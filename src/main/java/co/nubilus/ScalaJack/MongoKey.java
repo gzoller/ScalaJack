@@ -1,4 +1,4 @@
-package co.nubilus.ScalaJack;
+package co.nubilus.scalajack;
 
 import java.lang.annotation.*;
 

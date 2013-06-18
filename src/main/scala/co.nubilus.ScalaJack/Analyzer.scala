@@ -1,4 +1,4 @@
-package co.nubilus.ScalaJack
+package co.nubilus.scalajack
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._

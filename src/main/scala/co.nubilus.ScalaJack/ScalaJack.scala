@@ -1,4 +1,4 @@
-package co.nubilus.ScalaJack
+package co.nubilus.scalajack
 
 /**
  * Assumptions:
