@@ -41,20 +41,20 @@ if I also pass true as a second parameter (forMongo) to render:
 
 # Why?
 
-The natual and expected question when developing a library that already exists in the marketplace is "Why?".  
-Jackson has its own Scala module, and there is also a wonderful library called Salat that I've been using for
-some time that does JSON parsing for Scala.  What does ScalaJack offer these two don't?
+The natual and expected question when developing a library for a function that already exists in the marketplace 
+is "Why?".  Jackson has its own Scala module, and there is also a wonderful library called Salat that I've been 
+using for some time that does JSON parsing for Scala.  What does ScalaJack offer these two don't?
 
 Salat is very full-featured.  It gives you a high level of control over the parsing process including
-custom serializers for non-standard types.  After using it for a couple of years I began to wonder if it might
-be a bit slow for high-throughput needs.  In fairness, Salat's JSON handling features evolved after its primary
-mission of MongoDB DAO access.
+custom serializers for non-standard types.  After using it for a couple of years I began to be curious how its
+performance stacked up against other JSON parsers.  (In fairness, Salat's JSON handling features evolved after 
+its primary mission of MongoDB DAO access.)
 
 I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I didn't like the way
 Enumeration and Option types were handled.  It also didn't handle traits that I could see (serializing Foo, where 
 Foo is a trait member of a case class, and at runtime an object implementing the trait is given).  Salat does
-this very well, and seamlessly, via an embedded type hint.
+this very well and seamlessly via an embedded type hint.
 
 ScalaJack aimed for Jackson's speed and at least the best parts of Salat's behavior.  ScalaJack is indeed faster
 than Salat but losing nearly all of Salat's configurability and suffering a couple losses of datatypes supported.
-It does handle traits w/type hints nicely.
+It does handle traits w/type hints nicely.  If you're OK with my assumptions, ScalaJack is a great thing.

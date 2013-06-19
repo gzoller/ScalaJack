@@ -1,8 +1,7 @@
 package co.nubilus.scalajack
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe._
-import scala.reflect._
+import reflect.runtime.currentMirror
+import reflect.runtime.universe._
 import scala.reflect.runtime.{ currentMirror => cm }
 import scala.collection.concurrent.TrieMap
 import scala.reflect.NameTransformer._
@@ -18,66 +17,60 @@ object Analyzer {
 	
 	def apply[T]( cname:String ) : Field = 
 		classRepo.get(cname).fold({	
-			val v = inspect[T](cname)
+			val clazz  = Class.forName(cname)
+			val symbol = currentMirror.classSymbol(clazz)
+			val symbolType = symbol.typeSignature
+			val v = inspect[T]("", symbolType)
 			classRepo.put(cname, v)
 			v
 		})((ccf) => ccf)
 
-	private def inspect[T]( cname:String ) : Field = {
-		val clazz  = Class.forName(cname)
-		val symbol = currentMirror.classSymbol(clazz)
-		if( symbol.isCaseClass ) {
-			// Find and save the apply method of the companion object
-			val companionClazz = Class.forName(cname+"$")
-			val caseObj = companionClazz.getField(MODULE_INSTANCE_NAME).get(null)
-			val applyMethod = companionClazz.getMethods.find( _.getName == "apply" ).get
-			
-			// Build the field list
-		    val constructor = symbol.toType.members.collectFirst {
-		      case method: MethodSymbol
-		        if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
-		    }.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
-		    val fields = constructor.paramss.head.map( c => inspectField(c,symbol) )
+	private def inspect[T]( fieldName:String, ctype:Type, classCompanionSymbol:Option[Symbol] = None ) : Field = {
 
-		    CaseClassField( "", symbol.toType, cname, applyMethod, fields, caseObj )
-		} else if( symbol.isTrait ) 
-			TraitField( "", symbol.toType )
-		else 
-			throw new IllegalArgumentException("Only case classes are parsable.  Sorry. ("+symbol+")")
-	}
-	
-	private def inspectField[T]( sym:Symbol, classSymbol:Symbol ) : Field = {		
-		val cname = sym.name.toString
-		val cType = sym.typeSignature
-		val fullName = cType.typeSymbol.fullName.toString
-		if( fullName == "scala.Enumeration.Value" ) {
-			val erasedEnumClass = Class.forName(cType.asInstanceOf[TypeRef].toString.replace(".Value","$"))
+   		val fullName = ctype.typeSymbol.fullName.toString
+    		
+   		if( fullName.toString == "scala.collection.immutable.List" ) {
+   			ctype match {
+   				case TypeRef(pre, sym, args) =>
+   					ListField(fieldName, ctype, inspect( fieldName, args(0) ))
+   			}
+   		} else if( fullName == "scala.Enumeration.Value" ) {
+			val erasedEnumClass = Class.forName(ctype.asInstanceOf[TypeRef].toString.replace(".Value","$"))
 			val enum = erasedEnumClass.getField(MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-			EnumField( cname, cType, enum)
+			EnumField( fieldName, ctype, enum)
 		} else if( fullName == "scala.Option" ) {
-			val subtype = cType.asInstanceOf[TypeRef].args(0)
-			OptField( cname, cType, inspectField(subtype.typeSymbol, classSymbol) )
-		} else if( fullName == "scala.collection.immutable.List" ) {
-			val subtype = cType.asInstanceOf[TypeRef].args(0)
-			ListField( cname, cType, inspectField(subtype.typeSymbol, classSymbol) )
+			val subtype = ctype.asInstanceOf[TypeRef].args(0)
+			OptField( fieldName, ctype, inspect(fieldName, subtype) )
 		} else if( fullName == "scala.collection.immutable.Map" ) {
-			val keytype = cType.asInstanceOf[TypeRef].args(0)
-			val valuetype = cType.asInstanceOf[TypeRef].args(1)
-			MapField( cname, cType, inspectField(keytype.typeSymbol, classSymbol), inspectField(valuetype.typeSymbol, classSymbol) )
+			val valuetype = ctype.asInstanceOf[TypeRef].args(1)
+			MapField( fieldName, ctype, inspect(fieldName, valuetype) )
 		} else {
-    		val sym = currentMirror.classSymbol(Class.forName(fullName))
+			val sym = currentMirror.classSymbol(Class.forName(fullName))
     		if( sym.isTrait && !fullName.startsWith("scala"))
-    			TraitField( cname, cType )
+    			TraitField( fieldName, ctype )
     		else if( sym.isCaseClass ) {
-    			val cc = inspect(fullName).asInstanceOf[CaseClassField]
-    			cc.copy( name = cname )
-    		}
-    		else { 
+				// Find and save the apply method of the companion object
+				val companionClazz = Class.forName(fullName+"$")
+				val companionSymbol = currentMirror.classSymbol(companionClazz)
+				val caseObj = companionClazz.getField(MODULE_INSTANCE_NAME).get(null)
+				val applyMethod = companionClazz.getMethods.find( _.getName == "apply" ).get
+				
+				// Build the field list
+			    val constructor = ctype.members.collectFirst {
+			      case method: MethodSymbol
+			        if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
+			    }.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
+			    val fields = constructor.paramss.head.map( c => { inspect(c.name.toString, c.typeSignature, Some(companionSymbol)) })
+			    
+			    CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj )
+    		} else {
 				// See if there's a MongoKey annotation on any of the class' fields
-				val mongoAnno = classSymbol.companionSymbol.typeSignature.members.collectFirst {
-					case method:MethodSymbol if( method.name.toString == "apply") => method.paramss.head.collect{ case p if( p.annotations.find(a => a.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
-				}.getOrElse(List[String]())
-    			BaseField( cname, cType, mongoAnno.contains(cname))//sym.name.toString))
+    			val mongoAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
+					cs.typeSignature.members.collectFirst {
+						case method:MethodSymbol if( method.name.toString == "apply") => method.paramss.head.collect{ case p if( p.annotations.find(a => a.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
+					}.getOrElse(List[String]())
+    			})
+    			BaseField( fieldName, ctype, mongoAnno.contains(fieldName))
     		}
 		}
 	}
@@ -93,7 +86,7 @@ case class EnumField     ( name:String, dt:Type, enum:Enumeration ) extends Fiel
 case class TraitField    ( name:String, dt:Type ) extends Field
 case class OptField      ( name:String, dt:Type, subField:Field ) extends Field
 case class ListField     ( name:String, dt:Type, subField:Field ) extends Field
-case class MapField      ( name:String, dt:Type, keyField:Field, valueField:Field ) extends Field
+case class MapField      ( name:String, dt:Type, valueField:Field ) extends Field
 case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) extends Field {
 	val iFields = fields.map( f => (f.name, f)).toMap
 }

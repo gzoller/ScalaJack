@@ -18,7 +18,7 @@ package co.nubilus.scalajack
  */
 
 import com.fasterxml.jackson.core._
-import scala.reflect.runtime.universe._
+import reflect.runtime.universe._
 import scala.reflect.NameTransformer._
 
 object ScalaJack {
@@ -29,7 +29,7 @@ object ScalaJack {
 	
 	def render[T]( target:T, forMongo:Boolean = false )(implicit m:Manifest[T]) : JSON = _gen( 0, target, None, Analyzer(target.getClass.getName) )
 	def read[T]( js:JSON )(implicit m:Manifest[T]) : T = {
-			val jp = jsFactory.createParser(js)
+			val jp = jsFactory.createJsonParser(js)
 			jp.nextToken
 			_readClass( jp, Analyzer(m.runtimeClass.getName) ).asInstanceOf[T]
 	}
@@ -53,10 +53,9 @@ object ScalaJack {
 				val listVal = target.asInstanceOf[Iterable[_]]
 				if( listVal.isEmpty ) label.fold("[]")((label) => "\""+label+"\":[],")
 				else {
-					val items = listVal.map( item => {
-						_gen(level+1, item, None, lf.subField)+","
-					})
-					label.fold(target.toString)((label) => "\""+label+"\":["+items.mkString.reverse.tail.reverse+"],")
+					val items = listVal.map( item => { _gen(level+1, item, None, lf.subField)+"," })
+					val content = "["+items.mkString.reverse.tail.reverse+"]"
+					label.fold(content)((label) => "\""+label+"\":"+content+",")
 				}
 			}
 			case mf:MapField       => {
@@ -64,7 +63,7 @@ object ScalaJack {
 				if( mapVal.isEmpty ) label.fold("{}")((label) => "\""+label+"\":{},")
 				else {
 					val items = mapVal.map( { case (k,v) => {
-						_gen(level+1, k, None, mf.keyField) + ":" + _gen(level+1, v, None, mf.valueField)+","
+						"\""+k.toString+"\":" + _gen(level+1, v, None, mf.valueField)+","
 					}})
 					label.fold(target.toString)((label) => "\""+label+"\":{"+items.mkString.reverse.tail.reverse+"},")
 				}
@@ -100,13 +99,16 @@ object ScalaJack {
 			case ccf : CaseClassField => {
 				while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
 					fieldData += _readField(jp,ccf)
-					jp.nextToken
+					//jp.nextToken
 				}
+				jp.nextToken
 				poof( ccf.className, fieldData.toMap )				
 			}
 		}
 	}
 
+	// In: Token sitting on field name
+	// Out: Token sitting one past the field value (ready for the next field or 'end' token consumption)
 	private def _readField[T]( jp:JsonParser, ccf:CaseClassField )(implicit m:Manifest[T]) : (String,Any) = {
 		val fieldName = {
 			val raw = jp.getCurrentName
@@ -117,17 +119,25 @@ object ScalaJack {
 		( fieldName, _readValue( jp, ccf.iFields(fieldName) ) )
 	}
 	
+	private def _readMapField[T]( jp:JsonParser, vf:Field )(implicit m:Manifest[T]) : (Any,Any) = {
+		val fieldName = jp.getCurrentName
+		jp.nextToken
+		(fieldName, _readValue( jp, vf ))
+	}
+	
+	// In: Token sitting on field value
+	// Out: Token sitting one past the field value (ready for the next field or 'end' token consumption)
 	private def _readValue[T]( jp:JsonParser, f:Field )(implicit m:Manifest[T]) : Any = {
 		f match {
 			case bf:BaseField       => 
 				f.dt.typeSymbol.fullName.toString match {
-					case "java.lang.String" => jp.getValueAsString
-					case "scala.Int"        => jp.getValueAsInt
-					case "scala.Long"       => jp.getValueAsLong
-					case "scala.Boolean"    => jp.getValueAsBoolean
-					case _ => { println("BOOM: "+ f.dt.typeSymbol.fullName.toString); "wow"}
+					case "java.lang.String" => { val v = jp.getValueAsString; jp.nextToken; v }
+					case "scala.Int"        => { val v = jp.getValueAsInt; jp.nextToken; v }
+					case "scala.Long"       => { val v = jp.getValueAsLong; jp.nextToken; v }
+					case "scala.Boolean"    => { val v = jp.getValueAsBoolean; jp.nextToken; v }
+					case _ => throw new IllegalArgumentException("Unknown/unsupported type "+f.dt.typeSymbol.fullName.toString)
 				}
-			case ef :EnumField      => ef.enum.withName(jp.getValueAsString)
+			case ef :EnumField      => { val v = ef.enum.withName(jp.getValueAsString); jp.nextToken; v }
 			case of :OptField       => Some(_readValue(jp, of.subField))
 			case tf :TraitField     => _readClass( jp, f )
 			case ccf:CaseClassField => _readClass( jp, Analyzer(ccf.className) )
@@ -137,20 +147,17 @@ object ScalaJack {
 				val fieldData = scala.collection.mutable.ListBuffer[Any]()
 				while( jp.getCurrentToken != JsonToken.END_ARRAY ) {
 					fieldData += _readValue(jp,lf.subField)
-					jp.nextToken
 				}
+				jp.nextToken
 				fieldData.toList
 			}
 			case mf:MapField        => {
 				// Token now sitting on '{' so advance and read list
 				jp.nextToken
 				val fieldData = scala.collection.mutable.Map[Any,Any]()
-				while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
-					val k = _readValue(jp,mf.keyField)
-					val v = _readValue(jp,mf.valueField)
-					fieldData.put(k,v)
-					jp.nextToken
-				}
+				while( jp.getCurrentToken != JsonToken.END_OBJECT ) 
+					fieldData += _readMapField( jp, mf.valueField )
+				jp.nextToken
 				fieldData.toMap
 			}
 		}
@@ -166,11 +173,3 @@ object ScalaJack {
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
 }
-
-/* w/500 primed
- * 
- * Jackson: 451 ms
-   Gregs2:  451 ms
-   Salat:   983 ms
-
-*/
