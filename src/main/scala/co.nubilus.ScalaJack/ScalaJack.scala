@@ -53,9 +53,10 @@ object ScalaJack {
 				val listVal = target.asInstanceOf[Iterable[_]]
 				if( listVal.isEmpty ) label.fold("[]")((label) => "\""+label+"\":[],")
 				else {
-					val items = listVal.map( item => { _gen(level+1, item, None, lf.subField)+"," })
-					val content = "["+items.mkString.reverse.tail.reverse+"]"
-					label.fold(content)((label) => "\""+label+"\":"+content+",")
+					val items = listVal.map( item => { val anItem = _gen(level+1, item, None, lf.subField); if(anItem == "") "" else anItem + "," })
+					val rawContent = items.mkString.reverse.tail.reverse
+					val content = { if( rawContent == "" ) rawContent else "["+rawContent+"]" }
+					label.fold(content)((label) => if(content != "") "\""+label+"\":"+content+"," else "")
 				}
 			}
 			case mf:MapField       => {
@@ -63,9 +64,15 @@ object ScalaJack {
 				if( mapVal.isEmpty ) label.fold("{}")((label) => "\""+label+"\":{},")
 				else {
 					val items = mapVal.map( { case (k,v) => {
-						"\""+k.toString+"\":" + _gen(level+1, v, None, mf.valueField)+","
+						val gen = _gen(level+1, v, None, mf.valueField)
+						if( gen != "" )
+							"\""+k.toString+"\":" + _gen(level+1, v, None, mf.valueField)+","
+						else "" // i.e. None value
 					}})
-					label.fold(target.toString)((label) => "\""+label+"\":{"+items.mkString.reverse.tail.reverse+"},")
+					val rawContent = items.mkString.reverse.tail.reverse
+					val content = { if( rawContent == "" ) rawContent else "{"+rawContent+"}" }
+//					val content ="{"+items.mkString.reverse.tail.reverse+"}"
+					label.fold(content)((label) => if(content != "") "\""+label+"\":"+content+"," else "")
 				}
 			}
 			case ef:EnumField      => label.fold("\""+target+"\"")((label) => "\""+label+"\":\""+target+"\",")
