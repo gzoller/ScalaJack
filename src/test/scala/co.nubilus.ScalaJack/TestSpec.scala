@@ -34,10 +34,16 @@ class TestSpec extends FunSpec with MustMatchers with GivenWhenThen with BeforeA
 			val u = ScalaJack.read[Three](js2)
 			u must equal( t )
 		}
-		it( "MongoKey Annotation (_id field generation)" ) {
+		it( "MongoKey Annotation (_id field generation) - switch on" ) {
+			val five = Five("Fred",Two("blah",true))
+			val js = ScalaJack.render(five,true)
+			js must equal( """{"_id":"Fred","two":{"foo":"blah","bar":true}}""" )
+			ScalaJack.read[Five](js) must equal( five )
+		}
+		it( "MongoKey Annotation (_id field generation) - switch off" ) {
 			val five = Five("Fred",Two("blah",true))
 			val js = ScalaJack.render(five)
-			js must equal( """{"_id":"Fred","two":{"foo":"blah","bar":true}}""" )
+			js must equal( """{"name":"Fred","two":{"foo":"blah","bar":true}}""" )
 			ScalaJack.read[Five](js) must equal( five )
 		}
 

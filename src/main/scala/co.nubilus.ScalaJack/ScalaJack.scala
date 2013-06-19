@@ -27,9 +27,9 @@ object ScalaJack {
 	val jsFactory = new JsonFactory();
 	jsFactory.enable(JsonParser.Feature.ALLOW_COMMENTS);
 	
-	def render[T]( target:T, forMongo:Boolean = false )(implicit m:Manifest[T]) : JSON = _gen( 0, target, None, Analyzer(target.getClass.getName) )
+	def render[T]( target:T, forMongo:Boolean = false )(implicit m:Manifest[T]) : JSON = _gen( {if(forMongo) 0 else 1}, target, None, Analyzer(target.getClass.getName) )
 	def read[T]( js:JSON )(implicit m:Manifest[T]) : T = {
-			val jp = jsFactory.createJsonParser(js)
+			val jp = jsFactory.createParser(js)
 			jp.nextToken
 			_readClass( jp, Analyzer(m.runtimeClass.getName) ).asInstanceOf[T]
 	}
