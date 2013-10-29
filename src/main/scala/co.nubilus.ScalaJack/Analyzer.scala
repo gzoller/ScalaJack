@@ -70,23 +70,14 @@ object Analyzer {
 						case method:MethodSymbol if( method.name.toString == "apply") => method.paramss.head.collect{ case p if( p.annotations.find(a => a.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
 					}.getOrElse(List[String]())
     			})
-    			BaseField( fieldName, ctype, mongoAnno.contains(fieldName))
+    			fullName match {
+    				case "java.lang.String" => StringField( fieldName, ctype, mongoAnno.contains(fieldName))
+    				case "scala.Int"        => IntField( fieldName, ctype, mongoAnno.contains(fieldName))
+    				case "scala.Long"       => LongField( fieldName, ctype, mongoAnno.contains(fieldName))
+    				case "scala.Boolean"    => BoolField( fieldName, ctype, mongoAnno.contains(fieldName))
+    				case _                  => throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
+    			} 
     		}
 		}
 	}
-}
-
-trait Field {
-	val name         : String
-	val dt           : Type
-	val hasMongoAnno : Boolean = false
-}
-case class BaseField     ( name:String, dt:Type, override val hasMongoAnno:Boolean ) extends Field
-case class EnumField     ( name:String, dt:Type, enum:Enumeration ) extends Field
-case class TraitField    ( name:String, dt:Type ) extends Field
-case class OptField      ( name:String, dt:Type, subField:Field ) extends Field
-case class ListField     ( name:String, dt:Type, subField:Field ) extends Field
-case class MapField      ( name:String, dt:Type, valueField:Field ) extends Field
-case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) extends Field {
-	val iFields = fields.map( f => (f.name, f)).toMap
 }
