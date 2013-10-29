@@ -52,6 +52,10 @@ case class Wow2( x:String, y:Int) extends Pop {
 
 case class Animal(val name: String, val legs: Int)
 
+// Value class support
+class Wrapper(val underlying: Int) extends AnyVal
+case class ValSupport( name:String, wrap:Wrapper )
+
 // Test Lists
 case class ListList(val name: String, val stuff: List[List[Animal]])
 case class ListListList(val name: String, val stuff: List[List[List[Animal]]])

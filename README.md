@@ -12,14 +12,16 @@ ScalaJack is extremely simple to use.
 	val js = ScalaJack.render( myCaseObj )  // serialization
 	val myObj = ScalaJack.read[MyCaseClass](js) // deserialization
 
-That's about it.  Couldn't be simpler.
+That's about it.  Couldn't be simpler.  There is an optional hint (String) parameter for both render() and read()
+that changes the default \_hint field name for trait type hints, if you'd prefer something else.  Don't forget
+to use the same type hint name for render/read!
 
 # Assumptions
 
 - Case classes only
 - Options of value None are removed from generated JSON
 - Default parameters are not supported at this time
-- Simple types supported: Int, Boolean, Long, String, Enumeration.Value
+- Data types supported: Int, Boolean, Long, String, Enumeration.Value, Value Class
 - Collections/"containers" supported: List (immutable), Map (immutable), Option
 
 # Why?

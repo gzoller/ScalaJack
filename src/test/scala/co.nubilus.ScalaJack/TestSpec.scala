@@ -46,6 +46,19 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"bar","b":18}}]""" )
 			ScalaJack.readList[Three](js) should equal( stuff )
 		}
+		it( "Value class support" ) {
+			val stuff = ValSupport("foo", new Wrapper(42))
+			val js = ScalaJack.render(stuff)
+			js should equal( """{"name":"foo","wrap":42}""" )
+			ScalaJack.read[ValSupport](js) should equal( stuff )
+		}
+		it( "Support changing type hint" ) {
+			val t = Three("three",Num.A,Wow1("foo",17))
+			val js2 = ScalaJack.render(t,"hey")
+			js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}}""" )
+			val u = ScalaJack.read[Three](js2)
+			u should equal( t )
+		}
 		// it( "MongoKey Annotation (_id field generation) - switch on" ) {
 		// 	val five = Five("Fred",Two("blah",true))
 		// 	val js = ScalaJack.render(five,true)

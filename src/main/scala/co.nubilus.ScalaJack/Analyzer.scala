@@ -2,7 +2,6 @@ package co.nubilus.scalajack
 
 import reflect.runtime.currentMirror
 import reflect.runtime.universe._
-import scala.reflect.runtime.{ currentMirror => cm }
 import scala.collection.concurrent.TrieMap
 import scala.reflect.NameTransformer._
 
@@ -11,9 +10,9 @@ object Analyzer {
 	private val classRepo    = new TrieMap[String,Field]()
 	private val typeRepo     = new TrieMap[String,FieldMirror]()
 
-	val ru        = scala.reflect.runtime.universe
-	val m         = ru.runtimeMirror(getClass.getClassLoader)
-	val mongoType = ru.typeOf[MongoKey]
+	private val ru        = scala.reflect.runtime.universe
+	private val m         = ru.runtimeMirror(getClass.getClassLoader)
+	private val mongoType = ru.typeOf[MongoKey]
 	
 	def apply[T]( cname:String ) : Field = 
 		classRepo.get(cname).fold({	
@@ -32,22 +31,22 @@ object Analyzer {
 		if( fullName.toString == "scala.collection.immutable.List" ) {
 			ctype match {
 				case TypeRef(pre, sym, args) =>
-					ListField(fieldName, ctype, inspect( fieldName, args(0) ))
+					ListField(fieldName, inspect( fieldName, args(0) ))
 			}
 		} else if( fullName == "scala.Enumeration.Value" ) {
 			val erasedEnumClass = Class.forName(ctype.asInstanceOf[TypeRef].toString.replace(".Value","$"))
 			val enum = erasedEnumClass.getField(MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-			EnumField( fieldName, ctype, enum)
+			EnumField( fieldName, enum)
 		} else if( fullName == "scala.Option" ) {
 			val subtype = ctype.asInstanceOf[TypeRef].args(0)
-			OptField( fieldName, ctype, inspect(fieldName, subtype) )
+			OptField( fieldName, inspect(fieldName, subtype) )
 		} else if( fullName == "scala.collection.immutable.Map" ) {
 			val valuetype = ctype.asInstanceOf[TypeRef].args(1)
-			MapField( fieldName, ctype, inspect(fieldName, valuetype) )
+			MapField( fieldName, inspect(fieldName, valuetype) )
 		} else {
 			val sym = currentMirror.classSymbol(Class.forName(fullName))
 			if( sym.isTrait && !fullName.startsWith("scala"))
-				TraitField( fieldName, ctype )
+				TraitField( fieldName )
 			else if( sym.isCaseClass ) {
 				// Find and save the apply method of the companion object
 				val companionClazz = Class.forName(fullName+"$")
@@ -71,13 +70,27 @@ object Analyzer {
 					}.getOrElse(List[String]())
 				})
 				fullName match {
-					case "java.lang.String" => StringField( fieldName, ctype, mongoAnno.contains(fieldName))
-					case "scala.Int"        => IntField( fieldName, ctype, mongoAnno.contains(fieldName))
-					case "scala.Long"       => LongField( fieldName, ctype, mongoAnno.contains(fieldName))
-					case "scala.Boolean"    => BoolField( fieldName, ctype, mongoAnno.contains(fieldName))
-					case _                  => throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
+					case "java.lang.String" => StringField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Int"        => IntField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Long"       => LongField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName))
+					case _                  => {
+						if( isValueClass(sym) ) {
+							// Class name transformation so Analyzer will work
+							val className = Class.forName(fullName).getDeclaredFields.head.getType.getName match {
+								case "int"     => "scala.Int"
+								case "long"    => "scala.Long"
+								case "boolean" => "scala.Boolean"
+							}
+							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ) )
+						} else
+							throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
+					}
 				} 
 			}
 		}
 	}
+
+	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
+	private def isValueClass( sym:ClassSymbol ) = sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension"))
 }
