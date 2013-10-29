@@ -30,6 +30,13 @@ object ScalaJack {
 		sb.toString
 	}
 
+	def renderList[T]( target:List[T] )(implicit m:Manifest[T]) : JSON = {
+		val sb = new StringBuilder
+		if( target.size == 0 ) sb.append("[]")
+		else ListField( "", null, Analyzer(m.runtimeClass.getName) ).render(sb, target, None)
+		sb.toString
+	}
+
 	def read[T]( js:JSON )(implicit m:Manifest[T]) : T = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
@@ -37,6 +44,12 @@ object ScalaJack {
 			case t:TraitField => t.readClass(jp).asInstanceOf[T]
 			case c:CaseClassField => c.readClass(jp).asInstanceOf[T]
 		}
+	}
+
+	def readList[T]( js:JSON )(implicit m:Manifest[T]) : List[T] = {
+		val jp = jsFactory.createParser(js)
+		jp.nextToken
+		ListField( "", null, Analyzer(m.runtimeClass.getName) ).readValue(jp).asInstanceOf[List[T]]
 	}
 
 	// Magically create an instance of a case class given a map of name->value parameters.

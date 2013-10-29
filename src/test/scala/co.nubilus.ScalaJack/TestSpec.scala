@@ -27,12 +27,24 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			js should equal( """{"stuff":[],"things":{}}""" )
 			ScalaJack.read[Four](js) should equal( four )
 		}
-		it( "Traits" ) {
+		it( "Traits with subclasses" ) {
 			val t = Three("three",Num.A,Wow1("foo",17))
 			val js2 = ScalaJack.render(t)
 			js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}}""" )
 			val u = ScalaJack.read[Three](js2)
 			u should equal( t )
+		}
+		it( "Naked Lists of string" ) {
+			val stuff = List( "a","b","c" )
+			val js = ScalaJack.renderList(stuff)
+			js should equal( """["a","b","c"]""" )
+			ScalaJack.readList[String](js) should equal( stuff )
+		}
+		it( "Naked Lists of objects" ) {
+			val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
+			val js = ScalaJack.renderList(stuff)
+			js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"bar","b":18}}]""" )
+			ScalaJack.readList[Three](js) should equal( stuff )
 		}
 		// it( "MongoKey Annotation (_id field generation) - switch on" ) {
 		// 	val five = Five("Fred",Two("blah",true))

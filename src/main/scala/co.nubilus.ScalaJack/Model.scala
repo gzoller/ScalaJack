@@ -1,10 +1,6 @@
 package co.nubilus.scalajack
 
-import reflect.runtime.currentMirror
 import reflect.runtime.universe._
-import scala.reflect.runtime.{ currentMirror => cm }
-import scala.collection.concurrent.TrieMap
-import scala.reflect.NameTransformer._
 import com.fasterxml.jackson.core._
 
 trait Field {
