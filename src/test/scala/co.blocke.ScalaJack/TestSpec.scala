@@ -1,4 +1,4 @@
-package co.nubilus.scalajack
+package co.blocke.scalajack
 package test
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
@@ -30,7 +30,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		it( "Traits with subclasses" ) {
 			val t = Three("three",Num.A,Wow1("foo",17))
 			val js2 = ScalaJack.render(t)
-			js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}}""" )
+			js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
 			val u = ScalaJack.read[Three](js2)
 			u should equal( t )
 		}
@@ -43,7 +43,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		it( "Naked Lists of objects" ) {
 			val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
 			val js = ScalaJack.renderList(stuff)
-			js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.nubilus.scalajack.test.Wow1","a":"bar","b":18}}]""" )
+			js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
 			ScalaJack.readList[Three](js) should equal( stuff )
 		}
 		it( "Value class support" ) {
@@ -55,7 +55,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		it( "Support changing type hint" ) {
 			val t = Three("three",Num.A,Wow1("foo",17))
 			val js2 = ScalaJack.render(t,"hey")
-			js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.nubilus.scalajack.test.Wow1","a":"foo","b":17}}""" )
+			js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
 			val u = ScalaJack.read[Three](js2)
 			u should equal( t )
 		}

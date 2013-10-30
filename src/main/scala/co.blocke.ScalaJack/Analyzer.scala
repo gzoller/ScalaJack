@@ -1,4 +1,4 @@
-package co.nubilus.scalajack
+package co.blocke.scalajack
 
 import reflect.runtime.currentMirror
 import reflect.runtime.universe._

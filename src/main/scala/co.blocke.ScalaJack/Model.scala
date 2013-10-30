@@ -1,4 +1,4 @@
-package co.nubilus.scalajack
+package co.blocke.scalajack
 
 import reflect.runtime.universe._
 import com.fasterxml.jackson.core._

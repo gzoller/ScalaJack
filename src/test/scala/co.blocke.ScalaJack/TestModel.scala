@@ -1,4 +1,4 @@
-package co.nubilus.scalajack
+package co.blocke.scalajack
 package test
 
 object Num extends Enumeration {
