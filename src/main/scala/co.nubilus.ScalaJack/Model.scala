@@ -47,10 +47,46 @@ case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Fi
 		val v = jp.getValueAsInt
 		jp.nextToken
 		v
-	}}
+	}
+}
+case class CharField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], hint:String, withHint:Boolean=false ) : Boolean = {
+		label.fold( {
+				sb.append('"')
+				sb.append(target)
+				sb.append('"')
+			})((labelStr) => {
+				sb.append('"')
+				sb.append( labelStr )
+				sb.append("\":\"")
+				sb.append(target.toString)
+				sb.append("\",")
+			})
+		true
+	}
+	override private[scalajack] def readValue[T]( jp:JsonParser, hint:String )(implicit m:Manifest[T]) : Any = {
+		val v = jp.getValueAsString.charAt(0)
+		jp.nextToken
+		v
+	}
+}
 case class LongField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, hint:String )(implicit m:Manifest[T]) : Any = {
 		val v = jp.getValueAsLong
+		jp.nextToken
+		v
+	}
+}
+case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+	override private[scalajack] def readValue[T]( jp:JsonParser, hint:String )(implicit m:Manifest[T]) : Any = {
+		val v = jp.getValueAsDouble.toFloat
+		jp.nextToken
+		v
+	}
+}
+case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+	override private[scalajack] def readValue[T]( jp:JsonParser, hint:String )(implicit m:Manifest[T]) : Any = {
+		val v = jp.getValueAsDouble
 		jp.nextToken
 		v
 	}

@@ -72,14 +72,20 @@ object Analyzer {
 				fullName match {
 					case "java.lang.String" => StringField( fieldName, mongoAnno.contains(fieldName))
 					case "scala.Int"        => IntField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Char"       => CharField( fieldName, mongoAnno.contains(fieldName))
 					case "scala.Long"       => LongField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Float"      => FloatField( fieldName, mongoAnno.contains(fieldName))
+					case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName))
 					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName))
 					case _                  => {
 						if( isValueClass(sym) ) {
 							// Class name transformation so Analyzer will work
 							val className = Class.forName(fullName).getDeclaredFields.head.getType.getName match {
 								case "int"     => "scala.Int"
+								case "char"    => "scala.Char"
 								case "long"    => "scala.Long"
+								case "float"   => "scala.Flaot"
+								case "double"  => "scala.Double"
 								case "boolean" => "scala.Boolean"
 							}
 							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ) )

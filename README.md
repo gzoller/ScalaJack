@@ -21,7 +21,7 @@ to use the same type hint name for render/read!
 - Case classes only
 - Options of value None are removed from generated JSON
 - Default parameters are not supported at this time
-- Data types supported: Int, Boolean, Long, String, Enumeration.Value, Value Class
+- Data types supported: Int, Boolean, Long, Char, Double, Float, String, Enumeration.Value, Value Class
 - Collections/"containers" supported: List (immutable), Map (immutable), Option
 
 # Why?
