@@ -7,7 +7,7 @@ or "helper" code.
 
 ScalaJack is extremely simple to use.
 
-	import co.nubilus.scalajack._
+	import co.blocke.scalajack._
 
 	val js = ScalaJack.render( myCaseObj )  // serialization
 	val myObj = ScalaJack.read[MyCaseClass](js) // deserialization
@@ -48,3 +48,5 @@ ScalaJack also supports arbitrary nesting of data structures, Map, List, Option,
 sophisticated data structures with ease.
 
 If you're OK with speed at the price of my assumptions, ScalaJack is a great thing!
+
+Blöcke
