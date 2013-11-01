@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package test
 
+import com.fasterxml.jackson.core._
+
 object Num extends Enumeration {
 	val A,B,C = Value
 }
@@ -52,9 +54,26 @@ case class Wow2( x:String, y:Int) extends Pop {
 
 case class Animal(val name: String, val legs: Int)
 
-// Value class support
+// Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
-case class ValSupport( name:String, wrap:Wrapper )
+case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
+object Wrapper extends ExtJson[Int] {
+	override def toJson( obj:Int ) : String = "{\"num\":"+obj+",\"hey\":\"you\"}"
+	override def fromJson( valueType:Field, jp:JsonParser, hint:String, ext:Boolean )(implicit m:Manifest[Int]) : Any = {
+		jp.nextToken // consume '{'
+		jp.getCurrentName // consume 'num' label
+		jp.nextToken // scan to value
+		val v = jp.getValueAsInt // consume 'num' value
+		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
+			jp.nextToken
+		}
+		jp.nextToken // consume '}'
+		v
+	}
+}
+case class ListValSupport( name:String, wrap:List[Wrapper], more:Boolean )
+case class OptValSupport( name:String, wrap:Option[Wrapper] )
+case class MapValSupport( name:String, wrap:Map[String,Wrapper])
 
 // Test Lists
 case class ListList(val name: String, val stuff: List[List[Animal]])

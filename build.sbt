@@ -2,7 +2,11 @@ name := "ScalaJack"
 
 version := "1.0"
 
+organization := "co.blocke"
+
 scalaVersion := "2.10.1"
+
+scalacOptions += "-feature"
 
 resolvers += "Typesafe" at "http://repo.typesafe.com/typesafe/releases/"
 

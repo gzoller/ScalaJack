@@ -10,9 +10,9 @@ object Analyzer {
 	private val classRepo    = new TrieMap[String,Field]()
 	private val typeRepo     = new TrieMap[String,FieldMirror]()
 
-	private val ru        = scala.reflect.runtime.universe
-	private val m         = ru.runtimeMirror(getClass.getClassLoader)
-	private val mongoType = ru.typeOf[MongoKey]
+	private val ru           = scala.reflect.runtime.universe
+	private val m            = ru.runtimeMirror(getClass.getClassLoader)
+	private val mongoType    = ru.typeOf[MongoKey]
 	
 	def apply[T]( cname:String ) : Field = 
 		classRepo.get(cname).fold({	
@@ -30,8 +30,7 @@ object Analyzer {
 
 		if( fullName.toString == "scala.collection.immutable.List" ) {
 			ctype match {
-				case TypeRef(pre, sym, args) =>
-					ListField(fieldName, inspect( fieldName, args(0) ))
+				case TypeRef(pre, sym, args) => ListField(fieldName, inspect( fieldName, args(0) ))
 			}
 		} else if( fullName == "scala.Enumeration.Value" ) {
 			val erasedEnumClass = Class.forName(ctype.asInstanceOf[TypeRef].toString.replace(".Value","$"))
@@ -79,8 +78,9 @@ object Analyzer {
 					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName))
 					case _                  => {
 						if( isValueClass(sym) ) {
+							val clazz = Class.forName(fullName)
 							// Class name transformation so Analyzer will work
-							val className = Class.forName(fullName).getDeclaredFields.head.getType.getName match {
+							val className = clazz.getDeclaredFields.head.getType.getName match {
 								case "int"     => "scala.Int"
 								case "char"    => "scala.Char"
 								case "long"    => "scala.Long"
@@ -88,7 +88,7 @@ object Analyzer {
 								case "double"  => "scala.Double"
 								case "boolean" => "scala.Boolean"
 							}
-							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ) )
+							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
 						} else
 							throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
 					}
@@ -97,6 +97,42 @@ object Analyzer {
 		}
 	}
 
+	val classLoaders = List(this.getClass.getClassLoader)
+	val ModuleFieldName = "MODULE$"
+
+	def findExtJson(cname:String) : Option[ExtJson[_]] = {
+		val clazz = Class.forName(cname)
+		val path = if (clazz.getName.endsWith("$")) clazz.getName else "%s$".format(clazz.getName)
+		val c = resolveClass(path, classLoaders)
+		if (c.isDefined) {
+			val co = c.get.getField(ModuleFieldName).get(null)
+			if( co.isInstanceOf[ExtJson[_]] ) Some(co.asInstanceOf[ExtJson[_]])
+			else None
+		}
+		else None
+	}
+
 	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
 	private def isValueClass( sym:ClassSymbol ) = sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension"))
+
+	protected def resolveClass[X <: AnyRef](c: String, classLoaders: Iterable[ClassLoader]): Option[Class[X]] = classLoaders match {
+		case Nil      => sys.error("resolveClass: expected 1+ classloaders but received empty list")
+		case List(cl) => Some(Class.forName(c, true, cl).asInstanceOf[Class[X]])
+		case many => {
+			try {
+				var clazz: Class[_] = null
+				val iter = many.iterator
+				while (clazz == null && iter.hasNext) {
+					try {
+						clazz = Class.forName(c, true, iter.next())
+					} catch {
+						case e: ClassNotFoundException => 
+					}
+				}
+				if (clazz != null) Some(clazz.asInstanceOf[Class[X]]) else None
+			} catch {
+				case _: Throwable => None
+			}
+		}
+	}
 }

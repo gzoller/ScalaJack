@@ -46,11 +46,67 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
 			ScalaJack.readList[Three](js) should equal( stuff )
 		}
-		it( "Value class support" ) {
-			val stuff = ValSupport("foo", new Wrapper(42))
-			val js = ScalaJack.render(stuff)
-			js should equal( """{"name":"foo","wrap":42}""" )
-			ScalaJack.read[ValSupport](js) should equal( stuff )
+		describe("Value Classes") {
+			describe("Without custom JSON support") {
+				it( "Simple value class support" ) {
+					val stuff = ValSupport("foo", new Wrapper(42), false)
+					val js = ScalaJack.render(stuff)
+					js should equal( """{"name":"foo","wrap":42,"more":false}""" )
+					ScalaJack.read[ValSupport](js) should equal( stuff )
+				}
+				it( "List of value class without custom JSON support" ) {
+					val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
+					val js = ScalaJack.render(stuff)
+					js should equal("""{"name":"bar","wrap":[99,100],"more":true}""")
+					ScalaJack.read[ListValSupport](js) should equal( stuff )
+				}
+				it( "Option of value class without custom JSON support" ) {
+					val stuff = OptValSupport("hey", Some(new Wrapper(2)))
+					val stuff2 = OptValSupport("hey", None)
+					val js1 = ScalaJack.render(stuff)
+					val js2 = ScalaJack.render(stuff2)
+					js1 should equal("""{"name":"hey","wrap":2}""")
+					js2 should equal("""{"name":"hey"}""")
+					ScalaJack.read[OptValSupport](js1) should equal( stuff )
+					ScalaJack.read[OptValSupport](js2) should equal( stuff2 )
+				}
+				it( "Map of value class without custom JSON support" ) {
+					val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
+					val js2 = ScalaJack.render(stuff)
+					js2 should equal("""{"name":"hey","wrap":{"blah":2,"wow":3}}""")
+					ScalaJack.read[MapValSupport](js2) should equal( stuff )
+				}
+			}
+			describe("With custom JSON support") {
+				it( "Simple value custom JSON support for Value class" ) {
+					val stuff = ValSupport("foo", new Wrapper(99), true)
+					val js = ScalaJack.render(stuff,"_hint",true)
+					js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
+					ScalaJack.read[ValSupport](js,"_hint",true) should equal( stuff )
+				}
+				it( "List of value class with custom JSON support" ) {
+					val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
+					val js = ScalaJack.render(stuff,"_hint",true)
+					js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
+					ScalaJack.read[ListValSupport](js,"_hint",true) should equal( stuff )
+				}
+				it( "Option of value class with custom JSON support" ) {
+					val stuff = OptValSupport("hey", Some(new Wrapper(2)))
+					val stuff2 = OptValSupport("hey", None)
+					val js1 = ScalaJack.render(stuff,"_hint",true)
+					val js2 = ScalaJack.render(stuff2,"_hint",true)
+					js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
+					js2 should equal("""{"name":"hey"}""")
+					ScalaJack.read[OptValSupport](js1,"_hint",true) should equal( stuff )
+					ScalaJack.read[OptValSupport](js2,"_hint",true) should equal( stuff2 )
+				}
+				it( "Map of value class without custom JSON support" ) {
+					val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
+					val js1 = ScalaJack.render(stuff,"_hint",true)
+					js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
+					ScalaJack.read[MapValSupport](js1,"_hint",true) should equal( stuff )
+				}
+			}
 		}
 		it( "Support changing type hint" ) {
 			val t = Three("three",Num.A,Wow1("foo",17))
