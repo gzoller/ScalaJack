@@ -14,6 +14,9 @@ object Analyzer {
 	private val m            = ru.runtimeMirror(getClass.getClassLoader)
 	private val mongoType    = ru.typeOf[MongoKey]
 	
+	/**
+	 * Given a class name, figure out the appropriate Field object
+	 */
 	def apply[T]( cname:String ) : Field = 
 		classRepo.get(cname).fold({	
 			val clazz  = Class.forName(cname)
@@ -97,10 +100,10 @@ object Analyzer {
 		}
 	}
 
-	val classLoaders = List(this.getClass.getClassLoader)
-	val ModuleFieldName = "MODULE$"
+	private val classLoaders = List(this.getClass.getClassLoader)
+	private val ModuleFieldName = "MODULE$"
 
-	def findExtJson(cname:String) : Option[ExtJson[_]] = {
+	private def findExtJson(cname:String) : Option[ExtJson[_]] = {
 		val clazz = Class.forName(cname)
 		val path = if (clazz.getName.endsWith("$")) clazz.getName else "%s$".format(clazz.getName)
 		val c = resolveClass(path, classLoaders)
@@ -115,7 +118,7 @@ object Analyzer {
 	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
 	private def isValueClass( sym:ClassSymbol ) = sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension"))
 
-	protected def resolveClass[X <: AnyRef](c: String, classLoaders: Iterable[ClassLoader]): Option[Class[X]] = classLoaders match {
+	private def resolveClass[X <: AnyRef](c: String, classLoaders: Iterable[ClassLoader]): Option[Class[X]] = classLoaders match {
 		case Nil      => sys.error("resolveClass: expected 1+ classloaders but received empty list")
 		case List(cl) => Some(Class.forName(c, true, cl).asInstanceOf[Class[X]])
 		case many => {

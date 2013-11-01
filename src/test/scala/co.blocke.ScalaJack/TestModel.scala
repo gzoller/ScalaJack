@@ -59,7 +59,7 @@ class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
 object Wrapper extends ExtJson[Int] {
 	override def toJson( obj:Int ) : String = "{\"num\":"+obj+",\"hey\":\"you\"}"
-	override def fromJson( valueType:Field, jp:JsonParser, hint:String, ext:Boolean )(implicit m:Manifest[Int]) : Any = {
+	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[Int]) : Any = {
 		jp.nextToken // consume '{'
 		jp.getCurrentName // consume 'num' label
 		jp.nextToken // scan to value

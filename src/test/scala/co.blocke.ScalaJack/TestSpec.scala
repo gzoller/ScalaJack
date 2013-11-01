@@ -80,37 +80,37 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			describe("With custom JSON support") {
 				it( "Simple value custom JSON support for Value class" ) {
 					val stuff = ValSupport("foo", new Wrapper(99), true)
-					val js = ScalaJack.render(stuff,"_hint",true)
+					val js = ScalaJack.render(stuff,true)
 					js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
-					ScalaJack.read[ValSupport](js,"_hint",true) should equal( stuff )
+					ScalaJack.read[ValSupport](js,true) should equal( stuff )
 				}
 				it( "List of value class with custom JSON support" ) {
 					val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
-					val js = ScalaJack.render(stuff,"_hint",true)
+					val js = ScalaJack.render(stuff,true)
 					js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
-					ScalaJack.read[ListValSupport](js,"_hint",true) should equal( stuff )
+					ScalaJack.read[ListValSupport](js,true) should equal( stuff )
 				}
 				it( "Option of value class with custom JSON support" ) {
 					val stuff = OptValSupport("hey", Some(new Wrapper(2)))
 					val stuff2 = OptValSupport("hey", None)
-					val js1 = ScalaJack.render(stuff,"_hint",true)
-					val js2 = ScalaJack.render(stuff2,"_hint",true)
+					val js1 = ScalaJack.render(stuff,true)
+					val js2 = ScalaJack.render(stuff2,true)
 					js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
 					js2 should equal("""{"name":"hey"}""")
-					ScalaJack.read[OptValSupport](js1,"_hint",true) should equal( stuff )
-					ScalaJack.read[OptValSupport](js2,"_hint",true) should equal( stuff2 )
+					ScalaJack.read[OptValSupport](js1,true) should equal( stuff )
+					ScalaJack.read[OptValSupport](js2,true) should equal( stuff2 )
 				}
 				it( "Map of value class without custom JSON support" ) {
 					val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
-					val js1 = ScalaJack.render(stuff,"_hint",true)
+					val js1 = ScalaJack.render(stuff,true)
 					js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
-					ScalaJack.read[MapValSupport](js1,"_hint",true) should equal( stuff )
+					ScalaJack.read[MapValSupport](js1,true) should equal( stuff )
 				}
 			}
 		}
 		it( "Support changing type hint" ) {
 			val t = Three("three",Num.A,Wow1("foo",17))
-			val js2 = ScalaJack.render(t,"hey")
+			val js2 = ScalaJack.render(t,false,"hey")
 			js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
 			val u = ScalaJack.read[Three](js2)
 			u should equal( t )

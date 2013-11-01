@@ -6,7 +6,7 @@ organization := "co.blocke"
 
 scalaVersion := "2.10.1"
 
-scalacOptions += "-feature"
+//scalacOptions += "-feature"
 
 resolvers += "Typesafe" at "http://repo.typesafe.com/typesafe/releases/"
 

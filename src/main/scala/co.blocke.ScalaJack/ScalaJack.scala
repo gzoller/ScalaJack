@@ -22,48 +22,61 @@ import com.fasterxml.jackson.core.JsonFactory
 object ScalaJack {
 	type JSON = String
 	
-	val jsFactory = new JsonFactory();
+	private val jsFactory = new JsonFactory();
 	private val hint = "_hint"
 	
-	def render[T]( target:T, hint:String = hint, ext:Boolean = false )(implicit m:Manifest[T]) : JSON = {
+	/**
+	 * Render a JSON-encoded case class
+	 */
+	def render[T]( target:T, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
 		val sb = new StringBuilder
 		Analyzer(target.getClass.getName).render(sb, target, None, ext, hint)
 		sb.toString
 	}
 
-	def renderList[T]( target:List[T], hint:String = hint, ext:Boolean = false )(implicit m:Manifest[T]) : JSON = {
+	/**
+	 * Render a "naked" JSON list, e.g. ["a","b","c"]
+	 */
+	def renderList[T]( target:List[T], ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
 		val sb = new StringBuilder
 		if( target.size == 0 ) sb.append("[]")
 		else ListField( "", Analyzer(m.runtimeClass.getName) ).render(sb, target, None, ext, hint)
 		sb.toString
 	}
 
-	def read[T]( js:JSON, hint:String = hint, ext:Boolean = false )(implicit m:Manifest[T]) : T = {
+	/**
+	 * Read a JSON-encoded case class
+	 */
+	def read[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : T = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
 		Analyzer(m.runtimeClass.getName) match {
-			case t:TraitField => t.readClass(jp, hint, ext).asInstanceOf[T]
-			case c:CaseClassField => c.readClass(jp, hint, ext).asInstanceOf[T]
+			case t:TraitField => t.readClass(jp, ext, hint).asInstanceOf[T]
+			case c:CaseClassField => c.readClass(jp, ext, hint).asInstanceOf[T]
 		}
 	}
 
-	def readList[T]( js:JSON, hint:String = hint, ext:Boolean = false )(implicit m:Manifest[T]) : List[T] = {
+	/**
+	 * Read a "naked" JSON list, e.g. ["a","b","c"]
+	 */
+	def readList[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
-		ListField( "", Analyzer(m.runtimeClass.getName) ).readValue(jp,hint,ext).asInstanceOf[List[T]]
+		ListField( "", Analyzer(m.runtimeClass.getName) ).readValue(jp,ext,hint).asInstanceOf[List[T]]
 	}
 
-	// Magically create an instance of a case class given a map of name->value parameters.
-	// (Reflects on the apply method of the case class' companion object.)
+	/**
+	 * Magically create an instance of a case class given a map of name->value parameters.
+	 * (Reflects on the apply method of the case class' companion object.)
+	 * It's a quick way to materialize a cse class represented by a Map, which is how ScalaJack uses it.
+	 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
+	 * ScalaJack calls poof to build the case class from the Map.
+	 */
 	def poof[T]( data:Map[String,Any] )(implicit m:Manifest[T]) : T = poof( m.runtimeClass.getName, data ).asInstanceOf[T]
-		
+
 	private[scalajack] def poof( cname:String, data:Map[String,Any] ) : Any = {
-//if(cname.contains("ValSupport")) println("Data: "+data)
 		val classField = Analyzer(cname).asInstanceOf[CaseClassField]
-//if(cname.contains("ValSupport")) println("Flds: "+classField.fields)
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
-//if(cname.contains("ValSupport")) println("Args: "+args.toList)
-//if(cname.contains("ValSupport")) println("Mthd: "+classField.applyMethod)
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
 }
