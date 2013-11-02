@@ -14,5 +14,5 @@ Some differentiating features:
 
 Online at:
 
-- Code: [https://github.com/gzoller/ScalaJack][source]
+- Code: [source](https://github.com/gzoller/ScalaJack)
 
