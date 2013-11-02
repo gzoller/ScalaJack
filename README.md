@@ -7,6 +7,16 @@ or "helper" code.
 
 ScalaJack is extremely simple to use.
 
+Include it in your projects by adding the following to your build.sbt:
+
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack"   % "1.0")
+
+And if necessary add the OSS repo to your resolvers:
+
+	resolvers ++= Seq("OSS" at "http://oss.sonatype.org/content/repositories/releases")
+
+Now you're good to go!  Let's use ScalaJack in your project:
+
 	import co.blocke.scalajack._
 
 	val js = ScalaJack.render( myCaseObj )  // serialization
