@@ -1,17 +1,20 @@
 name := "ScalaJack"
 
-version := "1.0"
+version := "1.1"
 
 organization := "co.blocke"
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.2"
 
 //scalacOptions += "-feature"
 
-resolvers += "Typesafe" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
+             "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases")
 
 libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.2.0",
                             "org.scala-lang"             % "scala-compiler" % "2.10.1",
+                            "org.mongodb"                %% "casbah"        % "2.6.4",
+"net.databinder" %% "dispatch-http" % "0.8.10",
                             "org.scalatest"              % "scalatest_2.10" % "2.0.M7" % "test")
 
 publishArtifact in Test := false

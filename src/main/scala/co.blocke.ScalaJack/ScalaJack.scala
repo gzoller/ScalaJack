@@ -18,6 +18,7 @@ package co.blocke.scalajack
  */
 
 import com.fasterxml.jackson.core.JsonFactory
+import com.mongodb.casbah.Imports._
 
 object ScalaJack {
 	type JSON = String
@@ -30,8 +31,13 @@ object ScalaJack {
 	 */
 	def render[T]( target:T, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
 		val sb = new StringBuilder
-		Analyzer(target.getClass.getName).render(sb, target, None, ext, hint)
+		// Note: Was using Analyzer(target.getClass.getName) here but this failed to pick up 
+		// top-level trait class name.  m.toString did the job.
+		Analyzer(m.toString).render(sb, target, None, ext, hint)
 		sb.toString
+	}
+	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
+		Analyzer(target.getClass.getName).renderDB(target, None, hint ).asInstanceOf[DBObject]
 	}
 
 	/**
