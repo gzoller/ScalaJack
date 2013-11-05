@@ -90,6 +90,7 @@ object Analyzer {
 								case "float"   => "scala.Flaot"
 								case "double"  => "scala.Double"
 								case "boolean" => "scala.Boolean"
+								case t         => t
 							}
 							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
 						} else

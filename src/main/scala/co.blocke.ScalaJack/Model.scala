@@ -237,7 +237,14 @@ case class ListField( name:String, subField:Field ) extends Field {
 	}
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
 		val listVal = target.asInstanceOf[Iterable[_]]
-		listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }
+		if( subField.isInstanceOf[ValueClassField] ) {
+			listVal.collect{ case item => {
+				val valueFieldName = item.getClass.getDeclaredFields.head.getName
+				val unboxedVal = item.getClass.getDeclaredMethods.toList.find(m => m.getName == valueFieldName).get.invoke(item)
+				subField.renderDB(unboxedVal, None, hint )
+			} }
+		} else 
+			listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
 		// Token now sitting on '[' so advance and read list
@@ -313,9 +320,16 @@ case class MapField( name:String, valueField:Field ) extends Field {
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
 		val mapVal = target.asInstanceOf[Map[_,_]]
 		val mo = MongoDBObject()
-		mapVal.collect {  case (k,v) if( v != None ) => {
-			mo.put(k.toString, valueField.renderDB(v, None, hint ))
+		if( valueField.isInstanceOf[ValueClassField] ) {
+			mapVal.collect {  case (k,v) => {
+				val valueFieldName = v.getClass.getDeclaredFields.head.getName
+				val unboxedVal = v.getClass.getDeclaredMethods.toList.find(m => m.getName == valueFieldName).get.invoke(v)
+				mo.put(k.toString, valueField.renderDB(unboxedVal, None, hint ))
 			}}
+		} else 
+			mapVal.collect {  case (k,v) if( v != None ) => {
+				mo.put(k.toString, valueField.renderDB(v, None, hint ))
+				}}
 		mo
 	}
 	private def readMapField[T]( jp:JsonParser, vf:Field, ext:Boolean, hint:String )(implicit m:Manifest[T]) : (Any,Any) = {
@@ -418,6 +432,9 @@ case class ValueClassField( name:String, override val hasMongoAnno:Boolean, valu
 			true
 		} else 
 			valueType.render( sb, target, label, ext, hint )
+	}
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = { 
+		target
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
 		if( ext && extJson.isDefined )
