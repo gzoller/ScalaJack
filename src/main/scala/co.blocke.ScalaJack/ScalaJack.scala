@@ -19,6 +19,7 @@ package co.blocke.scalajack
 
 import com.fasterxml.jackson.core.JsonFactory
 import com.mongodb.casbah.Imports._
+import fields._
 
 object ScalaJack {
 	type JSON = String
@@ -33,11 +34,11 @@ object ScalaJack {
 		val sb = new StringBuilder
 		// Note: Was using Analyzer(target.getClass.getName) here but this failed to pick up 
 		// top-level trait class name.  m.toString did the job.
-		Analyzer(m.toString).render(sb, target, None, ext, hint)
+		Analyzer(m.runtimeClass.getName).render(sb, target, None, ext, hint)
 		sb.toString
 	}
 	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
-		Analyzer(target.getClass.getName).renderDB(target, None, hint ).asInstanceOf[DBObject]
+		Analyzer(m.runtimeClass.getName).renderDB(target, None, hint ).asInstanceOf[DBObject]
 	}
 
 	/**
@@ -50,16 +51,21 @@ object ScalaJack {
 		sb.toString
 	}
 
+	/** 
+	 * Render a "naked" list to DBObject
+	 */
+	def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
+		if( target.size == 0 ) MongoDBList.empty
+		else ListField( "", Analyzer(m.runtimeClass.getName) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
+	}
+
 	/**
 	 * Read a JSON-encoded case class
 	 */
 	def read[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : T = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
-		Analyzer(m.runtimeClass.getName) match {
-			case t:TraitField => t.readClass(jp, ext, hint).asInstanceOf[T]
-			case c:CaseClassField => c.readClass(jp, ext, hint).asInstanceOf[T]
-		}
+		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClass(jp, ext, hint).asInstanceOf[T]
 	}
 
 	/**
@@ -69,6 +75,20 @@ object ScalaJack {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
 		ListField( "", Analyzer(m.runtimeClass.getName) ).readValue(jp,ext,hint).asInstanceOf[List[T]]
+	}
+
+	/**
+	 * Read a "naked" list from DBObject into List()
+	 */
+	def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
+		ListField( "", Analyzer(m.runtimeClass.getName) ).readValueDB(src,hint).asInstanceOf[List[T]]
+	}
+
+	/**
+	 * Read a case class from a DBObject (MongoDB)
+	 */
+	def readDB[T]( src:DBObject, hint:String = hint )(implicit m:Manifest[T]) : T = {
+		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClassDB(src, hint).asInstanceOf[T]
 	}
 
 	/**

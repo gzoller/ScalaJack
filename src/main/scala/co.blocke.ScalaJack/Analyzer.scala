@@ -4,6 +4,7 @@ import reflect.runtime.currentMirror
 import reflect.runtime.universe._
 import scala.collection.concurrent.TrieMap
 import scala.reflect.NameTransformer._
+import fields._
 
 object Analyzer {
 

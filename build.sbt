@@ -6,7 +6,7 @@ organization := "co.blocke"
 
 scalaVersion := "2.10.2"
 
-//scalacOptions += "-feature"
+scalacOptions += "-feature"
 
 resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
              "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases")
