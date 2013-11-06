@@ -8,6 +8,7 @@ Some differentiating features:
 
 - Arbitrary combinations of List, Map, and Option are possible (n-levels deep) for complex structures.
 - Supports value classes
+- MongoDB DBObject render/read support including compound keys
 - Support for traits (e.g. a data value of type trait Animal will resolve implementing classes Dog and Cat)
 - Render/read custom (dynamic!) JSON for value classes
 - Very fast!
