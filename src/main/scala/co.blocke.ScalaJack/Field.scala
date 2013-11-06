@@ -19,15 +19,15 @@ trait Field {
 			})
 		true
 	}
-
-	private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = { 0 }
-
 	private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = { 0 }
 
+	private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = { 0 }
 	private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = { 0 }
 }
 
 trait ClassOrTrait {
 	private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any
+
+	private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false ) : Any
 	private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any
 }

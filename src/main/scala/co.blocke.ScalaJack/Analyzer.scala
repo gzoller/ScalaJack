@@ -80,6 +80,7 @@ object Analyzer {
 					case "scala.Float"      => FloatField( fieldName, mongoAnno.contains(fieldName))
 					case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName))
 					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName))
+					case "org.bson.types.ObjectId" => ObjectIdField( fieldName )
 					case _                  => {
 						if( isValueClass(sym) ) {
 							val clazz = Class.forName(fullName)

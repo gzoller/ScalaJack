@@ -1,0 +1,4 @@
+New support for Casbah/MongoDB persistence!
+
+Now you can render and read to DBObjects (i.e. convert case classes to/from MongoDB DBObjects)
+suitable for use with Casbah persistence, including support for compound keys.

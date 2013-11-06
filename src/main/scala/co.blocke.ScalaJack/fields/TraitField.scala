@@ -9,6 +9,10 @@ case class TraitField( name:String ) extends Field with ClassOrTrait {
 		Analyzer(target.getClass.getName).render( sb, target, label, ext, hint, true )
 	}
 
+	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false ) : Any = {
+		Analyzer(target.getClass.getName).asInstanceOf[CaseClassField].renderClassDB( target, hint, true )
+	}
+
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
 		Analyzer(target.getClass.getName).renderDB( target, label, hint, true )
 	}

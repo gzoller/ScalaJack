@@ -88,6 +88,38 @@ omit the fromJson function in your object.
 Seem like a strange feature?  This facility gives you the possibility of dynamic, on-the-fly json creation/type conversion
 in a lightweight/fast manner.
 
+# MongoDB (Casbah) Persistence
+
+ScalaJack doesn't wrap MongoDB or Casbah persistence libraries, but it does provide a way to convert case classes (and traits)
+to/from DBObjects.
+
+```scala
+val mydbo  = ScalaJack.renderDB( myCaseClass )         // using default type hint for traits
+val mydbo2 = ScalaJack.renderDB( myCaseClass, "_dt" )  // using custom type hint for traits
+val myCC   = ScalaJack.readDB( mydbo ) 
+val myCC2  = ScalaJack.readDB( mydbo, "_dt" ) 
+```
+
+There is also a way to specify the MongoDB key field (_id) via an annotation:
+
+```scala
+case class Sample( @MongoKey lastName:String, birthDate:Long, hobbies:List[String] )
+```
+
+Compound keys are also supported:
+
+```scala
+case class Sample( @MongoKey lastName:String, @MongoKey birthDate:Long, hobbies:List[String] )
+```
+
+Support has been added for Mongo's ObjectId type if you wish to use this directly.
+
+```scala
+case class Sample( _id:ObjectId, stuff:Int )
+```
+
+Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no fancy
+JodaTime support as found in other libraries, although this may be considered for a future release.
 
 # Assumptions
 

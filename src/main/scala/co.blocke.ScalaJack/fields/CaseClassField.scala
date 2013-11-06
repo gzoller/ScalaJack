@@ -38,6 +38,35 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		true
 	}
 
+	private def getFieldValue[T]( f:Field, target:T ) = {
+		val cz = target.getClass
+		val targetField = cz.getDeclaredField(f.name)
+		targetField.setAccessible(true)
+		val ftype = targetField.getType.getName
+		targetField.get(target)
+	}
+
+	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false ) : Any = {
+		val dbo = MongoDBObject()
+		if( withHint )
+			dbo.put( hint, dt.typeSymbol.fullName.toString )
+		val (keys, rest) = fields.partition( _.hasMongoAnno )
+		if( keys.size == 1 ) {
+			dbo.put("_id", keys.head.renderDB(getFieldValue(keys.head,target),None,hint))
+		}
+		else if( keys.size > 0 ) {
+			val keydbo = MongoDBObject()
+			keys.foreach( f => keydbo.put(f.name,f.renderDB(getFieldValue(f,target),None,hint) ) )
+			dbo.put("_id", keydbo)
+		}
+		rest.map( oneField => {
+			val fval = getFieldValue(oneField,target)
+			if( fval != None )
+				dbo.put( oneField.name, oneField.renderDB(fval, None, hint) ) 
+		})
+		dbo
+	}
+
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
 		val dbo = MongoDBObject()
 		val cz = target.getClass
@@ -79,7 +108,13 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			val fd = ( oneField.name, {
 				if( src.containsField(oneField.name) )
 					oneField.readValueDB( src.get(oneField.name), hint ) 
-				else None
+				else if( src.containsField("_id") && oneField.hasMongoAnno ) {
+					val sval = src.get("_id")
+					if( sval.isInstanceOf[java.util.Map[String,_]] ) 
+						oneField.readValueDB( sval.asInstanceOf[java.util.Map[String,_]].get(oneField.name), hint )
+					else 
+						oneField.readValueDB( sval, hint )
+				} else None
 				})
 			fieldData += fd
 		})	

@@ -37,9 +37,6 @@ object ScalaJack {
 		Analyzer(m.runtimeClass.getName).render(sb, target, None, ext, hint)
 		sb.toString
 	}
-	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
-		Analyzer(m.runtimeClass.getName).renderDB(target, None, hint ).asInstanceOf[DBObject]
-	}
 
 	/**
 	 * Render a "naked" JSON list, e.g. ["a","b","c"]
@@ -49,14 +46,6 @@ object ScalaJack {
 		if( target.size == 0 ) sb.append("[]")
 		else ListField( "", Analyzer(m.runtimeClass.getName) ).render(sb, target, None, ext, hint)
 		sb.toString
-	}
-
-	/** 
-	 * Render a "naked" list to DBObject
-	 */
-	def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
-		if( target.size == 0 ) MongoDBList.empty
-		else ListField( "", Analyzer(m.runtimeClass.getName) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
 	}
 
 	/**
@@ -78,10 +67,10 @@ object ScalaJack {
 	}
 
 	/**
-	 * Read a "naked" list from DBObject into List()
+	 * Render a case class to DBObject
 	 */
-	def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
-		ListField( "", Analyzer(m.runtimeClass.getName) ).readValueDB(src,hint).asInstanceOf[List[T]]
+	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
+		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].renderClassDB(target, hint).asInstanceOf[DBObject]
 	}
 
 	/**
@@ -89,6 +78,21 @@ object ScalaJack {
 	 */
 	def readDB[T]( src:DBObject, hint:String = hint )(implicit m:Manifest[T]) : T = {
 		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClassDB(src, hint).asInstanceOf[T]
+	}
+
+	/** 
+	 * Render a "naked" list to DBObject
+	 */
+	def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
+		if( target.size == 0 ) MongoDBList.empty
+		else ListField( "", Analyzer(m.runtimeClass.getName) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
+	}
+
+	/**
+	 * Read a "naked" list from DBObject into List()
+	 */
+	def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
+		ListField( "", Analyzer(m.runtimeClass.getName) ).readValueDB(src,hint).asInstanceOf[List[T]]
 	}
 
 	/**
@@ -103,6 +107,7 @@ object ScalaJack {
 	private[scalajack] def poof( cname:String, data:Map[String,Any] ) : Any = {
 		val classField = Analyzer(cname).asInstanceOf[CaseClassField]
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
+println(args.toList)
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
 }
