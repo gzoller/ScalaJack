@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package test
 
 import com.fasterxml.jackson.core._
+import org.bson.types.ObjectId
 
 object Num extends Enumeration {
 	val A,B,C = Value
@@ -38,6 +39,17 @@ case class Four(
 
 case class Five( 
 	@MongoKey name:String, 
+	two : Two
+	)
+
+case class Six( 
+	@MongoKey name:String, 
+	@MongoKey num:Int,
+	two : Two
+	)
+
+case class Seven( 
+	_id:ObjectId, 
 	two : Two
 	)
 	
