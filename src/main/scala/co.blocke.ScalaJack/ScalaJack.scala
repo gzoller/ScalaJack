@@ -107,7 +107,6 @@ object ScalaJack {
 	private[scalajack] def poof( cname:String, data:Map[String,Any] ) : Any = {
 		val classField = Analyzer(cname).asInstanceOf[CaseClassField]
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
-println(args.toList)
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
 }

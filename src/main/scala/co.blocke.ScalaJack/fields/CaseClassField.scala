@@ -110,7 +110,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 					oneField.readValueDB( src.get(oneField.name), hint ) 
 				else if( src.containsField("_id") && oneField.hasMongoAnno ) {
 					val sval = src.get("_id")
-					if( sval.isInstanceOf[java.util.Map[String,_]] ) 
+					if( sval.isInstanceOf[java.util.Map[_,_]] ) 
 						oneField.readValueDB( sval.asInstanceOf[java.util.Map[String,_]].get(oneField.name), hint )
 					else 
 						oneField.readValueDB( sval, hint )
