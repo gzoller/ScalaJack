@@ -90,12 +90,12 @@ in a lightweight/fast manner.
 
 # MongoDB (Casbah) Persistence
 
-ScalaJack doesn't wrap MongoDB or Casbah persistence libraries, but it does provide a way to convert case classes (and traits)
+ScalaJack doesn't wrap MongoDB or Casbah persistence libraries--that's not its mission.  It does provide a way to convert case classes (and traits)
 to/from DBObjects.
 
 ```scala
-val mydbo  = ScalaJack.renderDB( myCaseClass )         // using default type hint for traits
-val mydbo2 = ScalaJack.renderDB( myCaseClass, "_dt" )  // using custom type hint for traits
+val mydbo  = ScalaJack.renderDB( myCaseClass )         // default type hint for traits
+val mydbo2 = ScalaJack.renderDB( myCaseClass, "_dt" )  // custom type hint for traits
 val myCC   = ScalaJack.readDB( mydbo ) 
 val myCC2  = ScalaJack.readDB( mydbo, "_dt" ) 
 ```
@@ -123,11 +123,11 @@ JodaTime support as found in other libraries, although this may be considered fo
 
 # Assumptions
 
-- Case classes only
-- Options of value None are removed from generated JSON
+- Case classes (or traits for case classes) only
+- Options of value None are removed from generated JSON (e.g. from List or Map)
 - Default parameters are not supported at this time
 - Data types supported: Int, Boolean, Long, Char, Double, Float, String, Enumeration.Value, Value Class
-- Collections/"containers" supported: List (immutable), Map (immutable), Option
+- Collections supported: List (immutable), Map (immutable), Option
 
 # Why?
 
@@ -139,19 +139,19 @@ Salat is very full-featured.  It gives you a high level of control over the pars
 custom serializers for non-standard types.  Unlike a lot of JSON parsers that require "helper" code, and/or lots
 of annotations, Salat introspects Scala case classes and does it all almost completely automatically.
 
-After using Salat for a couple of years I began to be curious how its performance stacked up against other JSON 
+After using Salat for a long time I began to be curious how its performance stacked up against other JSON 
 parsers.  (In complete fairness, Salat's JSON handling features evolved some time after its primary mission of 
 MongoDB DAO access.)  I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I 
 didn't like the way Enumeration and Option types were handled.  It also didn't handle traits that I could see 
-(serializing Foo, where Foo is a trait member of a case class, and at runtime an object implementing the trait 
-is given).  It was configurable enough--but required a lot of manual fidgeting with annotations and such.  
+(serializing Dog and Cat, where both are a case classes extending trait Animal, and the parser can sort them out).
+It was configurable enough--but required a lot of manual fidgeting with annotations and such.  
 
-ScalaJack aimed for Jackson's speed and at least the best parts of Salat's behavior.  ScalaJack is indeed faster
-than Salat (about twice as fast!) but losing nearly all of Salat's configurability and suffering a couple losses of 
-supported datatypes.  It does handle traits w/type hints seamlessly.  Unlike Salat (at the time of this writing)
-ScalaJack also supports arbitrary nesting of data structures, Map, List, Option, to allow you to construct
-sophisticated data structures with ease.
+ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamless case class handling.  ScalaJack 
+is indeed faster than Salat (about twice as fast!) but losing nearly all of Salat's configurability and suffering 
+a couple losses of supported datatypes.  It does handle traits w/type hints seamlessly.  Unlike Salat (at the time 
+of this writing) ScalaJack also supports arbitrary nesting of data structures, Map, List, Option, to allow you to 
+construct sophisticated data structures with ease.
 
-If you're OK with speed at the price of my assumptions, ScalaJack is a great thing!
+If you're OK with gatining lots of speed at the price of my assumptions, ScalaJack is a great thing!
 
 Blöcke
