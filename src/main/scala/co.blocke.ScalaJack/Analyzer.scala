@@ -28,13 +28,13 @@ object Analyzer {
 			v
 		})((ccf) => ccf)
 
-	private def inspect[T]( fieldName:String, ctype:Type, classCompanionSymbol:Option[Symbol] = None ) : Field = {
+	private def inspect[T]( fieldName:String, ctype:Type, inContainer:Boolean = false, classCompanionSymbol:Option[Symbol] = None ) : Field = {
 
 		val fullName = ctype.typeSymbol.fullName.toString
 
 		if( fullName.toString == "scala.collection.immutable.List" ) {
 			ctype match {
-				case TypeRef(pre, sym, args) => ListField(fieldName, inspect( fieldName, args(0) ))
+				case TypeRef(pre, sym, args) => ListField(fieldName, inspect( fieldName, args(0), true ))
 			}
 		} else if( fullName == "scala.Enumeration.Value" ) {
 			val erasedEnumClass = Class.forName(ctype.asInstanceOf[TypeRef].toString.replace(".Value","$"))
@@ -42,10 +42,10 @@ object Analyzer {
 			EnumField( fieldName, enum)
 		} else if( fullName == "scala.Option" ) {
 			val subtype = ctype.asInstanceOf[TypeRef].args(0)
-			OptField( fieldName, inspect(fieldName, subtype) )
+			OptField( fieldName, inspect(fieldName, subtype, true) )
 		} else if( fullName == "scala.collection.immutable.Map" ) {
 			val valuetype = ctype.asInstanceOf[TypeRef].args(1)
-			MapField( fieldName, inspect(fieldName, valuetype) )
+			MapField( fieldName, inspect(fieldName, valuetype, true) )
 		} else {
 			val sym = currentMirror.classSymbol(Class.forName(fullName))
 			if( sym.isTrait && !fullName.startsWith("scala"))
@@ -62,7 +62,7 @@ object Analyzer {
 					case method: MethodSymbol
 						if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
 				}.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
-				val fields = constructor.paramss.head.map( c => { inspect(c.name.toString, c.typeSignature, Some(companionSymbol)) })
+				val fields = constructor.paramss.head.map( c => { inspect(c.name.toString, c.typeSignature, false, Some(companionSymbol)) })
 
 				CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj )
 			} else {
@@ -94,7 +94,10 @@ object Analyzer {
 								case "boolean" => "scala.Boolean"
 								case t         => t
 							}
-							ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
+							if( inContainer )
+								ValueClassField2( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
+							else
+								ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
 						} else
 							throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
 					}
