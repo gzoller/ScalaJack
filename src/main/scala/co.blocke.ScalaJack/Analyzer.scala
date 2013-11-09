@@ -42,7 +42,9 @@ object Analyzer {
 			EnumField( fieldName, enum)
 		} else if( fullName == "scala.Option" ) {
 			val subtype = ctype.asInstanceOf[TypeRef].args(0)
-			OptField( fieldName, inspect(fieldName, subtype, true) )
+			// Facilitate an Option as a Mongo key part (a very bad idea unless you are 100% sure the value is non-None!!!)
+			val subField = inspect(fieldName, subtype, true, classCompanionSymbol)
+			OptField( fieldName, subField, subField.hasMongoAnno )
 		} else if( fullName == "scala.collection.immutable.Map" ) {
 			val valuetype = ctype.asInstanceOf[TypeRef].args(1)
 			MapField( fieldName, inspect(fieldName, valuetype, true) )
@@ -73,13 +75,13 @@ object Analyzer {
 					}.getOrElse(List[String]())
 				})
 				fullName match {
-					case "java.lang.String" => StringField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Int"        => IntField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Char"       => CharField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Long"       => LongField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Float"      => FloatField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName))
-					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName))
+					case "java.lang.String" => StringField( fieldName, mongoAnno.contains(fieldName) )
+					case "scala.Int"        => IntField( fieldName, mongoAnno.contains(fieldName)    )
+					case "scala.Char"       => CharField( fieldName, mongoAnno.contains(fieldName)   )
+					case "scala.Long"       => LongField( fieldName, mongoAnno.contains(fieldName)   )
+					case "scala.Float"      => FloatField( fieldName, mongoAnno.contains(fieldName)  )
+					case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName) )
+					case "scala.Boolean"    => BoolField( fieldName, mongoAnno.contains(fieldName)   )
 					case "org.bson.types.ObjectId" => ObjectIdField( fieldName )
 					case _                  => {
 						if( isValueClass(sym) ) {
@@ -95,9 +97,9 @@ object Analyzer {
 								case t         => t
 							}
 							if( inContainer )
-								ValueClassField2( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
-							else
-								ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName), clazz.getConstructors.toList.head )
+								ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
+							else 
+								ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), Analyzer( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 						} else
 							throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
 					}
@@ -109,13 +111,13 @@ object Analyzer {
 	private val classLoaders = List(this.getClass.getClassLoader)
 	private val ModuleFieldName = "MODULE$"
 
-	private def findExtJson(cname:String) : Option[ExtJson[_]] = {
+	private def findExtJson(cname:String) : Option[ExtJson] = {
 		val clazz = Class.forName(cname)
 		val path = if (clazz.getName.endsWith("$")) clazz.getName else "%s$".format(clazz.getName)
 		val c = resolveClass(path, classLoaders)
 		if (c.isDefined) {
 			val co = c.get.getField(ModuleFieldName).get(null)
-			if( co.isInstanceOf[ExtJson[_]] ) Some(co.asInstanceOf[ExtJson[_]])
+			if( co.isInstanceOf[ExtJson] ) Some(co.asInstanceOf[ExtJson])
 			else None
 		}
 		else None

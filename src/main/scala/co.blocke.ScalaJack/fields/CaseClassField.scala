@@ -51,9 +51,8 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		if( withHint )
 			dbo.put( hint, dt.typeSymbol.fullName.toString )
 		val (keys, rest) = fields.partition( _.hasMongoAnno )
-		if( keys.size == 1 ) {
+		if( keys.size == 1 )
 			dbo.put("_id", keys.head.renderDB(getFieldValue(keys.head,target),None,hint))
-		}
 		else if( keys.size > 0 ) {
 			val keydbo = MongoDBObject()
 			keys.foreach( f => keydbo.put(f.name,f.renderDB(getFieldValue(f,target),None,hint) ) )

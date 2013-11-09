@@ -69,9 +69,9 @@ case class Animal(val name: String, val legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
-object Wrapper extends ExtJson[Int] {
-	override def toJson( obj:Int ) : String = "{\"num\":"+obj+",\"hey\":\"you\"}"
-	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[Int]) : Any = {
+object Wrapper extends ExtJson {
+	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
+	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String ) : Any = {
 		jp.nextToken // consume '{'
 		jp.getCurrentName // consume 'num' label
 		jp.nextToken // scan to value
