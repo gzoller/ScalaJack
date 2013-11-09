@@ -9,7 +9,7 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack"   % "1.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack"   % "1.2")
 
 And if necessary add the OSS repo to your resolvers:
 
@@ -57,9 +57,12 @@ this sort of thing but I want to extend my rendered JSON to incorporate it.  Thi
 trait on a companion object to your case class like this:  (Sounds worse than it is!)
 
 ```scala
-object PosixDate extends ExtJson[Long] {
-	override def toJson( obj:Long ) : String = "{\"rawTS\":"+obj+",\"human\":\""+ getHumanReadable(obj) +"\"}"
-	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[Long]) : Any = {
+object PosixDate extends ExtJson {
+	override def toJson( obj:Long ) : String = "{\"rawTS\":" 
+		+ obj.asInstanceOf[Long]
+		+ ",\"human\":\""+ getHumanReadable(obj.asInstanceOf[Long]) 
+		+ "\"}"
+	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String ) : Any = {
 		jp.nextToken // consume '{'
 		jp.getCurrentName // consume 'rawTS' label
 		jp.nextToken // scan to value
