@@ -7,7 +7,7 @@ import java.lang.reflect.Constructor
 
 case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolean, valueType:Field, extJson:Option[ExtJson] ) extends Field {
 
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		if( ext && extJson.isDefined ) {
 			label.fold( {
 					sb.append( extJson.get.asInstanceOf[ExtJson].toJson( target ) )
@@ -23,7 +23,7 @@ case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolea
 			valueType.render( sb, target, label, ext, hint )
 	}
 
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = 
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = 
 		valueType.renderDB( target, label, hint )
 
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = 
@@ -43,7 +43,7 @@ case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolea
 
 case class ValueClassField( name:String, override val hasMongoAnno:Boolean, valueType:Field, constructor:Constructor[_], extJson:Option[ExtJson] ) extends Field {
 
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val valueFieldName = target.getClass.getDeclaredFields.head.getName
 		val unboxedVal = target.getClass.getDeclaredMethods.toList.find(m => m.getName == valueFieldName).get.invoke(target)
 		if( ext && extJson.isDefined ) {
@@ -61,7 +61,7 @@ case class ValueClassField( name:String, override val hasMongoAnno:Boolean, valu
 			valueType.render( sb, unboxedVal, label, ext, hint )
 	}
 
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = { 
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = { 
 		val valueFieldName = target.getClass.getDeclaredFields.head.getName
 		val value = target.getClass.getDeclaredMethods.toList.find(m => m.getName == valueFieldName).get.invoke(target)
 		valueType.renderDB( value, label, hint )

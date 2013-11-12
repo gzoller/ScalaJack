@@ -5,15 +5,15 @@ import com.fasterxml.jackson.core._
 import com.mongodb.casbah.Imports._
 
 case class TraitField( name:String ) extends Field with ClassOrTrait {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		Analyzer(target.getClass.getName).render( sb, target, label, ext, hint, true )
 	}
 
-	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		Analyzer(target.getClass.getName).asInstanceOf[CaseClassField].renderClassDB( target, hint, true )
 	}
 
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		Analyzer(target.getClass.getName).renderDB( target, label, hint, true )
 	}
 

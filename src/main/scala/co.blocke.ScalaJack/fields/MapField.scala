@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports._
 import scala.collection.JavaConversions._
 
 case class MapField( name:String, valueField:Field ) extends Field {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val mapVal = target.asInstanceOf[Map[_,_]]
 		if( mapVal.isEmpty ) label.fold( sb.append("{}") )((labelStr) => {
 				sb.append('"')
@@ -41,7 +41,7 @@ case class MapField( name:String, valueField:Field ) extends Field {
 		}
 		true
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val mapVal = target.asInstanceOf[Map[_,_]]
 		val mo = MongoDBObject()
 		mapVal.collect {  case (k,v) if( v != None ) => {

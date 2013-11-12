@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports._
 import scala.collection.JavaConversions._
 
 case class ListField( name:String, subField:Field ) extends Field {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val listVal = target.asInstanceOf[Iterable[_]]
 		if( listVal.isEmpty ) label.fold( sb.append("[]"))((labelStr) => {
 				sb.append('"')
@@ -34,7 +34,7 @@ case class ListField( name:String, subField:Field ) extends Field {
 		}
 		true
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val listVal = target.asInstanceOf[Iterable[_]]
 		val items = listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }.toArray
 		MongoDBList( items: _* )

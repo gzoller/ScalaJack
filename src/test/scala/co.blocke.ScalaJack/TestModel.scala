@@ -8,6 +8,12 @@ object Num extends Enumeration {
 	val A,B,C = Value
 }
 
+case class Wrap[T,U] (
+		name:String,
+		data:T,
+		stuff:U
+		)
+
 case class One( 
 	name     : String, 
 	stuff    : List[String],

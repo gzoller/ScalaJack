@@ -9,7 +9,7 @@ import org.bson.types.ObjectId
  */
 
 case class ObjectIdField( name:String ) extends Field {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val oid = "{\"$oid\":\""+target.asInstanceOf[ObjectId].toString+"\"}"
 		label.fold( {
 				sb.append('"')
@@ -22,7 +22,7 @@ case class ObjectIdField( name:String ) extends Field {
 			})
 		true
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[ObjectId]
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {

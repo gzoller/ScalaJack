@@ -10,6 +10,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	val data = Map("mymap"->Map("hey"->17,"you"->21),"nest"->Two("Nest!",true),"num"->"B","maybe"->Some("wow"),"name"->"Greg","flipflop"->true,"big"->99123986123L,"more"->List(Two("x",false),Two("y",true)),"stuff"->List("a","b"),"num"->Num.C,"age"->46)
 
 	describe("====================\n| -- JSON Tests -- |\n====================") {
+		/*
 		describe("Basic Render/Read") {
 			it( "Serialize simple object to JSON -- all supported data types" ) {
 				val a = ScalaJack.poof[One]( data )
@@ -251,6 +252,52 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB(seven)
 				dbo.toString should equal( """{ "_id" : { "$oid" : """"+oid+""""} , "two" : { "foo" : "blah" , "bar" : true}}""" )
 				ScalaJack.readDB[Seven](dbo) should equal( seven )
+			}
+		}
+		*/
+		describe("Parameterized Class Support") {
+			it("Basic parameterized case class") {
+				val w = Wrap("number",true,15)
+				val w2 = Wrap("number",true,17)
+				val js = ScalaJack.render(w)
+				val js2 = ScalaJack.render(w2)
+				val db = ScalaJack.renderDB(w)
+				val db2 = ScalaJack.renderDB(w2)
+				js should equal("""{"name":"number","data":true,"stuff":15}""")
+				js2 should equal("""{"name":"number","data":true,"stuff":17}""")
+				db.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : 15}""")
+				db2.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : 17}""")
+				ScalaJack.read[Wrap[Boolean,Int]](js) should equal(w)
+				ScalaJack.read[Wrap[Boolean,Int]](js2) should equal(w2)
+				ScalaJack.readDB[Wrap[Boolean,Int]](db) should equal(w)
+				ScalaJack.readDB[Wrap[Boolean,Int]](db2) should equal(w2)
+			}
+			it("Basic parameterized case class having case class parameter") {
+				(pending)
+			}
+			it("Basic parameterized case class having trait parameter") {
+				(pending)
+			}
+			it("Embedded parameterized case class") {
+				(pending)
+			}
+			it("Container of parameterized case class") {
+				(pending)
+			}
+			it("Basic parameterized trait") {
+				(pending)
+			}
+			it("Basic parameterized trait having case class parameter") {
+				(pending)
+			}
+			it("Basic parameterized trait having trait parameter") {
+				(pending)
+			}
+			it("Embedded parameterized trait") {
+				(pending)
+			}
+			it("Container of parameterized trait") {
+				(pending)
 			}
 		}
 	}

@@ -12,21 +12,28 @@ object Analyzer {
 	private val typeRepo     = new TrieMap[String,FieldMirror]()
 
 	private val ru           = scala.reflect.runtime.universe
-	private val m            = ru.runtimeMirror(getClass.getClassLoader)
 	private val mongoType    = ru.typeOf[MongoKey]
 	
 	/**
 	 * Given a class name, figure out the appropriate Field object
 	 */
-	def apply[T]( cname:String ) : Field = 
-		classRepo.get(cname).fold({	
+	def apply[T]( cname:String )(implicit m:Manifest[T]) : Field = {
+		val ccf = classRepo.get(cname)
+		if( ccf.isDefined && m.typeArguments.size == 0 ) 
+			ccf.get
+		else {
 			val clazz  = Class.forName(cname)
 			val symbol = currentMirror.classSymbol(clazz)
 			val symbolType = symbol.typeSignature
-			val v = inspect[T]("", symbolType)
-			classRepo.put(cname, v)
-			v
-		})((ccf) => ccf)
+			if( m.typeArguments.size > 0 ) {
+				resolveCCTypes( m.typeArguments.map( _.toString ), cname, ()=>inspect[T]("", symbolType).asInstanceOf[CaseClassField] )
+			} else {
+				val v = inspect[T]("", symbolType)
+				classRepo.put(cname, v)
+				v
+			}
+		}
+	}
 
 	private def inspect[T]( fieldName:String, ctype:Type, inContainer:Boolean = false, classCompanionSymbol:Option[Symbol] = None ) : Field = {
 
@@ -53,6 +60,12 @@ object Analyzer {
 			if( sym.isTrait && !fullName.startsWith("scala"))
 				TraitField( fieldName )
 			else if( sym.isCaseClass ) {
+				val typeArgs = { 
+					if( ctype.takesTypeArgs ) {
+						val poly = ctype.asInstanceOf[PolyType].typeParams
+						poly.map( p => p.name.toString )
+					} else List[String]()
+				}
 				// Find and save the apply method of the companion object
 				val companionClazz = Class.forName(fullName+"$")
 				val companionSymbol = currentMirror.classSymbol(companionClazz)
@@ -64,9 +77,14 @@ object Analyzer {
 					case method: MethodSymbol
 						if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
 				}.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
-				val fields = constructor.paramss.head.map( c => { inspect(c.name.toString, c.typeSignature, false, Some(companionSymbol)) })
+				val fields = constructor.paramss.head.map( c => { 
+					if( typeArgs.contains( c.typeSignature.toString ) )
+						TypeField( c.name.toString, c.typeSignature.toString )
+					else 
+						inspect(c.name.toString, c.typeSignature, false, Some(companionSymbol)) 
+				})
 
-				CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj )
+				CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj, typeArgs )
 			} else {
 				// See if there's a MongoKey annotation on any of the class' fields
 				val mongoAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
@@ -91,7 +109,7 @@ object Analyzer {
 								case "int"     => "scala.Int"
 								case "char"    => "scala.Char"
 								case "long"    => "scala.Long"
-								case "float"   => "scala.Flaot"
+								case "float"   => "scala.Float"
 								case "double"  => "scala.Double"
 								case "boolean" => "scala.Boolean"
 								case t         => t
@@ -106,6 +124,39 @@ object Analyzer {
 				} 
 			}
 		}
+	}
+
+	private def resolveCCTypes[T](argNames:List[String], cname:String, finderFn: ()=>CaseClassField)(implicit m:Manifest[T]) = {
+		// Figure out typed class name
+		// Inspect it if not already in cache
+		val tcname = cname + argNames.mkString("[",",","]")
+		classRepo.get( tcname ).fold( {
+			val targTypes = argNames.map( tp =>
+				tp match {
+					case "String"  => (n:String) => StringField( n, false )
+					case "Int"     => (n:String) => IntField( n, false    )
+					case "Long"    => (n:String) => LongField( n, false   )
+					case "Double"  => (n:String) => DoubleField( n, false )
+					case "Float"   => (n:String) => FloatField( n, false  )
+					case "Boolean" => (n:String) => BoolField( n, false   )
+					case "Char"    => (n:String) => CharField( n, false   )
+					case t         => (n:String) => Analyzer(t)
+				}
+			)
+			val v = finderFn()
+			val typeMap = v.typeArgs.zip( targTypes ).toMap
+			val resolvedField = v.copy( typeArgs = List[String](), fields = v.fields.map( {
+					case tf : TypeField => typeMap(tf.symbol)( tf.name )
+					case f => f
+				}))
+			classRepo.put( tcname, resolvedField )
+			resolvedField
+		} )(c => c.asInstanceOf[CaseClassField])
+	}
+
+	private[scalajack] def registerParamClass[T]( target:T, cfield:CaseClassField )(implicit tag:TypeTag[T]) = { 
+		val targs = tag.tpe match { case TypeRef(_, _, args) => args }
+		resolveCCTypes( targs.map( _.toString ), target.getClass.getName, ()=>cfield )
 	}
 
 	private val classLoaders = List(this.getClass.getClassLoader)

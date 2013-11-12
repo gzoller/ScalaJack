@@ -5,11 +5,17 @@ import reflect.runtime.universe._
 import com.fasterxml.jackson.core._
 import com.mongodb.casbah.Imports._
 
-case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
+case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object, typeArgs:List[String] ) 
 	extends Field with ClassOrTrait 
 {
 	val iFields = fields.map( f => (f.name, f)).toMap
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+
+	private def resolveParamTypes[T](target:T)(implicit m:Manifest[T]) = {
+		if( typeArgs.length > 0 ) Analyzer.registerParamClass(target, this) 
+		else this
+	}
+
+	private def _render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val cz = target.getClass
 		val hintStr = { if( withHint ) "\""+hint+"\":\""+dt.typeSymbol.fullName.toString+"\"," else "" }
 		val sb2 = new StringBuilder
@@ -37,6 +43,8 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			})
 		true
 	}
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = 
+		resolveParamTypes(target)._render(sb,target,label,ext,hint,withHint)
 
 	private def getFieldValue[T]( f:Field, target:T ) = {
 		val cz = target.getClass
@@ -46,7 +54,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		targetField.get(target)
 	}
 
-	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false ) : Any = {
+	private def _renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val dbo = MongoDBObject()
 		if( withHint )
 			dbo.put( hint, dt.typeSymbol.fullName.toString )
@@ -65,8 +73,10 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		})
 		dbo
 	}
+	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = 
+		resolveParamTypes(target)._renderClassDB(target,hint,withHint)
 
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val dbo = MongoDBObject()
 		val cz = target.getClass
 		if( withHint )
@@ -119,7 +129,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		})	
 		ScalaJack.poof( className, fieldData.toMap )				
 	}
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
+
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = 
 		readClassDB( src.asInstanceOf[DBObject], hint )
-	}
 }

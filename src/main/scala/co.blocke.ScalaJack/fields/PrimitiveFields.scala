@@ -4,7 +4,7 @@ package fields
 import com.fasterxml.jackson.core._
 
 case class StringField( name:String, override val hasMongoAnno:Boolean ) extends Field {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
 				sb.append(target)
@@ -18,7 +18,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 			})
 		true
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.toString
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
@@ -35,14 +35,14 @@ case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Fi
 		jp.nextToken
 		v
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Int]
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = src.asInstanceOf[Int]
 }
 
 case class CharField( name:String, override val hasMongoAnno:Boolean ) extends Field {
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false ) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
 				sb.append(target)
@@ -56,7 +56,7 @@ case class CharField( name:String, override val hasMongoAnno:Boolean ) extends F
 			})
 		true
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Char]
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
@@ -73,7 +73,7 @@ case class LongField( name:String, override val hasMongoAnno:Boolean ) extends F
 		jp.nextToken
 		v
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Long]
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = src.asInstanceOf[Long]
@@ -85,7 +85,7 @@ case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends 
 		jp.nextToken
 		v
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Float]
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = src.asInstanceOf[Float]
@@ -97,10 +97,10 @@ case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends
 		jp.nextToken
 		v
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Double]
 	}
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = src.asInstanceOf[Double]
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]): Any = src.asInstanceOf[Double]
 }
 
 case class BoolField( name:String, override val hasMongoAnno:Boolean ) extends Field {
@@ -109,7 +109,7 @@ case class BoolField( name:String, override val hasMongoAnno:Boolean ) extends F
 		jp.nextToken
 		v
 	}
-	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false ) : Any = {
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[Boolean]
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = src.asInstanceOf[Boolean]
