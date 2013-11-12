@@ -256,6 +256,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		}
 		*/
 		describe("Parameterized Class Support") {
+			/*
 			it("Basic parameterized case class") {
 				val w = Wrap("number",true,15)
 				val w2 = Wrap("number",true,17)
@@ -273,13 +274,22 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				ScalaJack.readDB[Wrap[Boolean,Int]](db2) should equal(w2)
 			}
 			it("Basic parameterized case class having case class parameter") {
-				(pending)
+				val w = Wrap("number",true,Two("a",false))
+				val js = ScalaJack.render(w)
+				js should equal("""{"name":"number","data":true,"stuff":{"foo":"a","bar":false}}""")
+				val db = ScalaJack.renderDB(w)
+				db.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : { "foo" : "a" , "bar" : false}}""")
+				ScalaJack.read[Wrap[Boolean,Two]](js) should equal(w)
+				ScalaJack.readDB[Wrap[Boolean,Two]](db) should equal(w)
 			}
+			*/
 			it("Basic parameterized case class having trait parameter") {
 				(pending)
 			}
 			it("Embedded parameterized case class") {
-				(pending)
+				val c = Carry("Wow", Wrap("hello",5,"Boo"))
+				val js = ScalaJack.render(c)
+				println(js)
 			}
 			it("Container of parameterized case class") {
 				(pending)

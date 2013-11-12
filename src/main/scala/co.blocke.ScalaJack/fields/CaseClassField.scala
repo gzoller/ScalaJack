@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object, typeArgs:List[String] ) 
 	extends Field with ClassOrTrait 
 {
-	val iFields = fields.map( f => (f.name, f)).toMap
+	def iFields = fields.map( f => (f.name, f)).toMap
 
 	private def resolveParamTypes[T](target:T)(implicit m:Manifest[T]) = {
 		if( typeArgs.length > 0 ) Analyzer.registerParamClass(target, this) 

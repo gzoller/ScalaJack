@@ -17,7 +17,7 @@ object Analyzer {
 	/**
 	 * Given a class name, figure out the appropriate Field object
 	 */
-	def apply[T]( cname:String )(implicit m:Manifest[T]) : Field = {
+	def apply[T]( cname:String, fieldName:String = "" )(implicit m:Manifest[T]) : Field = {
 		val ccf = classRepo.get(cname)
 		if( ccf.isDefined && m.typeArguments.size == 0 ) 
 			ccf.get
@@ -26,9 +26,9 @@ object Analyzer {
 			val symbol = currentMirror.classSymbol(clazz)
 			val symbolType = symbol.typeSignature
 			if( m.typeArguments.size > 0 ) {
-				resolveCCTypes( m.typeArguments.map( _.toString ), cname, ()=>inspect[T]("", symbolType).asInstanceOf[CaseClassField] )
+				resolveCCTypes( m.typeArguments.map( _.toString ), cname, ()=>inspect[T](fieldName, symbolType).asInstanceOf[CaseClassField] )
 			} else {
-				val v = inspect[T]("", symbolType)
+				val v = inspect[T](fieldName, symbolType)
 				classRepo.put(cname, v)
 				v
 			}
@@ -78,10 +78,13 @@ object Analyzer {
 						if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
 				}.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
 				val fields = constructor.paramss.head.map( c => { 
-					if( typeArgs.contains( c.typeSignature.toString ) )
+					if( typeArgs.contains( c.typeSignature.toString ) ) 
 						TypeField( c.name.toString, c.typeSignature.toString )
-					else 
+					else { 
+						println("FLD: "+c.name.toString+" ARGS: "+typeArgs)
+						println("     SIG: "+c.typeSignature.toString)
 						inspect(c.name.toString, c.typeSignature, false, Some(companionSymbol)) 
+					}
 				})
 
 				CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj, typeArgs )
@@ -131,16 +134,16 @@ object Analyzer {
 		// Inspect it if not already in cache
 		val tcname = cname + argNames.mkString("[",",","]")
 		classRepo.get( tcname ).fold( {
-			val targTypes = argNames.map( tp =>
+			val targTypes = argNames.zip(m.typeArguments).map( tp =>
 				tp match {
-					case "String"  => (n:String) => StringField( n, false )
-					case "Int"     => (n:String) => IntField( n, false    )
-					case "Long"    => (n:String) => LongField( n, false   )
-					case "Double"  => (n:String) => DoubleField( n, false )
-					case "Float"   => (n:String) => FloatField( n, false  )
-					case "Boolean" => (n:String) => BoolField( n, false   )
-					case "Char"    => (n:String) => CharField( n, false   )
-					case t         => (n:String) => Analyzer(t)
+					case ("String",_)  => (n:String) => StringField( n, false )
+					case ("Int",_)     => (n:String) => IntField( n, false    )
+					case ("Long",_)    => (n:String) => LongField( n, false   )
+					case ("Double",_)  => (n:String) => DoubleField( n, false )
+					case ("Float",_)   => (n:String) => FloatField( n, false  )
+					case ("Boolean",_) => (n:String) => BoolField( n, false   )
+					case ("Char",_)    => (n:String) => CharField( n, false   )
+					case (t,m)         => (n:String) => Analyzer(t,n)(m)
 				}
 			)
 			val v = finderFn()

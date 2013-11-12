@@ -13,6 +13,7 @@ case class Wrap[T,U] (
 		data:T,
 		stuff:U
 		)
+case class Carry[V](s:String, w:Wrap[V,String])
 
 case class One( 
 	name     : String, 
