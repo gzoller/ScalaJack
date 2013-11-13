@@ -16,64 +16,63 @@ object Analyzer {
 	private	val xtractTypes  = """.*\[(.*)\]""".r
 
 	private val typeList = List("String","Int","Long","Float","Double","Boolean","Char")
-	private def typeMap( fManifest:Manifest[_] ) = {
-		val ftype = fManifest.toString
-		ftype match {
-			case "java.lang.String"  => (n:String) => StringField( n, false )
-			case "Int"     => (n:String) => IntField( n, false    )
-			case "Long"    => (n:String) => LongField( n, false   )
-			case "Float"   => (n:String) => FloatField( n, false  )
-			case "Double"  => (n:String) => DoubleField( n, false )
-			case "Boolean" => (n:String) => BoolField( n, false   )
-			case "Char"    => (n:String) => CharField( n, false   )
-			case t         => (n:String) => Analyzer(t)(fManifest).asInstanceOf[CaseClassField].copy(name = n)
+	private def typeMap( dt:String ) = { 
+		dt match {
+			case "String"        | "java.lang.String" => (n:String) => StringField( n, false )
+			case "scala.Int"     | "Int"              => (n:String) => IntField( n, false    )
+			case "scala.Long"    | "Long"             => (n:String) => LongField( n, false   )
+			case "scala.Float"   | "Float"            => (n:String) => FloatField( n, false  )
+			case "scala.Double"  | "Double"           => (n:String) => DoubleField( n, false )
+			case "scala.Boolean" | "Boolean"          => (n:String) => BoolField( n, false   )
+			case "scala.Char"    | "Char"             => (n:String) => CharField( n, false   )
+			case t         => (n:String) => _apply(t).asInstanceOf[CaseClassField].copy(name = n)
 		}
 	}
 
-	private[scalajack] def apply[T]( cname:String )(implicit m:Manifest[T]) : Field = resolve( _apply( cname ) )
+	private[scalajack] def apply[T]( cname:String )(implicit m:Manifest[T]) : Field = {
+		val rtArgs = m.typeArguments.map(_.toString)
+		val rtKeyName = cname + rtArgs.mkString("[",",","]")
+		_apply( cname, Some(rtKeyName) ) match {
+			case ccp : CaseClassProto => 
+				val argMap = ccp.typeArgs.zip( rtArgs ).toMap
+				resolve( ccp, argMap, rtKeyName )
+			case f                     => f
+		}
+	}
 
-	private def _apply( cname:String ) : Field = {
+	private def _apply( cname:String, rtName:Option[String] = None ) : Field = {
 		val symbol   = currentMirror.classSymbol(Class.forName(cname))
 		val typeArgs = symbol.typeParams.map( tp => tp.name.toString)
 		val staticName  = cname + typeArgs.mkString("[",",","]")
-		readyToEat.get( staticName ).orElse( protoRepo.get( staticName ) ).orElse({
+ 		readyToEat.get( rtName.getOrElse(staticName) ).orElse( protoRepo.get( staticName ) ).orElse({
 			val v = staticReflect( "", symbol.typeSignature )
 			v match {
 				case ccp:CaseClassProto => protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
-				case ccF:CaseClassField => readyToEat.put(staticName, v) // Simple case: No type args
+				case ccf:CaseClassField => readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
 			}
 			Some(v)
 		}).get
 	}
 
-	private def resolve[T]( field:Field )(implicit m:Manifest[T]) : Field = {
+	private def resolve( field:Field, argMap:Map[String,String], keyName:String, fieldName:Option[String] = None ) : Field = {
 		field match {
 			case ccf : CaseClassField => ccf
 			case ccp : CaseClassProto => {
-				// Get runtime type parameters
-				val rtArgs = m.typeArguments
-				// See if this proto has already been resolved
-				val rtKeyName = ccp.className + rtArgs.map(_.toString).mkString("[",",","]")
-				readyToEat.get( rtKeyName ).fold( {
-					val argMap = ccp.typeArgs.zip( rtArgs ).toMap
-println("ArgMap: "+argMap)
+				readyToEat.get( keyName ).fold( {
 					// Not there... resolve it
 					val fields = ccp.fields.map( _ match {
 						case tf:TypeField      => typeMap( argMap(tf.symbol) )(tf.name)
 						case cp:CaseClassProxy => {
 							val xtractTypes(terms) = ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(cp.name)).typeSignature.toString
 							val runtimeTypes = terms.split(",").toList
-//							println("RT: "+rtArgs+ "  "+ccp.typeArgs) // java.lang.String, Int, Boolean
-							println("R2: "+runtimeTypes)  // String, scala.Int, ...
-							// println("Proto Types: "+cp.proto.typeArgs)
-							// println("Proto Fields: "+cp.proto.fields)
-//							println("Mystery: "+ru..RuntimeMirror.reflectClass(cp.symbol))
-							cp//resolve( cp.proto )(argMap(tf.symbol))
+							val symMap = cp.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
+							resolve( cp.proto, symMap, "_bogus_", Some(cp.name))
 						}
 						case f                 => f
 						})
-					val cf = CaseClassField( "", ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
-					readyToEat.put( rtKeyName, cf )
+					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
+					if( keyName != "_bogus_")
+						readyToEat.put( keyName, cf )
 					cf
 				})( c => c.asInstanceOf[CaseClassField] )
 			}

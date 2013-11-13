@@ -290,9 +290,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			*/
 			it("Basic parameterized case class having case class parameter, itself with a parameter") {
-				val w = Carry("Bob", Wrap("Mary",35,"Available"))
+				val w = Carry("Bob", Wrap("Mary",3,"Available"))
+				val x = Carry("Mary", Wrap("Greg",false,"Done"))
 				val js = ScalaJack.render(w)
+				val js2 = ScalaJack.render(x)
 				println(js)
+				println(js2)
 			}
 			it("Basic parameterized case class having trait parameter") {
 				(pending)
