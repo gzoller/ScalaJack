@@ -259,19 +259,25 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			/*
 			it("Basic parameterized case class") {
 				val w = Wrap("number",true,15)
-				val w2 = Wrap("number",true,17)
+				val w2 = Wrap("number",true,"wow")
 				val js = ScalaJack.render(w)
 				val js2 = ScalaJack.render(w2)
 				val db = ScalaJack.renderDB(w)
 				val db2 = ScalaJack.renderDB(w2)
 				js should equal("""{"name":"number","data":true,"stuff":15}""")
-				js2 should equal("""{"name":"number","data":true,"stuff":17}""")
+				js2 should equal("""{"name":"number","data":true,"stuff":"wow"}""")
 				db.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : 15}""")
-				db2.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : 17}""")
+				db2.toString should equal("""{ "name" : "number" , "data" : true , "stuff" : "wow"}""")
 				ScalaJack.read[Wrap[Boolean,Int]](js) should equal(w)
-				ScalaJack.read[Wrap[Boolean,Int]](js2) should equal(w2)
+				ScalaJack.read[Wrap[Boolean,String]](js2) should equal(w2)
 				ScalaJack.readDB[Wrap[Boolean,Int]](db) should equal(w)
-				ScalaJack.readDB[Wrap[Boolean,Int]](db2) should equal(w2)
+				ScalaJack.readDB[Wrap[Boolean,String]](db2) should equal(w2)
+			}
+			it("Basic parameterized case class having a non-parameter case clase as a field member") {
+				val w = Truck(false, Two("z",true))
+				val js = ScalaJack.render(w)
+				js should equal("""{"s":false,"t":{"foo":"z","bar":true}}""")
+				ScalaJack.read[Truck[Boolean]](js) should equal(w)
 			}
 			it("Basic parameterized case class having case class parameter") {
 				val w = Wrap("number",true,Two("a",false))
@@ -283,13 +289,19 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				ScalaJack.readDB[Wrap[Boolean,Two]](db) should equal(w)
 			}
 			*/
+			it("Basic parameterized case class having case class parameter, itself with a parameter") {
+				val w = Carry("Bob", Wrap("Mary",35,"Available"))
+				val js = ScalaJack.render(w)
+				println(js)
+			}
 			it("Basic parameterized case class having trait parameter") {
 				(pending)
 			}
 			it("Embedded parameterized case class") {
-				val c = Carry("Wow", Wrap("hello",5,"Boo"))
-				val js = ScalaJack.render(c)
-				println(js)
+				// val c = Carry("Wow", Wrap("hello",5,"Boo"))
+				// val js = ScalaJack.render(c)
+				// println(js)
+				(pending)
 			}
 			it("Container of parameterized case class") {
 				(pending)

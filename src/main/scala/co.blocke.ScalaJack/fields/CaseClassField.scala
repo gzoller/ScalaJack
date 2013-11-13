@@ -5,17 +5,24 @@ import reflect.runtime.universe._
 import com.fasterxml.jackson.core._
 import com.mongodb.casbah.Imports._
 
-case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object, typeArgs:List[String] ) 
+case class CaseClassProto( dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object, typeArgs:List[String] ) extends Field {
+	val name = ""
+}
+
+case class CaseClassProxy( name:String, proto:CaseClassProto, symbol:ClassSymbol ) extends Field
+//case class CaseClassProxy( name:String, proto:CaseClassProto, typeSymMap:Map[String,String] ) extends Field
+
+case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
 	extends Field with ClassOrTrait 
 {
 	def iFields = fields.map( f => (f.name, f)).toMap
 
-	private def resolveParamTypes[T](target:T)(implicit m:Manifest[T]) = {
-		if( typeArgs.length > 0 ) Analyzer.registerParamClass(target, this) 
-		else this
-	}
+	// private def resolveParamTypes[T](target:T)(implicit m:Manifest[T]) = {
+	// 	if( typeArgs.length > 0 ) Analyzer.registerParamClass(target, this) 
+	// 	else this
+	// }
 
-	private def _render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val cz = target.getClass
 		val hintStr = { if( withHint ) "\""+hint+"\":\""+dt.typeSymbol.fullName.toString+"\"," else "" }
 		val sb2 = new StringBuilder
@@ -43,8 +50,6 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			})
 		true
 	}
-	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = 
-		resolveParamTypes(target)._render(sb,target,label,ext,hint,withHint)
 
 	private def getFieldValue[T]( f:Field, target:T ) = {
 		val cz = target.getClass
@@ -54,7 +59,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		targetField.get(target)
 	}
 
-	private def _renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val dbo = MongoDBObject()
 		if( withHint )
 			dbo.put( hint, dt.typeSymbol.fullName.toString )
@@ -73,8 +78,6 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		})
 		dbo
 	}
-	override private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = 
-		resolveParamTypes(target)._renderClassDB(target,hint,withHint)
 
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val dbo = MongoDBObject()
@@ -108,7 +111,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			}
 		}
 		jp.nextToken
-		ScalaJack.poof( className, fieldData.toMap )				
+		ScalaJack.poof( this, fieldData.toMap )				
 	}
 
 	override private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any = {
@@ -127,7 +130,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 				})
 			fieldData += fd
 		})	
-		ScalaJack.poof( className, fieldData.toMap )				
+		ScalaJack.poof( this, fieldData.toMap )				
 	}
 
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = 

@@ -8,12 +8,17 @@ object Num extends Enumeration {
 	val A,B,C = Value
 }
 
+case class Bar[A,B](a:A, b:B)
+case class Zoo[U](name:String, z:U)//stuff:Bar[U,String])
+case class Hey( age:Int )
+
 case class Wrap[T,U] (
 		name:String,
 		data:T,
 		stuff:U
 		)
 case class Carry[V](s:String, w:Wrap[V,String])
+case class Truck[Z]( s:Z, t:Two )
 
 case class One( 
 	name     : String, 

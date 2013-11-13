@@ -102,10 +102,11 @@ object ScalaJack {
 	 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
 	 * ScalaJack calls poof to build the case class from the Map.
 	 */
-	def poof[T]( data:Map[String,Any] )(implicit m:Manifest[T]) : T = poof( m.runtimeClass.getName, data ).asInstanceOf[T]
+//	def poof[T]( data:Map[String,Any] )(implicit m:Manifest[T]) : T = poof( m.runtimeClass.getName, data ).asInstanceOf[T]
 
-	private[scalajack] def poof( cname:String, data:Map[String,Any] ) : Any = {
-		val classField = Analyzer(cname).asInstanceOf[CaseClassField]
+	// private[scalajack] def poof( cname:String, data:Map[String,Any] ) : Any = {
+	// 	val classField = Analyzer(cname).asInstanceOf[CaseClassField]
+	private[scalajack] def poof( classField:CaseClassField, data:Map[String,Any] ) : Any = {
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
