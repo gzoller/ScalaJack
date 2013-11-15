@@ -9,8 +9,7 @@ case class CaseClassProto( dt:Type, className:String, applyMethod:java.lang.refl
 	val name = ""
 }
 
-case class CaseClassProxy( name:String, proto:CaseClassProto, symbol:ClassSymbol ) extends Field
-//case class CaseClassProxy( name:String, proto:CaseClassProto, typeSymMap:Map[String,String] ) extends Field
+case class CaseClassProxy( name:String, proto:CaseClassProto ) extends Field //, symbol:ClassSymbol ) extends Field
 
 case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
 	extends Field with ClassOrTrait 
