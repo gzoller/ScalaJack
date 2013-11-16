@@ -56,6 +56,7 @@ object Analyzer {
 						case vc2:ValueClassFieldUnboxed => vc2.copy(name = n)
 						case cc :CaseClassField         => cc.copy(name = n)
 						case op :OptField               => op.copy(name = n)
+						case tt :TraitField             => tt.copy(name = n)
 
 						// OK, this one's wierd... It supports a parameter that is itself a parameterized type Foo[Bar[Int]].  Sick, right?
 						// Note one limitation: The parameter parsing only goes 1-level, so Foo[Bar[T]] wouldn't likely work.
