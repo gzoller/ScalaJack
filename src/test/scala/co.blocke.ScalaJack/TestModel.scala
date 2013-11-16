@@ -21,6 +21,8 @@ case class Carry[V](s:String, w:Wrap[V,String])
 case class CarryList[V](li:List[String], w:Wrap[V,String])
 case class CarryOpt[V](li:List[String], w:Wrap[V,String])
 case class BagList[Y](s:String, many:List[Y])
+case class BagMap[Y](i:Int, items:Map[String,Y])
+case class BagOpt[Y](i:Int, maybe:Option[Y])
 case class Truck[Z]( s:Z, t:Two )
 
 case class One( 

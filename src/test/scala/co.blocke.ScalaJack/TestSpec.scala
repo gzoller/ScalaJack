@@ -331,9 +331,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[Zoo[Boolean]]](db) should equal(w)
 				}
 			}
-			*/
 			describe("Basic Collection Support") {
-				/*
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of simple type") {
 					val w = Carry("Trey", Wrap("Hobbies", List(true,true,false), "all"))
 					val js = ScalaJack.render(w)
@@ -344,16 +342,14 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[List[Boolean]]](db) should equal(w)
 				}
 				it("Case class having Map parameter - Foo[A](x:A) where A -> Map of simple type") {
-					val w = Carry("Troy", Wrap("Articles", Map("hey"->"Blue"), "all"))
+					val w = Carry("Troy", Wrap("Articles", Map("OK"->59), "all"))
 					val js = ScalaJack.render(w)
 					val db = ScalaJack.renderDB(w)
-					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"hey":"Blue"},"stuff":"all"}}""")
-					db.toString should equal("""{ "s" : "Troy" , "w" : { "name" : "Articles" , "data" : { "hey" : "Blue"} , "stuff" : "all"}}""")
-					ScalaJack.read[Carry[Map[String,String]]](js) should equal(w)
-					ScalaJack.readDB[Carry[Map[String,String]]](db) should equal(w)
+					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":59},"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Troy" , "w" : { "name" : "Articles" , "data" : { "OK" : 59} , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Map[String,Int]]](js) should equal(w)
+					ScalaJack.readDB[Carry[Map[String,Int]]](db) should equal(w)
 				}
-				*/
-				/*
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of simple type") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(17), "all"))
 					val x = Carry[Option[Int]]("Terry", Wrap("Hobbies", None, "all"))
@@ -370,55 +366,128 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[Option[Int]]](db) should equal(w)
 					ScalaJack.readDB[Carry[Option[Int]]](db2) should equal(x)
 				}
-				*/
 				it("Case class having List of parameterized value - Foo[A](x:List[A]) - where A is a simple type") {
-					// val w = BagList("list",List(1,2,3))
-					// val js = ScalaJack.render(w)
-					// println(js)
-					(pending)
+					val w = BagList("list",List(1,2,3))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"list","many":[1,2,3]}""")
+					db.toString should equal("""{ "s" : "list" , "many" : [ 1 , 2 , 3]}""")
+					ScalaJack.read[BagList[Int]](js) should equal(w)
+					ScalaJack.readDB[BagList[Int]](db) should equal(w)
 				}
 				it("Case class having Map of parameterized value - Foo[A,B](x:Map[A,B]) - where A,B are simple types") {
-					(pending)
+					val w = BagMap(5, Map("one"->true,"two"->false))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"i":5,"items":{"one":true,"two":false}}""")
+					db.toString should equal("""{ "i" : 5 , "items" : { "one" : true , "two" : false}}""")
+					ScalaJack.read[BagMap[Boolean]](js) should equal(w)
+					ScalaJack.readDB[BagMap[Boolean]](db) should equal(w)
 				}
 				it("Case class having Option of parameterized value - Foo[A](x:Option[A]) - where A is a simple type") {
-					(pending)
+					val w = BagOpt(1, Some("ok"))
+					val x = BagOpt[String](1,None)
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"i":1,"maybe":"ok"}""")
+					js2 should equal("""{"i":1}""")
+					db.toString should equal("""{ "i" : 1 , "maybe" : "ok"}""")
+					db2.toString should equal("""{ "i" : 1}""")
+					ScalaJack.read[BagOpt[String]](js) should equal(w)
+					ScalaJack.read[BagOpt[String]](js2) should equal(x)
+					ScalaJack.readDB[BagOpt[String]](db) should equal(w)
+					ScalaJack.readDB[BagOpt[String]](db2) should equal(x)
 				}
 			}
 			describe("Advanced Collection Support - collections of parameterized case class") {
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of Bar[Int]") {
-					// val w = Carry("Yyvonne", Wrap("Hobbies", List("a","b","c"), "all"))
-					// val js = ScalaJack.render(w)
-					// println(js)
-					(pending)
+					val w = Carry("Trey", Wrap("Hobbies", List(Zoo("one",1),Zoo("two",2)), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Trey","w":{"name":"Hobbies","data":[{"name":"one","z":1},{"name":"two","z":2}],"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Trey" , "w" : { "name" : "Hobbies" , "data" : [ { "name" : "one" , "z" : 1} , { "name" : "two" , "z" : 2}] , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[List[Zoo[Int]]]](js) should equal(w)
+					ScalaJack.readDB[Carry[List[Zoo[Int]]]](db) should equal(w)
 				}
 				it("Case class having Map parameter - Foo[A](x:A) where A -> Map of Bar[Int,String]") {
-					(pending)
+					val w = Carry("Troy", Wrap("Articles", Map("OK"->Zoo("q",false)), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":{"name":"q","z":false}},"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Troy" , "w" : { "name" : "Articles" , "data" : { "OK" : { "name" : "q" , "z" : false}} , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Map[String,Zoo[Boolean]]]](js) should equal(w)
+					ScalaJack.readDB[Carry[Map[String,Zoo[Boolean]]]](db) should equal(w)
 				}
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of Bar[Int]") {
-					(pending)
+					val w = Carry("Terri", Wrap("Hobbies", Some(Zoo("a","b")), "all"))
+					val x = Carry[Option[Int]]("Terry", Wrap("Hobbies", None, "all"))
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"name":"a","z":"b"},"stuff":"all"}}""")
+					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Terri" , "w" : { "name" : "Hobbies" , "data" : { "name" : "a" , "z" : "b"} , "stuff" : "all"}}""")
+					db2.toString should equal("""{ "s" : "Terry" , "w" : { "name" : "Hobbies" , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Option[Zoo[String]]]](js) should equal(w)
+					ScalaJack.read[Carry[Option[Zoo[String]]]](js2) should equal(x)
+					ScalaJack.readDB[Carry[Option[Zoo[String]]]](db) should equal(w)
+					ScalaJack.readDB[Carry[Option[Zoo[String]]]](db2) should equal(x)
 				}
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of value class") {
-					// val w = Carry("Yyvonne", Wrap("Hobbies", List("a","b","c"), "all"))
-					// val js = ScalaJack.render(w)
-					// println(js)
-					(pending)
+					val w = Carry("Trey", Wrap("Hobbies", List(new Wrapper(99),new Wrapper(100)), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Trey","w":{"name":"Hobbies","data":[99,100],"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Trey" , "w" : { "name" : "Hobbies" , "data" : [ 99 , 100] , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[List[Wrapper]]](js) should equal(w)
+					ScalaJack.readDB[Carry[List[Wrapper]]](db) should equal(w)
 				}
 				it("Case class having Map parameter - Foo[A](x:A) where A -> Map of Bar[String,value class]") {
-					(pending)
+					val w = Carry("Troy", Wrap("Articles", Map("OK"->new Wrapper(2)), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":2},"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Troy" , "w" : { "name" : "Articles" , "data" : { "OK" : 2} , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Map[String,Wrapper]]](js) should equal(w)
+					ScalaJack.readDB[Carry[Map[String,Wrapper]]](db) should equal(w)
 				}
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of value class") {
-					(pending)
+					val w = Carry("Terri", Wrap("Hobbies", Some(new Wrapper(-2)), "all"))
+					val x = Carry[Option[Wrapper]]("Terry", Wrap("Hobbies", None, "all"))
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":-2,"stuff":"all"}}""")
+					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Terri" , "w" : { "name" : "Hobbies" , "data" : -2 , "stuff" : "all"}}""")
+					db2.toString should equal("""{ "s" : "Terry" , "w" : { "name" : "Hobbies" , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Option[Wrapper]]](js) should equal(w)
+					ScalaJack.read[Carry[Option[Wrapper]]](js2) should equal(x)
+					ScalaJack.readDB[Carry[Option[Wrapper]]](db) should equal(w)
+					ScalaJack.readDB[Carry[Option[Wrapper]]](db2) should equal(x)
 				}
 				it("Case class having List of parameterized value - Foo[A](x:List[A]) - where A -> Bar[Int]") {
-					// val w = BagList("list",List(1,2,3))
-					// val js = ScalaJack.render(w)
-					// println(js)
-					(pending)
+					val w = BagList("list",List(Zoo("a",1),Zoo("b",2)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"list","many":[{"name":"a","z":1},{"name":"b","z":2}]}""")
+					db.toString should equal("""{ "s" : "list" , "many" : [ { "name" : "a" , "z" : 1} , { "name" : "b" , "z" : 2}]}""")
+					ScalaJack.read[BagList[Zoo[Int]]](js) should equal(w)
+					ScalaJack.readDB[BagList[Zoo[Int]]](db) should equal(w)
 				}
 				it("Case class having Map of parameterized value - Foo[A,B](x:Map[A,B]) - where A,B -> String,Bar[Int]") {
-					(pending)
+					val w = BagMap(5, Map("one"->Zoo("a",1),"two"->Zoo("b",2)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"i":5,"items":{"one":{"name":"a","z":1},"two":{"name":"b","z":2}}}""")
+					db.toString should equal("""{ "i" : 5 , "items" : { "one" : { "name" : "a" , "z" : 1} , "two" : { "name" : "b" , "z" : 2}}}""")
+					ScalaJack.read[BagMap[Zoo[Int]]](js) should equal(w)
+					ScalaJack.readDB[BagMap[Zoo[Int]]](db) should equal(w)
 				}
-				/*
 				it("Case class having Option of parameterized value - Foo[A](x:Option[A]) - where A -> Bar[Int]") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(Truck(false,Two("aaa",true))), "all"))
 					val x = Carry[Option[Truck[Boolean]]]("Terry", Wrap("Hobbies", None, "all"))
@@ -435,20 +504,42 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[Option[Truck[Boolean]]]](db) should equal(w)
 					ScalaJack.readDB[Carry[Option[Truck[Boolean]]]](db2) should equal(x)
 				}
-				*/
 				it("Case class having List of parameterized value - Foo[A](x:List[A]) - where A -> value class") {
-					// val w = BagList("list",List(1,2,3))
-					// val js = ScalaJack.render(w)
-					// println(js)
-					(pending)
+					val w = BagList("list",List(Zoo("a",new Wrapper(1)),Zoo("b",new Wrapper(2))))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"list","many":[{"name":"a","z":1},{"name":"b","z":2}]}""")
+					db.toString should equal("""{ "s" : "list" , "many" : [ { "name" : "a" , "z" : 1} , { "name" : "b" , "z" : 2}]}""")
+					ScalaJack.read[BagList[Zoo[Wrapper]]](js) should equal(w)
+					ScalaJack.readDB[BagList[Zoo[Wrapper]]](db) should equal(w)
 				}
 				it("Case class having Map of parameterized value - Foo[A,B](x:Map[A,B]) - where A,B -> String,value class") {
-					(pending)
+					val w = BagMap(5, Map("one"->Zoo("a",new Wrapper(1)),"two"->Zoo("b",new Wrapper(2))))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"i":5,"items":{"one":{"name":"a","z":1},"two":{"name":"b","z":2}}}""")
+					db.toString should equal("""{ "i" : 5 , "items" : { "one" : { "name" : "a" , "z" : 1} , "two" : { "name" : "b" , "z" : 2}}}""")
+					ScalaJack.read[BagMap[Zoo[Wrapper]]](js) should equal(w)
+					ScalaJack.readDB[BagMap[Zoo[Wrapper]]](db) should equal(w)
 				}
 				it("Case class having Option of parameterized value - Foo[A](x:Option[A]) - where A -> value class") {
-					(pending)
+					val w = Carry("Terri", Wrap("Hobbies", Some(Zoo("a",new Wrapper(12))), "all"))
+					val x = Carry[Option[Truck[Boolean]]]("Terry", Wrap("Hobbies", None, "all"))
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"name":"a","z":12},"stuff":"all"}}""")
+					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Terri" , "w" : { "name" : "Hobbies" , "data" : { "name" : "a" , "z" : 12} , "stuff" : "all"}}""")
+					db2.toString should equal("""{ "s" : "Terry" , "w" : { "name" : "Hobbies" , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Option[Zoo[Wrapper]]]](js) should equal(w)
+					ScalaJack.read[Carry[Option[Zoo[Wrapper]]]](js2) should equal(x)
+					ScalaJack.readDB[Carry[Option[Zoo[Wrapper]]]](db) should equal(w)
+					ScalaJack.readDB[Carry[Option[Zoo[Wrapper]]]](db2) should equal(x)
 				}
 			}
+				*/
 			it("Basic parameterized case class having trait parameter") {
 				(pending)
 			}

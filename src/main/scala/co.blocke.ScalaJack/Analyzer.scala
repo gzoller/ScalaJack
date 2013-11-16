@@ -93,7 +93,7 @@ println("3: "+cname)
 		val staticName  = cname + typeArgs.mkString("[",",","]")
  		readyToEat.get( rtName.getOrElse(staticName) ).orElse( protoRepo.get( staticName ) ).orElse({
  println("Reflect: "+staticName+" "+rtName)
-			val v = staticReflect( "", symbol.typeSignature, { if(isValueClass(symbol)) true else false } )
+			val v = staticReflect( "", symbol.typeSignature, List[String](), { if(isValueClass(symbol)) true else false } )
 			v match {
 				case ccp:CaseClassProto => protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
 				case ccf:CaseClassField => readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
@@ -112,38 +112,28 @@ println("3: "+cname)
 // println("Field: "+field.getClass.getName)
  println("Args : "+argMap)
 					val fields = ccp.fields.map( _ match {
-						case tf:TypeField      => {
-							val mappedType = argMap(tf.symbol)
-	println("TYPE: "+tf.symbol+" -> "+mappedType)
-							// Do something cool here if argMap(tf.symbol) is a collection, otherwise by default it tries to handle
-							// things as a case class, which is _not_ what we want!
-							if( mappedType startsWith "scala.collection.immutable.List" ) {
-								val xtractTypes(innerSymbol) = mappedType
-								ListField( tf.name, typeMap( innerSymbol )("") )
-							}
-							else if( mappedType startsWith "scala.collection.immutable.Map" ) {
-								val mapTypes = typeSplit( mappedType )
-								// val xtractTypes(innerSymbols) = mappedType
-								// val mapTypes = innerSymbols.split(",").toList
-								println("FOO ["+mapTypes(1)+"]")
-								MapField( tf.name, typeMap(mapTypes(1))("") )
-							}
-							else if( mappedType.startsWith("scala.Some") || mappedType.startsWith("scala.Option") ) {
-								val xtractTypes(innerSymbol) = mappedType
-								OptField( tf.name, typeMap( innerSymbol )("") )
-							}
-							else {
-								val q = typeMap( mappedType )(tf.name)
-								println("Q: "+q)
-								q
-							}
-						}
+						case tf:TypeField      => resolveTypeField( tf, argMap )
 						case cp:CaseClassProxy => {
 							val xtractTypes(terms) = ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(cp.name)).typeSignature.toString
 							val runtimeTypes = terms.split(",").toList
 							val symMap = cp.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( cp.proto, symMap, "_bogus_", Some(cp.name))
 						}
+						case lf:ListField      => 
+							lf.subField match {
+								case tf:TypeField => ListField( lf.name, resolveTypeField( tf, argMap ) )
+								case f            => f
+							}
+						case mf:MapField       => 
+							mf.valueField match {
+								case tf:TypeField => MapField( mf.name, resolveTypeField( tf, argMap ) )
+								case f            => f
+							}
+						case of:OptField       =>
+							of.subField match {
+								case tf:TypeField => OptField( of.name, resolveTypeField( tf, argMap ) )
+								case f            => f
+							}
 						case f                 => f
 						})
 					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
@@ -157,7 +147,39 @@ println("3: "+cname)
 		}
 	}
 
-	private def staticReflect( fieldName:String, ctype:Type, inContainer:Boolean = false, classCompanionSymbol:Option[Symbol] = None) : Field = {
+	private def resolveTypeField( tf:TypeField, argMap:Map[String,String] ) = {
+		val mappedType = argMap(tf.symbol)
+println("TYPE: "+tf.symbol+" -> "+mappedType)
+		// Do something cool here if argMap(tf.symbol) is a collection, otherwise by default it tries to handle
+		// things as a case class, which is _not_ what we want!
+		if( mappedType startsWith "scala.collection.immutable.List" ) {
+			val xtractTypes(innerSymbol) = mappedType
+			ListField( tf.name, typeMap( innerSymbol )("") )
+		}
+		else if( mappedType startsWith "scala.collection.immutable.Map" ) {
+			val mapTypes = typeSplit( mappedType )
+			// val xtractTypes(innerSymbols) = mappedType
+			// val mapTypes = innerSymbols.split(",").toList
+			MapField( tf.name, typeMap(mapTypes(1))("") )
+		}
+		else if( mappedType.startsWith("scala.Some") || mappedType.startsWith("scala.Option") ) {
+			val xtractTypes(innerSymbol) = mappedType
+			OptField( tf.name, typeMap( innerSymbol )("") )
+		}
+		else {
+			val q = typeMap( mappedType )(tf.name)
+			println("Q: "+q)
+			q
+		}
+	}
+
+	private def staticReflect( 
+		fieldName:String,   // Name of the field.  "" for top-level case classes and sometimes things inside a container
+		ctype:Type,         // Reflected Type of this field
+		caseClassParams:List[String] = List[String](), // top-level case class' parameter labels
+		inContainer:Boolean = false,  // Set true when object lives inside a container (List, Map, etc.) -- supresses field name
+		classCompanionSymbol:Option[Symbol] = None // if case class, needed to determine if fields have mongo key annotation
+	) : Field = {
 
 		val fullName = ctype.typeSymbol.fullName.toString
  println("FIELD: "+fullName)
@@ -166,7 +188,11 @@ println("3: "+cname)
 		fullName match {
 			case "scala.collection.immutable.List" =>
 				ctype match {
-					case TypeRef(pre, sym, args) => ListField(fieldName, staticReflect( fieldName, args(0), true ))
+					case TypeRef(pre, sym, args) => 
+						if( caseClassParams.contains(args(0).toString) )
+							ListField(fieldName, TypeField("", args(0).toString))
+						else
+							ListField(fieldName, staticReflect( fieldName, args(0), caseClassParams, true ))
 				}
 
 			case "scala.Enumeration.Value" =>
@@ -181,13 +207,19 @@ println("3: "+cname)
 				} else {
 					val subtype = ctype.asInstanceOf[TypeRef].args(0)
 					// Facilitate an Option as a Mongo key part (a very bad idea unless you are 100% sure the value is non-None!!!)
-					val subField = staticReflect(fieldName, subtype, true, classCompanionSymbol)
-					OptField( fieldName, subField, subField.hasMongoAnno )
+					if( caseClassParams.contains(subtype.toString) )
+						OptField( fieldName, TypeField("", subtype.toString ) )
+					else {
+						val subField = staticReflect(fieldName, subtype, caseClassParams, true, classCompanionSymbol)
+						OptField( fieldName, subField, subField.hasMongoAnno )
+					}
 				}
 
-			case "scala.collection.immutable.Map" =>
-				val valuetype = ctype.asInstanceOf[TypeRef].args(1)
-				MapField( fieldName, staticReflect(fieldName, valuetype, true) )
+			case "scala.collection.immutable.Map" => 
+				if( caseClassParams.contains( ctype.asInstanceOf[TypeRef].args(1).toString ) )
+					MapField( fieldName, TypeField("",ctype.asInstanceOf[TypeRef].args(1).toString) )
+				else
+					MapField( fieldName, staticReflect(fieldName, ctype.asInstanceOf[TypeRef].args(1), caseClassParams, true) )
 
 			case _ =>
 				val sym = currentMirror.classSymbol(Class.forName(fullName))
@@ -236,7 +268,7 @@ println("3: "+cname)
 // 				println("C: "+c)
 								}
 							}
-							staticReflect(c.name.toString, symbol.typeSignature, false, Some(companionSymbol)) match {
+							staticReflect(c.name.toString, symbol.typeSignature, typeArgs, false, Some(companionSymbol)) match {
 								case ccf:CaseClassField => ccf
 								case ccp:CaseClassProto => 
 									val staticName = fullName + typeArgs.mkString("[",",","]")
