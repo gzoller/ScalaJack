@@ -44,10 +44,7 @@ object Analyzer {
 					val pos = t.indexOf('[')
 					val applied = { 
 						if( pos < 0 )
-						{
-	println("CCC: "+convertType(t))
 							_apply( convertType(t) ) 
-						}
 						else 
 							_apply( convertType(t.take(pos)), Some(t))
 					} 
@@ -66,9 +63,7 @@ object Analyzer {
 						}
 						case tp :TraitProto         => {
 							val argMap = tp.typeArgs.zip( typeSplit( t ) ).toMap
-val z=							resolve(tp, argMap, t, Some(n))  // resolve returns TraitField
-println("RETURNED: "+z.getClass.getName)
-z
+							resolve(tp, argMap, t, Some(n))  // resolve returns TraitField
 						}
 					}
 				}
@@ -86,10 +81,6 @@ z
 				args
 		}
 		val rtKeyName = cname + rtArgs.mkString("[",",","]")
-// println("0: "+args+ "  -->  "+rtArgs)
-// println("1: "+ protoRepo.keySet.toList)
-// println("2: "+ readyToEat.keySet.toList)
-// println("3: "+cname)
 		_apply( cname, Some(rtKeyName) ) match {
 			case ccp : CaseClassProto => 
 				val argMap = ccp.typeArgs.zip( rtArgs ).toMap
@@ -99,9 +90,6 @@ z
 				resolve( ttp, argMap, rtKeyName )
 			case f                     => f
 		}
-		// println("---------------")
-		// println(z)
-		// println("---------------")
 	}
 
 	private def _apply( cname:String, rtName:Option[String] = None ) : Field = {
@@ -109,7 +97,6 @@ z
 		val typeArgs = symbol.typeParams.map( tp => tp.name.toString)
 		val staticName  = cname + typeArgs.mkString("[",",","]")
  		readyToEat.get( rtName.getOrElse(staticName) ).orElse( protoRepo.get( staticName ) ).orElse({
- println("Reflect: "+staticName+" "+rtName)
 			val v = staticReflect( "", symbol.typeSignature, List[String](), { if(isValueClass(symbol)) true else false } )
 			v match {
 				case ccp:CaseClassProto => protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
@@ -128,10 +115,6 @@ z
 			case ccp : CaseClassProto => {
 				readyToEat.get( keyName ).fold( {
 					// Not there... resolve it
-// println("Field: "+field.getClass.getName)
- println("Args : "+argMap)
- val y = ccp.fields.map( f => (f.name, f.getClass.getName)).toMap
- println("FIELDS: "+y)
 					val fields = ccp.fields.map( _ match {
 						case tf:TypeField      => resolveTypeField( tf, argMap )
 						case cp:CaseClassProxy => 
@@ -154,33 +137,27 @@ z
 								case f            => f
 							}
 						case tt:TraitProxy     => 
-			println("Pow!!! " +tt)
 							val runtimeTypes = typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(tt.name)).typeSignature.toString )
 							val symMap = tt.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( tt.proto, symMap, "_bogus_", Some(tt.name))
 						case f                 => f
 						})
 					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
-	//println("CF: "+cf.copy(dt=null, applyMethod=null, caseObj=null))
 					if( keyName != "_bogus_")
 						readyToEat.put( keyName, cf )
 					cf
 				})( c => c.asInstanceOf[CaseClassField] )
 			}
 			case tt : TraitProto => 
-				readyToEat.get( keyName ).fold ( {
-					println("Boom: "+tt.typeArgs+ " -> "+argMap)
-val x=					TraitField( fieldName.getOrElse(""), tt.typeArgs.map( a => argMap(a)) )
-println("X: "+x)
-x
-				})( c => c.asInstanceOf[TraitField] )
+				readyToEat.get( keyName ).fold (
+					TraitField( fieldName.getOrElse(""), tt.typeArgs.map( a => argMap(a)) )
+				)( c => c.asInstanceOf[TraitField] )
 			case f => f
 		}
 	}
 
 	private def resolveTypeField( tf:TypeField, argMap:Map[String,String] ) = {
 		val mappedType = argMap(tf.symbol)
-println("TYPE: "+tf.symbol+" -> "+mappedType)
 		// Do something cool here if argMap(tf.symbol) is a collection, otherwise by default it tries to handle
 		// things as a case class, which is _not_ what we want!
 		if( mappedType startsWith "scala.collection.immutable.List" ) {
@@ -189,19 +166,14 @@ println("TYPE: "+tf.symbol+" -> "+mappedType)
 		}
 		else if( mappedType startsWith "scala.collection.immutable.Map" ) {
 			val mapTypes = typeSplit( mappedType )
-			// val xtractTypes(innerSymbols) = mappedType
-			// val mapTypes = innerSymbols.split(",").toList
 			MapField( tf.name, typeMap(mapTypes(1))("") )
 		}
 		else if( mappedType.startsWith("scala.Some") || mappedType.startsWith("scala.Option") ) {
 			val xtractTypes(innerSymbol) = mappedType
 			OptField( tf.name, typeMap( innerSymbol )("") )
 		}
-		else {
-			val q = typeMap( mappedType )(tf.name)
-			println("Q: "+q)
-			q
-		}
+		else
+			typeMap( mappedType )(tf.name)
 	}
 
 	private def staticReflect( 
@@ -213,8 +185,6 @@ println("TYPE: "+tf.symbol+" -> "+mappedType)
 	) : Field = {
 
 		val fullName = ctype.typeSymbol.fullName.toString
- println("FIELD: "+fullName)
-// println(ctype)
 
 		fullName match {
 			case "scala.collection.immutable.List" =>
@@ -262,7 +232,6 @@ println("TYPE: "+tf.symbol+" -> "+mappedType)
 							poly.map( p => p.name.toString )
 						} else List[String]()
 					}
-		println("GGG: "+typeArgs)
 					if( typeArgs.size == 0) 
 						TraitField( fieldName )
 					else if( classCompanionSymbol.isEmpty )
@@ -271,10 +240,7 @@ println("TYPE: "+tf.symbol+" -> "+mappedType)
 						val staticName = fullName + typeArgs.mkString("[",",","]")
 						val tp = TraitProto( typeArgs )
 						val proto = protoRepo.get( staticName ).fold( { protoRepo.put(staticName,tp); tp } )( p => p.asInstanceOf[TraitProto] )
-						val z =TraitProxy( fieldName, proto )
-println("Proxy: "+z)
-println("Proto: "+z.proto)
-z
+						TraitProxy( fieldName, proto )
 					}
 				}
 				// --------------- Case Class
@@ -285,10 +251,6 @@ z
 							poly.map( p => p.name.toString )
 						} else List[String]()
 					}
-// println("TA: "+typeArgs)
-// println("Ctype: "+ctype)
-//println("Member: "+ctype.member(TermName.stringToTermName("w")))
-// ctype.members.foreach(t => println(t.getClass.getName))
 					// Find and save the apply method of the companion object
 					val companionClazz = Class.forName(fullName+"$")
 					val companionSymbol = currentMirror.classSymbol(companionClazz)
@@ -307,16 +269,11 @@ z
 							TypeField( c.name.toString, fieldTypeName ) 
 						} else {
 							val symbol = {
-								if( typeList.contains(fieldTypeName) || fieldTypeName.endsWith(".Value") ) {
+								if( typeList.contains(fieldTypeName) || fieldTypeName.endsWith(".Value") ) 
 									c
-								} else {
+								else {
 									val clazz = Class.forName(fieldTypeName)
 									currentMirror.classSymbol(clazz)
-// 	println("Clazz: "+clazz.getFields.toList)
-// // Somewhere in here I need to know about Wrap[V,String] so I can build a map associating V -> T, String -> U for later use in resolve!
-// // Make this map part of the Proxy object.
-// 				println("Types: "+s.typeParams)
-// 				println("C: "+c)
 								}
 							}
 							staticReflect(c.name.toString, symbol.typeSignature, typeArgs, false, Some(companionSymbol)) match {
