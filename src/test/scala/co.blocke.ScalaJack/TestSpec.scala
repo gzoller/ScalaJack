@@ -10,7 +10,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
 
 	describe("====================\n| -- JSON Tests -- |\n====================") {
-		/*
 		describe("Basic Render/Read") {
 			it( "Serialize simple object to JSON -- all supported data types" ) {
 				val js = ScalaJack.render(data)
@@ -252,9 +251,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				ScalaJack.readDB[Seven](dbo) should equal( seven )
 			}
 		}
-		*/
 		describe("Parameterized Class Support") {
-			/*
 			describe("Basic Parameterized Case Class") {
 				it("Simple parameters - Foo[A](x:A) where A -> simple type") {
 					val w = Wrap("number",true,15)
@@ -539,7 +536,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[Option[Zoo[Wrapper]]]](db2) should equal(x)
 				}
 			}
-//-------------------------------------------------
 			describe("Basic trait support") {
 				it("Parameter is a simple trait") {
 					val w = Carry[Pop]("Surprise", Wrap("Yellow", Wow2("three",3), "Done"))
@@ -619,40 +615,110 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[Carry[Option[Pop]]](db2) should equal(x)
 				}
 			}
-				*/
 			describe("Advanced trait support -- parameters are traits, themselves having parameters") {
 				it("Case class having an embedded parameterized trait") {
 					val w = Breakfast(true, Toast(7,"Burnt"))
 					val js = ScalaJack.render(w)
-					println(js)
-					(pending)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":"Burnt"}}""")
+					db.toString should equal("""{ "y" : true , "bread" : { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 7 , "yum" : "Burnt"}}""")
+					ScalaJack.read[Breakfast[String]](js) should equal(w)
+					ScalaJack.readDB[Breakfast[String]](db) should equal(w)
 				}
 				it("Case class having an embedded parameterized trait, with the trait's parameter another case class") {
-					(pending)
+					val w = Breakfast(true, Toast(7,Two("two",true)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":{"foo":"two","bar":true}}}""")
+					db.toString should equal("""{ "y" : true , "bread" : { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 7 , "yum" : { "foo" : "two" , "bar" : true}}}""")
+					ScalaJack.read[Breakfast[Two]](js) should equal(w)
+					ScalaJack.readDB[Breakfast[Two]](db) should equal(w)
 				}
 				it("Case class having an embedded parameterized trait, with the trait's parameter a value class") {
-					(pending)
+					val w = Breakfast(true, Toast(7,new Wrapper(-100)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":-100}}""")
+					db.toString should equal("""{ "y" : true , "bread" : { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 7 , "yum" : -100}}""")
+					ScalaJack.read[Breakfast[Wrapper]](js) should equal(w)
+					ScalaJack.readDB[Breakfast[Wrapper]](db) should equal(w)
 				}
-				it("Parameter is a parameterized trait") {
-					(pending)
+				it("Parameter is a parameterized trait") { // I can't believe this one worked!
+					val w = Carry[Tart[Soup[String]]]("Bill", Wrap("Betty", Bun(3,Cruton(8,"eight")),"ok"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"_hint":"co.blocke.scalajack.test.Bun","g":3,"yum":{"_hint":"co.blocke.scalajack.test.Cruton","i":8,"sweet":"eight"}},"stuff":"ok"}}""")
+					db.toString should equal("""{ "s" : "Bill" , "w" : { "name" : "Betty" , "data" : { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 3 , "yum" : { "_hint" : "co.blocke.scalajack.test.Cruton" , "i" : 8 , "sweet" : "eight"}} , "stuff" : "ok"}}""")
+					ScalaJack.read[Carry[Tart[Soup[String]]]](js) should equal(w)
+					ScalaJack.readDB[Carry[Tart[Soup[String]]]](db) should equal(w)
 				}
 				it("Parameter is List of parameterized trait") {
-					(pending)
+					val w = Carry[List[Tart[Boolean]]]("Trey", Wrap("Hobbies", List(Bun(1,false),Toast(2,true)), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Trey","w":{"name":"Hobbies","data":[{"_hint":"co.blocke.scalajack.test.Bun","g":1,"yum":false},{"_hint":"co.blocke.scalajack.test.Toast","g":2,"yum":true}],"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Trey" , "w" : { "name" : "Hobbies" , "data" : [ { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 1 , "yum" : false} , { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 2 , "yum" : true}] , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[List[Tart[Boolean]]]](js) should equal(w)
+					ScalaJack.readDB[Carry[List[Tart[Boolean]]]](db) should equal(w)
 				}
 				it("Parameter is Map of String->parameterized trait") {
-					(pending)
+					val w = Carry[Map[String,Tart[String]]]("Troy", Wrap("Articles", Map("OK"->Bun(27,"Hot")), "all"))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":{"_hint":"co.blocke.scalajack.test.Bun","g":27,"yum":"Hot"}},"stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Troy" , "w" : { "name" : "Articles" , "data" : { "OK" : { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 27 , "yum" : "Hot"}} , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Map[String,Tart[String]]]](js) should equal(w)
+					ScalaJack.readDB[Carry[Map[String,Tart[String]]]](db) should equal(w)
 				}
 				it("Parameter is an Option of parameterized trait") {
-					(pending)
+					val w = Carry[Option[Tart[Int]]]("Terri", Wrap("Hobbies", Some(Toast(11,12)), "all"))
+					val x = Carry[Option[Tart[Int]]]("Terry", Wrap("Hobbies", None, "all"))
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.Toast","g":11,"yum":12},"stuff":"all"}}""")
+					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					db.toString should equal("""{ "s" : "Terri" , "w" : { "name" : "Hobbies" , "data" : { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 11 , "yum" : 12} , "stuff" : "all"}}""")
+					db2.toString should equal("""{ "s" : "Terry" , "w" : { "name" : "Hobbies" , "stuff" : "all"}}""")
+					ScalaJack.read[Carry[Option[Tart[Int]]]](js) should equal(w)
+					ScalaJack.read[Carry[Option[Tart[Int]]]](js2) should equal(x)
+					ScalaJack.readDB[Carry[Option[Tart[Int]]]](db) should equal(w)
+					ScalaJack.readDB[Carry[Option[Tart[Int]]]](db2) should equal(x)
 				}
 				it("List of parameter, where parameter is a parameterized trait") {
-					(pending)
+					val w = BagList[Tart[Boolean]]("list",List(Toast(1,true),Bun(2,false)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"s":"list","many":[{"_hint":"co.blocke.scalajack.test.Toast","g":1,"yum":true},{"_hint":"co.blocke.scalajack.test.Bun","g":2,"yum":false}]}""")
+					db.toString should equal("""{ "s" : "list" , "many" : [ { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 1 , "yum" : true} , { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 2 , "yum" : false}]}""")
+					ScalaJack.read[BagList[Tart[Boolean]]](js) should equal(w)
+					ScalaJack.readDB[BagList[Tart[Boolean]]](db) should equal(w)
 				}
 				it("Map of String->parameter, where parameter is a parameterized trait") {
-					(pending)
+					val w = BagMap[Tart[Boolean]](5, Map("one"->Bun(1,true),"two"->Toast(2,false)))
+					val js = ScalaJack.render(w)
+					val db = ScalaJack.renderDB(w)
+					js should equal("""{"i":5,"items":{"one":{"_hint":"co.blocke.scalajack.test.Bun","g":1,"yum":true},"two":{"_hint":"co.blocke.scalajack.test.Toast","g":2,"yum":false}}}""")
+					db.toString should equal("""{ "i" : 5 , "items" : { "one" : { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 1 , "yum" : true} , "two" : { "_hint" : "co.blocke.scalajack.test.Toast" , "g" : 2 , "yum" : false}}}""")
+					ScalaJack.read[BagMap[Tart[Boolean]]](js) should equal(w)
+					ScalaJack.readDB[BagMap[Tart[Boolean]]](db) should equal(w)
 				}
 				it("Option of parameter, where parameter is a parameterized trait") {
-					(pending)
+					val w = BagOpt[Tart[String]](1, Some(Bun(6,"ok")))
+					val x = BagOpt[Tart[String]](1,None)
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val db = ScalaJack.renderDB(w)
+					val db2 = ScalaJack.renderDB(x)
+					js should equal("""{"i":1,"maybe":{"_hint":"co.blocke.scalajack.test.Bun","g":6,"yum":"ok"}}""")
+					js2 should equal("""{"i":1}""")
+					db.toString should equal("""{ "i" : 1 , "maybe" : { "_hint" : "co.blocke.scalajack.test.Bun" , "g" : 6 , "yum" : "ok"}}""")
+					db2.toString should equal("""{ "i" : 1}""")
+					ScalaJack.read[BagOpt[Tart[String]]](js) should equal(w)
+					ScalaJack.read[BagOpt[Tart[String]]](js2) should equal(x)
+					ScalaJack.readDB[BagOpt[Tart[String]]](db) should equal(w)
+					ScalaJack.readDB[BagOpt[Tart[String]]](db2) should equal(x)
 				}
 			}
 		}

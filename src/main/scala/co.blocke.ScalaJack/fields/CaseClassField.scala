@@ -9,17 +9,12 @@ case class CaseClassProto( dt:Type, className:String, applyMethod:java.lang.refl
 	val name = ""
 }
 
-case class CaseClassProxy( name:String, proto:CaseClassProto ) extends Field //, symbol:ClassSymbol ) extends Field
+case class CaseClassProxy( name:String, proto:CaseClassProto ) extends Field 
 
 case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
 	extends Field with ClassOrTrait 
 {
 	def iFields = fields.map( f => (f.name, f)).toMap
-
-	// private def resolveParamTypes[T](target:T)(implicit m:Manifest[T]) = {
-	// 	if( typeArgs.length > 0 ) Analyzer.registerParamClass(target, this) 
-	// 	else this
-	// }
 
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val cz = target.getClass

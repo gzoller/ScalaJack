@@ -76,6 +76,9 @@ trait Pop {
 trait Tart[T] {
 	val yum:T
 }
+trait Soup[A] {
+	val sweet:A
+}
 
 case class Wow1( a:String, b:Int) extends Pop {
 	def go { println("--1--") }
@@ -83,9 +86,10 @@ case class Wow1( a:String, b:Int) extends Pop {
 case class Wow2( x:String, y:Int) extends Pop {
 	def go { println("--2--") }
 }
-case class Toast[T]( g:Int, val yum:T ) extends Tart[T]
+case class Cruton[U]( i:Int, val sweet:U ) extends Soup[U]
+case class Toast[D]( g:Int, val yum:D ) extends Tart[D]
 case class Bun[R]( g:Int, val yum:R ) extends Tart[R]
-case class Breakfast[T]( y:Boolean, bread:Tart[T] )
+case class Breakfast[K]( y:Boolean, bread:Tart[K] )
 
 case class Animal(val name: String, val legs: Int)
 
