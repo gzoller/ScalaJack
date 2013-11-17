@@ -1,10 +1,10 @@
-This is a special release!  ScalaJack now supports paramterized types for case classes
+ScalaJack now supports paramterized types for case classes
 and traits.  So now, not only is ScalaJack a fast parser, it is one of the most powerful too.
 Of course this works with the MongoDB rendering too.
 
 ScalaJack isn't a compiler, so there will certainly be combinations of parameterized types
-that will confuse it, but the supported configurations are many.  See the test suite for
+that will confuse it, but there are dozens of tested combinations.  See the test suite for
 an exhaustive list.
 
 To our knowledge, this is currently the only Scala JSON parser that supports parameterized
-types, so now you can use more sophisticated models.
+types, allowing you to design more sophisticated and elegant models.
