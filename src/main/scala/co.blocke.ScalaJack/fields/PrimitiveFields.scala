@@ -13,10 +13,29 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 				sb.append('"')
 				sb.append( labelStr )
 				sb.append("\":\"")
-				sb.append(target.toString)
+				sb.append( clean(target.toString) )
 				sb.append("\",")
 			})
 		true
+	}
+	private def clean( input:String ) = {
+		val buffer = new StringBuffer(input.length())
+		for ( i <- 0 to input.length-1 ) {
+			if ( input.charAt(i) > 256) {
+				buffer.append("\\u").append(Integer.toHexString( input.charAt(i)) )
+			} else buffer.append( input.charAt(i) match {
+				case '\n' => "\\n"
+				case '\t' => "\\t"
+				case '\r' => "\\r"
+				case '\b' => "\\b"
+				case '\f' => "\\f"
+				case '\'' => "\\'"
+				case '\"' => "\\\""
+				case '\\' => "\\\\"
+				case c    => c
+        	})
+        }
+    	buffer.toString
 	}
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.toString

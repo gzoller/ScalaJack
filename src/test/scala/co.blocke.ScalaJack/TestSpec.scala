@@ -5,6 +5,9 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import org.bson.types.ObjectId
 
+import scala.pickling._
+import json._
+
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
@@ -38,6 +41,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = ScalaJack.renderList(stuff)
 				js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
 				ScalaJack.readList[Three](js) should equal( stuff )
+			}
+			it( "Renders and reads strings with embedded chars (newlines, quotes, etc.)" ) {
+				val w = Two("This is a test\nOf the \"Emergency Broadcast \tSystem\"",true)
+				val js = ScalaJack.render(w)
+				js should equal("""{"foo":"This is a test\nOf the \"Emergency Broadcast \tSystem\"","bar":true}""")
+				ScalaJack.read[Two](js) should equal(w)
 			}
 		}
 		describe("Trait Support") {
