@@ -5,9 +5,6 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import org.bson.types.ObjectId
 
-import scala.pickling._
-import json._
-
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
