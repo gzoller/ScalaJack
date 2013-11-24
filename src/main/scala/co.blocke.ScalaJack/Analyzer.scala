@@ -128,17 +128,17 @@ object Analyzer {
 						case lf:ListField      => 
 							lf.subField match {
 								case tf:TypeField => ListField( lf.name, resolveTypeField( tf, argMap ) )
-								case f            => f
+								case _            => lf
 							}
 						case mf:MapField       => 
 							mf.valueField match {
 								case tf:TypeField => MapField( mf.name, resolveTypeField( tf, argMap ) )
-								case f            => f
+								case _            => mf
 							}
 						case of:OptField       =>
 							of.subField match {
 								case tf:TypeField => OptField( of.name, resolveTypeField( tf, argMap ) )
-								case f            => f
+								case _            => of
 							}
 						case tt:TraitProxy     => 
 							val runtimeTypes = typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(tt.name)).typeSignature.toString )
