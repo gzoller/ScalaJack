@@ -1,6 +1,6 @@
 name := "ScalaJack"
 
-version := "1.3"
+version := "1.4"
 
 organization := "co.blocke"
 

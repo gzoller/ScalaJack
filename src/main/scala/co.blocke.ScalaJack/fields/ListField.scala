@@ -4,6 +4,7 @@ package fields
 import com.fasterxml.jackson.core._
 import com.mongodb.casbah.Imports._
 import scala.collection.JavaConversions._
+import scala.language.implicitConversions
 
 case class ListField( name:String, subField:Field ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
@@ -34,6 +35,9 @@ case class ListField( name:String, subField:Field ) extends Field {
 		}
 		true
 	}
+
+	implicit def BasicDBList2MongoDBList(bdbl : BasicDBList) = new MongoDBList(bdbl)
+
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		val listVal = target.asInstanceOf[Iterable[_]]
 		val items = listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }.toArray
@@ -50,6 +54,10 @@ case class ListField( name:String, subField:Field ) extends Field {
 		fieldData.toList
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
-		src.asInstanceOf[MongoDBList].map( item => subField.readValueDB(item, hint)).toList
+		val resolved = src match {
+			case mdbl:MongoDBList => mdbl
+			case bdbl:BasicDBList => MongoDBList(bdbl)
+		}
+		resolved.map( item => subField.readValueDB(item, hint)).toList
 	}
 }
