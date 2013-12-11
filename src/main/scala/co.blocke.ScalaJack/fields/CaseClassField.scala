@@ -67,8 +67,16 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		}
 		rest.map( oneField => {
 			val fval = getFieldValue(oneField,target)
-			if( fval != None )
+			if( fval != None ) 
 				dbo.put( oneField.name, oneField.renderDB(fval, None, hint) ) 
+			/* Needed only if we want to render MongoKeys for an embedded object -- don't think so for now.
+			if( fval != None ) {
+				oneField match {
+					case ccf:CaseClassField => dbo.put( oneField.name, ccf.renderClassDB(fval, hint))
+					case _ => dbo.put( oneField.name, oneField.renderDB(fval, None, hint) ) 
+				}
+			}
+			*/
 		})
 		dbo
 	}
@@ -127,6 +135,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		ScalaJack.poof( this, fieldData.toMap )				
 	}
 
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = 
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
 		readClassDB( src.asInstanceOf[DBObject], hint )
+	}
 }

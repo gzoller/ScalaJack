@@ -54,10 +54,16 @@ case class ListField( name:String, subField:Field ) extends Field {
 		fieldData.toList
 	}
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
-		val resolved = src match {
-			case mdbl:MongoDBList => mdbl
-			case bdbl:BasicDBList => MongoDBList(bdbl)
+		// Dumb down to BasicDBList to avoid double-creation/wrapping of value from database
+		val resolved = (src match {
+			case mdbl:MongoDBList => mdbl.underlying
+			case bdbl:BasicDBList => bdbl
+		}).iterator
+		val resList = scala.collection.mutable.ListBuffer.empty[Any]
+		while( resolved.hasNext ) {
+			val item = resolved.next
+			resList += subField.readValueDB(item,hint)
 		}
-		resolved.map( item => subField.readValueDB(item, hint)).toList
+		resList.toList
 	}
 }

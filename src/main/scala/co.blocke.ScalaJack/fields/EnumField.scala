@@ -26,4 +26,5 @@ case class EnumField( name:String, enum:Enumeration ) extends Field {
 		jp.nextToken
 		v
 	}
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = enum.withName( src.toString )
 }
