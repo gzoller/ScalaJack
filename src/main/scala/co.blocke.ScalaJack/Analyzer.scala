@@ -329,7 +329,7 @@ object Analyzer {
 								else 
 									ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), Analyzer._apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 							} else
-								throw new IllegalArgumentException("Unknown/unsupported data type: "+fullName)
+								throw new IllegalArgumentException("Field "+fieldName+" is of unknown/unsupported data type: "+fullName)
 						}
 					} 
 				}

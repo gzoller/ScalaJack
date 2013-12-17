@@ -29,7 +29,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 				case '\r' => "\\r"
 				case '\b' => "\\b"
 				case '\f' => "\\f"
-				case '\'' => "\\'"
+				//case '\'' => "\\'"   <- Don't need this one.  Commented out for now...for deletion later after "settling"
 				case '\"' => "\\\""
 				case '\\' => "\\\\"
 				case c    => c
