@@ -108,8 +108,10 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			jp.nextToken // scan to value
 			if( fieldName == hint ) jp.nextToken
 			else {
-				val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint) )
-				fieldData += fd
+				if( iFields.contains(fieldName) ) {
+					val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint) )
+					fieldData += fd
+				}
 			}
 		}
 		jp.nextToken

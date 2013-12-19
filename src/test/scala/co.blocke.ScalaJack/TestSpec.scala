@@ -4,6 +4,7 @@ package test
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import org.bson.types.ObjectId
+import com.mongodb.casbah.Imports._
 
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
@@ -20,6 +21,14 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js should equal( """{"name":"Greg","stuff":["a","b"],"more":[{"foo":"x","bar":false},{"foo":"y","bar":true}],"nest":{"foo":"Nest!","bar":true},"maybe":"wow","mymap":{"hey":17,"you":21},"flipflop":true,"big":99123986123,"num":"C","age":46}""" )
 				val b = ScalaJack.read[One](js)
 				b should equal( data )
+			}
+			it( "Should ignore extra fields in the inbound JSON" ) {
+				val js = """{"foo":"hey","bogus":19,"bar":true}"""
+				ScalaJack.read[Two](js) should equal( Two("hey",true) )
+			}
+			it( "Should ignore extra fields in the inbound database objects" ) {
+				val dbo = MongoDBObject( "foo"->"hey", "bogus"->19, "bar"-> true )
+				ScalaJack.readDB[Two](dbo) should equal( Two("hey",true) )
 			}
 			it( "Handle empty Lists & Maps") {
 				val four = Four(List[String](), Map[String,Int]())
