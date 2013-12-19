@@ -99,19 +99,25 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
+// println("Read class fieldname: "+fieldName)
+// println("TOKEN: "+jp.getCurrentToken)
 	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
 		// Token now sitting on '{' so advance and read list
 		jp.nextToken  // consume '{'
 		val fieldData = scala.collection.mutable.Map[String,Any]()
 		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
 			val fieldName = jp.getCurrentName
-			jp.nextToken // scan to value
-			if( fieldName == hint ) jp.nextToken
-			else {
-				if( iFields.contains(fieldName) ) {
+			if( iFields.contains(fieldName) ) {
+				jp.nextToken // scan to value
+				if( fieldName == hint ) jp.nextToken
+				else {
 					val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint) )
 					fieldData += fd
 				}
+			}
+			else {
+				jp.skipChildren
+				jp.nextToken
 			}
 		}
 		jp.nextToken

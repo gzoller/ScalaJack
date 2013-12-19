@@ -103,7 +103,7 @@ object ScalaJack {
 	 * ScalaJack calls poof to build the case class from the Map.
 	 */
 	private[scalajack] def poof( classField:CaseClassField, data:Map[String,Any] ) : Any = {
-		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
+		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(throw new IllegalArgumentException("Missing required field "+f.name)) }.toArray.asInstanceOf[Array[AnyRef]]
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
 	}
 }
