@@ -8,8 +8,8 @@ import fields._
 
 object Analyzer {
 
-	val readyToEat = new TrieMap[String,Field]()
-	val protoRepo  = new TrieMap[String,Field]()
+	private val readyToEat = new TrieMap[String,Field]()
+	private val protoRepo  = new TrieMap[String,Field]()
 
 	private val ru           = scala.reflect.runtime.universe
 	private val mongoType    = ru.typeOf[MongoKey]
@@ -35,6 +35,51 @@ object Analyzer {
 		case "String"  => "java.lang.String"
 		case x         => x
 	}
+
+
+	private[scalajack] def apply[T]( cname:String, args:List[String] = List[String]() )(implicit m:Manifest[T]) : Field = {
+		// Normally we get the runtime type args from the manifest...except for a parameterized trait.  In this case
+		// there is another level of type param indirection, so we pass in the runtime types, which were already resolved
+		// when the TypeField was resolved.
+		val rtArgs = {
+			if( args.length == 0 )
+				m.typeArguments.map(_.toString)
+			else 
+				args
+		}
+		val rtKeyName = cname + rtArgs.mkString("[",",","]")
+		val analyzer = Analyzer()
+		analyzer._apply( cname, Some(rtKeyName) ) match {
+			case ccp : CaseClassProto => 
+				val argMap = ccp.typeArgs.zip( rtArgs ).toMap
+				analyzer.resolve( ccp, argMap, rtKeyName )
+			case ttp : TraitProto =>
+				val argMap = ttp.typeArgs.zip( rtArgs ).toMap
+				analyzer.resolve( ttp, argMap, rtKeyName )
+			case f                     => f
+		}
+	}
+}
+
+case class Analyzer() {
+
+	private def _apply( cname:String, rtName:Option[String] = None ) : Field = {
+		val symbol   = currentMirror.classSymbol(Class.forName(cname))
+		val typeArgs = symbol.typeParams.map( tp => tp.name.toString)
+		val staticName  = cname + typeArgs.mkString("[",",","]")
+ 		Analyzer.readyToEat.get( rtName.getOrElse(staticName) ).orElse( Analyzer.protoRepo.get( staticName ) ).orElse({
+			val v = staticReflect( "", symbol.typeSignature, List[String](), { if(isValueClass(symbol)) true else false } )
+			v match {
+				case ccp:CaseClassProto => Analyzer.protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
+				case ccf:CaseClassField => Analyzer.readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
+				case ttp:TraitProto     => Analyzer.protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
+				case ttf:TraitField     => Analyzer.readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
+				case _ =>
+			}
+			Some(v)
+		}).get
+	}
+
 	private def typeMap( dt:String ) = { 
 		dt match {
 			case "String"        | "java.lang.String" => (n:String) => StringField( n, false )
@@ -48,9 +93,9 @@ object Analyzer {
 					val pos = t.indexOf('[')
 					val applied = { 
 						if( pos < 0 )
-							_apply( convertType(t) ) 
+							_apply( Analyzer.convertType(t) ) 
 						else 
-							_apply( convertType(t.take(pos)), Some(t))
+							_apply( Analyzer.convertType(t.take(pos)), Some(t))
 					} 
 					applied match {
 						case vc :ValueClassField        => vc.copy(name = n)
@@ -62,11 +107,11 @@ object Analyzer {
 						// OK, this one's wierd... It supports a parameter that is itself a parameterized type Foo[Bar[Int]].  Sick, right?
 						// Note one limitation: The parameter parsing only goes 1-level, so Foo[Bar[T]] wouldn't likely work.
 						case cp :CaseClassProto         => {
-							val argMap = cp.typeArgs.zip( typeSplit( t ) ).toMap
+							val argMap = cp.typeArgs.zip( Analyzer.typeSplit( t ) ).toMap
 							resolve(cp, argMap, t, Some(n))  // resolve returns CaseClassField
 						}
 						case tp :TraitProto         => {
-							val argMap = tp.typeArgs.zip( typeSplit( t ) ).toMap
+							val argMap = tp.typeArgs.zip( Analyzer.typeSplit( t ) ).toMap
 							resolve(tp, argMap, t, Some(n))  // resolve returns TraitField
 						}
 					}
@@ -74,55 +119,16 @@ object Analyzer {
 		}
 	}
 
-	private[scalajack] def apply[T]( cname:String, args:List[String] = List[String]() )(implicit m:Manifest[T]) : Field = {
-		// Normally we get the runtime type args from the manifest...except for a parameterized trait.  In this case
-		// there is another level of type param indirection, so we pass in the runtime types, which were already resolved
-		// when the TypeField was resolved.
-		val rtArgs = {
-			if( args.length == 0 )
-				m.typeArguments.map(_.toString)
-			else 
-				args
-		}
-		val rtKeyName = cname + rtArgs.mkString("[",",","]")
-		_apply( cname, Some(rtKeyName) ) match {
-			case ccp : CaseClassProto => 
-				val argMap = ccp.typeArgs.zip( rtArgs ).toMap
-				resolve( ccp, argMap, rtKeyName )
-			case ttp : TraitProto =>
-				val argMap = ttp.typeArgs.zip( rtArgs ).toMap
-				resolve( ttp, argMap, rtKeyName )
-			case f                     => f
-		}
-	}
-
-	private def _apply( cname:String, rtName:Option[String] = None ) : Field = {
-		val symbol   = currentMirror.classSymbol(Class.forName(cname))
-		val typeArgs = symbol.typeParams.map( tp => tp.name.toString)
-		val staticName  = cname + typeArgs.mkString("[",",","]")
- 		readyToEat.get( rtName.getOrElse(staticName) ).orElse( protoRepo.get( staticName ) ).orElse({
-			val v = staticReflect( "", symbol.typeSignature, List[String](), { if(isValueClass(symbol)) true else false } )
-			v match {
-				case ccp:CaseClassProto => protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
-				case ccf:CaseClassField => readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
-				case ttp:TraitProto     => protoRepo.put(staticName, v) // Parameterized type goes into protoRepo
-				case ttf:TraitField     => readyToEat.put(rtName.getOrElse(staticName), v)    // Simple case: No type args
-				case _ =>
-			}
-			Some(v)
-		}).get
-	}
-
 	private def resolve( field:Field, argMap:Map[String,String], keyName:String, fieldName:Option[String] = None ) : Field = {
 		field match {
 			//case ccf : CaseClassField => ccf
 			case ccp : CaseClassProto => {
-				readyToEat.get( keyName ).fold( {
+				Analyzer.readyToEat.get( keyName ).fold( {
 					// Not there... resolve it
 					val fields = ccp.fields.map( _ match {
 						case tf:TypeField      => resolveTypeField( tf, argMap )
 						case cp:CaseClassProxy => 
-							val runtimeTypes = typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(cp.name)).typeSignature.toString )
+							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(cp.name)).typeSignature.toString )
 							val symMap = cp.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( cp.proto, symMap, "_bogus_", Some(cp.name))
 						case lf:ListField      => 
@@ -141,19 +147,19 @@ object Analyzer {
 								case _            => of
 							}
 						case tt:TraitProxy     => 
-							val runtimeTypes = typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(tt.name)).typeSignature.toString )
+							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(tt.name)).typeSignature.toString )
 							val symMap = tt.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( tt.proto, symMap, "_bogus_", Some(tt.name))
 						case f                 => f
 						})
 					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
 					if( keyName != "_bogus_")
-						readyToEat.put( keyName, cf )
+						Analyzer.readyToEat.put( keyName, cf )
 					cf
 				})( c => c.asInstanceOf[CaseClassField] )
 			}
 			case tt : TraitProto => 
-				readyToEat.get( keyName ).fold (
+				Analyzer.readyToEat.get( keyName ).fold (
 					TraitField( fieldName.getOrElse(""), tt.typeArgs.map( a => argMap(a)) )
 				)( c => c.asInstanceOf[TraitField] )
 			case f => f
@@ -165,15 +171,15 @@ object Analyzer {
 		// Do something cool here if argMap(tf.symbol) is a collection, otherwise by default it tries to handle
 		// things as a case class, which is _not_ what we want!
 		if( mappedType startsWith "scala.collection.immutable.List" ) {
-			val xtractTypes(innerSymbol) = mappedType
+			val Analyzer.xtractTypes(innerSymbol) = mappedType
 			ListField( tf.name, typeMap( innerSymbol )("") )
 		}
 		else if( mappedType startsWith "scala.collection.immutable.Map" ) {
-			val mapTypes = typeSplit( mappedType )
+			val mapTypes = Analyzer.typeSplit( mappedType )
 			MapField( tf.name, typeMap(mapTypes(1))("") )
 		}
 		else if( mappedType.startsWith("scala.Some") || mappedType.startsWith("scala.Option") ) {
-			val xtractTypes(innerSymbol) = mappedType
+			val Analyzer.xtractTypes(innerSymbol) = mappedType
 			OptField( tf.name, typeMap( innerSymbol )("") )
 		}
 		else
@@ -243,7 +249,7 @@ object Analyzer {
 					else {
 						val staticName = fullName + typeArgs.mkString("[",",","]")
 						val tp = TraitProto( typeArgs )
-						val proto = protoRepo.get( staticName ).fold( { protoRepo.put(staticName,tp); tp } )( p => p.asInstanceOf[TraitProto] )
+						val proto = Analyzer.protoRepo.get( staticName ).fold( { Analyzer.protoRepo.put(staticName,tp); tp } )( p => p.asInstanceOf[TraitProto] )
 						TraitProxy( fieldName, proto )
 					}
 				}
@@ -273,7 +279,7 @@ object Analyzer {
 							TypeField( c.name.toString, fieldTypeName ) 
 						} else {
 							val symbol = {
-								if( typeList.contains(fieldTypeName) || fieldTypeName.endsWith(".Value") ) 
+								if( Analyzer.typeList.contains(fieldTypeName) || fieldTypeName.endsWith(".Value") ) 
 									c
 								else {
 									val clazz = Class.forName(fieldTypeName)
@@ -284,7 +290,7 @@ object Analyzer {
 								case ccf:CaseClassField => ccf
 								case ccp:CaseClassProto => 
 									val staticName = fullName + typeArgs.mkString("[",",","]")
-									val useProto = protoRepo.get( staticName ).fold( { protoRepo.put(staticName,ccp); ccp } )( p => p.asInstanceOf[CaseClassProto] )
+									val useProto = Analyzer.protoRepo.get( staticName ).fold( { Analyzer.protoRepo.put(staticName,ccp); ccp } )( p => p.asInstanceOf[CaseClassProto] )
 									CaseClassProxy(c.name.toString, useProto)
 								case f => f
 							}
@@ -325,9 +331,9 @@ object Analyzer {
 									case t         => t
 								}
 								if( inContainer )
-									ValueClassField( fieldName, mongoAnno.contains(fieldName), Analyzer._apply( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
+									ValueClassField( fieldName, mongoAnno.contains(fieldName), _apply( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 								else 
-									ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), Analyzer._apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
+									ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), _apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 							} else
 								throw new IllegalArgumentException("Field "+fieldName+" is of unknown/unsupported data type: "+fullName)
 						}
