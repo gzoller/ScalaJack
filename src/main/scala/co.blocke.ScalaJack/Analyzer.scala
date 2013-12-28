@@ -343,7 +343,7 @@ case class Analyzer() {
 	}
 	
 	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
-	private def isValueClass( sym:ClassSymbol ) = sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension"))
+	private def isValueClass( sym:ClassSymbol ) = this.synchronized{ sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension")) }
 
 	//--------------- Extended JSON support
 
