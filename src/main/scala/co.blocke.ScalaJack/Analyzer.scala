@@ -4,6 +4,7 @@ import reflect.runtime.currentMirror
 import reflect.runtime.universe._
 import scala.collection.concurrent.TrieMap
 import scala.reflect.NameTransformer._
+import scala.util.Try
 import fields._
 
 object Analyzer {
@@ -343,7 +344,7 @@ case class Analyzer() {
 	}
 	
 	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
-	private def isValueClass( sym:ClassSymbol ) = this.synchronized{ sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension")) }
+	private def isValueClass( sym:ClassSymbol ) = Try( sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension")) ).toOption.getOrElse(false)
 
 	//--------------- Extended JSON support
 

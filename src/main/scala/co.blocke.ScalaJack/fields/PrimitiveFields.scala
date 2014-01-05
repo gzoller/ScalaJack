@@ -7,7 +7,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
-				sb.append(target)
+				sb.append( clean(target.toString) )
 				sb.append('"')
 			})((labelStr) => {
 				sb.append('"')
