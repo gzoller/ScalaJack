@@ -266,7 +266,10 @@ case class Analyzer() {
 					val companionClazz = Class.forName(fullName+"$")
 					val companionSymbol = currentMirror.classSymbol(companionClazz)
 					val caseObj = companionClazz.getField(MODULE_INSTANCE_NAME).get(null)
-					val applyMethod = companionClazz.getMethods.find( _.getName == "apply" ).get
+					// The last condition about 'public java.lang.Object' handles a strange case where there are two viable constructors when a class has
+					// data members with default values.  The second one is a dud, however--all inputs and returns are java.lang.Object, which causes
+					// bad things to happen later.  We must choose the "real" constructor.
+					val applyMethod = companionClazz.getMethods.find( c => c.getName == "apply" && !c.toString.startsWith("public java.lang.Object") ).get
 					
 					// Build the field list
 					val constructor = ctype.members.collectFirst {
