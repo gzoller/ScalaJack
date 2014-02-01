@@ -198,7 +198,7 @@ case class Analyzer() {
 		val fullName = ctype.typeSymbol.fullName.toString
 
 		fullName match {
-			case "scala.collection.immutable.List" =>
+			case "scala.collection.immutable.List" | "List" =>
 				ctype match {
 					case TypeRef(pre, sym, args) => 
 						if( caseClassParams.contains(args(0).toString) )
@@ -277,7 +277,15 @@ case class Analyzer() {
 							if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
 					}.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
 					val fields = constructor.paramss.head.map( c => {
-						val fieldTypeName = c.typeSignature.typeConstructor.toString
+						// This little piece of field name re-mapping is needed to handle when a user's program is started
+						// with 'java' vs 'scala' from the command line, which affects class paths.  When started with 'scala'
+						// you get the correct "scala.List" or "scala.Option" here, but when started with 'java' for whatever 
+						// reason you only get "List" or "Option", which is incorrect and will crash.  So we correct things here if needed.
+						val fieldTypeName = c.typeSignature.typeConstructor.toString match {
+							case "List"   => "scala.List"
+							case "Option" => "scala.Option"
+							case x        => x
+						}
 						if( typeArgs.contains( fieldTypeName ) ) {
 							// Placeholder for simple type having type of class' parameter, e.g. case class[X]( stuff:X )
 							TypeField( c.name.toString, fieldTypeName ) 
