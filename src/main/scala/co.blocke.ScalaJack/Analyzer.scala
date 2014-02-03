@@ -355,7 +355,9 @@ case class Analyzer() {
 	}
 	
 	// Pulled this off Stackoverflow... Not sure if it's 100% effective, but seems to work!
-	private def isValueClass( sym:ClassSymbol ) = Try( sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension")) ).toOption.getOrElse(false)
+	private def isValueClass( sym:ClassSymbol ) = sym.isDerivedValueClass
+		// Deprecated way to detect value class... remove if the above line seems to work reliably.
+		// Try( sym.asType.companionSymbol.typeSignature.members.exists(_.name.toString.endsWith("$extension")) ).toOption.getOrElse(false)
 
 	//--------------- Extended JSON support
 
