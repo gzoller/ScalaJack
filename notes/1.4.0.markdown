@@ -1,0 +1,1 @@
+Bugfix release.  Several subtle but signficiant bugs fixed, including a new way of detecting value classes.
