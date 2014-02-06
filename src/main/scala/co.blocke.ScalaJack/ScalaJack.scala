@@ -95,6 +95,30 @@ object ScalaJack {
 		ListField( "", Analyzer(m.runtimeClass.getName) ).readValueDB(src,hint).asInstanceOf[List[T]]
 	}
 
+	def view[T]( master:Any )(implicit m:Manifest[T]) : T = {
+		val viewClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]
+		val masterData = master.getClass.getDeclaredFields
+		val args = viewClassField.fields.collect{ case f => masterData.find(_.getName == f.name).map( tf => {
+			tf.setAccessible(true)
+			tf.get(master)
+			}) }.flatten.toArray.asInstanceOf[Array[AnyRef]]
+		viewClassField.applyMethod.invoke( viewClassField.caseObj, args:_* ).asInstanceOf[T]
+	}
+
+	def spliceInto[T,U]( view:T, master:U )(implicit m:Manifest[U]) : U = {
+		val masterClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]
+		val viewData = view.getClass.getDeclaredFields
+		val masterData = master.getClass.getDeclaredFields
+		val args = masterClassField.fields.collect{ case f => viewData.find(_.getName == f.name).map( tf => {
+				tf.setAccessible(true)
+				tf.get(view)
+			}).orElse(masterData.find(_.getName == f.name).map( tf => {
+				tf.setAccessible(true)
+				tf.get(master)
+			}))}.flatten.toArray.asInstanceOf[Array[AnyRef]]
+		masterClassField.applyMethod.invoke( masterClassField.caseObj, args:_* ).asInstanceOf[U]
+	}
+
 	/**
 	 * Magically create an instance of a case class given a map of name->value parameters.
 	 * (Reflects on the apply method of the case class' companion object.)

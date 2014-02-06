@@ -36,7 +36,21 @@ case class One(
 	big      : Long,
 	num      : Num.Value,
 	age      : Int
-    )
+) {
+	val foo  : String = "yikes!"
+}
+
+case class OneSub1(
+	name     : String,
+	big      : Long,
+	maybe    : Option[String]
+	)
+
+case class OneSub2(
+	name     : String,
+	flipflop : Boolean,
+	mymap    : Map[String,Int]
+	)
 
 case class Two(
 	foo      : String,

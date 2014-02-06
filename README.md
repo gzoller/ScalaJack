@@ -124,6 +124,37 @@ case class Sample( _id:ObjectId, stuff:Int )
 Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no fancy
 JodaTime support as found in other libraries, although this may be considered for a future release.
 
+# View/SpliceInto Feature
+
+If you've ever had the need to support view "projections" to/from a large master object, these
+functions will help.  Below is an obviously rediculous example to demonstrate the behavior.
+
+```scala
+case class User(
+   name:String,
+   age:Int,
+   password:String,  // don't want password or ssn going up to a GUI
+   ssn:String
+)
+
+case class SafeUser(
+   name:String,
+   age:Int
+)
+
+val safe = ScalaJack.view[SafeUser]( fullUser ) // fullUser is of type User, safe will be SafeUser
+```
+
+Note that the field names of the view class (SafeUser above) must be exactly the same as the
+corresponding fields of the master class, and you shouldn't have extra fields that aren't
+present somewhere in the master class.  Order, however, is not important.
+
+You can also go the other way...incorporating data from a view object back into a master object.
+
+```scala
+val updatedUser = ScalaJack.spliceInto( user, newSafeUser ) // updatedUser will be of type User
+```
+
 # Assumptions
 
 - Case classes (or traits for case classes) only
