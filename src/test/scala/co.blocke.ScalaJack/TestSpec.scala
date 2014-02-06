@@ -745,7 +745,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		}
 		it("Must spliceWith") {
 			val x = ScalaJack.view[OneSub1](data)
-			val y : One = ScalaJack.spliceInto[OneSub1,One](x.copy(name="Fred", big=2L),data)
+			val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
 			y should equal( data.copy(name="Fred", big=2L) )
 		}
 	}
