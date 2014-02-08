@@ -1,6 +1,6 @@
 name := "ScalaJack"
 
-version := "1.5"
+version := "1.5.1"
 
 organization := "co.blocke"
 
@@ -12,7 +12,7 @@ resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
              "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases")
 
 libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.2.3",
-                            "org.scala-lang"             % "scala-compiler" % "2.10.2",
+                            "org.scala-lang"             % "scala-compiler" % "2.10.3",
                             "org.mongodb"                %% "casbah"        % "2.6.4",
                             "org.scalatest"              % "scalatest_2.10" % "2.0" % "test")
 

@@ -42,22 +42,30 @@ object Analyzer {
 		// Normally we get the runtime type args from the manifest...except for a parameterized trait.  In this case
 		// there is another level of type param indirection, so we pass in the runtime types, which were already resolved
 		// when the TypeField was resolved.
-		val rtArgs = {
-			if( args.length == 0 )
-				m.typeArguments.map(_.toString)
-			else 
-				args
-		}
-		val rtKeyName = cname + rtArgs.mkString("[",",","]")
-		val analyzer = Analyzer()
-		analyzer._apply( cname, Some(rtKeyName) ) match {
-			case ccp : CaseClassProto => 
-				val argMap = ccp.typeArgs.zip( rtArgs ).toMap
-				analyzer.resolve( ccp, argMap, rtKeyName )
-			case ttp : TraitProto =>
-				val argMap = ttp.typeArgs.zip( rtArgs ).toMap
-				analyzer.resolve( ttp, argMap, rtKeyName )
-			case f                     => f
+
+		// Note about this 'synchronized': It shouldn't be needed!  Scala 2.10.x series has a thread-safety issue with
+		// runtime reflection that (they say) has been corrected in 2.11.x.  For now we make sure only one caller at a time
+		// happens.  Fixes the problem favoring stability/reliability in favor of performance. :-(
+		// Confirm and remove whenever this code goes to 2.11.x!
+		// Read: http://docs.scala-lang.org/overviews/reflection/thread-safety.html
+		ru.synchronized {
+			val rtArgs = {
+				if( args.length == 0 )
+					m.typeArguments.map(_.toString)
+				else 
+					args
+			}
+			val rtKeyName = cname + rtArgs.mkString("[",",","]")
+			val analyzer = Analyzer()
+			analyzer._apply( cname, Some(rtKeyName) ) match {
+				case ccp : CaseClassProto => 
+					val argMap = ccp.typeArgs.zip( rtArgs ).toMap
+					analyzer.resolve( ccp, argMap, rtKeyName )
+				case ttp : TraitProto =>
+					val argMap = ttp.typeArgs.zip( rtArgs ).toMap
+					analyzer.resolve( ttp, argMap, rtKeyName )
+				case f                     => f
+			}
 		}
 	}
 }

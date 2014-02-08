@@ -12,6 +12,7 @@ Some differentiating features:
 - Support for traits (e.g. a data value of type trait Animal will resolve implementing classes Dog and Cat)
 - Render/read custom (dynamic!) JSON for value classes
 - Supports type parameters for case classes and traits
+- View/SpliceInto feature for "lite" versions of larger objects
 - Very fast!
 
 Online at:

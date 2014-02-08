@@ -1,0 +1,7 @@
+Ugly-bug fix in 1.5.1.  This is one of those really nasty rare, but catestrohpic bugs we all
+hate.  ScalaJack will blow up with incomprehensible Scala-internal exceptions on rare occasion.
+The cause is that Scala 2.10.x is not thread-safe on runtime reflection, which ScalaJack uses
+heavily.  Read more: http://docs.scala-lang.org/overviews/reflection/thread-safety.html
+
+So to trade a little performance for solid reliability I've synchronized the Analyzer.
+Once we move the code to 2.11.x this *shouldld* be unnecessary.
