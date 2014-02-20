@@ -64,7 +64,8 @@ object Analyzer {
 				case ttp : TraitProto =>
 					val argMap = ttp.typeArgs.zip( rtArgs ).toMap
 					analyzer.resolve( ttp, argMap, rtKeyName )
-				case f                     => f
+				case f                     => 
+				f
 			}
 		}
 	}

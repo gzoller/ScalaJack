@@ -45,6 +45,7 @@ case class ListField( name:String, subField:Field ) extends Field {
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
 		// Token now sitting on '[' so advance and read list
+		if( jp.getCurrentToken != JsonToken.START_ARRAY) throw new IllegalArgumentException("Expected '['")
 		jp.nextToken
 		val fieldData = scala.collection.mutable.ListBuffer[Any]()
 		while( jp.getCurrentToken != JsonToken.END_ARRAY ) {

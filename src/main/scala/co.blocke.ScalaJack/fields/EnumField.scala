@@ -22,6 +22,7 @@ case class EnumField( name:String, enum:Enumeration ) extends Field {
 		target.toString
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_STRING) throw new IllegalArgumentException("Expected VALUE_STRING (enum) and saw "+jp.getCurrentToken)
 		val v = enum.withName(jp.getValueAsString)
 		jp.nextToken
 		v

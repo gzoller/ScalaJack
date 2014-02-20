@@ -55,6 +55,7 @@ case class MapField( name:String, valueField:Field ) extends Field {
 		(fieldName, vf.readValue( jp, ext, hint ))
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '{'")
 		// Token now sitting on '{' so advance and read list
 		jp.nextToken
 		val fieldData = scala.collection.mutable.Map[Any,Any]()

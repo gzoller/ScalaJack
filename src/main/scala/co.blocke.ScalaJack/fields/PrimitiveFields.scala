@@ -41,6 +41,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 		target.toString
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_STRING) throw new IllegalArgumentException("Expected VALUE_STRING and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsString
 		jp.nextToken
 		v
@@ -50,6 +51,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 
 case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String)(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT) throw new IllegalArgumentException("Expected VALUE_STRING and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsInt
 		jp.nextToken
 		v
@@ -79,6 +81,7 @@ case class CharField( name:String, override val hasMongoAnno:Boolean ) extends F
 		target.asInstanceOf[Char]
 	}
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_STRING) throw new IllegalArgumentException("Expected VALUE_STRING and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsString.charAt(0)
 		jp.nextToken
 		v
@@ -88,6 +91,7 @@ case class CharField( name:String, override val hasMongoAnno:Boolean ) extends F
 
 case class LongField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT) throw new IllegalArgumentException("Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsLong
 		jp.nextToken
 		v
@@ -100,6 +104,7 @@ case class LongField( name:String, override val hasMongoAnno:Boolean ) extends F
 
 case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_FLOAT) throw new IllegalArgumentException("Expected VALUE_FLOAT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsDouble.toFloat
 		jp.nextToken
 		v
@@ -112,6 +117,7 @@ case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends 
 
 case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_FLOAT) throw new IllegalArgumentException("Expected VALUE_FLOAT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsDouble
 		jp.nextToken
 		v
@@ -124,6 +130,7 @@ case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends
 
 case class BoolField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_TRUE && jp.getCurrentToken != JsonToken.VALUE_FALSE ) throw new IllegalArgumentException("Expected boolean and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsBoolean
 		jp.nextToken
 		v

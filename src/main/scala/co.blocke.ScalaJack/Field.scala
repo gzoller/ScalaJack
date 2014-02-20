@@ -26,7 +26,7 @@ trait Field {
 }
 
 trait ClassOrTrait {
-	private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any
+	private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any
 
 	private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any
 	private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any

@@ -25,13 +25,14 @@ case class TraitField( name:String, typeArgs:List[String] = List[String]() ) ext
 
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
-	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '{'")
 		jp.nextToken  // consume '{'
 		val fieldData = scala.collection.mutable.Map[String,Any]()
 		// read hint
 		jp.nextToken // skip _hint label
 		val traitClassName = jp.getValueAsString
-		Analyzer(traitClassName, typeArgs).asInstanceOf[CaseClassField].readClass( jp, ext, hint )
+		Analyzer(traitClassName, typeArgs).asInstanceOf[CaseClassField].readClass( jp, ext, hint, true )
 	}
 
 	override private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any = {

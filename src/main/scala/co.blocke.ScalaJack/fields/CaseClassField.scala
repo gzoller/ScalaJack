@@ -99,9 +99,10 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
-	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
+		if( !fromTrait && jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '['")
 		// Token now sitting on '{' so advance and read list
-		jp.nextToken  // consume '{'
+		if( !fromTrait) jp.nextToken  // consume '{'
 		val fieldData = scala.collection.mutable.Map[String,Any]()
 		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
 			val fieldName = jp.getCurrentName
