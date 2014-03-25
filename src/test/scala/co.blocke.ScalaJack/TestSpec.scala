@@ -54,6 +54,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js should equal("""{"foo":"This is a test\nOf the \"Emergency Broadcast \tSystem\"","bar":true}""")
 				ScalaJack.read[Two](js) should equal(w)
 			}
+			it( "Handles a case class of all-optional values, that happen to be None") {
+				val ao = AllOpt(None,None,None)
+				val js = ScalaJack.render(ao)
+				js should equal("""{}""")
+				ScalaJack.read[AllOpt](js) should equal(ao)
+			}
 		}
 		describe("Trait Support") {
 			it( "Traits with subclasses" ) {

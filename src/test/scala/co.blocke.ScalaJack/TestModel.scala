@@ -25,6 +25,12 @@ case class BagMap[Y](i:Int, items:Map[String,Y])
 case class BagOpt[Y](i:Int, maybe:Option[Y])
 case class Truck[Z]( s:Z, t:Two )
 
+case class AllOpt(
+	one      : Option[String],
+	two      : Option[String],
+	three    : Option[String]
+	)
+
 case class One( 
 	name     : String, 
 	stuff    : List[String],

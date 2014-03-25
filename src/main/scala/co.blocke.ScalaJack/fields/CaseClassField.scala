@@ -27,7 +27,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 			val fval = targetField.get(target)
 			oneField.render( sb2, fval, Some(oneField.name), ext, hint )
 		})
-		if( sb2.charAt(sb2.length-1) == ',' )
+		if( sb2.length > 0 && sb2.charAt(sb2.length-1) == ',' )
 			sb2.deleteCharAt(sb2.length-1)
 		label.fold({
 				sb.append('{')

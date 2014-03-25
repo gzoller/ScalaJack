@@ -9,7 +9,7 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack"   % "1.5.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "1.5.3")
 
 And if necessary add the OSS repo to your resolvers:
 
