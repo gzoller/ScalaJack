@@ -23,7 +23,7 @@ case class TraitField( name:String, typeArgs:List[String] = List[String]() ) ext
 		Analyzer(target.getClass.getName, typeArgs).renderDB( target, label, hint, true )
 	}
 
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
 	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '{'")
@@ -39,7 +39,7 @@ case class TraitField( name:String, typeArgs:List[String] = List[String]() ) ext
 		Analyzer( src.get( hint ).asInstanceOf[String], typeArgs ).asInstanceOf[CaseClassField].readClassDB( src, hint )
 	}
 
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		Analyzer( src.asInstanceOf[DBObject].get( hint ).asInstanceOf[String], typeArgs ).asInstanceOf[CaseClassField].readClassDB( src.asInstanceOf[DBObject], hint )
 	}
 }

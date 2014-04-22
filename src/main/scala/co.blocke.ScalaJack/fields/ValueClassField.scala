@@ -26,13 +26,13 @@ case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolea
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = 
 		valueType.renderDB( target, label, hint )
 
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = 
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = 
 		if( ext && extJson.isDefined )
 			extJson.get.fromJson(valueType, jp, ext, hint)
 		else
-			valueType.readValue(jp,ext,hint)
+			valueType.readValue(jp,ext,hint, cc)
 
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = valueType.readValueDB(src,hint)
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = valueType.readValueDB(src,hint,cc)
 }
 
 //----------------------------------------------------------------------------------
@@ -67,16 +67,16 @@ case class ValueClassField( name:String, override val hasMongoAnno:Boolean, valu
 		valueType.renderDB( value, label, hint )
 	}
 
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		val value = { if( ext && extJson.isDefined )
 				extJson.get.fromJson(valueType, jp, ext, hint)
 			else
-				valueType.readValue(jp,ext,hint)
+				valueType.readValue(jp,ext,hint,cc)
 		}
 		constructor.newInstance( value.asInstanceOf[Object] )
 	}
 
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
-		constructor.newInstance( valueType.readValueDB(src,hint).asInstanceOf[Object] )
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+		constructor.newInstance( valueType.readValueDB(src,hint,cc).asInstanceOf[Object] )
 	}
 }

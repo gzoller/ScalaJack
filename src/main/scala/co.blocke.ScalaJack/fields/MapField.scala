@@ -49,23 +49,23 @@ case class MapField( name:String, valueField:Field ) extends Field {
 			}}
 		mo
 	}
-	private def readMapField[T]( jp:JsonParser, vf:Field, ext:Boolean, hint:String )(implicit m:Manifest[T]) : (Any,Any) = {
+	private def readMapField[T]( jp:JsonParser, vf:Field, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : (Any,Any) = {
 		val fieldName = jp.getCurrentName
 		jp.nextToken
-		(fieldName, vf.readValue( jp, ext, hint ))
+		(fieldName, vf.readValue( jp, ext, hint, cc ))
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
-		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '{'")
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected '{'")
 		// Token now sitting on '{' so advance and read list
 		jp.nextToken
 		val fieldData = scala.collection.mutable.Map[Any,Any]()
 		while( jp.getCurrentToken != JsonToken.END_OBJECT ) 
-			fieldData += readMapField( jp, valueField, ext, hint )
+			fieldData += readMapField( jp, valueField, ext, hint, cc )
 		jp.nextToken
 		fieldData.toMap
 	}
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		val dbo = src.asInstanceOf[DBObject]
-		dbo.keySet.map( key => (key,valueField.readValueDB(dbo.get(key), hint)) ).toMap
+		dbo.keySet.map( key => (key,valueField.readValueDB(dbo.get(key), hint, cc)) ).toMap
 	}
 }

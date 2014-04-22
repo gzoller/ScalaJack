@@ -31,6 +31,14 @@ case class AllOpt(
 	three    : Option[String]
 	)
 
+case class PrimitiveLists(
+	ints     : List[Int],
+	longs    : List[Long],
+	bools    : List[Boolean],
+	chars    : List[Char],
+	doubles  : List[Double]
+	)
+
 case class One( 
 	name     : String, 
 	stuff    : List[String],
@@ -88,6 +96,11 @@ case class Six(
 case class Seven( 
 	_id:ObjectId, 
 	two : Two
+	)
+
+case class Numy(
+	age : Int,
+	num : Num.Value
 	)
 	
 trait Pop {

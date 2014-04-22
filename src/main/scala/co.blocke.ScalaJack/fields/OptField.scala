@@ -17,8 +17,8 @@ case class OptField( name:String, subField:Field, override val hasMongoAnno:Bool
 		if( optVal != None ) subField.renderDB( optVal.get, label, hint )
 		else optVal
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
-		Some(subField.readValue(jp,ext,hint))
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+		Some(subField.readValue(jp,ext,hint,cc))
 	}
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = Some(subField.readValueDB(src,hint))
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = Some(subField.readValueDB(src,hint,cc))
 }

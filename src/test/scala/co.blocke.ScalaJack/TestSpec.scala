@@ -5,6 +5,7 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
+import scala.util.Try
 
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
@@ -36,6 +37,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js should equal( """{"stuff":[],"things":{}}""" )
 				ScalaJack.read[Four](js) should equal( four )
 			}
+			it("Primitive Lists") {
+				val pl = PrimitiveLists(List(1,2,3), List(3L,4L), List(true,false), List('a','b','c'), List(1.2,3.4))
+				val js = ScalaJack.render(pl)
+				js should equal("""{"ints":[1,2,3],"longs":[3,4],"bools":[true,false],"chars":["a","b","c"],"doubles":[1.2,3.4]}""")
+				ScalaJack.read[PrimitiveLists](js) should equal( pl )
+			}
 			it( "Naked Lists of string" ) {
 				val stuff = List( "a","b","c" )
 				val js = ScalaJack.renderList(stuff)
@@ -47,6 +54,36 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = ScalaJack.renderList(stuff)
 				js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
 				ScalaJack.readList[Three](js) should equal( stuff )
+			}
+			it( "Naked Lists of Boolean" ) {
+				val stuff = List(true,false) // int, boolean, long, double, char
+				val js = ScalaJack.renderList(stuff)
+				js should equal("""[true,false]""")
+				ScalaJack.readList[Boolean](js) should equal( stuff )
+			}
+			it( "Naked Lists of Int" ) {
+				val stuff = List(5,6) // int, boolean, long, double, char
+				val js = ScalaJack.renderList(stuff)
+				js should equal("""[5,6]""")
+				ScalaJack.readList[Int](js) should equal( stuff )
+			}
+			it( "Naked Lists of Long" ) {
+				val stuff = List(5L,6L) // int, boolean, long, double, char
+				val js = ScalaJack.renderList(stuff)
+				js should equal("""[5,6]""")
+				ScalaJack.readList[Long](js) should equal( stuff )
+			}
+			it( "Naked Lists of Double" ) {
+				val stuff = List(5.1,6.2) // int, boolean, long, double, char
+				val js = ScalaJack.renderList(stuff)
+				js should equal("""[5.1,6.2]""")
+				ScalaJack.readList[Double](js) should equal( stuff )
+			}
+			it( "Naked Lists of Char" ) {
+				val stuff = List('a','b') // int, boolean, long, double, char
+				val js = ScalaJack.renderList(stuff)
+				js should equal("""["a","b"]""")
+				ScalaJack.readList[Char](js) should equal( stuff )
 			}
 			it( "Renders and reads strings with embedded chars (newlines, quotes, etc.)" ) {
 				val w = Two("This is a test\nOf the \"Emergency Broadcast \tSystem\"",true)
@@ -742,6 +779,120 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.readDB[BagOpt[Tart[String]]](db2) should equal(x)
 				}
 			}
+		}
+		describe("Improved Error Reporting") {
+			describe("Object") {
+				it("Must provide useful errors - simple case class") {
+					val js = """{"a":"Foo","b":"Bar"}"""
+					Try( ScalaJack.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - list member of class") { 
+					val js = """{"stuff":[5],"things":{"a":5}}"""
+					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+				}
+				it("Must provide useful errors - map member of class") {
+					val js = """{"stuff":["hey"],"things":{"a":true}}"""
+					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
+				}
+				it("Must provide useful errors - list of case class member of class") {
+					val js = """{"s":"hey","many":[{"age":33},{"age":"old"}]}"""
+					Try( ScalaJack.read[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - map of case class member of class") {
+					val js = """{"i":5,"items":{"one":{"age":33},"two":{"age":"old"}}}"""
+					Try( ScalaJack.read[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Option member of class") {
+					val js = """{"name":"Bob","big":5,"maybe":false}"""
+					Try( ScalaJack.read[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
+				}
+				it("Must provide useful errors - Option of calue class") {
+					val js = """{"name":"Bob","wrap":false}"""
+					Try( ScalaJack.read[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+				}
+				it("Must provide useful errors - Option of case class member of class") {
+					val js = """{"i":5,"maybe":{"age":"boom"}}"""
+					Try( ScalaJack.read[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Enumeration member of class (wrong type)") {
+					val js = """{"age":5, "num":true}"""
+					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
+				}
+				it("Must provide useful errors - Enumeration member of class (right type, but not enum value") {
+					val js = """{"age":5, "num":"P"}"""
+					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
+				}
+				it("Must provide useful errors - Naked list") {
+// BIG BUG: Naked List of Int blows up!!  Other primitives too!
+// What about as member of a class?
+					val js = """["a","b",5]"""
+					Try( ScalaJack.readList[String](js) ).failed.get.getMessage should be( "Class scala.collection.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+				}
+				it("Must provide useful errors - Naked list of case class") {
+					val js = """[{"age":55},{"age":"bar"}]"""
+					Try( ScalaJack.readList[Hey](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Nested case class") {
+					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""
+					Try( ScalaJack.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+				}
+			}
+			/*
+			describe("DB Object") {
+				it("Must provide useful errors - simple case class") {
+					val js = Map("a"->"Foo","b"->"Bar")
+					Try( ScalaJack.readDB[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw java.lang.String" )
+				}
+				it("Must provide useful errors - list member of class") { 
+					val js = Map("stuff"->List(5),"things"->Map("a"->5))
+					Try( ScalaJack.readDB[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+				}
+				it("Must provide useful errors - map member of class") {
+					val js = """{"stuff":["hey"],"things":{"a":true}}"""
+					Try( ScalaJack.readDB[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
+				}
+				it("Must provide useful errors - list of case class member of class") {
+					val js = """{"s":"hey","many":[{"age":33},{"age":"old"}]}"""
+					Try( ScalaJack.readDB[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - map of case class member of class") {
+					val js = """{"i":5,"items":{"one":{"age":33},"two":{"age":"old"}}}"""
+					Try( ScalaJack.readDB[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Option member of class") {
+					val js = """{"name":"Bob","big":5,"maybe":false}"""
+					Try( ScalaJack.readDB[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
+				}
+				it("Must provide useful errors - Option of calue class") {
+					val js = """{"name":"Bob","wrap":false}"""
+					Try( ScalaJack.readDB[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+				}
+				it("Must provide useful errors - Option of case class member of class") {
+					val js = """{"i":5,"maybe":{"age":"boom"}}"""
+					Try( ScalaJack.readDB[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Enumeration member of class (wrong type)") {
+					val js = """{"age":5, "num":true}"""
+					Try( ScalaJack.readDB[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
+				}
+				it("Must provide useful errors - Enumeration member of class (right type, but not enum value") {
+					val js = """{"age":5, "num":"P"}"""
+					Try( ScalaJack.readDB[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
+				}
+				it("Must provide useful errors - Naked list") {
+					val js = """["a","b",5]"""
+					Try( ScalaJack.readListDB[String](js) ).failed.get.getMessage should be( "Class scala.collection.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+				}
+				it("Must provide useful errors - Naked list of case class") {
+					val js = """[{"age":55},{"age":"bar"}]"""
+					Try( ScalaJack.readListDB[Hey](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+				}
+				it("Must provide useful errors - Nested case class") {
+					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""
+					Try( ScalaJack.readDB[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+				}
+			}
+			*/
 		}
 	}
 

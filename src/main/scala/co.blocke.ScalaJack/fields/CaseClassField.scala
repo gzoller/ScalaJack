@@ -97,20 +97,22 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		dbo
 	}
 
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
 	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		if( !fromTrait && jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '['")
 		// Token now sitting on '{' so advance and read list
 		if( !fromTrait) jp.nextToken  // consume '{'
 		val fieldData = scala.collection.mutable.Map[String,Any]()
+		val cc = ClassContext(className,"")
 		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
 			val fieldName = jp.getCurrentName
+			cc.fieldName = fieldName
 			if( iFields.contains(fieldName) ) {
 				jp.nextToken // scan to value
 				if( fieldName == hint ) jp.nextToken
 				else {
-					val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint) )
+					val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint, cc) )
 					fieldData += fd
 				}
 			}
@@ -125,16 +127,18 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 
 	override private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any = {
 		val fieldData = scala.collection.mutable.Map[String,Any]()
+		val cc = ClassContext(className,"")
 		fields.map( oneField => {
+			cc.fieldName = oneField.name
 			val fd = ( oneField.name, {
 				if( src.containsField(oneField.name) )
-					oneField.readValueDB( src.get(oneField.name), hint ) 
+					oneField.readValueDB( src.get(oneField.name), hint, cc ) 
 				else if( src.containsField("_id") && oneField.hasMongoAnno ) {
 					val sval = src.get("_id")
 					if( sval.isInstanceOf[java.util.Map[_,_]] ) 
-						oneField.readValueDB( sval.asInstanceOf[java.util.Map[String,_]].get(oneField.name), hint )
+						oneField.readValueDB( sval.asInstanceOf[java.util.Map[String,_]].get(oneField.name), hint, cc )
 					else 
-						oneField.readValueDB( sval, hint )
+						oneField.readValueDB( sval, hint, cc )
 				} else None
 				})
 			fieldData += fd
@@ -142,7 +146,7 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		ScalaJack.poof( this, fieldData.toMap )				
 	}
 
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		readClassDB( src.asInstanceOf[DBObject], hint )
 	}
 }

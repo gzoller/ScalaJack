@@ -43,18 +43,18 @@ case class ListField( name:String, subField:Field ) extends Field {
 		val items = listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }.toArray
 		MongoDBList( items: _* )
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		// Token now sitting on '[' so advance and read list
-		if( jp.getCurrentToken != JsonToken.START_ARRAY) throw new IllegalArgumentException("Expected '['")
+		if( jp.getCurrentToken != JsonToken.START_ARRAY) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected '['")
 		jp.nextToken
 		val fieldData = scala.collection.mutable.ListBuffer[Any]()
 		while( jp.getCurrentToken != JsonToken.END_ARRAY ) {
-			fieldData += subField.readValue(jp, ext, hint)
+			fieldData += subField.readValue(jp, ext, hint, cc)
 		}
 		jp.nextToken
 		fieldData.toList
 	}
-	override private[scalajack] def readValueDB[T]( src:Any, hint:String )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		// Dumb down to BasicDBList to avoid double-creation/wrapping of value from database
 		val resolved = (src match {
 			case mdbl:MongoDBList => mdbl.underlying
@@ -63,7 +63,7 @@ case class ListField( name:String, subField:Field ) extends Field {
 		val resList = scala.collection.mutable.ListBuffer.empty[Any]
 		while( resolved.hasNext ) {
 			val item = resolved.next
-			resList += subField.readValueDB(item,hint)
+			resList += subField.readValueDB(item,hint,cc)
 		}
 		resList.toList
 	}

@@ -44,7 +44,8 @@ object ScalaJack {
 	def renderList[T]( target:List[T], ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
 		val sb = new StringBuilder
 		if( target.size == 0 ) sb.append("[]")
-		else ListField( "", Analyzer(m.runtimeClass.getName) ).render(sb, target, None, ext, hint)
+		else 
+			ListField( "", Analyzer( Analyzer.convertType(m.runtimeClass.getName)) ).render(sb, target, None, ext, hint)
 		sb.toString
 	}
 
@@ -63,7 +64,7 @@ object ScalaJack {
 	def readList[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
-		ListField( "", Analyzer(m.runtimeClass.getName) ).readValue(jp,ext,hint).asInstanceOf[List[T]]
+		ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValue(jp,ext,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
 	}
 
 	/**
@@ -85,14 +86,14 @@ object ScalaJack {
 	 */
 	def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
 		if( target.size == 0 ) MongoDBList.empty
-		else ListField( "", Analyzer(m.runtimeClass.getName) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
+		else ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
 	}
 
 	/**
 	 * Read a "naked" list from DBObject into List()
 	 */
 	def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
-		ListField( "", Analyzer(m.runtimeClass.getName) ).readValueDB(src,hint).asInstanceOf[List[T]]
+		ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValueDB(src,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
 	}
 
 	def view[T]( master:Any )(implicit m:Manifest[T]) : T = {
@@ -129,5 +130,12 @@ object ScalaJack {
 	private[scalajack] def poof( classField:CaseClassField, data:Map[String,Any] ) : Any = {
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
+// 		scala.util.Try(classField.applyMethod.invoke( classField.caseObj, args:_* )).toOption.getOrElse({
+// println("Boom whild making "+classField.className)
+// 			println(classField.applyMethod.getParameterTypes.toList.map(_.getName))
+// 			println(args.toList)
+// 			println(args.toList.map(_.getClass.getName))
+// 			"boom"
+// 			})
 	}
 }

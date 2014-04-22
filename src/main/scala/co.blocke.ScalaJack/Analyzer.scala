@@ -26,17 +26,16 @@ object Analyzer {
 
 	private val typeList = List("String","Int","Long","Float","Double","Boolean","Char",
 		"scala.List","Map","scala.Map","scala.Option", "scala.Enumeration.Value")
-	private def convertType( t:String ) = t match {
-		case "Boolean" => "scala.Boolean"
-		case "Int"     => "scala.Int"
-		case "Long"    => "scala.Long"
-		case "Float"   => "scala.Float"
-		case "Double"  => "scala.Double"
-		case "Char"    => "scala.Char"
-		case "String"  => "java.lang.String"
-		case x         => x
+	private[scalajack] def convertType( t:String ) = t match {
+		case "Boolean" | "boolean" => "scala.Boolean"
+		case "Int"     | "int"     => "scala.Int"
+		case "Long"    | "long"    => "scala.Long"
+		case "Float"   | "float"   => "scala.Float"
+		case "Double"  | "double"  => "scala.Double"
+		case "Char"    | "char"    => "scala.Char"
+		case "String"              => "java.lang.String"
+		case x                     => x
 	}
-
 
 	private[scalajack] def apply[T]( cname:String, args:List[String] = List[String]() )(implicit m:Manifest[T]) : Field = {
 		// Normally we get the runtime type args from the manifest...except for a parameterized trait.  In this case
