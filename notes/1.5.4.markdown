@@ -1,0 +1,4 @@
+Previousln ScalaJack error messages weren't very helpful...not much better than "it broke somewhere".
+New error messages have been created for non-DB reading operations.
+
+Also a bug preventing the proper rendering of Lists of primitives has been fixed.
