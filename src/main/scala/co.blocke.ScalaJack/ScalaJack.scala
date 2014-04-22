@@ -20,6 +20,7 @@ package co.blocke.scalajack
 import com.fasterxml.jackson.core.JsonFactory
 import com.mongodb.casbah.Imports._
 import fields._
+import scala.reflect.runtime.universe._
 
 object ScalaJack {
 	type JSON = String
@@ -34,18 +35,13 @@ object ScalaJack {
 		val sb = new StringBuilder
 		// Note: Was using Analyzer(target.getClass.getName) here but this failed to pick up 
 		// top-level trait class name.  m.toString did the job.
-		Analyzer(m.runtimeClass.getName).render(sb, target, None, ext, hint)
-		sb.toString
-	}
-
-	/**
-	 * Render a "naked" JSON list, e.g. ["a","b","c"]
-	 */
-	def renderList[T]( target:List[T], ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
-		val sb = new StringBuilder
-		if( target.size == 0 ) sb.append("[]")
-		else 
-			ListField( "", Analyzer( Analyzer.convertType(m.runtimeClass.getName)) ).render(sb, target, None, ext, hint)
+		if( m.runtimeClass.getSimpleName == "List" ) {
+		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			ListField( "", Analyzer( Analyzer.convertType(subtype)) ).render(sb, target, None, ext, hint)
+		} else if( m.runtimeClass.getSimpleName == "Map" ) 
+			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).render(sb, target, None, ext, hint)
+	    else 
+			Analyzer(m.runtimeClass.getName).render(sb, target, None, ext, hint)
 		sb.toString
 	}
 
@@ -55,46 +51,55 @@ object ScalaJack {
 	def read[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : T = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
-		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClass(jp, ext, hint).asInstanceOf[T]
-	}
-
-	/**
-	 * Read a "naked" JSON list, e.g. ["a","b","c"]
-	 */
-	def readList[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
-		val jp = jsFactory.createParser(js)
-		jp.nextToken
-		ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValue(jp,ext,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
+		if( m.runtimeClass.getSimpleName == "List" ) {
+		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).readValue(jp,ext,hint,ClassContext("scala.collection.immutable.List","")).asInstanceOf[T]
+		} else if( m.runtimeClass.getSimpleName == "Map" ) 
+			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).readValue(jp,ext,hint,ClassContext("scala.collection.immutable.Map","")).asInstanceOf[T]
+	    else
+			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClass(jp, ext, hint).asInstanceOf[T]
 	}
 
 	/**
 	 * Render a case class to DBObject
 	 */
 	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
-		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].renderClassDB(target, hint).asInstanceOf[DBObject]
+		if( m.runtimeClass.getSimpleName == "List" ) {
+		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
+		} else if( m.runtimeClass.getSimpleName == "Map" ) 
+			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).renderDB(target, None, hint).asInstanceOf[DBObject]
+	    else
+			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].renderClassDB(target, hint).asInstanceOf[DBObject]
 	}
 
 	/**
 	 * Read a case class from a DBObject (MongoDB)
 	 */
 	def readDB[T]( src:DBObject, hint:String = hint )(implicit m:Manifest[T]) : T = {
-		Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClassDB(src, hint).asInstanceOf[T]
+		if( m.runtimeClass.getSimpleName == "List" ) {
+		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).readValueDB(src,hint,ClassContext("scala.collection.immutable.List","")).asInstanceOf[T]
+		} else if( m.runtimeClass.getSimpleName == "Map" ) 
+			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).readValueDB(src,hint,ClassContext("scala.collection.immutable.Map","")).asInstanceOf[T]
+	    else
+			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClassDB(src, hint).asInstanceOf[T]
 	}
 
 	/** 
 	 * Render a "naked" list to DBObject
 	 */
-	def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
-		if( target.size == 0 ) MongoDBList.empty
-		else ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
-	}
+	// def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
+	// 	if( target.size == 0 ) MongoDBList.empty
+	// 	else ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
+	// }
 
 	/**
 	 * Read a "naked" list from DBObject into List()
 	 */
-	def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
-		ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValueDB(src,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
-	}
+	// def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
+	// 	ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValueDB(src,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
+	// }
 
 	def view[T]( master:Any )(implicit m:Manifest[T]) : T = {
 		val viewClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]
@@ -130,12 +135,5 @@ object ScalaJack {
 	private[scalajack] def poof( classField:CaseClassField, data:Map[String,Any] ) : Any = {
 		val args = classField.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
 		classField.applyMethod.invoke( classField.caseObj, args:_* )
-// 		scala.util.Try(classField.applyMethod.invoke( classField.caseObj, args:_* )).toOption.getOrElse({
-// println("Boom whild making "+classField.className)
-// 			println(classField.applyMethod.getParameterTypes.toList.map(_.getName))
-// 			println(args.toList)
-// 			println(args.toList.map(_.getClass.getName))
-// 			"boom"
-// 			})
 	}
 }

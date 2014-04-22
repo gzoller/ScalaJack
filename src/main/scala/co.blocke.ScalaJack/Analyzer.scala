@@ -14,9 +14,9 @@ object Analyzer {
 
 	private val ru           = scala.reflect.runtime.universe
 	private val mongoType    = ru.typeOf[MongoKey]
-	private	val xtractTypes  = """.*?\[(.*?)\]""".r
-	private val xtractSingle = """[+-]*([a-zA-Z\.\[\]]+).*""".r
-	private def typeSplit( raw:String ) = {
+	private[scalajack] val xtractTypes  = """.*?\[(.*?)\]""".r
+	private[scalajack] val xtractSingle = """[+-]*([a-zA-Z\.\[\]]+).*""".r
+	private[scalajack] def typeSplit( raw:String ) = {
 		val xtractTypes(stg2) = raw
 		stg2.split(",").toList.map( x => {
 			val xtractSingle(stg3) = x.trim

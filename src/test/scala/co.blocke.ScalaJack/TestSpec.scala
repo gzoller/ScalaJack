@@ -45,45 +45,87 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it( "Naked Lists of string" ) {
 				val stuff = List( "a","b","c" )
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal( """["a","b","c"]""" )
-				ScalaJack.readList[String](js) should equal( stuff )
+				ScalaJack.read[List[String]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
 				val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
-				ScalaJack.readList[Three](js) should equal( stuff )
+				ScalaJack.read[List[Three]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Boolean" ) {
 				val stuff = List(true,false) // int, boolean, long, double, char
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal("""[true,false]""")
-				ScalaJack.readList[Boolean](js) should equal( stuff )
+				ScalaJack.read[List[Boolean]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Int" ) {
 				val stuff = List(5,6) // int, boolean, long, double, char
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal("""[5,6]""")
-				ScalaJack.readList[Int](js) should equal( stuff )
+				ScalaJack.read[List[Int]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Long" ) {
 				val stuff = List(5L,6L) // int, boolean, long, double, char
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal("""[5,6]""")
-				ScalaJack.readList[Long](js) should equal( stuff )
+				ScalaJack.read[List[Long]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Double" ) {
 				val stuff = List(5.1,6.2) // int, boolean, long, double, char
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal("""[5.1,6.2]""")
-				ScalaJack.readList[Double](js) should equal( stuff )
+				ScalaJack.read[List[Double]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Char" ) {
 				val stuff = List('a','b') // int, boolean, long, double, char
-				val js = ScalaJack.renderList(stuff)
+				val js = ScalaJack.render(stuff)
 				js should equal("""["a","b"]""")
-				ScalaJack.readList[Char](js) should equal( stuff )
+				ScalaJack.read[List[Char]](js) should equal( stuff )
+			}
+			it( "Naked Maps of string" ) {
+				val stuff = Map( "a"->"b","c"->"d" )
+				val js = ScalaJack.render(stuff)
+				js should equal( """{"a":"b","c":"d"}""" )
+				ScalaJack.read[Map[String,String]](js) should equal( stuff )
+			}
+			it( "Naked Maps of objects" ) {
+				val stuff = Map( "a"->Three("three",Num.A,Wow1("foo",17)), "b"->Three("four",Num.B,Wow1("bar",18)) )
+				val js = ScalaJack.render(stuff)
+				js should equal( """{"a":{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},"b":{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}}""" )
+				ScalaJack.read[Map[String,Three]](js) should equal( stuff )
+			}
+			it( "Naked Maps of Boolean" ) {
+				val stuff = Map("a"->true,"b"->false) // int, boolean, long, double, char
+				val js = ScalaJack.render(stuff)
+				js should equal("""{"a":true,"b":false}""")
+				ScalaJack.read[Map[String,Boolean]](js) should equal( stuff )
+			}
+			it( "Naked Maps of Int" ) {
+				val stuff = Map("a"->5,"b"->6) // int, boolean, long, double, char
+				val js = ScalaJack.render(stuff)
+				js should equal("""{"a":5,"b":6}""")
+				ScalaJack.read[Map[String,Int]](js) should equal( stuff )
+			}
+			it( "Naked Maps of Long" ) {
+				val stuff = Map("a"->5L,"b"->6L) // int, boolean, long, double, char
+				val js = ScalaJack.render(stuff)
+				js should equal("""{"a":5,"b":6}""")
+				ScalaJack.read[Map[String,Long]](js) should equal( stuff )
+			}
+			it( "Naked Maps of Double" ) {
+				val stuff = Map("a"->5.1,"b"->6.2) // int, boolean, long, double, char
+				val js = ScalaJack.render(stuff)
+				js should equal("""{"a":5.1,"b":6.2}""")
+				ScalaJack.read[Map[String,Double]](js) should equal( stuff )
+			}
+			it( "Naked Maps of Char" ) {
+				val stuff = Map("a"->'b',"c"->'d') // int, boolean, long, double, char
+				val js = ScalaJack.render(stuff)
+				js should equal( """{"a":"b","c":"d"}""" )
+				ScalaJack.read[Map[String,Char]](js) should equal( stuff )
 			}
 			it( "Renders and reads strings with embedded chars (newlines, quotes, etc.)" ) {
 				val w = Two("This is a test\nOf the \"Emergency Broadcast \tSystem\"",true)
@@ -307,6 +349,18 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB(seven)
 				dbo.toString should equal( """{ "_id" : { "$oid" : """"+oid+""""} , "two" : { "foo" : "blah" , "bar" : true}}""" )
 				ScalaJack.readDB[Seven](dbo) should equal( seven )
+			}
+			it("Naked List support") {
+				val li = List("a","b","c")
+				val dbo = ScalaJack.renderDB(li)
+				dbo.toString should equal( """[ "a" , "b" , "c"]""" )
+				ScalaJack.readDB[List[String]](dbo) should equal( li )
+			}
+			it("Naked Map support") {
+				val li = Map("a"->1,"b"->2,"c"->3)
+				val dbo = ScalaJack.renderDB(li)
+				dbo.toString should equal( """{ "a" : 1 , "b" : 2 , "c" : 3}""" )
+				ScalaJack.readDB[Map[String,Int]](dbo) should equal( li )
 			}
 		}
 		describe("Parameterized Class Support") {
@@ -823,14 +877,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
 				}
 				it("Must provide useful errors - Naked list") {
-// BIG BUG: Naked List of Int blows up!!  Other primitives too!
-// What about as member of a class?
 					val js = """["a","b",5]"""
-					Try( ScalaJack.readList[String](js) ).failed.get.getMessage should be( "Class scala.collection.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+					Try( ScalaJack.read[List[String]](js) ).failed.get.getMessage should be( "Class scala.collection.immutable.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
 				}
 				it("Must provide useful errors - Naked list of case class") {
 					val js = """[{"age":55},{"age":"bar"}]"""
-					Try( ScalaJack.readList[Hey](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[List[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
 				it("Must provide useful errors - Nested case class") {
 					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""

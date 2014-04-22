@@ -1,0 +1,9 @@
+Version 1.6.0 of ScalaJack introduces one significant change and one new feature.
+
+The readList, renderList, readListDB, and renderListDB calls have all be deprecated and removed.
+Now you just supply the right type to the normal read/render calls, e.g. ScalaJack.read[List[Foo]].
+This change is breaking, so we bumped to a new minor version number, but it does simplify the
+API.
+
+Naked Maps are now supported with the proviso that the first type paramter of the Map
+is always String, to be compatible with JSON.  For example: ScalaJack.read[Map[String,Int]].
