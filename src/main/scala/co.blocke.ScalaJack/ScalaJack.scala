@@ -29,77 +29,67 @@ object ScalaJack {
 	private val hint = "_hint"
 	
 	/**
-	 * Render a JSON-encoded case class
-	 */
-	def render[T]( target:T, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
-		val sb = new StringBuilder
-		// Note: Was using Analyzer(target.getClass.getName) here but this failed to pick up 
-		// top-level trait class name.  m.toString did the job.
-		if( m.runtimeClass.getSimpleName == "List" ) {
-		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
-			ListField( "", Analyzer( Analyzer.convertType(subtype)) ).render(sb, target, None, ext, hint)
-		} else if( m.runtimeClass.getSimpleName == "Map" ) 
-			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).render(sb, target, None, ext, hint)
-	    else 
-			Analyzer(m.runtimeClass.getName).render(sb, target, None, ext, hint)
-		sb.toString
-	}
-
-	/**
 	 * Read a JSON-encoded case class
 	 */
 	def read[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : T = {
 		val jp = jsFactory.createParser(js)
 		jp.nextToken
-		if( m.runtimeClass.getSimpleName == "List" ) {
-		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
-			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).readValue(jp,ext,hint,ClassContext("scala.collection.immutable.List","")).asInstanceOf[T]
-		} else if( m.runtimeClass.getSimpleName == "Map" ) 
-			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).readValue(jp,ext,hint,ClassContext("scala.collection.immutable.Map","")).asInstanceOf[T]
-	    else
-			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClass(jp, ext, hint).asInstanceOf[T]
-	}
-
-	/**
-	 * Render a case class to DBObject
-	 */
-	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
-		if( m.runtimeClass.getSimpleName == "List" ) {
-		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
-			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
-		} else if( m.runtimeClass.getSimpleName == "Map" ) 
-			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).renderDB(target, None, hint).asInstanceOf[DBObject]
-	    else
-			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].renderClassDB(target, hint).asInstanceOf[DBObject]
+		_readRender(
+			_.readValue(jp,ext,hint,ClassContext("scala.collection.immutable.List","")),
+			_.readValue(jp,ext,hint,ClassContext("scala.collection.immutable.Map","")),
+			_.readClass(jp, ext, hint)
+			).asInstanceOf[T]
 	}
 
 	/**
 	 * Read a case class from a DBObject (MongoDB)
 	 */
 	def readDB[T]( src:DBObject, hint:String = hint )(implicit m:Manifest[T]) : T = {
-		if( m.runtimeClass.getSimpleName == "List" ) {
-		    val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
-			ListField( "", Analyzer(Analyzer.convertType(subtype) ) ).readValueDB(src,hint,ClassContext("scala.collection.immutable.List","")).asInstanceOf[T]
-		} else if( m.runtimeClass.getSimpleName == "Map" ) 
-			MapField( "", Analyzer( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1))) ).readValueDB(src,hint,ClassContext("scala.collection.immutable.Map","")).asInstanceOf[T]
-	    else
-			Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait].readClassDB(src, hint).asInstanceOf[T]
+		_readRender(
+			_.readValueDB(src,hint,ClassContext("scala.collection.immutable.List","")),
+			_.readValueDB(src,hint,ClassContext("scala.collection.immutable.Map","")),
+			_.readClassDB(src, hint)
+			).asInstanceOf[T]
 	}
 
-	/** 
-	 * Render a "naked" list to DBObject
+	/**
+	 * Render a JSON-encoded case class
 	 */
-	// def renderListDB[T]( target:List[T], hint:String = hint )(implicit m:Manifest[T]) : MongoDBList = {
-	// 	if( target.size == 0 ) MongoDBList.empty
-	// 	else ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).renderDB(target, None, hint).asInstanceOf[MongoDBList]
-	// }
+	def render[T]( target:T, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : JSON = {
+		val sb = new StringBuilder
+		_readRender(
+			_.render(sb, target, None, ext, hint),
+			_.render(sb, target, None, ext, hint),
+			_.asInstanceOf[Field].render(sb, target, None, ext, hint)
+			)
+		sb.toString
+	}
 
 	/**
-	 * Read a "naked" list from DBObject into List()
+	 * Render a case class to DBObject
 	 */
-	// def readListDB[T]( src:MongoDBList, hint:String = hint )(implicit m:Manifest[T]) : List[T] = {
-	// 	ListField( "", Analyzer(Analyzer.convertType(m.runtimeClass.getName)) ).readValueDB(src,hint,ClassContext("scala.collection.List","")).asInstanceOf[List[T]]
-	// }
+	def renderDB[T]( target:T, hint:String = hint )(implicit m:Manifest[T]) : DBObject = {
+		_readRender(
+			_.renderDB(target, None, hint),
+			_.renderDB(target, None, hint),
+			_.renderClassDB(target, hint)
+			) match {
+				case li:MongoDBList => li.asInstanceOf[MongoDBList]
+				case x              => x.asInstanceOf[DBObject]
+			}
+	}
+
+	private def _readRender[T]( listFn:(Field)=>Any, mapFn:(Field)=>Any, classFn:(ClassOrTrait)=>Any )(implicit m:Manifest[T]) : Any = {
+		if( m.runtimeClass.getSimpleName == "List" ) {
+			val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			val analyzer = Analyzer()
+			listFn( ListField( "", analyzer.typeMap(Analyzer.convertType(subtype))("") ) )
+		} else if( m.runtimeClass.getSimpleName == "Map" ) {
+			val analyzer = Analyzer()
+			mapFn( MapField( "", analyzer.typeMap( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1)))("") ) )
+		} else
+			classFn( Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait] )
+	}
 
 	def view[T]( master:Any )(implicit m:Manifest[T]) : T = {
 		val viewClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]

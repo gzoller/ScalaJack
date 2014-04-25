@@ -89,7 +89,7 @@ case class Analyzer() {
 		}).get
 	}
 
-	private def typeMap( dt:String ) = { 
+	private[scalajack] def typeMap( dt:String ) = { 
 		dt match {
 			case "String"        | "java.lang.String" => (n:String) => StringField( n, false )
 			case "scala.Int"     | "Int"              => (n:String) => IntField( n, false    )
