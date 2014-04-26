@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonFactory
 import com.mongodb.casbah.Imports._
 import fields._
 import scala.reflect.runtime.universe._
+import compat._
 
 object ScalaJack {
 	type JSON = String
@@ -81,7 +82,7 @@ object ScalaJack {
 
 	private def _readRender[T]( listFn:(Field)=>Any, mapFn:(Field)=>Any, classFn:(ClassOrTrait)=>Any )(implicit m:Manifest[T]) : Any = {
 		if( m.runtimeClass.getSimpleName == "List" ) {
-			val Analyzer.xtractTypes(subtype) = (typeOf[T]).toString
+			val Analyzer.xtractTypes(subtype) : String = (typeOf[T]).toString
 			val analyzer = Analyzer()
 			listFn( ListField( "", analyzer.typeMap(Analyzer.convertType(subtype))("") ) )
 		} else if( m.runtimeClass.getSimpleName == "Map" ) {
