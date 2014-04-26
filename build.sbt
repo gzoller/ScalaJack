@@ -8,14 +8,18 @@ scalaVersion := "2.11.0"
 
 scalacOptions += "-feature"
 
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
+
 resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
+            "Maven Repo" at "http://mvnrepository.com/artifact",
              "Sonatype releases" at "https://oss.sonatype.org/content/repositories/snapshots"
              )
 
 libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.2.3",
-                            "org.scala-lang"             % "scala-compiler" % "2.10.3",
+                            "org.scala-lang"             % "scala-compiler" % "2.11.0",
                             "org.mongodb"                %% "casbah"        % "2.7.1-SNAPSHOT",
-                            "org.scalatest"              % "scalatest_2.10" % "2.0" % "test")
+                            "org.scalatest"              % "scalatest_2.11.0-RC4" % "2.1.3" % "test")
+//                            "org.scalatest"              % "scalatest_2.10" % "2.0" % "test")
 
 publishArtifact in Test := false
 

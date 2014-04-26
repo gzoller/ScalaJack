@@ -137,7 +137,7 @@ case class Analyzer() {
 					val fields = ccp.fields.map( _ match {
 						case tf:TypeField      => resolveTypeField( tf, argMap )
 						case cp:CaseClassProxy => 
-							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(cp.name)).typeSignature.toString )
+							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.TermName(cp.name)).typeSignature.toString )
 							val symMap = cp.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( cp.proto, symMap, "_bogus_", Some(cp.name))
 						case lf:ListField      => 
@@ -156,7 +156,7 @@ case class Analyzer() {
 								case _            => of
 							}
 						case tt:TraitProxy     => 
-							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.newTermName(tt.name)).typeSignature.toString )
+							val runtimeTypes = Analyzer.typeSplit( ccp.dt.typeSymbol.typeSignature.member(currentMirror.universe.TermName(tt.name)).typeSignature.toString )
 							val symMap = tt.proto.typeArgs.zip( runtimeTypes.map( rtt => argMap.get(rtt).fold(rtt)(c => c.toString) ) ).toMap
 							resolve( tt.proto, symMap, "_bogus_", Some(tt.name))
 						case f                 => f
@@ -282,9 +282,9 @@ case class Analyzer() {
 					// Build the field list
 					val constructor = ctype.members.collectFirst {
 						case method: MethodSymbol
-							if method.isPrimaryConstructor && method.isPublic && !method.paramss.isEmpty && !method.paramss.head.isEmpty => method
+							if method.isPrimaryConstructor && method.isPublic && !method.paramLists.isEmpty && !method.paramLists.head.isEmpty => method
 					}.getOrElse( throw new IllegalArgumentException("Case class must have at least 1 public constructor having more than 1 parameters."))
-					val fields = constructor.paramss.head.map( c => {
+					val fields = constructor.paramLists.head.map( c => {
 						// This little piece of field name re-mapping is needed to handle when a user's program is started
 						// with 'java' vs 'scala' from the command line, which affects class paths.  When started with 'scala'
 						// you get the correct "scala.List" or "scala.Option" here, but when started with 'java' for whatever 
@@ -325,7 +325,7 @@ case class Analyzer() {
 					// See if there's a MongoKey annotation on any of the class' fields
 					val mongoAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
 						cs.typeSignature.members.collectFirst {
-							case method:MethodSymbol if( method.name.toString == "apply") => method.paramss.head.collect{ case p if( p.annotations.find(a => a.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
+							case method:MethodSymbol if( method.name.toString == "apply") => method.paramLists.head.collect{ case p if( p.annotations.find(a => a.tree.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
 						}.getOrElse(List[String]())
 					})
 					fullName match {
