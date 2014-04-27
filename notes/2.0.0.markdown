@@ -1,0 +1,11 @@
+Scala 2.11.0 build of ScalaJack.  This build does not take any special advantage of any new
+reflection capabilities of 2.11--just a compatible build with the last 2.10.3 build (1.6.1).
+
+One significant mod is that in Scala 2.10.3 there was a documented concurrency bug in the
+reflection code--code that obviously ScalaJack uses extensively.  To keep from crashing
+in multi-threaded use a key synchronized block was added to Analyzer.  This compensated
+for the Scala bug, but at a price of a little performance.  That compromise is unneeded
+with 2.11.0, as Scala no longer has this concurrency problem in reflection.
+
+If you haven't looked at ScalaJack in a while, there have been a number of API clean-ups
+and small enhancements.
