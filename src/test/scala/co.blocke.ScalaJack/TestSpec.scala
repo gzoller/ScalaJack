@@ -946,8 +946,28 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			*/
 		}
+		describe("Thread Safety Test") {
+			it("Should not crash when multiple threads access Analyzer (Scala 2.10.x reflection bug)") {
+				import scala.concurrent.{Future, Await}
+				import scala.concurrent.ExecutionContext.Implicits.global
+				import scala.concurrent.duration._
+				import scala.language.postfixOps
+				val doit = () => 
+					Try {
+						val js = ScalaJack.render( Foo("Greg",List("a","b","c")) )
+						ScalaJack.read[Foo](js)
+						}.toOption.isDefined
+				val z = List(
+					Future (doit()),
+					Future (doit()),
+					Future (doit()),
+					Future (doit())
+					)
+				val res = Await.result(Future.sequence(z), 3 seconds).reduce((a,b) => a && b)
+				res should be( true )
+			}
+		}
 	}
-
 	describe("View/Splice Tests") {
 		it("Must process view") {
 			ScalaJack.view[OneSub2](data) should equal( OneSub2("Greg",true,Map("hey"->17, "you"->21)))

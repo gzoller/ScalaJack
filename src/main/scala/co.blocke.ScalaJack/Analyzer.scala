@@ -47,7 +47,12 @@ object Analyzer {
 		// happens.  Fixes the problem favoring stability/reliability in favor of performance. :-(
 		// Confirm and remove whenever this code goes to 2.11.x!
 		// Read: http://docs.scala-lang.org/overviews/reflection/thread-safety.html
-		ru.synchronized {
+
+		// UPDATE - Removed for 2.11.0 build.  So far the test constructed to exercise this Scala bug in 2.10.x
+		// appears to have been successfully fixed in 2.11, and the test passes w/o the synchronized block. Yay!
+		// Leaving code and explanation here for a while--just in case.
+
+		// ru.synchronized {
 			val rtArgs = {
 				if( args.length == 0 )
 					m.typeArguments.map(_.toString)
@@ -66,7 +71,7 @@ object Analyzer {
 				case f                     => 
 				f
 			}
-		}
+		// }
 	}
 }
 

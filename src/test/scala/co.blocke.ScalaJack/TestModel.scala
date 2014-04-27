@@ -164,3 +164,8 @@ case class MapList(val name: String, val mapList: Map[String, List[Animal]])
 case class MapListList(val name: String, val mapList: Map[String, List[List[Animal]]])
 case class MapOpt(val name: String, val mapOpt: Map[String, Option[Animal]])
 case class MapMap(val name: String, val mapmap: Map[String, Map[String, Animal]])
+
+case class Foo(
+	name:String,
+	stuff:List[String]
+	)
