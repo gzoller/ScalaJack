@@ -251,7 +251,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 									Animal("tiger", 4)))))
 					val js = ScalaJack.render(ln)
 					js should equal( """{"name":"Fred","stuff":[[[{"name":"mouse","legs":4},{"name":"bug","legs":6}],[{"name":"whale","legs":0},{"name":"elephant","legs":4}]],[[{"name":"millipede","legs":1000},{"name":"slug","legs":0}],[{"name":"bird","legs":2},{"name":"tiger","legs":4}]]]}""" )
-					ScalaJack.read[ListListList](js) should equal( ln ) 
+					ScalaJack.read[ListListList](js) should equal( ln )
 				}
 				// NOTE: If your list has a None it it, this will be lost upon re-marshal from JSON as JSON has no representation
 				//       for a None (it's simply missing from the list).
@@ -840,7 +840,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val js = """{"a":"Foo","b":"Bar"}"""
 					Try( ScalaJack.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
-				it("Must provide useful errors - list member of class") { 
+				it("Must provide useful errors - list member of class") {
 					val js = """{"stuff":[5],"things":{"a":5}}"""
 					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
 				}
@@ -895,7 +895,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val js = Map("a"->"Foo","b"->"Bar")
 					Try( ScalaJack.readDB[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw java.lang.String" )
 				}
-				it("Must provide useful errors - list member of class") { 
+				it("Must provide useful errors - list member of class") {
 					val js = Map("stuff"->List(5),"things"->Map("a"->5))
 					Try( ScalaJack.readDB[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
 				}
@@ -952,7 +952,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				import scala.concurrent.ExecutionContext.Implicits.global
 				import scala.concurrent.duration._
 				import scala.language.postfixOps
-				val doit = () => 
+				val doit = () =>
 					Try {
 						val js = ScalaJack.render( Foo("Greg",List("a","b","c")) )
 						ScalaJack.read[Foo](js)

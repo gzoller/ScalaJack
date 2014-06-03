@@ -1,10 +1,10 @@
 name := "ScalaJack"
 
-version := "2.0.0"
+version := "2.0.1"
 
 organization := "co.blocke"
 
-scalaVersion := "2.11.0"
+scalaVersion := "2.11.1"
 
 scalacOptions += "-feature"
 
@@ -15,11 +15,10 @@ resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
              "Sonatype releases" at "https://oss.sonatype.org/content/repositories/snapshots"
              )
 
-libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.2.3",
-                            "org.scala-lang"             % "scala-compiler" % "2.11.0",
-                            "org.mongodb"                %% "casbah"        % "2.7.1-SNAPSHOT",
-                            "org.scalatest"              % "scalatest_2.11.0-RC4" % "2.1.3" % "test")
-//                            "org.scalatest"              % "scalatest_2.10" % "2.0" % "test")
+libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.3.2",
+                            "org.scala-lang"             % "scala-compiler" % "2.11.1",
+                            "org.mongodb"                % "casbah_2.11"    % "2.7.1",
+                            "org.scalatest"              % "scalatest_2.11" % "2.1.3" % "test")
 
 publishArtifact in Test := false
 

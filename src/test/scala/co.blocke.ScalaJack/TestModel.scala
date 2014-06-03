@@ -39,8 +39,8 @@ case class PrimitiveLists(
 	doubles  : List[Double]
 	)
 
-case class One( 
-	name     : String, 
+case class One(
+	name     : String,
 	stuff    : List[String],
 	more     : List[Two],
 	nest     : Two,
@@ -71,10 +71,10 @@ case class Two(
 	bar      : Boolean
 	)
 
-case class Three( 
-	name:String, 
+case class Three(
+	name:String,
 	two:Num.Value,
-	pp:Pop 
+	pp:Pop
 	)
 
 case class Four(
@@ -82,19 +82,19 @@ case class Four(
 	things : Map[String,Int]
 	)
 
-case class Five( 
-	@MongoKey name:String, 
+case class Five(
+	@MongoKey name:String,
 	two : Two
 	)
 
-case class Six( 
-	@MongoKey name:String, 
+case class Six(
+	@MongoKey name:String,
 	@MongoKey num:Int,
 	two : Two
 	)
 
-case class Seven( 
-	_id:ObjectId, 
+case class Seven(
+	_id:ObjectId,
 	two : Two
 	)
 
@@ -102,7 +102,7 @@ case class Numy(
 	age : Int,
 	num : Num.Value
 	)
-	
+
 trait Pop {
 	def go
 }
