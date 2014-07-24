@@ -1,0 +1,2 @@
+Force genereation of JVM 1.6 bytecode for compatibility.  This will likely be in force until Scala 2.12 series,
+where JVM 1.8 will be supported by default.

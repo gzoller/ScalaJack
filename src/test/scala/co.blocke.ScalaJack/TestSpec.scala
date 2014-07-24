@@ -139,6 +139,31 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js should equal("""{}""")
 				ScalaJack.read[AllOpt](js) should equal(ao)
 			}
+			it( "Handles null values - Double" ) {
+				val js = """{"a":5.1,"b":null}"""
+				val o = ScalaJack.read[Map[String,Double]](js)
+				o should equal( Map("a"->5.1,"b"->0.0) )
+			}
+			it( "Handles null values - Boolean" ) {
+				val js = """{"a":true,"b":null}"""
+				val o = ScalaJack.read[Map[String,Boolean]](js)
+				o should equal( Map("a"->true,"b"->false) )
+			}
+			it( "Handles null values - String" ) {
+				val js = """{"a":"wow","b":null}"""
+				val o = ScalaJack.read[Map[String,String]](js)
+				o should equal( Map("a"->"wow","b"->null) )
+			}
+			it( "Handles null values - Int" ) {
+				val js = """{"a":5,"b":null}"""
+				val o = ScalaJack.read[Map[String,Int]](js)
+				o should equal( Map("a"->5,"b"->0) )
+			}
+			it( "Handles null values - Long" ) {
+				val js = """{"a":5,"b":null}"""
+				val o = ScalaJack.read[Map[String,Long]](js)
+				o should equal( Map("a"->5L,"b"->0) )
+			}
 		}
 		describe("Trait Support") {
 			it( "Traits with subclasses" ) {

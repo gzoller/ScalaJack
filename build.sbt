@@ -1,6 +1,6 @@
 name := "ScalaJack"
 
-version := "2.0.1"
+version := "2.0.3"
 
 organization := "co.blocke"
 
@@ -9,6 +9,8 @@ scalaVersion := "2.11.1"
 scalacOptions += "-feature"
 
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
+
+javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
 
 resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
             "Maven Repo" at "http://mvnrepository.com/artifact",

@@ -1,0 +1,1 @@
+Support null-valued fields (valid in JSON) for simple types.
