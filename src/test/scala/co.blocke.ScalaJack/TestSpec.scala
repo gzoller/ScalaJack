@@ -164,6 +164,11 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val o = ScalaJack.read[Map[String,Long]](js)
 				o should equal( Map("a"->5L,"b"->0) )
 			}
+			it( "Handles null values - List" ) {
+				val js = """null"""
+				val o = ScalaJack.read[List[String]](js)
+				o should equal(List())
+			}
 		}
 		describe("Trait Support") {
 			it( "Traits with subclasses" ) {
