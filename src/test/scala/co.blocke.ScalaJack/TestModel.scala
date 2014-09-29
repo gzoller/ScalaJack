@@ -102,6 +102,13 @@ case class Numy(
 	age : Int,
 	num : Num.Value
 	)
+
+case class UuidThing(
+	name : String,
+	uuid : java.util.UUID,
+	many : List[java.util.UUID],
+	maybe: Option[java.util.UUID]
+	)
 	
 trait Pop {
 	def go

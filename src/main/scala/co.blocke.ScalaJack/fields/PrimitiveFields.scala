@@ -51,6 +51,36 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 		Try(src.toString).toOption.getOrElse(throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_STRING and saw "+src.getClass.getName))
 }
 
+case class UUIDField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
+		label.fold( {
+				sb.append('"')
+				sb.append(target)
+				sb.append('"')
+			})((labelStr) => {
+				sb.append('"')
+				sb.append( labelStr )
+				sb.append("\":\"")
+				sb.append(target.toString)
+				sb.append("\",")
+			})
+		true
+	}
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext)(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_STRING && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
+		val v = { if( jp.getCurrentToken == JsonToken.VALUE_NULL) null else java.util.UUID.fromString( jp.getValueAsString ) }
+		jp.nextToken
+		v
+	}
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
+		target.toString
+	}
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+		val v = Try(src.asInstanceOf[String]).toOption.getOrElse(throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_STRING (UUID) and saw "+src.getClass.getName))
+		java.util.UUID.fromString(v)
+	}
+}
+
 case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext)(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
