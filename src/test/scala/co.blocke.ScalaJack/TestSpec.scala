@@ -6,6 +6,7 @@ import org.scalatest.Matchers._
 import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import scala.util.Try
+import java.util.UUID
 
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
@@ -22,6 +23,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js should equal( """{"name":"Greg","stuff":["a","b"],"more":[{"foo":"x","bar":false},{"foo":"y","bar":true}],"nest":{"foo":"Nest!","bar":true},"maybe":"wow","mymap":{"hey":17,"you":21},"flipflop":true,"big":99123986123,"num":"C","age":46}""" )
 				val b = ScalaJack.read[One](js)
 				b should equal( data )
+			}
+			it("Should handle UUID types") {
+				val thing = UuidThing("Foo",UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),List(UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")),Some(UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")))
+				val js = ScalaJack.render( thing )
+				js should equal("""{"name":"Foo","uuid":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","many":["1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"],"maybe":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
+				val b = ScalaJack.read[UuidThing](js)
+				b should equal( thing )
 			}
 			it( "Should ignore extra fields in the inbound JSON" ) {
 				val js = """{"foo":"hey","bogus":19,"bar":true}"""
@@ -48,6 +56,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = ScalaJack.render(stuff)
 				js should equal( """["a","b","c"]""" )
 				ScalaJack.read[List[String]](js) should equal( stuff )
+			}
+			it( "Naked Lists of UUID" ) {
+				val stuff = List(UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c") )
+				val js = ScalaJack.render(stuff)
+				js should equal( """["1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"]""" )
+				ScalaJack.read[List[UUID]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
 				val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
@@ -163,6 +177,11 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Long]](js)
 				o should equal( Map("a"->5L,"b"->0) )
+			}
+			it( "Handles null values - UUID" ) {
+				val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
+				val o = ScalaJack.read[Map[String,UUID]](js)
+				o should equal( Map("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),"b"->null) )
 			}
 		}
 		describe("Trait Support") {
@@ -386,6 +405,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB(li)
 				dbo.toString should equal( """{ "a" : 1 , "b" : 2 , "c" : 3}""" )
 				ScalaJack.readDB[Map[String,Int]](dbo) should equal( li )
+			}
+			it("UUID support") {
+				val thing = UuidThing("Foo",UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),List(UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")),Some(UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")))
+				val dbo = ScalaJack.renderDB( thing )
+				dbo.toString should equal("""{ "name" : "Foo" , "uuid" : "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c" , "many" : [ "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c" , "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"] , "maybe" : "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
+				val b = ScalaJack.readDB[UuidThing](dbo)
+				b should equal( thing )
 			}
 		}
 		describe("Parameterized Class Support") {

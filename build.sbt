@@ -1,10 +1,10 @@
 name := "ScalaJack"
 
-version := "2.0.3"
+version := "2.0.4"
 
 organization := "co.blocke"
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.2"
 
 scalacOptions += "-feature"
 
@@ -18,7 +18,7 @@ resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
              )
 
 libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.3.2",
-                            "org.scala-lang"             % "scala-compiler" % "2.11.1",
+                            "org.scala-lang"             % "scala-compiler" % "2.11.2",
                             "org.mongodb"                % "casbah_2.11"    % "2.7.1",
                             "org.scalatest"              % "scalatest_2.11" % "2.1.3" % "test")
 
