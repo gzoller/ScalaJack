@@ -3,6 +3,7 @@ package fields
 
 import com.fasterxml.jackson.core._
 import scala.util.Try
+import org.joda.time.DateTime
 
 case class StringField( name:String, override val hasMongoAnno:Boolean ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
@@ -78,6 +79,24 @@ case class UUIDField( name:String, override val hasMongoAnno:Boolean ) extends F
 	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		val v = Try(src.asInstanceOf[String]).toOption.getOrElse(throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_STRING (UUID) and saw "+src.getClass.getName))
 		java.util.UUID.fromString(v)
+	}
+}
+
+case class JodaField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = 
+		super.render[Long]( sb, target.asInstanceOf[DateTime].getMillis.asInstanceOf[Long], label, ext, hint, withHint )
+	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext)(implicit m:Manifest[T]) : Any = {
+		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
+		val v = { if( jp.getCurrentToken == JsonToken.VALUE_NULL) null else new DateTime(jp.getValueAsLong) }
+		jp.nextToken
+		v
+	}
+	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
+		target.asInstanceOf[DateTime].getMillis
+	}
+	override private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+		val v = Try(src.asInstanceOf[Long]).toOption.getOrElse(throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+src.getClass.getName))
+		new DateTime(v)
 	}
 }
 

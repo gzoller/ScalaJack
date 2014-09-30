@@ -7,6 +7,8 @@ import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import scala.util.Try
 import java.util.UUID
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
@@ -29,6 +31,15 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = ScalaJack.render( thing )
 				js should equal("""{"name":"Foo","uuid":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","many":["1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"],"maybe":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
 				val b = ScalaJack.read[UuidThing](js)
+				b should equal( thing )
+			}
+			it("Should handle DateTime types") {
+				val pattern = "dd-MM-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val thing = JodaThing("Foo",t,List(t,t),Some(t))
+				val js = ScalaJack.render( thing )
+				js should equal("""{"name":"Foo","dt":505440000000,"many":[505440000000,505440000000],"maybe":505440000000}""")
+				val b = ScalaJack.read[JodaThing](js)
 				b should equal( thing )
 			}
 			it( "Should ignore extra fields in the inbound JSON" ) {
@@ -62,6 +73,14 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = ScalaJack.render(stuff)
 				js should equal( """["1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"]""" )
 				ScalaJack.read[List[UUID]](js) should equal( stuff )
+			}
+			it( "Naked Lists of Joda" ) {
+				val pattern = "dd-MM-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val stuff = List( t, t )
+				val js = ScalaJack.render(stuff)
+				js should equal( """[505440000000,505440000000]""" )
+				ScalaJack.read[List[DateTime]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
 				val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
@@ -157,6 +176,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
 				val o = ScalaJack.read[Map[String,UUID]](js)
 				o should equal( Map("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),"b"->null) )
+			}
+			it( "Handles null values - DateTime" ) {
+				val js = """{"a":505440000000,"b":null}"""
+				val o = ScalaJack.read[Map[String,DateTime]](js)
+				val pattern = "dd-MM-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				o should equal( Map("a"->t,"b"->null) )
 			}
 		}
 		describe("Trait Support") {
@@ -386,6 +412,15 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB( thing )
 				dbo.toString should equal("""{ "name" : "Foo" , "uuid" : "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c" , "many" : [ "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c" , "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"] , "maybe" : "1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
 				val b = ScalaJack.readDB[UuidThing](dbo)
+				b should equal( thing )
+			}
+			it("DateTime support") {
+				val pattern = "dd-MM-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val thing = JodaThing("Foo",t,List(t,t),Some(t))
+				val dbo = ScalaJack.renderDB( thing )
+				dbo.toString should equal("""{ "name" : "Foo" , "dt" : 505440000000 , "many" : [ 505440000000 , 505440000000] , "maybe" : 505440000000}""")
+				val b = ScalaJack.readDB[JodaThing](dbo)
 				b should equal( thing )
 			}
 		}

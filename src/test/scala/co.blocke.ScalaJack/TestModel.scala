@@ -3,6 +3,7 @@ package test
 
 import com.fasterxml.jackson.core._
 import org.bson.types.ObjectId
+import org.joda.time.DateTime
 
 object Num extends Enumeration {
 	val A,B,C = Value
@@ -109,6 +110,13 @@ case class UuidThing(
 	many : List[java.util.UUID],
 	maybe: Option[java.util.UUID]
 	)
+
+case class JodaThing(
+	name : String,
+	dt   : DateTime,
+	many : List[DateTime],
+	maybe: Option[DateTime]	
+)
 	
 trait Pop {
 	def go
