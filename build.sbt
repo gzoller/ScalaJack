@@ -1,6 +1,6 @@
 name := "ScalaJack"
 
-version := "2.0.4"
+version := "2.0.5"
 
 organization := "co.blocke"
 
@@ -20,6 +20,7 @@ resolvers ++= Seq("Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
 libraryDependencies ++= Seq("com.fasterxml.jackson.core" % "jackson-core"   % "2.3.2",
                             "org.scala-lang"             % "scala-compiler" % "2.11.2",
                             "org.mongodb"                % "casbah_2.11"    % "2.7.1",
+                            "joda-time"                  % "joda-time"      % "2.3",
                             "org.scalatest"              % "scalatest_2.11" % "2.1.3" % "test")
 
 publishArtifact in Test := false

@@ -104,6 +104,7 @@ case class Analyzer() {
 			case "scala.Boolean" | "Boolean"          => (n:String) => BoolField( n, false   )
 			case "scala.Char"    | "Char"             => (n:String) => CharField( n, false   )
 			case "java.util.UUID"                     => (n:String) => UUIDField( n, false   )
+			case "org.joda.time.DateTime"             => (n:String) => JodaField( n, false   )
 			case t         => (n:String) => {
 					val pos = t.indexOf('[')
 					val applied = { 
@@ -343,6 +344,7 @@ case class Analyzer() {
 						case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName) )
 						case "scala.Boolean"    => BoolField(   fieldName, mongoAnno.contains(fieldName) )
 						case "java.util.UUID"   => UUIDField(   fieldName, mongoAnno.contains(fieldName) )
+						case "org.joda.time.DateTime"  => JodaField( fieldName, mongoAnno.contains(fieldName) )
 						case "org.bson.types.ObjectId" => ObjectIdField( fieldName )
 						case _                  => {
 							if( isValueClass(sym) ) {
