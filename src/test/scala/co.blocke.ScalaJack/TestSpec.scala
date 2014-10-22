@@ -215,14 +215,16 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val t = Three("three",Num.A,Wow1("foo",17))
 				val js2 = ScalaJack.render(t)
 				js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
-				val u = ScalaJack.read[Three](js2)
+				// Change order so hint isn't first in list
+				val js3 = """{"name":"three","two":"A","pp":{"a":"foo","_hint":"co.blocke.scalajack.test.Wow1","b":17}}"""
+				val u = ScalaJack.read[Three](js3)
 				u should equal( t )
 			}
 			it( "Support changing type hint" ) {
 				val t = Three("three",Num.A,Wow1("foo",17))
 				val js2 = ScalaJack.render(t,false,"hey")
 				js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
-				val u = ScalaJack.read[Three](js2)
+				val u = ScalaJack.read[Three](js2,false,"hey")
 				u should equal( t )
 			}
 			it("Top-level trait") {
@@ -975,7 +977,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					Try( ScalaJack.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
 				}
 			}
-			/*
+			/*zzz
 			describe("DB Object") {
 				it("Must provide useful errors - simple case class") {
 					val js = Map("a"->"Foo","b"->"Bar")
@@ -1030,7 +1032,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					Try( ScalaJack.readDB[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
 				}
 			}
-			*/
+			zzz*/
 		}
 		describe("Thread Safety Test") {
 			it("Should not crash when multiple threads access Analyzer (Scala 2.10.x reflection bug)") {

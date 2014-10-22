@@ -43,7 +43,7 @@ case class ListField( name:String, subField:Field ) extends Field {
 		val items = listVal.collect{ case item if(item != None) => subField.renderDB(item, None, hint ) }.toArray
 		MongoDBList( items: _* )
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		// Token now sitting on '[' so advance and read list
 		if( jp.getCurrentToken != JsonToken.START_ARRAY) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected '['")
 		jp.nextToken

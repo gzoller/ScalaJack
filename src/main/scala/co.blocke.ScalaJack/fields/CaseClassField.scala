@@ -14,7 +14,7 @@ case class CaseClassProxy( name:String, proto:CaseClassProto ) extends Field
 case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
 	extends Field with ClassOrTrait 
 {
-	def iFields = fields.map( f => (f.name, f)).toMap
+	val iFields = fields.map( f => (f.name, f)).toMap
 
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val cz = target.getClass
@@ -97,9 +97,9 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		dbo
 	}
 
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
+	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
 
-	override private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readClass[T]( jp:JsonEmitter, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		if( !fromTrait && jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Expected '['")
 		// Token now sitting on '{' so advance and read list
 		if( !fromTrait) jp.nextToken  // consume '{'
@@ -108,16 +108,15 @@ case class CaseClassField( name:String, dt:Type, className:String, applyMethod:j
 		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
 			val fieldName = jp.getCurrentName
 			cc.fieldName = fieldName
-			if( iFields.contains(fieldName) ) {
+			if( fieldName == hint ) 
+				jp.nextToken // skip hint value
+			else if( iFields.contains(fieldName) ) {
 				jp.nextToken // scan to value
-				if( fieldName == hint ) jp.nextToken
-				else {
-					val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint, cc) )
-					fieldData += fd
-				}
+				val fd = (fieldName, iFields(fieldName).readValue(jp, ext, hint, cc) )
+				fieldData += fd
 			}
 			else {
-				jp.skipChildren
+				jp.skipChildren()
 				jp.nextToken
 			}
 		}

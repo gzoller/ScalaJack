@@ -17,7 +17,6 @@ package co.blocke.scalajack
  * 		http://stackoverflow.com/questions/17006271/deep-access-of-fields-in-scala-using-runtime-reflection
  */
 
-import com.fasterxml.jackson.core.JsonFactory
 import com.mongodb.casbah.Imports._
 import fields._
 import scala.reflect.runtime.universe._
@@ -25,15 +24,14 @@ import compat._
 
 object ScalaJack {
 	type JSON = String
-	
-	private val jsFactory = new JsonFactory();
+
 	private val hint = "_hint"
 	
 	/**
 	 * Read a JSON-encoded case class
 	 */
 	def read[T]( js:JSON, ext:Boolean = false, hint:String = hint )(implicit m:Manifest[T]) : T = {
-		val jp = jsFactory.createParser(js)
+		val jp = JsonEmitter(js)
 		jp.nextToken
 		_readRender(
 			_.readValue(jp,ext,hint,ClassContext("scala.collection.immutable.List","")),

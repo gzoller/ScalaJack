@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package fields
 
-import com.fasterxml.jackson.core._
 import org.bson.types.ObjectId
 
 /** 
@@ -25,7 +24,7 @@ case class ObjectIdField( name:String ) extends Field {
 	override private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = {
 		target.asInstanceOf[ObjectId]
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		jp.nextToken
 		jp.nextToken
 		val v = jp.getValueAsString

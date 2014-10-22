@@ -1,6 +1,5 @@
 package co.blocke.scalajack
 
-import com.fasterxml.jackson.core._
 import com.mongodb.casbah.Imports._
 
 trait Field {
@@ -19,14 +18,14 @@ trait Field {
 			})
 		true
 	}
-	private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = { 0 }
+	private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = { 0 }
 
 	private[scalajack] def renderDB[T]( target:T, label:Option[String], hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any = { 0 }
 	private[scalajack] def readValueDB[T]( src:Any, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = { 0 }
 }
 
 trait ClassOrTrait {
-	private[scalajack] def readClass[T]( jp:JsonParser, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any
+	private[scalajack] def readClass[T]( jp:JsonEmitter, ext:Boolean, hint:String, fromTrait:Boolean = false )(implicit m:Manifest[T]) : Any
 
 	private[scalajack] def renderClassDB[T]( target:T, hint:String, withHint:Boolean = false )(implicit m:Manifest[T]) : Any
 	private[scalajack] def readClassDB[T]( src:DBObject, hint:String )(implicit m:Manifest[T]) : Any

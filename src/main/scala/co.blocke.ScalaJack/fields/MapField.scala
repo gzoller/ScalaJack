@@ -49,12 +49,12 @@ case class MapField( name:String, valueField:Field ) extends Field {
 			}}
 		mo
 	}
-	private def readMapField[T]( jp:JsonParser, vf:Field, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : (Any,Any) = {
+	private def readMapField[T]( jp:JsonEmitter, vf:Field, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : (Any,Any) = {
 		val fieldName = jp.getCurrentName
 		jp.nextToken
 		(fieldName, vf.readValue( jp, ext, hint, cc ))
 	}
-	override private[scalajack] def readValue[T]( jp:JsonParser, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
+	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.START_OBJECT) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected '{'")
 		// Token now sitting on '{' so advance and read list
 		jp.nextToken

@@ -1,7 +1,5 @@
 package co.blocke.scalajack
 
-import com.fasterxml.jackson.core._
-
 /**
  * Mix this trait into a value class' companion object to enable an optional ability for extended
  * JSON rendering/reading.  If you have this trait mixed you can toggle the extended rendering 
@@ -12,5 +10,5 @@ import com.fasterxml.jackson.core._
  */
 trait ExtJson extends Any {
 	def toJson( obj:Any ) : String
-	def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String ) : Any
+	def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any
 }
