@@ -9,22 +9,43 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "2.0.5")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "3.0.0")
+    
+If you want to use the optional MongoDB serialization support include this as well:
 
-And if necessary add the OSS repo to your resolvers:
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "3.0.0")
+
+You may need to  add the OSS repo to your resolvers if its not already present:
 
 	resolvers ++= Seq("OSS" at "http://oss.sonatype.org/content/repositories/releases")
 
-Now you're good to go!  Let's use ScalaJack in your project:
+Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
 	import co.blocke.scalajack._
 
 	val js = ScalaJack.render( myCaseObj )  // serialization
 	val myObj = ScalaJack.read[MyCaseClass](js) // deserialization
 
-That's about it.  Couldn't be simpler.  There is an optional hint (String) parameter for both render() and read()
-that changes the default \_hint field name for trait type hints, if you'd prefer something else.  Don't forget
-to use the same type hint name for render and read!
+Couldn't be simpler.  
+
+### Trait support
+ScalaJack can handle traits too.  To do this you'll need the help of a type hint in the JSON.  This tells ScalaJack what actual class to create in support of the trait.  The default type hint is "_hint" but you can set whatever you want (very powerful for 3rd party JSON!)Don't forget to use the same type hint name for render and read!
+
+```scala
+package com.myproj
+
+trait Pet { val name:String }
+case class Dog( name:String ) extends Pet
+case class Cat( name:String ) extends Pet
+
+val p : Pet = Dog("Fido")
+val js = ScalaJack.render(p)  // {"_hint":"com.myproj.Dog","name":"Fido"}
+val js2 = ScalaJack.render(p,"kind") // {"kind":"com.myproj.Dog","name":"Fido"}
+
+// Be sure to match type hints when reading!
+val d1 = ScalaJack.render(js)
+val d2 = ScalaJack.render(js2,"kind")
+```
 
 # Custom Value Class JSON
 
@@ -93,10 +114,12 @@ in a lightweight/fast manner.
 
 # MongoDB (Casbah) Persistence
 
-ScalaJack doesn't wrap MongoDB or Casbah persistence libraries--that's not its mission.  It does provide a way to convert case classes (and traits)
-to/from DBObjects.
+ScalaJack doesn't wrap MongoDB or Casbah persistence libraries--that's not its mission.  It does provide a way to convert case classes (and traits)to/from DBObjects.  You'll need to include the mongo support package:
 
 ```scala
+import co.blocke.scalajack._
+import mongo._
+
 val mydbo  = ScalaJack.renderDB( myCaseClass )         // default type hint for traits
 val mydbo2 = ScalaJack.renderDB( myCaseClass, "_dt" )  // custom type hint for traits
 val myCC   = ScalaJack.readDB( mydbo ) 
@@ -127,13 +150,13 @@ JodaTime support as found in other libraries, although this may be considered fo
 # View/SpliceInto Feature
 
 If you've ever had the need to support view "projections" to/from a large master object, these
-functions will help.  Below is an obviously rediculous example to demonstrate the behavior.
+functions will help.  Below is a contrived example of a User object that has some protected fields we don't want to easily project out (to make it save for a UI, for example):
 
 ```scala
 case class User(
    name:String,
    age:Int,
-   password:String,  // don't want password or ssn going up to a GUI
+   password:String,  // don't want password or ssn going up to the UI
    ssn:String
 )
 
@@ -145,9 +168,9 @@ case class SafeUser(
 val safe = ScalaJack.view[SafeUser]( fullUser ) // fullUser is of type User, safe will be SafeUser
 ```
 
-Note that the field names of the view class (SafeUser above) must be exactly the same as the
+Note that the field names and types of the view class (SafeUser above) must be exactly the same as the
 corresponding fields of the master class, and you shouldn't have extra fields that aren't
-present somewhere in the master class.  Order, however, is not important.
+present somewhere in the master class.  Field order, however, is not important.
 
 You can also go the other way...incorporating data from a view object back into a master object.
 
