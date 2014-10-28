@@ -10,10 +10,18 @@ package object mongo {
 	import MongoEnum._
 	import MongoList._
 	import MongoMap._
-	import MongoObjectId._
 	import MongoOpt._
 	import MongoTrait._
 	import MongoValueClass._
+
+	implicit val hookFn:(String,String)=>Option[Field] = 
+		( fieldType, fieldName ) => 
+			if( fieldType == "org.bson.types.ObjectId" ) 
+				Some(ObjectIdField( fieldName ))
+			else 
+				None
+
+	implicit def mongoOID( s:String ) = new ObjectId( s)
 	
 	implicit def mongoSJ( sj:ScalaJack.type ) = MongoScalaJack
 
@@ -36,7 +44,7 @@ package object mongo {
 		case x:EnumField       => MongoEnumField(x)
 		case x:ListField       => MongoListField(x)
 		case x:MapField        => MongoMapField(x)
-		case x:ObjectIdField   => MongoObjectIdField(x)
+		case x:ObjectIdField   => x  // already a MongoField
 		case x:OptField        => MongoOptField(x)
 		case x:TraitField      => MongoTraitField(x)
 		case x:ValueClassField => MongoValueClassField(x)

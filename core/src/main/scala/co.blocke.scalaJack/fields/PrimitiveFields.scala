@@ -5,7 +5,7 @@ import scala.util.Try
 import org.joda.time.DateTime
 import com.fasterxml.jackson.core._
 
-case class StringField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class StringField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
@@ -31,7 +31,6 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 				case '\r' => "\\r"
 				case '\b' => "\\b"
 				case '\f' => "\\f"
-				//case '\'' => "\\'"   <- Don't need this one.  Commented out for now...for deletion later after "settling"
 				case '\"' => "\\\""
 				case '\\' => "\\\\"
 				case c    => c
@@ -47,7 +46,7 @@ case class StringField( name:String, override val hasMongoAnno:Boolean ) extends
 	}
 }
 
-case class UUIDField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class UUIDField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
@@ -70,7 +69,7 @@ case class UUIDField( name:String, override val hasMongoAnno:Boolean ) extends F
 	}
 }
 
-case class JodaField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class JodaField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = 
 		super.render[Long]( sb, target.asInstanceOf[DateTime].getMillis.asInstanceOf[Long], label, ext, hint, withHint )
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext)(implicit m:Manifest[T]) : Any = {
@@ -81,7 +80,7 @@ case class JodaField( name:String, override val hasMongoAnno:Boolean ) extends F
 	}
 }
 
-case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class IntField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext)(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsInt
@@ -90,7 +89,7 @@ case class IntField( name:String, override val hasMongoAnno:Boolean ) extends Fi
 	}
 }
 
-case class CharField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class CharField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {
 				sb.append('"')
@@ -113,7 +112,7 @@ case class CharField( name:String, override val hasMongoAnno:Boolean ) extends F
 	}
 }
 
-case class LongField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class LongField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_INT && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_NUMBER_INT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsLong
@@ -122,7 +121,7 @@ case class LongField( name:String, override val hasMongoAnno:Boolean ) extends F
 	}
 }
 
-case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class FloatField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_FLOAT && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_FLOAT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsDouble.toFloat
@@ -131,7 +130,7 @@ case class FloatField( name:String, override val hasMongoAnno:Boolean ) extends 
 	}
 }
 
-case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class DoubleField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_NUMBER_FLOAT && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected VALUE_FLOAT and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsDouble
@@ -140,7 +139,7 @@ case class DoubleField( name:String, override val hasMongoAnno:Boolean ) extends
 	}
 }
 
-case class BoolField( name:String, override val hasMongoAnno:Boolean ) extends Field {
+case class BoolField( name:String, override val hasDBKeyAnno:Boolean ) extends Field {
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = {
 		if( jp.getCurrentToken != JsonToken.VALUE_TRUE && jp.getCurrentToken != JsonToken.VALUE_FALSE && jp.getCurrentToken != JsonToken.VALUE_NULL ) throw new IllegalArgumentException("Class "+cc.className+" field "+cc.fieldName+" Expected boolean and saw "+jp.getCurrentToken)
 		val v = jp.getValueAsBoolean

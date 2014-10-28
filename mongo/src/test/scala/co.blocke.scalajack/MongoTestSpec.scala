@@ -422,6 +422,8 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB(seven)
 				dbo.toString should equal( """{ "_id" : { "$oid" : """"+oid+""""} , "two" : { "foo" : "blah" , "bar" : true}}""" )
 				ScalaJack.readDB[Seven](dbo) should equal( seven )
+				val js = ScalaJack.render(seven)
+				ScalaJack.read[Seven](js) should equal( seven )
 			}
 			it("Naked List support") {
 				val li = List("a","b","c")

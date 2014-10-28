@@ -13,7 +13,7 @@ object Analyzer {
 	private val protoRepo  = new TrieMap[String,Field]()
 
 	private val ru           = scala.reflect.runtime.universe
-	private val mongoType    = ru.typeOf[MongoKey]
+	private val mongoType    = ru.typeOf[DBKey]
 	private[scalajack] val xtractTypes  = """.*?\[(.*?)\]""".r
 	private[scalajack] val xtractSingle = """[+-]*([a-zA-Z\.\[\]]+).*""".r
 	private[scalajack] def typeSplit( raw:String ) = {
@@ -37,7 +37,10 @@ object Analyzer {
 		case x                     => x
 	}
 
-	private[scalajack] def apply[T]( cname:String, args:List[String] = List[String]() )(implicit m:Manifest[T]) : Field = {
+	private[scalajack] def inspect[T]( 
+		cname:String, 
+		args:List[String] = List[String]() 
+		)(implicit m:Manifest[T], hookFn:(String,String) => Option[Field] = (x,y) => None ) : Field = {
 		// Normally we get the runtime type args from the manifest...except for a parameterized trait.  In this case
 		// there is another level of type param indirection, so we pass in the runtime types, which were already resolved
 		// when the TypeField was resolved.
@@ -75,7 +78,7 @@ object Analyzer {
 	}
 }
 
-case class Analyzer() {
+case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (x,y) => None ) {
 
 	private def _apply( cname:String, rtName:Option[String] = None ) : Field = {
 		val symbol   = currentMirror.classSymbol(Class.forName(cname))
@@ -137,7 +140,6 @@ case class Analyzer() {
 
 	private def resolve( field:Field, argMap:Map[String,String], keyName:String, fieldName:Option[String] = None ) : Field = {
 		field match {
-			//case ccf : CaseClassField => ccf
 			case ccp : CaseClassProto => {
 				Analyzer.readyToEat.get( keyName ).fold( {
 					// Not there... resolve it
@@ -208,7 +210,7 @@ case class Analyzer() {
 		caseClassParams:List[String] = List[String](), // top-level case class' parameter labels
 		inContainer:Boolean = false,  // Set true when object lives inside a container (List, Map, etc.) -- supresses field name
 		classCompanionSymbol:Option[Symbol] = None // if case class, needed to determine if fields have mongo key annotation
-	) : Field = {
+	)(implicit hookFn:(String,String) => Option[Field]) : Field = {
 
 		val fullName = ctype.typeSymbol.fullName.toString
 
@@ -238,7 +240,7 @@ case class Analyzer() {
 						OptField( fieldName, TypeField("", subtype.toString ) )
 					else {
 						val subField = staticReflect(fieldName, subtype, caseClassParams, true, classCompanionSymbol)
-						OptField( fieldName, subField, subField.hasMongoAnno )
+						OptField( fieldName, subField, subField.hasDBKeyAnno )
 					}
 				}
 
@@ -329,7 +331,7 @@ case class Analyzer() {
 						CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj )
 				// --------------- Simple Types
 				} else {
-					// See if there's a MongoKey annotation on any of the class' fields
+					// See if there's a DBKey annotation on any of the class' fields
 					val mongoAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
 						cs.typeSignature.members.collectFirst {
 							case method:MethodSymbol if( method.name.toString == "apply") => method.paramLists.head.collect{ case p if( p.annotations.find(a => a.tree.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
@@ -345,7 +347,6 @@ case class Analyzer() {
 						case "scala.Boolean"    => BoolField(   fieldName, mongoAnno.contains(fieldName) )
 						case "java.util.UUID"   => UUIDField(   fieldName, mongoAnno.contains(fieldName) )
 						case "org.joda.time.DateTime"  => JodaField( fieldName, mongoAnno.contains(fieldName) )
-						case "org.bson.types.ObjectId" => ObjectIdField( fieldName )
 						case _                  => {
 							if( isValueClass(sym) ) {
 								val clazz = Class.forName(fullName)
@@ -363,8 +364,11 @@ case class Analyzer() {
 									ValueClassField( fieldName, mongoAnno.contains(fieldName), _apply( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 								else 
 									ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), _apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
-							} else
-								throw new IllegalArgumentException("Field "+fieldName+" is of unknown/unsupported data type: "+fullName)
+							} else 
+								// See if any extensions wish to map a field type to a Field object...
+								hookFn( fullName, fieldName ).getOrElse(
+									throw new IllegalArgumentException("Field "+fieldName+" is of unknown/unsupported data type: "+fullName)
+									)
 						}
 					} 
 				}

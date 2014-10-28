@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package fields
 
-case class OptField( name:String, subField:Field, override val hasMongoAnno:Boolean = false ) extends Field {
+case class OptField( name:String, subField:Field, override val hasDBKeyAnno:Boolean = false ) extends Field {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val optVal = target.asInstanceOf[Option[_]]
 		if( optVal != None ) {

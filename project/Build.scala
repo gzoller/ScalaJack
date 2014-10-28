@@ -26,7 +26,7 @@ object Build extends Build {
 
 	lazy val root = (project in file("."))
 		.settings(publishArtifact := false)
-		.aggregate(scalajack, scalajack_mongo)
+		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -71,6 +71,14 @@ object Build extends Build {
 			compile( casbah ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+
+	lazy val scalajack_mysql = project.in(file("mysql"))
+		.settings(basicSettings: _*)
+		.settings(pubSettings: _*)
+		.settings(libraryDependencies ++=
+			compile( mysql_jdbc ) ++
+			test( scalatest, slf4j_simple )
+		).dependsOn( scalajack )
 }
 
 object Dependencies {
@@ -94,4 +102,5 @@ object Dependencies {
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
+	val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
 }
