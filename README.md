@@ -129,13 +129,13 @@ val myCC2  = ScalaJack.readDB( mydbo, "_dt" )
 There is also a way to specify the MongoDB key field (_id) via an annotation:
 
 ```scala
-case class Sample( @MongoKey lastName:String, birthDate:Long, hobbies:List[String] )
+case class Sample( @DBKey lastName:String, birthDate:Long, hobbies:List[String] )
 ```
 
 Compound keys are also supported:
 
 ```scala
-case class Sample( @MongoKey lastName:String, @MongoKey birthDate:Long, hobbies:List[String] )
+case class Sample( @DBKey lastName:String, @DBKey birthDate:Long, hobbies:List[String] )
 ```
 
 Support has been added for Mongo's ObjectId type if you wish to use this directly.
