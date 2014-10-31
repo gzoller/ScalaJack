@@ -11,7 +11,7 @@ case class TraitProxy( name:String, proto:TraitProto ) extends Field
 
 case class TraitField( name:String, typeArgs:List[String] = List[String]() ) extends Field with ClassOrTrait {
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
-		Analyzer(target.getClass.getName, typeArgs).render( sb, target, label, ext, hint, true )
+		Analyzer.inspect(target.getClass.getName, typeArgs).render( sb, target, label, ext, hint, true )
 	}
 
 	override private[scalajack] def readValue[T]( jp:JsonEmitter, ext:Boolean, hint:String, cc:ClassContext )(implicit m:Manifest[T]) : Any = readClass(jp,ext,hint)
@@ -35,6 +35,6 @@ case class TraitField( name:String, typeArgs:List[String] = List[String]() ) ext
 				 jp.skipChildren(true) // skip value and any kids -- skip to next field name
 				}
 		}
-		Analyzer(hintClass, typeArgs).asInstanceOf[CaseClassField].readClass( jp, ext, hint, true )
+		Analyzer.inspect(hintClass, typeArgs).asInstanceOf[CaseClassField].readClass( jp, ext, hint, true )
 	}
 }

@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 trait Field {
 	private[scalajack] val name         : String
-	private[scalajack] val hasMongoAnno : Boolean = false
+	private[scalajack] val hasDBKeyAnno : Boolean = false
 
 	private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		label.fold( {

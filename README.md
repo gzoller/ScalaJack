@@ -9,11 +9,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "3.0.0")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "3.1.0")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "3.0.0")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "3.1.0")
 
 You may need to  add the OSS repo to your resolvers if its not already present:
 
@@ -146,6 +146,55 @@ case class Sample( _id:ObjectId, stuff:Int )
 
 Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no fancy
 JodaTime support as found in other libraries, although this may be considered for a future release.
+
+# MySQL Support
+Just like for MongoDB, ScalaJack offers some helper support for MySQL.  ScalaJack's mission is *not* to be a persistance layer or ORM, or anything of that kind.  It does leverage its powerful analyzer and case class materializer to make certain database operations easier.
+
+For SQL ScalaJack offers 3 helpers.  First is a db connection encapsulation that allows for a functional approach to using a connection and ensuring its closed.
+
+```scala
+import java.sql.Connection
+
+// db object needs to be pre-seeded with named urls for your database
+db.addDbs( Map("devDB"->"jdbc:mysql://localhost:3306/scalajack?user=root&password=&zeroDateTimeBehavior=convertToNull") )
+
+// Now you can use it functionally
+db.withConnection("devDB") { implicit c:Connection => {
+    // database functions here
+}}
+```
+
+If you import the mysql package object you'll get a couple handy new features in the ScalaJack object:
+
+```scala
+import mysql._
+
+@Collection(name="people")  // annotation with table name
+case class Person(
+	@DBKey   // Be sure to note your primary key!
+	name:String, 
+	age:Int, 
+	crazy:Double )
+	
+db.withConnection("devDB") { implicit c:Connection => {
+    val di = ScalaJack.select[Person]("")  // select all people
+    // di is a DataIterator: a wrapper around a ResultSet that marshals objects
+    while( di.hasNext )
+        println( di.next ) // print out each Person object returned
+        
+    // select with a where clause
+    val di2 = ScalaJack.select[Person]("""name="Tom"""") // get just Tom
+    val tom:Option[Person] = di2.toList.headOption
+    
+    // upsert (insert if new, update if exists)
+    val p1 = Person("Tom",12,0.2)
+    val p2 = Person("Bill",78,0.1)
+    val numUpdated = ScalaJack.insertInto( List(p1,p2) ) // batched upserts
+}}	
+```
+Note that if you know your data returned from a select is small there is a toList function on DataIterator that brings back all results.  Of course this is dangerous for a large, unbounded query, but can be handy for small queries.
+
+What ScalaJack's MySQL module does for you is to remove the boilerplate of all the field list generation, and the ability to bring back an Iterator of typed objects, rather than generic ResultSet data.
 
 # View/SpliceInto Feature
 

@@ -83,13 +83,13 @@ case class Four(
 	)
 
 case class Five(
-	@MongoKey name:String,
+	@DBKey name:String,
 	two : Two
 	)
 
 case class Six(
-	@MongoKey name:String,
-	@MongoKey num:Int,
+	@DBKey name:String,
+	@DBKey num:Int,
 	two : Two
 	)
 

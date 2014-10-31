@@ -22,7 +22,7 @@ object MongoCCF {
 			val dbo = MongoDBObject()
 			if( withHint )
 				dbo.put( hint, ccf.dt.typeSymbol.fullName.toString )
-			val (keys, rest) = ccf.fields.partition( _.hasMongoAnno )
+			val (keys, rest) = ccf.fields.partition( _.hasDBKeyAnno )
 			if( keys.size == 1 )
 				dbo.put("_id", keys.head.renderDB(getFieldValue(keys.head,target),None,hint))
 			else if( keys.size > 0 ) {
@@ -70,7 +70,7 @@ object MongoCCF {
 				val fd = ( oneField.name, {
 					if( src.containsField(oneField.name) )
 						oneField.readValueDB( src.get(oneField.name), hint, cc ) 
-					else if( src.containsField("_id") && oneField.hasMongoAnno ) {
+					else if( src.containsField("_id") && oneField.hasDBKeyAnno ) {
 						val sval = src.get("_id")
 						if( sval.isInstanceOf[java.util.Map[_,_]] ) 
 							oneField.readValueDB( sval.asInstanceOf[java.util.Map[String,_]].get(oneField.name), hint, cc )

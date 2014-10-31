@@ -25,6 +25,11 @@ object ScalaJack {
 	type JSON = String
 
 	val HINT = "_hint"
+
+	// This hook function, which does nothing in core, is fed implicitly into the Analyzer.
+	// It takes (fieldType,fieldName) as inputs.  It's an extension mechanism for bolt-on modules
+	// to map class names/types to Field values.  Look at Mongo's ObjectId for an example of use (Mongo.scala)
+	implicit val hookFn : (String,String)=>Option[Field] = (x,y)=>None
 	
 	/** Read a JSON-encoded case class
 	  * @param js JSON string to read
@@ -60,7 +65,7 @@ object ScalaJack {
 	}
 	def render[T]( target:T, ext:Boolean )(implicit m:Manifest[T]) : JSON = render[T]( target, HINT, ext )
 
-	private[scalajack] def _readRender[T]( listFn:(Field)=>Any, mapFn:(Field)=>Any, classFn:(ClassOrTrait)=>Any )(implicit m:Manifest[T]) : Any = {
+	private[scalajack] def _readRender[T]( listFn:(Field)=>Any, mapFn:(Field)=>Any, classFn:(ClassOrTrait)=>Any )(implicit m:Manifest[T], hookFn:(String,String)=>Option[Field]) : Any = {
 		if( m.runtimeClass.getSimpleName == "List" ) {
 			val Analyzer.xtractTypes(subtype) : String = (typeOf[T]).toString
 			val analyzer = Analyzer()
@@ -69,7 +74,7 @@ object ScalaJack {
 			val analyzer = Analyzer()
 			mapFn( MapField( "", analyzer.typeMap( Analyzer.convertType(Analyzer.typeSplit((typeOf[T]).toString)(1)))("") ) )
 		} else
-			classFn( Analyzer(m.runtimeClass.getName).asInstanceOf[ClassOrTrait] )
+			classFn( Analyzer.inspect(m.runtimeClass.getName).asInstanceOf[ClassOrTrait] )
 	}
 
 	/** Project fields from given master object to a view object of type T.  Field names/types must match master
@@ -78,7 +83,7 @@ object ScalaJack {
 	  * @return an object of type T which is a "subset" of the master
 	  */
 	def view[T]( master:Any )(implicit m:Manifest[T]) : T = {
-		val viewClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]
+		val viewClassField = Analyzer.inspect(m.runtimeClass.getName).asInstanceOf[CaseClassField]
 		val masterData = master.getClass.getDeclaredFields
 		val args = viewClassField.fields.collect{ case f => masterData.find(_.getName == f.name).map( tf => {
 			tf.setAccessible(true)
@@ -93,7 +98,7 @@ object ScalaJack {
 	  * @return the master object with the view object's corresponding fields merged/overlayed
 	  */
 	def spliceInto[T,U]( view:T, master:U )(implicit m:Manifest[U]) : U = {
-		val masterClassField = Analyzer(m.runtimeClass.getName).asInstanceOf[CaseClassField]
+		val masterClassField = Analyzer.inspect(m.runtimeClass.getName).asInstanceOf[CaseClassField]
 		val viewData = view.getClass.getDeclaredFields
 		val masterData = master.getClass.getDeclaredFields
 		val args = masterClassField.fields.collect{ case f => viewData.find(_.getName == f.name).map( tf => {

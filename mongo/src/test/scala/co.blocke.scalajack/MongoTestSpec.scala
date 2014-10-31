@@ -15,7 +15,7 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
 
-	describe("====================\n| -- JSON Tests -- |\n====================") {
+	describe("=====================\n| -- Mongo Tests -- |\n=====================") {
 		describe("Basic Render/Read") {
 			it( "Serialize simple object to JSON -- all supported data types" ) {
 				val js = ScalaJack.render(data)
@@ -422,6 +422,8 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val dbo = ScalaJack.renderDB(seven)
 				dbo.toString should equal( """{ "_id" : { "$oid" : """"+oid+""""} , "two" : { "foo" : "blah" , "bar" : true}}""" )
 				ScalaJack.readDB[Seven](dbo) should equal( seven )
+				val js = ScalaJack.render(seven)
+				ScalaJack.read[Seven](js) should equal( seven )
 			}
 			it("Naked List support") {
 				val li = List("a","b","c")

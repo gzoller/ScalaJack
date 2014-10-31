@@ -3,14 +3,22 @@ package fields
 
 import reflect.runtime.universe._
 import com.fasterxml.jackson.core._
+import java.lang.reflect.Method
 
-case class CaseClassProto( dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object, typeArgs:List[String] ) extends Field {
+case class CaseClassProto( 
+	dt:Type, 
+	className:String, 
+	applyMethod:java.lang.reflect.Method, 
+	fields:List[Field], 
+	caseObj:Object, 
+	typeArgs:List[String],
+	collAnno:Option[String] ) extends Field {
 	val name = ""
 }
 
 case class CaseClassProxy( name:String, proto:CaseClassProto ) extends Field 
 
-case class CaseClassField( name:String, dt:Type, className:String, applyMethod:java.lang.reflect.Method, fields:List[Field], caseObj:Object ) 
+case class CaseClassField( name:String, dt:Type, className:String, applyMethod:Method, fields:List[Field], caseObj:Object, collAnno:Option[String] ) 
 	extends Field with ClassOrTrait 
 {
 	val iFields = fields.map( f => (f.name, f)).toMap

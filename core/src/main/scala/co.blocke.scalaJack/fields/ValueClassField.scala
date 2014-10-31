@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core._
 import scala.language.existentials // compiler-recommended include
 import java.lang.reflect.Constructor
 
-case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolean, valueType:Field, extJson:Option[ExtJson] ) extends Field {
+case class ValueClassFieldUnboxed( name:String, override val hasDBKeyAnno:Boolean, valueType:Field, extJson:Option[ExtJson] ) extends Field {
 
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		if( ext && extJson.isDefined ) {
@@ -36,7 +36,7 @@ case class ValueClassFieldUnboxed( name:String, override val hasMongoAnno:Boolea
 // value class objects in a container (Option, List, etc.) and raw base types when a "naked" value, like a field in a
 // case class.  Horrors!
 
-case class ValueClassField( name:String, override val hasMongoAnno:Boolean, valueType:Field, constructor:Constructor[_], extJson:Option[ExtJson] ) extends Field {
+case class ValueClassField( name:String, override val hasDBKeyAnno:Boolean, valueType:Field, constructor:Constructor[_], extJson:Option[ExtJson] ) extends Field {
 
 	override private[scalajack] def render[T]( sb:StringBuilder, target:T, label:Option[String], ext:Boolean, hint:String, withHint:Boolean=false )(implicit m:Manifest[T]) : Boolean = {
 		val valueFieldName = target.getClass.getDeclaredFields.head.getName
