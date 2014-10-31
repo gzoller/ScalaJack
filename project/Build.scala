@@ -16,7 +16,7 @@ object Build extends Build {
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "3.0.0"
+		version 					:= "3.1.0"
 	)
 
 	// configure prompt to show current project
@@ -26,7 +26,7 @@ object Build extends Build {
 
 	lazy val root = (project in file("."))
 		.settings(publishArtifact := false)
-		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)
+		.aggregate(scalajack, scalajack_mongo, scalajack_mysql)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 

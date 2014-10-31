@@ -13,7 +13,8 @@ object Analyzer {
 	private val protoRepo  = new TrieMap[String,Field]()
 
 	private val ru           = scala.reflect.runtime.universe
-	private val mongoType    = ru.typeOf[DBKey]
+	private val dbType       = ru.typeOf[DBKey]
+	private val collectType  = ru.typeOf[Collection]
 	private[scalajack] val xtractTypes  = """.*?\[(.*?)\]""".r
 	private[scalajack] val xtractSingle = """[+-]*([a-zA-Z\.\[\]]+).*""".r
 	private[scalajack] def typeSplit( raw:String ) = {
@@ -170,7 +171,8 @@ case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (
 							resolve( tt.proto, symMap, "_bogus_", Some(tt.name))
 						case f                 => f
 						})
-					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj )
+					val sym = currentMirror.classSymbol(Class.forName(ccp.className))
+					val cf = CaseClassField( fieldName.getOrElse(""), ccp.dt, ccp.className, ccp.applyMethod, fields, ccp.caseObj, getCollectionAnno(sym) )
 					if( keyName != "_bogus_")
 						Analyzer.readyToEat.put( keyName, cf )
 					cf
@@ -204,12 +206,25 @@ case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (
 			typeMap( mappedType )(tf.name)
 	}
 
+	private def getCollectionAnno( sym:ClassSymbol ) = 
+		sym.annotations.collect{
+			case a:Annotation if(a.tree.tpe == Analyzer.collectType) => 
+				// This goofy nonsense is simply to get the label/value of the Collection annotation!
+				val param     = a.tree.children.tail(0).children  // get 0th element--we have only 1 param in this anno
+				val annoLabel = param(0).asInstanceOf[Ident].name.toString
+				if( annoLabel != "name" )
+					throw new IllegalArgumentException("Class "+sym.fullName+" has a Collection annotation with unknown parameter "+annoLabel)
+				// Anno value
+				param(1).asInstanceOf[Literal].value.value.toString
+		}.headOption
+
+
 	private def staticReflect( 
 		fieldName:String,   // Name of the field.  "" for top-level case classes and sometimes things inside a container
 		ctype:Type,         // Reflected Type of this field
 		caseClassParams:List[String] = List[String](), // top-level case class' parameter labels
 		inContainer:Boolean = false,  // Set true when object lives inside a container (List, Map, etc.) -- supresses field name
-		classCompanionSymbol:Option[Symbol] = None // if case class, needed to determine if fields have mongo key annotation
+		classCompanionSymbol:Option[Symbol] = None // if case class, needed to determine if fields have db key annotation
 	)(implicit hookFn:(String,String) => Option[Field]) : Field = {
 
 		val fullName = ctype.typeSymbol.fullName.toString
@@ -235,7 +250,7 @@ case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (
 					OptField( fieldName, TypeField("", subtype ) )
 				} else {
 					val subtype = ctype.asInstanceOf[TypeRef].args(0)
-					// Facilitate an Option as a Mongo key part (a very bad idea unless you are 100% sure the value is non-None!!!)
+					// Facilitate an Option as a DB key part (a very bad idea unless you are 100% sure the value is non-None!!!)
 					if( caseClassParams.contains(subtype.toString) )
 						OptField( fieldName, TypeField("", subtype.toString ) )
 					else {
@@ -326,27 +341,30 @@ case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (
 						}
 					})
 					if( typeArgs.size > 0 )
- 						CaseClassProto( ctype, fullName, applyMethod, fields, caseObj, typeArgs )
+ 						CaseClassProto( ctype, fullName, applyMethod, fields, caseObj, typeArgs, getCollectionAnno(sym))
 					else
-						CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj )
+						CaseClassField( fieldName, ctype, fullName, applyMethod, fields, caseObj, getCollectionAnno(sym))
 				// --------------- Simple Types
 				} else {
 					// See if there's a DBKey annotation on any of the class' fields
-					val mongoAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
+					val dbAnno = classCompanionSymbol.fold(List[String]())( (cs) => {
 						cs.typeSignature.members.collectFirst {
-							case method:MethodSymbol if( method.name.toString == "apply") => method.paramLists.head.collect{ case p if( p.annotations.find(a => a.tree.tpe == Analyzer.mongoType).isDefined) => p.name.toString }
+							case method:MethodSymbol if( method.name.toString == "apply") => 
+								method.paramLists.head.collect { 
+									case p if( p.annotations.find(a => a.tree.tpe == Analyzer.dbType).isDefined) => p.name.toString 
+								}
 						}.getOrElse(List[String]())
 					})
 					fullName match {
-						case "java.lang.String" => StringField( fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Int"        => IntField(    fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Char"       => CharField(   fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Long"       => LongField(   fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Float"      => FloatField(  fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Double"     => DoubleField( fieldName, mongoAnno.contains(fieldName) )
-						case "scala.Boolean"    => BoolField(   fieldName, mongoAnno.contains(fieldName) )
-						case "java.util.UUID"   => UUIDField(   fieldName, mongoAnno.contains(fieldName) )
-						case "org.joda.time.DateTime"  => JodaField( fieldName, mongoAnno.contains(fieldName) )
+						case "java.lang.String" => StringField( fieldName, dbAnno.contains(fieldName) )
+						case "scala.Int"        => IntField(    fieldName, dbAnno.contains(fieldName) )
+						case "scala.Char"       => CharField(   fieldName, dbAnno.contains(fieldName) )
+						case "scala.Long"       => LongField(   fieldName, dbAnno.contains(fieldName) )
+						case "scala.Float"      => FloatField(  fieldName, dbAnno.contains(fieldName) )
+						case "scala.Double"     => DoubleField( fieldName, dbAnno.contains(fieldName) )
+						case "scala.Boolean"    => BoolField(   fieldName, dbAnno.contains(fieldName) )
+						case "java.util.UUID"   => UUIDField(   fieldName, dbAnno.contains(fieldName) )
+						case "org.joda.time.DateTime"  => JodaField( fieldName, dbAnno.contains(fieldName) )
 						case _                  => {
 							if( isValueClass(sym) ) {
 								val clazz = Class.forName(fullName)
@@ -361,9 +379,9 @@ case class Analyzer()(implicit val hookFn : (String,String) => Option[Field] = (
 									case t         => t
 								}
 								if( inContainer )
-									ValueClassField( fieldName, mongoAnno.contains(fieldName), _apply( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
+									ValueClassField( fieldName, dbAnno.contains(fieldName), _apply( className ), clazz.getConstructors()(0), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 								else 
-									ValueClassFieldUnboxed( fieldName, mongoAnno.contains(fieldName), _apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
+									ValueClassFieldUnboxed( fieldName, dbAnno.contains(fieldName), _apply( className ), findExtJson(fullName) ) //, clazz.getConstructors.toList.head )
 							} else 
 								// See if any extensions wish to map a field type to a Field object...
 								hookFn( fullName, fieldName ).getOrElse(

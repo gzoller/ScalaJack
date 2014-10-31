@@ -1,0 +1,4 @@
+This release of ScalaJack fixes one bug and introduces one new feature.
+
+* Fixed ObjectId handling for MongoDB module
+* Added some basic MySQL support
