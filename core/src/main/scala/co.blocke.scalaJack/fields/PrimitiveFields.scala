@@ -24,7 +24,8 @@ case class StringField( name:String, override val hasDBKeyAnno:Boolean ) extends
 		val buffer = new StringBuffer(input.length())
 		for ( i <- 0 to input.length-1 ) {
 			if ( input.charAt(i) > 256) {
-				buffer.append("\\u").append(Integer.toHexString( input.charAt(i)) )
+				val hex = Integer.toHexString( input.charAt(i))
+				buffer.append("\\u").append(hex.reverse.padTo(4, "0").reverse.mkString)
 			} else buffer.append( input.charAt(i) match {
 				case '\n' => "\\n"
 				case '\t' => "\\t"
