@@ -16,7 +16,7 @@ object Build extends Build {
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "3.1.0"
+		version 					:= "3.1.1"
 	)
 
 	// configure prompt to show current project
@@ -60,7 +60,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(joda, joda_convert, jackson, scala_lang) ++
+			compile(joda, joda_convert, jackson, scala_reflect) ++
 			test(scalatest)
 		)
 
@@ -95,8 +95,9 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.3.2"
-	val scala_lang 		= "org.scala-lang"			% "scala-compiler"		% Build.scalaVer
+	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.3"
+	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
+	val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
 	val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"

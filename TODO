@@ -1,0 +1,6 @@
+TODO
+----
+
+[ ] UUID support for MySQL module
+[ ] Joda DateTime support for MySQL module
+[ ] Explore List and Map support for MySQL (lazy and immediate loading)
