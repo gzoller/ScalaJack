@@ -7,16 +7,16 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.2"
+	val scalaVer = "2.11.4"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
-		startYear 					:= Some(2014),
+		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "3.1.1"
+		version 					:= "4.0-WIP"
 	)
 
 	// configure prompt to show current project
@@ -26,7 +26,7 @@ object Build extends Build {
 
 	lazy val root = (project in file("."))
 		.settings(publishArtifact := false)
-		.aggregate(scalajack, scalajack_mongo, scalajack_mysql)
+		.aggregate(scalajack)//, scalajack_mongo, scalajack_mysql)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -64,6 +64,9 @@ object Build extends Build {
 			test(scalatest)
 		)
 
+/*
+	Don't build DB modules for now; until parse/render bit is done.
+
 	lazy val scalajack_mongo = project.in(file("mongo"))
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
@@ -79,6 +82,7 @@ object Build extends Build {
 			compile( mysql_jdbc ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+*/
 }
 
 object Dependencies {
@@ -95,7 +99,8 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.3"
+// TODO: Move each to latest version!
+	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.4"
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
 	val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
 	val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
