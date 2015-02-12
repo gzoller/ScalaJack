@@ -18,6 +18,7 @@ package co.blocke.scalajack
  */
 
 import scala.reflect.runtime.universe._
+import formats._
 
 object Formats extends Enumeration {
 	type Format = Value
@@ -26,29 +27,17 @@ object Formats extends Enumeration {
 import Formats._
   
 object ScalaJack {
-	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) = fmt match {
+	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) : ScalaJack = fmt match {
 		case JSON => ScalaJack_JSON()
 		case XML  => ScalaJack_XML()
-		case Custom => (fn.get)()
+//		case Custom => (fn.get)()
 	}
 }
 
 trait ScalaJack {
-	def render[T]( instance:T )(implicit tt:TypeTag[T]) = {
-		val graph = Analyzer.inspect(instance)
-		implicit val buf = new StringBuilder()
-		_render(graph, instance, buf)
-		buf.toString
-	}
-	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T])
+	this: ReadRenderFrame =>
+	def render[T](instance:T)(implicit tt:TypeTag[T]) = renderer.render(instance)
 }
 
-case class ScalaJack_JSON() extends ScalaJack {
-	import formats.JSON._
-	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T]) = renderFarm(graph, instance, buf)
-}
-
-case class ScalaJack_XML() extends ScalaJack {
-	import formats.XML._
-	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T]) = renderFarm(graph, instance, buf)
-}
+case class ScalaJack_JSON() extends ScalaJack with JSONReadRenderFrame 
+case class ScalaJack_XML()  extends ScalaJack with XMLReadRenderFrame 
