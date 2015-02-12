@@ -5,9 +5,14 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.language.postfixOps
 
+trait Blah
 case class Foo(
 	name:String, 
-	age:Int)
+	age:Int) extends Blah
+case class Stuff(
+	item:String,
+	other:Blah
+	)
 
 case class All(
 	a:	Int,
@@ -27,7 +32,8 @@ case class AllColl(
 	a: List[Int],
 	b: List[Foo],
 	c: Option[Int],
-	d: Option[String]
+	d: Option[String],
+	e: List[Option[Int]]
 	)
 
 import scala.reflect.runtime.universe._
@@ -71,9 +77,17 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			List(1,2),
 			List(Foo("one",1),Foo("two",2)),
 			None,
-			Some("Me")
+			Some("Me"),
+			List(Some(1),None,Some(3),None)
 			)
-		sjJS.render(all) should equal("""{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me"}""")
-		sjXML.render(all) should equal("""<class type="co.blocke.scalajack.test.AllColl"><field name="a"><list class="scala.collection.immutable.List"><item>1</item><item>2</item></list></field><field name="b"><list class="scala.collection.immutable.List"><item><class type="co.blocke.scalajack.test.Foo"><field name="name">one</field><field name="age">1</field></class></item><item><class type="co.blocke.scalajack.test.Foo"><field name="name">two</field><field name="age">2</field></class></item></list></field><field name="d">Me</field></class>""")
+	// println(sjJS.render(all))
+	// println(sjXML.render(all))
+		sjJS.render(all) should equal("""{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3]}""")
+		sjXML.render(all) should equal("""<class type="co.blocke.scalajack.test.AllColl"><field name="a"><list class="scala.collection.immutable.List"><item>1</item><item>2</item></list></field><field name="b"><list class="scala.collection.immutable.List"><item><class type="co.blocke.scalajack.test.Foo"><field name="name">one</field><field name="age">1</field></class></item><item><class type="co.blocke.scalajack.test.Foo"><field name="name">two</field><field name="age">2</field></class></item></list></field><field name="d">Me</field><field name="e"><list class="scala.collection.immutable.List"><item>1</item><item>3</item></list></field></class>""")
+	}
+	it("Must render traits") {
+		val t = Stuff("wow",Foo("me",9))
+		sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.Foo","name":"me","age":9}}""")
+		sjXML.render(t) should equal("""<class type="co.blocke.scalajack.test.Stuff"><field name="item">wow</field><field name="other"><class type="co.blocke.scalajack.test.Foo"><field name="name">me</field><field name="age">9</field></class></field></class>""")
 	}
 }

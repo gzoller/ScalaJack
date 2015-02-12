@@ -66,8 +66,13 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 							buf.append("</list>")
 							true
 					}
-				case g:SjTrait      => true
 				case g:SjTypeSymbol => true
+				case g:SjTrait      => 
+					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
+					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
+					//       to be intelligently mapped somehow.
+					_render(cc.copy(isTrait=true, params=g.params),instance,buf)
+					true
 			}
 	}
 }

@@ -18,6 +18,10 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 			graph match {
 				case g:SjCaseClass  => 
 					buf.append("{")
+					if( g.isTrait ) {
+						buf.append(s""""_hint":"${g.name}"""") //"
+						if(g.fields.size > 0) buf.append(",")
+					}
 					val sb2 = new StringBuilder()
 					g.fields.foreach( f => {
 						val sb3 = new StringBuilder() // needed to support Option -- it may not render anything
@@ -64,7 +68,12 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							true
 					}
 				case g:SjTypeSymbol => true
-				case g:SjTrait => true
+				case g:SjTrait => 
+					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
+					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
+					//       to be intelligently mapped somehow.
+					_render(cc.copy(isTrait=true, params=g.params),instance,buf)
+					true
 			}
 	}
 }
