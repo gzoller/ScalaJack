@@ -37,24 +37,18 @@ trait ScalaJack {
 	def render[T]( instance:T )(implicit tt:TypeTag[T]) = {
 		val graph = Analyzer.inspect(instance)
 		implicit val buf = new StringBuilder()
-		_render(graph, instance )
+		_render(graph, instance, buf)
 		buf.toString
 	}
-	protected def _render[T]( graph:SjType, instance:T )(implicit tt:TypeTag[T], buf:StringBuilder)
+	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T])
 }
 
 case class ScalaJack_JSON() extends ScalaJack {
 	import formats.JSON._
-	protected def _render[T]( graph:SjType, instance:T )(implicit tt:TypeTag[T], buf:StringBuilder) =
-		graph match {
-		  case g:SjCaseClass => g.render(instance)
-		}    
+	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T]) = renderFarm(graph, instance, buf)
 }
 
 case class ScalaJack_XML() extends ScalaJack {
 	import formats.XML._
-	protected def _render[T]( graph:SjType, instance:T )(implicit tt:TypeTag[T], buf:StringBuilder) =
-		graph match {
-		  case g:SjCaseClass => g.render(instance)
-		}
+	protected def _render[T]( graph:SjType, instance:T, buf:StringBuilder )(implicit tt:TypeTag[T]) = renderFarm(graph, instance, buf)
 }

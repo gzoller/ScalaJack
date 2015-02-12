@@ -11,9 +11,9 @@ object PrimitiveTypes {
 		"scala.Double",
 		"scala.Long",
 		"scala.Char",
-		"scala.Unit",
+		//"scala.Unit",
 		"scala.Null",
-		"scala.Any",
+		//"scala.Any",
 		"scala.Byte",
 		"scala.Short"
 		) 
