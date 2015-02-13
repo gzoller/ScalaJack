@@ -23,6 +23,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	// it("Must render custom output") {
 	// 	println(sjC.render(Foo("John",24)))		
 	// }
+	it("Must render naked collections") {
+		sjJS.render(List(1,2,3)) should equal("""[1,2,3]""")
+		sjJS.render(Set(1,2,3)) should equal("""[1,2,3]""")
+		sjXML.render(List(1,2,3)) should equal("""<list class="scala.collection.immutable.List"><item>1</item><item>2</item><item>3</item></list>""")
+		sjXML.render(Set(1,2,3)) should equal("""<list class="scala.collection.immutable.Set"><item>1</item><item>2</item><item>3</item></list>""")
+	}
 	it("Must render all primitives") {
 		val all = All(
 			5,
@@ -66,10 +72,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	it("Must render typed classes") {
 		val a1 = WithType("hey")
 		val a2 = WithType(Foo("boom",9))
+		val a3 = WithType(Set(List("a","b"),List("c")))
 		sjJS.render(a1) should equal("""{"me":"hey"}""")
 		sjXML.render(a1) should equal("""<class type="co.blocke.scalajack.test.WithType"><field name="me">hey</field></class>""")
 		sjJS.render(a2) should equal("""{"me":{"name":"boom","age":9}}""")
 		sjXML.render(a2) should equal("""<class type="co.blocke.scalajack.test.WithType"><field name="me"><class type="co.blocke.scalajack.test.Foo"><field name="name">boom</field><field name="age">9</field></class></field></class>""")
+		sjJS.render(a3) should equal("""{"me":[["a","b"],["c"]]}""")
+		sjXML.render(a3) should equal("""<class type="co.blocke.scalajack.test.WithType"><field name="me"><list class="scala.collection.immutable.Set"><item><list class="scala.collection.immutable.List"><item>a</item><item>b</item></list></item><item><list class="scala.collection.immutable.List"><item>c</item></list></item></list></field></class>""")
 	}
 	it("Must render Enumerations") {
 		val all = EnumExer( Colors.Red, Formats.JSON )

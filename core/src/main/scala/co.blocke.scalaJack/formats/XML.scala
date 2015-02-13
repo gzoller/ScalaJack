@@ -7,14 +7,19 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 	def renderer = new XMLReadRender()
 
 	class XMLReadRender() extends ReadRender[String] {
-		def render[T](instance:T)(implicit tt:TypeTag[T]) : String = {
-			val graph = Analyzer.inspect(instance)
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
+			val graph = getGraph(instance)
 			val buf = new StringBuilder()
 			_render(graph, instance, buf)
 			buf.toString
 		}
 
-		private def _render[T](graph:SjType, instance:T, buf:StringBuilder)(implicit tt:TypeTag[T]):Boolean = 
+		private def _render[T](
+			graph:SjType, 
+			instance:T, 
+			buf:StringBuilder, 
+			typeArgs:List[Type]=List.empty[Type]
+		)(implicit tt:TypeTag[T], vc:VisitorContext):Boolean = 
 			graph match {
 				case g:SjCaseClass  => 
 					buf.append(s"""<class type="${g.name}">""")
@@ -28,7 +33,7 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 							buf.append(s"""<field name="${f.fieldName}" xsi:nil="true"/>""")
 						else {
 							sb3.append(s"""<field name="${f.fieldName}">""")
-							if( _render(f.ftype, instVal, sb3) ) {
+							if( _render(f.ftype, instVal, sb3, tt.tpe.typeArgs) ) {
 								sb3.append(s"""</field>""")
 								buf.append(sb3)
 							}
@@ -38,7 +43,7 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 					true
 				case g:SjPrimitive  => 
 					if(g.name == "scala.Any") 
-						_render(Analyzer.inspect(instance),instance,buf)
+						_render(Analyzer.inspect(instance),instance,buf,tt.tpe.typeArgs)
 					else {
 						buf.append(instance)
 						true
@@ -47,7 +52,7 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 					g.name match {
 						case "scala.Option" => 
 							val optVal = instance.asInstanceOf[Option[_]]
-							optVal.map( ov => _render(g.collectionType.head, ov, buf) )
+							optVal.map( ov => _render(g.collectionType.head, ov, buf, tt.tpe.typeArgs) )
 							optVal.isDefined
 						case "scala.collection.immutable.Map" => 
 							buf.append(s""""${instance}"""") //"
@@ -59,7 +64,7 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 								collVal.map( item => {
 									val sb3 = new StringBuilder()
 									sb3.append("<item>")
-									if( _render(g.collectionType.head, item, sb3) ) {
+									if( _render(g.collectionType.head, item, sb3, tt.tpe.typeArgs) ) {
 										sb3.append("</item>")
 										buf.append(sb3)
 									}
@@ -71,12 +76,17 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 							true
 					}
 				case g:SjTypeSymbol => 
-					_render(Analyzer.inspect(instance),instance,buf)
+					val analyzed = Analyzer.inspect(instance) match {
+						// naked list = must supply actual collection type
+						case c:SjCollection if(c.collectionType.size==0) => Analyzer.nakedInspect(typeArgs).head
+						case c => c
+					}
+					_render(analyzed,instance,buf,tt.tpe.typeArgs)
 				case g:SjTrait      => 
 					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
-					_render(cc.copy(isTrait=true, params=g.params),instance,buf)
+					_render(cc.copy(isTrait=true, params=g.params),instance,buf, tt.tpe.typeArgs)
 			}
 	}
 }

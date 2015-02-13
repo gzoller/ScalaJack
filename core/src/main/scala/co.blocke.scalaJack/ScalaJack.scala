@@ -36,7 +36,7 @@ object ScalaJack {
 
 trait ScalaJack {
 	this: ReadRenderFrame =>
-	def render[T](instance:T)(implicit tt:TypeTag[T]) = renderer.render(instance)
+	def render[T](instance:T, vc:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = renderer.render(instance)
 }
 
 case class ScalaJack_JSON() extends ScalaJack with JSONReadRenderFrame 

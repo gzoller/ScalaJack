@@ -9,12 +9,14 @@ object Analyzer {
 
 	private val readyToEat = TrieMap.empty[String,SjType]  // a cache, sir, a cache
 
-	def inspect( c:Any ) = 
+	def inspect[T]( c:T )(implicit tt:TypeTag[T]) = 
 		readyToEat.get(c.getClass.getName).getOrElse({
 			val t = staticScan(currentMirror.classSymbol(c.getClass).typeSignature).asInstanceOf[SjType]
 			readyToEat.put(c.getClass.getName,t)
 			t      
 		})
+
+	def nakedInspect[T](typeArgs:List[Type]) = typeArgs.map( staticScan(_).asInstanceOf[SjType] )
 
 	private def staticScan( 
 		ctype:Type, 
@@ -23,9 +25,14 @@ object Analyzer {
 		ctype.typeSymbol match {
 			case s if(s.isPlaceholder(typePlaceholders)) => SjTypeSymbol( s.name.toString )
 			case s if(s.isPrimitive)                     => SjPrimitive( s.fullName )
-			case s if(s.isCollection)                    => 
-				val collArgTypes = ctype.asInstanceOf[TypeRef].args.map( a => staticScan(a,typePlaceholders) )
-				SjCollection( s.fullName, collArgTypes.asInstanceOf[List[SjType]] )
+			case s if(s.isCollection)                    =>
+				ctype match {
+					case p:TypeRef => // embedded collections (e.g. members of a case class)
+						val collArgTypes = p.args.map( a => staticScan(a,typePlaceholders) )
+						SjCollection( s.fullName, collArgTypes.asInstanceOf[List[SjType]] )
+					case p => // naked collections--we can't know the type...caller will have to fill it in!
+						SjCollection( PrimitiveTypes.fixPolyCollection(s.fullName).get, List.empty[SjType] )
+				}
 			case s if(s.asClass.isTrait)                 => 
 				val resolvedTypeArgs = ctype.asInstanceOf[TypeRef].args.map( _.toString )
 				SjTrait(s.fullName, resolvedTypeArgs)
