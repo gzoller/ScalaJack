@@ -11,11 +11,11 @@ object PrimitiveTypes {
 		"scala.Double",
 		"scala.Long",
 		"scala.Char",
-		//"scala.Unit",
 		"scala.Null",
-		//"scala.Any",
 		"scala.Byte",
-		"scala.Short"
+		"scala.Short",
+		"scala.Any",
+		"scala.Enumeration.Value"
 		) 
 
 	private val scalaCollections = List(

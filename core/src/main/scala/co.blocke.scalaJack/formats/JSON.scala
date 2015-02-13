@@ -40,10 +40,14 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 					true
 				case g:SjPrimitive  => 
 					g.name match {
-						case "String" | "java.lang.String" | "scala.Char" => buf.append(s""""${instance}"""") //"
-						case _ => buf.append(instance)
+						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" => 
+							buf.append(s""""${instance}"""") //"
+							true
+						case "scala.Any" => _render(Analyzer.inspect(instance),instance,buf)
+						case _ => 
+							buf.append(instance)
+							true
 					}
-					true
 				case g:SjCollection => 
 					g.name match {
 						case "scala.Option" => 
@@ -67,13 +71,13 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							buf.append("]")
 							true
 					}
-				case g:SjTypeSymbol => true
+				case g:SjTypeSymbol =>
+					_render(Analyzer.inspect(instance),instance,buf)
 				case g:SjTrait => 
 					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
 					_render(cc.copy(isTrait=true, params=g.params),instance,buf)
-					true
 			}
 	}
 }
