@@ -54,8 +54,37 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 							val optVal = instance.asInstanceOf[Option[_]]
 							optVal.map( ov => _render(g.collectionType.head, ov, buf, tt.tpe.typeArgs) )
 							optVal.isDefined
-						case "scala.collection.immutable.Map" => 
-							buf.append(s""""${instance}"""") //"
+						case n if(n.endsWith("Map")) =>  
+							val mapVal = instance.asInstanceOf[Map[_,_]]
+							if( mapVal.isEmpty ) 
+								buf.append(s"""<map class="${g.name}"/>""")
+							else {
+								buf.append(s"""<map class="${g.name}">""")
+								mapVal.map({ case (k,v) => {
+									val sb3 = new StringBuilder()
+									sb3.append("<entry>")
+									var renderedKey = true // handle optionality
+									if( vc.sloppyJSON ) { 
+										sb3.append("<key>")
+										renderedKey = _render(g.collectionType(0), k, sb3, tt.tpe.typeArgs)
+										sb3.append("</key>")
+									} else
+										sb3.append(s"""<key>${k.toString}</key>""") //"
+									if( renderedKey ) {
+										sb3.append("<value>")
+										if( _render(g.collectionType(1), v, sb3, tt.tpe.typeArgs) ) {
+											sb3.append("</value>")
+											sb3.append("</entry>")
+										} else
+											sb3.clear
+									} else
+										sb3.clear
+									buf.append(sb3)
+									}})
+								if( buf.charAt(buf.length-1) == ',' )
+									buf.deleteCharAt(buf.length-1)
+								buf.append("</map>")
+							}
 							true
 						case _ => 
 							buf.append(s"""<list class="${g.name}">""")

@@ -28,9 +28,4 @@ trait ReadRenderFrame {
 	}
 }
 
-case class VisitorContext(
-	traitHintLabel : String  = "_hint",
-	sloppyJSON     : Boolean = false    // allow non-string keys in Maps--not part of JSON spec
-	)
-
 class RenderException(msg:String) extends Exception(msg)

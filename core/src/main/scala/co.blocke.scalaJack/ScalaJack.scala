@@ -9,6 +9,7 @@ package co.blocke.scalajack
  *         Int, Boolean, Long, String, Enumeration.Value
  *   -- Collections/"containers" supported:
  *         List (mutable (ListBuffer) and immutable)
+ *         Set  (mutable and immutable)
  *         Map  (mutable and immutable)
  *         Option
  *   -- MongoKey-decorated fields must be type String and map to "_id" (Mongo's default)
@@ -25,6 +26,12 @@ object Formats extends Enumeration {
 	val JSON, XML, Custom = Value
 }
 import Formats._
+
+
+case class VisitorContext(
+	traitHintLabel : String  = "_hint",
+	sloppyJSON     : Boolean = false    // allow non-string keys in Maps--not part of JSON spec
+	)
   
 object ScalaJack {
 	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) : ScalaJack = fmt match {
@@ -36,7 +43,10 @@ object ScalaJack {
 
 trait ScalaJack {
 	this: ReadRenderFrame =>
-	def render[T](instance:T, vc:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = renderer.render(instance)
+	def render[T](instance:T, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
+		implicit val vc = vctx
+		renderer.render(instance)
+	}
 }
 
 case class ScalaJack_JSON() extends ScalaJack with JSONReadRenderFrame 

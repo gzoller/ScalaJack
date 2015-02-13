@@ -32,8 +32,10 @@ case class AllColl(
 	b: List[Foo],
 	c: Option[Int],
 	d: Option[String],
-	e: List[Option[Int]]
-	)
+	e: List[Option[Int]],
+	f: Map[String,Int],
+	g: Map[Foo,Option[WithType[Int]]] // test sloppy
+ 	)
 
 object Colors extends Enumeration {
   val Red, Amber, Green = Value

@@ -66,9 +66,30 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							val optVal = instance.asInstanceOf[Option[_]]
 							optVal.map( ov => _render(g.collectionType.head, ov, buf, tt.tpe.typeArgs) )
 							optVal.isDefined
-						case "scala.collection.immutable.Map" => 
+						case n if(n.endsWith("Map")) => 
 							val mapVal = instance.asInstanceOf[Map[_,_]]
-							if( mapVal.isEmpty ) buf.append("{}") 
+							buf.append("{")
+							if( !mapVal.isEmpty ) 
+								mapVal.map({ case (k,v) => {
+									val sb3 = new StringBuilder()
+									var renderedKey = true // handle optionality
+									if( vc.sloppyJSON ) 
+										renderedKey = _render(g.collectionType(0), k, sb3, tt.tpe.typeArgs)
+									else
+										sb3.append(s""""${k.toString}"""") //"
+									if( renderedKey ) {
+										sb3.append(":")
+										if( _render(g.collectionType(1), v, sb3, tt.tpe.typeArgs) )
+											sb3.append(",")
+										else
+											sb3.clear
+									} else
+										sb3.clear
+									buf.append(sb3)
+									}})
+							if( buf.charAt(buf.length-1) == ',' )
+								buf.deleteCharAt(buf.length-1)
+							buf.append("}")
 							true
 						case _ => 
 							buf.append("[")
@@ -87,7 +108,8 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 				case g:SjTypeSymbol =>
 					val analyzed = Analyzer.inspect(instance) match {
 						// naked list = must supply actual collection type
-						case c:SjCollection if(c.collectionType.size==0) => Analyzer.nakedInspect(typeArgs).head
+						case c:SjCollection if(c.collectionType.size==0) => 
+							Analyzer.nakedInspect(typeArgs).head
 						case c => c
 					}
 					_render(analyzed,instance,buf, tt.tpe.typeArgs)
