@@ -42,3 +42,9 @@ object Colors extends Enumeration {
 }
 import Formats._  // try alternate Ennumeration form
 case class EnumExer( a:Colors.Value, b:Format )
+
+// Value classes
+class Wrapper(val underlying: String) extends AnyVal
+class Wrapper2[T](val underlying: T) extends AnyVal
+case class Wrapped( hey:Wrapper, you:Int )
+case class Wrapped2[T]( hey:Wrapper2[T], you:Int )

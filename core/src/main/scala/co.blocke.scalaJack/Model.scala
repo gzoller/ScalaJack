@@ -19,5 +19,6 @@ case class SjTrait( name:String, params:List[String] ) extends SjType
 case class SjCollection( name:String, collectionType:List[SjType] ) extends SjType
 case class SjPrimitive( name:String ) extends SjType
 case class SjTypeSymbol( name:String ) extends SjType
+case class SjValueClass( name:String, vcType:SjType, vFieldName:String ) extends SjType
 
 class ReflectException(msg:String) extends Exception(msg)

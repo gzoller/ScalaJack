@@ -42,6 +42,16 @@ object Analyzer {
 				val fields        = symbol.primaryConstructor.typeSignature.paramLists.head
 				val sjfields      = fields.map( f => SjField(f.name.toString, staticScan( f.typeSignature, typeParamArgs ).asInstanceOf[SjType]) )
 				SjCaseClass( s.fullName, typeParamArgs, sjfields )
-			case s                                       => throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
+			case s if(s.asClass.isDerivedValueClass)     => // value class support
+				val symbol        = s.asClass
+				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
+				// Get type of the value member (only constructor parameter)
+				val vcType = Analyzer.staticScan(symbol.primaryConstructor.asMethod.paramLists.head.head.info, typeParamArgs).asInstanceOf[SjType]
+				// Get field name of value member
+				val vField = symbol.primaryConstructor.typeSignature.paramLists.head.head.name.toString
+				SjValueClass(symbol.fullName,vcType,vField)
+			case s                                       => 
+			println("BOOM: "+s.asClass.fullName)
+			throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
 		}
 }

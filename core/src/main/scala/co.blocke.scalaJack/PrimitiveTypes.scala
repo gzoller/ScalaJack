@@ -15,7 +15,8 @@ object PrimitiveTypes {
 		"scala.Byte",
 		"scala.Short",
 		"scala.Any",
-		"scala.Enumeration.Value"
+		"scala.Enumeration.Value",
+		"java.lang.Boolean"
 		) 
 
 	// IDEA : For reading, could convert this to a map of [class_name -> builder_fn]

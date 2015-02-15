@@ -87,4 +87,14 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		sjJS.render(all) should equal("""{"a":"Red","b":"JSON"}""")
 		sjXML.render(all) should equal("""<class type="co.blocke.scalajack.test.EnumExer"><field name="a">Red</field><field name="b">JSON</field></class>""")
 	}
+	it("Must render value classes") {
+		val a1 = new Wrapper("test")
+		val a2 = new Wrapper2(7)
+		val a3 = Wrapped( new Wrapper("foo"),1 )
+		val a4 = Wrapped2( new Wrapper2(true), 9 )
+		sjJS.render(a1) should equal("\"test\"")
+		sjJS.render(a2) should equal("7")
+		sjJS.render(a3) should equal("""{"hey":"foo","you":1}""")
+		sjJS.render(a4) should equal("""{"hey":true,"you":9}""")
+	}
 }
