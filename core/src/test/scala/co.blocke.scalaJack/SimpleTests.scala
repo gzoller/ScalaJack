@@ -96,5 +96,9 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		sjJS.render(a2) should equal("7")
 		sjJS.render(a3) should equal("""{"hey":"foo","you":1}""")
 		sjJS.render(a4) should equal("""{"hey":true,"you":9}""")
+		sjXML.render(a1) should equal("\"test\"")
+		sjXML.render(a2) should equal("7")
+		sjXML.render(a3) should equal("""{"hey":"foo","you":1}""")
+		sjXML.render(a4) should equal("""{"hey":true,"you":9}""")
 	}
 }

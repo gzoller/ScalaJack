@@ -116,6 +116,22 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
 					_render(cc.copy(isTrait=true, params=g.params),instance,buf, tt.tpe.typeArgs)
+				case g:SjValueClass =>
+					// Value classes are ugly!  Sometimes they're inlined so don't assume a class here... it may be just
+					// a raw/unwrapped value.  But... other times they are still wrapped in their class.  Be prepared
+					// to handle either.
+					//
+					// NOTE: Will not handle parameterized value classes having a non-primitive parameter, e.g. List
+					val renderVal = {
+						if( g.name != instance.getClass.getName ) // raw/unwrapped value
+							instance
+						else {
+							val targetField = instance.getClass.getDeclaredField(g.vFieldName)
+							targetField.setAccessible(true)
+							targetField.get(instance)
+						}
+					}
+					_render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
 			}
 	}
 }
