@@ -25,6 +25,26 @@ trait ReadRenderFrame {
 				Analyzer.inspect(instance) // normal non-collection case
 		}
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : R
+
+		protected def clean( input:String ) : String = {
+			val buffer = new StringBuffer(input.length())
+			for ( i <- 0 to input.length-1 ) {
+				if ( input.charAt(i) > 256) {
+					val hex = Integer.toHexString( input.charAt(i))
+					buffer.append("\\u").append(hex.reverse.padTo(4, "0").reverse.mkString)
+				} else buffer.append( input.charAt(i) match {
+					case '\n' => "\\n"
+					case '\t' => "\\t"
+					case '\r' => "\\r"
+					case '\b' => "\\b"
+					case '\f' => "\\f"
+					case '\"' => "\\\""
+					case '\\' => "\\\\"
+					case c    => c
+				})
+			}
+			buffer.toString
+		}
 	}
 }
 

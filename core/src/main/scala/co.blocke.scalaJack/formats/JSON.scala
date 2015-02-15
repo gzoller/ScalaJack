@@ -53,7 +53,8 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 				case g:SjPrimitive  => 
 					g.name match {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" => 
-							buf.append(s""""${instance}"""") //"
+							val cleaned = clean(instance.toString)
+							buf.append(s""""${cleaned}"""") //"
 							true
 						case "scala.Any" => _render(Analyzer.inspect(instance),instance,buf)
 						case _ => 

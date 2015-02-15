@@ -45,7 +45,8 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 					if(g.name == "scala.Any") 
 						_render(Analyzer.inspect(instance),instance,buf,tt.tpe.typeArgs)
 					else {
-						buf.append(instance)
+						val cleaned = clean(instance.toString)
+						buf.append(s"""${cleaned}""")
 						true
 					}
 				case g:SjCollection => 

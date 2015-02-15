@@ -96,9 +96,14 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		sjJS.render(a2) should equal("7")
 		sjJS.render(a3) should equal("""{"hey":"foo","you":1}""")
 		sjJS.render(a4) should equal("""{"hey":true,"you":9}""")
-		sjXML.render(a1) should equal("\"test\"")
+		sjXML.render(a1) should equal("test")
 		sjXML.render(a2) should equal("7")
-		sjXML.render(a3) should equal("""{"hey":"foo","you":1}""")
-		sjXML.render(a4) should equal("""{"hey":true,"you":9}""")
+		sjXML.render(a3) should equal("""<class type="co.blocke.scalajack.test.Wrapped"><field name="hey">foo</field><field name="you">1</field></class>""")
+		sjXML.render(a4) should equal("""<class type="co.blocke.scalajack.test.Wrapped2"><field name="hey">true</field><field name="you">9</field></class>""")
+	}
+	it("Must support unicode") {
+		val a = WithType("następujących")
+		sjJS.render(a) should equal("{\"me\":\"nast\\u0119puj\\u0105cych\"}")
+		sjXML.render(a) should equal("<class type=\"co.blocke.scalajack.test.WithType\"><field name=\"me\">nast\\u0119puj\\u0105cych</field></class>")
 	}
 }
