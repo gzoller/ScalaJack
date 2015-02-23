@@ -25,7 +25,8 @@ case class All(
 	k:	Byte,
 	l:	Short,
 	m:  Any,
-	n:  Any  // different than m
+	n:  Any,  // different than m
+	o:  java.util.UUID
 	)
 case class AllColl(
 	a: List[Int],

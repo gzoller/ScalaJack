@@ -44,12 +44,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			-14 toByte,
 			2 toShort,
 			"anytype",
-			Foo("any",1)
+			Foo("any",1),
+			java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")
 		)
 		// println(sjJS.render(all))
 		// println(sjXML.render(all))
-		sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"anytype","n":{"name":"any","age":1}}""")
-		sjXML.render(all) should equal("""<class type="co.blocke.scalajack.test.All"><field name="a">5</field><field name="b">17</field><field name="c">false</field><field name="d">hey</field><field name="e">you</field><field name="f">1.2</field><field name="g">1.2</field><field name="h">9223372036854775800</field><field name="i">Z</field><field name="j" xsi:nil="true"/><field name="k">-14</field><field name="l">2</field><field name="m">anytype</field><field name="n"><class type="co.blocke.scalajack.test.Foo"><field name="name">any</field><field name="age">1</field></class></field></class>""")
+		sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"anytype","n":{"name":"any","age":1},"o":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
+		sjXML.render(all) should equal("""<class type="co.blocke.scalajack.test.All"><field name="a">5</field><field name="b">17</field><field name="c">false</field><field name="d">hey</field><field name="e">you</field><field name="f">1.2</field><field name="g">1.2</field><field name="h">9223372036854775800</field><field name="i">Z</field><field name="j" xsi:nil="true"/><field name="k">-14</field><field name="l">2</field><field name="m">anytype</field><field name="n"><class type="co.blocke.scalajack.test.Foo"><field name="name">any</field><field name="age">1</field></class></field><field name="o">1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c</field></class>""")
 	}
 	it("Must render all collections (non-nested & sloppy)") {
 		val all = AllColl(
