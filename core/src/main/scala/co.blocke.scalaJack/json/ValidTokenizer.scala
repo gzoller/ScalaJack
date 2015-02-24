@@ -151,7 +151,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 
 				case 't' =>
 					tokPos  += i
-					tokLen  += 1
+					tokLen  += 4
 					tokType += JStrue
 					i += 3
 
@@ -163,7 +163,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 
 				case 'f' =>
 					tokPos  += i
-					tokLen  += 1
+					tokLen  += 5
 					tokType += JSfalse
 					i += 4
 
@@ -175,7 +175,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 
 				case 'n' =>
 					tokPos  += i
-					tokLen  += 1
+					tokLen  += 4
 					tokType += JSnull
 					i += 3
 

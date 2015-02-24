@@ -21,49 +21,46 @@ object PrimitiveTypes {
 		) 
 
 	// IDEA : For reading, could convert this to a map of [class_name -> builder_fn]
-	private val scalaCollections = List(
-		"scala.Option",
-		"scala.collection.immutable.List",
-		"scala.collection.immutable.Map",
-		"scala.collection.immutable.Set",
-		"scala.collection.immutable.HashMap",
-		"scala.collection.immutable.HashSet",
-		"scala.collection.immutable.ListMap",
-		"scala.collection.immutable.ListSet",
-		"scala.collection.immutable.Queue",
-		"scala.collection.immutable.Seq",
-		"scala.collection.immutable.TreeMap",
-		"scala.collection.immutable.TreeSet",
-		"scala.collection.immutable.Vector",
-		"scala.collection.mutable.ArrayBuffer",
-		"scala.collection.mutable.ArraySeq",
-		"scala.collection.mutable.DoublyLinkedList",
-		"scala.collection.mutable.HashMap",
-		"scala.collection.mutable.HashSet",
-		"scala.collection.mutable.IndexedSeq",
-		"scala.collection.mutable.LinearSeq",
-		"scala.collection.mutable.LinkedHashMap",
-		"scala.collection.mutable.LinkedHashSet",
-		"scala.collection.mutable.LinkedList",
-		"scala.collection.mutable.ListBuffer",
-		"scala.collection.mutable.ListMap",
-		"scala.collection.mutable.Map",
-		"scala.collection.mutable.MutableList",
-		"scala.collection.mutable.OpenHashMap",
-		"scala.collection.mutable.PriorityQueue",
-		"scala.collection.mutable.Queue",
-		"scala.collection.mutable.ResizableArray",
-		"scala.collection.mutable.Seq",
-		"scala.collection.mutable.Set",
-		"scala.collection.mutable.SortedSet",
-		"scala.collection.mutable.Stack",
-		"scala.collection.mutable.TreeSet",
-		"scala.collection.mutable.Seq",
-		"scala.collection.mutable.WeakHashMap",
-		"scala.collection.mutable.Seq"
+	private val scalaCollections = Map(
+		"scala.Option"                               -> { (a:Any) => Some(a) },
+		"scala.collection.immutable.List"            -> { (a:Any) => scala.collection.immutable.List(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.immutable.Map"             -> { (a:Any) => scala.collection.immutable.Map(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.immutable.Set"             -> { (a:Any) => scala.collection.immutable.Set(a.asInstanceOf[Seq[_]]:_*) }, 
+		"scala.collection.immutable.HashMap"         -> { (a:Any) => scala.collection.immutable.HashMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.immutable.HashSet"         -> { (a:Any) => scala.collection.immutable.HashSet(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.immutable.ListMap"         -> { (a:Any) => scala.collection.immutable.ListMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.immutable.ListSet"         -> { (a:Any) => scala.collection.immutable.ListSet(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.immutable.Queue"           -> { (a:Any) => scala.collection.immutable.Queue(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.immutable.Seq"             -> { (a:Any) => a.asInstanceOf[Seq[_]] },
+		"scala.collection.immutable.Vector"          -> { (a:Any) => scala.collection.immutable.Vector(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.ArrayBuffer"       -> { (a:Any) => scala.collection.mutable.ArrayBuffer(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.ArraySeq"          -> { (a:Any) => scala.collection.mutable.ArraySeq(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.HashMap"           -> { (a:Any) => scala.collection.mutable.HashMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.mutable.HashSet"           -> { (a:Any) => scala.collection.mutable.HashSet(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.IndexedSeq"        -> { (a:Any) => scala.collection.mutable.IndexedSeq(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.LinearSeq"         -> { (a:Any) => scala.collection.mutable.LinearSeq(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.LinkedHashMap"     -> { (a:Any) => scala.collection.mutable.LinkedHashMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.mutable.LinkedHashSet"     -> { (a:Any) => scala.collection.mutable.LinkedHashSet(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.ListBuffer"        -> { (a:Any) => scala.collection.mutable.ListBuffer(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.ListMap"           -> { (a:Any) => scala.collection.mutable.ListMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.mutable.Map"               -> { (a:Any) => scala.collection.mutable.Map(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.mutable.MutableList"       -> { (a:Any) => scala.collection.mutable.MutableList(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.OpenHashMap"       -> { (a:Any) => scala.collection.mutable.OpenHashMap(a.asInstanceOf[Seq[(_,_)]]:_*) },
+		"scala.collection.mutable.Queue"             -> { (a:Any) => scala.collection.mutable.Queue(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.ResizableArray"    -> { (a:Any) => scala.collection.mutable.ResizableArray(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.Seq"               -> { (a:Any) => scala.collection.mutable.Seq(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.Set"               -> { (a:Any) => scala.collection.mutable.Set(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.Stack"             -> { (a:Any) => scala.collection.mutable.Stack(a.asInstanceOf[Seq[_]]:_*) },
+		"scala.collection.mutable.WeakHashMap"       -> { (a:Any) => scala.collection.mutable.WeakHashMap(a.asInstanceOf[Seq[(_,_)]]:_*) }
 		)
+	// The following collections are not supported because there's no way to infer the implicit Ordering:
+		// "scala.collection.immutable.TreeMap"
+		// "scala.collection.immutable.TreeSet"
+		// "scala.collection.mutable.PriorityQueue"
+		// "scala.collection.mutable.SortedSet"
+		// "scala.collection.mutable.TreeSet"
 
-	def fixPolyCollection( polyName:String ) = scalaCollections.find( cn => polyName.startsWith(cn) ).orElse({
+	def fixPolyCollection( polyName:String ) = scalaCollections.keySet.find( cn => polyName.startsWith(cn) ).orElse({
 		if( polyName.equals("""scala.collection.immutable.$colon$colon""")) Some("scala.collection.immutable.List") else None
 		})
 

@@ -9,12 +9,23 @@ object Analyzer {
 
 	private val readyToEat = TrieMap.empty[String,SjType]  // a cache, sir, a cache
 
+	// Used when we have an actual instance of a class to inspect
 	def inspect[T]( c:T )(implicit tt:TypeTag[T]) = 
 		readyToEat.get(c.getClass.getName).getOrElse({
 			val t = staticScan(currentMirror.classSymbol(c.getClass).typeSignature).asInstanceOf[SjType]
 			readyToEat.put(c.getClass.getName,t)
-			t      
+			t
 		})
+	
+	/*
+	// Used when we only have the class name
+	def inspect( className:String ) = 
+		readyToEat.get(className).getOrElse({
+			val t = staticScan(currentMirror.classSymbol(Class.forName(className)).typeSignature).asInstanceOf[SjType]
+			readyToEat.put(className,t)
+			t
+		})
+	*/
 
 	def nakedInspect[T](typeArgs:List[Type]) = typeArgs.map( staticScan(_).asInstanceOf[SjType] )
 
@@ -39,9 +50,10 @@ object Analyzer {
 			case s if(s.asClass.isCaseClass)             =>
 				val symbol        = s.asClass
 				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
-				val fields        = symbol.primaryConstructor.typeSignature.paramLists.head
+				val ctor          = symbol.primaryConstructor
+				val fields        = ctor.typeSignature.paramLists.head
 				val sjfields      = fields.map( f => SjField(f.name.toString, staticScan( f.typeSignature, typeParamArgs ).asInstanceOf[SjType]) )
-				SjCaseClass( s.fullName, typeParamArgs, sjfields )
+				SjCaseClass( s.fullName, typeParamArgs, sjfields, currentMirror.reflectClass(symbol).reflectConstructor(ctor.asMethod) )
 			case s if(s.asClass.isDerivedValueClass)     => // value class support
 				val symbol        = s.asClass
 				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)

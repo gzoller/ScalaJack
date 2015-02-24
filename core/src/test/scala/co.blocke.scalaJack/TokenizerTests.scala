@@ -22,7 +22,7 @@ class TokenizerSpec extends FunSpec {
 				val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1},"e":null}"""
 				val z = validTC.tokenize(js.toCharArray)
 				z.tokPos.slice(0,z.tokCount) should equal(Array(0, 2, 5, 8, 11, 17, 20, 21, 23, 24, 27, 30, 32, 37, 38, 41, 44, 48))
-				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1))
+				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 4, 1))
 				z.tokType.slice(0,z.tokCount) should equal(Array(JSobjStart,JSstringObjKey,JSnumber,JSstringObjKey,JStrue,JSstringObjKey,JSlistStart,JSnumberInList,JSnumberInList,JSlistEnd,JSstringObjKey,JSobjStart,JSstringObjKey,JSnumber,JSobjEnd,JSstringObjKey,JSnull,JSobjEnd))
 			}
 			it("Must catch errors in json - open top-level object") {
@@ -131,7 +131,7 @@ class TokenizerSpec extends FunSpec {
 				val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}}"""
 				val z = validTNC.tokenize(js.toCharArray)
 				z.tokPos.slice(0,z.tokCount) should equal(Array(0, 2, 5, 8, 11, 17, 20, 21, 23, 24, 27, 30, 32, 37, 38, 39))
-				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
+				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
 				z.tokType.slice(0,z.tokCount) should equal(Array(JSobjStart,JSstringObjKey,JSnumber,JSstringObjKey,JStrue,JSstringObjKey,JSlistStart,JSnumberInList,JSnumberInList,JSlistEnd,JSstringObjKey,JSobjStart,JSstringObjKey,JSnumber,JSobjEnd,JSobjEnd))
 			}
 			it("Must catch errors in json - open top-level object") {
@@ -182,7 +182,7 @@ class TokenizerSpec extends FunSpec {
 				val js = """{"a":1,{"fred":1,"wilma":2}:true,"c":[1,2],"d":{"one":1}}"""
 				val z = validTNC.tokenize(js.toCharArray)
 				z.tokPos.slice(0,z.tokCount) should equal(Array(0, 2, 5, 7, 9, 15, 18, 25, 26, 28, 34, 37, 38, 40, 41, 44, 47, 49, 54, 55, 56))
-				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 4, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
+				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 4, 1, 5, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
 				z.tokType.slice(0,z.tokCount) should equal(Array(JSobjStart, JSstringObjKey, JSnumber, JSobjStart, JSstringObjKey, JSnumber, JSstringObjKey, JSnumber, JSobjEndObjKey, JStrue, JSstringObjKey, JSlistStart, JSnumberInList, JSnumberInList, JSlistEnd, JSstringObjKey, JSobjStart, JSstringObjKey, JSnumber, JSobjEnd, JSobjEnd))
 			}
 			it("Must catch errors in json - missing quotes for object key") {
@@ -236,7 +236,7 @@ class TokenizerSpec extends FunSpec {
 				val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}}"""
 				val z = fastT.tokenize(js.toCharArray)
 				z.tokPos.slice(0,z.tokCount) should equal(Array(0, 2, 5, 8, 11, 17, 20, 21, 23, 24, 27, 30, 32, 37, 38, 39))
-				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
+				z.tokLen.slice(0,z.tokCount) should equal(Array(1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1))
 				z.tokType.slice(0,z.tokCount) should equal(Array(JSobjStart,JSstringObjKey,JSnumber,JSstringObjKey,JStrue,JSstringObjKey,JSlistStart,JSnumberInList,JSnumberInList,JSlistEnd,JSstringObjKey,JSobjStart,JSstringObjKey,JSnumber,JSobjEnd,JSobjEnd))
 			}
 			// Don't test error conditions here -- no error validation is guaranteed, so you takes yer chances!

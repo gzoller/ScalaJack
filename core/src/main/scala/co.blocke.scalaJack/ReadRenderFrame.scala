@@ -1,5 +1,4 @@
 package co.blocke.scalajack
-package formats
 
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
@@ -24,12 +23,14 @@ trait ReadRenderFrame {
 			} else
 				Analyzer.inspect(instance) // normal non-collection case
 		}
+
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : R
+		// def read[T](src:R)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
 
 		protected def clean( input:String ) : String = {
 			val buffer = new StringBuffer(input.length())
 			for ( i <- 0 to input.length-1 ) {
-				if ( input.charAt(i) > 256) {
+				if ( input.charAt(i) > 256 ) {
 					val hex = Integer.toHexString( input.charAt(i))
 					buffer.append("\\u").append(hex.reverse.padTo(4, "0").reverse.mkString)
 				} else buffer.append( input.charAt(i) match {

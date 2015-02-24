@@ -104,21 +104,21 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 
 				case 't' =>
 					tokPos(tokPtr) = i
-					tokLen(tokPtr) = 1
+					tokLen(tokPtr) = 4
 					tokType(tokPtr) = JStrue
 					tokPtr += 1
 					i += 3
 
 				case 'f' =>
 					tokPos(tokPtr) = i
-					tokLen(tokPtr) = 1
+					tokLen(tokPtr) = 5
 					tokType(tokPtr) = JSfalse
 					tokPtr += 1
 					i += 4
 
 				case 'n' =>
 					tokPos(tokPtr) = i
-					tokLen(tokPtr) = 1
+					tokLen(tokPtr) = 3
 					tokType(tokPtr) = JSnull
 					tokPtr += 1
 					i += 3

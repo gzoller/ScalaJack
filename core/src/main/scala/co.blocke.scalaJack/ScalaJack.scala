@@ -20,6 +20,7 @@ package co.blocke.scalajack
 
 import scala.reflect.runtime.universe._
 import formats._
+import json._
 
 object Formats extends Enumeration {
 	type Format = Value
