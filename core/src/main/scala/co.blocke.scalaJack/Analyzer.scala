@@ -10,22 +10,22 @@ object Analyzer {
 	private val readyToEat = TrieMap.empty[String,SjType]  // a cache, sir, a cache
 
 	// Used when we have an actual instance of a class to inspect
-	def inspect[T]( c:T )(implicit tt:TypeTag[T]) = 
+	// def inspect[T]( c:T )(implicit tt:TypeTag[T]) : SjType = inspect(c.getClass)
+	// def inspect[T]( c:Class[T] )(implicit tt:TypeTag[T]) : SjType = 
+	def inspect[T]( c:T )(implicit tt:TypeTag[T]) : SjType = 
 		readyToEat.get(c.getClass.getName).getOrElse({
 			val t = staticScan(currentMirror.classSymbol(c.getClass).typeSignature).asInstanceOf[SjType]
 			readyToEat.put(c.getClass.getName,t)
 			t
 		})
 	
-	/*
 	// Used when we only have the class name
-	def inspect( className:String ) = 
+	def inspect[T]( className:String )(implicit tt:TypeTag[T]) : SjType = 
 		readyToEat.get(className).getOrElse({
 			val t = staticScan(currentMirror.classSymbol(Class.forName(className)).typeSignature).asInstanceOf[SjType]
 			readyToEat.put(className,t)
 			t
 		})
-	*/
 
 	def nakedInspect[T](typeArgs:List[Type]) = typeArgs.map( staticScan(_).asInstanceOf[SjType] )
 
@@ -53,7 +53,8 @@ object Analyzer {
 				val ctor          = symbol.primaryConstructor
 				val fields        = ctor.typeSignature.paramLists.head
 				val sjfields      = fields.map( f => SjField(f.name.toString, staticScan( f.typeSignature, typeParamArgs ).asInstanceOf[SjType]) )
-				SjCaseClass( s.fullName, typeParamArgs, sjfields, currentMirror.reflectClass(symbol).reflectConstructor(ctor.asMethod) )
+				SjCaseClass( s.fullName, typeParamArgs, sjfields )
+				// SjCaseClass( s.fullName, typeParamArgs, sjfields, currentMirror.reflectClass(symbol).reflectConstructor(ctor.asMethod) )
 			case s if(s.asClass.isDerivedValueClass)     => // value class support
 				val symbol        = s.asClass
 				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
@@ -62,6 +63,17 @@ object Analyzer {
 				// Get field name of value member
 				val vField = symbol.primaryConstructor.typeSignature.paramLists.head.head.name.toString
 				SjValueClass(symbol.fullName,vcType,vField)
+			case s if(s.asClass.fullName == "scala.Enumeration.Value") =>
+				val valueName = {
+					val raw = ctype.asInstanceOf[TypeRef].toString
+					if( raw.endsWith(".Value") )
+						raw.replace(".Value","$")
+					else
+						raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
+				}
+				val erasedEnumClass = Class.forName(valueName)
+				val enum = erasedEnumClass.getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
+				SjEnum(s.fullName, enum)
 			case s                                       => 
 			println("BOOM: "+s.asClass.fullName)
 			throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")

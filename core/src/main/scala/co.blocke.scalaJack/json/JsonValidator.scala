@@ -7,7 +7,6 @@ object JsonValidator {
 	// JSON "language" syntax tree--from node <key>, where are the valid next-nodes?
 	private val validCanonical = Map( 
 		JSobjStart      -> List(JSstringObjKey,JSobjEnd),  // JSstring -> JSstringObjKey validation will happy on ':'
-		// JSobjStart      -> List(JSstringObjKey,JSobjEnd),
 		JSobjEnd        -> List(JScomma,JSobjEnd,JSobjEndInList),
 		JSobjEndInList  -> List(JScommaInList,JSlistEnd,JSlistEndInList),
 		JScomma         -> List(JSstringObjKey),  // JSstring -> JSstringObjKey validation will happy on ':'

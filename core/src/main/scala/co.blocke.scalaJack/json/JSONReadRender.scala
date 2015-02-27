@@ -12,117 +12,21 @@ import JsonTokens._
 	types in case they are needed by a collection. <sigh>  These are marked with //!!! for reference to this note.
  */
 
-case class ParseFrame() {
-	var inObjVal  : Boolean         = false
-	var objKey    : Any             = null
-	val objFields : MMap[Any,Any]   = MMap.empty[Any,Any]
-	val listItems : ListBuffer[Any] = ListBuffer.empty[Any]
-	var item      : SjItem          = null
-}
-
 trait JSONReadRenderFrame extends ReadRenderFrame {
 	def renderer = new JSONReadRender()
 
 	class JSONReadRender() extends ReadRender[String] {
 
-		/**
-		 * Magically create an instance of a case class given a map of name->value parameters.
-		 * (Reflects on the apply method of the case class' companion object.)
-		 * It's a quick way to materialize a cse class represented by a Map, which is how ScalaJack uses it.
-		 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
-		 * ScalaJack calls poof to build the case class from the Map.
-		 */
-/*
-		private[scalajack] def poof( cc:SjCaseClass, data:Map[String,Any] ) : Any = {
-			val args = cc.fields.collect{ case f => data.get(f.name).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
-			cc.applyMethod.invoke( classField.caseObj, args:_* )
-		}
-
 		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = {
-// This is just for dev purposes...final must be more flexible
-val fast = FastTokenizer(128)
-val srcChars = src.toCharArray
-val idx = fast.tokenize(srcChars)
-
-val item = ??? // Analyze given type T (as SjType)
-
-			// Internal function so we don't pass around a lot of large data structures
-			def visit( i:Int, sjtype:SjType ) : (Int,Any) = sjtype match {
-				case st:SjCollection =>
-					idx.tokType(i) match {
-						case JSlistStart =>  // list-ish collection
-							val listBuf = ListBuffer.empty[Any]
-							var pc = i+1
-							while( idx.tokType(pc) != JSlistEnd && idx.tokType(pc) != JSlistEndInList ) {
-								val (iLater,baked) = visit(pc, st.collectionType(0))
-								pc = iLater+1
-								listBuf += baked
-							}
-							(pc, listBuff.toSeq)
-						case JSobjStart =>  // map-ish collection
-						case _   => throw new JsonParseException("Expected collection but found JSON token ${JsonTokens.toName(idx.tokType(i))} at position ${idx.tokPos(i)}",0)
-					}
+			val sjTypeName = tt.tpe.typeSymbol.fullName
+			val srcChars = src.toCharArray
+			val parser = vc.isValidating match {
+				case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc.typeHint)
+				case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc.typeHint)
+				case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc.typeHint)
 			}
-
-val (i,result) = visit(0)
-result.asInstanceOf[T]
-
-			val frameStack = scala.collection.mutable.Stack.empty[ParseFrame]
-			var finalResult:Any = null
-			(0 to idx.tokCount).foreach( i => idx.tokType(i) match {
-				case JSobjStart      => 
-					frameStack.push(ParseFrame())
-					frameStack.head.item = ??? // SjType (ensure SjCaseClass or SjCollection map flavor, or error) gotten by Analyzer
-				case JSobjEnd        => 
-					val frame = frameStack.pop 
-					val materialized = {
-						if( frame.item.isInstanceOf[SjCaseClass] )  
-							poof( frame.item.asInstanceOf[SjCaseClass], data??? )
-						// else ???
-					}
-					if( frameStack.size == 0 )  // all done
-						finalResult = materialized
-					// else ???
-				case JSobjEndInList  =>
-				case JSobjEndObjKey  =>
-				case JSlistStart     =>
-				case JSlistEnd       =>
-				case JSlistEndInList =>
-				case JSlistEndObjKey =>
-				case JStrue          =>
-					if(frameStack.head.inObjVal) {
-						frameStack.head.inObjVal = false
-						frameStack.head.objFields.put(frameStack.head.objKey, true)
-					}
-				case JStrueInList    =>
-				case JSfalse         =>
-					if(frameStack.head.inObjVal) {
-						frameStack.head.inObjVal = false
-						frameStack.head.objFields.put(frameStack.head.objKey, false)
-					}
-				case JSfalseInList   =>
-				case JSnull          =>
-					if(frameStack.head.inObjVal) {
-						frameStack.head.inObjVal = false
-						frameStack.head.objFields.put(frameStack.head.objKey, null)
-					}
-				case JSnullInList    =>
-				case JSstring        =>
-					if(frameStack.head.inObjVal) {
-						frameStack.head.inObjVal = false
-						frameStack.head.objFields.put(frameStack.head.objKey, idx.getToken(i,srcChars))
-					}
-				case JSstringInList  =>
-				case JSstringObjKey  => 
-					frameStack.head.objKey = idx.getToken(i,srcChars)
-					frameStack.head.inObjVal = true
-				case JSnumber        =>
-				case JSnumberInList  =>
-				case JSnumberObjKey  =>
-			})
-			finalResult.asInstanceOf[T]
+			parser.parse()
 		}
-		*/
 
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
 			val graph = getGraph(instance)
@@ -141,7 +45,7 @@ result.asInstanceOf[T]
 				case g:SjCaseClass  => 
 					buf.append("{")
 					if( g.isTrait ) {
-						buf.append(s""""${vc.traitHintLabel}":"${g.name}"""") //"
+						buf.append(s""""${vc.typeHint}":"${g.name}"""") //"
 						if(g.fields.size > 0) buf.append(",")
 					}
 					val sb2 = new StringBuilder()
@@ -162,11 +66,10 @@ result.asInstanceOf[T]
 					true
 				case g:SjPrimitive  => 
 					g.name match {
-						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" => 
+						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
 							val cleaned = clean(instance.toString)
 							buf.append(s""""${cleaned}"""") //"
 							true
-						case "scala.Any" => _render(Analyzer.inspect(instance),instance,buf)
 						case _ => 
 							buf.append(instance)
 							true
@@ -184,7 +87,7 @@ result.asInstanceOf[T]
 								mapVal.map({ case (k,v) => {
 									val sb3 = new StringBuilder()
 									var renderedKey = true // handle optionality
-									if( vc.sloppyJSON ) 
+									if( !vc.isCanonical ) 
 										renderedKey = _render(g.collectionType(0), k, sb3, tt.tpe.typeArgs)
 									else
 										sb3.append(s""""${k.toString}"""") //"
@@ -245,6 +148,9 @@ result.asInstanceOf[T]
 						}
 					}
 					_render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+				case g:SjEnum =>
+					buf.append(s""""${instance.toString}"""") //"
+					true
 			}
 		}
 	}

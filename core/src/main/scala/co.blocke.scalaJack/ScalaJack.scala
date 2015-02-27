@@ -30,8 +30,10 @@ import Formats._
 
 
 case class VisitorContext(
-	traitHintLabel : String  = "_hint",
-	sloppyJSON     : Boolean = false    // allow non-string keys in Maps--not part of JSON spec
+	typeHint       : String  = "_hint",
+	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
+	isValidating   : Boolean = false,
+	estFieldsInObj : Int     = 128
 	)
   
 object ScalaJack {
@@ -44,6 +46,10 @@ object ScalaJack {
 
 trait ScalaJack {
 	this: ReadRenderFrame =>
+	def read[T](js:String, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
+		implicit val vc = vctx
+		renderer.read(js)
+	}
 	def render[T](instance:T, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
 		implicit val vc = vctx
 		renderer.render(instance)

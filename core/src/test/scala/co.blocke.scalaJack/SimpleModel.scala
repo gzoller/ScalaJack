@@ -21,12 +21,10 @@ case class All(
 	g:	Double,
 	h:	Long,
 	i:	Char,
-	j:	Null,
+	j:	String, // set to null
 	k:	Byte,
 	l:	Short,
-	m:  Any,
-	n:  Any,  // different than m
-	o:  java.util.UUID
+	m:  java.util.UUID
 	)
 case class AllColl(
 	a: List[Int],
@@ -49,3 +47,6 @@ class Wrapper(val underlying: String) extends AnyVal
 class Wrapper2[T](val underlying: T) extends AnyVal
 case class Wrapped( hey:Wrapper, you:Int )
 case class Wrapped2[T]( hey:Wrapper2[T], you:Int )
+
+case class Address(street:String, zip:Int)
+case class Pristine( name:String, age:Int, stuff:Option[Boolean], addr:Address )

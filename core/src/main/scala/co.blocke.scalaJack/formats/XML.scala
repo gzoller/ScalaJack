@@ -14,6 +14,8 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 			buf.toString
 		}
 
+		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = null.asInstanceOf[T]
+
 		private def _render[T](
 			graph:SjType, 
 			instance:T, 
@@ -41,14 +43,11 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 					})
 					buf.append("</class>")
 					true
-				case g:SjPrimitive  => 
-					if(g.name == "scala.Any") 
-						_render(Analyzer.inspect(instance),instance,buf,tt.tpe.typeArgs)
-					else {
-						val cleaned = clean(instance.toString)
-						buf.append(s"""${cleaned}""")
-						true
-					}
+				case g:SjPrimitive  => 	
+					// TODO: Figure out how to represent primitive null value				
+					val cleaned = clean(instance.toString)
+					buf.append(s"""${cleaned}""")
+					true
 				case g:SjCollection => 
 					g.name match {
 						case "scala.Option" => 
@@ -65,7 +64,7 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 									val sb3 = new StringBuilder()
 									sb3.append("<entry>")
 									var renderedKey = true // handle optionality
-									if( vc.sloppyJSON ) { 
+									if( !vc.isCanonical ) { 
 										sb3.append("<key>")
 										renderedKey = _render(g.collectionType(0), k, sb3, tt.tpe.typeArgs)
 										sb3.append("</key>")
@@ -92,11 +91,14 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 							val collVal = instance.asInstanceOf[Iterable[_]]
 							if( !collVal.isEmpty ) {
 								collVal.map( item => {
-									val sb3 = new StringBuilder()
-									sb3.append("<item>")
-									if( _render(g.collectionType.head, item, sb3, tt.tpe.typeArgs) ) {
-										sb3.append("</item>")
-										buf.append(sb3)
+									if( item == null ) buf.append("""<item xsi:nil="true"/>""")
+									else {
+										val sb3 = new StringBuilder()
+										sb3.append("<item>")
+										if( _render(g.collectionType.head, item, sb3, tt.tpe.typeArgs) ) {
+											sb3.append("</item>")
+											buf.append(sb3)
+										}
 									}
 								})
 								if( buf.charAt(buf.length-1) == ',' )
@@ -133,6 +135,9 @@ trait XMLReadRenderFrame extends ReadRenderFrame {
 						}
 					}
 					_render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+				case g:SjEnum =>
+					buf.append(s"""${instance.toString}""") //"
+					true
 			}
 	}
 }

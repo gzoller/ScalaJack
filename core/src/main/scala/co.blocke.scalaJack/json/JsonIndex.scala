@@ -11,5 +11,5 @@ case class JsonIndex(
 		s"Indexes(${tokPos.slice(0,tokCount).toList},${tokLen.slice(0,tokCount).toList},${tokType.slice(0,tokCount).toList.map(JsonTokens.toName(_))})"
 
 	// Extract a token value at index i from the given StringBuilder
-	def getToken(i:Int, s:Array[Char]) = s.slice(tokPos(i), tokPos(i)+tokLen(i))
+	def getToken(i:Int, s:Array[Char]) = new String(s.slice(tokPos(i), tokPos(i)+tokLen(i)))
 }

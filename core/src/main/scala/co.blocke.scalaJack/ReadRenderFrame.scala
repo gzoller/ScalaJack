@@ -24,8 +24,9 @@ trait ReadRenderFrame {
 				Analyzer.inspect(instance) // normal non-collection case
 		}
 
+		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
+
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : R
-		// def read[T](src:R)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
 
 		protected def clean( input:String ) : String = {
 			val buffer = new StringBuffer(input.length())

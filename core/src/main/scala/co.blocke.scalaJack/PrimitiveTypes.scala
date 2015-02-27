@@ -1,27 +1,28 @@
 package co.blocke.scalajack
 
 object PrimitiveTypes {
-	private val primitiveTypes = List(
-		"scala.Int",
-		"java.lang.Integer",
-		"scala.Boolean",
-		"java.lang.String",
-		"String",
-		"scala.Float",
-		"scala.Double",
-		"scala.Long",
-		"scala.Char",
-		"scala.Null",
-		"scala.Byte",
-		"scala.Short",
-		"scala.Any",
-		"scala.Enumeration.Value",
-		"java.lang.Boolean",
-		"java.util.UUID"
+	// Map of [class_name -> builder_fn]
+	private[scalajack] val primitiveTypes = Map(
+		"scala.Int"                 -> { (s:String) => s.toInt },
+		"java.lang.Integer"         -> { (s:String) => java.lang.Integer.parseInt(s) }, 
+		"scala.Boolean"             -> { (s:String) => s.toBoolean },
+		"java.lang.String"          -> { (s:String) => s },
+		"String"                    -> { (s:String) => s },
+		"scala.Float"               -> { (s:String) => s.toFloat },
+		"scala.Double"              -> { (s:String) => s.toDouble },
+		"scala.Long"                -> { (s:String) => s.toLong },
+		"scala.Char"                -> { (s:String) => if( s.length > 0 ) s.charAt(0) else null },
+		"scala.Byte"                -> { (s:String) => s.toByte },
+		"scala.Short"               -> { (s:String) => s.toShort },
+		"java.lang.Boolean"         -> { (s:String) => java.lang.Boolean.parseBoolean(s) },
+		"java.util.UUID"            -> { (s:String) => java.util.UUID.fromString(s) }
 		) 
+	// Any type not supported -- to loose; Render is fine but unable to figure out what the "real" type is upon read.
+		// "scala.Any"                 -> { (s:String) => s },  // Is this right?  No!  Must "introspect" the string to infer type
+		// "scala.Null"                -> { (s:String) => null },
 
-	// IDEA : For reading, could convert this to a map of [class_name -> builder_fn]
-	private val scalaCollections = Map(
+	// Map of [class_name -> builder_fn]
+	private[scalajack] val scalaCollections = Map(
 		"scala.Option"                               -> { (a:Any) => Some(a) },
 		"scala.collection.immutable.List"            -> { (a:Any) => scala.collection.immutable.List(a.asInstanceOf[Seq[_]]:_*) },
 		"scala.collection.immutable.Map"             -> { (a:Any) => scala.collection.immutable.Map(a.asInstanceOf[Seq[(_,_)]]:_*) },
