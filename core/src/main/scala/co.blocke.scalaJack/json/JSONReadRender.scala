@@ -131,7 +131,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
-					_render(cc.copy(isTrait=true, params=g.params),instance,buf, tt.tpe.typeArgs)
+					_render(cc.copy(isTrait=true),instance,buf, tt.tpe.typeArgs)
 				case g:SjValueClass =>
 					// Value classes are ugly!  Sometimes they're inlined so don't assume a class here... it may be just
 					// a raw/unwrapped value.  But... other times they are still wrapped in their class.  Be prepared

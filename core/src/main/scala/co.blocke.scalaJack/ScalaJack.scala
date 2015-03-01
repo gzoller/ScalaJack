@@ -19,12 +19,11 @@ package co.blocke.scalajack
  */
 
 import scala.reflect.runtime.universe._
-import formats._
 import json._
 
 object Formats extends Enumeration {
 	type Format = Value
-	val JSON, XML, Custom = Value
+	val JSON  = Value  // add your values here, e.g. XML
 }
 import Formats._
 
@@ -39,7 +38,7 @@ case class VisitorContext(
 object ScalaJack {
 	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) : ScalaJack = fmt match {
 		case JSON => ScalaJack_JSON()
-		case XML  => ScalaJack_XML()
+		// case XML  => ScalaJack_XML()
 //		case Custom => (fn.get)()
 	}
 }
@@ -57,4 +56,4 @@ trait ScalaJack {
 }
 
 case class ScalaJack_JSON() extends ScalaJack with JSONReadRenderFrame 
-case class ScalaJack_XML()  extends ScalaJack with XMLReadRenderFrame 
+// case class ScalaJack_XML()  extends ScalaJack with XMLReadRenderFrame 

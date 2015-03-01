@@ -7,44 +7,6 @@ import scala.reflect.runtime.universe._
 import JsonTokens._
 import scala.collection.mutable.{Map => MMap,ListBuffer => MList}
 
-/*
-case class ParseFrame() {
-	// var inObjVal  : Boolean         = false
-	// var objKey    : Any             = null
-	val objFields : MMap[Any,Any]   = MMap.empty[Any,Any]
-	val listItems : ListBuffer[Any] = ListBuffer.empty[Any]
-	// var item      : SjItem          = null
-}
-*/
-
-/*
-trait JsonParser {
-	val s:Array[Char]
-	val idx:JsonIndex
-	def parse[T]()(implicit tt:TypeTag[T]) : T = null.asInstanceOf[T]
-
-
-	/**
-	 * Magically create an instance of a case class given a map of name->value parameters.
-	 * (Reflects on the apply method of the case class' companion object.)
-	 * It's a quick way to materialize a cse class represented by a Map, which is how ScalaJack uses it.
-	 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
-	 * ScalaJack calls poof to build the case class from the Map.
-	 */
-	private[json] def poof( cc:SjCaseClass, data:Map[String,Any] ) : Any = {
-		val args = cc.fields.collect{ case f => data.get(f.fieldName).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
-		cc.constructor.apply( args:_* )
-	}
-}
-
-// 2 Options: 
-//  1) Visit the SjTypes
-//  2) Visit the JSON tokens
-//
-// Choice: #2.  We can't control the token order so assemble these first as we find them in the JSON,
-//    then map against the expected type represented by SjType
-*/
-
 case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:String) {
 
 	/**
@@ -62,11 +24,11 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 
 	// This is a variant of the version of getGraph in ReadRenderFrame.  This one cooks the graph by class name *and* has 
 	// different implicit parameters.
-	private def getGraph2(className:String)(implicit t:Type) = {
+	private def getGraph2[T](className:String)(implicit t:TypeTag[T]) = {
 		val csym = currentMirror.classSymbol(Class.forName(className))
 		if( csym.isCollection ) { 
 			// handle naked collections -- kinda ugly
-			val naked = Analyzer.nakedInspect(t.typeArgs)
+			val naked = Analyzer.nakedInspect(t.tpe.typeArgs)
 			SjCollection(PrimitiveTypes.fixPolyCollection(csym.fullName).get,naked)
 		} else
 			Analyzer.inspect(className) // normal non-collection case
@@ -75,36 +37,24 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
 
-		def _makeClass( ccTypeFn : ()=>SjCaseClass, t:SjType ) = {
+		def _makeClass[U]( ccTypeFn : ()=>SjCaseClass, t:SjType )(implicit ty:TypeTag[U]) = {
 			val objFields = MMap.empty[Any,Any]
 			if( idx.tokType(i) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 			i += 1
 
 			val sjT = ccTypeFn()
-			// Map any class type parameters
-			val paramTypes = tt.tpe.typeArgs.map(ttype => {
-				implicit val x = ttype
-				getGraph2(ttype.typeSymbol.fullName)
-				})
-			val tparms = sjT.params.zip(paramTypes).toMap
 
 			// read key/value pairs
-	println("OBJ: "+sjT)
-	println("Pms: "+tparms)
 			while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList  && idx.tokType(i) != JSobjEndObjKey) {
 				if( idx.tokType(i) != JSstringObjKey ) throw new JsonParseException(s"Expected JSstringObjKey and found ${JsonTokens.toName(idx.tokType(i))}",0)
 				val fieldName = idx.getToken(i,s)
 				i += 1
-				println("Finding field: "+fieldName)
 				sjT.fields.find(_.fieldName == fieldName).fold( skipValue )( _.ftype match {
 					case vt:SjValueClass =>
 						// Voodoo here--if a value class is a property of a case class, unwrap it--don't create the value class object
-						objFields.put(fieldName, _parse(vt.vcType, tparms))
-					case vt:SjTypeSymbol =>
-						objFields.put(fieldName, _parse(tparms(vt.name), tparms))
-println("FIELD: "+fieldName)
+						objFields.put(fieldName, _parse(vt.vcType))
 					case vt =>
-						objFields.put(fieldName, _parse(vt, tparms))
+						objFields.put(fieldName, _parse(vt))
 				})
 			}
 			i+=1
@@ -127,7 +77,8 @@ println("FIELD: "+fieldName)
 			poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )
 		}
 
-		def _parse( t:SjType, params:Map[String,SjType] = Map.empty[String,SjType] ) : Any = t match {
+		// def _parse( t:SjType, params:Map[String,SjType] = Map.empty[String,SjType] ) : Any = t match {
+		def _parse( t:SjType ) : Any = t match {
 			case sj:SjCaseClass =>
 				_makeClass( ()=>{sj}, t )
 
@@ -238,7 +189,6 @@ println("FIELD: "+fieldName)
 		}
 
 		// Make it happen!
-		implicit val x = tt.tpe
 		_parse(getGraph2(sjTName)).asInstanceOf[T]
 	}
 }

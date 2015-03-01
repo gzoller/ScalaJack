@@ -8,31 +8,29 @@ import scala.collection.concurrent.TrieMap
 object Analyzer {
 
 	private val readyToEat = TrieMap.empty[String,SjType]  // a cache, sir, a cache
+	private val resolved   = TrieMap.empty[String,SjType]  // case classe proxies with type params resolved
 
 	// Used when we have an actual instance of a class to inspect
-	// def inspect[T]( c:T )(implicit tt:TypeTag[T]) : SjType = inspect(c.getClass)
-	// def inspect[T]( c:Class[T] )(implicit tt:TypeTag[T]) : SjType = 
-	def inspect[T]( c:T )(implicit tt:TypeTag[T]) : SjType = 
-		readyToEat.get(c.getClass.getName).getOrElse({
-			val t = staticScan(currentMirror.classSymbol(c.getClass).typeSignature).asInstanceOf[SjType]
-			readyToEat.put(c.getClass.getName,t)
-			t
-		})
-	
-	// Used when we only have the class name
-	def inspect[T]( className:String )(implicit tt:TypeTag[T]) : SjType = 
-		readyToEat.get(className).getOrElse({
-			val t = staticScan(currentMirror.classSymbol(Class.forName(className)).typeSignature).asInstanceOf[SjType]
-			readyToEat.put(className,t)
-			t
-		})
+	def inspect[T]( c:T )(implicit tt:TypeTag[T]) : SjType = _inspect[T]( c.getClass )
 
+	// Used when we only have the class name
+	def inspect[T]( className:String )(implicit tt:TypeTag[T]) : SjType = _inspect[T]( Class.forName(className) )
+
+	private def _inspect[T]( clazz:Class[_] )(implicit tt:TypeTag[T]) : SjType = {
+		val ctype = currentMirror.classSymbol(clazz).typeSignature
+		readyToEat.getOrElse(clazz.getName, {
+			staticScan(ctype).asInstanceOf[SjType]
+		}) match {
+			case cc:SjCaseClassProxy  => resolveTypeParams(cc, tt.tpe)
+			case cc:SjValueClassProxy => resolveTypeParams(cc, tt.tpe)
+			case cc                   => cc
+		}
+	}
+
+	// For inspecting naked collections (type args must be captured top-level or be lost!)
 	def nakedInspect[T](typeArgs:List[Type]) = typeArgs.map( staticScan(_).asInstanceOf[SjType] )
 
-	private def staticScan( 
-		ctype:Type, 
-		typePlaceholders:List[String] = List.empty[String] 
-	) : SjItem = 
+	private def staticScan( ctype:Type, typePlaceholders:List[String] = List.empty[String] ) : SjItem = 
 		ctype.typeSymbol match {
 			case s if(s.isPlaceholder(typePlaceholders)) => SjTypeSymbol( s.name.toString )
 			case s if(s.isPrimitive)                     => SjPrimitive( s.fullName )
@@ -49,33 +47,91 @@ object Analyzer {
 				SjTrait(s.fullName, resolvedTypeArgs)
 			case s if(s.asClass.isCaseClass)             =>
 				val symbol        = s.asClass
-				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
-				val ctor          = symbol.primaryConstructor
-				val fields        = ctor.typeSignature.paramLists.head
-				val sjfields      = fields.map( f => SjField(f.name.toString, staticScan( f.typeSignature, typeParamArgs ).asInstanceOf[SjType]) )
-				SjCaseClass( s.fullName, typeParamArgs, sjfields )
-				// SjCaseClass( s.fullName, typeParamArgs, sjfields, currentMirror.reflectClass(symbol).reflectConstructor(ctor.asMethod) )
+				readyToEat.getOrElse(symbol.fullName, {
+					val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
+					val ctor          = symbol.primaryConstructor
+					val fields        = ctor.typeSignature.paramLists.head
+					val sjfields      = fields.map( f => 
+						SjField(f.name.toString, staticScan( f.typeSignature, typeParamArgs ).asInstanceOf[SjType]) )
+					val built = {
+						if( typeParamArgs.size == 0 )  // no type parameters to resolve 
+							SjCaseClass( s.fullName,  sjfields )
+						else // unresolved type parameters
+							SjCaseClassProxy( s.fullName, typeParamArgs, sjfields )
+					}
+					readyToEat.put(symbol.fullName,built)
+					built
+				}) match {
+					case noParams:SjCaseClass      => noParams
+					case wParams:SjCaseClassProxy  => resolveTypeParams(wParams, ctype)
+					case cc                        => cc  // error!
+				}
+
 			case s if(s.asClass.isDerivedValueClass)     => // value class support
 				val symbol        = s.asClass
 				val typeParamArgs = symbol.typeParams.map( tp => tp.name.toString)
-				// Get type of the value member (only constructor parameter)
-				val vcType = Analyzer.staticScan(symbol.primaryConstructor.asMethod.paramLists.head.head.info, typeParamArgs).asInstanceOf[SjType]
 				// Get field name of value member
 				val vField = symbol.primaryConstructor.typeSignature.paramLists.head.head.name.toString
-				SjValueClass(symbol.fullName,vcType,vField)
+				// Get type of the value member (only constructor parameter)
+				Analyzer.staticScan(symbol.primaryConstructor.asMethod.paramLists.head.head.info, typeParamArgs).asInstanceOf[SjType] match {
+					case vcType:SjTypeSymbol => SjValueClassProxy(symbol.fullName,vcType,vField)
+					case vcType              => SjValueClass(symbol.fullName,vcType,vField)
+				}
+
 			case s if(s.asClass.fullName == "scala.Enumeration.Value") =>
 				val valueName = {
-					val raw = ctype.asInstanceOf[TypeRef].toString
-					if( raw.endsWith(".Value") )
-						raw.replace(".Value","$")
-					else
-						raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
+				val raw = ctype.asInstanceOf[TypeRef].toString
+				if( raw.endsWith(".Value") )
+					raw.replace(".Value","$")
+				else
+					raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
 				}
 				val erasedEnumClass = Class.forName(valueName)
 				val enum = erasedEnumClass.getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
 				SjEnum(s.fullName, enum)
+
 			case s                                       => 
-			println("BOOM: "+s.asClass.fullName)
-			throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
+				throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
+	} // match
+  
+	private def resolveTypeParams(sjt:SjType, ctype:Type, params:Map[String,SjType] = Map.empty[String,SjType]) : SjType =
+		sjt match {
+			case sj:SjCaseClassProxy => 
+				ctype match {
+					case p:TypeRef => 
+						val resolvedTag = sj.name+p.args.map(_.typeSymbol.fullName).mkString("[",",","]")
+						resolved.getOrElse(resolvedTag, {
+							var allTypesResolved = true
+							val resolvedFields = sj.fields.map( f => f.ftype match {
+								case ft:SjTypeSymbol =>
+									val typos = sj.params.indexOf(ft.name)
+									if(p.args(typos).toString() == ft.name) {
+										allTypesResolved = false
+										f  // still-unresolved type parameter
+									} else 
+										f.copy(ftype = staticScan(p.args(typos), sj.params).asInstanceOf[SjType])
+								case ft =>
+									f.copy(ftype = resolveTypeParams(ft, ctype, params))
+							})
+							if( allTypesResolved ) {
+								val cc = SjCaseClass(sj.name, resolvedFields)
+								resolved.put(resolvedTag,cc)
+								cc
+							} else
+								sj.copy(fields = resolvedFields)
+						})
+					case nope      => sj
+				}
+			case sj:SjValueClassProxy =>
+				ctype match {
+					case p:TypeRef => 
+						val resolvedTag = sj.name+"["+p.args.head.typeSymbol.fullName+"]"
+						resolved.getOrElse(resolvedTag, 
+							SjValueClass(sj.name, staticScan(p.args(0)).asInstanceOf[SjType], sj.vFieldName)
+							)
+					case nope      => sj
+				}
+			case sj:SjCollection => sj.copy( collectionType = sj.collectionType.map( ct => resolveTypeParams(ct, ctype, params) ) )
+			case sj => sj
 		}
 }
