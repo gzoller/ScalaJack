@@ -39,7 +39,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 
 		def _makeClass[U]( ccTypeFn : ()=>SjCaseClass, t:SjType )(implicit ty:TypeTag[U]) = {
 			val objFields = MMap.empty[Any,Any]
-			if( idx.tokType(i) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
+			if( idx.tokType(i) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i))} at token $i",0)
 			i += 1
 
 			val sjT = ccTypeFn()
@@ -83,6 +83,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				_makeClass( ()=>{sj}, t )
 
 			case sj:SjTrait =>
+			println("Trait: "+sj)
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
 					val objClass = findTypeHint(typeHint).getOrElse(typeHint, throw new JsonParseException(s"No type hint $typeHint given for trait ${sj.name}",0))

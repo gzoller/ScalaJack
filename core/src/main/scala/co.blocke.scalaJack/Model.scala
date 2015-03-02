@@ -16,7 +16,8 @@ case class SjField( fieldName:String, ftype:SjType ) extends SjParam
 // SjTypes -- name == scala class name except for SjTypesymbol where it = the type symbol placeholder
 case class SjCaseClass( name:String, fields:List[SjField], isTrait:Boolean = false ) extends SjType
 case class SjCaseClassProxy( name:String, params:List[String], fields:List[SjField] ) extends SjType
-case class SjTrait( name:String, params:List[String] ) extends SjType
+case class SjTrait( name:String, resolvedParams:Map[String,SjType] = Map.empty[String,SjType] ) extends SjType
+case class SjTraitProxy( name:String, params:List[String] ) extends SjType
 case class SjCollection( name:String, collectionType:List[SjType] ) extends SjType {
 	def isOptional = name == "scala.Option"
 }

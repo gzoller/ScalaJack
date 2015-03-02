@@ -9,7 +9,29 @@ case class Stuff(
 	item:String,
 	other:Blah
 	)
+
+// Parameterized classes/traits
+case class Case_1( name:String, other:List[WithType[Int]] )
+case class Case_2[T]( name:String, other:List[WithType[T]] )
+case class Case_3[T]( name:String, other:List[Two[T,Boolean]] )
+case class Case_5[U,T]( name:String, other:List[Two[T,U]] )
 case class WithType[T](me:T)
+case class Two[T,U](a:T, b:U)
+trait Excite[T,U] {
+	val a:U
+	val b:T
+}
+trait Excite2[T,U] {
+	val a:T
+	val b:U
+}
+trait Sleep[Y] {
+	val x:Y
+}
+case class Ex1(a:String, b:Int) extends Excite[Int,String]
+case class Slp[Z](x:Z) extends Sleep[Z]
+case class Ex2[Z](a:Sleep[Z], b:Int) extends Excite2[Sleep[Z],Int]
+// case class Ex2[Z](a:Slp[Z], b:Int) extends Excite[Int,Sleep[Z]]
 
 case class All(
 	a:	Int,
