@@ -128,7 +128,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 					}
 					_render(analyzed,instance,buf, tt.tpe.typeArgs)
 				case g:SjTrait => 
-					val cc = Analyzer.inspect(instance).asInstanceOf[SjCaseClass]
+					val cc = Analyzer.inspect(instance,Some(g)).asInstanceOf[SjCaseClass]
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
 					_render(cc.copy(isTrait=true),instance,buf, tt.tpe.typeArgs)

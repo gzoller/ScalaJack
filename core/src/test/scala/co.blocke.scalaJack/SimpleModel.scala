@@ -30,8 +30,7 @@ trait Sleep[Y] {
 }
 case class Ex1(a:String, b:Int) extends Excite[Int,String]
 case class Slp[Z](x:Z) extends Sleep[Z]
-case class Ex2[Z](a:Sleep[Z], b:Int) extends Excite2[Sleep[Z],Int]
-// case class Ex2[Z](a:Slp[Z], b:Int) extends Excite[Int,Sleep[Z]]
+case class Ex2[Z,X](a:Sleep[Z], b:Sleep[X]) extends Excite2[Sleep[Z],Sleep[X]]
 
 case class All(
 	a:	Int,

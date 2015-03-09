@@ -1,0 +1,86 @@
+
+case class M[T](hey:T)
+
+1) Top level class - no type.  Type defined in static class def
+
+case class Foo(
+	n:String
+	r:M[Int]
+)
+
+sj.read[Foo]
+
+(p:TypeRef).args in Analyzer has a realized type value 
+typeParamArgs is a type symbol(s)
+
+	Actions:
+
+------------------------------------------------------------------
+
+2) Parameterized top-class with parametierized member
+
+case class Foo[T](
+	n:String
+	r:M[T]
+)
+
+sj.read[Foo[Int]]
+
+(p:TypeRef).args in Analyzer is a type symbol(s) 
+typeParamArgs is a type symbol(s)
+
+	Actions:
+
+------------------------------------------------------------------
+
+3) Partially-applied parameters
+
+case class Foo[T](
+	n:String
+	r:M[T,Boolean]
+)
+
+sj.read[Foo[Int]]
+
+(p:TypeRef).args in Analyzer is a type symbol(s) 
+typeParamArgs is a type symbol(s)
+
+	Actions:
+
+------------------------------------------------------------------
+
+4) Collection (possibly nested?) of parameterized objects
+
+case class Foo[T](
+	n:String
+	r:M[T,Boolean]
+)
+
+sj.read[List[Foo[Int]]]
+
+(p:TypeRef).args in Analyzer is a type symbol(s) 
+typeParamArgs is a type symbol(s)
+
+	Actions:
+
+------------------------------------------------------------------
+
+::: Case 1 --------------------------------
+Examine class co.blocke.scalajack.Case_1
+Args2: List()
+Here! List(co.blocke.scalajack.WithType[scala.Int])
+Examine class co.blocke.scalajack.WithType
+Args: List(scala.Int)
+Args2: List(T)
+SjCaseClass(co.blocke.scalajack.Case_1,List(),List(SjField(name,SjPrimitive(java.lang.String)), SjField(other,SjCollection(scala.collection.immutable.List,List(SjCaseClass(co.blocke.scalajack.WithType,List(T),List(SjField(me,SjTypeSymbol(T))),false))))),false)
+co.blocke.scalajack.Case_1
+::: Case 2 --------------------------------
+Examine class co.blocke.scalajack.Case_2
+Args2: List(T)
+Here! List(co.blocke.scalajack.WithType[T])
+Examine class co.blocke.scalajack.WithType
+Args: List(T)
+Args2: List(T)
+SjCaseClass(co.blocke.scalajack.Case_2,List(T),List(SjField(name,SjPrimitive(java.lang.String)), SjField(other,SjCollection(scala.collection.immutable.List,List(SjCaseClass(co.blocke.scalajack.WithType,List(T),List(SjField(me,SjTypeSymbol(T))),false))))),false)
+co.blocke.scalajack.Case_2[Int]
+

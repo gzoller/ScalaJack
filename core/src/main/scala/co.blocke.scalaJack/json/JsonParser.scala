@@ -31,7 +31,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 			val naked = Analyzer.nakedInspect(t.tpe.typeArgs)
 			SjCollection(PrimitiveTypes.fixPolyCollection(csym.fullName).get,naked)
 		} else
-			Analyzer.inspect(className) // normal non-collection case
+			Analyzer.inspectByName(className) // normal non-collection case
 	}
 
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
@@ -83,11 +83,10 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				_makeClass( ()=>{sj}, t )
 
 			case sj:SjTrait =>
-			println("Trait: "+sj)
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
 					val objClass = findTypeHint(typeHint).getOrElse(typeHint, throw new JsonParseException(s"No type hint $typeHint given for trait ${sj.name}",0))
-					val sjObjType = Analyzer.inspect(objClass.toString)
+					val sjObjType = Analyzer.inspectByName(objClass.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[SjCaseClass] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[SjCaseClass]
 					}, t)
