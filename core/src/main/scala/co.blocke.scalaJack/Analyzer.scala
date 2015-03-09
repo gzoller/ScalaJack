@@ -31,14 +31,7 @@ object Analyzer {
     
     readyToEat.getOrElse(clazz.getName, {
       staticScan(ctype,relativeToTrait,paramMap).asInstanceOf[SjType]
-    }) match {
-      case cc:SjCaseClassProxy  => 
-        if( relativeToTrait.isDefined )
-          preRezolve_trait(cc, cc.mappedTraitParams)
-        else
-          preRezolve_nonTrait( cc, ctype )
-      case cc                   => cc
-    }
+    }) 
   }
 
   // For inspecting naked collections (type args must be captured top-level or be lost!)
@@ -55,7 +48,6 @@ object Analyzer {
       ctype:Type,                                // Reflected type to be scanned
       relativeToTrait:Option[SjTrait] = None,    // Optional trait this object implements
       paramSym2Type:LinkedHashMap[String,SjType] = LinkedHashMap.empty[String,SjType] // Map (possibly empty) of parameter symbol -> SjType (resolved)
-//      xtypePlaceholders:List[String] = List.empty[String] 
   ) : SjItem = 
     ctype.typeSymbol match {
       case s if(s.isPlaceholder(paramSym2Type.keySet.toList)) => SjTypeSymbol( s.name.toString )
@@ -70,7 +62,7 @@ object Analyzer {
               })))
             val resolveParamMaps = collTypeParamSyms.zip(resolvedParamTypes).map({case(sym,types) => LinkedHashMap.empty[String,SjType] ++= sym.zip(types).toMap })
 
-            val collArgTypes = p.args.zipWithIndex.map( { case(a,i) => preRezolve_nonTrait(staticScan(a,relativeToTrait,resolveParamMaps(i)).asInstanceOf[SjType],a )})
+            val collArgTypes = p.args.zipWithIndex.map( { case(a,i) => staticScan(a,relativeToTrait,resolveParamMaps(i)).asInstanceOf[SjType] })
 
             SjCollection( s.fullName, collArgTypes.asInstanceOf[List[SjType]] )
           case p => // naked collections--we can't know the type...caller will have to fill it in!
@@ -79,7 +71,6 @@ object Analyzer {
         }
       case s if(s.asClass.isTrait)                 => 
         val paramSymbols = s.asClass.typeParams.map(_.name.toString)  // e.g. Foo[A,B]  A & B are the type symbols
-        //val typeArgs = ctype.typeParams.map( _.asType.toType.toString )
         val members  = ctype.members.filter(_.isTerm).map(_.asMethod).filter(_.isGetter)
         val mappedMembers = members.map(_.name.toString).zip( members.map(_.typeSignature.resultType.toString) ) // a -> A
         ctype match {
@@ -169,51 +160,5 @@ object Analyzer {
       case s                                       => 
         throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
   } // match
- 
-  // Goal: Build a map of symbols->SjType
-  def preRezolve_nonTrait( sjT:SjType, ctype:Type ) : SjType = sjT match {
-    case sj:SjCaseClassProxy =>
-     ctype match {
-        case p:TypeRef => 
-          val mapped = LinkedHashMap.empty[String,SjType]
-          sj.params.zip(p.args).map( { case(psym,parg) => mapped.put(psym,staticScan(parg).asInstanceOf[SjType] ) })
-//          sj.params.zip(p.args).map( { case(psym,parg) => mapped.put(psym,staticScan(parg,None,sj.params).asInstanceOf[SjType] ) })
-          rezolve(sj, mapped)
-        case nope      =>
-          println("BOOM! CC Proxy resolution failed")
-          sj
-      }
-    case sj => sj
-  }
-  
-  def preRezolve_trait( sjT:SjType, mappedSymbols:LinkedHashMap[String,SjType] ) : SjType = sjT match {
-    case sj:SjCaseClassProxy =>
-      rezolve( sj, sj.mappedTraitParams )
-    case sj => sj
-  }
-  
-    def rezolve( sjT:SjType, mappedSymbols:LinkedHashMap[String,SjType] ) : SjType = {
-      sjT match {
-        case sj:SjCaseClassProxy  =>
-          val tag = sj.name+mappedSymbols.values.map(_.tag).mkString("[",",","]")
-          resolved.getOrElse(tag, {
-            val r = SjCaseClass( sj.name, sj.fields.map( f => f.ftype match {
-              case ft:SjTypeSymbol => f.copy( ftype = mappedSymbols(ft.name) )
-              case ft:ParamProxy   => 
-                f.copy( ftype = rezolve(ft, mappedSymbols) )
-              case ft =>
-                f // no mapping
-            }))
-            resolved.put(tag, r)
-            r
-          })
-       case sj:SjValueClassProxy  => 
-          val appliedParam = mappedSymbols(sj.vcType.name)
-          val resolvedTag = s"sj.name[${appliedParam.name}]"
-          resolved.getOrElse(resolvedTag, SjValueClass(sj.name, appliedParam, sj.vFieldName))
-       case sj:SjCollection      => sj.copy( collectionType = sj.collectionType.map( ct => rezolve(ct, mappedSymbols) ) )
-       case sj => sj
-      }
-    }
 }
  
