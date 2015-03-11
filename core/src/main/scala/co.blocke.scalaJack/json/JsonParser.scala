@@ -16,10 +16,15 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 	 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
 	 * ScalaJack calls poof to build the case class from the Map.
 	 */
-	private def poof( cc:SjCaseClass, data:Map[String,Any] ) : Any = {
+	private def poof[T]( cc:SjCaseClass, data:Map[String,Any] )(implicit tt:TypeTag[T]) : Any = {
+		// Get constructor arguments in right order, we should.
 		val args = cc.fields.collect{ case f => data.get(f.fieldName).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
 		Class.forName(cc.name).getConstructors()(0).newInstance(args:_*)
-		// cc.constructor.apply( args:_* )   -- didn't seem to work for value classes, but newInstance did... hmm...
+
+		// Can go to this one after Scala fixes their bug: https://issues.scala-lang.org/browse/SI-9102
+		// At that point we'll compute ctor differently (see Analyzer.scala).  We also won't need all the special handling
+		// of SjValueClass objects in _parse in this file.
+		// cc.ctor.apply( args: _* )   //-- didn't seem to work for value classes, but newInstance did... hmm...
 	}
 
 	// This is a variant of the version of getGraph in ReadRenderFrame.  This one cooks the graph by class name *and* has 
@@ -49,13 +54,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				if( idx.tokType(i) != JSstringObjKey ) throw new JsonParseException(s"Expected JSstringObjKey and found ${JsonTokens.toName(idx.tokType(i))}",0)
 				val fieldName = idx.getToken(i,s)
 				i += 1
-				sjT.fields.find(_.fieldName == fieldName).fold( skipValue )( _.ftype match {
-					case vt:SjValueClass =>
-						// Voodoo here--if a value class is a property of a case class, unwrap it--don't create the value class object
-						objFields.put(fieldName, _parse(vt.vcType))
-					case vt =>
-						objFields.put(fieldName, _parse(vt))
-				})
+				sjT.fields.find(_.fieldName == fieldName).fold( skipValue )( f => objFields.put(fieldName, _parse(f.ftype)) )
 			}
 			i+=1
 
@@ -74,11 +73,11 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				}.flatten.map(_.fieldName)
 
 			if(missing.size > 0) throw new JsonParseException(s"""No values parsed for field(s) ${missing.mkString(",")} for class ${t.name}""",0)
-			poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )
+			poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )(ty)
 		}
 
 		// def _parse( t:SjType, params:Map[String,SjType] = Map.empty[String,SjType] ) : Any = t match {
-		def _parse( t:SjType ) : Any = t match {
+		def _parse( t:SjType, topLevel:Boolean = false ) : Any = t match {
 			case sj:SjCaseClass =>
 				_makeClass( ()=>{sj}, t )
 
@@ -94,10 +93,10 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 			case sj:SjPrimitive =>
 				val v = idx.tokType(i) match {
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
-						PrimitiveTypes.primitiveTypes(sj.name)(idx.getToken(i,s))
-					case JStrue  => true
-					case JSfalse => false
-					case JSnull  => null
+						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i,s)) )
+					case JStrue  | JStrueInList  => true
+					case JSfalse | JSfalseInList => false
+					case JSnull  | JSnullInList  => null
 					case _ => throw new JsonParseException(s"Expected primitive value but saw ${JsonTokens.toName(idx.tokType(i))} obj ${idx.getToken(i,s)}",0)
 				}
 				i += 1
@@ -143,10 +142,18 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				i += 1
 				ret
 
+			// This is messed up (in Scala)...  If sj is a type parameter (of something else) then we wrap the value in the
+			// value class, otherwise just supply the primitive value and let the JVM do the rest. <sigh>
 			case sj:SjValueClass =>
-  				val primitive = _parse(sj.vcType).asInstanceOf[AnyRef]
-				Class.forName(sj.name).getConstructors()(0).newInstance(primitive)
+				if( sj.isTypeParam || topLevel ) {
+					parseValueClass(sj, parseValueClassPrimitive(sj)).asInstanceOf[T]
+				} else {
+					parseValueClassPrimitive(sj)
+				}
 		}
+
+		def parseValueClassPrimitive( vc:SjValueClass ) =  _parse(vc.vcType).asInstanceOf[AnyRef]
+		def parseValueClass( vc:SjValueClass, primitive:AnyRef ) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
 		def findTypeHint( hint:String ) : Option[String] = {
 			var saveI = i
@@ -189,7 +196,12 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 		}
 
 		// Make it happen!
-		_parse(getGraph2(sjTName)).asInstanceOf[T]
+		val z = getGraph2(sjTName)
+		// println("IDX: "+this.idx.tokType.slice(0,8).toList)
+		// println("Z: "+z)
+		_parse(z,true).asInstanceOf[T]
+		
+		// _parse(getGraph2(sjTName)).asInstanceOf[T]
 	}
 }
 

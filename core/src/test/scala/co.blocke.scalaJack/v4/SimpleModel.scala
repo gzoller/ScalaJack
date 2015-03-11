@@ -1,5 +1,7 @@
 package co.blocke.scalajack
-package test
+package test.v4
+
+import org.joda.time.DateTime
 
 trait Blah
 case class Foo(
@@ -13,10 +15,10 @@ case class Stuff(
 // Parameterized classes/traits
 case class Case_1( name:String, other:List[WithType[Int]] )
 case class Case_2[T]( name:String, other:List[WithType[T]] )
-case class Case_3[T]( name:String, other:List[Two[T,Boolean]] )
-case class Case_5[U,T]( name:String, other:List[Two[T,U]] )
+case class Case_3[T]( name:String, other:List[TwoP[T,Boolean]] )
+case class Case_5[U,T]( name:String, other:List[TwoP[T,U]] )
 case class WithType[T](me:T)
-case class Two[T,U](a:T, b:U)
+case class TwoP[T,U](a:T, b:U)
 trait Excite[T,U] {
 	val a:U
 	val b:T
@@ -31,6 +33,7 @@ trait Sleep[Y] {
 case class Ex1(a:String, b:Int) extends Excite[Int,String]
 case class Slp[Z](x:Z) extends Sleep[Z]
 case class Ex2[Z,X](a:Sleep[Z], b:Sleep[X]) extends Excite2[Sleep[Z],Sleep[X]]
+case class Ex3[R]( a:String, b:R ) extends Excite2[String,R]
 
 case class All(
 	a:	Int,
@@ -45,7 +48,8 @@ case class All(
 	j:	String, // set to null
 	k:	Byte,
 	l:	Short,
-	m:  java.util.UUID
+	m:  java.util.UUID,
+	n:  DateTime
 	)
 case class AllColl(
 	a: List[Int],
@@ -55,7 +59,7 @@ case class AllColl(
 	e: List[Option[Int]],
 	f: Map[String,Int],
 	g: Map[Foo,Option[WithType[Int]]] // test sloppy
- 	)
+	)
 
 object Colors extends Enumeration {
   val Red, Amber, Green = Value

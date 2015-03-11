@@ -39,8 +39,13 @@ object ScalaJack {
 	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) : ScalaJack = fmt match {
 		case JSON => ScalaJack_JSON()
 		// case XML  => ScalaJack_XML()
-//		case Custom => (fn.get)()
+		// case Custom => (fn.get)()
 	}
+
+	// Legacy support (JSON implied)
+	private val jsonJS = apply(JSON)
+	def read[T](js:String, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.read(js,VisitorContext(hint))
+	def render[T](instance:T, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.render(instance,VisitorContext(hint)).toString
 }
 
 trait ScalaJack {

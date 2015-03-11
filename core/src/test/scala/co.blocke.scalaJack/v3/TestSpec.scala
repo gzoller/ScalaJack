@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package test
+package test.v3
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
@@ -12,7 +12,8 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
 
-	describe("====================\n| -- JSON Tests -- |\n====================") {
+	describe("==================\n| -- V3 Tests -- |\n==================") {
+			/*
 		describe("Basic Render/Read") {
 			it( "Serialize simple object to JSON -- all supported data types" ) {
 				val js = ScalaJack.render(data)
@@ -79,7 +80,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Naked Lists of objects" ) {
 				val stuff = List( Three("three",Num.A,Wow1("foo",17)), Three("four",Num.B,Wow1("bar",18)) )
 				val js = ScalaJack.render(stuff)
-				js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}]""" )
+				js should equal( """[{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}},{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"bar","b":18}}]""" )
 				ScalaJack.read[List[Three]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Boolean" ) {
@@ -121,7 +122,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Naked Maps of objects" ) {
 				val stuff = Map( "a"->Three("three",Num.A,Wow1("foo",17)), "b"->Three("four",Num.B,Wow1("bar",18)) )
 				val js = ScalaJack.render(stuff)
-				js should equal( """{"a":{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}},"b":{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"bar","b":18}}}""" )
+				js should equal( """{"a":{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}},"b":{"name":"four","two":"B","pp":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"bar","b":18}}}""" )
 				ScalaJack.read[Map[String,Three]](js) should equal( stuff )
 			}
 			it( "Naked Maps of Boolean" ) {
@@ -169,12 +170,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Handles null values - Double" ) {
 				val js = """{"a":5.1,"b":null}"""
 				val o = ScalaJack.read[Map[String,Double]](js)
-				o should equal( Map("a"->5.1,"b"->0.0) )
+				o should equal( Map("a"->5.1,"b"->null) )
 			}
 			it( "Handles null values - Boolean" ) {
 				val js = """{"a":true,"b":null}"""
 				val o = ScalaJack.read[Map[String,Boolean]](js)
-				o should equal( Map("a"->true,"b"->false) )
+				o should equal( Map("a"->true,"b"->null) )
 			}
 			it( "Handles null values - String" ) {
 				val js = """{"a":"wow","b":null}"""
@@ -184,12 +185,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Handles null values - Int" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Int]](js)
-				o should equal( Map("a"->5,"b"->0) )
+				o should equal( Map("a"->5,"b"->null) )
 			}
 			it( "Handles null values - Long" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Long]](js)
-				o should equal( Map("a"->5L,"b"->0) )
+				o should equal( Map("a"->5L,"b"->null) )
 			}
 			it( "Handles null values - UUID" ) {
 				val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
@@ -208,23 +209,24 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Traits with subclasses" ) {
 				val t = Three("three",Num.A,Wow1("foo",17))
 				val js2 = ScalaJack.render(t)
-				js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
+				js2 should equal( """{"name":"three","two":"A","pp":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}}""" )
 				// Change order so hint isn't first in list
-				val js3 = """{"name":"three","two":"A","pp":{"a":"foo","_hint":"co.blocke.scalajack.test.Wow1","b":17}}"""
+				val js3 = """{"name":"three","two":"A","pp":{"a":"foo","_hint":"co.blocke.scalajack.test.v3.Wow1","b":17}}"""
 				val u = ScalaJack.read[Three](js3)
 				u should equal( t )
 			}
 			it( "Support changing type hint" ) {
 				val t = Three("three",Num.A,Wow1("foo",17))
 				val js2 = ScalaJack.render(t,"hey")
-				js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.Wow1","a":"foo","b":17}}""" )
+				js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}}""" )
 				val u = ScalaJack.read[Three](js2,"hey")
 				u should equal( t )
+				println("-----------------------")
 			}
 			it("Top-level trait") {
 				val w = Wow1("hey",99)
 				val js = ScalaJack.render[Pop](w)
-				js should equal("""{"_hint":"co.blocke.scalajack.test.Wow1","a":"hey","b":99}""")
+				js should equal("""{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"hey","b":99}""")
 				ScalaJack.read[Pop](js) should equal(w)
 			}
 		}
@@ -259,37 +261,42 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[MapValSupport](js2) should equal( stuff )
 				}
 			}
-			describe("With custom JSON support") {
-				it( "Simple value custom JSON support for Value class" ) {
-					val stuff = ValSupport("foo", new Wrapper(99), true)
-					val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
-					ScalaJack.read[ValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				}
-				it( "List of value class with custom JSON support" ) {
-					val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
-					val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
-					ScalaJack.read[ListValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				}
-				it( "Option of value class with custom JSON support" ) {
-					val stuff = OptValSupport("hey", Some(new Wrapper(2)))
-					val stuff2 = OptValSupport("hey", None)
-					val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					val js2 = ScalaJack.render(stuff2,ScalaJack.HINT,true)
-					js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
-					js2 should equal("""{"name":"hey"}""")
-					ScalaJack.read[OptValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
-					ScalaJack.read[OptValSupport](js2,ScalaJack.HINT,true) should equal( stuff2 )
-				}
-				it( "Map of value class without custom JSON support" ) {
-					val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
-					val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
-					ScalaJack.read[MapValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
-				}
-			}
+
+			//
+			// CUSTOM JSON HANDLING DEPRECATED
+			//
+			// describe("With custom JSON support") {
+				// it( "Simple value custom JSON support for Value class" ) {
+				// 	val stuff = ValSupport("foo", new Wrapper(99), true)
+				// 	val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
+				// 	js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
+				// 	ScalaJack.read[ValSupport](js,ScalaJack.HINT,true) should equal( stuff )
+				// }
+				// it( "List of value class with custom JSON support" ) {
+				// 	val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
+				// 	val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
+				// 	js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
+				// 	ScalaJack.read[ListValSupport](js,ScalaJack.HINT,true) should equal( stuff )
+				// }
+				// it( "Option of value class with custom JSON support" ) {
+				// 	val stuff = OptValSupport("hey", Some(new Wrapper(2)))
+				// 	val stuff2 = OptValSupport("hey", None)
+				// 	val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
+				// 	val js2 = ScalaJack.render(stuff2,ScalaJack.HINT,true)
+				// 	js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
+				// 	js2 should equal("""{"name":"hey"}""")
+				// 	ScalaJack.read[OptValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
+				// 	ScalaJack.read[OptValSupport](js2,ScalaJack.HINT,true) should equal( stuff2 )
+				// }
+				// it( "Map of value class without custom JSON support" ) {
+				// 	val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
+				// 	val js1 = ScalaJack.render(stuff)
+				// 	js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
+				// 	ScalaJack.read[MapValSupport](js1) should equal( stuff )
+				// }
+			// }
 		}
+
 		describe("Nested Constructs") {
 			describe("With Lists") {
 				it( "List of lists of case classes" ) {
@@ -396,7 +403,9 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				}
 			}
 		}
+		*/
 		describe("Parameterized Class Support") {
+			/*
 			describe("Basic Parameterized Case Class") {
 				it("Simple parameters - Foo[A](x:A) where A -> simple type") {
 					val w = Wrap("number",true,15)
@@ -421,34 +430,44 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[Wrap[Boolean,Two]](js) should equal(w)
 				}
 			}
+			*/
 			describe("Advanced Parameterized Case Class") {
-				it("Parameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int]") {
-					val w = Carry("Bob", Wrap("Mary",3,"Available"))
-					val x = Carry("Mary", Wrap("Greg",false,"Done"))
-					val y = Carry("Fred", Wrap("Mike",Two("Steam",true),"OK"))
-					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
-					val js3 = ScalaJack.render(y)
-					js should equal("""{"s":"Bob","w":{"name":"Mary","data":3,"stuff":"Available"}}""")
-					js2 should equal("""{"s":"Mary","w":{"name":"Greg","data":false,"stuff":"Done"}}""")
-					js3 should equal("""{"s":"Fred","w":{"name":"Mike","data":{"foo":"Steam","bar":true},"stuff":"OK"}}""")
-					ScalaJack.read[Carry[Int]](js) should equal(w)
-					ScalaJack.read[Carry[Boolean]](js2) should equal(x)
-					ScalaJack.read[Carry[Two]](js3) should equal(y)
-				}
+				// it("Parameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int]") {
+				// 	val w = Carry("Bob", Wrap("Mary",3,"Available"))
+				// 	val x = Carry("Mary", Wrap("Greg",false,"Done"))
+				// 	val y = Carry("Fred", Wrap("Mike",Two("Steam",true),"OK"))
+				// 	val js = ScalaJack.render(w)
+				// 	val js2 = ScalaJack.render(x)
+				// 	val js3 = ScalaJack.render(y)
+				// 	js should equal("""{"s":"Bob","w":{"name":"Mary","data":3,"stuff":"Available"}}""")
+				// 	js2 should equal("""{"s":"Mary","w":{"name":"Greg","data":false,"stuff":"Done"}}""")
+				// 	js3 should equal("""{"s":"Fred","w":{"name":"Mike","data":{"foo":"Steam","bar":true},"stuff":"OK"}}""")
+				// 	ScalaJack.read[Carry[Int]](js) should equal(w)
+				// 	ScalaJack.read[Carry[Boolean]](js2) should equal(x)
+				// 	ScalaJack.read[Carry[Two]](js3) should equal(y)
+				// }
 				it("Case class having value class parameter - Foo[A](x:A) where A -> value class") {
 					val w = Carry("Mike", Wrap("Sally", new Wrapper(15), "Fine"))
 					val js = ScalaJack.render(w)
 					js should equal("""{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}""")
+
+					// val js = """{"name":"Sally","data":15,"stuff":"Fine"}"""
+					// println("HEY: "+ScalaJack.read[Wrap[Wrapper,String]](js))
+					// println("W  : "+w)
+					// val js = """{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}"""
+					// println("HEY: "+ScalaJack.read[Carry[Wrapper]](js))
+					// println("W  : "+w)
+
 					ScalaJack.read[Carry[Wrapper]](js) should equal(w)
 				}
-				it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
-					val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))
-					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"name":"dog","z":false},"stuff":"ok"}}""")
-					ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
-				}
+				// it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
+				// 	val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))
+				// 	val js = ScalaJack.render(w)
+				// 	js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"name":"dog","z":false},"stuff":"ok"}}""")
+				// 	ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
+				// }
 			}
+			/*
 			describe("Basic Collection Support") {
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of simple type") {
 					val w = Carry("Trey", Wrap("Hobbies", List(true,true,false), "all"))
@@ -707,7 +726,9 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[BagOpt[Tart[String]]](js2) should equal(x)
 				}
 			}
+			*/
 		}
+		/*
 		describe("Improved Error Reporting") {
 			describe("Object") {
 				it("Must provide useful errors - simple case class") {
@@ -785,8 +806,10 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				res should be( true )
 			}
 		}
+		*/
 	}
-	describe("View/Splice Tests") {
+	describe("View/Splice Tests") {  // TODO
+		/*
 		it("Must process view") {
 			ScalaJack.view[OneSub2](data) should equal( OneSub2("Greg",true,Map("hey"->17, "you"->21)))
 		}
@@ -795,5 +818,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
 			y should equal( data.copy(name="Fred", big=2L) )
 		}
+		*/
 	}
 }

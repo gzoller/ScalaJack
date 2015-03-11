@@ -1,7 +1,7 @@
 package co.blocke.scalajack
-package test
+package test.v3
 
-import com.fasterxml.jackson.core._
+//import com.fasterxml.jackson.core._
 import org.joda.time.DateTime
 
 object Num extends Enumeration {
@@ -143,6 +143,10 @@ case class Animal(val name: String, val legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
+/*
+
+EXTENDED JSON NO LONGER SUPPORTED!!
+
 object Wrapper extends ExtJson {
 	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
 	override def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any = {
@@ -157,6 +161,7 @@ object Wrapper extends ExtJson {
 		v
 	}
 }
+*/
 case class ListValSupport( name:String, wrap:List[Wrapper], more:Boolean )
 case class OptValSupport( name:String, wrap:Option[Wrapper] )
 case class MapValSupport( name:String, wrap:Map[String,Wrapper])

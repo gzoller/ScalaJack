@@ -42,7 +42,7 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 		var i    = 0
 		ctxPtr   = -1
 		tokPtr   = 0
-    
+
 		while( i < sLen ) {
 			s(i) match {
 				case ' ' | '\n' | '\t' => // skip whitespace
@@ -89,7 +89,8 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 				case ']' =>
 					ctxPtr -= 1  // stack pop
 					// Adjust last element in list to list variant
-					tokType(tokPtr-1) = (tokType(tokPtr-1) << 1).toByte 
+					if( tokType(tokPtr-1) != JSlistStart )
+						tokType(tokPtr-1) = (tokType(tokPtr-1) << 1).toByte 
 					tokPos(tokPtr) = i
 					tokLen(tokPtr) = 1
 					tokType(tokPtr) = JSlistEnd

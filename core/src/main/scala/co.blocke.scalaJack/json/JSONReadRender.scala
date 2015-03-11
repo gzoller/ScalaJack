@@ -4,6 +4,7 @@ package json
 import scala.reflect.runtime.universe._
 import scala.collection.mutable.{Map => MMap,ListBuffer}
 import JsonTokens._
+import org.joda.time.DateTime
 
 /*
 	OK, some wierd stuff goes on here...  Parameterized classes that have collections as their type pose real problems.
@@ -69,6 +70,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
 							val cleaned = clean(instance.toString)
 							buf.append(s""""${cleaned}"""") //"
+							true
+						case "org.joda.time.DateTime" =>
+							buf.append(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
 							true
 						case _ => 
 							buf.append(instance)

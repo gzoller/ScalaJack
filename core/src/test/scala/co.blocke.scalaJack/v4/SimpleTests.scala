@@ -1,15 +1,17 @@
 package co.blocke.scalajack
-package test
+package test.v4
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.language.postfixOps
 import scala.util.Try
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	val sjJS  = ScalaJack(Formats.JSON)
 
-	describe("======================\n| -- Simple Tests -- |\n======================") {
+	describe("==================\n| -- V4 Tests -- |\n==================") {
 		describe("Render Tests") {
 			it("Must render JSON") {
 				sjJS.render(Foo("John",24)) should equal("""{"name":"John","age":24}""")
@@ -20,6 +22,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				sjJS.render(Set(1,2,3)) should equal("""[1,2,3]""")
 			}
 			it("Must render all primitives") {
+				val pattern = "dd-MM-yy"
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
 				val all = All(
 					5,
 					new java.lang.Integer(17),
@@ -33,10 +37,11 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					null,
 					-14 toByte,
 					2 toShort,
-					java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")
+					java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),
+					dt
 				)
 				// println(sjJS.render(all))
-				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"}""")
+				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505440000000}""")
 			}
 			it("Must render all collections (non-nested & non-canonical)") {
 				val all = AllColl(
@@ -53,7 +58,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("Must render traits") {
 				val t = Stuff("wow",Foo("me",9))
-				sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.Foo","name":"me","age":9}}""")
+				sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.v4.Foo","name":"me","age":9}}""")
 			}
 			it("Must render typed classes") {
 				val a1 = WithType("hey")
@@ -92,8 +97,10 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("Must read all primitive types") {
 				val sjJS  = ScalaJack(Formats.JSON)
-				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":null}"""
+				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505440000000,"o":null}"""
 				val z = sjJS.read[All](js,VisitorContext().copy(isValidating = true))
+				val pattern = "dd-MM-yy"
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
 				val all = All(
 					5,
 					new java.lang.Integer(17),
@@ -107,7 +114,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					null,
 					-14 toByte,
 					2 toShort,
-					java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")
+					java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),
+					dt
 				)
 				(all == z) should be( true )
 			}
@@ -133,57 +141,58 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				(all.copy(e=all.e.filter(_.isDefined),g=all.g.filter(_._2.isDefined)) == z) should be( true )
 			}
 			it("Must read traits") {
-				val js = """{"item":"wow","other":{"name":"me","_hint":"co.blocke.scalajack.test.Foo","age":9}}"""
+				val js = """{"item":"wow","other":{"name":"me","_hint":"co.blocke.scalajack.test.v4.Foo","age":9}}"""
 				val z = sjJS.read[Stuff](js,VisitorContext().copy(isValidating = true))
 				val t = Stuff("wow",Foo("me",9))
 				(z == t) should equal( true )
 			}
-			it("Must read typed (parameterized) classes") {
+			it("Must read parameterized classes - Basic") {
 				val a1 = WithType("hey")
 				val a2 = WithType(Foo("boom",9))
 				val a3 = WithType(Set(List("a","b"),List("c")))
-				val c1 = Case_1("Greg",List(WithType(1),WithType(2)))
-				val c2 = Case_2("Greg",List(WithType(1),WithType(2)))
-				val c3 = Case_3("Greg",List(Two(4,true),Two(3,true)))
-				val c4 = List(List(WithType("foo")))
-				val c5 = Case_5("Greg",List(Two(5,"five"),Two(6,"six")))
-				val t1 = Ex1("hey",99)
-
 				sjJS.read[WithType[String]]("""{"me":"hey"}""") should equal( a1 )
 				sjJS.read[WithType[Foo]]("""{"me":{"name":"boom","age":9}}""") should equal( a2 )
 				sjJS.read[WithType[Set[List[String]]]]("""{"me":[["a","b"],["c"]]}""") should equal( a3 )
-
-				// ::: Case 1 -------------------------------- Case class having a defined parameterized type
+			}
+			it("Must read parameterized classes - Case class having a defined parameterized type") {
+				val c1 = Case_1("Greg",List(WithType(1),WithType(2)))
 				val jsC1 = """{"name":"Greg","other":[{"me":1},{"me":2}]}"""
 				(sjJS.read[Case_1](jsC1) == c1) should be( true )
-
-				// ::: Case 2 -------------------------------- Parameterized case class having parameterized type
+			}
+			it("Must read parameterized classes - Parameterized case class having parameterized type") {
+				val c2 = Case_2("Greg",List(WithType(1),WithType(2)))
 				val jsC2 = """{"name":"Greg","other":[{"me":1},{"me":2}]}"""
 				(sjJS.read[Case_2[Int]](jsC2) == c2) should be( true )
-
-				// ::: Case 3 -------------------------------- Parameterized case class having 2 param types--one specified, one not
+			}
+			it("Must read parameterized classes - Parameterized case class having 2 param types--one specified, one not") {
+				val c3 = Case_3("Greg",List(TwoP(4,true),TwoP(3,true)))
 				val jsC3 = """{"name":"Greg","other":[{"a":4,"b":true},{"a":3,"b":true}]}"""
 				(sjJS.read[Case_3[Int]](jsC3) == c3) should be( true )
-
-				// ::: Case 4 -------------------------------- Naked collection (nested) of parameterized type
+			}
+			it("Must read parameterized classes - Naked collection (nested) of parameterized type") {
+				val c4 = List(List(WithType("foo")))
 				val jsC4 = """[[{"me":"foo"}]]"""
 				(sjJS.read[List[List[WithType[String]]]](jsC4) == c4) should be( true )
-
-				// ::: Case 5 -------------------------------- Multiple parameters, consumed out-of-order
+			}
+			it("Must read parameterized classes - Multiple parameters, consumed out-of-order") {
+				val c5 = Case_5("Greg",List(TwoP(5,"five"),TwoP(6,"six")))
 				val jsC5 = """{"name":"Greg","other":[{"a":5,"b":"five"},{"a":6,"b":"six"}]}"""
 				(sjJS.read[Case_5[String,Int]](jsC5) == c5) should be( true )
-
-				// ::: Case 6 -------------------------------- Parameterized trait
-				val jsT1 = """{"_hint":"co.blocke.scalajack.test.Ex1","a":"hey","b":99}"""
+			}
+			it("Must read parameterized classes - Parameterized trait") {
+				val t1 = Ex1("hey",99)
+				val jsT1 = """{"_hint":"co.blocke.scalajack.test.v4.Ex1","a":"hey","b":99}"""
 				(sjJS.read[Excite[Int,String]](jsT1) == t1) should be( true )
-
-				// ::: Case 7 -------------------------------- Nested parameterized trait
+			}
+			it("Must read parameterized classes - Nested parameterized trait") {
 				val t2 = Ex2(Slp('a'),Slp(false))
-				val jsT2 = """{"_hint":"co.blocke.scalajack.test.Ex2","a":{"_hint":"co.blocke.scalajack.test.Slp","x":"a"},"b":{"_hint":"co.blocke.scalajack.test.Slp","x":false}}"""
+				val jsT2 = """{"_hint":"co.blocke.scalajack.test.v4.Ex2","a":{"_hint":"co.blocke.scalajack.test.v4.Slp","x":"a"},"b":{"_hint":"co.blocke.scalajack.test.v4.Slp","x":false}}"""
 				(sjJS.read[Excite2[Sleep[Char],Sleep[Boolean]]](jsT2) == t2) should be( true )
-
-				// ::: Case 8 -------------------------------- Nested parameterized trait, partially applied
-//				(pending)
+			}
+			it("Must read parameterized classes - Nested parameterized trait, partially applied") {
+				val t3 = Ex3( "wow", false )
+				val jsT3 = """{"_hint":"co.blocke.scalajack.test.v4.Ex3","a":"wow","b":false}"""
+				(sjJS.read[Excite2[String,Boolean]](jsT3) == t3) should be( true )
 			}
 			it("Must read Enumerations") {
 				val js = """{"a":"Red","b":"JSON"}"""
@@ -194,19 +203,22 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it("Must read value classes") {
 				val a1 = new Wrapper("test")
 				val a2 = new Wrapper2(7)
-				val a3 = Wrapped( new Wrapper("foo"),1 )
+				val a3 = Wrapped( new Wrapper("foo"), 1 )
 				val a4 = Wrapped2( new Wrapper2(true), 9 )
 				val js1 = "\"test\""
 				val js2 = "7"
 				val js3 = """{"hey":"foo","you":1}"""
 				val js4 = """{"hey":true,"you":9}"""
+				val js5 = """["a","b","c"]"""
 				(sjJS.read[Wrapper](js1) == a1) should be( true )
-				//(sjJS.read[Wrapper2[Int]](js2) == a2) should be( true )  <-- Can't parse "7"
+				// (sjJS.read[Wrapper2[Int]](js2) == a2) should be( true )  <-- Can't parse "7"
 				(sjJS.read[Wrapped](js3) == a3) should be( true )
 				(sjJS.read[Wrapped2[Int]](js4) == a4) should be( true )
 			}
 			it("Must read unicode") {
-				(pending)
+				val js = "{\"me\":\"nast\\u0119puj\\u0105cych\"}"
+				val a = WithType("następujących")
+				(sjJS.read[WithType[String]](js) == a) should be( true )
 			}
 		}
 	}

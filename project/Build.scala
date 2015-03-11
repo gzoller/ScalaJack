@@ -16,7 +16,7 @@ object Build extends Build {
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "4.0-WIP"
+		version 					:= "4.0-ALPHA"
 	)
 
 	// configure prompt to show current project
@@ -60,7 +60,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(joda, joda_convert, jackson, scala_reflect) ++
+			compile(joda, joda_convert, scala_reflect) ++
 			test(scalatest)
 		)
 
@@ -91,7 +91,6 @@ object Dependencies {
 		"Typesafe Snapshots"	at "http://repo.typesafe.com/typesafe/snapshots/",
 		"OSS"					at "http://oss.sonatype.org/content/repositories/releases",
 		"OSS Staging"			at "http://oss.sonatype.org/content/repositories/staging",
-		"Spray"					at "http://repo.spray.io",
 		"PhantomMvn"			at "http://maven.websudos.co.uk/ext-release-local",
 		"Mvn" 					at "http://mvnrepository.com/artifact"  // for commons_exec
 	)
@@ -100,13 +99,13 @@ object Dependencies {
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
 // TODO: Move each to latest version!
-	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.4"
+	// val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.4"
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
-	val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
+	// val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
+	// val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
-	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
-	val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
+	// val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
+	// val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
 }
