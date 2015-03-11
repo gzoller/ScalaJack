@@ -446,26 +446,18 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				// 	ScalaJack.read[Carry[Boolean]](js2) should equal(x)
 				// 	ScalaJack.read[Carry[Two]](js3) should equal(y)
 				// }
-				it("Case class having value class parameter - Foo[A](x:A) where A -> value class") {
-					val w = Carry("Mike", Wrap("Sally", new Wrapper(15), "Fine"))
-					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}""")
-
-					// val js = """{"name":"Sally","data":15,"stuff":"Fine"}"""
-					// println("HEY: "+ScalaJack.read[Wrap[Wrapper,String]](js))
-					// println("W  : "+w)
-					// val js = """{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}"""
-					// println("HEY: "+ScalaJack.read[Carry[Wrapper]](js))
-					// println("W  : "+w)
-
-					ScalaJack.read[Carry[Wrapper]](js) should equal(w)
-				}
-				// it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
-				// 	val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))
+				// it("Case class having value class parameter - Foo[A](x:A) where A -> value class") {
+				// 	val w = Carry("Mike", Wrap("Sally", new Wrapper(15), "Fine"))
 				// 	val js = ScalaJack.render(w)
-				// 	js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"name":"dog","z":false},"stuff":"ok"}}""")
-				// 	ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
+				// 	js should equal("""{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}""")
+				// 	ScalaJack.read[Carry[Wrapper]](js) should equal(w)
 				// }
+				it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
+					val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))
+					val js = ScalaJack.render(w)
+					js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"name":"dog","z":false},"stuff":"ok"}}""")
+					ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
+				}
 			}
 			/*
 			describe("Basic Collection Support") {
