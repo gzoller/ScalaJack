@@ -15,12 +15,12 @@ trait ReadRenderFrame {
 	trait ReadRender[R] {
 		// This piece of magic handles naked lists, i.e. ScalaJack.render(List(1,2,3)) -- not wrapped in a case class
 		def getGraph[T](instance:T)(implicit tt:TypeTag[T]) = {
-			val csym = currentMirror.classSymbol(instance.getClass)
-			if( csym.isCollection ) { 
-				// handle naked collections -- kinda ugly
-				val naked = Analyzer.nakedInspect(tt.tpe.typeArgs)
-				SjCollection(PrimitiveTypes.fixPolyCollection(csym.fullName).get,naked)
-			} else
+			// val csym = currentMirror.classSymbol(instance.getClass)
+			// if( csym.isCollection ) { 
+			// 	// handle naked collections -- kinda ugly
+			// 	val naked = Analyzer.nakedInspect(tt.tpe.typeArgs)
+			// 	SjCollection(PrimitiveTypes.fixPolyCollection(csym.fullName).get,naked)
+			// } else
 				Analyzer.inspect(instance) // normal non-collection case
 		}
 

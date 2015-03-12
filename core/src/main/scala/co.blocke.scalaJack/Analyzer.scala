@@ -4,162 +4,145 @@ package scalajack
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
 import scala.reflect.NameTransformer._
-import PrimitiveTypes._
-import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.LinkedHashMap
+import scala.collection.concurrent.TrieMap
+import PrimitiveTypes._
+
+trait AType {
+  val name   : String
+}
+case class CCType(
+    name     : String, 
+    members  : LinkedHashMap[String,AType], 
+    paramMap : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
+    isTrait  : Boolean = false
+) extends AType {
+  override def toString() = s"[$name -> $members]"
+}
+case class PrimType(name:String) extends AType
+case class CollType(name:String, colTypes:List[AType]) extends AType {
+  def isOptional = name == "scala.Option"
+}
+case class EnumType(name:String, enum:Enumeration) extends AType
+case class ValueClassType(name:String, vcType:AType, vFieldName:String, isTypeParam:Boolean) extends AType
+case class TraitType(name:String, paramMap:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType]) extends AType
+case class ErrType(name:String = "Error") extends AType
 
 object Analyzer {
-
-	private val readyToEat = TrieMap.empty[String,SjType]  // a cache, sir, a cache
-	private val resolved   = TrieMap.empty[String,SjType]  // case classe proxies with type params resolved
-
-	// Used when we have an actual instance of a class to inspect
-	def inspect[T]( c:T, relativeToTrait:Option[SjTrait] = None )(implicit tt:TypeTag[T]) : SjType = _inspect[T]( c.getClass, relativeToTrait )
-
-	// Used when we only have the class name
-	def inspectByName[T]( className:String, relativeToTrait:Option[SjTrait] = None )(implicit tt:TypeTag[T]) : SjType = _inspect[T]( Class.forName(className), relativeToTrait )
-
-	private def getParamSymbols( t:Type ) = 
-		LinkedHashMap.empty[String,SjType] ++=
-			t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => staticScan(ta,true).asInstanceOf[SjType]) ).toMap
   
-	private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[SjTrait] )(implicit tt:TypeTag[T]) : SjType = {
-		val (ctype, paramMap) = if( relativeToTrait.isDefined ) 
-				(currentMirror.classSymbol(clazz).typeSignature, LinkedHashMap.empty[String,SjType])  // no trait given--use the implied context
-			else 
-				(tt.tpe, getParamSymbols(tt.tpe))  // no trait given--use the implied context
-		readyToEat.getOrElse(ctype.typeSymbol.fullName+"[]", staticScan(ctype,false,relativeToTrait,paramMap).asInstanceOf[SjType] )
-	}
+  private val readyToEat = TrieMap.empty[String,AType]  // a cache, sir, a cache
 
-	// For inspecting naked collections (type args must be captured top-level or be lost!)
-	def nakedInspect[T](typeArgs:List[Type]) = typeArgs.map( staticScan(_,false).asInstanceOf[SjType] )
+  def inspect[T]( c:T, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( c.getClass, relativeToTrait )
 
-	// Statically scan (reflect) given type and product a SjType object "explaining" the given reflected type.
-	// If this type is parameterized (e.g. Foo[A,B]) the parameters will either come from 1) the resolved
-	// ctype params of the top-level object (carried down through the descention tree via paramSym2Type),
-	// or 2) a given (resolved) trait's parameters.  Typically either relativeToTrait or paramSym2Type
-	// will be used for parameterized case classes but not both.  (relativeToTrait if this cc implements
-	// a trait and paramSym2Type if not.)
-	//
-	def staticScan( 
-		ctype:Type,                                // Reflected type to be scanned
-		isTypeParam:Boolean,                       // True if this object represents a type parameter value, e.g. Foo[X] where X is being scanned
-		relativeToTrait:Option[SjTrait] = None,    // Optional trait this object implements
-		paramSym2Type:LinkedHashMap[String,SjType] = LinkedHashMap.empty[String,SjType] // Map (possibly empty) of parameter symbol -> SjType (resolved)
-	) : SjItem = 
-		ctype.typeSymbol match {
-			case s if(s.isPlaceholder(paramSym2Type.keySet.toList)) => SjTypeSymbol( s.name.toString )
+  // Used when we only have the class name
+  def inspectByName[T]( className:String, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( Class.forName(className), relativeToTrait )
 
-			case s if(s.isPrimitive)                     => SjPrimitive( s.fullName )
+   private def getParamSymbols( t:Type ) = 
+     LinkedHashMap.empty[String,AType] ++=
+      t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta,None, true)) ).toMap
+  
+  private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[TraitType] )(implicit tt:TypeTag[T]) : AType = {
+    val ctype = if( relativeToTrait.isDefined ) 
+        currentMirror.classSymbol(clazz).typeSignature  // no trait given--use the implied context
+      else 
+        tt.tpe  // no relative trait given--use the implied context
+    know(ctype,relativeToTrait,false)
+   }
+  
+   def know( 
+       t:Type, 
+       relativeToTrait:Option[TraitType] = None, 
+       isParamType:Boolean = false, 
+       preResolved:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType]
+   ) : AType = {
+    val (args,argMap) = t match {
+      case ty:TypeRef =>
+        val done = LinkedHashMap.empty[String,AType] ++= ty.typeSymbol.typeSignature.typeParams.map(_.name.toString).zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta,None,true,preResolved))))
+        (ty.args, {
+          done
+//          if( preResolved.size > 0 ) done
+//          else getParamSymbols(ty)
+        })
+/*
+        //        val syms      = ty.typeSymbol.typeSignature.typeParams.map(_.name.toString)
+//        println(s" (1) $syms")
+        println("  ta: "+ty.args)
+        val foo = ty.args.map( ta => argMap.getOrElse( ta.toString, know(ta,None,true) ))
+//        println("  ta: "+ty.typeParams)
+//        println("  ta: "+foo)
+//        val argMapped = LinkedHashMap.empty[String,AType] ++= syms.zip(ty.args.map(a => know(a,relativeToTrait,true)))
+        (ty.args, getParamSymbols(ty))
+        * 
+        */
+      case ty => // generally a case class that's implementing a trait
+//        println(" (2)")
+        (List.empty[Type], relativeToTrait.get.paramMap)
+    }
+    val tag    = t.typeSymbol.fullName+argMap.values.map(_.name).mkString("[",",","]")
+    readyToEat.getOrElse(tag,{
 
-			case s if(s.isCollection)                    =>
-				ctype match {
-					case p:TypeRef => // embedded collections (e.g. members of a case class)
-						val collTypeParamSyms = p.args.map(_.typeSymbol.asClass.typeParams.map(_.name.toString)) // List(B,C)
-						val resolvedParamTypes = p.args.map(_.typeArgs.map(ta => paramSym2Type.getOrElse(ta.toString,{
-							val psym2Type = if( paramSym2Type.size > 0 ) paramSym2Type else getParamSymbols(ta)
-							staticScan(ta,true,relativeToTrait,psym2Type).asInstanceOf[SjType]
-						})))
-						val resolveParamMaps = collTypeParamSyms.zip(resolvedParamTypes).map({case(sym,types) => LinkedHashMap.empty[String,SjType] ++= sym.zip(types).toMap })
-						val collArgTypes = p.args.zipWithIndex.map( { case(a,i) => staticScan(a,false,relativeToTrait,resolveParamMaps(i)).asInstanceOf[SjType] })
-						SjCollection( s.fullName, collArgTypes.asInstanceOf[List[SjType]] )
-				}
+      t.typeSymbol match {
+        case sym if(sym.isPrimitive)         => PrimType(sym.fullName)
+        
+        case sym if(sym.isCollection)        =>
+          CollType( sym.fullName, argMap.values.toList) //args.map(a => know(a,None,true)) )
+          
+        case sym if(sym.asClass.isTrait)     =>
+          val members  = t.members.filter(_.isTerm).map(_.asMethod).filter(_.isGetter)
+          // mappedParams = Map[ field_name -> field_type (AType) ]
+          val mappedParams = LinkedHashMap.empty[String,AType] ++= 
+              members.map(_.name.toString).zip( members.map(_.typeSignature.resultType) )
+              .collect{
+                case (item,itemType) if(argMap.contains(itemType.toString)) => (item,argMap(itemType.toString)) 
+                case (item,itemType) => (item,know(itemType))
+              }.toList
+          TraitType(sym.fullName, mappedParams)
+        
+        case sym if(sym.asClass.isCaseClass) =>
+          val ctor    = sym.asClass.primaryConstructor
+          val members = ctor.typeSignature.paramLists.head.map( f => {
+            val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
+              .orElse( Some(argMap.getOrElse(f.typeSignature.toString, {
+//                val greg:List[AType] = f.typeSignature.typeArgs.map(ta => argMap.getOrElse(ta.toString,know(ta,None,true)))
+//                know(f.typeSignature, f.typeSignature.typeArgs.map(ta => argMap.getOrElse(ta.toString,know(ta,None,true))))
+                if(f.typeSignature.typeSymbol.isClass && f.typeSignature.typeSymbol.asClass.isCollection ) {
+                  know(f.typeSignature,None,false,argMap)
+//                  CollType( f.typeSignature.typeSymbol.fullName, argMap.values.toList )
+//                  CollType( f.typeSignature.typeSymbol.fullName, argMap.values.toList )
+                } else
+                  know(f.typeSignature,None,false,argMap)
+              })) )
+            (f.name.toString, fType.get)
+          })
+          CCType( 
+              sym.fullName, 
+              LinkedHashMap.empty[String,AType] ++= members,
+              argMap ) 
+              
+        case sym if(sym.asClass.fullName == "scala.Enumeration.Value") =>
+          val erasedEnumClassName = t.toString match {
+            case raw if(raw.endsWith(".Value")) => raw.replace(".Value","$")
+            case raw                            => raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
+          }
+          EnumType(sym.fullName, 
+              Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration])
+              
+        case sym if(sym.asClass.isDerivedValueClass) =>
+          val vField = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head
+          val valSjType = args match {
+            case pa if( pa.length == 0 ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
+            case pa => 
+              val vTerm = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
+              val g = sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
+              if( g.typeSymbol.isClass && g.typeSymbol.asClass.isCollection )
+                CollType( g.typeSymbol.asClass.fullName, argMap.values.toList )
+              else
+                argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info))
+          }
+          ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType)
 
-			case s if(s.asClass.isTrait)                 => 
-				val paramSymbols = s.asClass.typeParams.map(_.name.toString)  // e.g. Foo[A,B]  A & B are the type symbols
-				val members  = ctype.members.filter(_.isTerm).map(_.asMethod).filter(_.isGetter)
-				val mappedMembers = members.map(_.name.toString).zip( members.map(_.typeSignature.resultType.toString) ) // a -> A
-				val tag = s.fullName+members.map(_.typeSignature.resultType.toString).mkString("[",",","]")
-				ctype match {
-					case p:TypeRef => // embedded collections (e.g. members of a case class)
-						val resolvedParams = p.args.map( pa => staticScan(pa, true, relativeToTrait, paramSym2Type).asInstanceOf[SjType] )
-						val rere = s.asClass.typeParams.map(_.name.toString).zip(resolvedParams).toMap  // A -> <some resolved type>
-						// Now associate the field 'a' with the resolved type using the type symbol to hook them up
-						val resolvedFields = LinkedHashMap.empty[String,SjType] ++= mappedMembers.collect{  
-							case (item,itemType) if(rere.contains(itemType)) => (item,rere(itemType)) 
-						}
-						val built = SjTrait(s.fullName,resolvedFields)
-						readyToEat.put(tag,built)
-						built
-				}
-
-			case s if(s.asClass.isCaseClass)             =>
-				val symbol        = s.asClass
-				// OK, type params came in the right order (positionally), but will have parent's symbols (except for top-level cc).
-				// We must re-map these positionally to this classes reflected symbols.
-        val tag = s.fullName+paramSym2Type.values.map(_.tag).mkString("[",",","]")
-      // Need field mapper to create T->Int , U->String
-				readyToEat.getOrElse(tag, {
-					val ctor          = symbol.primaryConstructor
-// Easy way, but... Seems stuck on a Scala bug!  https://issues.scala-lang.org/browse/SI-9102
-val classMirror = currentMirror.reflectClass(symbol)
-val ctorMethod = classMirror.reflectConstructor(ctor.asMethod)
-
-					val fields        = ctor.typeSignature.paramLists.head
-					val sjfields      = fields.map( f => {
-						val preMappedField = relativeToTrait.flatMap( _.resolvedParamFields.get(f.name.toString) )
-						val ftype = preMappedField.getOrElse({ // Look at trait syms first
- 						paramSym2Type.getOrElse(f.typeSignature.toString, { // Then our class' parameters
-if(f.typeSignature.typeSymbol.isClass && f.typeSignature.typeSymbol.asClass.isCollection )
-  staticScan( f.typeSignature, false, relativeToTrait, paramSym2Type ).asInstanceOf[SjType] // finally scan type
-else {
-              val pMap = LinkedHashMap.empty[String,SjType]
-                  pMap ++= f.typeSignature.typeArgs.zip(f.typeSignature.typeSymbol.asClass.typeParams.map(_.name.toString)).map({ case(mySym,memberSym) => 
-                    (memberSym,paramSym2Type.getOrElse(mySym.toString,staticScan(mySym,true,relativeToTrait,pMap).asInstanceOf[SjType]))
-                  })
-							  staticScan( f.typeSignature, false, relativeToTrait, pMap ).asInstanceOf[SjType] // finally scan type
+        case sym                             => ErrType()
+      }
+    })
+  }
 }
-              }
-            )})
-						SjField(f.name.toString, ftype)
-					})
-					val built = SjCaseClass( s.fullName, sjfields, ctorMethod )
-					readyToEat.put(tag,built)
-					built
-				}) 
-
-			/*
-			 * 3 cases:
-			 * 1) No parameters
-			 * 2) Simple parameter (param type is the value type)
-			 * 3) Complex parameter (param is a likewise a param of a case class, which is the value type)
-			 */
-			case s if(s.asClass.isDerivedValueClass)     => // value class support
-				val symbol        = s.asClass
-				ctype match {
-					case p:TypeRef => // embedded collections (e.g. members of a case class)
-						val vField = symbol.primaryConstructor.typeSignature.paramLists.head.head
-						val vFieldResult = vField.asTerm.info.resultType
-						val valSjType = p.args match {
-							case pa if( pa.length == 0 ) => // Case 1
-								staticScan(symbol.primaryConstructor.asMethod.paramLists.head.head.info, false, relativeToTrait, paramSym2Type).asInstanceOf[SjType]
-							case pa => // Cases 2 & 3
-								val vTerm = symbol.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
-								paramSym2Type.getOrElse( vTerm.toString, {  // Case 2
-									// Case 3
-									val pMap = LinkedHashMap.empty[String,SjType] ++= vTerm.typeArgs.zip(vTerm.typeSymbol.asClass.typeParams.map(_.name.toString)).map({ case(mySym,memberSym) => 
-										(memberSym,paramSym2Type(mySym.toString))
-									})
-									staticScan(symbol.primaryConstructor.asMethod.paramLists.head.head.info, true, relativeToTrait, pMap).asInstanceOf[SjType]
-								})
-						}
-						SjValueClass(symbol.fullName, valSjType, vField.name.toString, isTypeParam)
-				}
-
-			case s if(s.asClass.fullName == "scala.Enumeration.Value") =>
-				val valueName = {
-					val raw = ctype.asInstanceOf[TypeRef].toString
-					if( raw.endsWith(".Value") )
-						raw.replace(".Value","$")
-					else
-						raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
-					}
-				val erasedEnumClass = Class.forName(valueName)
-				val enum = erasedEnumClass.getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-				SjEnum(s.fullName, enum)
-
-			case s                                       => 
-				throw new ReflectException(s"Static reflection failed for symbol ${s.fullName}.")
-  } // match
-}
- 

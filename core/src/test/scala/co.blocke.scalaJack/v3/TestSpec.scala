@@ -430,28 +430,27 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[Wrap[Boolean,Two]](js) should equal(w)
 				}
 			}
-			*/
 			describe("Advanced Parameterized Case Class") {
-				// it("Parameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int]") {
-				// 	val w = Carry("Bob", Wrap("Mary",3,"Available"))
-				// 	val x = Carry("Mary", Wrap("Greg",false,"Done"))
-				// 	val y = Carry("Fred", Wrap("Mike",Two("Steam",true),"OK"))
-				// 	val js = ScalaJack.render(w)
-				// 	val js2 = ScalaJack.render(x)
-				// 	val js3 = ScalaJack.render(y)
-				// 	js should equal("""{"s":"Bob","w":{"name":"Mary","data":3,"stuff":"Available"}}""")
-				// 	js2 should equal("""{"s":"Mary","w":{"name":"Greg","data":false,"stuff":"Done"}}""")
-				// 	js3 should equal("""{"s":"Fred","w":{"name":"Mike","data":{"foo":"Steam","bar":true},"stuff":"OK"}}""")
-				// 	ScalaJack.read[Carry[Int]](js) should equal(w)
-				// 	ScalaJack.read[Carry[Boolean]](js2) should equal(x)
-				// 	ScalaJack.read[Carry[Two]](js3) should equal(y)
-				// }
-				// it("Case class having value class parameter - Foo[A](x:A) where A -> value class") {
-				// 	val w = Carry("Mike", Wrap("Sally", new Wrapper(15), "Fine"))
-				// 	val js = ScalaJack.render(w)
-				// 	js should equal("""{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}""")
-				// 	ScalaJack.read[Carry[Wrapper]](js) should equal(w)
-				// }
+				it("Parameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int]") {
+					val w = Carry("Bob", Wrap("Mary",3,"Available"))
+					val x = Carry("Mary", Wrap("Greg",false,"Done"))
+					val y = Carry("Fred", Wrap("Mike",Two("Steam",true),"OK"))
+					val js = ScalaJack.render(w)
+					val js2 = ScalaJack.render(x)
+					val js3 = ScalaJack.render(y)
+					js should equal("""{"s":"Bob","w":{"name":"Mary","data":3,"stuff":"Available"}}""")
+					js2 should equal("""{"s":"Mary","w":{"name":"Greg","data":false,"stuff":"Done"}}""")
+					js3 should equal("""{"s":"Fred","w":{"name":"Mike","data":{"foo":"Steam","bar":true},"stuff":"OK"}}""")
+					ScalaJack.read[Carry[Int]](js) should equal(w)
+					ScalaJack.read[Carry[Boolean]](js2) should equal(x)
+					ScalaJack.read[Carry[Two]](js3) should equal(y)
+				}
+				it("Case class having value class parameter - Foo[A](x:A) where A -> value class") {
+					val w = Carry("Mike", Wrap("Sally", new Wrapper(15), "Fine"))
+					val js = ScalaJack.render(w)
+					js should equal("""{"s":"Mike","w":{"name":"Sally","data":15,"stuff":"Fine"}}""")
+					ScalaJack.read[Carry[Wrapper]](js) should equal(w)
+				}
 				it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
 					val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))
 					val js = ScalaJack.render(w)
@@ -459,8 +458,9 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
 				}
 			}
-			/*
+			*/
 			describe("Basic Collection Support") {
+				/*
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of simple type") {
 					val w = Carry("Trey", Wrap("Hobbies", List(true,true,false), "all"))
 					val js = ScalaJack.render(w)
@@ -473,16 +473,19 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":59},"stuff":"all"}}""")
 					ScalaJack.read[Carry[Map[String,Int]]](js) should equal(w)
 				}
+				*/
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of simple type") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(17), "all"))
 					val x = Carry[Option[Int]]("Terry", Wrap("Hobbies", None, "all"))
 					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
+					// val js2 = ScalaJack.render(x)
+	println(js)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":17,"stuff":"all"}}""")
-					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
-					ScalaJack.read[Carry[Option[Int]]](js) should equal(w)
-					ScalaJack.read[Carry[Option[Int]]](js2) should equal(x)
+					// js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					// ScalaJack.read[Carry[Option[Int]]](js) should equal(w)
+					// ScalaJack.read[Carry[Option[Int]]](js2) should equal(x)
 				}
+				/*
 				it("Case class having List of parameterized value - Foo[A](x:List[A]) - where A is a simple type") {
 					val w = BagList("list",List(1,2,3))
 					val js = ScalaJack.render(w)
@@ -505,7 +508,9 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[BagOpt[String]](js) should equal(w)
 					ScalaJack.read[BagOpt[String]](js2) should equal(x)
 				}
+				*/
 			}
+			/*
 			describe("Advanced Collection Support - collections of parameterized case class") {
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of Bar[Int]") {
 					val w = Carry("Trey", Wrap("Hobbies", List(Zoo("one",1),Zoo("two",2)), "all"))

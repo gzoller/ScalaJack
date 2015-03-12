@@ -31,41 +31,42 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
 			val graph = getGraph(instance)
+println(graph)
 			val buf = new StringBuilder()
 			_render(graph, instance, buf)
 			buf.toString
 		}
 
 		private def _render[T](
-			graph:SjType, 
-			instance:T, 
-			buf:StringBuilder, 
-			typeArgs:List[Type]=List.empty[Type]
+			graph    : AType, 
+			instance : T, 
+			buf      : StringBuilder, 
+			typeArgs : List[Type]=List.empty[Type]
 		)(implicit tt:TypeTag[T], vc:VisitorContext):Boolean = {
 			graph match {
-				case g:SjCaseClass  => 
+				case g:CCType  => 
 					buf.append("{")
 					if( g.isTrait ) {
 						buf.append(s""""${vc.typeHint}":"${g.name}"""") //"
-						if(g.fields.size > 0) buf.append(",")
+						if(g.members.size > 0) buf.append(",")
 					}
 					val sb2 = new StringBuilder()
-					g.fields.foreach( f => {
+					g.members.foreach( { case(fname, ftype) => {
 						val sb3 = new StringBuilder() // needed to support Option -- it may not render anything
-						sb3.append(s""""${f.fieldName}":""")
+						sb3.append(s""""${fname}":""")
 						val cz = instance.getClass()
-						val targetField = cz.getDeclaredField(f.fieldName)
+						val targetField = cz.getDeclaredField(fname)
 						targetField.setAccessible(true)
-						if( _render(f.ftype, targetField.get(instance), sb3, tt.tpe.typeArgs) ) {
+						if( _render(ftype, targetField.get(instance), sb3, tt.tpe.typeArgs) ) {
 							sb3.append(",")
 							sb2.append(sb3)
 						}
-					})
+					}})
 					if( !sb2.isEmpty )
 						buf.append(sb2.dropRight(1))
 					buf.append("}")
 					true
-				case g:SjPrimitive  => 
+				case g:PrimType  => 
 					g.name match {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
 							val cleaned = clean(instance.toString)
@@ -78,11 +79,11 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							buf.append(instance)
 							true
 					}
-				case g:SjCollection => 
+				case g:CollType => 
 					g.name match {
 						case "scala.Option" => 
 							val optVal = instance.asInstanceOf[Option[_]]
-							optVal.map( ov => _render(g.collectionType.head, ov, buf, tt.tpe.typeArgs) )
+							optVal.map( ov => _render(g.colTypes.head, ov, buf, tt.tpe.typeArgs) )
 							optVal.isDefined
 						case n if(n.endsWith("Map")) => 
 							val mapVal = instance.asInstanceOf[Map[_,_]]
@@ -92,12 +93,12 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 									val sb3 = new StringBuilder()
 									var renderedKey = true // handle optionality
 									if( !vc.isCanonical ) 
-										renderedKey = _render(g.collectionType(0), k, sb3, tt.tpe.typeArgs)
+										renderedKey = _render(g.colTypes(0), k, sb3, tt.tpe.typeArgs)
 									else
 										sb3.append(s""""${k.toString}"""") //"
 									if( renderedKey ) {
 										sb3.append(":")
-										if( _render(g.collectionType(1), v, sb3, tt.tpe.typeArgs) )
+										if( _render(g.colTypes(1), v, sb3, tt.tpe.typeArgs) )
 											sb3.append(",")
 										else
 											sb3.clear
@@ -114,7 +115,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							val collVal = instance.asInstanceOf[Iterable[_]]
 							if( !collVal.isEmpty ) {
 								collVal.map( item => {
-									if( _render(g.collectionType.head, item, buf, tt.tpe.typeArgs) )
+									if( _render(g.colTypes.head, item, buf, tt.tpe.typeArgs) )
 										buf.append(",")
 								})
 								if( buf.charAt(buf.length-1) == ',' )
@@ -123,20 +124,12 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							buf.append("]")
 							true
 					}
-				case g:SjTypeSymbol =>
-					val analyzed = Analyzer.inspect(instance) match {
-						// naked list = must supply actual collection type
-						case c:SjCollection if(c.collectionType.size==0) => 
-							Analyzer.nakedInspect(typeArgs).head
-						case c => c
-					}
-					_render(analyzed,instance,buf, tt.tpe.typeArgs)
-				case g:SjTrait => 
-					val cc = Analyzer.inspect(instance,Some(g)).asInstanceOf[SjCaseClass]
+				case g:TraitType => 
+					val cc = Analyzer.inspect(instance,Some(g)).asInstanceOf[CCType]
 					// WARN: Possible Bug.  Check propagation of type params from trait->case class.  These may need
 					//       to be intelligently mapped somehow.
 					_render(cc.copy(isTrait=true),instance,buf, tt.tpe.typeArgs)
-				case g:SjValueClass =>
+				case g:ValueClassType =>
 					// Value classes are ugly!  Sometimes they're inlined so don't assume a class here... it may be just
 					// a raw/unwrapped value.  But... other times they are still wrapped in their class.  Be prepared
 					// to handle either.
@@ -152,7 +145,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 						}
 					}
 					_render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
-				case g:SjEnum =>
+				case g:EnumType =>
 					buf.append(s""""${instance.toString}"""") //"
 					true
 			}
