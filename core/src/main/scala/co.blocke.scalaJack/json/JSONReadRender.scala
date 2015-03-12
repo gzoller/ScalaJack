@@ -31,7 +31,6 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
 			val graph = getGraph(instance)
-println(graph)
 			val buf = new StringBuilder()
 			_render(graph, instance, buf)
 			buf.toString

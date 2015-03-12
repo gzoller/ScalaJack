@@ -13,7 +13,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
 
 	describe("==================\n| -- V3 Tests -- |\n==================") {
-			/*
 		describe("Basic Render/Read") {
 			it( "Serialize simple object to JSON -- all supported data types" ) {
 				val js = ScalaJack.render(data)
@@ -221,7 +220,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				js2 should equal( """{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}}""" )
 				val u = ScalaJack.read[Three](js2,"hey")
 				u should equal( t )
-				println("-----------------------")
 			}
 			it("Top-level trait") {
 				val w = Wow1("hey",99)
@@ -403,9 +401,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				}
 			}
 		}
-		*/
 		describe("Parameterized Class Support") {
-			/*
 			describe("Basic Parameterized Case Class") {
 				it("Simple parameters - Foo[A](x:A) where A -> simple type") {
 					val w = Wrap("number",true,15)
@@ -458,9 +454,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
 				}
 			}
-			*/
 			describe("Basic Collection Support") {
-				/*
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of simple type") {
 					val w = Carry("Trey", Wrap("Hobbies", List(true,true,false), "all"))
 					val js = ScalaJack.render(w)
@@ -473,19 +467,16 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":59},"stuff":"all"}}""")
 					ScalaJack.read[Carry[Map[String,Int]]](js) should equal(w)
 				}
-				*/
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of simple type") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(17), "all"))
 					val x = Carry[Option[Int]]("Terry", Wrap("Hobbies", None, "all"))
-					val js = ScalaJack.render(w)
-					// val js2 = ScalaJack.render(x)
-	println(js)
+					val js = ScalaJack.render[Carry[Option[Int]]](w)
+					val js2 = ScalaJack.render[Carry[Option[Int]]](x)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":17,"stuff":"all"}}""")
-					// js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
-					// ScalaJack.read[Carry[Option[Int]]](js) should equal(w)
-					// ScalaJack.read[Carry[Option[Int]]](js2) should equal(x)
+					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
+					ScalaJack.read[Carry[Option[Int]]](js) should equal(w)
+					ScalaJack.read[Carry[Option[Int]]](js2) should equal(x)
 				}
-				/*
 				it("Case class having List of parameterized value - Foo[A](x:List[A]) - where A is a simple type") {
 					val w = BagList("list",List(1,2,3))
 					val js = ScalaJack.render(w)
@@ -508,9 +499,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[BagOpt[String]](js) should equal(w)
 					ScalaJack.read[BagOpt[String]](js2) should equal(x)
 				}
-				*/
 			}
-			/*
 			describe("Advanced Collection Support - collections of parameterized case class") {
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of Bar[Int]") {
 					val w = Carry("Trey", Wrap("Hobbies", List(Zoo("one",1),Zoo("two",2)), "all"))
@@ -527,12 +516,12 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of Bar[Int]") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(Zoo("a","b")), "all"))
 					val x = Carry[Option[Int]]("Terry", Wrap("Hobbies", None, "all"))
-					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
+					val js = ScalaJack.render[Carry[Option[Zoo[String]]]](w)
+					val js2 = ScalaJack.render[Carry[Option[Int]]](x)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"name":"a","z":"b"},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Zoo[String]]]](js) should equal(w)
-					ScalaJack.read[Carry[Option[Zoo[String]]]](js2) should equal(x)
+					ScalaJack.read[Carry[Option[Int]]](js2) should equal(x)
 				}
 				it("Case class having List parameter - Foo[A](x:A) where A -> List of value class") {
 					val w = Carry("Trey", Wrap("Hobbies", List(new Wrapper(99),new Wrapper(100)), "all"))
@@ -549,8 +538,8 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("Case class having Option parameter - Foo[A](x:A) where A -> Option of value class") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(new Wrapper(-2)), "all"))
 					val x = Carry[Option[Wrapper]]("Terry", Wrap("Hobbies", None, "all"))
-					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
+					val js = ScalaJack.render[Carry[Option[Wrapper]]](w)
+					val js2 = ScalaJack.render[Carry[Option[Wrapper]]](x)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":-2,"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Wrapper]]](js) should equal(w)
@@ -571,8 +560,8 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("Case class having Option of parameterized value - Foo[A](x:Option[A]) - where A -> Bar[Int]") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(Truck(false,Two("aaa",true))), "all"))
 					val x = Carry[Option[Truck[Boolean]]]("Terry", Wrap("Hobbies", None, "all"))
-					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
+					val js = ScalaJack.render[Carry[Option[Truck[Boolean]]]](w)
+					val js2 = ScalaJack.render[Carry[Option[Truck[Boolean]]]](x)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"s":false,"t":{"foo":"aaa","bar":true}},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Truck[Boolean]]]](js) should equal(w)
@@ -593,31 +582,31 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("Case class having Option of parameterized value - Foo[A](x:Option[A]) - where A -> value class") {
 					val w = Carry("Terri", Wrap("Hobbies", Some(Zoo("a",new Wrapper(12))), "all"))
 					val x = Carry[Option[Truck[Boolean]]]("Terry", Wrap("Hobbies", None, "all"))
-					val js = ScalaJack.render(w)
-					val js2 = ScalaJack.render(x)
+					val js = ScalaJack.render[Carry[Option[Zoo[Wrapper]]]](w)
+					val js2 = ScalaJack.render[Carry[Option[Truck[Boolean]]]](x)
 					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"name":"a","z":12},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Zoo[Wrapper]]]](js) should equal(w)
-					ScalaJack.read[Carry[Option[Zoo[Wrapper]]]](js2) should equal(x)
+					ScalaJack.read[Carry[Option[Truck[Boolean]]]](js2) should equal(x)
 				}
 			}
 			describe("Basic trait support") {
 				it("Parameter is a simple trait") {
 					val w = Carry[Pop]("Surprise", Wrap("Yellow", Wow2("three",3), "Done"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":{"_hint":"co.blocke.scalajack.test.Wow2","x":"three","y":3},"stuff":"Done"}}""")
+					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":{"_hint":"co.blocke.scalajack.test.v3.Wow2","x":"three","y":3},"stuff":"Done"}}""")
 					ScalaJack.read[Carry[Pop]](js) should equal(w)
 				}
 				it("Parameter is List of trait") {
 					val w = Carry[List[Pop]]("Surprise", Wrap("Yellow", List(Wow1("four",4),Wow2("three",3)), "Done"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":[{"_hint":"co.blocke.scalajack.test.Wow1","a":"four","b":4},{"_hint":"co.blocke.scalajack.test.Wow2","x":"three","y":3}],"stuff":"Done"}}""")
+					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":[{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"four","b":4},{"_hint":"co.blocke.scalajack.test.v3.Wow2","x":"three","y":3}],"stuff":"Done"}}""")
 					ScalaJack.read[Carry[List[Pop]]](js) should equal(w)
 				}
 				it("Parameter is Map of String->trait") {
 					val w = Carry[Map[String,Pop]]("Surprise", Wrap("Yellow", Map("a"->Wow1("four",4),"b"->Wow2("three",3)), "Done"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":{"a":{"_hint":"co.blocke.scalajack.test.Wow1","a":"four","b":4},"b":{"_hint":"co.blocke.scalajack.test.Wow2","x":"three","y":3}},"stuff":"Done"}}""")
+					js should equal("""{"s":"Surprise","w":{"name":"Yellow","data":{"a":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"four","b":4},"b":{"_hint":"co.blocke.scalajack.test.v3.Wow2","x":"three","y":3}},"stuff":"Done"}}""")
 					ScalaJack.read[Carry[Map[String,Pop]]](js) should equal(w)
 				}
 				it("Parameter is an Option of trait") {
@@ -625,7 +614,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val x = Carry[Option[Pop]]("Terry", Wrap("Hobbies", None, "all"))
 					val js = ScalaJack.render(w)
 					val js2 = ScalaJack.render(x)
-					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.Wow1","a":"ok","b":-99},"stuff":"all"}}""")
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"ok","b":-99},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Pop]]](js) should equal(w)
 					ScalaJack.read[Carry[Option[Pop]]](js2) should equal(x)
@@ -633,13 +622,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("List of parameter, where parameter is a trait") {
 					val w = BagList[Pop]("list",List(Wow1("A",1),Wow1("B",2)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"list","many":[{"_hint":"co.blocke.scalajack.test.Wow1","a":"A","b":1},{"_hint":"co.blocke.scalajack.test.Wow1","a":"B","b":2}]}""")
+					js should equal("""{"s":"list","many":[{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"A","b":1},{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"B","b":2}]}""")
 					ScalaJack.read[BagList[Pop]](js) should equal(w)
 				}
 				it("Map of String->parameter, where parameter is a trait") {
 					val w = BagMap[Pop](5, Map("one"->Wow2("q",7),"two"->Wow1("r",3)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"i":5,"items":{"one":{"_hint":"co.blocke.scalajack.test.Wow2","x":"q","y":7},"two":{"_hint":"co.blocke.scalajack.test.Wow1","a":"r","b":3}}}""")
+					js should equal("""{"i":5,"items":{"one":{"_hint":"co.blocke.scalajack.test.v3.Wow2","x":"q","y":7},"two":{"_hint":"co.blocke.scalajack.test.v3.Wow1","a":"r","b":3}}}""")
 					ScalaJack.read[BagMap[Pop]](js) should equal(w)
 				}
 				it("Option of parameter, where parameter is a trait") {
@@ -647,7 +636,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val x = Carry[Option[Pop]]("Terry", Wrap("Hobbies", None, "all"))
 					val js = ScalaJack.render(w)
 					val js2 = ScalaJack.render(x)
-					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.Wow2","x":"finite","y":1000},"stuff":"all"}}""")
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.v3.Wow2","x":"finite","y":1000},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Pop]]](js) should equal(w)
 					ScalaJack.read[Carry[Option[Pop]]](js2) should equal(x)
@@ -657,37 +646,37 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("Case class having an embedded parameterized trait") {
 					val w = Breakfast(true, Toast(7,"Burnt"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":"Burnt"}}""")
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.v3.Toast","g":7,"yum":"Burnt"}}""")
 					ScalaJack.read[Breakfast[String]](js) should equal(w)
 				}
 				it("Case class having an embedded parameterized trait, with the trait's parameter another case class") {
 					val w = Breakfast(true, Toast(7,Two("two",true)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":{"foo":"two","bar":true}}}""")
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.v3.Toast","g":7,"yum":{"foo":"two","bar":true}}}""")
 					ScalaJack.read[Breakfast[Two]](js) should equal(w)
 				}
 				it("Case class having an embedded parameterized trait, with the trait's parameter a value class") {
 					val w = Breakfast(true, Toast(7,new Wrapper(-100)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":-100}}""")
+					js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.v3.Toast","g":7,"yum":-100}}""")
 					ScalaJack.read[Breakfast[Wrapper]](js) should equal(w)
 				}
 				it("Parameter is a parameterized trait") { // I can't believe this one worked!
 					val w = Carry[Tart[Soup[String]]]("Bill", Wrap("Betty", Bun(3,Cruton(8,"eight")),"ok"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"_hint":"co.blocke.scalajack.test.Bun","g":3,"yum":{"_hint":"co.blocke.scalajack.test.Cruton","i":8,"sweet":"eight"}},"stuff":"ok"}}""")
+					js should equal("""{"s":"Bill","w":{"name":"Betty","data":{"_hint":"co.blocke.scalajack.test.v3.Bun","g":3,"yum":{"_hint":"co.blocke.scalajack.test.v3.Cruton","i":8,"sweet":"eight"}},"stuff":"ok"}}""")
 					ScalaJack.read[Carry[Tart[Soup[String]]]](js) should equal(w)
 				}
 				it("Parameter is List of parameterized trait") {
 					val w = Carry[List[Tart[Boolean]]]("Trey", Wrap("Hobbies", List(Bun(1,false),Toast(2,true)), "all"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Trey","w":{"name":"Hobbies","data":[{"_hint":"co.blocke.scalajack.test.Bun","g":1,"yum":false},{"_hint":"co.blocke.scalajack.test.Toast","g":2,"yum":true}],"stuff":"all"}}""")
+					js should equal("""{"s":"Trey","w":{"name":"Hobbies","data":[{"_hint":"co.blocke.scalajack.test.v3.Bun","g":1,"yum":false},{"_hint":"co.blocke.scalajack.test.v3.Toast","g":2,"yum":true}],"stuff":"all"}}""")
 					ScalaJack.read[Carry[List[Tart[Boolean]]]](js) should equal(w)
 				}
 				it("Parameter is Map of String->parameterized trait") {
 					val w = Carry[Map[String,Tart[String]]]("Troy", Wrap("Articles", Map("OK"->Bun(27,"Hot")), "all"))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":{"_hint":"co.blocke.scalajack.test.Bun","g":27,"yum":"Hot"}},"stuff":"all"}}""")
+					js should equal("""{"s":"Troy","w":{"name":"Articles","data":{"OK":{"_hint":"co.blocke.scalajack.test.v3.Bun","g":27,"yum":"Hot"}},"stuff":"all"}}""")
 					ScalaJack.read[Carry[Map[String,Tart[String]]]](js) should equal(w)
 				}
 				it("Parameter is an Option of parameterized trait") {
@@ -695,7 +684,7 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val x = Carry[Option[Tart[Int]]]("Terry", Wrap("Hobbies", None, "all"))
 					val js = ScalaJack.render(w)
 					val js2 = ScalaJack.render(x)
-					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.Toast","g":11,"yum":12},"stuff":"all"}}""")
+					js should equal("""{"s":"Terri","w":{"name":"Hobbies","data":{"_hint":"co.blocke.scalajack.test.v3.Toast","g":11,"yum":12},"stuff":"all"}}""")
 					js2 should equal("""{"s":"Terry","w":{"name":"Hobbies","stuff":"all"}}""")
 					ScalaJack.read[Carry[Option[Tart[Int]]]](js) should equal(w)
 					ScalaJack.read[Carry[Option[Tart[Int]]]](js2) should equal(x)
@@ -703,13 +692,13 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				it("List of parameter, where parameter is a parameterized trait") {
 					val w = BagList[Tart[Boolean]]("list",List(Toast(1,true),Bun(2,false)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"s":"list","many":[{"_hint":"co.blocke.scalajack.test.Toast","g":1,"yum":true},{"_hint":"co.blocke.scalajack.test.Bun","g":2,"yum":false}]}""")
+					js should equal("""{"s":"list","many":[{"_hint":"co.blocke.scalajack.test.v3.Toast","g":1,"yum":true},{"_hint":"co.blocke.scalajack.test.v3.Bun","g":2,"yum":false}]}""")
 					ScalaJack.read[BagList[Tart[Boolean]]](js) should equal(w)
 				}
 				it("Map of String->parameter, where parameter is a parameterized trait") {
 					val w = BagMap[Tart[Boolean]](5, Map("one"->Bun(1,true),"two"->Toast(2,false)))
 					val js = ScalaJack.render(w)
-					js should equal("""{"i":5,"items":{"one":{"_hint":"co.blocke.scalajack.test.Bun","g":1,"yum":true},"two":{"_hint":"co.blocke.scalajack.test.Toast","g":2,"yum":false}}}""")
+					js should equal("""{"i":5,"items":{"one":{"_hint":"co.blocke.scalajack.test.v3.Bun","g":1,"yum":true},"two":{"_hint":"co.blocke.scalajack.test.v3.Toast","g":2,"yum":false}}}""")
 					ScalaJack.read[BagMap[Tart[Boolean]]](js) should equal(w)
 				}
 				it("Option of parameter, where parameter is a parameterized trait") {
@@ -717,71 +706,72 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					val x = BagOpt[Tart[String]](1,None)
 					val js = ScalaJack.render(w)
 					val js2 = ScalaJack.render(x)
-					js should equal("""{"i":1,"maybe":{"_hint":"co.blocke.scalajack.test.Bun","g":6,"yum":"ok"}}""")
+					js should equal("""{"i":1,"maybe":{"_hint":"co.blocke.scalajack.test.v3.Bun","g":6,"yum":"ok"}}""")
 					js2 should equal("""{"i":1}""")
 					ScalaJack.read[BagOpt[Tart[String]]](js) should equal(w)
 					ScalaJack.read[BagOpt[Tart[String]]](js2) should equal(x)
 				}
 			}
-			*/
 		}
 		/*
 		describe("Improved Error Reporting") {
 			describe("Object") {
 				it("Must provide useful errors - simple case class") {
 					val js = """{"a":"Foo","b":"Bar"}"""
-					Try( ScalaJack.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Wow1 field b Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
-				it("Must provide useful errors - list member of class") {
+					it("Must provide useful errors - list member of class") {
 					val js = """{"stuff":[5],"things":{"a":5}}"""
-					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
 				}
 				it("Must provide useful errors - map member of class") {
 					val js = """{"stuff":["hey"],"things":{"a":true}}"""
-					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
+					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
 				}
 				it("Must provide useful errors - list of case class member of class") {
 					val js = """{"s":"hey","many":[{"age":33},{"age":"old"}]}"""
-					Try( ScalaJack.read[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
 				it("Must provide useful errors - map of case class member of class") {
 					val js = """{"i":5,"items":{"one":{"age":33},"two":{"age":"old"}}}"""
-					Try( ScalaJack.read[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
 				it("Must provide useful errors - Option member of class") {
 					val js = """{"name":"Bob","big":5,"maybe":false}"""
-					Try( ScalaJack.read[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
+					Try( ScalaJack.read[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
 				}
 				it("Must provide useful errors - Option of calue class") {
 					val js = """{"name":"Bob","wrap":false}"""
-					Try( ScalaJack.read[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+					Try( ScalaJack.read[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
 				}
 				it("Must provide useful errors - Option of case class member of class") {
 					val js = """{"i":5,"maybe":{"age":"boom"}}"""
-					Try( ScalaJack.read[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
 				it("Must provide useful errors - Enumeration member of class (wrong type)") {
 					val js = """{"age":5, "num":true}"""
-					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
+					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
 				}
 				it("Must provide useful errors - Enumeration member of class (right type, but not enum value") {
 					val js = """{"age":5, "num":"P"}"""
-					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
+					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Numy field num Given value of P is not valid for this enum field." )
 				}
 				it("Must provide useful errors - Naked list") {
 					val js = """["a","b",5]"""
-					Try( ScalaJack.read[List[String]](js) ).failed.get.getMessage should be( "Class scala.collection.immutable.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
+					Try( ScalaJack.read[List[String]](js) ).failed.get.getMessage should be( "Class scala.collection.immutable.v3.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
 				}
 				it("Must provide useful errors - Naked list of case class") {
 					val js = """[{"age":55},{"age":"bar"}]"""
-					Try( ScalaJack.read[List[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
+					Try( ScalaJack.read[List[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
 				}
 				it("Must provide useful errors - Nested case class") {
 					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""
-					Try( ScalaJack.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
+					Try( ScalaJack.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.v3.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
 				}
 			}
 		}
+		*/
+		/*
 		describe("Thread Safety Test") {
 			it("Should not crash when multiple threads access Analyzer (Scala 2.10.x reflection bug)") {
 				import scala.concurrent.{Future, Await}
@@ -805,8 +795,8 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		}
 		*/
 	}
-	describe("View/Splice Tests") {  // TODO
 		/*
+	describe("View/Splice Tests") {  // TODO
 		it("Must process view") {
 			ScalaJack.view[OneSub2](data) should equal( OneSub2("Greg",true,Map("hey"->17, "you"->21)))
 		}
@@ -815,6 +805,6 @@ class TestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
 			y should equal( data.copy(name="Fred", big=2L) )
 		}
-		*/
 	}
+		*/
 }

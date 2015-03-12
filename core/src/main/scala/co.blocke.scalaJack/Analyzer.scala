@@ -57,25 +57,13 @@ object Analyzer {
    ) : AType = {
     val (args,argMap) = t match {
       case ty:TypeRef =>
-        val done = LinkedHashMap.empty[String,AType] ++= ty.typeSymbol.typeSignature.typeParams.map(_.name.toString).zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta,None,true,preResolved))))
-        (ty.args, {
-          done
-//          if( preResolved.size > 0 ) done
-//          else getParamSymbols(ty)
-        })
-/*
-        //        val syms      = ty.typeSymbol.typeSignature.typeParams.map(_.name.toString)
-//        println(s" (1) $syms")
-        println("  ta: "+ty.args)
-        val foo = ty.args.map( ta => argMap.getOrElse( ta.toString, know(ta,None,true) ))
-//        println("  ta: "+ty.typeParams)
-//        println("  ta: "+foo)
-//        val argMapped = LinkedHashMap.empty[String,AType] ++= syms.zip(ty.args.map(a => know(a,relativeToTrait,true)))
-        (ty.args, getParamSymbols(ty))
-        * 
-        */
+        val buildingArgMap = 
+            LinkedHashMap.empty[String,AType] ++= 
+              ty.typeSymbol.typeSignature.typeParams
+                .map(_.name.toString)
+                .zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta,None,true,preResolved))))
+        (ty.args, buildingArgMap)
       case ty => // generally a case class that's implementing a trait
-//        println(" (2)")
         (List.empty[Type], relativeToTrait.get.paramMap)
     }
     val tag    = t.typeSymbol.fullName+argMap.values.map(_.name).mkString("[",",","]")

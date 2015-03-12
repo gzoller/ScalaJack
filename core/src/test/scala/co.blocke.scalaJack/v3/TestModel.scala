@@ -12,12 +12,12 @@ case class Bar[A,B](a:A, b:B)
 case class Zoo[U](name:String, z:U)//stuff:Bar[U,String])
 case class Hey( age:Int )
 
-case class Wrap[T,U] (
+case class Wrap[+T,U] (
 		name:String,
 		data:T,
 		stuff:U
 		)
-case class Carry[V](s:String, w:Wrap[V,String])
+case class Carry[+V](s:String, w:Wrap[V,String])
 case class CarryList[V](li:List[String], w:Wrap[V,String])
 case class CarryOpt[V](li:List[String], w:Wrap[V,String])
 case class BagList[Y](s:String, many:List[Y])

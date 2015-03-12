@@ -107,9 +107,10 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 				case ']' =>
 					ctxPtr -= 1  // stack pop
 					// Adjust last element in list to list variant
-					if( tokType(tokType.length-1) != JSlistStart )
+					if( tokType(tokType.length-1) != JSlistStart ) {
 						tokType.update(tokType.length-1, (tokType(tokType.length-1) << 1).toByte)
-					lastToken2 = (lastToken2 << 1).toByte
+						lastToken2 = (lastToken2 << 1).toByte
+					}
 					tokPos  += i
 					tokLen  += 1
 					tokType += JSlistEnd
