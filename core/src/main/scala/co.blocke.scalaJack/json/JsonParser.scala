@@ -29,17 +29,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 
 	// This is a variant of the version of getGraph in ReadRenderFrame.  This one cooks the graph by class name *and* has 
 	// different implicit parameters.
-	private def getGraph2[T](className:String)(implicit t:TypeTag[T]) = {
-		/*
-		val csym = currentMirror.classSymbol(Class.forName(className))
-		if( csym.isCollection ) { 
-			// handle naked collections -- kinda ugly
-			val naked = Analyzer.nakedInspect(t.tpe.typeArgs)
-			SjCollection(PrimitiveTypes.fixPolyCollection(csym.fullName).get,naked)
-		} else
-		*/
-			Analyzer.inspectByName(className) // normal non-collection case
-	}
+	private def getGraph2[T](className:String)(implicit t:TypeTag[T]) = Analyzer.inspectByName(className) // normal non-collection case
 
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
@@ -199,12 +189,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 		}
 
 		// Make it happen!
-		val z = getGraph2(sjTName)
-		// println("IDX: "+this.idx.tokType.slice(0,8).toList)
-		// println("Z: "+z)
-		_parse(z,true).asInstanceOf[T]
-		
-		// _parse(getGraph2(sjTName)).asInstanceOf[T]
+		_parse(getGraph2(sjTName),true).asInstanceOf[T]
 	}
 }
 

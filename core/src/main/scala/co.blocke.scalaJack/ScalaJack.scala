@@ -5,13 +5,6 @@ package co.blocke.scalajack
  *   -- Case classes only
  *   -- Options of value None are removed from generated output
  *   -- Default parameters are not supported at this time
- *   -- Simple types supported:
- *         Int, Boolean, Long, String, Enumeration.Value
- *   -- Collections/"containers" supported:
- *         List (mutable (ListBuffer) and immutable)
- *         Set  (mutable and immutable)
- *         Map  (mutable and immutable)
- *         Option
  *   -- MongoKey-decorated fields must be type String and map to "_id" (Mongo's default)
  *   
  * Useful references:
