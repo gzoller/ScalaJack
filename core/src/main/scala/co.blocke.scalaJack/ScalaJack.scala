@@ -20,7 +20,6 @@ object Formats extends Enumeration {
 }
 import Formats._
 
-
 case class VisitorContext(
 	typeHint       : String  = "_hint",
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec

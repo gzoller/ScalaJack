@@ -71,6 +71,5 @@ object PrimitiveTypes {
 	implicit class CollMaps( val symbol : scala.reflect.runtime.universe.Symbol ) extends AnyVal {
 		def isCollection = scalaCollections.contains(symbol.fullName) || symbol.fullName.startsWith("scala.collection")
 		def isPrimitive  = primitiveTypes.contains(symbol.asClass.fullName)
-		def isPlaceholder( phs:List[String] ) = phs.contains(symbol.name.toString)
 	}
 }
