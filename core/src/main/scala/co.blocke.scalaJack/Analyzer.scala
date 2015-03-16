@@ -15,14 +15,17 @@ object Analyzer {
 	// pre-populate cache with all the primitives
 	primitiveTypes.foreach( p => readyToEat.put(p._1+"[]",PrimType(p._1)) )
 
+	private val ru           = scala.reflect.runtime.universe
+	private val dbType       = ru.typeOf[DBKey]
+	private val collectType  = ru.typeOf[Collection]
+
 	def inspect[T]( c:T, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( c.getClass, relativeToTrait )
 
 	// Used when we only have the class name
 	def inspectByName[T]( className:String, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( Class.forName(className), relativeToTrait )
 
 	private def getParamSymbols( t:Type ) = 
-		LinkedHashMap.empty[String,AType] ++=
-			t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta,None, true)) ).toMap
+		LinkedHashMap.empty[String,AType] ++= t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta,None, true)) ).toMap
   
 	private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[TraitType] )(implicit tt:TypeTag[T]) : AType = {
 		val ctype = if( relativeToTrait.isDefined ) 
@@ -75,13 +78,18 @@ object Analyzer {
 						tty
 		        
 					case sym if(sym.asClass.isCaseClass) =>
-						val ctor    = sym.asClass.primaryConstructor
-						val members = ctor.typeSignature.paramLists.head.map( f => {
+						val ctor         = sym.asClass.primaryConstructor
+						val collAnnoName = sym.asClass.annotations.find(_.tree.tpe =:= typeOf[Collection]).map(_.tree.children.tail.head.productElement(1).toString)
+						val members      = ctor.typeSignature.paramLists.head.map( f => {
 							val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
 								.orElse( Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) )
-							(f.name.toString, fType.get)
+							val finalFtype = fType.get match {
+								case ft:PrimType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => ft.copy(isDbKey = true)
+								case ft => ft
+							}
+							(f.name.toString, finalFtype)
 						})
-						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType] ++= members, argMap )
+						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType] ++= members, argMap, false, collAnnoName.map(_.filterNot(_ == '"')) )
 						if( cc.paramMap.size == 0 )  // For simplicity's sake, don't cache cc's having parameters.  Too many nuances, e.g. parameterized types
 							readyToEat.put(tag, cc)
 						cc

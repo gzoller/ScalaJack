@@ -6,17 +6,19 @@ import scala.collection.mutable.LinkedHashMap
 class ReflectException(msg:String) extends Exception(msg)
 
 trait AType {
-	val name   : String
+	val name    : String
+	val isDbKey : Boolean = false
 }
 case class CCType(
 	name     : String, 
 	members  : LinkedHashMap[String,AType], 
 	paramMap : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
-	isTrait  : Boolean = false
+	isTrait  : Boolean = false,
+	collAnno : Option[String] = None  // db collumn annotation 
 ) extends AType {
 	override def toString() = s"[$name -> $members]"
 }
-case class PrimType(name:String) extends AType
+case class PrimType(name:String, override val isDbKey:Boolean = false) extends AType
 case class CollType(name:String, colTypes:List[AType]) extends AType {
 	def isOptional = name == "scala.Option"
 }

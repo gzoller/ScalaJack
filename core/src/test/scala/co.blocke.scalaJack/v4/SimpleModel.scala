@@ -12,6 +12,13 @@ case class Stuff(
 	other:Blah
 	)
 
+@Collection(name="mystuff")
+case class Decorated(
+	@DBKey one : String,
+	two   : Int,
+	three : Boolean
+	)
+
 // Parameterized classes/traits
 case class Case_1( name:String, other:List[WithType[Int]] )
 case class Case_2[T]( name:String, other:List[WithType[T]] )

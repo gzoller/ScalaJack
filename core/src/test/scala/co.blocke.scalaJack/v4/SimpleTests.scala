@@ -221,5 +221,13 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				(sjJS.read[WithType[String]](js) == a) should be( true )
 			}
 		}
+		describe("Annotation Tests") {
+			it("Must analyze annotations for Collection and DBKey") {
+				val t = Analyzer.inspectByName[Decorated]("co.blocke.scalajack.test.v4.Decorated").asInstanceOf[CCType]
+				println(">>> "+t.collAnno)
+				t.collAnno should equal( Some("mystuff") )
+				t.members.values.map(_.isDbKey) should equal( List(true,false,false) )
+			}
+		}
 	}
 }
