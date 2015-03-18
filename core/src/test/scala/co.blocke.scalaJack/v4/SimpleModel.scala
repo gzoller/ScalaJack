@@ -82,3 +82,6 @@ case class Wrapped2[T]( hey:Wrapper2[T], you:Int )
 
 case class Address(street:String, zip:Int)
 case class Pristine( name:String, age:Int, stuff:Option[Boolean], addr:Address )
+
+class CustomVC(val underlying: DateTime) extends AnyVal
+case class SomethingSpecial( what:String, when:CustomVC )

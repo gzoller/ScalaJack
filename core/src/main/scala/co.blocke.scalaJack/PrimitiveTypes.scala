@@ -64,10 +64,6 @@ object PrimitiveTypes {
 		// "scala.collection.mutable.SortedSet"
 		// "scala.collection.mutable.TreeSet"
 
-	def fixPolyCollection( polyName:String ) = scalaCollections.keySet.find( cn => polyName.startsWith(cn) ).orElse({
-		if( polyName.equals("""scala.collection.immutable.$colon$colon""")) Some("scala.collection.immutable.List") else None
-		})
-
 	implicit class CollMaps( val symbol : scala.reflect.runtime.universe.Symbol ) extends AnyVal {
 		def isCollection = scalaCollections.contains(symbol.fullName) || symbol.fullName.startsWith("scala.collection")
 		def isPrimitive  = primitiveTypes.contains(symbol.asClass.fullName)

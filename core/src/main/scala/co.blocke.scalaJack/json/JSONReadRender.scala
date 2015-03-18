@@ -13,7 +13,7 @@ import org.joda.time.DateTime
 	types in case they are needed by a collection. <sigh>  These are marked with //!!! for reference to this note.
  */
 
-trait JSONReadRenderFrame extends ReadRenderFrame {
+trait JSONReadRenderFrame extends ReadRenderFrame { 
 	def renderer = new JSONReadRender()
 
 	class JSONReadRender() extends ReadRender[String] {
@@ -22,9 +22,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 			val sjTypeName = tt.tpe.typeSymbol.fullName
 			val srcChars = src.toCharArray
 			val parser = vc.isValidating match {
-				case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc.typeHint)
-				case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc.typeHint)
-				case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc.typeHint)
+				case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc)
+				case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc)
+				case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc)
 			}
 			parser.parse()
 		}
@@ -143,7 +143,12 @@ trait JSONReadRenderFrame extends ReadRenderFrame {
 							targetField.get(instance)
 						}
 					}
-					_render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+					vc.valClassMap.get(g.name).map( vcHand => {
+							buf.append(vcHand.render(renderVal))
+							true
+						}).orElse(
+							Some(_render(g.vcType,renderVal,buf,tt.tpe.typeArgs))
+						).get
 				case g:EnumType =>
 					buf.append(s""""${instance.toString}"""") //"
 					true

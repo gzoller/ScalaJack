@@ -16,15 +16,21 @@ import json._
 
 object Formats extends Enumeration {
 	type Format = Value
-	val JSON  = Value  // add your values here, e.g. XML
+	val  JSON   = Value  // add your values here, e.g. XML
 }
 import Formats._
+
+case class ValClassHandler(
+	read:(String) => Any,
+	render:(Any) => String
+	)
 
 case class VisitorContext(
 	typeHint       : String  = "_hint",
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
 	isValidating   : Boolean = false,
-	estFieldsInObj : Int     = 128
+	estFieldsInObj : Int     = 128,
+	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler]
 	)
   
 object ScalaJack {

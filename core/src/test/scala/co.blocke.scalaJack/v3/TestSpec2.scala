@@ -68,40 +68,6 @@ class TestSpec2 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[MapValSupport](js2) should equal( stuff )
 				}
 			}
-
-			//
-			// CUSTOM JSON HANDLING DEPRECATED
-			//
-			// describe("With custom JSON support") {
-				// it( "Simple value custom JSON support for Value class" ) {
-				// 	val stuff = ValSupport("foo", new Wrapper(99), true)
-				// 	val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-				// 	js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
-				// 	ScalaJack.read[ValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				// }
-				// it( "List of value class with custom JSON support" ) {
-				// 	val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
-				// 	val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-				// 	js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
-				// 	ScalaJack.read[ListValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				// }
-				// it( "Option of value class with custom JSON support" ) {
-				// 	val stuff = OptValSupport("hey", Some(new Wrapper(2)))
-				// 	val stuff2 = OptValSupport("hey", None)
-				// 	val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
-				// 	val js2 = ScalaJack.render(stuff2,ScalaJack.HINT,true)
-				// 	js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
-				// 	js2 should equal("""{"name":"hey"}""")
-				// 	ScalaJack.read[OptValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
-				// 	ScalaJack.read[OptValSupport](js2,ScalaJack.HINT,true) should equal( stuff2 )
-				// }
-				// it( "Map of value class without custom JSON support" ) {
-				// 	val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
-				// 	val js1 = ScalaJack.render(stuff)
-				// 	js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
-				// 	ScalaJack.read[MapValSupport](js1) should equal( stuff )
-				// }
-			// }
 		}
 
 		describe("Nested Constructs") {

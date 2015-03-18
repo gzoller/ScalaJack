@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe._
 import JsonTokens._
 import scala.collection.mutable.{Map => MMap,ListBuffer => MList}
 
-case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:String) {
+case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:VisitorContext) {
 
 	/**
 	 * Magically create an instance of a case class given a map of name->value parameters.
@@ -77,7 +77,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 			case sj:TraitType =>
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
-					val objClass = findTypeHint(typeHint).getOrElse(typeHint, throw new JsonParseException(s"No type hint $typeHint given for trait ${sj.name}",0))
+					val objClass = findTypeHint(vctx.typeHint).getOrElse(vctx.typeHint, throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0))
 					val sjObjType = Analyzer.inspectByName(objClass.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[CCType]
@@ -145,7 +145,10 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, typeHint:Str
 				}
 		}
 
-		def parseValueClassPrimitive( vc:ValueClassType ) =  _parse(vc.vcType).asInstanceOf[AnyRef]
+		def parseValueClassPrimitive( vc:ValueClassType ) = 
+			vctx.valClassMap.get(vc.name).map( handler => 
+				handler.read( _parse(PrimType("String")).asInstanceOf[String] ).asInstanceOf[AnyRef]
+			).orElse( Some(_parse(vc.vcType).asInstanceOf[AnyRef]) ).get
 		def parseValueClass( vc:ValueClassType, primitive:AnyRef ) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
 		def findTypeHint( hint:String ) : Option[String] = {
