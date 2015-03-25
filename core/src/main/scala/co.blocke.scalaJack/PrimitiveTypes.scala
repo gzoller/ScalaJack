@@ -13,7 +13,7 @@ object PrimitiveTypes {
 		"scala.Float"               -> { (s:String) => s.toFloat },
 		"scala.Double"              -> { (s:String) => s.toDouble },
 		"scala.Long"                -> { (s:String) => s.toLong },
-		"scala.Char"                -> { (s:String) => if( s.length > 0 ) s.charAt(0) else null },
+		"scala.Char"                -> { (s:String) => if( !s.isEmpty ) s.charAt(0) else null },
 		"scala.Byte"                -> { (s:String) => s.toByte },
 		"scala.Short"               -> { (s:String) => s.toShort },
 		"java.lang.Boolean"         -> { (s:String) => java.lang.Boolean.parseBoolean(s) },

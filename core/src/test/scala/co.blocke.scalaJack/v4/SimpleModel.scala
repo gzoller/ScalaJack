@@ -71,6 +71,10 @@ case class AllColl(
 object Colors extends Enumeration {
   val Red, Amber, Green = Value
 }
+object Formats extends Enumeration {
+	type Format = Value
+	val  JSON   = Value  // add your values here, e.g. XML
+}
 import Formats._  // try alternate Ennumeration form
 case class EnumExer( a:Colors.Value, b:Format )
 

@@ -93,7 +93,7 @@ object Analyzer {
 						if( cc.paramMap.size == 0 )  // For simplicity's sake, don't cache cc's having parameters.  Too many nuances, e.g. parameterized types
 							readyToEat.put(tag, cc)
 						cc
-		              
+
 					case sym if(sym.asClass.fullName == "scala.Enumeration.Value") =>
 						val erasedEnumClassName = t.toString match {
 							case raw if(raw.endsWith(".Value")) => raw.replace(".Value","$")
@@ -101,11 +101,11 @@ object Analyzer {
 						}
 						EnumType(sym.fullName, 
 							Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration])
-		              
+
 					case sym if(sym.asClass.isDerivedValueClass) =>
 						val vField = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head
 						val valSjType = args match {
-							case pa if( pa.length == 0 ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
+							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
 							case pa => 
 								val vTerm = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
 								val g = sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info

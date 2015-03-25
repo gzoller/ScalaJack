@@ -118,7 +118,7 @@ case class JodaThing(
 )
 
 trait Pop {
-	def go
+	def go():Unit
 }
 trait Tart[T] {
 	val yum:T
@@ -128,10 +128,10 @@ trait Soup[A] {
 }
 
 case class Wow1( a:String, b:Int) extends Pop {
-	def go { println("--1--") }
+	def go() { println("--1--") }
 }
 case class Wow2( x:String, y:Int) extends Pop {
-	def go { println("--2--") }
+	def go() { println("--2--") }
 }
 case class Cruton[U]( i:Int, val sweet:U ) extends Soup[U]
 case class Toast[D]( g:Int, val yum:D ) extends Tart[D]

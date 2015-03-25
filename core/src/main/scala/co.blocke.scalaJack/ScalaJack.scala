@@ -14,15 +14,9 @@ package co.blocke.scalajack
 import scala.reflect.runtime.universe._
 import json._
 
-object Formats extends Enumeration {
-	type Format = Value
-	val  JSON   = Value  // add your values here, e.g. XML
-}
-import Formats._
-
 case class ValClassHandler(
 	read:(String) => Any,
-	render:(Any) => String
+	render:(Any)  => String
 	)
 
 case class VisitorContext(
@@ -31,32 +25,36 @@ case class VisitorContext(
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
 	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler]
+	// hintMap : Map[String,String] = Map.empty[String,String]
 	)
+
+
+case class ScalaJack_JSON() extends ScalaJack[String] with JSONReadRenderFrame 
+
+trait SupportedType[U] {
+	def makeScalaJack():ScalaJack[U]
+}
+case class JsonType() extends SupportedType[String] {
+	def makeScalaJack():ScalaJack[String] = ScalaJack_JSON()
+}
   
 object ScalaJack {
-	def apply(fmt:Format, fn:Option[()=>ScalaJack] = None) : ScalaJack = fmt match {
-		case JSON => ScalaJack_JSON()
-		// case XML  => ScalaJack_XML()
-		// case Custom => (fn.get)()
-	}
+	def apply[R]( kind:SupportedType[R] = JsonType() ) : ScalaJack[R] = kind.makeScalaJack
 
 	// Legacy support (JSON implied)
-	private val jsonJS = apply(JSON)
+	private val jsonJS = apply()
 	def read[T](js:String, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.read(js,VisitorContext(hint,true,true))
 	def render[T](instance:T, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.render(instance,VisitorContext(hint,true,true)).toString
 }
 
-trait ScalaJack {
-	this: ReadRenderFrame =>
-	def read[T](js:String, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
+trait ScalaJack[R] {
+	this: ReadRenderFrame[R] =>
+	def read[T](in:R, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
 		implicit val vc = vctx
-		renderer.read(js)
+		renderer.read(in)
 	}
 	def render[T](instance:T, vctx:VisitorContext=VisitorContext())(implicit tt:TypeTag[T]) = {
 		implicit val vc = vctx
 		renderer.render(instance)
 	}
 }
-
-case class ScalaJack_JSON() extends ScalaJack with JSONReadRenderFrame 
-// case class ScalaJack_XML()  extends ScalaJack with XMLReadRenderFrame 

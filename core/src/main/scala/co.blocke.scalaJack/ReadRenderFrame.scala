@@ -10,13 +10,11 @@ import PrimitiveTypes._
 // The weird typing ('R' here) is to allow for the fact that future
 // serializations may be to non-String output, e.g. bytes.
 
-trait ReadRenderFrame {
-	def renderer : ReadRender[_]
-	trait ReadRender[R] {
-		// This piece of magic handles naked lists, i.e. ScalaJack.render(List(1,2,3)) -- not wrapped in a case class
-		def getGraph[T](instance:T)(implicit tt:TypeTag[T]) = Analyzer.inspect(instance) // normal non-collection case
+trait ReadRenderFrame[R] {
+	def renderer : ReadRender
+	trait ReadRender {
 
-		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
+		def read[T](src:R)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
 
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : R
 

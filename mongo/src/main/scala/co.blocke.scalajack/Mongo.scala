@@ -1,10 +1,22 @@
 package co.blocke.scalajack
 
-import fields._
+// import fields._
 import scala.language.implicitConversions
 import com.mongodb.casbah.Imports._
 
 package object mongo {
+	implicit def mongoOID( s:String ) = new ObjectId( s)
+}
+
+case class ScalaJack_Mongo() extends ScalaJack[MongoDBObject] with mongo.MongoReadRenderFrame 
+
+case class MongoType() extends SupportedType[MongoDBObject] {
+	def makeScalaJack():ScalaJack[MongoDBObject] = ScalaJack_Mongo()
+}
+
+/*
+
+
 	import MongoCCF._
 	import MongoPrimative._
 	import MongoEnum._
@@ -20,8 +32,6 @@ package object mongo {
 				Some(ObjectIdField( fieldName ))
 			else 
 				None
-
-	implicit def mongoOID( s:String ) = new ObjectId( s)
 	
 	implicit def mongoSJ( sj:ScalaJack.type ) = MongoScalaJack
 
@@ -50,4 +60,4 @@ package object mongo {
 		case x:ValueClassField => MongoValueClassField(x)
 		case x:ValueClassFieldUnboxed => MongoValueClassFieldUnboxed(x)
 	}
-}
+	*/

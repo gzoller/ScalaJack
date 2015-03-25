@@ -27,10 +27,6 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 		// cc.ctor.apply( args: _* )   //-- didn't seem to work for value classes, but newInstance did... hmm...
 	}
 
-	// This is a variant of the version of getGraph in ReadRenderFrame.  This one cooks the graph by class name *and* has 
-	// different implicit parameters.
-	private def getGraph2[T](className:String)(implicit t:TypeTag[T]) = Analyzer.inspectByName(className) // normal non-collection case
-
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
 
@@ -77,8 +73,11 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 			case sj:TraitType =>
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
-					val objClass = findTypeHint(vctx.typeHint).getOrElse(vctx.typeHint, throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0))
-					val sjObjType = Analyzer.inspectByName(objClass.toString,Some(sj))
+					val objClass = findTypeHint(vctx.typeHint)//.get(vctx.typeHint)
+					if( !objClass.isDefined )
+						throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0)
+					// val objClass = findTypeHint(vctx.typeHint).getOrElse(vctx.typeHint, throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0))
+					val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[CCType]
 					}, t)
@@ -192,7 +191,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 		}
 
 		// Make it happen!
-		_parse(getGraph2(sjTName),true).asInstanceOf[T]
+		_parse(Analyzer.inspectByName(sjTName),true).asInstanceOf[T]
 	}
 }
 

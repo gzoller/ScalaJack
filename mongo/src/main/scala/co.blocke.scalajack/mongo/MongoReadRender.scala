@@ -1,10 +1,12 @@
 package co.blocke.scalajack
-package json
+package mongo
 
 import scala.reflect.runtime.universe._
 import scala.collection.mutable.{Map => MMap,ListBuffer}
+import json._
 import JsonTokens._
 import org.joda.time.DateTime
+import com.mongodb.casbah.Imports._
 
 /*
 	OK, some wierd stuff goes on here...  Parameterized classes that have collections as their type pose real problems.
@@ -13,28 +15,31 @@ import org.joda.time.DateTime
 	types in case they are needed by a collection. <sigh>  These are marked with //!!! for reference to this note.
  */
 
-trait JSONReadRenderFrame extends ReadRenderFrame[String] { 
-	def renderer = new JSONReadRender()
+trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] { 
+	def renderer = new MongoReadRender()
 
-	class JSONReadRender() extends ReadRender {
+	class MongoReadRender() extends ReadRender {
 
-		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = {
-			val sjTypeName = tt.tpe.typeSymbol.fullName
-			val srcChars = src.toCharArray
-			val parser = vc.isValidating match {
-				case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc)
-				case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc)
-				case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc)
-			}
-			parser.parse()
+		def read[T](src:MongoDBObject)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = {
+			// val sjTypeName = tt.tpe.typeSymbol.fullName
+			// val srcChars = src.toCharArray
+			// val parser = vc.isValidating match {
+			// 	case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc)
+			// 	case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc)
+			// 	case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc)
+			// }
+			// parser.parse()
+			null.asInstanceOf[T]
 		}
 
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
-			val buf = new StringBuilder()
-			_render(Analyzer.inspect(instance), instance, buf)
-			buf.toString
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : MongoDBObject = {
+			// val buf = new StringBuilder()
+			// _render(Analyzer.inspect(instance), instance, buf)
+			// buf.toString
+			new MongoDBObject()
 		}
 
+/*
 		private def _render[T](
 			graph    : AType, 
 			instance : T, 
@@ -151,5 +156,6 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 					true
 			}
 		}
+		*/
 	}
 }

@@ -36,6 +36,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 		tokPos.clear()
 		tokLen.clear()
 		tokType.clear()
+		var ttLen = 0 // because ttLen is O(n), so this should be a tad faster
 
 		var lastToken1 : Byte = 0
 		var lastPos1   : Int  = 0
@@ -60,6 +61,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					}
 					tokLen  += i - strStart
 					tokType += JSstring
+					ttLen   += 1
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 					lastToken1 = lastToken2
 					lastPos1   = lastPos2
@@ -72,6 +74,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 1
 					tokType += JSobjStart
+					ttLen   += 1
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 					lastToken1 = lastToken2
@@ -84,6 +87,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 1
 					tokType += JSobjEnd
+					ttLen   += 1
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 					lastToken1 = lastToken2
@@ -97,6 +101,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 1
 					tokType += JSlistStart
+					ttLen   += 1
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 					lastToken1 = lastToken2
@@ -107,13 +112,14 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 				case ']' =>
 					ctxPtr -= 1  // stack pop
 					// Adjust last element in list to list variant
-					if( tokType(tokType.length-1) != JSlistStart ) {
-						tokType.update(tokType.length-1, (tokType(tokType.length-1) << 1).toByte)
+					if( tokType(ttLen-1) != JSlistStart ) {
+						tokType.update(ttLen-1, (tokType(ttLen-1) << 1).toByte)
 						lastToken2 = (lastToken2 << 1).toByte
 					}
 					tokPos  += i
 					tokLen  += 1
 					tokType += JSlistEnd
+					ttLen   += 1
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 					lastToken1 = lastToken2
@@ -125,7 +131,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					// Convert last token to a list variant if we're in list context
 					val toBeToken =  {
 						if(ctxStack(ctxPtr) == CTX_LIST ) {
-							tokType.update(tokType.length-1, (tokType(tokType.length-1) << 1).toByte)
+							tokType.update(ttLen-1, (tokType(ttLen-1) << 1).toByte)
 							lastToken2 = (lastToken2 << 1).toByte
 							JScommaInList
 						} else 
@@ -139,9 +145,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					lastPos2   = i
 
 				case ':' => 
-					// if( tokType(tokType.length-1) != JSstring && isCanonical ) 
-					// 	throw new JsonParseException(s"JSON parse error.  Non-String object keys not supported in canonical JSON at position ${tokPos(tokType.length-1)}",tokPos(tokType.length-1))
-					tokType.update(tokType.length-1, (tokType(tokType.length-1) << 2).toByte)
+					tokType.update(ttLen-1, (tokType(ttLen-1) << 2).toByte)
 					lastToken2 = (lastToken2 << 2).toByte
 					// Note: not added to index!
 
@@ -155,6 +159,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 4
 					tokType += JStrue
+					ttLen   += 1
 					i += 3
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
@@ -167,6 +172,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 5
 					tokType += JSfalse
+					ttLen   += 1
 					i += 4
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
@@ -179,6 +185,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					tokPos  += i
 					tokLen  += 4
 					tokType += JSnull
+					ttLen   += 1
 					i += 3
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
@@ -194,6 +201,7 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 						i += 1
 					tokLen  += i - numStart
 					tokType += JSnumber
+					ttLen   += 1
 					i -= 1 // back up one... process non-number char
 
 					JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)

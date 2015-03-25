@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
-	val sjJS  = ScalaJack(Formats.JSON)
+	val sjJS  = ScalaJack()
 
 	describe("==================\n| -- V4 Tests -- |\n==================") {
 		describe("Render Tests") {
@@ -90,13 +90,11 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 		describe("Read Tests") {
 			it("Must read simple JSON") {
-				val sjJS  = ScalaJack(Formats.JSON)
 				val js = """{"name":"Fred","age":29,"bogus":false,"addr":{"street":"123 Main","zip":29384}}"""
 				val z = sjJS.read[Pristine](js,VisitorContext().copy(isValidating = true))
 			 	(z == Pristine("Fred",29,None,Address("123 Main",29384))) should be( true )
 			}
 			it("Must read all primitive types") {
-				val sjJS  = ScalaJack(Formats.JSON)
 				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505440000000,"o":null}"""
 				val z = sjJS.read[All](js,VisitorContext().copy(isValidating = true))
 				val pattern = "dd-MM-yy"

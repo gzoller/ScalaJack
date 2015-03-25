@@ -7,14 +7,14 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.4"
+	val scalaVer = "2.11.5"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
-		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
+		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF"),
 		version 					:= "4.0-ALPHA"
 	)
@@ -26,7 +26,7 @@ object Build extends Build {
 
 	lazy val root = (project in file("."))
 		.settings(publishArtifact := false)
-		.aggregate(scalajack)//, scalajack_mongo, scalajack_mysql)
+		.aggregate(scalajack, scalajack_mongo)//, scalajack_mongo, scalajack_mysql)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -64,8 +64,6 @@ object Build extends Build {
 			test(scalatest)
 		)
 
-/*
-	Don't build DB modules for now; until parse/render bit is done.
 
 	lazy val scalajack_mongo = project.in(file("mongo"))
 		.settings(basicSettings: _*)
@@ -74,6 +72,8 @@ object Build extends Build {
 			compile( casbah ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+/*
+	Don't build DB modules for now; until parse/render bit is done.
 
 	lazy val scalajack_mysql = project.in(file("mysql"))
 		.settings(basicSettings: _*)
@@ -102,10 +102,10 @@ object Dependencies {
 	// val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.4"
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
 	// val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
-	// val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
+	val casbah 			= "org.mongodb"				%% "casbah"				% "2.8.0"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
-	// val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
+	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
 	// val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
 }
