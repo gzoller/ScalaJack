@@ -98,10 +98,7 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-// TODO: Move each to latest version!
-	// val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.4"
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	// val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
 	val casbah 			= "org.mongodb"				%% "casbah"				% "2.8.0"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"

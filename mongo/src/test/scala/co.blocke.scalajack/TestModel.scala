@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package test
 
-import com.fasterxml.jackson.core._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 
@@ -119,7 +118,7 @@ case class JodaThing(
 )
 
 trait Pop {
-	def go
+	def go():Unit
 }
 trait Tart[T] {
 	val yum:T
@@ -144,6 +143,7 @@ case class Animal(val name: String, val legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
+/*
 object Wrapper extends ExtJson {
 	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
 	override def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any = {
@@ -158,6 +158,7 @@ object Wrapper extends ExtJson {
 		v
 	}
 }
+*/
 case class ListValSupport( name:String, wrap:List[Wrapper], more:Boolean )
 case class OptValSupport( name:String, wrap:Option[Wrapper] )
 case class MapValSupport( name:String, wrap:Map[String,Wrapper])

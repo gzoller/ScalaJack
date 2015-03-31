@@ -9,24 +9,6 @@ import scala.collection.mutable.{Map => MMap,ListBuffer => MList}
 
 case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:VisitorContext) {
 
-	/**
-	 * Magically create an instance of a case class given a map of name->value parameters.
-	 * (Reflects on the apply method of the case class' companion object.)
-	 * It's a quick way to materialize a cse class represented by a Map, which is how ScalaJack uses it.
-	 * ScalaJack parses the JSON, building a value Map as it goes.  When the JSON object has been parsed
-	 * ScalaJack calls poof to build the case class from the Map.
-	 */
-	private def poof[T]( cc:CCType, data:Map[String,Any] )(implicit tt:TypeTag[T]) : Any = {
-		// Get constructor arguments in right order, we should.
-		val args = cc.members.collect{ case (fname,ftype) => data.get(fname).getOrElse(None) }.toArray.asInstanceOf[Array[AnyRef]]
-		Class.forName(cc.name).getConstructors()(0).newInstance(args:_*)
-
-		// Can go to this one after Scala fixes their bug: https://issues.scala-lang.org/browse/SI-9102
-		// At that point we'll compute ctor differently (see Analyzer.scala).  We also won't need all the special handling
-		// of SjValueClass objects in _parse in this file.
-		// cc.ctor.apply( args: _* )   //-- didn't seem to work for value classes, but newInstance did... hmm...
-	}
-
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
 
@@ -62,7 +44,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 				}.flatten.map(_._1)
 
 			if(missing.size > 0) throw new JsonParseException(s"""No values parsed for field(s) ${missing.mkString(",")} for class ${t.name}""",0)
-			poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )(ty)
+			Util.poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )(ty)
 		}
 
 		// def _parse( t:SjType, params:Map[String,SjType] = Map.empty[String,SjType] ) : Any = t match {
