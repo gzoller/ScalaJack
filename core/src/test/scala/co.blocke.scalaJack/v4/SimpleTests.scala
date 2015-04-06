@@ -239,5 +239,16 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				(sjJS.read[SomethingSpecial](js.toString,vc) == ss) should be(true)
 			}
 		}
+		describe("View/Splice Tests") {
+			it("Must process view") {
+				val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
+				ScalaJack.view[OneSub2](data) should equal( OneSub2("Greg",true,Map("hey"->17, "you"->21)))
+			}
+			// it("Must spliceWith") {
+			// 	val x = ScalaJack.view[OneSub1](data)
+			// 	val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
+			// 	y should equal( data.copy(name="Fred", big=2L) )
+			// }
+		}
 	}
 }

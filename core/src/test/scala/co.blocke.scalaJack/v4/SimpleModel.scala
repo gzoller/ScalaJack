@@ -89,3 +89,36 @@ case class Pristine( name:String, age:Int, stuff:Option[Boolean], addr:Address )
 
 class CustomVC(val underlying: DateTime) extends AnyVal
 case class SomethingSpecial( what:String, when:CustomVC )
+
+// Test view/splice
+object Num extends Enumeration {
+	val A,B,C = Value
+}
+case class One(
+	name     : String,
+	stuff    : List[String],
+	more     : List[Two],
+	nest     : Two,
+	maybe    : Option[String],
+	mymap    : Map[String,Int],
+	flipflop : Boolean,
+	big      : Long,
+	num      : Num.Value,
+	age      : Int
+) {
+	val foo  : String = "yikes!"
+}
+case class Two(
+	foo      : String,
+	bar      : Boolean
+	)
+case class OneSub1(
+	name     : String,
+	big      : Long,
+	maybe    : Option[String]
+	)
+case class OneSub2(
+	name     : String,
+	flipflop : Boolean,
+	mymap    : Map[String,Int]
+	)
