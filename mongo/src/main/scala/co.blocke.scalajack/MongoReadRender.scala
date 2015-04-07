@@ -46,8 +46,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 							}
 						case _ =>
 							sjT.members.find( { case(fname,ftype) => ftype match {
-								case p:PrimType if(p.isDbKey) => true 
-								case _ => false
+								case p:AType if(p.isDbKey) => true 
+								case x => false
 								}}).map( f => build.put(f._1, parse(f._2,v)) )
 					}
 				case(k,v) if(sjT.members.contains(k)) => 
@@ -109,6 +109,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 				else 
 					parseValueClassPrimitive(src, sj, vc, topLevel)
 				}.asInstanceOf[T]
+			case g:CustomType =>
+				g.readers("mongo")(src).asInstanceOf[T]
 		}
 		private def parseValueClassPrimitive( src:AnyRef, vc:ValueClassType, visitor:VisitorContext, topLevel:Boolean ) = 
 			visitor.valClassMap.get(vc.name).fold(src)( handler => 
@@ -199,6 +201,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						)
 				case g:EnumType =>
 					Some(s"${instance.toString}")
+				case g:CustomType =>
+					Some(g.renderers("mongo")(instance))
 			}
 		}
 	}

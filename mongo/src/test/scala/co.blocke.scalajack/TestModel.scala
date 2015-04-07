@@ -94,7 +94,7 @@ case class Six(
 	)
 
 case class Seven(
-	_id:ObjectId,
+	@DBKey _id:ObjectId,
 	two : Two
 	)
 

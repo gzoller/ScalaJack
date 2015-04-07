@@ -149,6 +149,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 				case g:EnumType =>
 					buf.append(s""""${instance.toString}"""") //"
 					true
+				case g:CustomType =>
+					buf.append( g.renderers("default")(instance) )
+					true
 			}
 		}
 	}

@@ -124,6 +124,11 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 				} else {
 					parseValueClassPrimitive(sj)
 				}
+
+			case sj:CustomType =>
+				val v = sj.readers("default")(idx.getToken(i,s))
+				i += 1
+				v
 		}
 
 		def parseValueClassPrimitive( vc:ValueClassType ) = 

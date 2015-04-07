@@ -268,38 +268,6 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[MapValSupport](js2) should equal( stuff )
 				}
 			}
-		/*
-			describe("With custom JSON support") {
-				it( "Simple value custom JSON support for Value class" ) {
-					val stuff = ValSupport("foo", new Wrapper(99), true)
-					val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js should equal("""{"name":"foo","wrap":{"num":99,"hey":"you"},"more":true}""")
-					ScalaJack.read[ValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				}
-				it( "List of value class with custom JSON support" ) {
-					val stuff = ListValSupport("bar", List(new Wrapper(99),new Wrapper(100)), true)
-					val js = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js should equal("""{"name":"bar","wrap":[{"num":99,"hey":"you"},{"num":100,"hey":"you"}],"more":true}""")
-					ScalaJack.read[ListValSupport](js,ScalaJack.HINT,true) should equal( stuff )
-				}
-				it( "Option of value class with custom JSON support" ) {
-					val stuff = OptValSupport("hey", Some(new Wrapper(2)))
-					val stuff2 = OptValSupport("hey", None)
-					val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					val js2 = ScalaJack.render(stuff2,ScalaJack.HINT,true)
-					js1 should equal("""{"name":"hey","wrap":{"num":2,"hey":"you"}}""")
-					js2 should equal("""{"name":"hey"}""")
-					ScalaJack.read[OptValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
-					ScalaJack.read[OptValSupport](js2,ScalaJack.HINT,true) should equal( stuff2 )
-				}
-				it( "Map of value class without custom JSON support" ) {
-					val stuff = MapValSupport("hey", Map("blah"->new Wrapper(2),"wow"->new Wrapper(3)))
-					val js1 = ScalaJack.render(stuff,ScalaJack.HINT,true)
-					js1 should equal("""{"name":"hey","wrap":{"blah":{"num":2,"hey":"you"},"wow":{"num":3,"hey":"you"}}}""")
-					ScalaJack.read[MapValSupport](js1,ScalaJack.HINT,true) should equal( stuff )
-				}
-			}
-			*/
 		}
 		describe("Nested Constructs") {
 			describe("With Lists") {
@@ -420,17 +388,15 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				dbo.toString should equal( """{ "_id" : { "name" : "Fred" , "num" : 12} , "two" : { "foo" : "blah" , "bar" : true}}""" )
 				sjM.read[Six](dbo) should equal( six )
 			}
-			/*
 			it("ObjectId support") {
 				val oid = new ObjectId
 				val seven = Seven(oid,Two("blah",true))
-				val dbo = sjM.render(seven)
-				dbo.toString should equal( """{ "_id" : { "$oid" : """"+oid+""""} , "two" : { "foo" : "blah" , "bar" : true}}""" )
-				sjM.read[Seven](dbo) should equal( seven )
 				val js = ScalaJack.render(seven)
-				ScalaJack.read[Seven](js) should equal( seven )
+				ScalaJack.read[Seven](js) should equal( seven )				
+				val dbo = sjM.render(seven)
+				dbo.toString should equal( "{ \"_id\" : { \""+'$'+"oid\" : \""+oid+"\"} , \"two\" : { \"foo\" : \"blah\" , \"bar\" : true}}" )
+				sjM.read[Seven](dbo) should equal( seven )
 			}
-			*/
 			it("Naked Map support") {
 				val li = Map("a"->1,"b"->2,"c"->3)
 				val dbo = sjM.render(li)
@@ -928,120 +894,6 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				}
 			}
 		}
-		/*
-		describe("Improved Error Reporting") {
-			describe("Object") {
-				it("Must provide useful errors - simple case class") {
-					val js = """{"a":"Foo","b":"Bar"}"""
-					Try( ScalaJack.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - list member of class") {
-					val js = """{"stuff":[5],"things":{"a":5}}"""
-					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
-				}
-				it("Must provide useful errors - map member of class") {
-					val js = """{"stuff":["hey"],"things":{"a":true}}"""
-					Try( ScalaJack.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
-				}
-				it("Must provide useful errors - list of case class member of class") {
-					val js = """{"s":"hey","many":[{"age":33},{"age":"old"}]}"""
-					Try( ScalaJack.read[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - map of case class member of class") {
-					val js = """{"i":5,"items":{"one":{"age":33},"two":{"age":"old"}}}"""
-					Try( ScalaJack.read[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Option member of class") {
-					val js = """{"name":"Bob","big":5,"maybe":false}"""
-					Try( ScalaJack.read[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
-				}
-				it("Must provide useful errors - Option of calue class") {
-					val js = """{"name":"Bob","wrap":false}"""
-					Try( ScalaJack.read[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
-				}
-				it("Must provide useful errors - Option of case class member of class") {
-					val js = """{"i":5,"maybe":{"age":"boom"}}"""
-					Try( ScalaJack.read[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Enumeration member of class (wrong type)") {
-					val js = """{"age":5, "num":true}"""
-					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
-				}
-				it("Must provide useful errors - Enumeration member of class (right type, but not enum value") {
-					val js = """{"age":5, "num":"P"}"""
-					Try( ScalaJack.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
-				}
-				it("Must provide useful errors - Naked list") {
-					val js = """["a","b",5]"""
-					Try( ScalaJack.read[List[String]](js) ).failed.get.getMessage should be( "Class scala.collection.immutable.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
-				}
-				it("Must provide useful errors - Naked list of case class") {
-					val js = """[{"age":55},{"age":"bar"}]"""
-					Try( ScalaJack.read[List[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Nested case class") {
-					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""
-					Try( ScalaJack.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
-				}
-			}
-			/*zzz
-			describe("DB Object") {
-				it("Must provide useful errors - simple case class") {
-					val js = Map("a"->"Foo","b"->"Bar")
-					Try( sjM.read[Wow1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Wow1 field b Expected VALUE_NUMBER_INT and saw java.lang.String" )
-				}
-				it("Must provide useful errors - list member of class") {
-					val js = Map("stuff"->List(5),"things"->Map("a"->5))
-					Try( sjM.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field stuff Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
-				}
-				it("Must provide useful errors - map member of class") {
-					val js = """{"stuff":["hey"],"things":{"a":true}}"""
-					Try( sjM.read[Four](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Four field things Expected VALUE_NUMBER_INT and saw VALUE_TRUE" )
-				}
-				it("Must provide useful errors - list of case class member of class") {
-					val js = """{"s":"hey","many":[{"age":33},{"age":"old"}]}"""
-					Try( sjM.read[BagList[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - map of case class member of class") {
-					val js = """{"i":5,"items":{"one":{"age":33},"two":{"age":"old"}}}"""
-					Try( sjM.read[BagMap[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Option member of class") {
-					val js = """{"name":"Bob","big":5,"maybe":false}"""
-					Try( sjM.read[OneSub1](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OneSub1 field maybe Expected VALUE_STRING and saw VALUE_FALSE" )
-				}
-				it("Must provide useful errors - Option of calue class") {
-					val js = """{"name":"Bob","wrap":false}"""
-					Try( sjM.read[OptValSupport](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.OptValSupport field wrap Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
-				}
-				it("Must provide useful errors - Option of case class member of class") {
-					val js = """{"i":5,"maybe":{"age":"boom"}}"""
-					Try( sjM.read[BagOpt[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Enumeration member of class (wrong type)") {
-					val js = """{"age":5, "num":true}"""
-					Try( sjM.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Expected VALUE_STRING (enum) and saw VALUE_TRUE" )
-				}
-				it("Must provide useful errors - Enumeration member of class (right type, but not enum value") {
-					val js = """{"age":5, "num":"P"}"""
-					Try( sjM.read[Numy](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Numy field num Given value of P is not valid for this enum field." )
-				}
-				it("Must provide useful errors - Naked list") {
-					val js = """["a","b",5]"""
-					Try( ScalaJack.readListDB[String](js) ).failed.get.getMessage should be( "Class scala.collection.List field  Expected VALUE_STRING and saw VALUE_NUMBER_INT" )
-				}
-				it("Must provide useful errors - Naked list of case class") {
-					val js = """[{"age":55},{"age":"bar"}]"""
-					Try( ScalaJack.readListDB[Hey](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_STRING" )
-				}
-				it("Must provide useful errors - Nested case class") {
-					val js = """{"_hint":"co.blocke.scalajack.test.Cruton","i":5,"sweet":{"age":false}}"""
-					Try( sjM.read[Soup[Hey]](js) ).failed.get.getMessage should be( "Class co.blocke.scalajack.test.Hey field age Expected VALUE_NUMBER_INT and saw VALUE_FALSE" )
-				}
-			}
-			zzz*/
-		}
-		*/
 		describe("Thread Safety Test") {
 			it("Should not crash when multiple threads access Analyzer (Scala 2.10.x reflection bug)") {
 				import scala.concurrent.{Future, Await}

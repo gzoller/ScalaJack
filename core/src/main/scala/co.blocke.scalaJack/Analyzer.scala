@@ -12,6 +12,9 @@ object Analyzer {
   
 	private val readyToEat = TrieMap.empty[String,AType]  // a cache, sir, a cache
 
+	// Simple way to allow extension modules like Mongo to hook in custom types.
+	private[scalajack] def addType( name:String, newType:AType ) = readyToEat.put(name+"[]", newType)
+
 	// pre-populate cache with all the primitives
 	primitiveTypes.foreach( p => readyToEat.put(p._1+"[]",PrimType(p._1)) )
 
@@ -84,7 +87,11 @@ object Analyzer {
 							val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
 								.orElse( Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) )
 							val finalFtype = fType.get match {
-								case ft:PrimType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => ft.copy(isDbKey = true)
+								case ft:AType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => {
+									val ft2 = ft.dup
+									ft2._isDbKey = true
+									ft2
+								}
 								case ft => ft
 							}
 							(f.name.toString, finalFtype)
