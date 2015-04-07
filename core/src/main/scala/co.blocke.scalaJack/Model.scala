@@ -13,11 +13,11 @@ trait AType {
 	def dup : AType
 }
 case class CCType(
-	name     : String, 
-	members  : LinkedHashMap[String,AType], 
-	paramMap : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
-	isTrait  : Boolean = false,
-	collAnno : Option[String] = None  // db collumn annotation 
+	name       : String, 
+	members    : LinkedHashMap[String,AType], 
+	paramMap   : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
+	superTrait : Option[TraitType] = None,
+	collAnno   : Option[String] = None  // db collumn annotation 
 ) extends AType {
 	override def toString() = s"[$name -> $members]"
 	def dup = this.copy()

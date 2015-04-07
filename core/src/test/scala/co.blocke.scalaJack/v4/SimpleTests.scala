@@ -54,7 +54,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					Map(Foo("a",1) -> Some(WithType(5)),Foo("b",2) -> Some(WithType(7)),Foo("c",3) -> None)
 					)
 				// println(sjJS.render(all,VisitorContext("_hint",true)))
-				sjJS.render(all,VisitorContext("_hint",false)) should equal("""{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1},"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}""")
+				sjJS.render(all,VisitorContext(isCanonical=false)) should equal("""{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1},"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}""")
 			}
 			it("Must render traits") {
 				val t = Stuff("wow",Foo("me",9))
@@ -239,16 +239,31 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				(sjJS.read[SomethingSpecial](js.toString,vc) == ss) should be(true)
 			}
 		}
+		describe("Type Hint Handling") {
+			it("Must handle changing default type hint") {
+				val pets = List(Dog("Fido"),Cat("Meow"))
+				sjJS.render[List[Animal]](pets, VisitorContext(hintMap = Map("default"->"kind"))) should equal("""[{"kind":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},{"kind":"co.blocke.scalajack.test.v4.Cat","name":"Meow"}]""")
+			}
+			it("Must handle per-trait (trait specific) type hinting") {
+				val pets = List(NicePet(Dog("Fido"),"kibbles"),GrumpyPet(Cat("Meow"),"fish"))
+				val js = sjJS.render[List[Pet]](pets, VisitorContext(hintMap = Map("default"->"_hint",
+					"co.blocke.scalajack.test.v4.Pet"->"_happy","co.blocke.scalajack.test.v4.Animal"->"_kind")))
+				js should equal("""[{"_happy":"co.blocke.scalajack.test.v4.NicePet","kind":{"_kind":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},"food":"kibbles"},{"_happy":"co.blocke.scalajack.test.v4.GrumpyPet","kind":{"_kind":"co.blocke.scalajack.test.v4.Cat","name":"Meow"},"food":"fish"}]""")
+				sjJS.read[List[Pet]](js, VisitorContext(hintMap = Map("default"->"_hint",
+					"co.blocke.scalajack.test.v4.Pet"->"_happy","co.blocke.scalajack.test.v4.Animal"->"_kind"))) should equal(pets)
+			}
+		}
 		describe("View/Splice Tests") {
 			it("Must process view") {
 				val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
 				ScalaJack.view[OneSub2](data) should equal( OneSub2("Greg",true,Map("hey"->17, "you"->21)))
 			}
-			// it("Must spliceWith") {
-			// 	val x = ScalaJack.view[OneSub1](data)
-			// 	val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
-			// 	y should equal( data.copy(name="Fred", big=2L) )
-			// }
+			it("Must spliceWith") {
+				val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
+				val x = ScalaJack.view[OneSub1](data)
+				val y : One = ScalaJack.spliceInto(x.copy(name="Fred", big=2L),data)
+				y should equal( data.copy(name="Fred", big=2L) )
+			}
 		}
 	}
 }

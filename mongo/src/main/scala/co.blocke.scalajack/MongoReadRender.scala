@@ -64,8 +64,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
 					val mo = src.asInstanceOf[MongoDBObject]
-					val hintClass = mo.get(vc.typeHint)
-					if( hintClass.isEmpty ) throw new MongoParseException(s"No type hint ${vc.typeHint} given for trait ${sj.name}")
+					val hintClass = mo.get(vc.hintMap.getOrElse(sj.name,vc.hintMap("default")))
+					if( hintClass.isEmpty ) throw new MongoParseException(s"No type hint given for trait ${sj.name}")
 					val sjObjType = Analyzer.inspectByName(hintClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new MongoParseException(s"Type hint $hintClass does not specify a case class")
 					sjObjType.asInstanceOf[CCType]
@@ -127,8 +127,7 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 			graph match {
 				case g:CCType  => 
 					val mdbo = new MongoDBObject()
-					if( g.isTrait ) 
-						mdbo.put(vc.typeHint, g.name)
+					g.superTrait.map( superTrait => mdbo.put(vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default")), g.name) )
 					val (dbIds, regFields) = g.members.partition{ // separate out the db key fields (may be 0, 1, or >1)
 						case(fname,ftype) => ftype.isDbKey
 					}
@@ -183,7 +182,7 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 					}
 				case g:TraitType => 
 					val cc = Analyzer.inspect(instance,Some(g)).asInstanceOf[CCType]
-					_render(cc.copy(isTrait=true),instance,tt.tpe.typeArgs)
+					_render(cc.copy(superTrait = Some(g)),instance,tt.tpe.typeArgs)
 				case g:ValueClassType =>
 					val renderVal = {
 						if( g.name != instance.getClass.getName ) // raw/unwrapped value

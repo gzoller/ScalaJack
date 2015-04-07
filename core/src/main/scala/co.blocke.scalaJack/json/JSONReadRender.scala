@@ -44,10 +44,10 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 			graph match {
 				case g:CCType  => 
 					buf.append("{")
-					if( g.isTrait ) {
-						buf.append(s""""${vc.typeHint}":"${g.name}"""") //"
+					g.superTrait.map( superTrait => {
+						buf.append(s""""${vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default"))}":"${g.name}"""") //"
 						if(g.members.size > 0) buf.append(",")
-					}
+					})
 					val sb2 = new StringBuilder()
 					g.members.foreach( { case(fname, ftype) => {
 						val sb3 = new StringBuilder() // needed to support Option -- it may not render anything
@@ -124,7 +124,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 					}
 				case g:TraitType => 
 					val cc = Analyzer.inspect(instance,Some(g)).asInstanceOf[CCType]
-					_render(cc.copy(isTrait=true),instance,buf, tt.tpe.typeArgs)
+					_render(cc.copy(superTrait=Some(g)),instance,buf, tt.tpe.typeArgs)
 				case g:ValueClassType =>
 					// Value classes are ugly!  Sometimes they're inlined so don't assume a class here... it may be just
 					// a raw/unwrapped value.  But... other times they are still wrapped in their class.  Be prepared

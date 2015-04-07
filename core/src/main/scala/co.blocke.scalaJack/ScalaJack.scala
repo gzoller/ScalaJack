@@ -20,14 +20,12 @@ case class ValClassHandler(
 	)
 
 case class VisitorContext(
-	typeHint       : String  = "_hint",
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
-	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler]
-	// hintMap : Map[String,String] = Map.empty[String,String]
+	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler],
+	hintMap        : Map[String,String] = Map("default" -> "_hint")  // per-class type hints (for nested classes)
 	)
-
 
 case class ScalaJack_JSON() extends ScalaJack[String] with JSONReadRenderFrame 
 
@@ -43,8 +41,8 @@ object ScalaJack {
 
 	// Legacy support (JSON implied)
 	private val jsonJS = apply()
-	def read[T](js:String, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.read(js,VisitorContext(hint,true,true))
-	def render[T](instance:T, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.render(instance,VisitorContext(hint,true,true)).toString
+	def read[T](js:String, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.read(js,VisitorContext(isCanonical=true, isValidating=true, hintMap=Map("default"->hint)))
+	def render[T](instance:T, hint:String="_hint")(implicit tt:TypeTag[T]) = jsonJS.render(instance,VisitorContext(isCanonical=true, isValidating=true, hintMap=Map("default"->hint))).toString
 
 	/** Project fields from given master object to a view object of type T.  Field names/types must match master
 	  * precisely.

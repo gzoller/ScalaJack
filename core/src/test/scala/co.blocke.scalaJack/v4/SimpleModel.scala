@@ -122,3 +122,15 @@ case class OneSub2(
 	flipflop : Boolean,
 	mymap    : Map[String,Int]
 	)
+
+trait Animal {
+	val name:String
+}
+case class Dog(name:String) extends Animal
+case class Cat(name:String) extends Animal
+trait Pet {
+	val kind:Animal
+	val food:String
+}
+case class NicePet(kind:Animal, food:String) extends Pet
+case class GrumpyPet(kind:Animal, food:String) extends Pet

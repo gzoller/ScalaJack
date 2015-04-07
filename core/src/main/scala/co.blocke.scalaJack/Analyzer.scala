@@ -96,7 +96,7 @@ object Analyzer {
 							}
 							(f.name.toString, finalFtype)
 						})
-						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType] ++= members, argMap, false, collAnnoName.map(_.filterNot(_ == '"')) )
+						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType] ++= members, argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
 						if( cc.paramMap.size == 0 )  // For simplicity's sake, don't cache cc's having parameters.  Too many nuances, e.g. parameterized types
 							readyToEat.put(tag, cc)
 						cc

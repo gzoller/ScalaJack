@@ -55,10 +55,9 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 			case sj:TraitType =>
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
-					val objClass = findTypeHint(vctx.typeHint)//.get(vctx.typeHint)
+					val objClass = findTypeHint(vctx.hintMap.getOrElse(sj.name,vctx.hintMap("default")))//.get(vctx.typeHint)
 					if( !objClass.isDefined )
-						throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0)
-					// val objClass = findTypeHint(vctx.typeHint).getOrElse(vctx.typeHint, throw new JsonParseException(s"No type hint ${vctx.typeHint} given for trait ${sj.name}",0))
+						throw new JsonParseException(s"No type hint given for trait ${sj.name}",0)
 					val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[CCType]
