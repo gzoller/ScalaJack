@@ -9,13 +9,13 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "3.1.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.0")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "3.1.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.0")
 
-You may need to  add the OSS repo to your resolvers if its not already present:
+You may need to add the OSS repo to your resolvers if its not already present:
 
 	resolvers ++= Seq("OSS" at "http://oss.sonatype.org/content/repositories/releases")
 
@@ -23,13 +23,16 @@ Now you're good to go!  Let's use ScalaJack in your project to serialize/de-seri
 
 	import co.blocke.scalajack._
 
-	val js = ScalaJack.render( myCaseObj )  // serialization
-	val myObj = ScalaJack.read[MyCaseClass](js) // deserialization
+	val sj = ScalaJack()
+	val js = sj.render( myCaseObj )  // serialization
+	val myObj = sj.read[MyCaseClass](js) // deserialization
 
 Couldn't be simpler.  
 
 ### Trait support
-ScalaJack can handle traits too.  To do this you'll need the help of a type hint in the JSON.  This tells ScalaJack what actual class to create in support of the trait.  The default type hint is "_hint" but you can set whatever you want (very powerful for 3rd party JSON!)Don't forget to use the same type hint name for render and read!
+ScalaJack can handle traits too.  To do this you'll need the help of a type hint in the JSON.  This tells ScalaJack what actual class to create in support of the trait.  
+
+The default type hint is "_hint" but you can set whatever you want (very powerful for 3rd party JSON!) You set your own type hint with a VisitorContext object as shown below.   Don't forget to use the same type hint name for render and read.
 
 ```scala
 package com.myproj
@@ -39,22 +42,50 @@ case class Dog( name:String ) extends Pet
 case class Cat( name:String ) extends Pet
 
 val p : Pet = Dog("Fido")
-val js = ScalaJack.render(p)  // {"_hint":"com.myproj.Dog","name":"Fido"}
-val js2 = ScalaJack.render(p,"kind") // {"kind":"com.myproj.Dog","name":"Fido"}
+val sj = ScalaJack()
+val js = sj.render(p)  // {"_hint":"com.myproj.Dog","name":"Fido"}
+val vc = VisitorContext(hintMap=Map("default"->"kind"))
+val js2 = sj.render(p,vc) // {"kind":"com.myproj.Dog","name":"Fido"}
 
 // Be sure to match type hints when reading!
-val d1 = ScalaJack.render(js)
-val d2 = ScalaJack.render(js2,"kind")
+val d1 = sj.read[Pet](js)
+val d2 = sj.read[Pet](js2,vc)
 ```
+There's one more cool trick we can do with traits.  Imagine you're parsing JSON from a 3rd party (i.e. you don't control its structure) and you're modeling nested traits but want the type hint field to be different.  ScalaJack's VisitorContext object allows you specify per-trait hints like so:
+
+```scala
+package com.myproj
+
+trait Animal {
+	val name:String
+}
+case class Dog(name:String) extends Animal
+case class Cat(name:String) extends Animal
+trait Pet {
+	val kind:Animal
+	val food:String
+}
+case class NicePet(kind:Animal, food:String) extends Pet
+case class GrumpyPet(kind:Animal, food:String) extends Pet
+
+val pets = List(NicePet(Dog("Fido"),"kibbles"),GrumpyPet(Cat("Meow"),"fish"))
+val sj = ScalaJack()
+val vc = VisitorContext(hintMap = Map(
+		"default"->"_hint",
+		"com.myproj.Pet"->"_happy",
+		"com.myproj.Animal"->"_kind"))
+val js = sj.render(pets,vc) 
+// produces: [{"_happy":"com.myproj.NicePet","kind":{"_kind":"com.myproj.Dog","name":"Fido"},"food":"kibbles"},{"_happy":"com.myproj.GrumpyPet","kind":{"_kind":"com.myproj.Cat","name":"Meow"},"food":"fish"}]
+```
+Note how you get different type hints for specific traits.  This can be invaluable for advanced JSON parsing of 3rd party data.
 
 # Custom Value Class JSON
 
-Many JSON parsers have the ability to perform custom generations/parsings for fields or data types.  Adding 
-this feature in the conventional way would slow down the parser quite a lot, so ScalaJack does something a little
-different using an optional "mode" for value classes.  Let's demonstrate via an example.
+(**NOTE:**  Custom value class JSON handling has changed since ScalaJack 3.x.  In some ways its more limited but also much simpler.)
 
-Let's imagine we have a value class PosixDate that has a long as its single value type, holding a Unix timestamp.
-Let's further assume we use this class in a case class for server stats like this:
+Many JSON parsers have the ability to perform custom generations/parsings for fields or data types.  Adding this feature in the conventional way would slow down the parser quite a lot, so ScalaJack does something a little different using an optional "mode" for value classes that allows you to read/render custom JSON for them.  Let's demonstrate via an example.
+
+Let's imagine we have a value class PosixDate that has a long as its single value type, holding a Unix timestamp.  Let's further assume we use this class in a case class for server stats like this:
 
 ```scala
 class PosixDate( val ts:Long = (new Date()).getTime/1000 ) extends AnyVal {
@@ -70,47 +101,20 @@ Good enough.  Now let's render some JSON:
 
 ```scala
 val ss = ServerStats( "admin", new PosixDate() )
-val js = ScalaJack.render( ss )  // Output: {"instanceName":"admin","upSince":1383317215}
+val js = sj.render( ss )  // Output: {"instanceName":"admin","upSince":1383317215}
 ```
 
-For my use, though, I might want a human-readable timestamp too, like "5 hours ago". There are libraries that do
-this sort of thing but I want to extend my rendered JSON to incorporate it.  This is possible using an extension
-trait on a companion object to your case class like this:  (Sounds worse than it is!)
+For my use, though, I might want a specific format for my timestamp in the JSON.  I can accomplish this by handling custom JSON for my value classes using another field of VisitorContext, like this:
 
 ```scala
-object PosixDate extends ExtJson {
-	override def toJson( obj:Long ) : String = "{\"rawTS\":" 
-		+ obj.asInstanceOf[Long]
-		+ ",\"human\":\""+ getHumanReadable(obj.asInstanceOf[Long]) 
-		+ "\"}"
-	override def fromJson( valueType:Field, jp:JsonParser, ext:Boolean, hint:String ) : Any = {
-		jp.nextToken // consume '{'
-		jp.getCurrentName // consume 'rawTS' label
-		jp.nextToken // scan to value
-		val v = jp.getValueAsLong // consume 'rawTS' value
-		while( jp.getCurrentToken != JsonToken.END_OBJECT ) { // skip the rest
-			jp.nextToken
-		}
-		jp.nextToken // consume '}'...ready for next parsed field
-		v  // return created value
-	}
-
-val js2 = ScalaJack.render( ss, true )  // Output: {"instanceName":"admin","upSince":{"rawTS":1383317215,"human":"5 hours ago"}}
+val handler = ValClassHandler(
+	(s) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(s),
+	(v) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(v.asInstanceOf[DateTime])+'"'
+)
+val vc = VisitorContext(valClassMap = Map("com.myproj.PosixDate"->handler))
+val js = sj.render(ss,vc) // Output: {"instanceName":"admin","upSince":"November, 2013"}
 ```
-
-The ExtJson trait defines toJson (for render) and fromJson (for read).  Note that all the types defined are the
-data type of your value class' data element, Long in this case.  The toJson function simply renders whatever JSON you want.
-If you need the ability to parse it back in, it would be necessary to render enough information so that you can 
-reconstitute the object from JSON, which is exactly what fromJson does.  fromJson uses Jackson parser calls to step
-through your custom JSON and do "whatever ya gotta do" to build an instance of your object.  The only hard rule of thumb
-for fromJson is that you must leave the parser at a clean point--ready to parse the next field's tokens, i.e. don't stop
-consuming tokens half way through your custom JSON object!
-
-If you only need custom rendering (i.e. you have no intention of ever reading your custom-rendered JSON) you may simply
-omit the fromJson function in your object.
-
-Seem like a strange feature?  This facility gives you the possibility of dynamic, on-the-fly json creation/type conversion
-in a lightweight/fast manner.
+The handler consists of 2 functions: one that accepts a string (for reads) and produces the appropriate object, presumably with whatever necessary manipulations you wish on the string, and another function for renders that accepts an object from your value class and produces whatever string value you wish for the JSON.
 
 # MongoDB (Casbah) Persistence
 
@@ -120,13 +124,14 @@ ScalaJack doesn't wrap MongoDB or Casbah persistence libraries--that's not its m
 import co.blocke.scalajack._
 import mongo._
 
-val mydbo  = ScalaJack.renderDB( myCaseClass )         // default type hint for traits
-val mydbo2 = ScalaJack.renderDB( myCaseClass, "_dt" )  // custom type hint for traits
-val myCC   = ScalaJack.readDB( mydbo ) 
-val myCC2  = ScalaJack.readDB( mydbo, "_dt" ) 
+val sjMongo = ScalaJack(MongoType()) // produce a Mongo-flavored ScalaJack
+val mydbo  = sjMongo.render( myCaseClass )  
+val myCC   = sjMongo.read[MyClass]( mydbo ) 
 ```
 
-There is also a way to specify the MongoDB key field (_id) via an annotation:
+The VisitorContext modifications work here too, as before with JSON.
+
+You can (and should) specify the key field(s) for your classes with the @DBKey annotation as shown here:
 
 ```scala
 case class Sample( @DBKey lastName:String, birthDate:Long, hobbies:List[String] )
@@ -141,60 +146,35 @@ case class Sample( @DBKey lastName:String, @DBKey birthDate:Long, hobbies:List[S
 Support has been added for Mongo's ObjectId type if you wish to use this directly.
 
 ```scala
-case class Sample( _id:ObjectId, stuff:Int )
+case class Sample( @DBKey _id:ObjectId, stuff:Int )
 ```
 
-Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no fancy
-JodaTime support as found in other libraries, although this may be considered for a future release.
+Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no JodaTime support as found in JSON libraries, although this may be considered for a future release.
 
 # MySQL Support
-Just like for MongoDB, ScalaJack offers some helper support for MySQL.  ScalaJack's mission is *not* to be a persistance layer or ORM, or anything of that kind.  It does leverage its powerful analyzer and case class materializer to make certain database operations easier.
+The MySQL support provided in the ScalaJack 3.x series has been removed for the time being.  I wasn't entirely happy with it.  It may be back in a future release if there is a swell of people interested in it.
 
-For SQL ScalaJack offers 3 helpers.  First is a db connection encapsulation that allows for a functional approach to using a connection and ensuring its closed.
-
-```scala
-import java.sql.Connection
-
-// db object needs to be pre-seeded with named urls for your database
-db.addDbs( Map("devDB"->"jdbc:mysql://localhost:3306/scalajack?user=root&password=&zeroDateTimeBehavior=convertToNull") )
-
-// Now you can use it functionally
-db.withConnection("devDB") { implicit c:Connection => {
-    // database functions here
-}}
-```
-
-If you import the mysql package object you'll get a couple handy new features in the ScalaJack object:
+# VisitorContext
+ScalaJack uses an optional VisitorContext object you can pass into read/render to control certain aspects of how data is processed.  Looking at the definition of VisitorContext is a good starting point:
 
 ```scala
-import mysql._
-
-@Collection(name="people")  // annotation with table name
-case class Person(
-	@DBKey   // Be sure to note your primary key!
-	name:String, 
-	age:Int, 
-	crazy:Double )
-	
-db.withConnection("devDB") { implicit c:Connection => {
-    val di = ScalaJack.select[Person]("")  // select all people
-    // di is a DataIterator: a wrapper around a ResultSet that marshals objects
-    while( di.hasNext )
-        println( di.next ) // print out each Person object returned
-        
-    // select with a where clause
-    val di2 = ScalaJack.select[Person]("""name="Tom"""") // get just Tom
-    val tom:Option[Person] = di2.toList.headOption
-    
-    // upsert (insert if new, update if exists)
-    val p1 = Person("Tom",12,0.2)
-    val p2 = Person("Bill",78,0.1)
-    val numUpdated = ScalaJack.insertInto( List(p1,p2) ) // batched upserts
-}}	
+case class VisitorContext(
+	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
+	isValidating   : Boolean = false,
+	estFieldsInObj : Int     = 128,
+	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler],
+	hintMap        : Map[String,String] = Map("default" -> "_hint")  // per-class type hints (for nested classes)
+	)
 ```
-Note that if you know your data returned from a select is small there is a toList function on DataIterator that brings back all results.  Of course this is dangerous for a large, unbounded query, but can be handy for small queries.
+Let's look at these fields one-by-one.  isCanonical=true is standard JSON.  In some strange situations you may wish JSON-like notation that does not use strings as keys.  You would set this field to false to allow that.  Note that this is *not* really JSON and won't many libraries (like Mongo) assume and require string-based keys for JSON objects.
 
-What ScalaJack's MySQL module does for you is to remove the boilerplate of all the field list generation, and the ability to bring back an Iterator of typed objects, rather than generic ResultSet data.
+isValidating controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
+
+estFieldsInObj is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
+
+valClassMap is a map of value class name (fully-qualified) to ValClassHandler.  An example of its use was shown above in the section on custom JSON for value classes.  If you don't need custom JSON you can ignore this.
+
+hintMap is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
 
 # View/SpliceInto Feature
 
@@ -232,31 +212,61 @@ val updatedUser = ScalaJack.spliceInto( user, newSafeUser ) // updatedUser will 
 - Case classes (or traits for case classes) only
 - Options of value None are removed from generated JSON (e.g. from List or Map)
 - Default parameters are not supported at this time
-- Data types supported: Int, Boolean, Long, Char, Double, Float, String, Enumeration.Value, Value Class
-- Collections supported: List (immutable), Map (immutable), Option
+- Primitive/Simple Data types supported:  
+	- Int
+	- Boolean
+	- Long
+	- Char
+	- Double
+	- Float
+	- String
+	- Byte
+	- Short
+	- java.util.UUID
+	- org.joda.time.DateTime
+	- Enumeration.Value
+	- Value Class
+- Collections supported: 
+	- scala.Option
+	- scala.collection.immutable.List
+	- scala.collection.immutable.Map
+	- scala.collection.immutable.Set
+	- scala.collection.immutable.HashMap
+	- scala.collection.immutable.HashSet
+	- scala.collection.immutable.ListMap
+	- scala.collection.immutable.ListSet
+	- scala.collection.immutable.Queue
+	- scala.collection.immutable.Seq
+	- scala.collection.immutable.Vector
+	- scala.collection.mutable.ArrayBuffer
+	- scala.collection.mutable.ArraySeq
+	- scala.collection.mutable.HashMap
+	- scala.collection.mutable.HashSet
+	- scala.collection.mutable.IndexedSeq
+	- scala.collection.mutable.LinearSeq
+	- scala.collection.mutable.LinkedHashMap
+	- scala.collection.mutable.LinkedHashSeq
+	- scala.collection.mutable.ListBuffer
+	- scala.collection.mutable.ListMap
+	- scala.collection.mutable.Map
+	- scala.collection.mutable.MutableList
+	- scala.collection.mutable.OpenHashMap
+	- scala.collection.mutable.Queue
+	- scala.collection.mutable.ResizableArray
+	- scala.collection.mutable.Seq
+	- scala.collection.mutable.Set
+	- scala.collection.mutable.Stack
+	- scala.collection.mutable.WeakHashMap
 
 # Why?
 
-The natual and expected question when developing a library for a function that already exists in the marketplace 
-is "Why?".  Jackson has its own Scala module, and there is also a wonderful library called Salat that I've been 
-using for years that does JSON parsing for Scala.  What does ScalaJack offer these two don't?
+The natual and expected question when developing a library for a function that already exists in the marketplace is "Why?".  Jackson has its own Scala module, and there is also a wonderful library called Salat that I've been using for years that does JSON parsing for Scala.  What does ScalaJack offer these two don't?
 
-Salat is very full-featured.  It gives you a high level of control over the parsing process including
-custom serializers for non-standard types.  Unlike a lot of JSON parsers that require "helper" code, and/or lots
-of annotations, Salat introspects Scala case classes and does it all almost completely automatically.
+Salat is very full-featured.  It gives you a high level of control over the parsing process including custom serializers for non-standard types.  Unlike a lot of JSON parsers that require "helper" code, and/or lots of annotations, Salat introspects Scala case classes and does it all almost completely automatically.
 
-After using Salat for a long time I began to be curious how its performance stacked up against other JSON 
-parsers.  (In complete fairness, Salat's JSON handling features evolved some time after its primary mission of 
-MongoDB DAO access.)  I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I 
-didn't like the way Enumeration and Option types were handled.  It also didn't handle traits that I could see 
-(serializing Dog and Cat, where both are a case classes extending trait Animal, and the parser can sort them out).
-It was configurable enough--but required a lot of manual fidgeting with annotations and such.  
+After using Salat for a long time I began to be curious how its performance stacked up against other JSON parsers.  (In complete fairness, Salat's JSON handling features evolved some time after its primary mission of MongoDB DAO access.)  I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I didn't like the way Enumeration and Option types were handled.  It also didn't handle traits that I could see (serializing Dog and Cat, where both are a case classes extending trait Animal, and the parser can sort them out). It was configurable enough--but required a lot of manual fidgeting with annotations and such.  
 
-ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamless case class handling.  ScalaJack 
-is indeed faster than Salat (about twice as fast!) but losing nearly all of Salat's configurability and suffering 
-a couple losses of supported datatypes.  It does handle traits w/type hints seamlessly.  Unlike Salat (at the time 
-of this writing) ScalaJack also supports arbitrary nesting of data structures, Map, List, Option, to allow you to 
-construct sophisticated data structures with ease.
+ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamless case class handling.  ScalaJack is indeed faster than Salat (about twice as fast!) but losing nearly all of Salat's configurability.  It does handle traits w/type hints seamlessly.  Unlike Salat (at the time of this writing) ScalaJack also supports arbitrary nesting of data structures to allow you to construct sophisticated data structures with ease.
 
 If you're OK with gatining lots of speed at the price of my assumptions, ScalaJack is a great thing!
 
