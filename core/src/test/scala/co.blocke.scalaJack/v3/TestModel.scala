@@ -1,7 +1,7 @@
 package co.blocke.scalajack
-package test
+package test.v3
 
-import com.fasterxml.jackson.core._
+//import com.fasterxml.jackson.core._
 import org.joda.time.DateTime
 
 object Num extends Enumeration {
@@ -12,12 +12,12 @@ case class Bar[A,B](a:A, b:B)
 case class Zoo[U](name:String, z:U)//stuff:Bar[U,String])
 case class Hey( age:Int )
 
-case class Wrap[T,U] (
+case class Wrap[+T,U] (
 		name:String,
 		data:T,
 		stuff:U
 		)
-case class Carry[V](s:String, w:Wrap[V,String])
+case class Carry[+V](s:String, w:Wrap[V,String])
 case class CarryList[V](li:List[String], w:Wrap[V,String])
 case class CarryOpt[V](li:List[String], w:Wrap[V,String])
 case class BagList[Y](s:String, many:List[Y])
@@ -118,7 +118,7 @@ case class JodaThing(
 )
 
 trait Pop {
-	def go
+	def go():Unit
 }
 trait Tart[T] {
 	val yum:T
@@ -128,10 +128,10 @@ trait Soup[A] {
 }
 
 case class Wow1( a:String, b:Int) extends Pop {
-	def go { println("--1--") }
+	def go() { println("--1--") }
 }
 case class Wow2( x:String, y:Int) extends Pop {
-	def go { println("--2--") }
+	def go() { println("--2--") }
 }
 case class Cruton[U]( i:Int, val sweet:U ) extends Soup[U]
 case class Toast[D]( g:Int, val yum:D ) extends Tart[D]
@@ -143,6 +143,10 @@ case class Animal(val name: String, val legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport( name:String, wrap:Wrapper, more:Boolean )
+/*
+
+EXTENDED JSON NO LONGER SUPPORTED!!
+
 object Wrapper extends ExtJson {
 	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
 	override def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any = {
@@ -157,6 +161,7 @@ object Wrapper extends ExtJson {
 		v
 	}
 }
+*/
 case class ListValSupport( name:String, wrap:List[Wrapper], more:Boolean )
 case class OptValSupport( name:String, wrap:Option[Wrapper] )
 case class MapValSupport( name:String, wrap:Map[String,Wrapper])

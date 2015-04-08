@@ -7,16 +7,16 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.2"
+	val scalaVer = "2.11.5"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
-		startYear 					:= Some(2014),
+		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
-		scalacOptions				:= Seq("-feature", "-deprecation", "-encoding", "UTF8", "-unchecked"),
+		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "3.1.1"
+		version 					:= "4.0"
 	)
 
 	// configure prompt to show current project
@@ -26,7 +26,7 @@ object Build extends Build {
 
 	lazy val root = (project in file("."))
 		.settings(publishArtifact := false)
-		.aggregate(scalajack, scalajack_mongo, scalajack_mysql)
+		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)  // mysql support disabled for now
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -60,9 +60,10 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(joda, joda_convert, jackson, scala_reflect) ++
+			compile(joda, joda_convert, scala_reflect) ++
 			test(scalatest)
 		)
+
 
 	lazy val scalajack_mongo = project.in(file("mongo"))
 		.settings(basicSettings: _*)
@@ -71,6 +72,8 @@ object Build extends Build {
 			compile( casbah ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+/*
+	Don't build DB modules for now; until parse/render bit is done.
 
 	lazy val scalajack_mysql = project.in(file("mysql"))
 		.settings(basicSettings: _*)
@@ -79,6 +82,7 @@ object Build extends Build {
 			compile( mysql_jdbc ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+*/
 }
 
 object Dependencies {
@@ -87,7 +91,6 @@ object Dependencies {
 		"Typesafe Snapshots"	at "http://repo.typesafe.com/typesafe/snapshots/",
 		"OSS"					at "http://oss.sonatype.org/content/repositories/releases",
 		"OSS Staging"			at "http://oss.sonatype.org/content/repositories/staging",
-		"Spray"					at "http://repo.spray.io",
 		"PhantomMvn"			at "http://maven.websudos.co.uk/ext-release-local",
 		"Mvn" 					at "http://mvnrepository.com/artifact"  // for commons_exec
 	)
@@ -95,13 +98,11 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val jackson         = "com.fasterxml.jackson.core" % "jackson-core"	 	% "2.4.3"
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	val scala_lib 		= "org.scala-lang"			% "scala-library"		% Build.scalaVer
-	val casbah 			= "org.mongodb"				%% "casbah"				% "2.7.1"
+	val casbah 			= "org.mongodb"				%% "casbah"				% "2.8.0"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
-	val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
+	// val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
 }

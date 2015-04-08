@@ -1,0 +1,11 @@
+This is a complete re-write of ScalaJack.  There are several improvements to this version.
+
+* Greatly cleaned-up/reduced the code!  Uses Scala 2.11 reflection enhancements.
+* A little bit faster
+* Greatly expanded type support, particularly collections
+* Revised/simplified custom JSON for value classes
+* Cake-pattern based design for extensions (like for Mongo support)
+* Removed (for now) MySQL support
+* Can handle more complex parameterized types than ScalaJack 3.x series
+* Removed Jackson dependency
+* Provides validating and non-validating (faster) JSON tokenizers
