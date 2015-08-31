@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 import com.mongodb.casbah.Imports._
 import scala.util.Try
 import java.util.UUID
-import org.joda.time.DateTime
+import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
 class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
@@ -38,10 +38,10 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("Should handle DateTime types") {
 				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val js = ScalaJack.render( thing )
-				js should equal("""{"name":"Foo","dt":505440000000,"many":[505440000000,505440000000],"maybe":505440000000}""")
+				js should equal("""{"name":"Foo","dt":505461600000,"many":[505461600000,505461600000],"maybe":505461600000}""")
 				val b = ScalaJack.read[JodaThing](js)
 				b should equal( thing )
 			}
@@ -79,10 +79,10 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it( "Naked Lists of Joda" ) {
 				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val stuff = List( t, t )
 				val js = ScalaJack.render(stuff)
-				js should equal( """[505440000000,505440000000]""" )
+				js should equal( """[505461600000,505461600000]""" )
 				ScalaJack.read[List[DateTime]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
@@ -206,10 +206,10 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				o should equal( Map("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),"b"->null) )
 			}
 			it( "Handles null values - DateTime" ) {
-				val js = """{"a":505440000000,"b":null}"""
+				val js = """{"a":505461600000,"b":null}"""
 				val o = ScalaJack.read[Map[String,DateTime]](js)
 				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				o should equal( Map("a"->t,"b"->null) )
 			}
 		}
@@ -412,10 +412,10 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("DateTime support") {
 				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val dbo = sjM.render( thing )
-				dbo.toString should equal("""{ "name" : "Foo" , "dt" : 505440000000 , "many" : [ 505440000000 , 505440000000] , "maybe" : 505440000000}""")
+				dbo.toString should equal("""{ "name" : "Foo" , "dt" : 505461600000 , "many" : [ 505461600000 , 505461600000] , "maybe" : 505461600000}""")
 				val b = sjM.read[JodaThing](dbo)
 				b should equal( thing )
 			}

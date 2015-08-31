@@ -42,6 +42,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 			typeArgs : List[Type]=List.empty[Type]
 		)(implicit tt:TypeTag[T], vc:VisitorContext):Boolean = {
 			graph match {
+				case _ if( instance == null ) => 
+					buf.append("null")
+					true
 				case g:CCType  => 
 					buf.append("{")
 					g.superTrait.map( superTrait => {

@@ -37,13 +37,28 @@ object Analyzer {
 			tt.tpe  // no relative trait given--use the implied context
 		know(ctype,relativeToTrait,false)
 	}
+
+	// Used to create unique tag name for a type.  Explodes all type param arguments where applicable.
+	private def argExplode( a:AType ) : String = a match {
+		case atype:PrimType       => atype.name
+		case atype:CollType       => atype.name+atype.colTypes.map(argExplode(_)).mkString("[",",","]")
+		case atype:CCType         => atype.name+atype.paramMap.values.map(argExplode(_)).mkString("[",",","]")
+		case atype:EnumType       => atype.name
+		case atype:ValueClassType => atype.name
+		case atype:TraitType      => atype.name+atype.paramMap.values.map(argExplode(_)).mkString("[",",","]")
+	}
   
 	private[scalajack] def know( 
 		t:Type, 
 		relativeToTrait:Option[TraitType] = None, 
 		isParamType:Boolean = false, 
 		preResolved:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType]
-	) : AType = {
+	) : AType = this.synchronized {
+		// NOTE: Had to add synchronized here because we're adding an "empty" case class type into readyToEat first,
+		// then building case class method field lists as we go.  THis is to support self-referencing.
+		// If other threads see a not-yet-complete in readyToEat it will blow up.  This sync ensures we wait
+		// until any other threads that may be working to analyze a case class has finished and the type is complete.
+
 		// Shortcut--in case there's a 0-parameter version we save a few cycles not computing parameters & tag
 		readyToEat.getOrElse(t.typeSymbol.fullName+"[]",{
 			val (args,argMap) = t match {
@@ -56,7 +71,7 @@ object Analyzer {
 				case ty => // generally a case class that's implementing a trait
 					(List.empty[Type], relativeToTrait.get.paramMap)
 			}
-			val tag = t.typeSymbol.fullName+argMap.values.map(_.name).mkString("[",",","]")
+			val tag = t.typeSymbol.fullName+argMap.values.map(argExplode(_)).mkString("[",",","]")
 			readyToEat.getOrElse(tag,{
 				t.typeSymbol match {
 					case sym if(sym.isPrimitive)         =>  // Should Never Happen(tm)
@@ -83,9 +98,21 @@ object Analyzer {
 					case sym if(sym.asClass.isCaseClass) =>
 						val ctor         = sym.asClass.primaryConstructor
 						val collAnnoName = sym.asClass.annotations.find(_.tree.tpe =:= typeOf[Collection]).map(_.tree.children.tail.head.productElement(1).toString)
+
+						// Create (and possibly cache) cc here in case we have self-referencing members or derivatives (e.g. collections)
+						// That way we don't spin out of control with stack overflow.  We then add members to the created cc.
+						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType], argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
+						readyToEat.put(tag, cc)
 						val members      = ctor.typeSignature.paramLists.head.map( f => {
+							// val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
+							// 	.orElse( Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) )
 							val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
-								.orElse( Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) )
+								.orElse( {
+									if(f.typeSignature.toString == cc.name)
+										Some(cc)
+									else 
+										Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) 
+									})
 							val finalFtype = fType.get match {
 								case ft:AType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => {
 									val ft2 = ft.dup
@@ -96,9 +123,11 @@ object Analyzer {
 							}
 							(f.name.toString, finalFtype)
 						})
-						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType] ++= members, argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
-						if( cc.paramMap.size == 0 )  // For simplicity's sake, don't cache cc's having parameters.  Too many nuances, e.g. parameterized types
-							readyToEat.put(tag, cc)
+						// cc.members.synchronized {
+						// 	cc.members.empty
+						// 	cc.members ++= members
+						// }
+						cc.members ++= members
 						cc
 
 					case sym if(sym.asClass.fullName == "scala.Enumeration.Value") =>

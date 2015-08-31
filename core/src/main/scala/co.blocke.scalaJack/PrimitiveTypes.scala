@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime,DateTimeZone}
 
 object PrimitiveTypes {
 	// Map of [class_name -> builder_fn]
@@ -18,7 +18,7 @@ object PrimitiveTypes {
 		"scala.Short"               -> { (s:String) => s.toShort },
 		"java.lang.Boolean"         -> { (s:String) => java.lang.Boolean.parseBoolean(s) },
 		"java.util.UUID"            -> { (s:String) => java.util.UUID.fromString(s) },
-		"org.joda.time.DateTime"    -> { (s:String) => new DateTime(s.toLong) }
+		"org.joda.time.DateTime"    -> { (s:String) => (new DateTime(s.toLong)).toDateTime(DateTimeZone.forID("UTC")) }
 		) 
 	// Any type not supported -- to loose; Render is fine but unable to figure out what the "real" type is upon read.
 		// "scala.Any"                 -> { (s:String) => s },  // Is this right?  No!  Must "introspect" the string to infer type

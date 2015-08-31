@@ -5,12 +5,13 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.util.Try
 import java.util.UUID
-import org.joda.time.DateTime
+import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
 class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
+	val ms = "520578000000"
 
 	describe("=========================\n| -- V3 Tests Part 1 -- |\n=========================") {
 		describe("Basic Render/Read") {
@@ -32,11 +33,11 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				b should equal( thing )
 			}
 			it("Should handle DateTime types") {
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val js = ScalaJack.render( thing )
-				js should equal("""{"name":"Foo","dt":505440000000,"many":[505440000000,505440000000],"maybe":505440000000}""")
+				js should equal(s"""{"name":"Foo","dt":$ms,"many":[$ms,$ms],"maybe":$ms}""")
 				val b = ScalaJack.read[JodaThing](js)
 				b should equal( thing )
 			}
@@ -69,11 +70,11 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				ScalaJack.read[List[UUID]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Joda" ) {
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val stuff = List( t, t )
 				val js = ScalaJack.render(stuff)
-				js should equal( """[505440000000,505440000000]""" )
+				js should equal( s"""[$ms,$ms]""" )
 				ScalaJack.read[List[DateTime]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
@@ -169,39 +170,39 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Handles null values - Double" ) {
 				val js = """{"a":5.1,"b":null}"""
 				val o = ScalaJack.read[Map[String,Double]](js)
-				o should equal( Map("a"->5.1,"b"->null) )
+				o should contain only (("a"->5.1),("b"->null))
 			}
 			it( "Handles null values - Boolean" ) {
 				val js = """{"a":true,"b":null}"""
 				val o = ScalaJack.read[Map[String,Boolean]](js)
-				o should equal( Map("a"->true,"b"->null) )
+				o should contain only (("a"->true),("b"->null))
 			}
 			it( "Handles null values - String" ) {
 				val js = """{"a":"wow","b":null}"""
 				val o = ScalaJack.read[Map[String,String]](js)
-				o should equal( Map("a"->"wow","b"->null) )
+				o should contain only (("a"->"wow"),("b"->null))
 			}
 			it( "Handles null values - Int" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Int]](js)
-				o should equal( Map("a"->5,"b"->null) )
+				o should contain only (("a"->5),("b"->null))
 			}
 			it( "Handles null values - Long" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Long]](js)
-				o should equal( Map("a"->5L,"b"->null) )
+				o should contain only (("a"->5L),("b"->null))
 			}
 			it( "Handles null values - UUID" ) {
 				val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
 				val o = ScalaJack.read[Map[String,UUID]](js)
-				o should equal( Map("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),"b"->null) )
+				o should contain only (("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")),("b"->null))
 			}
 			it( "Handles null values - DateTime" ) {
-				val js = """{"a":505440000000,"b":null}"""
+				val js = s"""{"a":$ms,"b":null}"""
 				val o = ScalaJack.read[Map[String,DateTime]](js)
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
-				o should equal( Map("a"->t,"b"->null) )
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				o should contain only (("a"->t),("b"->null))
 			}
 		}
 	}

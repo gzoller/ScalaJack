@@ -10,7 +10,8 @@ trait AType {
 	val name    : String
 	protected[scalajack] var _isDbKey = false
 	def isDbKey : Boolean = _isDbKey
-	def dup : AType
+	def dup : AType  // Allows type-safe copying of AType for modifying _isDbKey flag.
+	// (A type may be a dbKey in one context but not another so it's not a universal property of a type.)
 }
 case class CCType(
 	name       : String, 
@@ -19,7 +20,7 @@ case class CCType(
 	superTrait : Option[TraitType] = None,
 	collAnno   : Option[String] = None  // db collumn annotation 
 ) extends AType {
-	override def toString() = s"[$name -> $members]"
+	override def toString() = s"[$name -> ${members.map(_._1)}]"
 	def dup = this.copy()
 }
 case class PrimType(name:String) extends AType { def dup = this.copy() }

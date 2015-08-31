@@ -16,7 +16,7 @@ object Build extends Build {
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "4.0"
+		version 					:= "4.1"
 	)
 
 	// configure prompt to show current project
