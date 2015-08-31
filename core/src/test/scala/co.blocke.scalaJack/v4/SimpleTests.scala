@@ -5,7 +5,7 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.language.postfixOps
 import scala.util.Try
-import org.joda.time.DateTime
+import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
@@ -23,7 +23,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("Must render all primitives") {
 				val pattern = "dd-MM-yy"
-				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val all = All(
 					5,
 					new java.lang.Integer(17),
@@ -41,7 +41,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					dt
 				)
 				// println(sjJS.render(all))
-				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505440000000}""")
+				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505461600000}""")
 			}
 			it("Must render all collections (non-nested & non-canonical)") {
 				val all = AllColl(
@@ -95,10 +95,10 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			 	(z == Pristine("Fred",29,None,Address("123 Main",29384))) should be( true )
 			}
 			it("Must read all primitive types") {
-				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505440000000,"o":null}"""
+				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505461600000,"o":null}"""
 				val z = sjJS.read[All](js,VisitorContext().copy(isValidating = true))
 				val pattern = "dd-MM-yy"
-				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern))
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
 				val all = All(
 					5,
 					new java.lang.Integer(17),
@@ -115,7 +115,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					java.util.UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),
 					dt
 				)
-				(all == z) should be( true )
+				all should equal( z )
 			}
 			it("Must read naked collections") {
 				sjJS.read[List[Int]]("""[1,2,3]""") should equal(List(1,2,3))
