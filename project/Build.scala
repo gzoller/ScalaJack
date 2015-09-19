@@ -32,7 +32,7 @@ object Build extends Build {
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
 	val pubSettings = Seq (
-		publishMavenStyle := false,
+		publishMavenStyle := true,
 		bintrayOrganization := Some("blocke"),
 		bintrayReleaseOnPublish in ThisBuild := false,
 		licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
