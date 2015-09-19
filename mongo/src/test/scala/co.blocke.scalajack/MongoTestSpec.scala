@@ -37,11 +37,11 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				b should equal( thing )
 			}
 			it("Should handle DateTime types") {
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val js = ScalaJack.render( thing )
-				js should equal("""{"name":"Foo","dt":505461600000,"many":[505461600000,505461600000],"maybe":505461600000}""")
+				js should equal("""{"name":"Foo","dt":520560000000,"many":[520560000000,520560000000],"maybe":520560000000}""")
 				val b = ScalaJack.read[JodaThing](js)
 				b should equal( thing )
 			}
@@ -78,11 +78,11 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				ScalaJack.read[List[UUID]](js) should equal( stuff )
 			}
 			it( "Naked Lists of Joda" ) {
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val stuff = List( t, t )
 				val js = ScalaJack.render(stuff)
-				js should equal( """[505461600000,505461600000]""" )
+				js should equal( """[520560000000,520560000000]""" )
 				ScalaJack.read[List[DateTime]](js) should equal( stuff )
 			}
 			it( "Naked Lists of objects" ) {
@@ -178,39 +178,39 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			it( "Handles null values - Double" ) {
 				val js = """{"a":5.1,"b":null}"""
 				val o = ScalaJack.read[Map[String,Double]](js)
-				o should equal( Map("a"->5.1,"b"->null) )
+				o should contain allOf( ("a"->5.1), ("b"->null) )
 			}
 			it( "Handles null values - Boolean" ) {
 				val js = """{"a":true,"b":null}"""
 				val o = ScalaJack.read[Map[String,Boolean]](js)
-				o should equal( Map("a"->true,"b"->null) )
+				o should contain allOf( ("a"->true), ("b"->null) )
 			}
 			it( "Handles null values - String" ) {
 				val js = """{"a":"wow","b":null}"""
 				val o = ScalaJack.read[Map[String,String]](js)
-				o should equal( Map("a"->"wow","b"->null) )
+				o should contain allOf( ("a"->"wow"), ("b"->null) )
 			}
 			it( "Handles null values - Int" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Int]](js)
-				o should equal( Map("a"->5,"b"->null) )
+				o should contain allOf( ("a"->5), ("b"->null) )
 			}
 			it( "Handles null values - Long" ) {
 				val js = """{"a":5,"b":null}"""
 				val o = ScalaJack.read[Map[String,Long]](js)
-				o should equal( Map("a"->5L,"b"->null) )
+				o should contain allOf( ("a"->5L), ("b"->null) )
 			}
 			it( "Handles null values - UUID" ) {
 				val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
 				val o = ScalaJack.read[Map[String,UUID]](js)
-				o should equal( Map("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c"),"b"->null) )
+				o should contain allOf( ("a"->UUID.fromString("1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c")), ("b"->null) )
 			}
 			it( "Handles null values - DateTime" ) {
-				val js = """{"a":505461600000,"b":null}"""
+				val js = """{"a":520560000000,"b":null}"""
 				val o = ScalaJack.read[Map[String,DateTime]](js)
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
-				o should equal( Map("a"->t,"b"->null) )
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
+				o should contain allOf( ("a"->t), ("b"->null) )
 			}
 		}
 		describe("Trait Support") {
@@ -411,11 +411,11 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				b should equal( thing )
 			}
 			it("DateTime support") {
-				val pattern = "dd-MM-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val pattern = "MM-dd-yy"
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val dbo = sjM.render( thing )
-				dbo.toString should equal("""{ "name" : "Foo" , "dt" : 505461600000 , "many" : [ 505461600000 , 505461600000] , "maybe" : 505461600000}""")
+				dbo.toString should equal("""{ "name" : "Foo" , "dt" : 520560000000 , "many" : [ 520560000000 , 520560000000] , "maybe" : 520560000000}""")
 				val b = sjM.read[JodaThing](dbo)
 				b should equal( thing )
 			}

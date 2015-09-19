@@ -22,9 +22,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 			val sjTypeName = tt.tpe.typeSymbol.fullName
 			val srcChars = src.toCharArray
 			val parser = vc.isValidating match {
-				case true if(vc.isCanonical)  => JsonParser(sjTypeName, srcChars, ValidTokenizer().tokenize(srcChars),                 vc)
-				case true if(!vc.isCanonical) => JsonParser(sjTypeName, srcChars, ValidTokenizer(false).tokenize(srcChars),            vc)
-				case false                    => JsonParser(sjTypeName, srcChars, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc)
+				case true if(vc.isCanonical)  => JsonParser(sjTypeName, ValidTokenizer().tokenize(srcChars),                 vc)
+				case true if(!vc.isCanonical) => JsonParser(sjTypeName, ValidTokenizer(false).tokenize(srcChars),            vc)
+				case false                    => JsonParser(sjTypeName, FastTokenizer(vc.estFieldsInObj).tokenize(srcChars), vc)
 			}
 			parser.parse()
 		}

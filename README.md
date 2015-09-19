@@ -9,11 +9,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.2")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.2")
 
 You may need to add the OSS repo to your resolvers if its not already present:
 

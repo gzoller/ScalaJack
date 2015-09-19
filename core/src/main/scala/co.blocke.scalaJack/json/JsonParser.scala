@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe._
 import JsonTokens._
 import scala.collection.mutable.{Map => MMap,ListBuffer => MList}
 
-case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:VisitorContext) {
+case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
@@ -22,7 +22,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 			// read key/value pairs
 			while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList  && idx.tokType(i) != JSobjEndObjKey) {
 				if( idx.tokType(i) != JSstringObjKey ) throw new JsonParseException(s"Expected JSstringObjKey and found ${JsonTokens.toName(idx.tokType(i))}",0)
-				val fieldName = idx.getToken(i,s)
+				val fieldName = idx.getToken(i)
 				i += 1
 				sjT.members.find(_._1 == fieldName).fold( skipValue )( f => objFields.put(fieldName, _parse(f._2)) )
 			}
@@ -66,20 +66,20 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 			case sj:PrimType =>
 				val v = idx.tokType(i) match {
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
-						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i,s)) )
+						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i)) )
 					case JStrue  | JStrueInList  => true
 					case JSfalse | JSfalseInList => false
 					case JSnull  | JSnullInList  => null
-					case _ => throw new JsonParseException(s"Expected primitive value but saw ${JsonTokens.toName(idx.tokType(i))} obj ${idx.getToken(i,s)}",0)
+					case _ => throw new JsonParseException(s"Expected primitive value but saw ${JsonTokens.toName(idx.tokType(i))} obj ${idx.getToken(i)}",0)
 				}
 				i += 1
 				v
 
 			case sj:EnumType =>
 				try {
-					sj.enum.withName( idx.getToken(i,s) )
+					sj.enum.withName( idx.getToken(i) )
 				} catch {
-					case w:Throwable => throw new JsonParseException(s"Value ${idx.getToken(i,s)} is not a valid for enum ${sj.enum.toString}",0)
+					case w:Throwable => throw new JsonParseException(s"Value ${idx.getToken(i)} is not a valid for enum ${sj.enum.toString}",0)
 				} finally {
 					i += 1
 				}
@@ -125,7 +125,7 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 				}
 
 			case sj:CustomType =>
-				val v = sj.readers("default")(idx.getToken(i,s))
+				val v = sj.readers("default")(idx.getToken(i))
 				i += 1
 				v
 		}
@@ -144,9 +144,9 @@ case class JsonParser(sjTName:String, s:Array[Char], idx:JsonIndex, vctx:Visitor
 			while( !done ) {
 				idx.tokType(i) match {
 					case JSobjStart => skipValue()
-					case JSstringObjKey if(idx.getToken(i,s) == hint) => 
+					case JSstringObjKey if(idx.getToken(i) == hint) => 
 						i += 1
-						retval = Some(idx.getToken(i,s))
+						retval = Some(idx.getToken(i))
 						done = true
 					case _ => i += 1
 				}
