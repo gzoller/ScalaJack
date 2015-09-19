@@ -17,7 +17,6 @@ object Build extends Build {
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF")
-//		version 					:= "4.1"
 	)
 
 	// configure prompt to show current project
@@ -26,6 +25,7 @@ object Build extends Build {
 	}
 
 	lazy val root = (project in file("."))
+		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)  // mysql support disabled for now
 		// For gpg might need this too:
