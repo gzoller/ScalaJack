@@ -11,7 +11,7 @@ import org.joda.time.format.DateTimeFormat
 class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
 	val data = One( "Greg", List("a","b"), List(Two("x",false),Two("y",true)), Two("Nest!",true), Some("wow"), Map("hey"->17,"you"->21), true, 99123986123L, Num.C, 46 )
-	val ms = "520578000000"
+	val ms = "520560000000"
 
 	describe("=========================\n| -- V3 Tests Part 1 -- |\n=========================") {
 		describe("Basic Render/Read") {
@@ -34,7 +34,7 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it("Should handle DateTime types") {
 				val pattern = "MM-dd-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val thing = JodaThing("Foo",t,List(t,t),Some(t))
 				val js = ScalaJack.render( thing )
 				js should equal(s"""{"name":"Foo","dt":$ms,"many":[$ms,$ms],"maybe":$ms}""")
@@ -71,7 +71,7 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			}
 			it( "Naked Lists of Joda" ) {
 				val pattern = "MM-dd-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val stuff = List( t, t )
 				val js = ScalaJack.render(stuff)
 				js should equal( s"""[$ms,$ms]""" )
@@ -201,7 +201,7 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js = s"""{"a":$ms,"b":null}"""
 				val o = ScalaJack.read[Map[String,DateTime]](js)
 				val pattern = "MM-dd-yy"
-				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				o should contain only (("a"->t),("b"->null))
 			}
 		}

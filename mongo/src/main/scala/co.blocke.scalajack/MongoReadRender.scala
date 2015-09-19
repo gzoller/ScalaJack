@@ -156,6 +156,7 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
 							Some(clean(instance.toString))
 						case "org.joda.time.DateTime" =>
+		// "org.joda.time.DateTime"    -> { (s:String) => (new DateTime(s.toLong)).toDateTime(DateTimeZone.forID("UTC")) }
 							Some(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
 						case _ => 
 							Some(instance)
