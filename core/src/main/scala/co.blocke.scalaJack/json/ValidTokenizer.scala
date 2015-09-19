@@ -219,6 +219,6 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 	JsonValidator.validate(lastPos2,lastToken1,lastToken2,isCanonical)
 	if( ctxPtr >= 0 ) throw new JsonParseException("Incomplete (open) object or list in JSON.  Forgot closing } or ]?",i,true)
 
-	JsonIndex(tokPos.size,tokPos.toArray,tokLen.toArray,tokType.toArray)
+	JsonIndex(tokPos.size,tokPos.toArray,tokLen.toArray,tokType.toArray,s)
 	}
 }

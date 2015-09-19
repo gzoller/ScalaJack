@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+import bintray.BintrayKeys._
 
 import scala.Some
 
@@ -7,7 +8,7 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.5"
+	val scalaVer = "2.11.7"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
@@ -15,8 +16,8 @@ object Build extends Build {
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
 		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
-		testOptions in Test += Tests.Argument("-oDF"),
-		version 					:= "4.1"
+		testOptions in Test += Tests.Argument("-oDF")
+//		version 					:= "4.1"
 	)
 
 	// configure prompt to show current project
@@ -31,6 +32,13 @@ object Build extends Build {
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
 	val pubSettings = Seq (
+		publishMavenStyle := false,
+		bintrayOrganization := Some("blocke"),
+		bintrayReleaseOnPublish in ThisBuild := false,
+		licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
+		bintrayRepository := "releases",
+		bintrayPackageLabels := Seq("scala", "json", "scalajack")
+/*
 		publishArtifact in Test := false,
 		publishTo := {
 			val nexus = "https://oss.sonatype.org/"
@@ -54,6 +62,7 @@ object Build extends Build {
 		      <url>http://github.com/gzoller</url>
 		    </developer>
 		  </developers>)
+*/
 	)
 
   	lazy val scalajack = project.in(file("core"))

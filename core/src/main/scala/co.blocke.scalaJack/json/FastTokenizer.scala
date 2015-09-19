@@ -139,6 +139,6 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 			i += 1
 		}
 	if( ctxPtr >= 0 ) throw new JsonParseException("Incomplete (open) object or list in JSON.  Forgot closing } or ]?",i,true)
-	JsonIndex(tokPtr,tokPos,tokLen,tokType)
+	JsonIndex(tokPtr,tokPos,tokLen,tokType,s)
 	}
 }
