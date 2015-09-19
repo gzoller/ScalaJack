@@ -22,8 +22,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				sjJS.render(Set(1,2,3)) should equal("""[1,2,3]""")
 			}
 			it("Must render all primitives") {
-				val pattern = "dd-MM-yy"
-				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val pattern = "MM-dd-yy"
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val all = All(
 					5,
 					new java.lang.Integer(17),
@@ -41,7 +41,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					dt
 				)
 				// println(sjJS.render(all))
-				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505461600000}""")
+				sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":520560000000}""")
 			}
 			it("Must render all collections (non-nested & non-canonical)") {
 				val all = AllColl(
@@ -95,10 +95,10 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 			 	(z == Pristine("Fred",29,None,Address("123 Main",29384))) should be( true )
 			}
 			it("Must read all primitive types") {
-				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":505461600000,"o":null}"""
+				val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":520560000000,"o":null}"""
 				val z = sjJS.read[All](js,VisitorContext().copy(isValidating = true))
-				val pattern = "dd-MM-yy"
-				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern)).toDateTime(DateTimeZone.forID("UTC"))
+				val pattern = "MM-dd-yy"
+				val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
 				val all = All(
 					5,
 					new java.lang.Integer(17),

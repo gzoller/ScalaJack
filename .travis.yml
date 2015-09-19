@@ -1,0 +1,10 @@
+# See http://about.travis-ci.org/docs/user/build-configuration/
+language: scala
+scala:
+   - 2.11.7
+notifications:
+  email:
+    recipients:
+      - gzoller@gmail.com
+jdk:
+  - oraclejdk8

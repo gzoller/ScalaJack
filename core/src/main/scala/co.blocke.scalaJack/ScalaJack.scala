@@ -35,7 +35,11 @@ trait SupportedType[U] {
 case class JsonType() extends SupportedType[String] {
 	def makeScalaJack():ScalaJack[String] = ScalaJack_JSON()
 }
-  
+
+object JSON {
+	def toCollection( js:String, size:Int = 500 ) : Either[Map[String,Any],List[Any]] = json.FastTokenizer(size).tokenize(js.toCharArray).toCollection()
+}
+
 object ScalaJack {
 	def apply[R]( kind:SupportedType[R] = JsonType() ) : ScalaJack[R] = kind.makeScalaJack
 
