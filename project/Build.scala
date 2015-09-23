@@ -27,6 +27,7 @@ object Build extends Build {
 	lazy val root = (project in file("."))
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
+		.settings(publish := { })
 		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)  // mysql support disabled for now
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
