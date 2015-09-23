@@ -76,6 +76,9 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 						case "org.joda.time.DateTime" =>
 							buf.append(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
 							true
+						case "scala.Any" if(instance.isInstanceOf[List[_]] || instance.isInstanceOf[Map[_,_]]) =>
+							buf.append( explodeAny(instance) )
+							true
 						case _ => 
 							buf.append(instance)
 							true
@@ -156,6 +159,14 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 					buf.append( g.renderers("default")(instance) )
 					true
 			}
+		}
+
+		private def explodeAny( inst:Any ) : String = inst match {
+			case s:String   => s""""$s""""
+			case l:List[_]  => l.map( explodeAny(_) ).mkString("[",",","]")
+			case m:Map[_,_] => m.map( { case(k,v) => '"'+k.toString+"\":"+explodeAny(v)} ).mkString("{",",","}")
+			case n if(inst == null) => "null"
+			case x          => x.toString
 		}
 	}
 }
