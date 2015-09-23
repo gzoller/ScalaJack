@@ -40,8 +40,7 @@ class AnySpec extends FunSpec {
 			sjM.render( ScalaMaster.a ) should be( MongoMaster.a )
 			sjM.render( ScalaMaster.b ) should be( MongoMaster.b )
 			sjM.render( ScalaMaster.c ) should be( MongoMaster.c )
-			// sjM.render( ScalaMaster.d ) should be( MongoMaster.d )
-			// sjM.render( ScalaMaster.e ) should be( MongoMaster.e )
+			sjM.render( ScalaMaster.e ) should be( MongoMaster.e )
 		}
 		describe("Read Tests") {
 			sjM.read[Something](MongoMaster.a).stuff should contain allOf (("a" -> 1), ("b" -> true))

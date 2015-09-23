@@ -1,0 +1,2 @@
+Bug-fix Any support whereby a type-def would confuse ScalaJack,
+e.g. type Data = Map[String,Any]
