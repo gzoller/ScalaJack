@@ -65,6 +65,10 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 
 			case sj:PrimType =>
 				val v = idx.tokType(i) match {
+					case pt if(sj.name == "scala.Any") => 
+						val (newI, value) = inferSimpleType(idx,i)
+						i = newI-1
+						value
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
 						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i)) )
 					case JStrue  | JStrueInList  => true
@@ -173,6 +177,46 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						}
 					}
 				case _ => i += 1  // simple, single value
+			}
+		}
+
+		def inferSimpleType(idx:JsonIndex, start:Int):(Int,Any) = {
+			var i = start
+			idx.tokType(i) match {
+				case JSlistStart => 
+					i += 1
+					val acc = new scala.collection.mutable.ListBuffer[Any]()
+					while(idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList) {
+						val (newI,v) = inferSimpleType(idx,i)
+						i = newI
+						acc += v
+					}
+					(i+1,acc.toList)
+				case JSobjStart => 
+					i += 1
+					val acc = new scala.collection.mutable.HashMap[String,Any]()
+					while(idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList) {
+						val (newI,k) = inferSimpleType(idx,i)
+						i = newI
+						val (newI2,v) = inferSimpleType(idx,i)
+						i = newI2
+						acc += (k.toString -> v)
+					}
+					(i+1,acc.toMap)
+				case JSstringObjKey | JSstring | JSstringInList =>
+					(i+1,PrimitiveTypes.primitiveTypes("String")( Unicode.unescape_perl_string(idx.getToken(i)) ))
+				case JSnumberObjKey | JSnumber | JSnumberInList =>
+					val raw = Unicode.unescape_perl_string(idx.getToken(i))
+					if( raw.contains('.') )
+						(i+1,PrimitiveTypes.primitiveTypes("scala.Double")( raw ))
+					else
+						(i+1,PrimitiveTypes.primitiveTypes("scala.Int")( raw ))
+				case JStrue | JStrueInList | JSfalse | JSfalseInList =>
+					(i+1,PrimitiveTypes.primitiveTypes("scala.Boolean")( Unicode.unescape_perl_string(idx.getToken(i)) ))
+				case JSnull | JSnullInList =>
+					(i+1,null)
+				// case z => println("Boom: "+z)
+				// (0,null)
 			}
 		}
 
