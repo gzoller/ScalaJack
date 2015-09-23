@@ -9,11 +9,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.3")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.3")
 
 You may need to add the OSS repo to your resolvers if its not already present:
 
@@ -27,10 +27,10 @@ Now you're good to go!  Let's use ScalaJack in your project to serialize/de-seri
 	val js = sj.render( myCaseObj )  // serialization
 	val myObj = sj.read[MyCaseClass](js) // deserialization
 
-Couldn't be simpler.  
+Couldn't be simpler.
 
 ### Trait support
-ScalaJack can handle traits too.  To do this you'll need the help of a type hint in the JSON.  This tells ScalaJack what actual class to create in support of the trait.  
+ScalaJack can handle traits too.  To do this you'll need the help of a type hint in the JSON.  This tells ScalaJack what actual class to create in support of the trait.
 
 The default type hint is "_hint" but you can set whatever you want (very powerful for 3rd party JSON!) You set your own type hint with a VisitorContext object as shown below.   Don't forget to use the same type hint name for render and read.
 
@@ -258,13 +258,15 @@ val updatedUser = ScalaJack.spliceInto( user, newSafeUser ) // updatedUser will 
 	- scala.collection.mutable.Stack
 	- scala.collection.mutable.WeakHashMap
 
+**New for v4.3!** Limited support of Any type is supported.  You can use primitives, Lists[Any], Maps[String,Any], and nested List/Map with Any.  Don't get too cute, though.  Type inference is pretty primal and limited to a few basic types: String, Int, Double, Boolean, and null.  See v4/AnyTests.scala for examples.
+
 # Why?
 
 The natual and expected question when developing a library for a function that already exists in the marketplace is "Why?".  Jackson has its own Scala module, and there is also a wonderful library called Salat that I've been using for years that does JSON parsing for Scala.  What does ScalaJack offer these two don't?
 
 Salat is very full-featured.  It gives you a high level of control over the parsing process including custom serializers for non-standard types.  Unlike a lot of JSON parsers that require "helper" code, and/or lots of annotations, Salat introspects Scala case classes and does it all almost completely automatically.
 
-After using Salat for a long time I began to be curious how its performance stacked up against other JSON parsers.  (In complete fairness, Salat's JSON handling features evolved some time after its primary mission of MongoDB DAO access.)  I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I didn't like the way Enumeration and Option types were handled.  It also didn't handle traits that I could see (serializing Dog and Cat, where both are a case classes extending trait Animal, and the parser can sort them out). It was configurable enough--but required a lot of manual fidgeting with annotations and such.  
+After using Salat for a long time I began to be curious how its performance stacked up against other JSON parsers.  (In complete fairness, Salat's JSON handling features evolved some time after its primary mission of MongoDB DAO access.)  I discovered Jackson's relatively new Scala module and found it blazing fast, but...  I didn't like the way Enumeration and Option types were handled.  It also didn't handle traits that I could see (serializing Dog and Cat, where both are a case classes extending trait Animal, and the parser can sort them out). It was configurable enough--but required a lot of manual fidgeting with annotations and such.
 
 ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamless case class handling.  ScalaJack is indeed faster than Salat (about twice as fast!) but losing nearly all of Salat's configurability.  It does handle traits w/type hints seamlessly.  Unlike Salat (at the time of this writing) ScalaJack also supports arbitrary nesting of data structures to allow you to construct sophisticated data structures with ease.
 

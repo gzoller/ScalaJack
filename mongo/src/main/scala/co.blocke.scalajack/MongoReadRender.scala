@@ -70,6 +70,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 					if( !sjObjType.isInstanceOf[CCType] ) throw new MongoParseException(s"Type hint $hintClass does not specify a case class")
 					sjObjType.asInstanceOf[CCType]
 					}, t, src)
+			case sj:PrimType if( sj.name == "scala.Any" ) =>
+				inferType( src ).asInstanceOf[T]
 			case sj:PrimType =>
 				PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(src.toString) ).asInstanceOf[T]
 			case sj:EnumType =>
@@ -156,8 +158,9 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
 							Some(clean(instance.toString))
 						case "org.joda.time.DateTime" =>
-		// "org.joda.time.DateTime"    -> { (s:String) => (new DateTime(s.toLong)).toDateTime(DateTimeZone.forID("UTC")) }
 							Some(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
+						case "scala.Any" if(instance.isInstanceOf[List[_]] || instance.isInstanceOf[Map[_,_]]) =>
+							Some( explodeAny(instance) )
 						case _ => 
 							Some(instance)
 					}
@@ -204,6 +207,39 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 				case g:CustomType =>
 					Some(g.renderers("mongo")(instance))
 			}
+		}
+			
+		private def explodeAny( inst:Any ) : Any = inst match {
+			case s:String   => s
+			case l:List[_]  => 
+				val builder = new MongoDBListBuilder()
+				l.map( item => builder += explodeAny(item) )
+				builder.result
+			case m:Map[_,_] => 
+				val mdbo = new MongoDBObject()
+				m.map({ case (k,v) => 
+					mdbo.put(k.asInstanceOf[String],explodeAny(v))
+				})
+				mdbo
+			case x          => x 
+		}
+
+		private def inferType( src:AnyRef ) : Any = src match {
+			case l:MongoDBList => 
+				val lbuf = new scala.collection.mutable.ListBuffer[Any]()
+				val iter = l.iterator
+				while( iter.hasNext )
+					lbuf += inferType(iter.next)
+				lbuf.toList
+			case dbo:DBObject => 
+				val mbuf = new scala.collection.mutable.HashMap[String,Any]()
+				val iter = dbo.keySet.iterator
+				while( iter.hasNext ) {
+					val key = iter.next
+					mbuf += (key -> inferType(dbo.get(key)))
+				}
+				mbuf.toMap
+			case x => x
 		}
 	}
 }
