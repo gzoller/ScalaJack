@@ -104,14 +104,12 @@ object Analyzer {
 						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType], argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
 						readyToEat.put(tag, cc)
 						val members      = ctor.typeSignature.paramLists.head.map( f => {
-							// val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
-							// 	.orElse( Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) )
 							val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
 								.orElse( {
 									if(f.typeSignature.toString == cc.name)
 										Some(cc)
 									else 
-										Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature,None,false,argMap) )) 
+										Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature.dealias,None,false,argMap) )) 
 									})
 							val finalFtype = fType.get match {
 								case ft:AType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => {
@@ -123,10 +121,6 @@ object Analyzer {
 							}
 							(f.name.toString, finalFtype)
 						})
-						// cc.members.synchronized {
-						// 	cc.members.empty
-						// 	cc.members ++= members
-						// }
 						cc.members ++= members
 						cc
 

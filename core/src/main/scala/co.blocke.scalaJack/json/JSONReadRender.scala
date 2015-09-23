@@ -83,7 +83,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 							buf.append(instance)
 							true
 					}
-				case g:CollType => 
+				case g:CollType =>
 					g.name match {
 						case "scala.Option" => 
 							val optVal = instance.asInstanceOf[Option[_]]
