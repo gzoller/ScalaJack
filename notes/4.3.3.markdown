@@ -1,0 +1,1 @@
+This release fixes a bug found where a typedef type that is part of a complext structure (e.g. a Map) wouldn't dealias properly, and cause ScalaJack to crash.
