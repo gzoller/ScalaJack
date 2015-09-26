@@ -16,6 +16,7 @@ case class Something(
 // Complex real-world problem involving type def (Data below) that was breaking
 package object v4 {
   type Data = Map[String,Any]
+  type QConfig = Map[String,Int]
 }
 import v4._
 
@@ -58,6 +59,16 @@ case class DirectCommand(
   recipient : Recipient,
   data      : Data
 ) extends MessageCommand
+
+trait AppConfig
+case class HelloConfig(
+  qIn    : QConfig,
+  mediaQ : Map[String,QConfig]
+  ) extends AppConfig
+
+case class Harness(
+  applications : List[AppConfig]
+)
 //---------------------------------
 
 
@@ -71,6 +82,7 @@ class AnySpec extends FunSpec {
 		val d = """{"name":"Fred","stuff":{"a":1,"b":null}}"""
 		val e = """{"name":"Fred","stuff":{"a":1,"b":["foo",null,"bar"]}}"""
 		val x = """{"_hint":"co.blocke.scalajack.test.v4.DirectCommand","intent":"hello","priority":"High","recipient":{"firstName":"John","lastName":"Smith","salutation":"Mr.","preferredMedia":"Email","preferredLanguage":"en_US","optOut":[],"contacts":{}},"data":{"a":1,"b":45}}"""
+		val y = """{"applications":[{"_hint":"co.blocke.scalajack.test.v4.HelloConfig","qIn":{"Critical":2},"mediaQ":{"Email":{"Foo":15}}}]}"""
 	}
 
 	object ScalaMaster {
@@ -85,6 +97,7 @@ class AnySpec extends FunSpec {
 			Recipient("John","Smith","Mr.",MediaID.Email,"en_US",List.empty[MediaID],Map.empty[MediaID,ContactInfo]),
 			Map("a"->1,"b"->45)
 			)
+		val y = Harness(List(HelloConfig(Map("Critical" -> 2),Map("Email" -> Map("Foo" -> 15)))))
 	}
 
 	describe("===================\n| -- Any Tests -- |\n===================") {
@@ -95,6 +108,7 @@ class AnySpec extends FunSpec {
 			sjJS.render( ScalaMaster.d ) should be( JSMaster.d )
 			sjJS.render( ScalaMaster.e ) should be( JSMaster.e )
 			sjJS.render[Command]( ScalaMaster.x ) should be( JSMaster.x )
+			sjJS.render( ScalaMaster.y ) should be( JSMaster.y )
 		}
 		describe("Read Tests") {
 			sjJS.read[Something](JSMaster.a).stuff should contain allOf (("a" -> 1), ("b" -> true))
@@ -105,6 +119,7 @@ class AnySpec extends FunSpec {
 			sjJS.read[Something](JSMaster.d).stuff should contain allOf (("a" -> 1), ("b" -> null))
 			sjJS.read[Something](JSMaster.e).stuff should contain allOf (("a" -> 1), ("b" -> List("foo",null,"bar")))
 			sjJS.read[Command](JSMaster.x) should be( ScalaMaster.x )
+			sjJS.read[Harness](JSMaster.y) should be( ScalaMaster.y )
 		}
 	}
 }

@@ -28,7 +28,7 @@ object Analyzer {
 	def inspectByName[T]( className:String, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( Class.forName(className), relativeToTrait )
 
 	private def getParamSymbols( t:Type ) = 
-		LinkedHashMap.empty[String,AType] ++= t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta,None, true)) ).toMap
+		LinkedHashMap.empty[String,AType] ++= t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta.dealias,None, true)) ).toMap
   
 	private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[TraitType] )(implicit tt:TypeTag[T]) : AType = {
 		val ctype = if( relativeToTrait.isDefined ) 
@@ -66,7 +66,7 @@ object Analyzer {
 					val buildingArgMap = 
 						LinkedHashMap.empty[String,AType] ++= ty.typeSymbol.typeSignature.typeParams
 							.map(_.name.toString)
-							.zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta,None,true,preResolved))))
+							.zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta.dealias,None,true,preResolved))))
 					(ty.args, buildingArgMap)
 				case ty => // generally a case class that's implementing a trait
 					(List.empty[Type], relativeToTrait.get.paramMap)
@@ -80,7 +80,7 @@ object Analyzer {
 						pt
 
 					case sym if(sym.isCollection)        =>
-						CollType( sym.fullName, argMap.values.toList)
+						CollType( sym.fullName, argMap.values.toList )
 
 					case sym if(sym.asClass.isTrait)     =>
 						val members  = t.members.filter(_.isTerm).map(_.asMethod).filter(_.isGetter)
@@ -89,7 +89,7 @@ object Analyzer {
 							members.map(_.name.toString).zip( members.map(_.typeSignature.resultType) )
 								.collect{
 									case (item,itemType) if(argMap.contains(itemType.toString)) => (item,argMap(itemType.toString)) 
-									case (item,itemType) => (item,know(itemType))
+									case (item,itemType) => (item,know(itemType.dealias))
 								}.toList
 						val tty = TraitType(sym.fullName, mappedParams)
 						readyToEat.put(tag, tty)
@@ -135,14 +135,14 @@ object Analyzer {
 					case sym if(sym.asClass.isDerivedValueClass) =>
 						val vField = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head
 						val valSjType = args match {
-							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
+							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias) // No type params on VC
 							case pa => 
 								val vTerm = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
 								val g = sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
 								if( g.typeSymbol.isClass && g.typeSymbol.asClass.isCollection )
 									CollType( g.typeSymbol.asClass.fullName, argMap.values.toList )
 								else
-									argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info))
+									argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias))
 						}
 						ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType)
 
