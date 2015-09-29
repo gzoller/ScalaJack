@@ -81,6 +81,8 @@ class AnySpec extends FunSpec {
 		val c = """{"name":"Fred","stuff":{"a":1,"b":[{"x":"Fido","y":false},{"x":"Cat","y":true}]}}"""
 		val d = """{"name":"Fred","stuff":{"a":1,"b":null}}"""
 		val e = """{"name":"Fred","stuff":{"a":1,"b":["foo",null,"bar"]}}"""
+		val f = """{"name":"Fred","age":40}"""
+		val g = """{"name":"Fred","stuff":{"a":1,"b":"Greg"}}"""
 		val x = """{"_hint":"co.blocke.scalajack.test.v4.DirectCommand","intent":"hello","priority":"High","recipient":{"firstName":"John","lastName":"Smith","salutation":"Mr.","preferredMedia":"Email","preferredLanguage":"en_US","optOut":[],"contacts":{}},"data":{"a":1,"b":45}}"""
 		val y = """{"applications":[{"_hint":"co.blocke.scalajack.test.v4.HelloConfig","qIn":{"Critical":2},"mediaQ":{"Email":{"Foo":15}}}]}"""
 	}
@@ -91,6 +93,8 @@ class AnySpec extends FunSpec {
 		val c = Something("Fred",Map("a"->1,"b"->List(Map("x"->"Fido","y"->false),Map("x"->"Cat","y"->true))))
 		val d = Something("Fred",Map("a"->1,"b"->null))
 		val e = Something("Fred",Map("a"->1,"b"->List("foo",null,"bar")))
+		val f = Map[String,Any]("name"->"Fred","age"->40)
+		val g = Something("Fred",Map("a"->1,"b"->"Greg"))
 		val x = DirectCommand(
 			"hello",
 			MsgPriority.High,
@@ -107,6 +111,8 @@ class AnySpec extends FunSpec {
 			sjJS.render( ScalaMaster.c ) should be( JSMaster.c )
 			sjJS.render( ScalaMaster.d ) should be( JSMaster.d )
 			sjJS.render( ScalaMaster.e ) should be( JSMaster.e )
+			sjJS.render( ScalaMaster.f ) should be( JSMaster.f )
+			sjJS.render( ScalaMaster.g ) should be( JSMaster.g )
 			sjJS.render[Command]( ScalaMaster.x ) should be( JSMaster.x )
 			sjJS.render( ScalaMaster.y ) should be( JSMaster.y )
 		}
@@ -118,6 +124,8 @@ class AnySpec extends FunSpec {
 			c("b")(1) should contain allOf (("x" -> "Cat"), ("y" -> true))
 			sjJS.read[Something](JSMaster.d).stuff should contain allOf (("a" -> 1), ("b" -> null))
 			sjJS.read[Something](JSMaster.e).stuff should contain allOf (("a" -> 1), ("b" -> List("foo",null,"bar")))
+			sjJS.read[Map[String,Any]](JSMaster.f) should contain allOf (("name" -> "Fred"), ("age" -> 40))
+			sjJS.read[Something](JSMaster.g).stuff should contain allOf (("a" -> 1), ("b" -> "Greg"))
 			sjJS.read[Command](JSMaster.x) should be( ScalaMaster.x )
 			sjJS.read[Harness](JSMaster.y) should be( ScalaMaster.y )
 		}
