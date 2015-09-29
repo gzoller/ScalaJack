@@ -76,10 +76,10 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 						case "org.joda.time.DateTime" =>
 							buf.append(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
 							true
-						case "scala.Any" if(instance.isInstanceOf[List[_]] || instance.isInstanceOf[Map[_,_]]) =>
+						case "scala.Any" => 
 							buf.append( explodeAny(instance) )
 							true
-						case _ => 
+						case x => 
 							buf.append(instance)
 							true
 					}
@@ -98,7 +98,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 									var renderedKey = true // handle optionality
 									if( !vc.isCanonical ) 
 										renderedKey = _render(g.colTypes(0), k, sb3, tt.tpe.typeArgs)
-									else
+									else 
 										sb3.append(s""""${k.toString}"""") //"
 									if( renderedKey ) {
 										sb3.append(":")
@@ -166,7 +166,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 			case l:List[_]  => l.map( explodeAny(_) ).mkString("[",",","]")
 			case m:Map[_,_] => m.map( { case(k,v) => '"'+k.toString+"\":"+explodeAny(v)} ).mkString("{",",","}")
 			case n if(inst == null) => "null"
-			case x          => x.toString
+			case x          => 	x.toString
 		}
 	}
 }
