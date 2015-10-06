@@ -55,7 +55,28 @@ object PrimitiveTypes {
 		"scala.collection.mutable.Seq"               -> { (a:Any) => scala.collection.mutable.Seq(a.asInstanceOf[Seq[_]]:_*)               },
 		"scala.collection.mutable.Set"               -> { (a:Any) => scala.collection.mutable.Set(a.asInstanceOf[Seq[_]]:_*)               },
 		"scala.collection.mutable.Stack"             -> { (a:Any) => scala.collection.mutable.Stack(a.asInstanceOf[Seq[_]]:_*)             },
-		"scala.collection.mutable.WeakHashMap"       -> { (a:Any) => scala.collection.mutable.WeakHashMap(a.asInstanceOf[Seq[(_,_)]]:_*)   }
+		"scala.collection.mutable.WeakHashMap"       -> { (a:Any) => scala.collection.mutable.WeakHashMap(a.asInstanceOf[Seq[(_,_)]]:_*)   },
+		"scala.Tuple2"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple2[_,_]]; (t._1,t._2)                   }},
+		"scala.Tuple3"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple3[_,_,_]]; (t._1,t._2,t._3)              }},
+		"scala.Tuple4"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple4[_,_,_,_]]; (t._1,t._2,t._3,t._4)         }},
+		"scala.Tuple5"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple5[_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5)    }},
+		"scala.Tuple6"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple6[_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6) }},
+		"scala.Tuple7"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple7[_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._6) }},
+		"scala.Tuple8"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple8[_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8) }},
+		"scala.Tuple9"                               -> { (a:Any) => { val t = a.asInstanceOf[Tuple9[_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9) }},
+		"scala.Tuple10"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple10[_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10) }},
+		"scala.Tuple11"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple11[_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11) }},
+		"scala.Tuple12"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple12[_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12) }},
+		"scala.Tuple13"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple13[_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13) }},
+		"scala.Tuple14"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple14[_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14) }},
+		"scala.Tuple15"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple15[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15) }},
+		"scala.Tuple16"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple16[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16) }},
+		"scala.Tuple17"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple17[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17) }},
+		"scala.Tuple18"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple18[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17,t._18) }},
+		"scala.Tuple19"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple19[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17,t._18,t._19) }},
+		"scala.Tuple20"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple20[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17,t._18,t._19,t._20) }},
+		"scala.Tuple21"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple21[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17,t._18,t._19,t._20,t._21) }},
+		"scala.Tuple22"                              -> { (a:Any) => { val t = a.asInstanceOf[Tuple22[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]; (t._1,t._2,t._3,t._4,t._5,t._6,t._7,t._8,t._9,t._10,t._11,t._12,t._13,t._14,t._15,t._16,t._17,t._18,t._19,t._20,t._21,t._22) }}
 		)
 	// The following collections are not supported because there's no way to infer the implicit Ordering:
 		// "scala.collection.immutable.TreeMap"

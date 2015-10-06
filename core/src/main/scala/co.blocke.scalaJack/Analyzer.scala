@@ -61,7 +61,7 @@ object Analyzer {
 
 		// Shortcut--in case there's a 0-parameter version we save a few cycles not computing parameters & tag
 		readyToEat.getOrElse(t.typeSymbol.fullName+"[]",{
-			val (args,argMap) = t match {
+			val (args,argMap) = t.dealias match {
 				case ty:TypeRef =>
 					val buildingArgMap = 
 						LinkedHashMap.empty[String,AType] ++= ty.typeSymbol.typeSignature.typeParams
