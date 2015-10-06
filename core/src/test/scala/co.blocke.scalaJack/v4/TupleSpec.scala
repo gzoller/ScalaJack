@@ -39,25 +39,21 @@ class TupleSpec extends FunSpec {
 	}
 
 	describe("===================\n| -- Any Tests -- |\n===================") {
-		describe("Render Tests") {
-			it( "Naked tuples" ) {
-				sjJS.render( ScalaMaster.a ) should be( JSMaster.a )
-				sjJS.render( ScalaMaster.b ) should be( JSMaster.b )
-				sjJS.render( ScalaMaster.c ) should be( JSMaster.c )
-				sjJS.render( ScalaMaster.d ) should be( JSMaster.d )
-				sjJS.render( ScalaMaster.e ) should be( JSMaster.e )
-				sjJS.render( ScalaMaster.f ) should be( JSMaster.f )
-			}
+		it("Render Tests") {
+			sjJS.render( ScalaMaster.a ) should be( JSMaster.a )
+			sjJS.render( ScalaMaster.b ) should be( JSMaster.b )
+			sjJS.render( ScalaMaster.c ) should be( JSMaster.c )
+			sjJS.render( ScalaMaster.d ) should be( JSMaster.d )
+			sjJS.render( ScalaMaster.e ) should be( JSMaster.e )
+			sjJS.render( ScalaMaster.f ) should be( JSMaster.f )
 		}
-		describe("Read Tests") {
-			it( "Naked tuples" ) {
-				sjJS.read[tupA]( JSMaster.a ) should be( ScalaMaster.a )
-				sjJS.read[tupB]( JSMaster.b ) should be( ScalaMaster.b )
-				sjJS.read[tupC]( JSMaster.c ) should be( ScalaMaster.c )
-				sjJS.read[tupD]( JSMaster.d ) should be( ScalaMaster.d )
-				sjJS.read[tupE]( JSMaster.e ) should be( ScalaMaster.e )
-				sjJS.read[Hip] ( JSMaster.f ) should be( ScalaMaster.f )
-			}
+		it( "Read tuples" ) {
+			sjJS.read[tupA]( JSMaster.a ) should be( ScalaMaster.a )
+			sjJS.read[tupB]( JSMaster.b ) should be( ScalaMaster.b )
+			sjJS.read[tupC]( JSMaster.c ) should be( ScalaMaster.c )
+			sjJS.read[tupD]( JSMaster.d ) should be( ScalaMaster.d )
+			sjJS.read[tupE]( JSMaster.e ) should be( ScalaMaster.e )
+			sjJS.read[Hip] ( JSMaster.f ) should be( ScalaMaster.f )
 		}
 	}
 }
