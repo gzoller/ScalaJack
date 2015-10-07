@@ -92,6 +92,43 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						case _ => 
 							throw new MongoParseException(s"Expected MongoDBObject or DBObject and found ${src.getClass.getName}")
 					}
+				} else if( sj.name.startsWith("scala.Tuple") ) {
+					val arity = """\d+""".r.findFirstIn(sj.name).get.toInt
+					val resolved = (src match {
+						case mdbl:MongoDBList => mdbl.underlying
+						case bdbl:BasicDBList => bdbl
+						case _ => throw new MongoParseException(s"Expected MongoDBList or BasicDBList and found ${src.getClass.getName}")
+					}).iterator
+					val res = MList.empty[Any]
+					var c = 0
+					while( resolved.hasNext ) {
+						res += parse(sj.colTypes(c), resolved.next)
+						c += 1
+					}
+					arity match {
+						case 2  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1)) ).asInstanceOf[T]
+						case 3  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2)) ).asInstanceOf[T]
+						case 4  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3)) ).asInstanceOf[T]
+						case 5  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4)) ).asInstanceOf[T]
+						case 6  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5)) ).asInstanceOf[T]
+						case 7  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6)) ).asInstanceOf[T]
+						case 8  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7)) ).asInstanceOf[T]
+						case 9  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8)) ).asInstanceOf[T]
+						case 10 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9)) ).asInstanceOf[T]
+						case 11 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10)) ).asInstanceOf[T]
+						case 12 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11)) ).asInstanceOf[T]
+						case 13 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12)) ).asInstanceOf[T]
+						case 14 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13)) ).asInstanceOf[T]
+						case 15 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14)) ).asInstanceOf[T]
+						case 16 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15)) ).asInstanceOf[T]
+						case 17 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16)) ).asInstanceOf[T]
+						case 18 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17)) ).asInstanceOf[T]
+						case 19 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18)) ).asInstanceOf[T]
+						case 20 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19)) ).asInstanceOf[T]
+						case 21 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20)) ).asInstanceOf[T]
+						case 22 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20),res(21)) ).asInstanceOf[T]
+					}
+//zzz
 				} else {
 					// Dumb down to BasicDBList to avoid double-creation/wrapping of value from database
 					val resolved = (src match {
@@ -176,6 +213,310 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 								_render(g.colTypes(1), v, tt.tpe.typeArgs).map( item => mdbo.put(k.asInstanceOf[String],item))
 							})
 							Some(mdbo)
+						case t if( t startsWith("scala.Tuple") ) => 
+							val arity = """\d+""".r.findFirstIn(t).get.toInt
+							val builder = new MongoDBListBuilder()
+							arity match {
+								case 2  =>
+									val cv = instance.asInstanceOf[Tuple2[_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+								case 3  =>
+									val cv = instance.asInstanceOf[Tuple3[_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+								case 4  =>
+									val cv = instance.asInstanceOf[Tuple4[_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+								case 5  =>
+									val cv = instance.asInstanceOf[Tuple5[_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+								case 6  =>
+									val cv = instance.asInstanceOf[Tuple6[_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+								case 7  =>
+									val cv = instance.asInstanceOf[Tuple7[_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+								case 8  =>
+									val cv = instance.asInstanceOf[Tuple8[_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+								case 9  =>
+									val cv = instance.asInstanceOf[Tuple9[_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+								case 10  =>
+									val cv = instance.asInstanceOf[Tuple10[_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+								case 11  =>
+									val cv = instance.asInstanceOf[Tuple11[_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+								case 12  =>
+									val cv = instance.asInstanceOf[Tuple12[_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+								case 13  =>
+									val cv = instance.asInstanceOf[Tuple13[_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+								case 14  =>
+									val cv = instance.asInstanceOf[Tuple14[_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+								case 15  =>
+									val cv = instance.asInstanceOf[Tuple15[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+								case 16  =>
+									val cv = instance.asInstanceOf[Tuple16[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+								case 17  =>
+									val cv = instance.asInstanceOf[Tuple17[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+								case 18  =>
+									val cv = instance.asInstanceOf[Tuple18[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(17), cv._18, tt.tpe.typeArgs).map( item => builder += item )
+								case 19  =>
+									val cv = instance.asInstanceOf[Tuple19[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(17), cv._18, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(18), cv._19, tt.tpe.typeArgs).map( item => builder += item )
+								case 20  =>
+									val cv = instance.asInstanceOf[Tuple20[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(17), cv._18, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(18), cv._19, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(19), cv._20, tt.tpe.typeArgs).map( item => builder += item )
+								case 21  =>
+									val cv = instance.asInstanceOf[Tuple21[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(17), cv._18, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(18), cv._19, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(19), cv._20, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(20), cv._21, tt.tpe.typeArgs).map( item => builder += item )
+								case 22  =>
+									val cv = instance.asInstanceOf[Tuple22[_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]]
+									_render(g.colTypes(0), cv._1, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(1), cv._2, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(2), cv._3, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(3), cv._4, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(4), cv._5, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(5), cv._6, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(6), cv._7, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(7), cv._8, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(8), cv._9, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(9), cv._10, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(10), cv._11, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(11), cv._12, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(12), cv._13, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(13), cv._14, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(14), cv._15, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(15), cv._16, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(16), cv._17, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(17), cv._18, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(18), cv._19, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(19), cv._20, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(20), cv._21, tt.tpe.typeArgs).map( item => builder += item )
+									_render(g.colTypes(21), cv._22, tt.tpe.typeArgs).map( item => builder += item )
+							}
+							// val collVal = instance.asInstanceOf[Iterable[_]]
+							// collVal.map( item => 
+							// 	_render(g.colTypes.head, item, tt.tpe.typeArgs).map( item => builder += item )
+							// )
+							Some(builder.result)
 						case _ => 
 							val collVal = instance.asInstanceOf[Iterable[_]]
 							val builder = new MongoDBListBuilder()
