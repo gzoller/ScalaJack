@@ -105,6 +105,37 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							mapAcc.put(key,value)
 						}
 						PrimitiveTypes.scalaCollections(sj.name)(mapAcc.toList)
+					} else if(sj.name.startsWith("scala.Tuple")) {
+						val arity = """\d+""".r.findFirstIn(sj.name).get.toInt
+						if( idx.tokType(i) != JSlistStart ) 
+							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
+						i += 1
+						val tv = (0 to arity-1).map( a => _parse(sj.colTypes(a)) ) // parse tuple values
+						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList ) 
+							throw new JsonParseException(s"Expected JSlistEnd or JSlistEndInList and found ${JsonTokens.toName(idx.tokType(i))}",0)
+						arity match {
+							case 2  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1)) )
+							case 3  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2)) )
+							case 4  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3)) )
+							case 5  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4)) )
+							case 6  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5)) )
+							case 7  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6)) )
+							case 8  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7)) )
+							case 9  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8)) )
+							case 10 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9)) )
+							case 11 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10)) )
+							case 12 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11)) )
+							case 13 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12)) )
+							case 14 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13)) )
+							case 15 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14)) )
+							case 16 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15)) )
+							case 17 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16)) )
+							case 18 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17)) )
+							case 19 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18)) )
+							case 20 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19)) )
+							case 21 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20)) )
+							case 22 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20),tv(21)) )
+						}
 					} else {
 						val listAcc = MList.empty[Any]
 						if( idx.tokType(i) != JSlistStart ) 
