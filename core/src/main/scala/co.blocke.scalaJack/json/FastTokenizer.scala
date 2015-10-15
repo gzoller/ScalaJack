@@ -127,7 +127,7 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 				case c if(c.isDigit || c == '-') =>
 					tokPos(tokPtr) = i
 					var numStart = i
-					while( s(i)!=']' && s(i)!='}' && s(i)!=',' ) 
+					while( s(i)!=']' && s(i)!='}' && s(i)!=',' && s(i)!=' ' && s(i)!='\n' && s(i)!='\t' ) 
 						i += 1
 					tokLen(tokPtr) = i - numStart
 					tokType(tokPtr) = JSnumber
