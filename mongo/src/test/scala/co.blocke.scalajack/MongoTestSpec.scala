@@ -718,6 +718,16 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					ScalaJack.read[Carry[Pop]](js) should equal(w)
 					sjM.read[Carry[Pop]](db) should equal(w)
 				}
+				it("Parameter is a simple trait with hint function value mappings") {
+					val vcx = VisitorContext().copy(
+						hintValueRender = Map("co.blocke.scalajack.test.Pop"-> {(x:String)=>x.split('.').last} ),
+						hintValueRead = Map("co.blocke.scalajack.test.Pop"-> {(x:String)=>"co.blocke.scalajack.test."+x} )
+						)
+					val w = Carry[Pop]("Surprise", Wrap("Yellow", Wow2("three",4), "Done"))
+					val db = sjM.render(w,vcx)
+					db.toString should equal("""{ "s" : "Surprise" , "w" : { "name" : "Yellow" , "data" : { "_hint" : "Wow2" , "x" : "three" , "y" : 4} , "stuff" : "Done"}}""")
+					sjM.read[Carry[Pop]](db,vcx) should equal(w)
+				}
 				it("Parameter is List of trait") {
 					val w = Carry[List[Pop]]("Surprise", Wrap("Yellow", List(Wow1("four",4),Wow2("three",3)), "Done"))
 					val js = ScalaJack.render(w)

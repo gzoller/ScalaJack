@@ -55,7 +55,9 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 			case sj:TraitType =>
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
-					val objClass = findTypeHint(vctx.hintMap.getOrElse(sj.name,vctx.hintMap("default")))//.get(vctx.typeHint)
+					val objClass = findTypeHint(vctx.hintMap.getOrElse(sj.name,vctx.hintMap("default")))
+						// See if we need to look up actual objClass (e.g. abbreviation) or if its ready-to-eat
+						.map( candidate => vctx.hintValueRead.get(sj.name).map(_(candidate)).getOrElse(candidate) )
 					if( !objClass.isDefined )
 						throw new JsonParseException(s"No type hint given for trait ${sj.name}",0)
 					val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))

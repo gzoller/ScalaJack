@@ -49,7 +49,8 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 				case g:CCType  => 
 					buf.append("{")
 					g.superTrait.map( superTrait => {
-						buf.append(s""""${vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default"))}":"${g.name}"""") //"
+						val hintValue = vc.hintValueRender.get(superTrait.name).map(_(g.name)).getOrElse(g.name)
+						buf.append(s""""${vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default"))}":"$hintValue"""") //"
 						if(g.members.size > 0) buf.append(",")
 					})
 					val sb2 = new StringBuilder()

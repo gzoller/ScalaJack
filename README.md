@@ -9,11 +9,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.4.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.4.2")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.4.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.4.2")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
@@ -161,18 +161,24 @@ case class VisitorContext(
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
 	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler],
-	hintMap        : Map[String,String] = Map("default" -> "_hint")  // per-class type hints (for nested classes)
+	hintMap        : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
+	hintValueRead   : Map[String,(String)=>String] = Map.empty[String,(String)=>String], // per-class type hint value -> class name
+	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
 	)
 ```
-Let's look at these fields one-by-one.  isCanonical=true is standard JSON.  In some strange situations you may wish JSON-like notation that does not use strings as keys.  You would set this field to false to allow that.  Note that this is *not* really JSON and won't many libraries (like Mongo) assume and require string-based keys for JSON objects.
+Let's look at these fields one-by-one.  
 
-isValidating controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
+**isCanonical**=true is standard JSON.  In some strange situations you may wish JSON-like notation that does not use strings as keys.  You would set this field to false to allow that.  Note that this is *not* really JSON and won't many libraries (like Mongo) assume and require string-based keys for JSON objects.
 
-estFieldsInObj is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
+**isValidating** controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
 
-valClassMap is a map of value class name (fully-qualified) to ValClassHandler.  An example of its use was shown above in the section on custom JSON for value classes.  If you don't need custom JSON you can ignore this.
+**estFieldsInObj** is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
 
-hintMap is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
+**valClassMap** is a map of value class name (fully-qualified) to ValClassHandler.  An example of its use was shown above in the section on custom JSON for value classes.  If you don't need custom JSON you can ignore this.
+
+**hintMap** is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
+
+**hintValueRead/hintValueRender** maps allow you to use strings other than fully-qualified class names as a hint value.  This can be very valuable if the "discriminator" field for your JSON is provided by a 3rd party, or you'd like to hide the internal details of hint-handling from an external system.  They key to both maps is the fully-qualified trait name.  The value of hintValueRead is a function that accepts a String (the "friendly" hint value) and emits a fully-qualified class name.  In a simple implementation this may just prepend a package hierarchy, a la "com.foo.something", but it can be whatever you want.  hintValueRender goes the other way.  It's values are functions accepting a String (a fully-qualified class name) and emits a friendly hint value.
 
 # View/SpliceInto Feature
 
