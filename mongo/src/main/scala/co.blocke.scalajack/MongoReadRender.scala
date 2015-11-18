@@ -29,7 +29,7 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : MongoDBObject = 
 			_render(Analyzer.inspect(instance), instance).get.asInstanceOf[MongoDBObject]
 
-		private def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType, src:Any )(implicit ty:TypeTag[U]) = {
+		private def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType, src:Any )(implicit ty:TypeTag[U], vc:VisitorContext) = {
 			val sjT = ccTypeFn()
 			if( !src.isInstanceOf[MongoDBObject] ) throw new MongoParseException(s"Wrong type for $src.  Expected a MongoDBObject.")
 			val mo = src.asInstanceOf[MongoDBObject]
@@ -64,7 +64,9 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
 					val mo = src.asInstanceOf[MongoDBObject]
-					val hintClass = mo.get(vc.hintMap.getOrElse(sj.name,vc.hintMap("default")))
+					val hintClass = mo.get( vc.hintMap.getOrElse(sj.name,vc.hintMap("default")) ).asInstanceOf[Option[String]]
+						// See if we need to look up actual objClass (e.g. abbreviation) or if its ready-to-eat
+						.map( candidate => vc.hintValueRead.get(sj.name).map(_(candidate)).getOrElse(candidate) )
 					if( hintClass.isEmpty ) throw new MongoParseException(s"No type hint given for trait ${sj.name}")
 					val sjObjType = Analyzer.inspectByName(hintClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new MongoParseException(s"Type hint $hintClass does not specify a case class")
@@ -128,7 +130,6 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						case 21 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20)) ).asInstanceOf[T]
 						case 22 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20),res(21)) ).asInstanceOf[T]
 					}
-//zzz
 				} else {
 					// Dumb down to BasicDBList to avoid double-creation/wrapping of value from database
 					val resolved = (src match {
@@ -166,7 +167,10 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 			graph match {
 				case g:CCType  => 
 					val mdbo = new MongoDBObject()
-					g.superTrait.map( superTrait => mdbo.put(vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default")), g.name) )
+					g.superTrait.map( superTrait => {
+						val hintValue = vc.hintValueRender.get(superTrait.name).map(_(g.name)).getOrElse(g.name)
+						mdbo.put(vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default")), hintValue) 
+						})
 					val (dbIds, regFields) = g.members.partition{ // separate out the db key fields (may be 0, 1, or >1)
 						case(fname,ftype) => ftype.isDbKey
 					}

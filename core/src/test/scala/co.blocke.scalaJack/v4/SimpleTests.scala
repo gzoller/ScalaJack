@@ -60,6 +60,11 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val t = Stuff("wow",Foo("me",9))
 				sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.v4.Foo","name":"me","age":9}}""")
 			}
+			it("Must render traits with hint function value mappings") {
+				val t = Stuff("wow",Foo("me",9))
+				val vcx = VisitorContext().copy(hintValueRender = Map("co.blocke.scalajack.test.v4.Blah"-> {(x:String)=>x.split('.').last} ))
+				sjJS.render(t,vcx) should equal("""{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}""")
+			}
 			it("Must render typed classes") {
 				val a1 = WithType("hey")
 				val a2 = WithType(Foo("boom",9))
@@ -143,6 +148,11 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val z = sjJS.read[Stuff](js,VisitorContext().copy(isValidating = true))
 				val t = Stuff("wow",Foo("me",9))
 				(z == t) should equal( true )
+			}
+			it("Must read traits with hint function value mappings") {
+				val js = """{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}"""
+				val vcx = VisitorContext().copy(hintValueRead = Map("co.blocke.scalajack.test.v4.Blah"-> {(x:String)=>"co.blocke.scalajack.test.v4."+x} ))
+				sjJS.read[Stuff](js,vcx) should equal(Stuff("wow",Foo("me",9)))
 			}
 			it("Must read parameterized classes - Basic") {
 				val a1 = WithType("hey")
