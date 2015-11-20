@@ -1,3 +1,7 @@
+CI service | Status | Description
+-----------|--------|------------
+Travis | [![Build Status](https://travis-ci.org/gzoller/ScalaJack.png?branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Linux container tests
+
 # ScalaJack
 
 Very fast JSON parser/generator for Scala case classes using Jackson that requires virtually no annotations
