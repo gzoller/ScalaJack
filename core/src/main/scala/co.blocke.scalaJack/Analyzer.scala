@@ -106,7 +106,7 @@ object Analyzer {
 						val mod     = sym.asClass.companion.asModule
 						val im      = cm.reflect(cm.reflectModule(mod).instance)
 						val ts      = im.symbol.typeSignature
-						val mApply  = ts.members.find(_.name.toString() == "apply").head.asMethod
+						val mApply  = ts.member(TermName("apply")).asMethod
 						val syms    = mApply.paramLists.flatten
 						val members = syms.zipWithIndex.map { case (p, i) =>
 							val fType = relativeToTrait.flatMap( _.paramMap.get(p.name.toString) )
@@ -117,9 +117,9 @@ object Analyzer {
 										Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias,None,false,argMap) )) 
 									})
 							val defaultVal = {
-								val found = ts.members.find(_.name.toString() == "apply$default$"+(i+1))
-								if(found.size > 0) 
-									Some(im.reflectMethod(found.head.asMethod)())
+								val found = ts.member(TermName("apply$default$"+(i+1)))
+								if(found.isMethod) 
+									Some(im.reflectMethod(found.asMethod)())
 								else
 									None
 							}
