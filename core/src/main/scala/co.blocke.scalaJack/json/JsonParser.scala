@@ -24,7 +24,8 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 				if( idx.tokType(i) != JSstringObjKey ) throw new JsonParseException(s"Expected JSstringObjKey and found ${JsonTokens.toName(idx.tokType(i))}",0)
 				val fieldName = idx.getToken(i)
 				i += 1
-				sjT.members.find(_._1 == fieldName).fold( skipValue )( f => objFields.put(fieldName, _parse(f._2)) )
+				// The "f._2._1" here gets the member's AType while ignoring the default value
+				sjT.members.find(_._1 == fieldName).fold( skipValue )( f => objFields.put(fieldName, _parse(f._2._1)) )
 			}
 			i+=1
 
@@ -35,9 +36,12 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 			val missing = sjT.members.collect{
 				case f if(fnames.contains(f._1)) => 
 					None  // field found -- don't collect
-				case f if(f._2.isInstanceOf[CollType] && f._2.asInstanceOf[CollType].isOptional) =>
+				case f if(f._2._1.isInstanceOf[CollType] && f._2._1.asInstanceOf[CollType].isOptional) =>
 				 	// Missing but optional => None  -- don't collect
 					objFields.put(f._1,None)
+					None
+				case f if(f._2._2.isDefined) =>
+					objFields.put(f._1,f._2._2) // Not there but default value specified
 					None
 				case f => 
 					Some(f)

@@ -1,7 +1,7 @@
 package co.blocke
 package scalajack
 
-import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.{currentMirror => cm}
 import scala.reflect.runtime.universe._
 import scala.reflect.NameTransformer._
 import scala.collection.mutable.LinkedHashMap
@@ -32,7 +32,7 @@ object Analyzer {
   
 	private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[TraitType] )(implicit tt:TypeTag[T]) : AType = {
 		val ctype = if( relativeToTrait.isDefined ) 
-			currentMirror.classSymbol(clazz).typeSignature  // no trait given--use the implied context
+			cm.classSymbol(clazz).typeSignature  // no trait given--use the implied context
 		else 
 			tt.tpe  // no relative trait given--use the implied context
 		know(ctype,relativeToTrait,false)
@@ -96,31 +96,43 @@ object Analyzer {
 						tty
 		        
 					case sym if(sym.asClass.isCaseClass) =>
-						val ctor         = sym.asClass.primaryConstructor
 						val collAnnoName = sym.asClass.annotations.find(_.tree.tpe =:= typeOf[Collection]).map(_.tree.children.tail.head.productElement(1).toString)
 
 						// Create (and possibly cache) cc here in case we have self-referencing members or derivatives (e.g. collections)
 						// That way we don't spin out of control with stack overflow.  We then add members to the created cc.
-						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,AType], argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
+						val cc = CCType( sym.fullName, LinkedHashMap.empty[String,(AType,Option[Any])], argMap, None, collAnnoName.map(_.filterNot(_ == '"')) )
 						readyToEat.put(tag, cc)
-						val members      = ctor.typeSignature.paramLists.head.map( f => {
-							val fType = relativeToTrait.flatMap( _.paramMap.get(f.name.toString) )
+
+						val mod     = sym.asClass.companion.asModule
+						val im      = cm.reflect(cm.reflectModule(mod).instance)
+						val ts      = im.symbol.typeSignature
+						val mApply  = ts.member(TermName("apply")).asMethod
+						val syms    = mApply.paramLists.flatten
+						val members = syms.zipWithIndex.map { case (p, i) =>
+							val fType = relativeToTrait.flatMap( _.paramMap.get(p.name.toString) )
 								.orElse( {
-									if(f.typeSignature.toString == cc.name)
+									if(p.typeSignature.toString == cc.name)
 										Some(cc)
 									else 
-										Some(argMap.getOrElse(f.typeSignature.toString, know(f.typeSignature.dealias,None,false,argMap) )) 
+										Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias,None,false,argMap) )) 
 									})
+							val defaultVal = {
+								val found = ts.member(TermName("apply$default$"+(i+1)))
+								if(found.isMethod) 
+									Some(im.reflectMethod(found.asMethod)())
+								else
+									None
+							}
 							val finalFtype = fType.get match {
-								case ft:AType if(f.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => {
+								case ft:AType if(p.annotations.find(_.tree.tpe =:= typeOf[DBKey]).isDefined) => {
 									val ft2 = ft.dup
 									ft2._isDbKey = true
 									ft2
 								}
 								case ft => ft
 							}
-							(f.name.toString, finalFtype)
-						})
+          					(p.name.toString, (finalFtype,defaultVal))
+						}
 						cc.members ++= members
 						cc
 

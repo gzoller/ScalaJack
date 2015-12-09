@@ -1,0 +1,5 @@
+This release added a "friendly" hint feature for json.  Up to now you could use the VisitorContext to map package-specific _hint key values (i.e. call "_hint" whatever you want), but the hint values always had to be a fully-qualified class name.
+
+In 4.4.2 you can use a similar mechanism in the VisitorContext to specify two sets of functions to transform to/from the classname to a more human-friendly value.  For example a simple transform might be to just strip off the class package prefix and just use the base class name (and the inverse function pre-pends that info to the name), but it can be whatever you want.
+
+This feature is a little hard to grasp without looking at an example but it can be invaluable when dealing with 3rd party json you have no control over.

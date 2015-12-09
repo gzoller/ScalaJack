@@ -7,17 +7,25 @@ Travis | [![Build Status](https://travis-ci.org/gzoller/ScalaJack.png?branch=mas
 Very fast JSON parser/generator for Scala case classes using Jackson that requires virtually no annotations
 or "helper" code.
 
+Advanced Features:
+ - Handles tuples
+ - Limited 'any' support
+ - Handles default values for case class fields
+ - Rich configuration of trait type hint/value
+ - Supports value classes
+ - Pluggable reader/render (for non-JSON encodings in the future)
+
 # Use
 
 ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.4.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.4.1")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.4.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.4.1")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
@@ -281,3 +289,4 @@ ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamle
 If you're OK with gatining lots of speed at the price of my assumptions, ScalaJack is a great thing!
 
 Blöcke
+

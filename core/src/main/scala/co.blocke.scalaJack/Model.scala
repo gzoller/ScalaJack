@@ -15,7 +15,7 @@ trait AType {
 }
 case class CCType(
 	name       : String, 
-	members    : LinkedHashMap[String,AType], 
+	members    : LinkedHashMap[String,(AType,Option[Any])],   // Map[memberName -> (MemberType,Optional Default Value)]
 	paramMap   : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
 	superTrait : Option[TraitType] = None,
 	collAnno   : Option[String] = None  // db collumn annotation 
@@ -30,11 +30,13 @@ case class CollType(name:String, colTypes:List[AType]) extends AType {
 }
 case class EnumType(name:String, enum:Enumeration) extends AType { def dup = this.copy() }
 case class ValueClassType(name:String, vcType:AType, vFieldName:String, isTypeParam:Boolean) extends AType { def dup = this.copy() }
-case class TraitType(name:String, paramMap:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType]) extends AType { def dup = this.copy() }
+case class TraitType(name:String, paramMap:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType], default:Option[Any]=None) extends AType { def dup = this.copy() }
 
 trait CustomType extends AType {
 	val readers   : Map[String, (Any => Any)]
 	val renderers : Map[String, (Any => Any)]
 }
 
-case class ErrType(name:String = "Error") extends AType { def dup = this.copy() }
+case class ErrType(name:String = "Error") extends AType { 
+	def dup = this.copy() 
+}
