@@ -134,3 +134,11 @@ trait Pet {
 }
 case class NicePet(kind:Animal, food:String) extends Pet
 case class GrumpyPet(kind:Animal, food:String) extends Pet
+
+case class WithDefaults(
+	name     : String,
+	age      : Int = 50,
+	num      : Option[Int],
+	hasStuff : Option[Boolean] = Some(true),
+	pet      : Pet = NicePet(Dog("Fido"),"bones")
+	)

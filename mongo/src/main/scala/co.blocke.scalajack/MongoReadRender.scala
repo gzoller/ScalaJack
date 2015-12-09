@@ -33,26 +33,33 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 			val sjT = ccTypeFn()
 			if( !src.isInstanceOf[MongoDBObject] ) throw new MongoParseException(s"Wrong type for $src.  Expected a MongoDBObject.")
 			val mo = src.asInstanceOf[MongoDBObject]
-			val build = 
-			scala.collection.mutable.Map.empty[String,Any]
-			val fieldData = mo.collect{ 
+			val build = scala.collection.mutable.Map.empty[String,Any]
+			mo.map{ 
 				case(k,v) if(k == "_id") => 
 					v match {
 						case vObj:DBObject =>
 							vObj.foreach{ case(fname,koV) => 
 								sjT.members.get(fname).map( ft => 
-									build.put(fname,parse(ft,koV))
+									build.put(fname,parse(ft._1,koV))
 									)
 							}
 						case _ =>
-							sjT.members.find( { case(fname,ftype) => ftype match {
+							sjT.members.find( { case(fname,ftype) => ftype._1 match {
 								case p:AType if(p.isDbKey) => true 
 								case x => false
-								}}).map( f => build.put(f._1, parse(f._2,v)) )
+								}}).map( f => build.put(f._1, parse(f._2._1,v)) )
 					}
 				case(k,v) if(sjT.members.contains(k)) => 
-					build.put(k,parse(sjT.members(k),v))
+					build.put(k,parse(sjT.members(k)._1,v))
 				case _ => null.asInstanceOf[U]
+			}
+			// Handle any missing fields
+			sjT.members.keySet.diff(mo.keySet).map{ missing =>
+				sjT.members(missing) match {
+					case (t:CollType,dv) if(t.isOptional) => build.put(missing,None)
+					case (t,dv) if(dv.isDefined) => build.put(missing,dv.get)
+					case _ => // really missing, not optional and no devault value given
+				}
 			}
 			Util.poof( sjT, build.toMap ).asInstanceOf[U]
 		}
@@ -172,7 +179,7 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						mdbo.put(vc.hintMap.getOrElse(superTrait.name,vc.hintMap("default")), hintValue) 
 						})
 					val (dbIds, regFields) = g.members.partition{ // separate out the db key fields (may be 0, 1, or >1)
-						case(fname,ftype) => ftype.isDbKey
+						case(fname,ftype) => ftype._1.isDbKey
 					}
 					val cz = instance.getClass()
 					val getField = (fname:String) => {
@@ -184,14 +191,14 @@ trait MongoReadRenderFrame extends ReadRenderFrame[MongoDBObject] {
 						case 0 => // nothing
 						case 1 => 
 							val (fname,ftype) = dbIds.head
-							_render(ftype, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put("_id",fval) )
+							_render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put("_id",fval) )
 						case _ => 
 							val keyObj = new MongoDBObject()
-							dbIds.map{ case(fname,ftype) => _render(ftype, getField(fname), tt.tpe.typeArgs).map( fval => keyObj.put(fname,fval) ) }
+							dbIds.map{ case(fname,ftype) => _render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => keyObj.put(fname,fval) ) }
 							mdbo.put("_id",keyObj)
 					}
 					regFields.map{ case(fname,ftype) =>
-						_render(ftype, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put(fname,fval) )
+						_render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put(fname,fval) )
 					}
 					Some(mdbo)
 				case g:PrimType  => 

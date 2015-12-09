@@ -91,6 +91,14 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val a = WithType("następujących")
 				sjJS.render(a) should equal("{\"me\":\"nast\\u0119puj\\u0105cych\"}")
 			}
+			it("Must handle a case class with default values - defaults specified") {
+				val wd = WithDefaults("Greg",49,Some(5),Some(false),GrumpyPet(Cat("Fluffy"),"fish"))
+				sjJS.render(wd) should equal("""{"name":"Greg","age":49,"num":5,"hasStuff":false,"pet":{"_hint":"co.blocke.scalajack.test.v4.GrumpyPet","kind":{"_hint":"co.blocke.scalajack.test.v4.Cat","name":"Fluffy"},"food":"fish"}}""")
+			}
+			it("Must handle a case class with default values - defaults not specified") {
+				val wd = WithDefaults("Greg",49,Some(5))
+				sjJS.render(wd) should equal("""{"name":"Greg","age":49,"num":5,"hasStuff":true,"pet":{"_hint":"co.blocke.scalajack.test.v4.NicePet","kind":{"_hint":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},"food":"bones"}}""")
+			}
 		}
 
 		describe("Read Tests") {
@@ -228,12 +236,22 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val a = WithType("następujących")
 				(sjJS.read[WithType[String]](js) == a) should be( true )
 			}
+			it("Must handle a case class with default values - defaults specified") {
+				val wd = WithDefaults("Greg",49,Some(5),Some(false),GrumpyPet(Cat("Fluffy"),"fish"))
+				val js = """{"name":"Greg","age":49,"num":5,"hasStuff":false,"pet":{"_hint":"co.blocke.scalajack.test.v4.GrumpyPet","kind":{"_hint":"co.blocke.scalajack.test.v4.Cat","name":"Fluffy"},"food":"fish"}}"""
+				sjJS.read[WithDefaults](js) should equal(wd)
+			}
+			it("Must handle a case class with default values - defaults not specified") {
+				val wd = WithDefaults("Greg",49,Some(5))
+				val js ="""{"name":"Greg","age":49,"num":5,"hasStuff":true,"pet":{"_hint":"co.blocke.scalajack.test.v4.NicePet","kind":{"_hint":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},"food":"bones"}}"""
+				sjJS.read[WithDefaults](js) should equal(wd)
+			}
 		}
 		describe("Annotation Tests") {
 			it("Must analyze annotations for Collection and DBKey") {
 				val t = Analyzer.inspectByName[Decorated]("co.blocke.scalajack.test.v4.Decorated").asInstanceOf[CCType]
 				t.collAnno should equal( Some("mystuff") )
-				t.members.values.map(_.isDbKey) should equal( List(true,false,false) )
+				t.members.values.map(_._1.isDbKey) should equal( List(true,false,false) )
 			}
 		}
 		describe("Support Custom JSON for Value Class") {
