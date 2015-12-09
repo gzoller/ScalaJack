@@ -185,3 +185,22 @@ case class Foo(
 	name:String,
 	stuff:List[String]
 	)
+
+trait PetAnimal {
+	val name:String
+}
+case class Dog(name:String) extends PetAnimal
+case class Cat(name:String) extends PetAnimal
+trait Pet {
+	val kind:PetAnimal
+	val food:String
+}
+case class NicePet(kind:PetAnimal, food:String) extends Pet
+case class GrumpyPet(kind:PetAnimal, food:String) extends Pet
+case class WithDefaults(
+	name     : String,
+	age      : Int = 50,
+	num      : Option[Int],
+	hasStuff : Option[Boolean] = Some(true),
+	pet      : Pet = NicePet(Dog("Fido"),"bones")
+	)

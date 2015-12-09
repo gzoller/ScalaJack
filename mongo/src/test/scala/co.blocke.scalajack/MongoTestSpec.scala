@@ -419,6 +419,20 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val b = sjM.read[JodaThing](dbo)
 				b should equal( thing )
 			}
+			it("Must handle a case class with default values - defaults specified") {
+				val wd = WithDefaults("Greg",49,Some(5),Some(false),GrumpyPet(Cat("Fluffy"),"fish"))
+				val dbo = sjM.render(wd)
+				dbo.toString should equal("""{ "name" : "Greg" , "age" : 49 , "num" : 5 , "hasStuff" : false , "pet" : { "_hint" : "co.blocke.scalajack.test.GrumpyPet" , "kind" : { "_hint" : "co.blocke.scalajack.test.Cat" , "name" : "Fluffy"} , "food" : "fish"}}""")
+				val b = sjM.read[WithDefaults](dbo)
+				b should equal(wd)
+			}
+			it("Must handle a case class with default values - defaults not specified") {
+				val wd = WithDefaults("Greg",49,None)
+				val dbo = sjM.render(wd)
+				dbo.toString should equal("""{ "name" : "Greg" , "age" : 49 , "hasStuff" : true , "pet" : { "_hint" : "co.blocke.scalajack.test.NicePet" , "kind" : { "_hint" : "co.blocke.scalajack.test.Dog" , "name" : "Fido"} , "food" : "bones"}}""")
+				val b = sjM.read[WithDefaults](dbo)
+				b should equal(wd)
+			}
 		}
 		describe("Parameterized Class Support") {
 			describe("Basic Parameterized Case Class") {

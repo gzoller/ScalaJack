@@ -60,7 +60,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 						val cz = instance.getClass()
 						val targetField = cz.getDeclaredField(fname)
 						targetField.setAccessible(true)
-						if( _render(ftype, targetField.get(instance), sb3, tt.tpe.typeArgs) ) {
+						if( _render(ftype._1, targetField.get(instance), sb3, tt.tpe.typeArgs) ) {  // "._1" here gets the AType, ignores the default value (see CCType)
 							sb3.append(",")
 							sb2.append(sb3)
 						}
