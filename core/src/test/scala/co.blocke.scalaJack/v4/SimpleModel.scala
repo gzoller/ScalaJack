@@ -135,6 +135,9 @@ trait Pet {
 case class NicePet(kind:Animal, food:String) extends Pet
 case class GrumpyPet(kind:Animal, food:String) extends Pet
 
+object WithDefaults {
+	def apply(s:String):WithDefaults = WithDefaults("a",3,None)
+}
 case class WithDefaults(
 	name     : String,
 	age      : Int = 50,

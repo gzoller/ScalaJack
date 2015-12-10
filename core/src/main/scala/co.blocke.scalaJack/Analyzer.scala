@@ -106,7 +106,7 @@ object Analyzer {
 						val mod     = sym.asClass.companion.asModule
 						val im      = cm.reflect(cm.reflectModule(mod).instance)
 						val ts      = im.symbol.typeSignature
-						val mApply  = ts.member(TermName("apply")).asMethod
+						val mApply  = ts.members.toList.find(m => m.name.toString == "apply" && m.isSynthetic).get.asMethod
 						val syms    = mApply.paramLists.flatten
 						val members = syms.zipWithIndex.map { case (p, i) =>
 							val fType = relativeToTrait.flatMap( _.paramMap.get(p.name.toString) )
