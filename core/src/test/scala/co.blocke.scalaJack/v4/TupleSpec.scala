@@ -38,7 +38,7 @@ class TupleSpec extends FunSpec {
 		val f        = Hip("Greg",(5,true))
 	}
 
-	describe("===================\n| -- Any Tests -- |\n===================") {
+	describe("=====================\n| -- Tuple Tests -- |\n=====================") {
 		it("Render Tests") {
 			sjJS.render( ScalaMaster.a ) should be( JSMaster.a )
 			sjJS.render( ScalaMaster.b ) should be( JSMaster.b )
