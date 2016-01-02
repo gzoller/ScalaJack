@@ -51,12 +51,12 @@ case class ValidTokenizer( isCanonical:Boolean = true ) extends JsonTokenizer {
 					i += 1
 					tokPos += i
 					var strStart = i
-					var skip = false
-					while( s(i)!='"' || skip ) { 
-						if(s(i) == '\\' )
-							skip = true
+					var skip = 0
+					while( s(i)!='"' || skip > 0 ) { 
+						if(s(i) == '\\' && skip == 0)
+							skip = 1
 						else
-							skip = false
+							skip = 0
 						i += 1
 					}
 					tokLen  += i - strStart
