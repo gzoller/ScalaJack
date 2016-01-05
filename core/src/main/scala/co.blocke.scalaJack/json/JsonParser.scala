@@ -41,7 +41,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 					objFields.put(f._1,None)
 					None
 				case f if(f._2._2.isDefined) =>
-					objFields.put(f._1,f._2._2) // Not there but default value specified
+					objFields.put(f._1,f._2._2.get) // Not there but default value specified
 					None
 				case f => 
 					Some(f)
