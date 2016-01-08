@@ -8,7 +8,9 @@ import scala.language.postfixOps
 import scala.util.Try
 import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.DateTimeFormat
-import com.mongodb.casbah.Imports._
+import org.mongodb.scala._
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.bson._
 
 case class Something(
 	name:String,
@@ -19,13 +21,13 @@ class AnySpec extends FunSpec {
 	val sjM = ScalaJack(MongoType())
 
 	object MongoMaster {
-		val a = MongoDBObject( "name"->"Fred", "stuff"-> MongoDBObject("a"->1,"b"->true) )
-		val b = MongoDBObject( "name"->"Fred", "stuff"-> MongoDBObject("a"->1,"b"->MongoDBList(4,5,6)) )
-		val c = MongoDBObject( "name"->"Fred", "stuff"-> MongoDBObject("a"->1,"b"->MongoDBList(
-			MongoDBObject("x"->"Fido", "y"->false),
-			MongoDBObject("x"->"Cat", "y"->true)
-			)) )
-		val e = MongoDBObject( "name"->"Fred", "stuff"-> MongoDBObject("a"->1,"b"->MongoDBList("foo",null,"bar")) )
+		val a = Document(BsonDocument( "name"->"Fred", "stuff"-> BsonDocument("a"->1,"b"->true) ))
+		val b = Document(BsonDocument( "name"->"Fred", "stuff"-> BsonDocument("a"->1,"b"->BsonArray(4,5,6)) ))
+		val c = Document(BsonDocument( "name"->"Fred", "stuff"-> BsonDocument("a"->1,"b"->BsonArray(
+			BsonDocument("x"->"Fido", "y"->false),
+			BsonDocument("x"->"Cat", "y"->true)
+			)) ))
+		val e = Document(BsonDocument( "name"->"Fred", "stuff"-> BsonDocument("a"->1,"b"->BsonArray("foo",BsonNull(),"bar")) ))
 	}
 
 	object ScalaMaster {
