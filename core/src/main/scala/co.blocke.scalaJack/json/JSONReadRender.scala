@@ -680,10 +680,10 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 							targetField.get(instance)
 						}
 					}
-					vc.valClassHandlers.get("default").flatMap( _.get(g.name).map( vcHand => {
+					vc.valClassMap.get(g.name).map( vcHand => {
 							buf.append(vcHand.render(renderVal))
 							true
-						})).orElse(
+						}).orElse(
 							Some(_render(g.vcType,renderVal,buf,tt.tpe.typeArgs))
 						).get
 				case g:EnumType =>

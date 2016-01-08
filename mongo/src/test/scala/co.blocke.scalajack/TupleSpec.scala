@@ -8,9 +8,7 @@ import scala.language.postfixOps
 import scala.util.Try
 import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.DateTimeFormat
-import org.mongodb.scala._
-import org.mongodb.scala.bson.collection.immutable.Document
-import org.mongodb.scala.bson._
+import com.mongodb.casbah.Imports._
 
 case class TT2    ( name:String, rec:Map[String,List[(String,Int,Boolean)]])
 
@@ -18,7 +16,7 @@ class TupleSpec extends FunSpec {
 	val sjM = ScalaJack(MongoType())
 
 	object MongoMaster {
-		val a = Document( BsonDocument("name"->"Larry","rec"->BsonDocument("foo"->BsonArray(BsonArray("a",1,true)),"hey"->BsonArray(BsonArray("x",8,false),BsonArray("r",3,true)))))
+		val a = MongoDBObject("name"->"Larry","rec"->MongoDBObject("foo"->MongoDBList(MongoDBList("a",1,true)),"hey"->MongoDBList(MongoDBList("x",8,false),MongoDBList("r",3,true))))
 	}
 
 	object ScalaMaster {
