@@ -182,6 +182,12 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 						(v) => BsonDateTime(v.asInstanceOf[DateTime].toDate)
 						)
 
+val now = new java.util.Date()
+println("Now: "+now)
+val z = BsonDateTime(now)
+println(z)
+println(new DateTime(z.getValue))
+
 					val vc = VisitorContext().copy(valClassHandlers = Map("default"->Map("co.blocke.scalajack.test.CustomVC"->handlerJS), "mongo"->Map("co.blocke.scalajack.test.CustomVC"->handlerM)))
 
 					val w = Carry("Mike", Wrap("Sally", new CustomVC(new DateTime(2015,7,1,0,0)), "Fine"))
