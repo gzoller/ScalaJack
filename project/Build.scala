@@ -54,7 +54,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile( mongo_scala ) ++
+			compile( casbah ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
 /*
@@ -84,7 +84,7 @@ object Dependencies {
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver" % "1.1.0"
+	val casbah 			= "org.mongodb"				%% "casbah"				% "2.8.0"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
