@@ -10,10 +10,13 @@ import org.joda.time.DateTime
 
 import org.mongodb.scala._
 import org.mongodb.scala.bson.collection.immutable.Document
-import org.mongodb.scala.bson._
+import org.bson._
+
+// import com.mongodb.casbah.Imports._
+// import com.mongodb.casbah.commons.MongoDBListBuilder
 
 /*
-	Mongo serializes to Document, so there are some built-in constraints.
+	Mongo serializes to MongoDBObject, so there are some built-in constraints.
 	1) Top-level object must be a case class.
 	2) Keys to any Map-like data must be of type String
 */
@@ -26,74 +29,67 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 	class MongoReadRender() extends ReadRender {
 
 		def read[T](src:Document)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = 
-			parse(Analyzer.inspectByName(tt.tpe.typeSymbol.fullName), src.toBsonDocument, true)
+			parse(Analyzer.inspectByName(tt.tpe.typeSymbol.fullName), src.toMap[String,BsonValue], true)
 
 		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : Document = 
-			_render(Analyzer.inspect(instance), instance).map( _ match {
-				case bsdoc:BsonDocument => Document(bsdoc)
-				case _ => throw new MongoParseException("Unexpected result where Document was expected.")
-			}).getOrElse(throw new MongoParseException("Unable to render JSON to MongoDB"))
+			Document( _render(Analyzer.inspect(instance), instance).get.asInstanceOf[BsonDocument] )
 
-	//-------------------------------------------------------------- Read ------
-
-		private def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType, src:BsonValue )(implicit ty:TypeTag[U], vc:VisitorContext) = src match {
-			case doc:BsonDocument =>
-				val sjT = ccTypeFn()
-				val build = scala.collection.mutable.Map.empty[String,Any]
-				doc.map{ 
-					case(k,v) if(k == "_id") => 
-						v match {
-							case vObj:BsonDocument =>   // Compound key
-								vObj.foreach{ case(fname,koV) => 
-									sjT.members.get(fname).map( ft => 
-										build.put(fname,parse(ft._1,koV))
-										)
-								}
-							case _ =>
-								sjT.members.find( { case(fname,ftype) => ftype._1 match {
-									case p:AType if(p.isDbKey) => true 
-									case x => false
-									}}).map( f => build.put(f._1, parse(f._2._1,v)) )
-						}
-					case(k,v) if(sjT.members.contains(k)) => 
-						build.put(k,parse(sjT.members(k)._1,v))
-					case _ => null.asInstanceOf[U]
-				}
-				// Handle any missing fields
-				sjT.members.keySet.diff(doc.keySet).map{ missing =>
-					sjT.members(missing) match {
-						case (t:CollType,dv) if(t.isOptional) => build.put(missing,None)
-						case (t,dv) if(dv.isDefined) => build.put(missing,dv.get)
-						case (t,dv) => 
-							if(!t.isDbKey || (t.isDbKey && !build.contains(missing))) 
-								throw new MongoParseException(s"Missing required field $missing in BsonDocument")   // really missing, not optional and no devault value given
+		private def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType, src:Map[String,BsonValue] )(implicit ty:TypeTag[U], vc:VisitorContext) = {
+			val sjT = ccTypeFn()
+			// if( !src.isInstanceOf[Document] ) throw new MongoParseException(s"Wrong type for $src.  Expected a Document.")
+			// val mo = src.asInstanceOf[BsonDocument]
+			val build = scala.collection.mutable.Map.empty[String,Any]
+			src.map{ 
+				case(k,v) if(k == "_id") => 
+					v match {
+						case vObj:BsonDocument =>   // Compound key
+							vObj.foreach{ case(fname,koV) => 
+								sjT.members.get(fname).map( ft => 
+									build.put(fname,parse(ft._1,koV))
+									)
+							}
+						case _ =>
+							sjT.members.find( { case(fname,ftype) => ftype._1 match {
+								case p:AType if(p.isDbKey) => true 
+								case x => false
+								}}).map( f => build.put(f._1, parse(f._2._1,v)) )
 					}
+				case(k,v) if(sjT.members.contains(k)) => 
+					build.put(k,parse(sjT.members(k)._1,v))
+				case _ => null.asInstanceOf[U]
+			}
+			// Handle any missing fields
+			sjT.members.keySet.diff(src.keySet).map{ missing =>
+				sjT.members(missing) match {
+					case (t:CollType,dv) if(t.isOptional) => build.put(missing,None)
+					case (t,dv) if(dv.isDefined) => build.put(missing,dv.get)
+					case _ => // really missing, not optional and no devault value given
 				}
-				Util.poof( sjT, build.toMap ).asInstanceOf[U]
-			case _ => throw new MongoParseException("Attempt to make a class from something other than a BsonDocument: "+src)
+			}
+			Util.poof( sjT, build.toMap ).asInstanceOf[U]
 		}
 
-		private def parse[T](t:AType, src:BsonValue, topLevel:Boolean = false)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = t match {
+		private def parse[T](t:AType, src:Any, topLevel:Boolean = false)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = t match {
 			case sj:CCType =>
-				_makeClass( ()=>{sj}, t, src )
+				_makeClass( ()=>{sj}, t, src.asInstanceOf[Map[String,BsonValue]] )
 			case sj:TraitType =>
 				_makeClass( ()=>{
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
-					val hintClass = Option(src.asInstanceOf[BsonDocument].get( vc.hintMap.getOrElse(sj.name,vc.hintMap("default")) )).map(_.asString.getValue())
+					val hintClass = src.asInstanceOf[Map[String,BsonValue]].get( vc.hintMap.getOrElse(sj.name,vc.hintMap("default")) ).map(_.asString.getValue())
 						// See if we need to look up actual objClass (e.g. abbreviation) or if its ready-to-eat
 						.map( candidate => vc.hintValueRead.get(sj.name).map(_(candidate)).getOrElse(candidate) )
 					if( hintClass.isEmpty ) throw new MongoParseException(s"No type hint given for trait ${sj.name}")
 					val sjObjType = Analyzer.inspectByName(hintClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new MongoParseException(s"Type hint $hintClass does not specify a case class")
 					sjObjType.asInstanceOf[CCType]
-				}, t, src)
+					}, t, src.asInstanceOf[Map[String,BsonValue]])
 			case sj:PrimType if( sj.name == "scala.Any" ) =>
-				inferType( src ).asInstanceOf[T]
+				inferType( src.asInstanceOf[BsonValue] ).asInstanceOf[T]
 			case sj:PrimType =>
-				PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(stringValue(src)) ).asInstanceOf[T]
+				PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(src.toString) ).asInstanceOf[T]
 			case sj:EnumType =>
 				try {
-					sj.enum.withName( src.asString.getValue() ).asInstanceOf[T]
+					sj.enum.withName( src.toString ).asInstanceOf[T]
 				} catch {
 					case w:Throwable => throw new MongoParseException(s"Value ${src} is not a valid for enum ${sj.enum.toString}")
 				}
@@ -102,8 +98,8 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 					Some(parse(sj.colTypes(0), src)).asInstanceOf[T]
 				} else if(sj.name.endsWith("Map")) {
 					src match {
-						case doc:BsonDocument => 
-							PrimitiveTypes.scalaCollections(sj.name)( doc.map{ case(k,v) => (k,parse(sj.colTypes(1),v)) }.toSeq ).asInstanceOf[T]
+						case dbo:BsonDocument => 
+							PrimitiveTypes.scalaCollections(sj.name)( dbo.keySet.map( key => (key,parse(sj.colTypes(1),dbo(key))) ).toSeq ).asInstanceOf[T]
 						case _ => 
 							throw new MongoParseException(s"Expected BsonDocument and found ${src.getClass.getName}")
 					}
@@ -163,63 +159,18 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 			case g:CustomType =>
 				g.readers("mongo")(src).asInstanceOf[T]
 		}
-
-		private def primValue( src:BsonValue ) = src match {
-			case bs:BsonString  => bs.getValue()
-			case bs:BsonBoolean => bs.getValue()
-			case bs:BsonInt32   => bs.getValue()
-			case bs:BsonInt64   => bs.getValue()
-			case bs:BsonDouble  => bs.getValue()
-			case bs:BsonNull    => null
-		}
 		private def parseValueClassPrimitive( src:BsonValue, vc:ValueClassType, visitor:VisitorContext, topLevel:Boolean ) = 
-			visitor.valClassHandlers.get("mongo").flatMap(_.get(vc.name)).fold(primValue(src).asInstanceOf[AnyRef])( handler => 
-				handler.read( src ).asInstanceOf[AnyRef]
+			visitor.valClassMap.get(vc.name).fold(src)( handler => 
+				handler.read( src.toString ).asInstanceOf[AnyRef]
 			)
 		private def makeValueClass( vc:ValueClassType, primitive:AnyRef ) = 
 			Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
-
-		def stringValue( bv:BsonValue ) = bv match {
-			case bs:BsonString   => bs.getValue()
-			case bs:BsonBoolean  => bs.getValue().toString
-			case bs:BsonInt32    => bs.getValue().toString
-			case bs:BsonInt64    => bs.getValue().toString
-			case bs:BsonDouble   => bs.getValue().toString
-			case bs:BsonDateTime => bs.getValue().toString
-			case bs:BsonNull     => "null"
-		}
-
-		private def inferType( src:BsonValue ) : Any = src match {
-			case l:BsonArray => 
-				val lbuf = new scala.collection.mutable.ListBuffer[Any]()
-				val iter = l.iterator
-				while( iter.hasNext )
-					lbuf += inferType(iter.next)
-				lbuf.toList
-			case dbo:BsonDocument => 
-				val mbuf = new scala.collection.mutable.HashMap[String,Any]()
-				val iter = dbo.keySet.iterator
-				while( iter.hasNext ) {
-					val key = iter.next
-					mbuf += (key -> inferType(dbo.get(key)))
-				}
-				mbuf.toMap
-			case bs:BsonBoolean => bs.getValue()
-			case bs:BsonString  => bs.getValue()
-			case bs:BsonInt32   => bs.getValue()
-			case bs:BsonInt64   => bs.getValue()
-			case bs:BsonDouble  => bs.getValue()
-			case bs:BsonNull    => null
-			case bs => throw new MongoParseException(s"Can't infer type for value $bs")
-		}
-
-	//-------------------------------------------------------------- Render ------
 
 		private def _render[T](
 			graph    : AType, 
 			instance : T, 
 			typeArgs : List[Type]=List.empty[Type]
-		)(implicit tt:TypeTag[T], vc:VisitorContext):Option[BsonValue] = {
+		)(implicit tt:TypeTag[T], vc:VisitorContext):Option[Any] = {
 			graph match {
 				case g:CCType  => 
 					val mdbo = new BsonDocument()
@@ -240,24 +191,26 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 						case 0 => // nothing
 						case 1 => 
 							val (fname,ftype) = dbIds.head
-							_render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put("_id",fval) )
+							_render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put("_id",new BsonString(fval.toString)) )
 						case _ => 
-							val keyObj = new BsonDocument()
-							dbIds.map{ case(fname,ftype) => _render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => keyObj.put(fname,fval) ) }
+							val keyObj = new MongoDBObject()
+							dbIds.map{ case(fname,ftype) => _render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => keyObj.put(fname,new BsonString(fval.toString)) ) }
 							mdbo.put("_id",keyObj)
 					}
-					regFields.map{ case(fname,ftype) => 
+					regFields.map{ case(fname,ftype) =>
 						_render(ftype._1, getField(fname), tt.tpe.typeArgs).map( fval => mdbo.put(fname,fval) )
 					}
 					Some(mdbo)
 				case g:PrimType  => 
 					g.name match {
 						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
-							Some( BsonString( clean( instance.toString ) ) )
+							Some(clean(instance.toString))
 						case "org.joda.time.DateTime" =>
-							Some( BsonDateTime(instance.asInstanceOf[DateTime].toDate) )
-						case _ => // Including Any type
+							Some(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
+						case "scala.Any" if(instance.isInstanceOf[List[_]] || instance.isInstanceOf[Map[_,_]]) =>
 							Some( explodeAny(instance) )
+						case _ => 
+							Some(instance)
 					}
 				case g:CollType => 
 					g.name match {
@@ -570,6 +523,10 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 									_render(g.colTypes(20), cv._21, tt.tpe.typeArgs).map( item => builder.add(item) )
 									_render(g.colTypes(21), cv._22, tt.tpe.typeArgs).map( item => builder.add(item) )
 							}
+							// val collVal = instance.asInstanceOf[Iterable[_]]
+							// collVal.map( item => 
+							// 	_render(g.colTypes.head, item, tt.tpe.typeArgs).map( item => builder.add(item) )
+							// )
 							Some(builder)
 						case _ => 
 							val collVal = instance.asInstanceOf[Iterable[_]]
@@ -592,25 +549,25 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 							targetField.get(instance)
 						}
 					}
-					vc.valClassHandlers.get("mongo").flatMap(_.get(g.name).map( vcHand =>
-							vcHand.render(renderVal).asInstanceOf[BsonValue]
-						)).orElse(
+					vc.valClassMap.get(g.name).map( vcHand =>
+							Some(vcHand.render(renderVal))
+						).orElse(
 							_render(g.vcType,renderVal,tt.tpe.typeArgs)
 						)
 				case g:EnumType =>
-					Some( BsonString(s"${instance.toString}") )
+					Some(s"${instance.toString}")
 				case g:CustomType =>
-					Some( (g.renderers("mongo")(instance)).asInstanceOf[BsonValue] )
+					Some(g.renderers("mongo")(instance))
 			}
 		}
 			
 		private def explodeAny( inst:Any ) : BsonValue = inst match {
-			case n if(n==null) => new BsonNull()
 			case s:String   => new BsonString(s)
 			case b:Boolean  => new BsonBoolean(b)
 			case n:Int      => new BsonInt32(n)
 			case n:Long     => new BsonInt64(n)
 			case n:Double   => new BsonDouble(n)
+			case n if(n==null) => new BsonNull()
 			case l:List[_]  => 
 				val builder = new BsonArray()
 				l.map( item => builder.add(explodeAny(item)) )
@@ -622,6 +579,30 @@ trait MongoReadRenderFrame extends ReadRenderFrame[Document] {
 				})
 				mdbo
 			case bs => throw new MongoParseException(s"Can't explode Any value for $bs")
+		}
+
+		private def inferType( src:BsonValue ) : Any = src match {
+			case l:BsonArray => 
+				val lbuf = new scala.collection.mutable.ListBuffer[Any]()
+				val iter = l.iterator
+				while( iter.hasNext )
+					lbuf += inferType(iter.next)
+				lbuf.toList
+			case dbo:BsonDocument => 
+				val mbuf = new scala.collection.mutable.HashMap[String,Any]()
+				val iter = dbo.keySet.iterator
+				while( iter.hasNext ) {
+					val key = iter.next
+					mbuf += (key -> inferType(dbo.get(key)))
+				}
+				mbuf.toMap
+			case bs:BsonBoolean => bs.getValue()
+			case bs:BsonString  => bs.getValue()
+			case bs:BsonInt32   => bs.getValue()
+			case bs:BsonInt64   => bs.getValue()
+			case bs:BsonDouble  => bs.getValue()
+			case bs:BsonNull    => null
+			case bs => throw new MongoParseException(s"Can't infer type for value $bs")
 		}
 	}
 }
