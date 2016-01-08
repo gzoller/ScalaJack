@@ -1,14 +1,9 @@
-This is a segnificant release with breaking changes.
+This is a major update with breaking changes.
 
-This release supports the (relatively) new asynchronous drivers for MognoDB.  This is an upgrade from the older, synchronous Casbah drivers.
+The big news is a move to support the (relatively) new async drivers for MongoDB (deprecating Casbah).
+Note this is new, so the ".0" code should be used cautiously.  Version 4.4.6 still uses tried 'n true Casbah.
 
-The ".0" release may be a little unproven so use with care.  4.4.6 is still using the "trusted" Casbah drivers if needed.
+The new drivers tighten up type safety considerably within MongoDB's driver, which is a good thing, but drives
+some change in ScalaJack, particularly necessitating reworking how the custom value class handlers work.
 
-Since the new drivers cleaned up the MongoDB representation to incorporate stronger typing, new handler support was needed for
-VisitorContext's custom value class handlers.  Now there's a Map[ mode -> Map[ classname -> ValClassHandler ] ] structure,
-where 'mode' is either 'default' (json) or 'mongo'.  This is because the 'Any' type on the handlers actually needs to be
-different things for mongo and json.  For json it all resolves to String.  For mongo the Any resolves to BsonValue (meaning
-you'll have to typecast the Any to some BsonValue).
-
-If it all sounds complex, well, it is a bit.  See the tests, particularly in the mongo subproject for some help.
-For examples of custom value class handlers grep for "valClassHandlers" in the test code.
+Please see examples in mongo subproject test code.  Grep around for 'valClassHandlers'.
