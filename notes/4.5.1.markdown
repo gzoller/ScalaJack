@@ -1,0 +1,9 @@
+This is a major update with breaking changes.
+
+The big news is a move to support the (relatively) new async drivers for MongoDB (deprecating Casbah).
+Note this is new, so the ".1" code should be used cautiously.  Version 4.4.6 still uses tried 'n true Casbah.
+
+The new drivers tighten up type safety considerably within MongoDB's driver, which is a good thing, but drives
+some change in ScalaJack, particularly necessitating reworking how the custom value class handlers work.
+
+Please see examples in mongo subproject test code.  Grep around for 'valClassHandlers'.

@@ -172,9 +172,9 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 		}
 
 		def parseValueClassPrimitive( vc:ValueClassType ) = 
-			vctx.valClassMap.get(vc.name).map( handler => 
+			vctx.valClassHandlers.get("default").flatMap(_.get(vc.name).map( handler => 
 				handler.read( _parse(PrimType("String")).asInstanceOf[String] ).asInstanceOf[AnyRef]
-			).orElse( Some(_parse(vc.vcType).asInstanceOf[AnyRef]) ).get
+			)).orElse( Some(_parse(vc.vcType).asInstanceOf[AnyRef]) ).get
 		def parseValueClass( vc:ValueClassType, primitive:AnyRef ) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
 		def findTypeHint( hint:String ) : Option[String] = {
