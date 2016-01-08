@@ -182,19 +182,14 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 						(v) => BsonDateTime(v.asInstanceOf[DateTime].toDate)
 						)
 
-val now = new java.util.Date()
-println("Now: "+now)
-val z = BsonDateTime(now)
-println(z)
-println(new DateTime(z.getValue))
-
 					val vc = VisitorContext().copy(valClassHandlers = Map("default"->Map("co.blocke.scalajack.test.CustomVC"->handlerJS), "mongo"->Map("co.blocke.scalajack.test.CustomVC"->handlerM)))
 
 					val w = Carry("Mike", Wrap("Sally", new CustomVC(new DateTime(2015,7,1,0,0)), "Fine"))
 					val js = ScalaJack().render(w,vc)
 					val db = sjM.render(w,vc)
 
-					db.toJson should equal("""{ "s" : "Mike", "w" : { "name" : "Sally", "data" : { "$date" : 1435726800000 }, "stuff" : "Fine" } }""")
+					val timeval = (new DateTime(2015,7,1,0,0)).toDate.getTime
+					db.toJson should equal(s"""{ "s" : "Mike", "w" : { "name" : "Sally", "data" : { "$$date" : $timeval }, "stuff" : "Fine" } }""")
 					ScalaJack().read[Carry[CustomVC]](js,vc) should equal(w)
 					sjM.read[Carry[CustomVC]](db,vc) should equal(w)
 				}
