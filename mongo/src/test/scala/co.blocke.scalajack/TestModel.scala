@@ -94,7 +94,7 @@ case class Six(
 	)
 
 case class Seven(
-	@DBKey _id:ObjectId,
+	@DBKey _id:org.bson.BsonObjectId,
 	two : Two
 	)
 
@@ -204,3 +204,6 @@ case class WithDefaults(
 	hasStuff : Option[Boolean] = Some(true),
 	pet      : Pet = NicePet(Dog("Fido"),"bones")
 	)
+
+class CustomVC(val underlying: DateTime) extends AnyVal
+case class SomethingSpecial( what:String, when:CustomVC )
