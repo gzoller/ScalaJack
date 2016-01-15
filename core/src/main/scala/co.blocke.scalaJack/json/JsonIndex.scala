@@ -36,14 +36,14 @@ case class JsonIndex(
 		(m,i)
 	}
 	private def goDeepList(startI:Int) : (List[Any],Int) = {
-		var l = List.empty[Any]
+		val l = scala.collection.mutable.ListBuffer.empty[Any]
 		var i = startI
 		while( tokType(i) != JSlistEnd && tokType(i) != JSlistEndInList ) {
 			val (value,j) = goDeepValue(i)
-			l = l :+ value
+			l += value
 			i = j + 1
 		}
-		(l,i)
+		(l.toList,i)
 	}
 	private def goDeepValue(startI:Int) : (Any,Int) = {
 		var i = startI

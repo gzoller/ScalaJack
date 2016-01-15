@@ -54,13 +54,13 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 						if(g.members.size > 0) buf.append(",")
 					})
 					val sb2 = new StringBuilder()
-					g.members.foreach( { case(fname, ftype) => {
+					g.members.foreach( { case(fname, (ftype,defaultVal)) => {
 						val sb3 = new StringBuilder() // needed to support Option -- it may not render anything
 						sb3.append(s""""${fname}":""")
 						val cz = instance.getClass()
 						val targetField = cz.getDeclaredField(fname)
 						targetField.setAccessible(true)
-						if( _render(ftype._1, targetField.get(instance), sb3, tt.tpe.typeArgs) ) {  // "._1" here gets the AType, ignores the default value (see CCType)
+						if( _render(ftype, targetField.get(instance), sb3, tt.tpe.typeArgs) ) { 
 							sb3.append(",")
 							sb2.append(sb3)
 						}
