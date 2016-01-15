@@ -42,6 +42,12 @@ object JSON {
 	def toCollection( js:String, size:Int = 500 ) : Either[Map[String,Any],List[Any]] = json.FastTokenizer(size).tokenize(js.toCharArray).toCollection()
 }
 
+case class ScalaJack_CSV() extends ScalaJack[String] with csv.CSVReadRenderFrame 
+
+case class CSVType() extends SupportedType[String] {
+	def makeScalaJack():ScalaJack[String] = ScalaJack_CSV()
+}
+
 object ScalaJack {
 	def apply[R]( kind:SupportedType[R] = JsonType() ) : ScalaJack[R] = kind.makeScalaJack
 
