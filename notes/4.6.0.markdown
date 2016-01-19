@@ -1,0 +1,5 @@
+This version is a key upgrade with the following changes:
+
+* Adding support for CSV rendering/reading (CSVFlavor)
+* Cleaning up cake pattern implementation in ScalaJack
+* Deprecating Scalajack.read and ScalaJack.render -- BREAKING CHANGE!
