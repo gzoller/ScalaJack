@@ -20,15 +20,19 @@ import org.mongodb.scala.bson._
 
 class MongoParseException(msg:String) extends Exception(msg)
 
-trait MongoReadRenderFrame extends ReadRenderFrame[Document] { 
-	def renderer = new MongoReadRender()
+case class MongoFlavor() extends FlavorKind[Document] {
+	Analyzer.addType(OBJECT_ID,ObjectIdType(OBJECT_ID))
+	def makeScalaJack : ScalaJack[Document] = new MongoScalaJack()  
+	class MongoScalaJack() extends ScalaJack[Document] with MongoJackFlavor
+}
 
-	class MongoReadRender() extends ReadRender {
-
+trait MongoJackFlavor extends JackFlavor[Document] {
+	def rr = new MongoReadRenderer()
+	class MongoReadRenderer() extends ReadRenderer {
 		def read[T](src:Document)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = 
 			parse(Analyzer.inspectByName(tt.tpe.typeSymbol.fullName), src.toBsonDocument, true)
 
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : Document = 
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : Document = 
 			_render(Analyzer.inspect(instance), instance).map( _ match {
 				case bsdoc:BsonDocument => Document(bsdoc)
 				case _ => throw new MongoParseException("Unexpected result where Document was expected.")
