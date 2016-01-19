@@ -4,19 +4,18 @@ import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
 import PrimitiveTypes._
 
-// Behold, the sublime power of the Cake Pattern.
+// Behold, the sublime power of the Cake Pattern!
 // The wiring is accomplished in the ScalaJack trait.
 
-// The weird typing ('R' here) is to allow for the fact that future
-// serializations may be to non-String output, e.g. bytes.
+// The weird typing ('S here) is to allow for the fact that future
+// serializations may be to non-String output, e.g. bytes, or Mongo Document.
 
-trait ReadRenderFrame[R] {
-	def renderer : ReadRender
-	trait ReadRender {
 
-		def read[T](src:R)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
-
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : R
+trait JackFlavor[S] {
+	def rr : ReadRenderer
+	trait ReadRenderer {
+		def read[T](src:S)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : S
 
 		protected def clean( input:String ) : String = {
 			val buffer = new StringBuffer(input.length())

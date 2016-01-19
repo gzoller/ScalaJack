@@ -15,11 +15,14 @@ import PrimitiveTypes._
 case class CSVParseException(msg:String) extends Exception(msg)
 case class CSVField( value:String, isQuoted:Boolean )
 
-trait CSVReadRenderFrame extends ReadRenderFrame[String] { 
-	def renderer = new CSVReadRender()
+case class CSVFlavor() extends FlavorKind[String] {
+	def makeScalaJack : ScalaJack[String] = new CSVScalaJack()  
+	class CSVScalaJack() extends ScalaJack[String] with CSVJackFlavor
+}
 
-	class CSVReadRender() extends ReadRender {
-
+trait CSVJackFlavor extends JackFlavor[String] {
+	def rr = new CSVReadRenderer()
+	class CSVReadRenderer() extends ReadRenderer {
 		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = {
 			val sjTypeName = tt.tpe.typeSymbol.fullName
 			Analyzer.inspectByName(sjTypeName) match {
@@ -41,7 +44,7 @@ trait CSVReadRenderFrame extends ReadRenderFrame[String] {
 			}
 		}
 
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : String = {
 			val sjTypeName = tt.tpe.typeSymbol.fullName
 			val buf = scala.collection.mutable.ListBuffer.empty[String]
 			Analyzer.inspectByName(sjTypeName) match {

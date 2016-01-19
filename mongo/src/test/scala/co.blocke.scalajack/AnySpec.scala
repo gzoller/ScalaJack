@@ -18,7 +18,7 @@ case class Something(
 	)
 
 class AnySpec extends FunSpec {
-	val sjM = ScalaJack(MongoType())
+	val sjM = ScalaJack(MongoFlavor())
 
 	object MongoMaster {
 		val a = Document(BsonDocument( "name"->"Fred", "stuff"-> BsonDocument("a"->1,"b"->true) ))

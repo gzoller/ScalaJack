@@ -16,7 +16,7 @@ case class MaybeNull(name:String,other:Option[String],mine:String="stuff")
 case class MaybeNull2(name:String,now:DateTime)
 
 class CSVSpec extends FunSpec {
-	val sjCSV  = ScalaJack(CSVType())
+	val sjCSV  = ScalaJack(csv.CSVFlavor())
 
 	object CSVMaster {
 		val a  = """5,17,false,"hey ""stuff"" blah",you,1.2,1.2,9223372036854775800,Z,null,-14,2,"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c",520560000000"""

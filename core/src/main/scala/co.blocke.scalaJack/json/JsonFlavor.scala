@@ -14,11 +14,14 @@ import scala.language.experimental.macros
 	types in case they are needed by a collection. <sigh>  These are marked with //!!! for reference to this note.
  */
 
-trait JSONReadRenderFrame extends ReadRenderFrame[String] { 
-	def renderer = new JSONReadRender()
+case class JsonFlavor() extends FlavorKind[String] {
+	def makeScalaJack : ScalaJack[String] = new JsonScalaJack()  
+	class JsonScalaJack() extends ScalaJack[String] with JsonJackFlavor
+}
 
-	class JSONReadRender() extends ReadRender {
-
+trait JsonJackFlavor extends JackFlavor[String] {
+	def rr = new JsonReadRenderer()
+	class JsonReadRenderer() extends ReadRenderer {
 		def read[T](src:String)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = {
 			val sjTypeName = tt.tpe.typeSymbol.fullName
 			val srcChars = src.toCharArray
@@ -30,7 +33,7 @@ trait JSONReadRenderFrame extends ReadRenderFrame[String] {
 			parser.parse()
 		}
 
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext) : String = {
+		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : String = {
 			val buf = new StringBuilder()
 			_render(Analyzer.inspect(instance), instance, buf)
 			buf.toString
