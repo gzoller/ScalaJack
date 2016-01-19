@@ -27,103 +27,49 @@ class TokenizerSpec extends FunSpec {
 			}
 			it("Must catch errors in json - open top-level object") {
 				val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage + " @ " + st.asInstanceOf[JsonParseException].pos
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				val err = thrown.getMessage + " @ " + thrown.pos
 				err should equal("""Incomplete (open) object or list in JSON.  Forgot closing } or ]? @ 39""")
 			}
 			it("Must catch errors in json - missing comma") {
 				val js = """{"a":1"b":true,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JScomma JSobjEnd JSobjEndInList but saw JSstringObjKey at position 6""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JScomma JSobjEnd JSobjEndInList but saw JSstringObjKey at position 6""")
 			}
 			it("Must catch errors in json - missing colon") {
 				val js = """{"a":1,"b"true,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JSstringObjKey but saw JSstring at position 7""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSstringObjKey but saw JSstring at position 7""")
 			}
 			it("Must catch errors in json - invalid field") {
 				val js = """{"a":1,"b":bogus,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 11""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 11""")
 			}
 			it("Must catch errors in json - non-string object key") {
 				val js = """{"a":1,{"fred":1,"wilma":2}:true,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JSstringObjKey but saw JSobjStart at position 7""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSstringObjKey but saw JSobjStart at position 7""")
 			}
 			it("Must catch errors in json - missing quotes for object key") {
 				val js = """{"a":1,"b":true,c:[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 16""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 16""")
 			}
 			it("Must catch errors in json - open quotes for object key") {
 				val js = """{"a":1,"b":true,"c:[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 26""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 26""")
 			}
 			it("Must catch errors in json - open list") {
 				val js = """{"a":1,"b":true,"c":[1,2,"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrueInList JSfalseInList JSnullInList JSstringInList JSnumberInList but saw JSstringObjKey at position 25""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrueInList JSfalseInList JSnullInList JSstringInList JSnumberInList but saw JSstringObjKey at position 25""")
 			}
 			it("Must catch errors in json - open object in list") {
 				val js = """{"a":1,"b":true,"c":[{"fred":1,"wilma":2},{"barney":3,"betty":4],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				// Not sure this is right... pos 62 -> ']' (after 4)
-				err should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrue JSfalse JSnull JSstring JSnumber but saw JSnumberInList at position 62""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrue JSfalse JSnull JSstring JSnumber but saw JSnumberInList at position 62""")
 			}
 		}
 		describe("::: Validating Tokenizer (non-canonical)") {
@@ -136,47 +82,24 @@ class TokenizerSpec extends FunSpec {
 			}
 			it("Must catch errors in json - open top-level object") {
 				val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage + " @ " + st.asInstanceOf[JsonParseException].pos
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				val err = thrown.getMessage + " @ " + thrown.pos
 				err should equal("""Incomplete (open) object or list in JSON.  Forgot closing } or ]? @ 39""")
 			}
 			it("Must catch errors in json - missing comma") {
 				val js = """{"a":1"b":true,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JScomma JSobjEnd JSobjEndInList JSobjEndObjKey but saw JSstringObjKey at position 6""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JScomma JSobjEnd JSobjEndInList but saw JSstringObjKey at position 6""")
 			}
 			it("Must catch errors in json - missing colon") {
 				val js = """{"a":1,"b"true,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JSstringObjKey JSobjStart JSnumberObjKey but saw JSstring at position 7""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSstringObjKey but saw JSstring at position 7""")
 			}
 			it("Must catch errors in json - invalid field") {
 				val js = """{"a":1,"b":bogus,"c":[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 11""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 11""")
 			}
 			it("Must *not* catch errors in json for non-string object key") {
 				val js = """{"a":1,{"fred":1,"wilma":2}:true,"c":[1,2],"d":{"one":1}}"""
@@ -187,48 +110,24 @@ class TokenizerSpec extends FunSpec {
 			}
 			it("Must catch errors in json - missing quotes for object key") {
 				val js = """{"a":1,"b":true,c:[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 16""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 16""")
 			}
 			it("Must catch errors in json - open quotes for object key") {
 				val js = """{"a":1,"b":true,"c:[1,2],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""Character out of place (bad JSON) at position 26""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""Character out of place (bad JSON) at position 26""")
 			}
 			it("Must catch errors in json - open list") {
 				val js = """{"a":1,"b":true,"c":[1,2,"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
-				err should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrueInList JSfalseInList JSnullInList JSstringInList JSnumberInList but saw JSstringObjKey at position 25""")
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrueInList JSfalseInList JSnullInList JSstringInList JSnumberInList but saw JSstringObjKey at position 25""")
 			}
 			it("Must catch errors in json - open object in list") {
 				val js = """{"a":1,"b":true,"c":[{"fred":1,"wilma":2},{"barney":3,"betty":4],"d":{"one":1}}"""
-				var st:Throwable = null
-				try {
-					val z = validTNC.tokenize(js.toCharArray)
-				} catch {
-					case t:Throwable => st = t
-				}
-				val err = st.getMessage
+				val thrown = the [JsonParseException] thrownBy validTC.tokenize(js.toCharArray)
 				// Not sure this is right... pos 62 -> ']' (after 4)
-				err should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrue JSfalse JSnull JSstring JSnumber but saw JSnumberInList at position 62""")
+				thrown.getMessage should equal("""JSON parse error.  Expected one of JSobjStart JSlistStart JStrue JSfalse JSnull JSstring JSnumber but saw JSnumberInList at position 62""")
 			}
 		}
 		describe("::: Fast (non-validating) Tokenizer") {
