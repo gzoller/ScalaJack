@@ -21,11 +21,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.5.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.6.0")
     
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.5.1")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.6.0")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
@@ -126,15 +126,17 @@ val js = sj.render(ss,vc) // Output: {"instanceName":"admin","upSince":"November
 ```
 The handler consists of 2 functions: one that accepts a string (for reads) and produces the appropriate object, presumably with whatever necessary manipulations you wish on the string, and another function for renders that accepts an object from your value class and produces whatever string value you wish for the JSON.
 
-# MongoDB (Casbah) Persistence
+# MongoDB Persistence
 
-ScalaJack doesn't wrap MongoDB or Casbah persistence libraries--that's not its mission.  It does provide a way to convert case classes (and traits)to/from DBObjects.  You'll need to include the mongo support package:
+**NOTE:**  As of version 4.5.1 ScalaJack supports the new asynchronous MongoDB drivers for Scala, deprecating Casbah support.  If you need Casbah, version 4.4.6 is the last version supporting Casbah.
+
+ScalaJack doesn't wrap the MongoDB persistence libraries--that's not its mission.  It does provide a way to convert case classes (and traits)to/from Documents.  You'll need to include the mongo support package:
 
 ```scala
 import co.blocke.scalajack._
 import mongo._
 
-val sjMongo = ScalaJack(MongoType()) // produce a Mongo-flavored ScalaJack
+val sjMongo = ScalaJack(MongoFalvor()) // produce a Mongo-flavored ScalaJack
 val mydbo  = sjMongo.render( myCaseClass )  
 val myCC   = sjMongo.read[MyClass]( mydbo ) 
 ```
@@ -159,7 +161,42 @@ Support has been added for Mongo's ObjectId type if you wish to use this directl
 case class Sample( @DBKey _id:ObjectId, stuff:Int )
 ```
 
-Once you have your DBObject, use Casbah or MongoDB's native Java APIs as you normally would.  At this time there's no JodaTime support as found in JSON libraries, although this may be considered for a future release.
+Once you have your Document, use MongoDB's native Scala API as you normally would.  
+
+
+# CSV Support
+CSV support is provided but by necessity is very limited.  CSV itself is not sufficiently expressive to handle complex data structures such as fields n a class that are themselves classes, collections, etc.  Therefore the following rules apply:
+
+* Case class only support
+* Classes must be "flat"
+	* no List/Array, Map, or collection fields
+	* no fields that are classes
+* Field ordering in the CSV must match the declared field order of the class
+* Optional fields of simple type are OK, for example Option[String] (these will be read/rendered as empty csv: foo,,bar)
+* Classes must be concrete. Traits are not allowed. (How would you supply the type hint?)
+* Parameterized classes are OK as long as the parameters conform to the above rules
+
+During a read of a CSV record, if a field is empty "foo,,bar" it may mean the empty value is optional, which will be read in as None.  It may also mean that a field in the class has a default value on the constructor, in which case the default value is applied.  If the class field corresponding to the empty spot in the CSV is neither Option nor a default-value field then it is viewed as an empty value.
+
+### Usage
+CSV rendering is an inexact science, so here's how this works in ScalaJack.  First you'll need to instantiate a ScalaJack instance with CSVFlavor as shown in the code below.
+Null values are represented as null in the CSV.  null (unquoted) read in is a null value in the object.  "null" (quoted) is a String with value "null" (not a real null value).  For example "foo,null,bar" contains a null.  "foo,"null",bar" shows a string having value "null".  Confused yet?
+
+Optional None is rendered as blank in the CSV and when read in, like "foo,,bar".
+
+As per the (unofficial) CSV spec:
+
+* Fields may be enclosed in double-quotes
+* String values containing double quotes *must* be enclosed by double quotes and the double-quote char in the string must be escaped by another double quote like this:  "I read ""Lord of the Rings"" last year"
+* String values that contain a field separator (comma) must be enclosed in double quotes.
+
+Use CSV support like this:
+```scala
+case class Foo(name:String, age:Int)
+val sjCSV  = ScalaJack(CSVFlavor())
+sjCSV.render( Foo("Fred", 32) ) // Fred,32
+sjCSV.read[Foo]( "Fred,32" ) // Foo("Fred",32)
+```
 
 # MySQL Support
 The MySQL support provided in the ScalaJack 3.x series has been removed for the time being.  I wasn't entirely happy with it.  It may be back in a future release if there is a swell of people interested in it.

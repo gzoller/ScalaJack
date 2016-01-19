@@ -7,7 +7,7 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.BsonObjectId
 
 package object mongo {
-	implicit def mongoOID( s:String ) = BsonObjectId( s)
+	implicit def mongoOID( s:String ) = BsonObjectId(s)
 
 	val OBJECT_ID = "org.bson.BsonObjectId"
 }
@@ -24,12 +24,4 @@ case class ObjectIdType(name:String) extends CustomType {
 		"mongo"   -> ((a:Any) => a)
 		)
 	def dup = this.copy()
-}
-
-case class ScalaJack_Mongo() extends ScalaJack[Document] with mongo.MongoReadRenderFrame {
-	Analyzer.addType(OBJECT_ID,ObjectIdType(OBJECT_ID))
-} 
-
-case class MongoType() extends SupportedType[Document] {
-	def makeScalaJack():ScalaJack[Document] = ScalaJack_Mongo()
 }

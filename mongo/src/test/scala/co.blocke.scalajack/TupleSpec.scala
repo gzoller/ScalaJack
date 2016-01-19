@@ -15,7 +15,7 @@ import org.mongodb.scala.bson._
 case class TT2    ( name:String, rec:Map[String,List[(String,Int,Boolean)]])
 
 class TupleSpec extends FunSpec {
-	val sjM = ScalaJack(MongoType())
+	val sjM = ScalaJack(MongoFlavor())
 
 	object MongoMaster {
 		val a = Document( BsonDocument("name"->"Larry","rec"->BsonDocument("foo"->BsonArray(BsonArray("a",1,true)),"hey"->BsonArray(BsonArray("x",8,false),BsonArray("r",3,true)))))
