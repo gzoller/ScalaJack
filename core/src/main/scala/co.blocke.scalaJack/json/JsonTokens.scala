@@ -19,8 +19,10 @@ object JsonTokens {
 	val JSlistEndObjKey : Byte = 28  // JSlistEnd << 2  *WARNING* Non-standard JSON
 	val JStrue          : Byte = 8
 	val JStrueInList    : Byte = 16  // JStrue << 1
+	val JStrueObjKey    : Byte = 32  // JStrue << 2 *WARNING* Non-standard JSON
 	val JSfalse         : Byte = 9
 	val JSfalseInList   : Byte = 18  // JSfalse << 1
+	val JSfalseObjKey   : Byte = 36  // JSfalse << 2 *WARNING* Non-standard JSON
 	val JSnull          : Byte = 10
 	val JSnullInList    : Byte = 20  // JSnull << 1
 	val JSstring        : Byte = 11
@@ -46,8 +48,10 @@ object JsonTokens {
 		case JSlistEndInList => "JSlistEndInList"
 		case JStrue          => "JStrue"
 		case JStrueInList    => "JStrueInList"
+		case JStrueObjKey    => "JStrueObjKey"
 		case JSfalse         => "JSfalse"
 		case JSfalseInList   => "JSfalseInList"
+		case JSfalseObjKey   => "JSfalseObjKey"
 		case JSnull          => "JSnull"
 		case JSnullInList    => "JSnullInList"
 		case JSstring        => "JSstring"
