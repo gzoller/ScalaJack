@@ -77,8 +77,8 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						value
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
 						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i)) )
-					case JStrue  | JStrueInList  => true
-					case JSfalse | JSfalseInList => false
+					case JStrue  | JStrueInList | JStrueObjKey  => true
+					case JSfalse | JSfalseInList | JSfalseObjKey => false
 					case JSnull  | JSnullInList  => null
 					case _ => throw new JsonParseException(s"Expected primitive value but saw ${JsonTokens.toName(idx.tokType(i))} obj ${idx.getToken(i)}",0)
 				}
@@ -105,7 +105,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						if( idx.tokType(i) != JSobjStart ) 
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
-						while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList ) {
+						while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList && idx.tokType(i) != JSobjEndObjKey ) {
 							val key = _parse(sj.colTypes(0))
 							val value = _parse(sj.colTypes(1)) 
 							mapAcc.put(key,value)
@@ -117,7 +117,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
 						val tv = (0 to arity-1).map( a => _parse(sj.colTypes(a)) ) // parse tuple values
-						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList ) 
+						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey ) 
 							throw new JsonParseException(s"Expected JSlistEnd or JSlistEndInList and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						arity match {
 							case 2  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1)) )
@@ -147,7 +147,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						if( idx.tokType(i) != JSlistStart ) 
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
-						while( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList ) {
+						while( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey ) {
 							listAcc.append(_parse(sj.colTypes(0)))
 						}
 						PrimitiveTypes.scalaCollections(sj.name)(listAcc)
