@@ -105,6 +105,13 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						if( idx.tokType(i) != JSobjStart ) 
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
+						sj.colTypes(0) match { // For canonical JSON Map key must resolve to String type.  Anything goes for non-canoical.
+							case ct if(!vctx.isCanonical) => 
+							case PrimType("String") | PrimType("java.lang.String") => 
+							case et:EnumType => 
+							case ValueClassType(_,PrimType("String"),_,_) | ValueClassType(_,PrimType("java.lang.String"),_,_) | ValueClassType(_,EnumType(_,_),_,_) =>
+							case t => throw new JsonParseException("Map keys must be of type String in canonical JSON",0)
+						}
 						while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList && idx.tokType(i) != JSobjEndObjKey ) {
 							val key = _parse(sj.colTypes(0))
 							val value = _parse(sj.colTypes(1)) 
@@ -117,7 +124,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
 						val tv = (0 to arity-1).map( a => _parse(sj.colTypes(a)) ) // parse tuple values
-						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey ) 
+						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey  ) 
 							throw new JsonParseException(s"Expected JSlistEnd or JSlistEndInList and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						arity match {
 							case 2  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1)) )
