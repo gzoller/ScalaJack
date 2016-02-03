@@ -103,8 +103,11 @@ trait JsonJackFlavor extends JackFlavor[String] {
 									var renderedKey = true // handle optionality
 									if( !vc.isCanonical ) 
 										renderedKey = _render(g.colTypes(0), k, sb3, tt.tpe.typeArgs)
-									else 
-										sb3.append(s""""${k.toString}"""") //"
+									else g.colTypes(0) match {
+										case PrimType("String") => sb3.append(s""""${k.toString}"""") //"
+										case PrimType("java.lang.String") => sb3.append(s""""${k.toString}"""") //"
+										case _ => throw new RenderException("Canonical JSON requires map keys to be of type String")
+									}
 									if( renderedKey ) {
 										sb3.append(":")
 										if( _render(g.colTypes(1), v, sb3, tt.tpe.typeArgs) )
