@@ -74,6 +74,10 @@ case class Harness(
 
 class AnySpec extends FunSpec {
 	val sjJS  = ScalaJack()
+	val vc_nc_v  = VisitorContext().copy(isCanonical = false, isValidating = true) 
+	val vc_c_v   = VisitorContext().copy(isValidating = true) 
+	val vc_nc_nv = VisitorContext().copy(isCanonical = false) 
+	// No vc = c_nv canonical (c) and non-validating (nv)
 
 	object JSMaster {
 		val a = """{"name":"Fred","stuff":{"a":1,"b":true}}"""
@@ -105,7 +109,7 @@ class AnySpec extends FunSpec {
 	}
 
 	describe("===================\n| -- Any Tests -- |\n===================") {
-		describe("Render Tests") {
+		it("Render Tests - CNV") {
 			sjJS.render( ScalaMaster.a ) should be( JSMaster.a )
 			sjJS.render( ScalaMaster.b ) should be( JSMaster.b )
 			sjJS.render( ScalaMaster.c ) should be( JSMaster.c )
@@ -116,7 +120,7 @@ class AnySpec extends FunSpec {
 			sjJS.render[Command]( ScalaMaster.x ) should be( JSMaster.x )
 			sjJS.render( ScalaMaster.y ) should be( JSMaster.y )
 		}
-		describe("Read Tests") {
+		it("Read Tests - CNV") {
 			sjJS.read[Something](JSMaster.a).stuff should contain allOf (("a" -> 1), ("b" -> true))
 			sjJS.read[Something](JSMaster.b).stuff should contain allOf (("a" -> 1), ("b" -> List(4,5,6)))
 			val c = sjJS.read[Something](JSMaster.c).stuff.asInstanceOf[Map[String,List[Map[_,_]]]] 
@@ -128,6 +132,78 @@ class AnySpec extends FunSpec {
 			sjJS.read[Something](JSMaster.g).stuff should contain allOf (("a" -> 1), ("b" -> "Greg"))
 			sjJS.read[Command](JSMaster.x) should be( ScalaMaster.x )
 			sjJS.read[Harness](JSMaster.y) should be( ScalaMaster.y )
+		}
+		it("Render Tests - NCNV") {
+			sjJS.render( ScalaMaster.a,vc_nc_nv ) should be( JSMaster.a )
+			sjJS.render( ScalaMaster.b,vc_nc_nv ) should be( JSMaster.b )
+			sjJS.render( ScalaMaster.c,vc_nc_nv ) should be( JSMaster.c )
+			sjJS.render( ScalaMaster.d,vc_nc_nv ) should be( JSMaster.d )
+			sjJS.render( ScalaMaster.e,vc_nc_nv ) should be( JSMaster.e )
+			sjJS.render( ScalaMaster.f,vc_nc_nv ) should be( JSMaster.f )
+			sjJS.render( ScalaMaster.g,vc_nc_nv ) should be( JSMaster.g )
+			sjJS.render[Command]( ScalaMaster.x,vc_nc_nv ) should be( JSMaster.x )
+			sjJS.render( ScalaMaster.y,vc_nc_nv ) should be( JSMaster.y )
+		}
+		it("Read Tests - NCNV") {
+			sjJS.read[Something](JSMaster.a,vc_nc_nv).stuff should contain allOf (("a" -> 1), ("b" -> true))
+			sjJS.read[Something](JSMaster.b,vc_nc_nv).stuff should contain allOf (("a" -> 1), ("b" -> List(4,5,6)))
+			val c = sjJS.read[Something](JSMaster.c,vc_nc_nv).stuff.asInstanceOf[Map[String,List[Map[_,_]]]] 
+			c("b")(0) should contain allOf (("x" -> "Fido"), ("y" -> false))
+			c("b")(1) should contain allOf (("x" -> "Cat"), ("y" -> true))
+			sjJS.read[Something](JSMaster.d,vc_nc_nv).stuff should contain allOf (("a" -> 1), ("b" -> null))
+			sjJS.read[Something](JSMaster.e,vc_nc_nv).stuff should contain allOf (("a" -> 1), ("b" -> List("foo",null,"bar")))
+			sjJS.read[Map[String,Any]](JSMaster.f,vc_nc_nv) should contain allOf (("name" -> "Fred"), ("age" -> 40))
+			sjJS.read[Something](JSMaster.g,vc_nc_nv).stuff should contain allOf (("a" -> 1), ("b" -> "Greg"))
+			sjJS.read[Command](JSMaster.x,vc_nc_nv) should be( ScalaMaster.x )
+			sjJS.read[Harness](JSMaster.y,vc_nc_nv) should be( ScalaMaster.y )
+		}
+		it("Render Tests - CV") {
+			sjJS.render( ScalaMaster.a,vc_c_v ) should be( JSMaster.a )
+			sjJS.render( ScalaMaster.b,vc_c_v ) should be( JSMaster.b )
+			sjJS.render( ScalaMaster.c,vc_c_v ) should be( JSMaster.c )
+			sjJS.render( ScalaMaster.d,vc_c_v ) should be( JSMaster.d )
+			sjJS.render( ScalaMaster.e,vc_c_v ) should be( JSMaster.e )
+			sjJS.render( ScalaMaster.f,vc_c_v ) should be( JSMaster.f )
+			sjJS.render( ScalaMaster.g,vc_c_v ) should be( JSMaster.g )
+			sjJS.render[Command]( ScalaMaster.x,vc_c_v ) should be( JSMaster.x )
+			sjJS.render( ScalaMaster.y,vc_c_v ) should be( JSMaster.y )
+		}
+		it("Read Tests - CV") {
+			sjJS.read[Something](JSMaster.a,vc_c_v).stuff should contain allOf (("a" -> 1), ("b" -> true))
+			sjJS.read[Something](JSMaster.b,vc_c_v).stuff should contain allOf (("a" -> 1), ("b" -> List(4,5,6)))
+			val c = sjJS.read[Something](JSMaster.c,vc_c_v).stuff.asInstanceOf[Map[String,List[Map[_,_]]]] 
+			c("b")(0) should contain allOf (("x" -> "Fido"), ("y" -> false))
+			c("b")(1) should contain allOf (("x" -> "Cat"), ("y" -> true))
+			sjJS.read[Something](JSMaster.d,vc_c_v).stuff should contain allOf (("a" -> 1), ("b" -> null))
+			sjJS.read[Something](JSMaster.e,vc_c_v).stuff should contain allOf (("a" -> 1), ("b" -> List("foo",null,"bar")))
+			sjJS.read[Map[String,Any]](JSMaster.f,vc_c_v) should contain allOf (("name" -> "Fred"), ("age" -> 40))
+			sjJS.read[Something](JSMaster.g,vc_c_v).stuff should contain allOf (("a" -> 1), ("b" -> "Greg"))
+			sjJS.read[Command](JSMaster.x,vc_c_v) should be( ScalaMaster.x )
+			sjJS.read[Harness](JSMaster.y,vc_c_v) should be( ScalaMaster.y )
+		}
+		it("Render Tests - NCV") {
+			sjJS.render( ScalaMaster.a,vc_nc_v ) should be( JSMaster.a )
+			sjJS.render( ScalaMaster.b,vc_nc_v ) should be( JSMaster.b )
+			sjJS.render( ScalaMaster.c,vc_nc_v ) should be( JSMaster.c )
+			sjJS.render( ScalaMaster.d,vc_nc_v ) should be( JSMaster.d )
+			sjJS.render( ScalaMaster.e,vc_nc_v ) should be( JSMaster.e )
+			sjJS.render( ScalaMaster.f,vc_nc_v ) should be( JSMaster.f )
+			sjJS.render( ScalaMaster.g,vc_nc_v ) should be( JSMaster.g )
+			sjJS.render[Command]( ScalaMaster.x,vc_nc_v ) should be( JSMaster.x )
+			sjJS.render( ScalaMaster.y,vc_nc_v ) should be( JSMaster.y )
+		}
+		it("Read Tests - NCV") {
+			sjJS.read[Something](JSMaster.a,vc_nc_v).stuff should contain allOf (("a" -> 1), ("b" -> true))
+			sjJS.read[Something](JSMaster.b,vc_nc_v).stuff should contain allOf (("a" -> 1), ("b" -> List(4,5,6)))
+			val c = sjJS.read[Something](JSMaster.c,vc_nc_v).stuff.asInstanceOf[Map[String,List[Map[_,_]]]] 
+			c("b")(0) should contain allOf (("x" -> "Fido"), ("y" -> false))
+			c("b")(1) should contain allOf (("x" -> "Cat"), ("y" -> true))
+			sjJS.read[Something](JSMaster.d,vc_nc_v).stuff should contain allOf (("a" -> 1), ("b" -> null))
+			sjJS.read[Something](JSMaster.e,vc_nc_v).stuff should contain allOf (("a" -> 1), ("b" -> List("foo",null,"bar")))
+			sjJS.read[Map[String,Any]](JSMaster.f,vc_nc_v) should contain allOf (("name" -> "Fred"), ("age" -> 40))
+			sjJS.read[Something](JSMaster.g,vc_nc_v).stuff should contain allOf (("a" -> 1), ("b" -> "Greg"))
+			sjJS.read[Command](JSMaster.x,vc_nc_v) should be( ScalaMaster.x )
+			sjJS.read[Harness](JSMaster.y,vc_nc_v) should be( ScalaMaster.y )
 		}
 	}
 }
