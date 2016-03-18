@@ -33,7 +33,7 @@ trait CSVJackFlavor extends JackFlavor[String] {
 						val marshalled = value match {
 							case CSVField("null",false) => null
 							case CSVField("",false) if(defaultVal.isDefined) => defaultVal.get
-							case csv:CSVField if(primitiveTypes.contains(atype.name)) => reifyValue(atype,csv.value)
+							case csv:CSVField if(primCodes.contains(atype.name)) => reifyValue(atype,csv.value)
 							case csv:CSVField if(fieldIsOptional(atype)) => reifyOptional(atype.asInstanceOf[CollType],csv.value)
 							case _ => throw new CSVParseException("Only primitive fields allowed! (No collections, classes, etc.)")
 						}
@@ -60,8 +60,8 @@ trait CSVJackFlavor extends JackFlavor[String] {
 			buf.mkString(",")
 		}
 
-		private def fieldIsOptional(atype:AType) = atype.isInstanceOf[CollType] && atype.asInstanceOf[CollType].isOptional && primitiveTypes.contains(atype.asInstanceOf[CollType].colTypes.head.name)
-		private def reifyValue(atype:AType, value:String) : Any = primitiveTypes.get(atype.name).map(fn => fn(value)).get
+		private def fieldIsOptional(atype:AType) = atype.isInstanceOf[CollType] && atype.asInstanceOf[CollType].isOptional && primCodes.contains(atype.asInstanceOf[CollType].colTypes.head.name)
+		private def reifyValue(atype:AType, value:String) : Any = primTypes.get(atype.asInstanceOf[PrimType].primCode).map(fn => fn(value)).get
 		private def reifyOptional(otype:CollType, value:String) : Option[Any] = 
 			if(value == "") None
 			else Some(reifyValue(otype.colTypes.head, value))

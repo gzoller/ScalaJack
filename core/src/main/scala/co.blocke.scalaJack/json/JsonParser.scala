@@ -76,7 +76,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						i = newI-1
 						value
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
-						PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(idx.getToken(i)) )
+						PrimitiveTypes.primTypes(sj.primCode)( Unicode.unescape_perl_string(idx.getToken(i)) )
 					case JStrue  | JStrueInList | JStrueObjKey  => true
 					case JSfalse | JSfalseInList | JSfalseObjKey => false
 					case JSnull  | JSnullInList  => null
@@ -117,7 +117,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							val value = _parse(sj.colTypes(1)) 
 							mapAcc.put(key,value)
 						}
-						PrimitiveTypes.scalaCollections(sj.name)(mapAcc.toList)
+						PrimitiveTypes.collTypes(sj.collCode)(mapAcc.toList)
 					} else if(sj.name.startsWith("scala.Tuple")) {
 						val arity = """\d+""".r.findFirstIn(sj.name).get.toInt
 						if( idx.tokType(i) != JSlistStart ) 
@@ -127,27 +127,27 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						if( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey  ) 
 							throw new JsonParseException(s"Expected JSlistEnd or JSlistEndInList and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						arity match {
-							case 2  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1)) )
-							case 3  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2)) )
-							case 4  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3)) )
-							case 5  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4)) )
-							case 6  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5)) )
-							case 7  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6)) )
-							case 8  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7)) )
-							case 9  => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8)) )
-							case 10 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9)) )
-							case 11 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10)) )
-							case 12 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11)) )
-							case 13 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12)) )
-							case 14 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13)) )
-							case 15 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14)) )
-							case 16 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15)) )
-							case 17 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16)) )
-							case 18 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17)) )
-							case 19 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18)) )
-							case 20 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19)) )
-							case 21 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20)) )
-							case 22 => PrimitiveTypes.scalaCollections(sj.name)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20),tv(21)) )
+							case 2  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1)) )
+							case 3  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2)) )
+							case 4  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3)) )
+							case 5  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4)) )
+							case 6  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5)) )
+							case 7  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6)) )
+							case 8  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7)) )
+							case 9  => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8)) )
+							case 10 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9)) )
+							case 11 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10)) )
+							case 12 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11)) )
+							case 13 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12)) )
+							case 14 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13)) )
+							case 15 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14)) )
+							case 16 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15)) )
+							case 17 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16)) )
+							case 18 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17)) )
+							case 19 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18)) )
+							case 20 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19)) )
+							case 21 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20)) )
+							case 22 => PrimitiveTypes.collTypes(sj.collCode)( (tv(0),tv(1),tv(2),tv(3),tv(4),tv(5),tv(6),tv(7),tv(8),tv(9),tv(10),tv(11),tv(12),tv(13),tv(14),tv(15),tv(16),tv(17),tv(18),tv(19),tv(20),tv(21)) )
 						}
 					} else {
 						val listAcc = MList.empty[Any]
@@ -157,7 +157,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						while( idx.tokType(i) != JSlistEnd && idx.tokType(i) != JSlistEndInList && idx.tokType(i) != JSlistEndObjKey ) {
 							listAcc.append(_parse(sj.colTypes(0)))
 						}
-						PrimitiveTypes.scalaCollections(sj.name)(listAcc)
+						PrimitiveTypes.collTypes(sj.collCode)(listAcc)
 					}
 				}
 				i += 1
@@ -248,15 +248,15 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 					}
 					(i+1,acc.toMap)
 				case JSstringObjKey | JSstring | JSstringInList =>
-					(i+1,PrimitiveTypes.primitiveTypes("String")( Unicode.unescape_perl_string(idx.getToken(i)) ))
+					(i+1,PrimitiveTypes.primTypes(5)( Unicode.unescape_perl_string(idx.getToken(i)) ))  // String
 				case JSnumberObjKey | JSnumber | JSnumberInList =>
 					val raw = Unicode.unescape_perl_string(idx.getToken(i))
 					if( raw.contains('.') )
-						(i+1,PrimitiveTypes.primitiveTypes("scala.Double")( raw ))
+						(i+1,PrimitiveTypes.primTypes(7)( raw ))  // scala.Double
 					else
-						(i+1,PrimitiveTypes.primitiveTypes("scala.Int")( raw ))
+						(i+1,PrimitiveTypes.primTypes(1)( raw ))  // scala.Int
 				case JStrue | JStrueInList | JSfalse | JSfalseInList =>
-					(i+1,PrimitiveTypes.primitiveTypes("scala.Boolean")( Unicode.unescape_perl_string(idx.getToken(i)) ))
+					(i+1,PrimitiveTypes.primTypes(3)( Unicode.unescape_perl_string(idx.getToken(i)) )) // scala.Boolean
 				case JSnull | JSnullInList =>
 					(i+1,null)
 				// case z => println("Boom: "+z)

@@ -16,7 +16,7 @@ object Analyzer {
 	private[scalajack] def addType( name:String, newType:AType ) = readyToEat.put(name+"[]", newType)
 
 	// pre-populate cache with all the primitives
-	primitiveTypes.foreach( p => readyToEat.put(p._1+"[]",PrimType(p._1)) )
+	primCodes.foreach( p => readyToEat.put(p._1+"[]",PrimType(p._1)))
 
 	private val ru           = scala.reflect.runtime.universe
 	private val dbType       = ru.typeOf[DBKey]
