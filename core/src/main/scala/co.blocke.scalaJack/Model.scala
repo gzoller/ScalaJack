@@ -23,8 +23,12 @@ case class CCType(
 	override def toString() = s"[$name -> ${members.map(_._1)}]"
 	def dup = this.copy()
 }
-case class PrimType(name:String) extends AType { def dup = this.copy() }
+case class PrimType(name:String) extends AType { 
+	val primCode = PrimitiveTypes.primCodes(name)
+	def dup = this.copy() 
+}
 case class CollType(name:String, colTypes:List[AType]) extends AType {
+	val collCode = PrimitiveTypes.collCodes(name)
 	def isOptional = name == "scala.Option"
 	def dup = this.copy()
 }

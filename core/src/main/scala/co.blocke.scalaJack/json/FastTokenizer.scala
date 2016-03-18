@@ -51,13 +51,11 @@ case class FastTokenizer( capacity:Int ) extends JsonTokenizer {
 					i += 1
 					tokPos(tokPtr) = i
 					var strStart = i
-					var skip = 0
-					while( s(i)!='"' || skip > 0 ) { 
-						if(s(i) == '\\' && skip == 0)
-							skip = 1
+					while( s(i) != '"' ) { 
+						if(s(i) == '\\')
+							i += 2
 						else
-							skip = 0
-						i += 1
+  						i += 1
 					}
 					tokLen(tokPtr)  = i - strStart
 					tokType(tokPtr) = JSstring

@@ -94,7 +94,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 			case sj:PrimType if( sj.name == "scala.Any" ) =>
 				inferType( src ).asInstanceOf[T]
 			case sj:PrimType =>
-				PrimitiveTypes.primitiveTypes(sj.name)( Unicode.unescape_perl_string(stringValue(src)) ).asInstanceOf[T]
+				PrimitiveTypes.primTypes(sj.primCode)( Unicode.unescape_perl_string(stringValue(src)) ).asInstanceOf[T]
 			case sj:EnumType =>
 				try {
 					sj.enum.withName( src.asString.getValue() ).asInstanceOf[T]
@@ -107,7 +107,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 				} else if(sj.name.endsWith("Map")) {
 					src match {
 						case doc:BsonDocument => 
-							PrimitiveTypes.scalaCollections(sj.name)( doc.map{ case(k,v) => (k,parse(sj.colTypes(1),v)) }.toSeq ).asInstanceOf[T]
+							PrimitiveTypes.collTypes(sj.collCode)( doc.map{ case(k,v) => (k,parse(sj.colTypes(1),v)) }.toSeq ).asInstanceOf[T]
 						case _ => 
 							throw new MongoParseException(s"Expected BsonDocument and found ${src.getClass.getName}")
 					}
@@ -124,27 +124,27 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 						c += 1
 					}
 					arity match {
-						case 2  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1)) ).asInstanceOf[T]
-						case 3  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2)) ).asInstanceOf[T]
-						case 4  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3)) ).asInstanceOf[T]
-						case 5  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4)) ).asInstanceOf[T]
-						case 6  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5)) ).asInstanceOf[T]
-						case 7  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6)) ).asInstanceOf[T]
-						case 8  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7)) ).asInstanceOf[T]
-						case 9  => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8)) ).asInstanceOf[T]
-						case 10 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9)) ).asInstanceOf[T]
-						case 11 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10)) ).asInstanceOf[T]
-						case 12 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11)) ).asInstanceOf[T]
-						case 13 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12)) ).asInstanceOf[T]
-						case 14 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13)) ).asInstanceOf[T]
-						case 15 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14)) ).asInstanceOf[T]
-						case 16 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15)) ).asInstanceOf[T]
-						case 17 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16)) ).asInstanceOf[T]
-						case 18 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17)) ).asInstanceOf[T]
-						case 19 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18)) ).asInstanceOf[T]
-						case 20 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19)) ).asInstanceOf[T]
-						case 21 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20)) ).asInstanceOf[T]
-						case 22 => PrimitiveTypes.scalaCollections(sj.name)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20),res(21)) ).asInstanceOf[T]
+						case 2  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1)) ).asInstanceOf[T]
+						case 3  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2)) ).asInstanceOf[T]
+						case 4  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3)) ).asInstanceOf[T]
+						case 5  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4)) ).asInstanceOf[T]
+						case 6  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5)) ).asInstanceOf[T]
+						case 7  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6)) ).asInstanceOf[T]
+						case 8  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7)) ).asInstanceOf[T]
+						case 9  => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8)) ).asInstanceOf[T]
+						case 10 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9)) ).asInstanceOf[T]
+						case 11 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10)) ).asInstanceOf[T]
+						case 12 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11)) ).asInstanceOf[T]
+						case 13 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12)) ).asInstanceOf[T]
+						case 14 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13)) ).asInstanceOf[T]
+						case 15 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14)) ).asInstanceOf[T]
+						case 16 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15)) ).asInstanceOf[T]
+						case 17 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16)) ).asInstanceOf[T]
+						case 18 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17)) ).asInstanceOf[T]
+						case 19 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18)) ).asInstanceOf[T]
+						case 20 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19)) ).asInstanceOf[T]
+						case 21 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20)) ).asInstanceOf[T]
+						case 22 => PrimitiveTypes.collTypes(sj.collCode)( (res(0),res(1),res(2),res(3),res(4),res(5),res(6),res(7),res(8),res(9),res(10),res(11),res(12),res(13),res(14),res(15),res(16),res(17),res(18),res(19),res(20),res(21)) ).asInstanceOf[T]
 					}
 				} else {
 					// Dumb down to BasicDBList to avoid double-creation/wrapping of value from database
@@ -156,7 +156,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 					while( resolved.hasNext ) {
 						resList += parse(sj.colTypes(0), resolved.next)
 					}
-					PrimitiveTypes.scalaCollections(sj.name)(resList.toList).asInstanceOf[T]
+					PrimitiveTypes.collTypes(sj.collCode)(resList.toList).asInstanceOf[T]
 				}
 			case sj:ValueClassType =>
 				{if( sj.isTypeParam || topLevel ) 
