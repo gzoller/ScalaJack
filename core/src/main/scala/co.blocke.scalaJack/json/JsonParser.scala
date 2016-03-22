@@ -12,12 +12,13 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
 
-		def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType )(implicit ty:TypeTag[U]) = {
+		// def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType )(implicit ty:TypeTag[U]) = {
+		def _makeClass[U]( sjT:CCType, t:AType )(implicit ty:TypeTag[U]) = {
 			val objFields = MMap.empty[Any,Any]
-			if( idx.tokType(i) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i))} at token $i",0)
-			i += 1
+			if( idx.tokType(i-1) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i-1))} at token $i",0)
+			// i += 1
 
-			val sjT = ccTypeFn()
+			//val sjT = ccTypeFn()
 
 			// read key/value pairs
 			while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList  && idx.tokType(i) != JSobjEndObjKey) {
@@ -28,36 +29,17 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 				sjT.members.find(_._1 == fieldName).fold( skipValue )( f => objFields.put(fieldName, _parse(f._2._1)) )
 			}
 			i+=1
-
-			// Ensure all needed class fields are there, setting aside any missing Optional fields (which become None)
-			// val missing = sj.fields.map(_.fieldName).toSet.diff(objFields.keySet)
-			val fnames = objFields.keySet
-			// For all of the below:  _1 is the field name and _2 is the field type (AType)
-			val missing = sjT.members.collect{
-				case f if(fnames.contains(f._1)) => 
-					None  // field found -- don't collect
-				case f if(f._2._1.isInstanceOf[CollType] && f._2._1.asInstanceOf[CollType].isOptional) =>
-				 	// Missing but optional => None  -- don't collect
-					objFields.put(f._1,None)
-					None
-				case f if(f._2._2.isDefined) =>
-					objFields.put(f._1,f._2._2.get) // Not there but default value specified
-					None
-				case f => 
-					Some(f)
-				}.flatten.map(_._1)
-
-			if(missing.size > 0) throw new JsonParseException(s"""No values parsed for field(s) ${missing.mkString(",")} for class ${t.name}""",0)
-			Util.poof( sjT, objFields.toMap.asInstanceOf[Map[String,Any]] )(ty)
+			sjT.materialize(objFields.toMap.asInstanceOf[Map[String,Any]])
 		}
 
-		// def _parse( t:SjType, params:Map[String,SjType] = Map.empty[String,SjType] ) : Any = t match {
 		def _parse( t:AType, topLevel:Boolean = false ) : Any = t match {
 			case sj:CCType =>
-				_makeClass( ()=>{sj}, t )
+				i += 1
+				_makeClass(sj, t)
 
 			case sj:TraitType =>
-				_makeClass( ()=>{
+				i += 1
+				val sjCC = {
 					// Look-ahead and find type hint--figure out what kind of object his is and inspect it.
 					val objClass = findTypeHint(vctx.hintMap.getOrElse(sj.name,vctx.hintMap("default")))
 						// See if we need to look up actual objClass (e.g. abbreviation) or if its ready-to-eat
@@ -67,11 +49,12 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 					val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[CCType]
-					}, t)
+				}
+				_makeClass(sjCC,t)
 
 			case sj:PrimType =>
 				val v = idx.tokType(i) match {
-					case pt if(sj.name == "scala.Any") => 
+					case pt if(sj.primCode == PrimitiveTypes.ANY) => // scala.Any
 						val (newI, value) = inferSimpleType(idx,i)
 						i = newI-1
 						value
@@ -100,14 +83,14 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						val parsed = _parse(sj.colTypes(0))
 						i -= 1  // compensate for increment later
 						Some(parsed)
-					} else if(sj.name.endsWith("Map")) {
+					} else if( sj.collCode > 0 && sj.collCode < 10 ) {  // range in PrimitiveTypes for Map variants
 						val mapAcc = MMap.empty[Any,Any]
 						if( idx.tokType(i) != JSobjStart ) 
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
 						i += 1
 						sj.colTypes(0) match { // For canonical JSON Map key must resolve to String type.  Anything goes for non-canoical.
-							case ct if(!vctx.isCanonical) => 
-							case PrimType("String") | PrimType("java.lang.String") => 
+							case ct if(!vctx.isCanonical) =>
+							case ct:PrimType if(ct.primCode == PrimitiveTypes.STRING) =>
 							case et:EnumType => 
 							case ValueClassType(_,PrimType("String"),_,_) | ValueClassType(_,PrimType("java.lang.String"),_,_) | ValueClassType(_,EnumType(_,_),_,_) =>
 							case t => throw new JsonParseException("Map keys must be of type String in canonical JSON",0)
@@ -118,7 +101,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							mapAcc.put(key,value)
 						}
 						PrimitiveTypes.collTypes(sj.collCode)(mapAcc.toList)
-					} else if(sj.name.startsWith("scala.Tuple")) {
+					} else if(sj.collCode > 29) {  // range in PrimitiveTypes for Tuple variants
 						val arity = """\d+""".r.findFirstIn(sj.name).get.toInt
 						if( idx.tokType(i) != JSlistStart ) 
 							throw new JsonParseException(s"Expected JSlistStart and found ${JsonTokens.toName(idx.tokType(i))}",0)
@@ -185,22 +168,21 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 		def parseValueClass( vc:ValueClassType, primitive:AnyRef ) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
 		def findTypeHint( hint:String ) : Option[String] = {
-			var saveI = i
+			var thI = i
 			var done = false
 			val imax = idx.tokCount
 			var retval : Option[String] = None
 			while( !done ) {
-				idx.tokType(i) match {
+				idx.tokType(thI) match {
 					case JSobjStart => skipValue()
-					case JSstringObjKey if(idx.getToken(i) == hint) => 
-						i += 1
-						retval = Some(idx.getToken(i))
+					case JSstringObjKey if(idx.getToken(thI) == hint) => 
+						thI += 1
+						retval = Some(idx.getToken(thI))
 						done = true
-					case _ => i += 1
+					case _ => thI += 1
 				}
-				if( i == idx.tokCount ) done = true
+				if( thI == idx.tokCount ) done = true
 			}
-			i = saveI
 			retval
 		}
 
@@ -248,15 +230,15 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 					}
 					(i+1,acc.toMap)
 				case JSstringObjKey | JSstring | JSstringInList =>
-					(i+1,PrimitiveTypes.primTypes(5)( Unicode.unescape_perl_string(idx.getToken(i)) ))  // String
+					(i+1,PrimitiveTypes.primTypes(PrimitiveTypes.STRING)( Unicode.unescape_perl_string(idx.getToken(i)) ))  // String
 				case JSnumberObjKey | JSnumber | JSnumberInList =>
 					val raw = Unicode.unescape_perl_string(idx.getToken(i))
 					if( raw.contains('.') )
-						(i+1,PrimitiveTypes.primTypes(7)( raw ))  // scala.Double
+						(i+1,PrimitiveTypes.primTypes(PrimitiveTypes.DOUBLE)( raw ))  // scala.Double
 					else
-						(i+1,PrimitiveTypes.primTypes(1)( raw ))  // scala.Int
+						(i+1,PrimitiveTypes.primTypes(PrimitiveTypes.INT)( raw ))  // scala.Int
 				case JStrue | JStrueInList | JSfalse | JSfalseInList =>
-					(i+1,PrimitiveTypes.primTypes(3)( Unicode.unescape_perl_string(idx.getToken(i)) )) // scala.Boolean
+					(i+1,PrimitiveTypes.primTypes(PrimitiveTypes.BOOLEAN)( Unicode.unescape_perl_string(idx.getToken(i)) )) // scala.Boolean
 				case JSnull | JSnullInList =>
 					(i+1,null)
 				// case z => println("Boom: "+z)

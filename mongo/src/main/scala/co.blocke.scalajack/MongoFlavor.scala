@@ -73,7 +73,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 								throw new MongoParseException(s"Missing required field $missing in BsonDocument")   // really missing, not optional and no devault value given
 					}
 				}
-				Util.poof( sjT, build.toMap ).asInstanceOf[U]
+				sjT.materialize(build.toMap).asInstanceOf[U]
 			case _ => throw new MongoParseException("Attempt to make a class from something other than a BsonDocument: "+src)
 		}
 

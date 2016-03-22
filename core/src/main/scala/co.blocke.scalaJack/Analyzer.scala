@@ -74,10 +74,10 @@ object Analyzer {
 			val tag = t.typeSymbol.fullName+argMap.values.map(argExplode(_)).mkString("[",",","]")
 			readyToEat.getOrElse(tag,{
 				t.typeSymbol match {
-					case sym if(sym.isPrimitive)         =>  // Should Never Happen(tm)
-						val pt = PrimType(sym.fullName)
-						readyToEat.put(tag,pt)
-						pt
+					// case sym if(sym.isPrimitive)         =>  // Should Never Happen(tm)  -- Primitives are pre-loaded into readyToEat!
+					// 	val pt = PrimType(sym.fullName)
+					// 	readyToEat.put(tag,pt)
+					// 	pt
 
 					case sym if(sym.isCollection)        =>
 						CollType( sym.fullName, argMap.values.toList )

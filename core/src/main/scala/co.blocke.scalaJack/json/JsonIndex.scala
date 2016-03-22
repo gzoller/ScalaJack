@@ -12,7 +12,7 @@ case class JsonIndex(
 		s"Indexes(${tokPos.slice(0,tokCount).toList},${tokLen.slice(0,tokCount).toList},${tokType.slice(0,tokCount).toList.map(JsonTokens.toName(_))})"
 
 	// Extract a token value at index i from the given StringBuilder
-	def getToken(i:Int) = new String(data.slice(tokPos(i), tokPos(i)+tokLen(i)))
+	def getToken(i:Int) = data.subSequence(tokPos(i), tokPos(i)+tokLen(i)).toString
 
 	import JsonTokens._
 	def toCollection() : Either[Map[String,_],List[_]] =
@@ -71,26 +71,3 @@ case class JsonIndex(
 		}
 	}
 }
-
-/*
-	val JSobjStart      : Byte = 1
-	val JSobjEnd        : Byte = 15
-	val JSobjEndInList  : Byte = 30  // JSobjEnd << 1
-	val JSobjEndObjKey  : Byte = 60  // JSobjEnd << 2  *WARNING* Non-standard JSON
-	val JSlistStart     : Byte = 26
-	val JSlistEnd       : Byte = 7
-	val JSlistEndInList : Byte = 14  // JSlistEnd << 1
-	val JSlistEndObjKey : Byte = 28  // JSlistEnd << 2  *WARNING* Non-standard JSON
-	val JStrue          : Byte = 8
-	val JStrueInList    : Byte = 16  // JStrue << 1
-	val JSfalse         : Byte = 9
-	val JSfalseInList   : Byte = 18  // JSfalse << 1
-	val JSnull          : Byte = 10
-	val JSnullInList    : Byte = 20  // JSnull << 1
-	val JSstring        : Byte = 11
-	val JSstringInList  : Byte = 22  // JSstring << 1
-	val JSstringObjKey  : Byte = 44  // JSstring << 2
-	val JSnumber        : Byte = 12
-	val JSnumberInList  : Byte = 24  // JSnumber << 1
-	val JSnumberObjKey  : Byte = 48  // JSnumber << 2  *WARNING* Non-standard JSON
-*/
