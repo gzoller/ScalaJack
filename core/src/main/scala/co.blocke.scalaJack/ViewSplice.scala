@@ -16,7 +16,7 @@ trait ViewSplice {
 					tf.setAccessible(true)
 					(fname, tf.get(master))
 					}) }.flatten.toMap 
-				Util.poof( viewClass, args ).asInstanceOf[T]
+				viewClass.materialize(args).asInstanceOf[T]
 			case _ => throw new ViewException("Type parameter must be a case class, but was instead "+tt.tpe.typeSymbol.fullName)
 		}
 
@@ -37,7 +37,7 @@ trait ViewSplice {
 						tf.setAccessible(true)
 						(fname,tf.get(master))
 					}))}.flatten.toMap
-				Util.poof( masterClass, args ).asInstanceOf[U]
+				masterClass.materialize(args).asInstanceOf[U]
 			case _ => throw new ViewException("Type parameter must be a case class, but was instead "+tu.tpe.typeSymbol.fullName)
 		}
 }

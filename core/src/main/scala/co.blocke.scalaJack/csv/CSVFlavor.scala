@@ -39,7 +39,7 @@ trait CSVJackFlavor extends JackFlavor[String] {
 						}
 						(fieldName, marshalled)
 					}.toMap
-					Util.poof( cc, fldval )(tt).asInstanceOf[T]
+					cc.materialize(fldval).asInstanceOf[T]
 				case _ => throw new CSVParseException("CSV parser can only handle case classes.")
 			}
 		}
@@ -61,7 +61,7 @@ trait CSVJackFlavor extends JackFlavor[String] {
 		}
 
 		private def fieldIsOptional(atype:AType) = atype.isInstanceOf[CollType] && atype.asInstanceOf[CollType].isOptional && primCodes.contains(atype.asInstanceOf[CollType].colTypes.head.name)
-		private def reifyValue(atype:AType, value:String) : Any = primTypes.get(atype.asInstanceOf[PrimType].primCode).map(fn => fn(value)).get
+		private def reifyValue(atype:AType, value:String) : Any = primTypes(atype.asInstanceOf[PrimType].primCode)(value)
 		private def reifyOptional(otype:CollType, value:String) : Option[Any] = 
 			if(value == "") None
 			else Some(reifyValue(otype.colTypes.head, value))
