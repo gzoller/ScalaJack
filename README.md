@@ -29,6 +29,12 @@ If you want to use the optional MongoDB serialization support include this as we
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
+If you're on sbt v0.13.11 you may need to enable the bintray resolver in your build.sbt with
+
+``` sbt
+useJCenter := true
+```
+
 Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
 	import co.blocke.scalajack._
