@@ -21,13 +21,19 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.7.0")
-    
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.7.1")
+
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.7.0")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.7.1")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
+
+If you're on sbt v0.13.11 you may need to enable the bintray resolver in your build.sbt with
+
+``` sbt
+useJCenter := true
+```
 
 Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
@@ -84,7 +90,7 @@ val vc = VisitorContext(hintMap = Map(
 		"default"->"_hint",
 		"com.myproj.Pet"->"_happy",
 		"com.myproj.Animal"->"_kind"))
-val js = sj.render(pets,vc) 
+val js = sj.render(pets,vc)
 // produces: [{"_happy":"com.myproj.NicePet","kind":{"_kind":"com.myproj.Dog","name":"Fido"},"food":"kibbles"},{"_happy":"com.myproj.GrumpyPet","kind":{"_kind":"com.myproj.Cat","name":"Meow"},"food":"fish"}]
 ```
 Note how you get different type hints for specific traits.  This can be invaluable for advanced JSON parsing of 3rd party data.
@@ -136,9 +142,9 @@ ScalaJack doesn't wrap the MongoDB persistence libraries--that's not its mission
 import co.blocke.scalajack._
 import mongo._
 
-val sjMongo = ScalaJack(MongoFalvor()) // produce a Mongo-flavored ScalaJack
-val mydbo  = sjMongo.render( myCaseClass )  
-val myCC   = sjMongo.read[MyClass]( mydbo ) 
+val sjMongo = ScalaJack(MongoFlavor()) // produce a Mongo-flavored ScalaJack
+val mydbo  = sjMongo.render( myCaseClass )
+val myCC   = sjMongo.read[MyClass]( mydbo )
 ```
 
 The VisitorContext modifications work here too, as before with JSON.
@@ -161,7 +167,7 @@ Support has been added for Mongo's ObjectId type if you wish to use this directl
 case class Sample( @DBKey _id:ObjectId, stuff:Int )
 ```
 
-Once you have your Document, use MongoDB's native Scala API as you normally would.  
+Once you have your Document, use MongoDB's native Scala API as you normally would.
 
 
 # CSV Support
@@ -215,7 +221,7 @@ case class VisitorContext(
 	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
 	)
 ```
-Let's look at these fields one-by-one.  
+Let's look at these fields one-by-one.
 
 **isCanonical**=true is standard JSON.  In some strange situations you may wish JSON-like notation that does not use strings as keys.  You would set this field to false to allow that.  Note that this is *not* really JSON and won't many libraries (like Mongo) assume and require string-based keys for JSON objects.
 
@@ -265,7 +271,7 @@ val updatedUser = ScalaJack.spliceInto( user, newSafeUser ) // updatedUser will 
 - Case classes (or traits for case classes) only
 - Options of value None are removed from generated JSON (e.g. from List or Map)
 - Default parameters are not supported at this time
-- Primitive/Simple Data types supported:  
+- Primitive/Simple Data types supported:
 	- Int
 	- Boolean
 	- Long
@@ -279,7 +285,7 @@ val updatedUser = ScalaJack.spliceInto( user, newSafeUser ) // updatedUser will 
 	- org.joda.time.DateTime
 	- Enumeration.Value
 	- Value Class
-- Collections supported: 
+- Collections supported:
 	- scala.Option
 	- scala.collection.immutable.List
 	- scala.collection.immutable.Map
@@ -326,4 +332,3 @@ ScalaJack aimed for Jackson's speed and at least the key parts of Salat's seamle
 If you're OK with gatining lots of speed at the price of my assumptions, ScalaJack is a great thing!
 
 Blöcke
-
