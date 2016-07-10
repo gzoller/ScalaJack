@@ -47,7 +47,15 @@ case class CollType(name:String, colTypes:List[AType]) extends AType {
 
 case class EnumType(name:String, enum:Enumeration) extends AType { def dup = this.copy() }
 case class ValueClassType(name:String, vcType:AType, vFieldName:String, isTypeParam:Boolean) extends AType { def dup = this.copy() }
-case class TraitType(name:String, paramMap:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType], default:Option[Any]=None) extends AType { def dup = this.copy() }
+
+case class TraitType(
+	name     : String, 
+	members  : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType],
+	paramMap : LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType], 
+	default  : Option[Any]=None
+) extends AType { 
+	def dup = this.copy() 
+}
 
 trait CustomType extends AType {
 	val readers   : Map[String, (Any => Any)]

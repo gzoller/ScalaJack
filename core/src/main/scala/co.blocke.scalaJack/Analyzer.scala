@@ -91,7 +91,7 @@ object Analyzer {
 									case (item,itemType) if(argMap.contains(itemType.toString)) => (item,argMap(itemType.toString)) 
 									case (item,itemType) => (item,know(itemType.dealias))
 								}.toList
-						val tty = TraitType(sym.fullName, mappedParams)
+						val tty = TraitType(sym.fullName, mappedParams, argMap)
 						readyToEat.put(tag, tty)
 						tty
 		        
@@ -109,7 +109,7 @@ object Analyzer {
 						val mApply  = ts.members.toList.find(m => m.name.toString == "apply" && m.isSynthetic).get.asMethod
 						val syms    = mApply.paramLists.flatten
 						val members = syms.zipWithIndex.map { case (p, i) =>
-							val fType = relativeToTrait.flatMap( _.paramMap.get(p.name.toString) )
+							val fType = relativeToTrait.flatMap( _.members.get(p.name.toString) )
 								.orElse( {
 									if(p.typeSignature.toString == cc.name)
 										Some(cc)
