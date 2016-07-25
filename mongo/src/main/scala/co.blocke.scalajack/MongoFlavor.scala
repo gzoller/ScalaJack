@@ -18,10 +18,12 @@ import org.mongodb.scala.bson._
 	2) Keys to any Map-like data must be of type String
 */
 
+case class MongoKind() extends KindMarker  // For custom value class read/render (ValueClassCustom)
+
 class MongoParseException(msg:String) extends Exception(msg)
 
 case class MongoFlavor() extends FlavorKind[Document] {
-	Analyzer.addType(OBJECT_ID,ObjectIdType(OBJECT_ID))
+	// Analyzer.addType(OBJECT_ID,ObjectIdType(OBJECT_ID))
 	def makeScalaJack : ScalaJack[Document] = new MongoScalaJack()  
 	class MongoScalaJack() extends ScalaJack[Document] with MongoJackFlavor
 }
@@ -164,8 +166,6 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 				else 
 					parseValueClassPrimitive(src, sj, vc, topLevel)
 				}.asInstanceOf[T]
-			case g:CustomType =>
-				g.readers("mongo")(src).asInstanceOf[T]
 		}
 
 		private def primValue( src:BsonValue ) = src match {
@@ -177,9 +177,14 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 			case bs:BsonNull    => null
 		}
 		private def parseValueClassPrimitive( src:BsonValue, vc:ValueClassType, visitor:VisitorContext, topLevel:Boolean ) = 
-			visitor.valClassHandlers.get("mongo").flatMap(_.get(vc.name)).fold(primValue(src).asInstanceOf[AnyRef])( handler => 
-				handler.read( src ).asInstanceOf[AnyRef]
-			)
+			vc.custom.map{ _.read.applyOrElse(
+					(MongoKind(), src),
+					(k:(KindMarker, _)) => {
+						throw new JsonParseException(s"No custom read function defined for kind ${k._1}",0)
+						null.asInstanceOf[Any]
+					})
+				}.orElse( Some(primValue(src).asInstanceOf[AnyRef]) ).get.asInstanceOf[AnyRef]
+
 		private def makeValueClass( vc:ValueClassType, primitive:AnyRef ) = 
 			Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
@@ -596,15 +601,28 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 							targetField.get(instance)
 						}
 					}
-					vc.valClassHandlers.get("mongo").flatMap(_.get(g.name).map( vcHand =>
-							vcHand.render(renderVal).asInstanceOf[BsonValue]
-						)).orElse(
-							_render(g.vcType,renderVal,tt.tpe.typeArgs)
-						)
+					g.custom.map{ _.render.applyOrElse(
+							(MongoKind(), renderVal ),
+							(k:(KindMarker, _)) => {
+								throw new JsonParseException(s"No custom render function defined for kind ${k._1}",0)
+								""
+							})
+					}.orElse{ _render(g.vcType,renderVal,tt.tpe.typeArgs) }.asInstanceOf[Option[BsonValue]]
+					// } match {
+					// 	case Some(x) => 
+					// 		buf.append(x)
+					// 		true
+					// 	case None => _render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+					// }
+					// vc.valClassHandlers.get("mongo").flatMap(_.get(g.name).map( vcHand =>
+					// 		vcHand.render(renderVal).asInstanceOf[BsonValue]
+					// 	)).orElse(
+					// 		_render(g.vcType,renderVal,tt.tpe.typeArgs)
+					// 	)
 				case g:EnumType =>
 					Some( BsonString(s"${instance.toString}") )
-				case g:CustomType =>
-					Some( (g.renderers("mongo")(instance)).asInstanceOf[BsonValue] )
+				// case g:CustomType =>
+				// 	Some( (g.renderers("mongo")(instance)).asInstanceOf[BsonValue] )
 			}
 		}
 			
