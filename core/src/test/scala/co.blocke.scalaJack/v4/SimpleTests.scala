@@ -256,15 +256,10 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 		}
 		describe("Support Custom JSON for Value Class") {
 			it("Must read & render custom JSON for value class") {				
-				val handler = ValClassHandler(
-					(s) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(s.asInstanceOf[String]),
-					(v) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(v.asInstanceOf[DateTime])+'"'
-					)
 				val ss = SomethingSpecial("hey", new CustomVC(new DateTime(2015,7,1,0,0)))
-				val vc = VisitorContext().copy(valClassHandlers = Map("default"->Map("co.blocke.scalajack.test.v4.CustomVC"->handler)))
-				val js = sjJS.render(ss,vc)
+				val js = sjJS.render(ss)
 				js should equal("""{"what":"hey","when":"July, 2015"}""")
-				(sjJS.read[SomethingSpecial](js.toString,vc) == ss) should be(true)
+				(sjJS.read[SomethingSpecial](js.toString) == ss) should be(true)
 			}
 		}
 		describe("Type Hint Handling") {

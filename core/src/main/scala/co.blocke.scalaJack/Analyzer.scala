@@ -146,6 +146,20 @@ object Analyzer {
 
 					case sym if(sym.asClass.isDerivedValueClass) =>
 						val vField = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head
+
+						// Determine if there are custom read/render functions for this value class (in a companion object)
+					    val custom = 
+					    	if(sym.asClass.companion.typeSignature.baseClasses.map(_.fullName).contains("co.blocke.scalajack.ValueClassCustom")) {
+							    val runtimeMirror = scala.reflect.runtime.universe.runtimeMirror(getClass.getClassLoader)
+							    val module = runtimeMirror.staticModule(sym.asClass.fullName)
+							    val obj = runtimeMirror.reflectModule(module)
+							    val someTrait:ValueClassCustom = obj.instance.asInstanceOf[ValueClassCustom]  
+							    val readPF = someTrait.read.asInstanceOf[PartialFunction[(KindMarker,_), Any]]
+							    val renderPF = someTrait.render.asInstanceOf[PartialFunction[(KindMarker,_), Any]]
+							    Some(VCCustomMethods(readPF,renderPF))
+					    	} else
+					    		None
+
 						val valSjType = args match {
 							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias) // No type params on VC
 							case pa => 
@@ -156,7 +170,7 @@ object Analyzer {
 								else
 									argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias))
 						}
-						ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType)
+						ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType, custom)
 
 					case sym                             => ErrType()
 				}

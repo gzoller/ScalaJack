@@ -14,6 +14,8 @@ import scala.language.experimental.macros
 	types in case they are needed by a collection. <sigh>  These are marked with //!!! for reference to this note.
  */
 
+case class JsonKind() extends KindMarker  // For custom value class read/render (ValueClassCustom)
+
 case class JsonFlavor() extends FlavorKind[String] {
 	def makeScalaJack : ScalaJack[String] = new JsonScalaJack()  
 	class JsonScalaJack() extends ScalaJack[String] with JsonJackFlavor
@@ -686,17 +688,18 @@ trait JsonJackFlavor extends JackFlavor[String] {
 							targetField.get(instance)
 						}
 					}
-					vc.valClassHandlers.get("default").flatMap( _.get(g.name).map( vcHand => {
-							buf.append(vcHand.render(renderVal))
+					g.custom.map{ _.render.applyOrElse(
+							(JsonKind(), renderVal ),
+							(k:(KindMarker, _)) => _render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+							)
+					} match {
+						case Some(x) => 
+							buf.append(x)
 							true
-						})).orElse(
-							Some(_render(g.vcType,renderVal,buf,tt.tpe.typeArgs))
-						).get
+						case None => _render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
+					}
 				case g:EnumType =>
 					buf.append(s""""${instance.toString}"""") //"
-					true
-				case g:CustomType =>
-					buf.append( g.renderers("default")(instance) )
 					true
 			}
 		}

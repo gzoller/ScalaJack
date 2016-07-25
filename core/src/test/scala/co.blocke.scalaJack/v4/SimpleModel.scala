@@ -1,7 +1,9 @@
 package co.blocke.scalajack
 package test.v4
 
+import json.JsonKind
 import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 trait Blah
 case class Foo(
@@ -88,6 +90,14 @@ case class Address(street:String, zip:Int)
 case class Pristine( name:String, age:Int, stuff:Option[Boolean], addr:Address )
 
 class CustomVC(val underlying: DateTime) extends AnyVal
+object CustomVC extends ValueClassCustom {
+	def read:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,js:String) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js)
+	}
+	def render:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,dt:DateTime) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(dt)+'"'
+	}
+}
 case class SomethingSpecial( what:String, when:CustomVC )
 
 // Test view/splice

@@ -53,16 +53,17 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				sjM.read[Six](dbo) should equal( six )
 			}
 			it("ObjectId support -- JSON") {
-				val oid = BsonObjectId()
+				val oid = new ObjectId( BsonObjectId() )
 				val seven = Seven(oid,Two("blah",true))
 				val js = ScalaJack().render(seven)
+				println(js)
 				ScalaJack().read[Seven](js) should equal( seven )				
 			}
 			it("ObjectId support -- Mongo") {
-				val oid = BsonObjectId()
+				val oid = new ObjectId( BsonObjectId() )
 				val seven = Seven(oid,Two("blah",true))
 				val dbo = sjM.render(seven)
-				dbo.toJson should equal( s"""{ "_id" : { "$$oid" : "${oid.getValue.toString}" }, "two" : { "foo" : "blah", "bar" : true } }""" )
+				dbo.toJson should equal( s"""{ "_id" : { "$$oid" : "${oid.bsonObjectId.getValue.toString}" }, "two" : { "foo" : "blah", "bar" : true } }""" )
 				sjM.read[Seven](dbo) should equal( seven )
 			}
 			it("Naked Map support") {
@@ -173,25 +174,14 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 					sjM.read[Carry[Wrapper]](db) should equal(w)
 				}
 				it("Case class having value class parameter - Foo[A](x:A) where A -> value class (WITH value class handler)") {
-					val handlerJS = ValClassHandler(
-						(s) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(s.asInstanceOf[String]),
-						(v) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(v.asInstanceOf[DateTime])+'"'
-						)
-					val handlerM = ValClassHandler(
-						(s) => new DateTime(s.asInstanceOf[BsonDateTime].getValue),
-						(v) => BsonDateTime(v.asInstanceOf[DateTime].toDate)
-						)
-
-					val vc = VisitorContext().copy(valClassHandlers = Map("default"->Map("co.blocke.scalajack.test.CustomVC"->handlerJS), "mongo"->Map("co.blocke.scalajack.test.CustomVC"->handlerM)))
-
 					val w = Carry("Mike", Wrap("Sally", new CustomVC(new DateTime(2015,7,1,0,0)), "Fine"))
-					val js = ScalaJack().render(w,vc)
-					val db = sjM.render(w,vc)
+					val js = ScalaJack().render(w)
+					val db = sjM.render(w)
 
 					val timeval = (new DateTime(2015,7,1,0,0)).toDate.getTime
 					db.toJson should equal(s"""{ "s" : "Mike", "w" : { "name" : "Sally", "data" : { "$$date" : $timeval }, "stuff" : "Fine" } }""")
-					ScalaJack().read[Carry[CustomVC]](js,vc) should equal(w)
-					sjM.read[Carry[CustomVC]](db,vc) should equal(w)
+					ScalaJack().read[Carry[CustomVC]](js) should equal(w)
+					sjM.read[Carry[CustomVC]](db) should equal(w)
 				}
 				it("Case class having parameterized case class as a parameter: Foo[A](x:A) where A -> Bar[Blah[Long]]") {
 					val w = Carry("Bill", Wrap("Betty", Zoo("dog",false),"ok"))

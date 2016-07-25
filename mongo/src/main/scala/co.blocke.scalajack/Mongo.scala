@@ -1,5 +1,6 @@
 package co.blocke.scalajack
 
+import json.JsonKind
 import scala.collection.mutable.LinkedHashMap
 import scala.language.implicitConversions
 import org.mongodb.scala._
@@ -13,15 +14,14 @@ package object mongo {
 }
 import mongo._
 
-// Custom type
-case class ObjectIdType(name:String) extends CustomType {
-	val renderers = Map(  // ObjectId -> <something>
-		"default" -> ((a:Any) => "\""+a.asInstanceOf[BsonObjectId].getValue.toString+"\""),
-		"mongo"   -> ((a:Any) => a)
-		)
-	val readers   = Map(
-		"default" -> ((a:Any) => BsonObjectId(a.toString)),
-		"mongo"   -> ((a:Any) => a)
-		)
-	def dup = this.copy()
+class ObjectId( val bsonObjectId:BsonObjectId ) extends AnyVal
+object ObjectId extends ValueClassCustom {
+	def read:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,js:String) => BsonObjectId(js)
+	  case (mk:MongoKind,boid:BsonObjectId) => boid
+	}
+	def render:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,boid:BsonObjectId) => '"'+boid.getValue.toString+'"'
+	  case (mk:MongoKind,boid:BsonObjectId) => boid
+	}
 }

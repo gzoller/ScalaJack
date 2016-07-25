@@ -3,6 +3,10 @@ package test
 
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
+import org.joda.time.format._
+import org.mongodb.scala.bson._
+import json.JsonKind
+import mongo.MongoKind
 
 object Num extends Enumeration {
 	val A,B,C = Value
@@ -94,7 +98,7 @@ case class Six(
 	)
 
 case class Seven(
-	@DBKey _id:org.bson.BsonObjectId,
+	@DBKey _id:co.blocke.scalajack.ObjectId,
 	two : Two
 	)
 
@@ -205,5 +209,15 @@ case class WithDefaults(
 	pet      : Pet = NicePet(Dog("Fido"),"bones")
 	)
 
+object CustomVC extends ValueClassCustom {
+	def read:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,js:String) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js)
+	  case (mk:MongoKind,bdt:BsonDateTime) => new DateTime(bdt.getValue)
+	}
+	def render:PartialFunction[(KindMarker,_), Any] = {
+	  case (jk:JsonKind,dt:DateTime) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(dt)+'"'
+	  case (mk:MongoKind,dt:DateTime) => BsonDateTime(dt.toDate)
+	}
+}
 class CustomVC(val underlying: DateTime) extends AnyVal
 case class SomethingSpecial( what:String, when:CustomVC )
