@@ -12,13 +12,9 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 	def parse[T]()(implicit tt:TypeTag[T]) : T = {
 		var i = 0  // index into idx
 
-		// def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType )(implicit ty:TypeTag[U]) = {
 		def _makeClass[U]( sjT:CCType, t:AType )(implicit ty:TypeTag[U]) = {
 			val objFields = MMap.empty[Any,Any]
 			if( idx.tokType(i-1) != JSobjStart ) throw new JsonParseException(s"Expected JSobjStart and found ${JsonTokens.toName(idx.tokType(i-1))} at token $i",0)
-			// i += 1
-
-			//val sjT = ccTypeFn()
 
 			// read key/value pairs
 			while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList  && idx.tokType(i) != JSobjEndObjKey) {
@@ -92,7 +88,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							case ct if(!vctx.isCanonical) =>
 							case ct:PrimType if(ct.primCode == PrimitiveTypes.STRING) =>
 							case et:EnumType => 
-							case ValueClassType(_,PrimType("String"),_,_) | ValueClassType(_,PrimType("java.lang.String"),_,_) | ValueClassType(_,EnumType(_,_),_,_) =>
+							case ValueClassType(_,PrimType("String"),_,_,_) | ValueClassType(_,PrimType("java.lang.String"),_,_,_) | ValueClassType(_,EnumType(_,_),_,_,_) =>
 							case t => throw new JsonParseException("Map keys must be of type String in canonical JSON",0)
 						}
 						while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList && idx.tokType(i) != JSobjEndObjKey ) {
@@ -152,19 +148,15 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 				if( sj.isTypeParam || topLevel ) {
 					parseValueClass(sj, parseValueClassPrimitive(sj)).asInstanceOf[T]
 				} else {
-					parseValueClassPrimitive(sj)
+					parseValueClassPrimitive(sj).asInstanceOf[T]
 				}
-
-			case sj:CustomType =>
-				val v = sj.readers("default")(idx.getToken(i))
-				i += 1
-				v
 		}
 
 		def parseValueClassPrimitive( vc:ValueClassType ) = 
-			vctx.valClassHandlers.get("default").flatMap(_.get(vc.name).map( handler => 
-				handler.read( _parse(PrimType("String")).asInstanceOf[String] ).asInstanceOf[AnyRef]
-			)).orElse( Some(_parse(vc.vcType).asInstanceOf[AnyRef]) ).get
+			vc.custom.map{ _.read.applyOrElse(
+					(JsonKind(), _parse(PrimType("String")).asInstanceOf[String] ),
+					(k:(KindMarker, _)) => _parse(vc.vcType)
+				)}.orElse( Some(_parse(vc.vcType)) ).get.asInstanceOf[AnyRef]
 		def parseValueClass( vc:ValueClassType, primitive:AnyRef ) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 
 		def findTypeHint( hint:String ) : Option[String] = {
