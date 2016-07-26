@@ -273,15 +273,10 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				}
 				it("Must read & render custom JSON for value class") {
 					val sj = ScalaJack()
-					val handler = ValClassHandler(
-						(s) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(s.asInstanceOf[String]),
-						(v) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(v.asInstanceOf[DateTime])+'"'
-						)
 					val ss = SomethingSpecial("hey", new CustomVC(new DateTime(2015,7,1,0,0)))
-					val vc = VisitorContext().copy(valClassHandlers = Map("default"->Map("co.blocke.scalajack.test.CustomVC"->handler)))
-					val js = sj.render(ss,vc)
+					val js = sj.render(ss)
 					js should equal("""{"what":"hey","when":"July, 2015"}""")
-					(sj.read[SomethingSpecial](js.toString,vc) == ss) should be(true)
+					(sj.read[SomethingSpecial](js.toString) == ss) should be(true)
 				}
 			}
 		}

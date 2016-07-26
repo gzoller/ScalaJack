@@ -97,15 +97,13 @@ Note how you get different type hints for specific traits.  This can be invaluab
 
 # Custom Value Class JSON
 
-(**NOTE:**  Custom value class JSON handling has changed since ScalaJack 3.x.  In some ways its more limited but also much simpler.)
-
-Many JSON parsers have the ability to perform custom generations/parsings for fields or data types.  Adding this feature in the conventional way would slow down the parser quite a lot, so ScalaJack does something a little different using an optional "mode" for value classes that allows you to read/render custom JSON for them.  Let's demonstrate via an example.
+(**NOTE:**  Custom value class JSON handling has changed since ScalaJack 4.7.  We no longer use the VisitorContext.)
 
 Let's imagine we have a value class PosixDate that has a long as its single value type, holding a Unix timestamp.  Let's further assume we use this class in a case class for server stats like this:
 
 ```scala
-class PosixDate( val ts:Long = (new Date()).getTime/1000 ) extends AnyVal {
-	def toDate : Date = new Date(ts*1000)
+class PosixDate( val ts:Long = (new Date()).getTime ) extends AnyVal {
+	def toDate : Date = new Date(ts)
 	def isBefore( pd:PosixDate ) = this.ts < pd.ts
 	def isAfter( pd:PosixDate )  = this.ts > pd.ts
 	override def toString() = ts.toString
@@ -120,17 +118,42 @@ val ss = ServerStats( "admin", new PosixDate() )
 val js = sj.render( ss )  // Output: {"instanceName":"admin","upSince":1383317215}
 ```
 
-For my use, though, I might want a specific format for my timestamp in the JSON.  I can accomplish this by handling custom JSON for my value classes using another field of VisitorContext, like this:
+Hmm... For my use I might want something different than that Long numeric output.  I may want a specific format for my timestamp in the JSON.  I can accomplish this by providing a companion object to my value class that extends a special trait, **ValueClassCustom**.  This trait defines read and render functions as PartialFunctions, which allows you to provide whatever reading or rendering logic you need for a given "flavor" of parsing. 
+
+The two flavors supported to day are:  **JsonKind** and **MongoKind**
+
 
 ```scala
-val handler = ValClassHandler(
-	(s) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(s),
-	(v) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(v.asInstanceOf[DateTime])+'"'
-)
-val vc = VisitorContext(valClassMap = Map("com.myproj.PosixDate"->handler))
-val js = sj.render(ss,vc) // Output: {"instanceName":"admin","upSince":"November, 2013"}
+object PosixDate extends ValueClassCustom {
+  def read:PartialFunction[(KindMarker,_), Long] = {
+	  case (j:JsonKind,js:String) => 
+		  DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js).toDate.getTime
+  }
+  def render:PartialFunction[(KindMarker,_),Any] = {
+	  case (j:JsonKind,pd:Long) => 
+		  '"'+DateTimeFormat.forPattern("MMMM, yyyy").print( new DateTime( new java.util.Date(pd)) )+'"'
+  }
+}
 ```
-The handler consists of 2 functions: one that accepts a string (for reads) and produces the appropriate object, presumably with whatever necessary manipulations you wish on the string, and another function for renders that accepts an object from your value class and produces whatever string value you wish for the JSON.
+Admittedly, the date formatting code here is a bit tortured, but to prove a point.  You'd use it like this:
+```scala
+  val sj = ScalaJack()
+  val one = ServerStats("Admin", new PosixDate)
+  println("1: "+one)
+  val js = sj.render(one)  // outputs {"instanceName":"Admin","upSince":"July, 2016"}
+  println("2: "+js)
+  println("3: "+sj.read[ServerStats](js))
+```
+The Long (the internal representation of your PosixDate value class) is successfully read and rendered using whatever formatting rules you specify.
+
+Some tips:
+
+ - For JSON parsing the first element of the tuple in read is JsonKind,
+   and the second is a String (the raw JSON value).
+ - For rendering JSON, the second tuple element of render is the internal data type, or Long
+   in our example. 
+ - For rendering JSON note that quotes are included in    the result. 
+   If your value was numeric or boolean you wouldn't need    these.
 
 # MongoDB Persistence
 
@@ -215,7 +238,6 @@ case class VisitorContext(
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
-	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler],
 	hintMap        : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
 	hintValueRead   : Map[String,(String)=>String] = Map.empty[String,(String)=>String], // per-class type hint value -> class name
 	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
@@ -228,8 +250,6 @@ Let's look at these fields one-by-one.
 **isValidating** controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
 
 **estFieldsInObj** is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
-
-**valClassMap** is a map of value class name (fully-qualified) to ValClassHandler.  An example of its use was shown above in the section on custom JSON for value classes.  If you don't need custom JSON you can ignore this.
 
 **hintMap** is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
 
