@@ -238,7 +238,6 @@ case class VisitorContext(
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
-	valClassMap    : Map[String,ValClassHandler] = Map.empty[String,ValClassHandler],
 	hintMap        : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
 	hintValueRead   : Map[String,(String)=>String] = Map.empty[String,(String)=>String], // per-class type hint value -> class name
 	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
@@ -251,8 +250,6 @@ Let's look at these fields one-by-one.
 **isValidating** controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
 
 **estFieldsInObj** is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
-
-**valClassMap** is a map of value class name (fully-qualified) to ValClassHandler.  An example of its use was shown above in the section on custom JSON for value classes.  If you don't need custom JSON you can ignore this.
 
 **hintMap** is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
 
