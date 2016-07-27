@@ -55,7 +55,12 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						i = newI-1
 						value
 					case JSstringObjKey | JSstring | JSstringInList | JSnumberObjKey | JSnumber | JSnumberInList =>
-						PrimitiveTypes.primTypes(sj.primCode)( Unicode.unescape_perl_string(idx.getToken(i)) )
+						val text = Unicode.unescape_perl_string(idx.getToken(i))
+						sj.alias.flatMap( alias => vctx.customHandlers.get(alias).map( _.read.applyOrElse( (JsonKind(), text),
+							(k:(KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}",0)
+						) ) ).getOrElse(
+							PrimitiveTypes.primTypes(sj.primCode)( text )
+						)
 					case JStrue  | JStrueInList | JStrueObjKey  => true
 					case JSfalse | JSfalseInList | JSfalseObjKey => false
 					case JSnull  | JSnullInList  => null
@@ -88,7 +93,7 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 							case ct if(!vctx.isCanonical) =>
 							case ct:PrimType if(ct.primCode == PrimitiveTypes.STRING) =>
 							case et:EnumType => 
-							case ValueClassType(_,PrimType("String"),_,_,_) | ValueClassType(_,PrimType("java.lang.String"),_,_,_) | ValueClassType(_,EnumType(_,_),_,_,_) =>
+							case ValueClassType(_,PrimType("String",_),_,_,_) | ValueClassType(_,PrimType("java.lang.String",_),_,_,_) | ValueClassType(_,EnumType(_,_),_,_,_) =>
 							case t => throw new JsonParseException("Map keys must be of type String in canonical JSON",0)
 						}
 						while( idx.tokType(i) != JSobjEnd && idx.tokType(i) != JSobjEndInList && idx.tokType(i) != JSobjEndObjKey ) {
@@ -150,6 +155,14 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 				} else {
 					parseValueClassPrimitive(sj).asInstanceOf[T]
 				}
+
+			case sj:JavaType =>
+				val handler = vctx.customHandlers.getOrElse(sj.name, throw new JsonParseException(s"No custom read/render handler (CustomReadRender) provided for class ${sj.name}",0))
+				val java = handler.read.applyOrElse( (JsonKind(), idx.getToken(i)),
+					(k:(KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}",0)
+				)
+				i += 1
+				java
 		}
 
 		def parseValueClassPrimitive( vc:ValueClassType ) = 
