@@ -34,7 +34,7 @@ case class CCType(
 	}
 }
 
-case class PrimType(name:String) extends AType { 
+case class PrimType(name:String, alias:Option[String]=None) extends AType { 
 	val primCode = PrimitiveTypes.primCodes(name)
 	def dup = this.copy() 
 }
@@ -42,6 +42,10 @@ case class PrimType(name:String) extends AType {
 case class CollType(name:String, colTypes:List[AType]) extends AType {
 	val collCode = PrimitiveTypes.collCodes(name)
 	def isOptional = {collCode == 0}
+	def dup = this.copy()
+}
+
+case class JavaType(name:String) extends AType {
 	def dup = this.copy()
 }
 
