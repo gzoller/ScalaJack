@@ -80,7 +80,9 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 
 			case sj:CollType =>
 				val ret = { 
-					if( sj.isOptional ) {
+					if(idx.tokType(i) == JSnull) 
+						null
+					else if( sj.isOptional ) {
 						val parsed = _parse(sj.colTypes(0))
 						i -= 1  // compensate for increment later
 						Some(parsed)
