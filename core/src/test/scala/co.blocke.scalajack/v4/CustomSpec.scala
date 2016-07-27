@@ -40,10 +40,11 @@ class Numa( val s:String ) extends AnyVal
 
 // Overriding a primitive requires assigning it to a new type, so as to differentiate it from 
 // the vanilla flavor of the primitive.
-object TD {
+object Overrides {
 	type SpecialTime = DateTime
 }
-import TD._
+import Overrides._
+
 case class Naked( name:String, when:SpecialTime, charset:Charset )
 case class Bunched( name:String, group:Map[String,SpecialTime], many:List[Charset])
 case class WithCustomType[R,S]( r:R, s:S )
@@ -67,7 +68,7 @@ class CustomSpec extends FunSpec {
 	)
 
 	val handlerMap = Map(
-		"co.blocke.scalajack.test.v4.TD.SpecialTime"->specialTimeHandler,
+		"co.blocke.scalajack.test.v4.Overrides.SpecialTime"->specialTimeHandler,
 		"java.nio.charset.Charset"->charsetHandler
 		)
 
