@@ -10,7 +10,6 @@ import PrimitiveTypes._
 // The weird typing ('S here) is to allow for the fact that future
 // serializations may be to non-String output, e.g. bytes, or Mongo Document.
 
-
 trait JackFlavor[S] {
 	def rr : ReadRenderer
 	trait ReadRenderer {

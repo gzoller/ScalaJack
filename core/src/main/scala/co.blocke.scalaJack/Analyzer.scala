@@ -28,14 +28,14 @@ object Analyzer {
 	def inspectByName[T]( className:String, relativeToTrait:Option[TraitType] = None )(implicit tt:TypeTag[T]) : AType = _inspect[T]( Class.forName(className), relativeToTrait )
 
 	private def getParamSymbols( t:Type ) = 
-		LinkedHashMap.empty[String,AType] ++= t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta.dealias,None, true)) ).toMap
+		LinkedHashMap.empty[String,AType] ++= t.typeSymbol.asClass.typeParams.map(_.name.toString).zip( t.typeArgs.map(ta => know(ta.dealias, ta, None, true)) ).toMap
   
 	private def _inspect[T]( clazz:Class[_], relativeToTrait:Option[TraitType] )(implicit tt:TypeTag[T]) : AType = {
 		val ctype = if( relativeToTrait.isDefined ) 
 			cm.classSymbol(clazz).typeSignature  // no trait given--use the implied context
 		else 
 			tt.tpe  // no relative trait given--use the implied context
-		know(ctype,relativeToTrait,false)
+		know(ctype,ctype,relativeToTrait,false)
 	}
 
 	// Used to create unique tag name for a type.  Explodes all type param arguments where applicable.
@@ -46,10 +46,12 @@ object Analyzer {
 		case atype:EnumType       => atype.name
 		case atype:ValueClassType => atype.name
 		case atype:TraitType      => atype.name+atype.paramMap.values.map(argExplode(_)).mkString("[",",","]")
+		case atype:JavaType       => atype.name
 	}
   
 	private[scalajack] def know( 
-		t:Type, 
+		t:Type,
+		t_alias:Type,
 		relativeToTrait:Option[TraitType] = None, 
 		isParamType:Boolean = false, 
 		preResolved:LinkedHashMap[String,AType] = LinkedHashMap.empty[String,AType]
@@ -66,7 +68,7 @@ object Analyzer {
 					val buildingArgMap = 
 						LinkedHashMap.empty[String,AType] ++= ty.typeSymbol.typeSignature.typeParams
 							.map(_.name.toString)
-							.zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta.dealias,None,true,preResolved))))
+							.zip(ty.args.map(ta => preResolved.getOrElse(ta.toString,know(ta.dealias,ta,None,true,preResolved))))
 					(ty.args, buildingArgMap)
 				case ty => // generally a case class that's implementing a trait
 					(List.empty[Type], relativeToTrait.get.paramMap)
@@ -89,7 +91,7 @@ object Analyzer {
 							members.map(_.name.toString).zip( members.map(_.typeSignature.resultType) )
 								.collect{
 									case (item,itemType) if(argMap.contains(itemType.toString)) => (item,argMap(itemType.toString)) 
-									case (item,itemType) => (item,know(itemType.dealias))
+									case (item,itemType) => (item,know(itemType.dealias,itemType))
 								}.toList
 						val tty = TraitType(sym.fullName, mappedParams, argMap)
 						readyToEat.put(tag, tty)
@@ -110,12 +112,21 @@ object Analyzer {
 						val syms    = mApply.paramLists.flatten
 						val members = syms.zipWithIndex.map { case (p, i) =>
 							val fType = relativeToTrait.flatMap( _.members.get(p.name.toString) )
-								.orElse( {
+								.orElse( 
 									if(p.typeSignature.toString == cc.name)
 										Some(cc)
 									else 
-										Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias,None,false,argMap) )) 
+										Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias,p.typeSignature,None,false,argMap)))
+								)
+									/*
+										Some(argMap.getOrElse(p.typeSignature.toString, {
+											know(p.typeSignature.dealias,p.typeSignature,None,false,argMap) match {
+												case pr:PrimType if(p.typeSignature.dealias.toString != p.typeSignature.toString) => pr.copy(alias = Some(p.typeSignature.toString))
+												case pr => pr
+											}
+											} )) 
 									})
+											*/
 							val defaultVal = {
 								val found = ts.member(TermName("apply$default$"+(i+1)))
 								if(found.isMethod) 
@@ -161,20 +172,27 @@ object Analyzer {
 					    		None
 
 						val valSjType = args match {
-							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias) // No type params on VC
+							case pa if( pa.isEmpty ) => know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias,
+															sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
 							case pa => 
 								val vTerm = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
 								val g = sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
 								if( g.typeSymbol.isClass && g.typeSymbol.asClass.isCollection )
 									CollType( g.typeSymbol.asClass.fullName, argMap.values.toList )
 								else
-									argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias))
+									argMap.getOrElse(vTerm.toString, know(sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias,
+																		sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info))
 						}
 						ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType, custom)
 
-					case sym                             => ErrType()
+					// NOTE: User *must* provide custom read/render code for JavaTypes.  ScalaJack has no clue what
+					// to do with them otherwise!
+					case sym                             => JavaType(sym.asClass.fullName)
 				}
 			})
-		})
+		}) match {
+			case prim:PrimType if(t.toString != t_alias.toString) => prim.copy(alias = Some(t_alias.toString))
+			case whatever => whatever
+		}
 	}
 }

@@ -21,11 +21,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.7.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.8.2")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.7.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.8.2")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
@@ -97,7 +97,7 @@ Note how you get different type hints for specific traits.  This can be invaluab
 
 # Custom Value Class JSON
 
-(**NOTE:**  Custom value class JSON handling has changed since ScalaJack 4.7.  We no longer use the VisitorContext.)
+**NOTE:**  Custom value class JSON handling has changed since ScalaJack 4.7.  We no longer use the VisitorContext.
 
 Let's imagine we have a value class PosixDate that has a long as its single value type, holding a Unix timestamp.  Let's further assume we use this class in a case class for server stats like this:
 
@@ -154,6 +154,62 @@ Some tips:
    in our example. 
  - For rendering JSON note that quotes are included in    the result. 
    If your value was numeric or boolean you wouldn't need    these.
+
+# Custom Renderings for simple Java objects and Primitives
+
+This feature is similar to the previous section, Custom Value Class JSON, however it doesn't require you to wrap your objects in a value class.  Neato!
+
+Let's look at a similar example using two types: org.joda.time.DateTime, and java.nio.charset.Charset.  The first is a built-in ScalaJack primitive and the second is a simple Java object.
+
+**Note**: *"Simple" here means a class can be rendered and re-read with just one field.  ScalaJack does not (yet) support a more sophisticated multi-field rendering of a Java class.*
+
+You're already familiar with the use case from the last section, so let's go right to code:
+```scala
+	// We're going to override the DateTime default rendering
+	object Overrides {
+		type SpecialTime = DateTime
+	}
+	import Overrides._
+	
+	case class ShowMe( when:SpecialTime, again:DateTime, charset:Charset )
+
+	val specialTimeHandler = CustomReadRender(
+		{
+			case (j:JsonKind,js:String) => ISODateTimeFormat.dateTime().parseDateTime(js)
+		},
+		{
+			case (j:JsonKind,thing:DateTime) => '"'+ISODateTimeFormat.dateTime().withZoneUTC().print(thing)+'"'
+		}
+	)
+	val charsetHandler = CustomReadRender(
+		{
+			case (j:JsonKind,js:String) => Charset.forName(js)
+		},
+		{
+			case (j:JsonKind,thing:Charset) => '"'+thing.toString+'"'
+		}
+	)
+
+	val handlerMap = Map(
+		"com.my.path.Overrides.SpecialTime"->specialTimeHandler,
+		"java.nio.charset.Charset"->charsetHandler
+		)
+
+	val sjJS  = ScalaJack()
+	val vc = VisitorContext().copy(customHandlers = handlerMap)
+
+	val showMe = ShowMe( new DateTime, new DateTime, Charset.defaultCharset )
+	val js = sjJS.render(showMe,vc) // Don't forget the vc!!
+```
+
+This will produce some JSON looking like this:
+```JSON
+{"when":"2016-07-27T00:35:51.977Z","again":1469579752025,"charset":"UTF-8"}
+```
+Notice something cool... The fields when and again are both basically DateTime values.  We set when to a custom type then mapped that type to a custom handler, so the when value got custom read/render treatment, while the vanilla DateTime variant was handled in the default way.
+
+There is no default handling for a Java class like Charset!  You must always provide a CustomHandler for a Java type or ScalaJack will give you an error.
+
 
 # MongoDB Persistence
 
@@ -238,6 +294,7 @@ case class VisitorContext(
 	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
 	isValidating   : Boolean = false,
 	estFieldsInObj : Int     = 128,
+	customHandlers : Map[String,CustomReadRender] = Map.empty[String,CustomReadRender],
 	hintMap        : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
 	hintValueRead   : Map[String,(String)=>String] = Map.empty[String,(String)=>String], // per-class type hint value -> class name
 	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
@@ -250,6 +307,8 @@ Let's look at these fields one-by-one.
 **isValidating** controls which of ScalaJack's 2 parsers is used.  The non-validating parser (isValidating=false) is a bit faster but doesn't make much effort in telling you why JSON parsing failed.  The validating parser is a little slower but has better error reporting.
 
 **estFieldsInObj** is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
+
+**customHandlers** is a map of class name to CustomReadRender object, which provides PartialFunctions for read and render operations by kind (JsonKind, MongoKind, etc.)  This is how you implement custom renderings for either simple Java types and for overriding standard renderings for primitives.
 
 **hintMap** is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
 

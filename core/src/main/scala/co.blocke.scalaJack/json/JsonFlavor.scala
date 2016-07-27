@@ -74,22 +74,20 @@ trait JsonJackFlavor extends JackFlavor[String] {
 						buf.append(sb2.dropRight(1))
 					buf.append("}")
 					true
-				case g:PrimType  => 
-					g.name match {
-						case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
-							val cleaned = clean(instance.toString)
-							buf.append(s""""${cleaned}"""") //"
-							true
-						case "org.joda.time.DateTime" =>
-							buf.append(instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long])
-							true
-						case "scala.Any" => 
-							buf.append( explodeAny(instance) )
-							true
-						case x => 
-							buf.append(instance)
-							true
-					}
+				case g:PrimType  =>
+					buf.append( g.alias.flatMap( alias => vc.customHandlers.get(alias).map( _.render.applyOrElse( (JsonKind(), instance),
+						(k:(KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${g.name}",0)
+					) ) ).getOrElse(
+						g.name match {
+							case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if(instance != null) => 
+								val cleaned = clean(instance.toString)
+								s""""${cleaned}""""
+							case "org.joda.time.DateTime" => instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long]
+							case "scala.Any" => explodeAny(instance)
+							case x => instance
+						}					
+					))
+					true
 				case g:CollType =>
 					g.name match {
 						case "scala.Option" => 
@@ -106,8 +104,8 @@ trait JsonJackFlavor extends JackFlavor[String] {
 									if( !vc.isCanonical ) 
 										renderedKey = _render(g.colTypes(0), k, sb3, tt.tpe.typeArgs)
 									else g.colTypes(0) match {
-										case PrimType("String") => sb3.append(s""""${k.toString}"""") //"
-										case PrimType("java.lang.String") => sb3.append(s""""${k.toString}"""") //"
+										case PrimType("String",_) => sb3.append(s""""${k.toString}"""") //"
+										case PrimType("java.lang.String",_) => sb3.append(s""""${k.toString}"""") //"
 										case _ => throw new RenderException("Canonical JSON requires map keys to be of type String")
 									}
 									if( renderedKey ) {
@@ -698,6 +696,12 @@ trait JsonJackFlavor extends JackFlavor[String] {
 							true
 						case None => _render(g.vcType,renderVal,buf,tt.tpe.typeArgs)
 					}
+				case sj:JavaType =>
+					val handler = vc.customHandlers.getOrElse(sj.name, throw new JsonParseException(s"No custom read/render handler (CustomReadRender) provided for class ${sj.name}",0))
+					buf.append(handler.render.applyOrElse( (JsonKind(), instance),
+						(k:(KindMarker, _)) => throw new JsonParseException(s"No JSON render code provided in CustomReadRender handler for class ${sj.name}",0)
+					).toString)
+					true
 				case g:EnumType =>
 					buf.append(s""""${instance.toString}"""") //"
 					true
