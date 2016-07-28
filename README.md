@@ -21,11 +21,11 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.8.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "4.8.3")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.8.2")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "4.8.3")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
@@ -210,6 +210,43 @@ Notice something cool... The fields when and again are both basically DateTime v
 
 There is no default handling for a Java class like Charset!  You must always provide a CustomHandler for a Java type or ScalaJack will give you an error.
 
+# Parse Or Else for Traits
+
+Occasionally you may be parsing certain traits that may fail--and that's ok.  A good example might be something like this JSON for a Configuration object:
+```JSON
+
+case class Module(name:String,...)
+case class Configuration( modules: List[Module] )
+
+{
+	"modules":[
+		{ 
+			"_hint":"com.foo.MyModule",
+			"name":"Something",
+			...
+		},
+		{ 
+			"_hint":"com.foo.OtherModule",
+			"name":"Something Else",
+			...
+		}
+	]
+}
+```
+If this is a shared configuration file it's possible that you don't have the code for OtherModule, so when you try to parse this JSON it will (by default) explode with a ClassNotFoundException for com.foo.OtherModule.  There are times when this is exactly what you want--when you should indeed have that class in your path somewhere, but other times it's ok to fail.  Maybe I don't care about any modules other than mine so I intend to ignore OtherModule anyway, even if I had it.
+
+For those time when its ok to fail to parse a concrete class implementing a trait (i.e. a _hint class not found) ScalaJack provides a parseOrElse feature in the VisitorContext.  It allows you to specify a default concrete object to use if it can't successfully parse the given _hint for a trait.  Use it like this:
+```scala
+trait MyTrait
+case class SomeDefault(name:String) extends MyTrait
+case class Foo() extends MyTrait
+
+val vc = VisitorContext().copy( parseOrElse = Map("com.foo.MyTrait" -> "com.foo.SomeDefault")
+val sj = ScalaJack()
+
+val myModule = sj.read[Configuration](configJS,vc).find(_.name == "Something").asInstanceOf[MyModule]
+```
+Using the VisitorContext (vc) during read with parseOrElse set, when ScalaJack parsed the _hint for com.foo.OtherModule it caught the ClassNotFound exception and noted that you asked to substitude the default of SomeDefault (which we don't care about here), which is what it returns so that the Configuration parse doesn't die.
 
 # MongoDB Persistence
 
@@ -291,11 +328,12 @@ ScalaJack uses an optional VisitorContext object you can pass into read/render t
 
 ```scala
 case class VisitorContext(
-	isCanonical    : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
-	isValidating   : Boolean = false,
-	estFieldsInObj : Int     = 128,
-	customHandlers : Map[String,CustomReadRender] = Map.empty[String,CustomReadRender],
-	hintMap        : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
+	isCanonical     : Boolean = true,    // allow non-string keys in Maps--not part of JSON spec
+	isValidating    : Boolean = false,
+	estFieldsInObj  : Int     = 128,
+	customHandlers  : Map[String,CustomReadRender] = Map.empty[String,CustomReadRender],
+	parseOrElse     : Map[String,String] = Map.empty[String,String],
+	hintMap         : Map[String,String] = Map("default" -> "_hint"),  // per-class type hints (for nested classes)
 	hintValueRead   : Map[String,(String)=>String] = Map.empty[String,(String)=>String], // per-class type hint value -> class name
 	hintValueRender : Map[String,(String)=>String] = Map.empty[String,(String)=>String]  // per-class type class name -> hint value
 	)
@@ -309,6 +347,8 @@ Let's look at these fields one-by-one.
 **estFieldsInObj** is also something you'll likely want to set for non-validating parsing.  Part of its speed is pre-allocated buffers, so you'll need to guess a reasonable maximum field count for the largest expected object in your data.  If you use the validating parser you can ignore this field as another reason the validating parser is slower is that it can auto-scale its buffers without your help.
 
 **customHandlers** is a map of class name to CustomReadRender object, which provides PartialFunctions for read and render operations by kind (JsonKind, MongoKind, etc.)  This is how you implement custom renderings for either simple Java types and for overriding standard renderings for primitives.
+
+**parseOrElse** is a map of fully-qualified class names for traits to fully-qualified class names to concrete classes implementing those traits to be used as defaults if ScalaJack can't successfully find the given classes in the type hint (_hint) in the JSON.
 
 **hintMap** is a map of class name (fully-qualified) to trait type hint string.  Note there must always be a "default" entry in your map or you risk breaking.
 
