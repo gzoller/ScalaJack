@@ -42,7 +42,16 @@ case class JsonParser(sjTName:String, idx:JsonIndex, vctx:VisitorContext) {
 						.map( candidate => vctx.hintValueRead.get(sj.name).map(_(candidate)).getOrElse(candidate) )
 					if( !objClass.isDefined )
 						throw new JsonParseException(s"No type hint given for trait ${sj.name}",0)
-					val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))
+					// Trying to marshall the trait's instance class may fail.  Is that bad?  Usually but the user
+					// may have specified a parseOrElse class mapping to marshal instead.  If so, try to use that class.
+					val sjObjType = try {
+						Analyzer.inspectByName(objClass.get.toString,Some(sj))
+					} catch {
+						case t:ClassNotFoundException if(vctx.parseOrElse.contains(sj.name)) =>
+						  Analyzer.inspectByName(vctx.parseOrElse(sj.name),Some(sj))
+						case t:Throwable => throw(t)
+					}
+					// val sjObjType = Analyzer.inspectByName(objClass.get.toString,Some(sj))
 					if( !sjObjType.isInstanceOf[CCType] ) throw new JsonParseException(s"Type hint $objClass does not specify a case class",0)
 					sjObjType.asInstanceOf[CCType]
 				}
