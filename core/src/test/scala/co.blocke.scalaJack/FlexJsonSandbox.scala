@@ -9,10 +9,6 @@ case class Person(id: Long, first_name: String, last_name: String, email: String
 object FlexJsonSandbox extends App {
 
   val context = Context.StandardContext
-//    .withFactory(LongTypeAdapter)
-//    .withFactory(CaseClassTypeAdapter)
-//    .withFactory(ListTypeAdapter)
-//    .withFactory(StringTypeAdapter)
 
   val personListTypeAdapter = context.typeAdapter(typeOf[List[Person]])
 
