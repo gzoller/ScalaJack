@@ -8,7 +8,7 @@ class TokenReader(source: Array[Char],
                   tokenOffsets: Array[Int],
                   tokenLengths: Array[Int]) extends Reader {
 
-  var position = -1
+  override var position = -1
 
   override def peek: TokenType = tokenTypes(position + 1)
 
@@ -28,5 +28,10 @@ class TokenReader(source: Array[Char],
 
   override def tokenText: String =
     new String(source, tokenOffsets(position), tokenLengths(position))
+
+  override def read(): TokenType = {
+    position += 1
+    tokenTypes(position)
+  }
 
 }

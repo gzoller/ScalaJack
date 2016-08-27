@@ -11,4 +11,8 @@ object EmptyReader extends Reader {
 
   override def tokenText: String = ???
 
+  override var position: Int = _
+
+  override def read(): TokenType = ???
+
 }

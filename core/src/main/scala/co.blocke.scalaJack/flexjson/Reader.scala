@@ -4,13 +4,30 @@ import co.blocke.scalajack.flexjson.TokenType.TokenType
 
 trait Reader {
 
+  var position: Int
+
   def peek: TokenType
+
+  def read(): TokenType
 
   def read(expected: TokenType): Unit
 
   def readString(): String
 
-  def skipValue(): Unit = ???
+  def skipValue(): Unit = {
+    peek match {
+      case TokenType.BeginObject =>
+        // TODO
+        ???
+
+      case TokenType.BeginArray =>
+        // TODO
+        ???
+
+      case _ =>
+        position += 1
+    }
+  }
 
   def tokenText: String
 
