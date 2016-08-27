@@ -22,17 +22,30 @@ trait Reader {
 
   def skipValue(): Unit = {
     peek match {
-      case TokenType.BeginObject =>
-        // TODO
-        ???
+      case TokenType.BeginObject => skipOver( TokenType.BeginObject, TokenType.EndObject )
 
-      case TokenType.BeginArray =>
-        // TODO
-        ???
+      case TokenType.BeginArray => skipOver( TokenType.BeginArray, TokenType.EndArray )
 
       case _ =>
         position += 1
     }
+  }
+
+  private def skipOver( beginToken:TokenType.Value, endToken:TokenType.Value ): Unit = {
+      var depth = 0
+      while( depth > 0 || peek != endToken) {
+        println(s"Peek ${depth}:${position}: ${peek}")
+        position += 1
+        peek match {
+          case `beginToken` => 
+            depth += 1
+          case `endToken` if(depth > 0) => 
+            depth -= 1
+            position += 1
+          case _ => 
+        }
+      }
+      position += 1
   }
 
   def tokenText: String
