@@ -2,7 +2,7 @@ package co.blocke.scalajack.flexjson
 
 import co.blocke.scalajack.flexjson.TokenType.TokenType
 
-class TokenReader(source: Array[Char],
+class TokenReader(override val source: Array[Char],
                   numberOfTokens: Int,
                   tokenTypes: Array[TokenType],
                   tokenOffsets: Array[Int],
@@ -33,5 +33,9 @@ class TokenReader(source: Array[Char],
     position += 1
     tokenTypes(position)
   }
+
+  override def tokenOffset: Int = tokenOffsets(position)
+
+  override def tokenLength: Int = tokenLengths(position)
 
 }

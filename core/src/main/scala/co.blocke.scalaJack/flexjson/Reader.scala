@@ -6,6 +6,12 @@ trait Reader {
 
   var position: Int
 
+  def source: Array[Char]
+
+  def tokenOffset: Int
+
+  def tokenLength: Int
+
   def peek: TokenType
 
   def read(): TokenType

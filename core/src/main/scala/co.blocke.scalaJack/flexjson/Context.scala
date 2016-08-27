@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{CaseClassTypeAdapter, ListTypeAdapter, LongTypeAdapter, OptionTypeAdapter, StringTypeAdapter, TryTypeAdapter}
+import co.blocke.scalajack.flexjson.typeadapter.{BooleanTypeAdapter, CaseClassTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, StringTypeAdapter, TryTypeAdapter}
 
 import scala.reflect.runtime.universe.{Type, TypeTag}
 
@@ -8,9 +8,13 @@ object Context {
 
   val StandardContext = Context()
     .withFactory(ListTypeAdapter)
+    .withFactory(SetTypeAdapter)
+    .withFactory(MapTypeAdapter)
     .withFactory(CaseClassTypeAdapter)
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
+    .withFactory(BooleanTypeAdapter)
+    .withFactory(IntTypeAdapter)
     .withFactory(LongTypeAdapter)
     .withFactory(StringTypeAdapter)
 

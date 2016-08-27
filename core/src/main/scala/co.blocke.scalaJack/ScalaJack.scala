@@ -11,6 +11,8 @@ package co.blocke.scalajack
  * 		http://stackoverflow.com/questions/17006271/deep-access-of-fields-in-scala-using-runtime-reflection
  */
 
+import co.blocke.scalajack.flexjson.FlexJsonFlavor
+
 import scala.reflect.runtime.universe._
 import json._
 
@@ -32,7 +34,7 @@ trait ScalaJack[S] {
 }
 
 object ScalaJack extends ViewSplice {
-	def apply() = JsonFlavor().makeScalaJack
+	def apply() = FlexJsonFlavor.makeScalaJack
 	def apply[R]( flavor:FlavorKind[R] ) = flavor.makeScalaJack
 }
 
