@@ -19,6 +19,7 @@ trait Reader {
   def read(expected: TokenType): Unit
 
   def readString(): String
+  def readIdentifier(): String
 
   def skipValue(): Unit = {
     peek match {
@@ -49,6 +50,8 @@ trait Reader {
   }
 
   def tokenText: String
+
+  def hasNext: Boolean = peek != TokenType.End  // differentiate end-of-parsing from end of object/array
 
   def hasMoreElements: Boolean = peek != TokenType.EndArray
 

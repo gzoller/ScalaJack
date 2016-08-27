@@ -44,7 +44,7 @@ case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
     reader.beginObject()
 
     while (reader.hasMoreFields) {
-      val name = reader.readString()
+      val name = reader.readIdentifier()
 
       val optionalParameter = parametersByName.get(name)
       optionalParameter match {
