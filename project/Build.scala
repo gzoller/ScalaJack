@@ -1,6 +1,7 @@
 import sbt._
 import sbt.Keys._
 import bintray.BintrayKeys._
+import pl.project13.scala.sbt.JmhPlugin
 
 import scala.Some
 
@@ -56,6 +57,16 @@ object Build extends Build {
 		.settings(libraryDependencies ++=
 			compile( mongo_scala ) ++
 			test( scalatest, slf4j_simple )
+		).dependsOn( scalajack )
+
+
+	lazy val scalajack_benchmarks = project.in(file("benchmarks"))
+		.enablePlugins(JmhPlugin)
+		.settings(basicSettings: _*)
+		.settings(pubSettings: _*)
+		.settings(libraryDependencies ++=
+			compile( mongo_scala ) ++
+				test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
 /*
 	Don't build DB modules for now; until parse/render bit is done.
