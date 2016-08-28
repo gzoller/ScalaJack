@@ -8,7 +8,7 @@ trait TypeAdapter[T] {
 
   def write(value: T, writer: Writer): Unit
 
-  def transform[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
+  def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
 
 }
