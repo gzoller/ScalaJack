@@ -19,15 +19,16 @@ trait Reader {
   def read(expected: TokenType): Unit
 
   def readString(): String
+
   def readIdentifier(): String
 
   def skipValue(): Unit = {
     peek match {
-      case TokenType.BeginObject => skipOver( TokenType.BeginObject, TokenType.EndObject )
+      case TokenType.BeginObject ⇒ skipOver( TokenType.BeginObject, TokenType.EndObject )
 
-      case TokenType.BeginArray => skipOver( TokenType.BeginArray, TokenType.EndArray )
+      case TokenType.BeginArray ⇒ skipOver( TokenType.BeginArray, TokenType.EndArray )
 
-      case _ =>
+      case _ ⇒
         position += 1
     }
   }
@@ -38,12 +39,12 @@ trait Reader {
         println(s"Peek ${depth}:${position}: ${peek}")
         position += 1
         peek match {
-          case `beginToken` => 
+          case `beginToken` ⇒
             depth += 1
-          case `endToken` if(depth > 0) => 
+          case `endToken` if(depth > 0) ⇒
             depth -= 1
             position += 1
-          case _ => 
+          case _ ⇒
         }
       }
       position += 1

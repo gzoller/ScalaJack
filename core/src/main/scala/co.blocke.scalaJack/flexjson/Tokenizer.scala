@@ -113,7 +113,7 @@ class Tokenizer {
 
           appendToken(TokenType.Number, start, position - start)
 
-        case ch =>
+        case ch ⇒
           throw new IllegalArgumentException(s"Unknown character: $ch")
       }
     }

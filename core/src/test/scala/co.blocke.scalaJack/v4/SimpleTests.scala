@@ -229,7 +229,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				(sjJS.read[Wrapper](js1) == a1) should be( true )
 				// (sjJS.read[Wrapper2[Int]](js2) == a2) should be( true )  <-- Can't parse "7"
 				(sjJS.read[Wrapped](js3) == a3) should be( true )
-				(sjJS.read[Wrapped2[Int]](js4) == a4) should be( true )
+				(sjJS.read[Wrapped2[Boolean]](js4) == a4) should be( true )
 			}
 			it("Must read unicode") {
 				val js = "{\"me\":\"nast\\u0119puj\\u0105cych\"}"

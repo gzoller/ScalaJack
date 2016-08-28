@@ -1,12 +1,13 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{BooleanTypeAdapter, CaseClassTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, StringTypeAdapter, TryTypeAdapter}
+import co.blocke.scalajack.flexjson.typeadapter.{BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DoubleTypeAdapter, FloatTypeAdapter, IntTypeAdapter, JavaBooleanTypeAdapter, JavaByteTypeAdapter, JavaCharacterTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaShortTypeAdapter, JodaDateTimeTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, PolymorphicTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter}
 
 import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object Context {
 
   val StandardContext = Context()
+    .withFactory(TypeTypeAdapter)
     .withFactory(ListTypeAdapter)
     .withFactory(SetTypeAdapter)
     .withFactory(MapTypeAdapter)
@@ -14,9 +15,26 @@ object Context {
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
     .withFactory(BooleanTypeAdapter)
+    .withFactory(CharTypeAdapter)
+    .withFactory(ByteTypeAdapter)
+    .withFactory(ShortTypeAdapter)
     .withFactory(IntTypeAdapter)
     .withFactory(LongTypeAdapter)
+    .withFactory(FloatTypeAdapter)
+    .withFactory(DoubleTypeAdapter)
     .withFactory(StringTypeAdapter)
+    .withFactory(DerivedValueClassAdapter)
+    .withFactory(PolymorphicTypeAdapter)
+    .withFactory(JavaBooleanTypeAdapter)
+    .withFactory(JavaByteTypeAdapter)
+    .withFactory(JavaCharacterTypeAdapter)
+    .withFactory(JavaDoubleTypeAdapter)
+    .withFactory(JavaFloatTypeAdapter)
+    .withFactory(JavaIntegerTypeAdapter)
+    .withFactory(JavaLongTypeAdapter)
+    .withFactory(JavaShortTypeAdapter)
+    .withFactory(UUIDTypeAdapter)
+    .withFactory(JodaDateTimeTypeAdapter)
 
 }
 
