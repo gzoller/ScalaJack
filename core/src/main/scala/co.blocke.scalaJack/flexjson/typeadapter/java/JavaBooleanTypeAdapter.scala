@@ -1,5 +1,6 @@
-package co.blocke.scalajack.flexjson.typeadapter
+package co.blocke.scalajack.flexjson.typeadapter.java
 
+import co.blocke.scalajack.flexjson.typeadapter.SimpleTypeAdapter
 import co.blocke.scalajack.flexjson.{Reader, TokenType, Writer}
 
 object JavaBooleanTypeAdapter extends SimpleTypeAdapter[java.lang.Boolean] {
