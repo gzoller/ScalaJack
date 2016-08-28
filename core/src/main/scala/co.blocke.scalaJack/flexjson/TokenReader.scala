@@ -25,6 +25,10 @@ class TokenReader(override val source: Array[Char],
     read(expected = TokenType.String)
     tokenText
   }
+  override def readIdentifier(): String = {
+    read(expected = TokenType.Identifier)
+    tokenText
+  }
 
   override def tokenText: String =
     new String(source, tokenOffsets(position), tokenLengths(position))

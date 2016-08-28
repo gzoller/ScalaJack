@@ -11,7 +11,11 @@ object TokenType extends Enumeration {
       Identifier,
       Number,
       String,
+      True,
+      False,
+      Null,
       NameSeparator,
       ValueSeparator,
-      InsignificantWhitespace = Value
+      InsignificantWhitespace,
+      End = Value
 }
