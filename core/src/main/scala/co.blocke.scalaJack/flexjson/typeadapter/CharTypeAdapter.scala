@@ -8,6 +8,7 @@ object CharTypeAdapter extends SimpleTypeAdapter[Char] {
     reader.readString().head // TODO Ensure there is only one character
   }
 
-  override def write(value: Char, writer: Writer): Unit = ???
+  override def write(value: Char, writer: Writer): Unit =
+    writer.writeString(s"'$value'")
 
 }

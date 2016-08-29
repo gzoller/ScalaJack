@@ -15,6 +15,11 @@ object JavaIntegerTypeAdapter extends SimpleTypeAdapter[java.lang.Integer] {
         java.lang.Integer.valueOf(reader.tokenText)
     }
 
-  override def write(value: java.lang.Integer, writer: Writer): Unit = ???
+  override def write(value: java.lang.Integer, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeInt(value.intValue)
+    }
 
 }

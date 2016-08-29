@@ -41,6 +41,24 @@ case class MapTypeAdapter[K, V](keyTypeAdapter: TypeAdapter[K],
     builder.result()
   }
 
-  override def write(value: Map[K, V], writer: Writer): Unit = ???
+  override def write(map: Map[K, V], writer: Writer): Unit = {
+    writer.beginObject()
+
+    var isFirstEntry = true
+
+    for ((key, value) <- map) {
+      if (isFirstEntry) {
+        isFirstEntry = false
+      } else {
+        writer.writeValueSeparator()
+      }
+
+      keyTypeAdapter.write(key, writer)
+      writer.writeNameSeparator()
+      valueTypeAdapter.write(value, writer)
+    }
+
+    writer.endObject()
+  }
 
 }

@@ -9,6 +9,7 @@ object FloatTypeAdapter extends SimpleTypeAdapter[Float] {
     reader.tokenText.toFloat
   }
 
-  override def write(value: Float, writer: Writer): Unit = ???
+  override def write(value: Float, writer: Writer): Unit =
+    writer.writeFloat(value)
 
 }

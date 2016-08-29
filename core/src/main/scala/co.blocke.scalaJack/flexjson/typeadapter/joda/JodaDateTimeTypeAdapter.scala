@@ -16,6 +16,11 @@ object JodaDateTimeTypeAdapter extends SimpleTypeAdapter[DateTime] {
         new DateTime(reader.tokenText.toLong).toDateTime(DateTimeZone.forID("UTC"))
     }
 
-  override def write(value: DateTime, writer: Writer): Unit = ???
+  override def write(value: DateTime, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeString(value.toString)
+    }
 
 }

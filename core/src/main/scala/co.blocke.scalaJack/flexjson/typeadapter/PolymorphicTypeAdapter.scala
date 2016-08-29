@@ -2,18 +2,13 @@ package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
 
-import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.{ClassSymbol, Type}
 
-object PolymorphicTypeAdapter extends TypeAdapterFactory {
+object PolymorphicTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-    if (tpe.typeSymbol.isClass) {
-      val classSymbol = tpe.typeSymbol.asClass
-      if (classSymbol.isTrait) {
-        Some(PolymorphicTypeAdapter("_hint", context.typeAdapterOf[Type], context))
-      } else {
-        None
-      }
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+    if (classSymbol.isTrait) {
+      Some(PolymorphicTypeAdapter("_hint", context.typeAdapterOf[Type], context))
     } else {
       None
     }

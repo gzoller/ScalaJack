@@ -9,6 +9,7 @@ object LongTypeAdapter extends SimpleTypeAdapter[Long] {
     reader.tokenText.toLong
   }
 
-  override def write(value: Long, writer: Writer): Unit = ???
+  override def write(value: Long, writer: Writer): Unit =
+    writer.writeLong(value)
 
 }

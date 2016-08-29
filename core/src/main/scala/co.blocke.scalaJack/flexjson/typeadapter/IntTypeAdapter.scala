@@ -9,6 +9,7 @@ object IntTypeAdapter extends SimpleTypeAdapter[Int] {
     reader.tokenText.toInt
   }
 
-  override def write(value: Int, writer: Writer): Unit = ???
+  override def write(value: Int, writer: Writer): Unit =
+    writer.writeInt(value)
 
 }

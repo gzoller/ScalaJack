@@ -70,16 +70,20 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
         finalContext
       })
 
-    override def read[T](json: String)(implicit valueTypeTag: TypeTag[T], vc: VisitorContext): T = {
+    override def read[T](json: String)(implicit valueTypeTag: TypeTag[T], visitorContext: VisitorContext): T = {
       val tokenizer = new Tokenizer
 
       val source = json.toCharArray
       val reader = tokenizer.tokenize(source, 0, source.length)
 
-      context(vc).typeAdapterOf[T].read(reader)
+      context(visitorContext).typeAdapterOf[T].read(reader)
     }
 
-    override def render[T](value: T)(implicit valueTypeTag: TypeTag[T], context: VisitorContext): String = ???
+    override def render[T](value: T)(implicit valueTypeTag: TypeTag[T], visitorContext: VisitorContext): String = {
+      val writer = new StringJsonWriter
+      context(visitorContext).typeAdapterOf[T].write(value, writer)
+      writer.jsonString
+    }
 
   }
 

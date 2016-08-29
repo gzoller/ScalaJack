@@ -9,6 +9,7 @@ object ByteTypeAdapter extends SimpleTypeAdapter[Byte] {
     reader.tokenText.toByte
   }
 
-  override def write(value: Byte, writer: Writer): Unit = ???
+  override def write(value: Byte, writer: Writer): Unit =
+    writer.writeByte(value)
 
 }

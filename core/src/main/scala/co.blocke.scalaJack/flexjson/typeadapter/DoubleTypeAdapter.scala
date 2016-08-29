@@ -9,6 +9,7 @@ object DoubleTypeAdapter extends SimpleTypeAdapter[Double] {
     reader.tokenText.toDouble
   }
 
-  override def write(value: Double, writer: Writer): Unit = ???
+  override def write(value: Double, writer: Writer): Unit =
+    writer.writeDouble(value)
 
 }

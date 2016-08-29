@@ -9,6 +9,7 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
   override def read(reader: Reader): UUID =
     UUID.fromString(reader.readString())
 
-  override def write(value: UUID, writer: Writer): Unit = ???
+  override def write(value: UUID, writer: Writer): Unit =
+    writer.writeString(value.toString)
 
 }

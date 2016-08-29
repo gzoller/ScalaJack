@@ -18,6 +18,7 @@ object StringTypeAdapter extends SimpleTypeAdapter[String] {
     }
   }
 
-  override def write(value: String, writer: Writer): Unit = ???
+  override def write(value: String, writer: Writer): Unit =
+    writer.writeString(value)
 
 }

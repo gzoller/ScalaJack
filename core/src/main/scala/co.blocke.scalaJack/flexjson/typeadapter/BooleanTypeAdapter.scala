@@ -40,6 +40,11 @@ object BooleanTypeAdapter extends SimpleTypeAdapter[Boolean] {
     }
   }
 
-  override def write(value: Boolean, writer: Writer): Unit = ???
+  override def write(value: Boolean, writer: Writer): Unit =
+    if (value) {
+      writer.writeTrue()
+    } else {
+      writer.writeFalse()
+    }
 
 }

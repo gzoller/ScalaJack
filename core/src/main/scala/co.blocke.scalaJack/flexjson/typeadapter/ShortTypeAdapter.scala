@@ -9,6 +9,7 @@ object ShortTypeAdapter extends SimpleTypeAdapter[Short] {
     reader.tokenText.toShort
   }
 
-  override def write(value: Short, writer: Writer): Unit = ???
+  override def write(value: Short, writer: Writer): Unit =
+    writer.writeShort(value)
 
 }
