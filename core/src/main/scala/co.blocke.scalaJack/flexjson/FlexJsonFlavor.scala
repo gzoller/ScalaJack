@@ -1,11 +1,10 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{PolymorphicTypeAdapter, SimpleTypeAdapter, StringTypeAdapter}
+import co.blocke.scalajack.flexjson.typeadapter.PolymorphicTypeAdapter
 import co.blocke.scalajack.{FlavorKind, JackFlavor, ScalaJack, VisitorContext}
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{Type, TypeTag, typeOf}
-import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with JackFlavor[String] {
 
