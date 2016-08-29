@@ -31,6 +31,9 @@ trait BijectiveFunction[A, B] extends Function[A, B] {
   def andThen[C](g: BijectiveFunction[B, C]): BijectiveFunction[A, C] =
     ComposedBijectiveFunction(this, g)
 
+  def memoized: BijectiveFunction[A, B] =
+    MemoizedBijectiveFunction(this)
+
 }
 
 case class BijectiveFunctionPair[A, B](applyFn: A ⇒ B,
@@ -58,5 +61,20 @@ case class ComposedBijectiveFunction[A, B, C](f: BijectiveFunction[A, B],
   override def apply(a: A): C = g.apply(f.apply(a))
 
   override def unapply(c: C): A = f.unapply(g.unapply(c))
+
+}
+
+case class MemoizedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends BijectiveFunction[A, B] {
+
+  import scala.collection.mutable
+
+  val applyCache = new mutable.WeakHashMap[A, B]
+  val unapplyCache = new mutable.WeakHashMap[B, A]
+
+  override def apply(a: A): B =
+    applyCache.getOrElseUpdate(a, f.apply(a))
+
+  override def unapply(b: B): A =
+    unapplyCache.getOrElseUpdate(b, f.unapply(b))
 
 }

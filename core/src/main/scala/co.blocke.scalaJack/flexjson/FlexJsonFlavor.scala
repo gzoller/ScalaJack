@@ -47,14 +47,14 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
             }
           }
 
-          val polymorphicTypeAdapter = PolymorphicTypeAdapter(hintFieldName, StringTypeAdapter andThen hintToType, context)
-
           val polymorphicTypeAdapterFactory = new TypeAdapterFactory {
 
             override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
 // FIXME              if (tpe =:= polymorphicType) {
               if (tpe.typeSymbol.fullName == polymorphicFullName) {
-                Some(polymorphicTypeAdapter)
+                val stringTypeAdapter = context.typeAdapterOf[String]
+
+                Some(PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context))
               } else {
                 None
               }
@@ -77,7 +77,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
       val source = json.toCharArray
       val reader = tokenizer.tokenize(source, 0, source.length)
 
-      // Map("co.blocke.scalajack.test.v4.Blah"-> {(x:String)⇒"co.blocke.scalajack.test.v4."+x} ))
+      // Map("co.blocke.scalajack.test.v4.Blah"→ {(x:String)⇒"co.blocke.scalajack.test.v4."+x} ))
 
       context(vc).typeAdapterOf[T].read(reader)
     }

@@ -1,6 +1,6 @@
 package co.blocke.scalajack.benchmarks
 
-import co.blocke.scalajack.ScalaJack
+import co.blocke.scalajack.{ScalaJack, VisitorContext}
 import co.blocke.scalajack.flexjson.FlexJsonFlavor
 import co.blocke.scalajack.json.JsonFlavor
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
@@ -65,19 +65,27 @@ class BaseBenchmarksState {
   val nativeScalaJack = ScalaJack[String](JsonFlavor())
   val flexScalaJack = ScalaJack[String](FlexJsonFlavor)
 
+  val vc = VisitorContext(
+    hintMap = Map("co.blocke.scalajack.benchmarks.Human" -> "gender"),
+    hintValueRead = Map("co.blocke.scalajack.benchmarks.Human" -> {
+      case "Male" => "co.blocke.scalajack.benchmarks.Male"
+      case "Female" => "co.blocke.scalajack.benchmarks.Female"
+    })
+  )
+
 }
 
 @State(Scope.Thread)
 class BaseBenchmarks {
 
   @Benchmark
-  def testNativeScalaJack(state: BaseBenchmarksState): List[Person] = {
-    state.nativeScalaJack.read[List[Person]](state.jsonString)
+  def testNativeScalaJack(state: BaseBenchmarksState): List[Human] = {
+    state.nativeScalaJack.read[List[Human]](state.jsonString, state.vc)
   }
 
   @Benchmark
-  def testFlexScalaJack(state: BaseBenchmarksState): List[Person] = {
-    state.flexScalaJack.read[List[Person]](state.jsonString)
+  def testFlexScalaJack(state: BaseBenchmarksState): List[Human] = {
+    state.flexScalaJack.read[List[Human]](state.jsonString, state.vc)
   }
 
 }
