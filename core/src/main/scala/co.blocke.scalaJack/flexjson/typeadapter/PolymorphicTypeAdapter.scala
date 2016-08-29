@@ -24,9 +24,6 @@ case class PolymorphicTypeAdapter[T](typeFieldName: String,
                                      typeTypeAdapter: TypeAdapter[Type],
                                      context: Context) extends TypeAdapter[T] {
 
-  var hintToTypeCache = Map[String, Type]()
-  var typeToHintCache = Map[Type, String]()
-
   override def read(reader: Reader): T = {
     val originalPosition = reader.position
 

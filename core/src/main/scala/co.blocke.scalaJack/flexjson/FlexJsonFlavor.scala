@@ -77,8 +77,6 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
       val source = json.toCharArray
       val reader = tokenizer.tokenize(source, 0, source.length)
 
-      // Map("co.blocke.scalajack.test.v4.Blah"→ {(x:String)⇒"co.blocke.scalajack.test.v4."+x} ))
-
       context(vc).typeAdapterOf[T].read(reader)
     }
 
