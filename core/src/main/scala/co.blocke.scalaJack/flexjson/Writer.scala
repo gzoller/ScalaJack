@@ -10,7 +10,7 @@ trait Writer {
 
   def endArray(): Unit
 
-  def writeRaw(source: Array[Char], offset: Int, length: Int): Unit
+  def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit
 
   def writeNothing(): Unit
 
@@ -52,7 +52,7 @@ trait ForwardingWriter extends Writer {
 
   override def endArray(): Unit = delegate.endArray()
 
-  override def writeRaw(source: Array[Char], offset: Int, length: Int): Unit = delegate.writeRaw(source, offset, length)
+  override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = delegate.writeRawValue(source, offset, length)
 
   override def writeNothing(): Unit = delegate.writeNothing()
 

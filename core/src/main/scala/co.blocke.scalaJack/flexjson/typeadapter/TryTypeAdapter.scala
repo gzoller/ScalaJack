@@ -38,7 +38,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
         val exception= new UnreadableJsonException(cause) {
           override def write(writer: Writer): Unit = {
-            writer.writeRaw(reader.source, originalPosition, lengthOfUnreadableJson)
+            writer.writeRawValue(reader.source, originalPosition, lengthOfUnreadableJson)
           }
         }
         Failure(exception)

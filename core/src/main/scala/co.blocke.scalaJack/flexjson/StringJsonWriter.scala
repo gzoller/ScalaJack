@@ -7,7 +7,7 @@ object StructureType extends Enumeration {
 
 object ValueType extends Enumeration {
   type ValueType = Value
-  val String, Number, Boolean, Identifier, Object, Array, Unreadable, Nothing = Value
+  val String, Number, Boolean, Identifier, Object, Array, Unreadable, Raw, Nothing = Value
 }
 
 object MemberPart extends Enumeration {
@@ -19,20 +19,81 @@ import co.blocke.scalajack.flexjson.StructureType.StructureType
 import co.blocke.scalajack.flexjson.ValueType.ValueType
 import co.blocke.scalajack.flexjson.MemberPart.MemberPart
 
-class Structure(var structureType: StructureType) {
-
-  // structureType == StructureType.Object
-  var numberOfMembersWrittenSoFar: Int = 0
-  var nextMemberPartToBeWritten: MemberPart = MemberPart.MemberName
-  var builderLengthBeforeMemberNameWritten: Int = 0
-
-  // structureType == StructureType.Array
-  var numberOfElementsWrittenSoFar: Int = 0
-  var builderLengthBeforeElementWritten: Int = 0
-
-}
-
 class StringJsonWriter extends Writer {
+
+  sealed trait Structure {
+
+    val structureType: StructureType
+
+    def beginNestedValue(nestedValueType: ValueType): Unit
+
+    def endNestedValue(nestedValueType: ValueType): Unit
+
+    def endStructure(expectedStructureType: StructureType): Unit = {
+      val actualStructureType = structureType
+      if (expectedStructureType != actualStructureType) {
+        throw new RuntimeException(s"Attempting to end an $actualStructureType structure when a $expectedStructureType is currently open")
+      }
+    }
+
+  }
+
+  class ObjectStructure extends Structure {
+
+    var numberOfMembersWrittenSoFar: Int = 0
+    var nextMemberPartToBeWritten: MemberPart = MemberPart.MemberName
+    var builderLengthBeforeMemberNameWritten: Int = 0
+
+    override val structureType = StructureType.Object
+
+    override def beginNestedValue(valueType: ValueType): Unit = {
+      nextMemberPartToBeWritten match {
+        case MemberPart.MemberName ⇒
+          builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
+          if (numberOfMembersWrittenSoFar > 0) {
+            writeValueSeparator()
+          }
+
+        case MemberPart.MemberValue ⇒
+          writeNameSeparator()
+          if (valueType == ValueType.Nothing) {
+            builder.length = builderLengthBeforeMemberNameWritten
+          }
+      }
+    }
+
+    override def endNestedValue(valueType: ValueType): Unit = {
+      numberOfMembersWrittenSoFar += 1
+      nextMemberPartToBeWritten = nextMemberPartToBeWritten match {
+        case MemberPart.MemberName ⇒ MemberPart.MemberValue
+        case MemberPart.MemberValue ⇒ MemberPart.MemberName
+      }
+    }
+
+  }
+
+  class ArrayStructure extends Structure {
+
+    var numberOfElementsWrittenSoFar: Int = 0
+    var builderLengthBeforeElementWritten: Int = 0
+
+    override val structureType = StructureType.Array
+
+    override def beginNestedValue(valueType: ValueType): Unit = {
+      builderLengthBeforeElementWritten = builder.length
+      if (numberOfElementsWrittenSoFar > 0) {
+        writeValueSeparator()
+      }
+      if (valueType == ValueType.Nothing) {
+        builder.length = builderLengthBeforeElementWritten
+      }
+    }
+
+    override def endNestedValue(valueType: ValueType): Unit = {
+      numberOfElementsWrittenSoFar += 1
+    }
+
+  }
 
   import scala.collection.mutable
 
@@ -41,49 +102,17 @@ class StringJsonWriter extends Writer {
 
   def jsonString: String = builder.toString
 
-  @inline def structure: Structure = structures.last
-
   @inline def beginValue(valueType: ValueType): Unit = {
     if (structures.nonEmpty) {
-      val structure = structures.top
-
-      structure.structureType match {
-        case StructureType.Object ⇒
-
-          structure.nextMemberPartToBeWritten match {
-            case MemberPart.MemberName ⇒
-              structure.builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
-              if (structure.numberOfMembersWrittenSoFar > 0) {
-                writeValueSeparator()
-              }
-
-            case MemberPart.MemberValue ⇒
-              writeNameSeparator()
-              if (valueType == ValueType.Nothing) {
-                builder.length = structure.builderLengthBeforeMemberNameWritten
-              }
-          }
-
-        case StructureType.Array ⇒
-          structure.builderLengthBeforeElementWritten = builder.length
-          if (structure.numberOfElementsWrittenSoFar > 0) {
-            writeValueSeparator()
-          }
-          if (valueType == ValueType.Nothing) {
-            builder.length = structure.builderLengthBeforeElementWritten
-          }
-
-      }
+      structures.top.beginNestedValue(valueType)
     }
 
     valueType match {
       case ValueType.Object ⇒
-        val structure = new Structure(StructureType.Object)
-        structures.push(structure)
+        structures.push(new ObjectStructure)
 
       case ValueType.Array ⇒
-        val structure = new Structure(StructureType.Array)
-        structures.push(structure)
+        structures.push(new ArrayStructure)
 
       case _ ⇒
     }
@@ -92,30 +121,16 @@ class StringJsonWriter extends Writer {
   @inline def endValue(valueType: ValueType): Unit = {
     valueType match {
       case ValueType.Object ⇒
-        val structure = structures.pop()
-        assert(structure.structureType == StructureType.Object)
+        structures.pop().endStructure(expectedStructureType = StructureType.Object)
 
       case ValueType.Array ⇒
-        val structure = structures.pop()
-        assert(structure.structureType == StructureType.Array)
+        structures.pop().endStructure(expectedStructureType = StructureType.Array)
 
       case _ ⇒
     }
 
     if (structures.nonEmpty) {
-      val structure = structures.top
-
-      structure.structureType match {
-        case StructureType.Object ⇒
-          structure.numberOfMembersWrittenSoFar += 1
-          structure.nextMemberPartToBeWritten = structure.nextMemberPartToBeWritten match {
-            case MemberPart.MemberName ⇒ MemberPart.MemberValue
-            case MemberPart.MemberValue ⇒ MemberPart.MemberName
-          }
-
-        case StructureType.Array ⇒
-          structure.numberOfElementsWrittenSoFar += 1
-      }
+      structures.top.endNestedValue(valueType)
     }
   }
 
@@ -139,8 +154,11 @@ class StringJsonWriter extends Writer {
     endValue(ValueType.Array)
   }
 
-  override def writeRaw(source: Array[Char], offset: Int, length: Int): Unit =
+  override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = {
+    beginValue(ValueType.Raw)
     builder.appendAll(source, offset, length)
+    endValue(ValueType.Raw)
+  }
 
   override def writeNothing(): Unit = {
     beginValue(ValueType.Nothing)
