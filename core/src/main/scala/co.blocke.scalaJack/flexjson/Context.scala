@@ -55,10 +55,10 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
         typeAdapter
 
       case None ⇒
+        resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
         val optionalTypeAdapter: Option[TypeAdapter[_]] = factories.find(f => f.typeAdapter(tpe, this).isDefined).flatMap(f => f.typeAdapter(tpe, this))
         val typeAdapter = optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
 
-        resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
         resolvedTypeAdapters += tpe → typeAdapter
 
         typeAdapter
