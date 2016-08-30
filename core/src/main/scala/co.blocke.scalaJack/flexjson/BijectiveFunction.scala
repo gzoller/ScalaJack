@@ -77,4 +77,7 @@ case class MemoizedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends B
   override def unapply(b: B): A =
     unapplyCache.getOrElseUpdate(b, f.unapply(b))
 
+  override def memoized: BijectiveFunction[A, B] =
+    this
+
 }

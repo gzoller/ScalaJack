@@ -8,6 +8,9 @@ object JodaDateTimeTypeAdapter extends SimpleTypeAdapter[DateTime] {
 
   override def read(reader: Reader): DateTime =
     reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
+
       case TokenType.String ⇒
         DateTime.parse(reader.readString()).toDateTime(DateTimeZone.forID("UTC"))
 

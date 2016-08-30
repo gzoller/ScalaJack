@@ -8,13 +8,18 @@ object JavaShortTypeAdapter extends SimpleTypeAdapter[java.lang.Short] {
   override def read(reader: Reader): java.lang.Short =
     reader.peek match {
       case TokenType.Null ⇒
-        null
+        reader.readNull()
 
       case TokenType.Number ⇒
         reader.read(expected = TokenType.Number)
         java.lang.Short.valueOf(reader.tokenText)
     }
 
-  override def write(value: java.lang.Short, writer: Writer): Unit = ???
+  override def write(value: java.lang.Short, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeShort(value.shortValue)
+    }
 
 }

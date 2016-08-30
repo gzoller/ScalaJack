@@ -12,6 +12,9 @@ object TypeTypeAdapter extends SimpleTypeAdapter[Type] {
     currentMirror.staticClass(fullName).info
   }
 
-  override def write(value: Type, writer: Writer): Unit = ???
+  override def write(value: Type, writer: Writer): Unit = {
+    val fullName = value.typeSymbol.fullName
+    writer.writeString(fullName)
+  }
 
 }

@@ -1,9 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, UnreadableJsonException, Writer}
 
-import scala.util.Try
-
+import scala.util.{Failure, Success, Try}
 import scala.reflect.runtime.universe.{Type, typeOf}
 
 object TryTypeAdapter extends TypeAdapterFactory {
@@ -27,14 +26,34 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
     val attempt = Try { valueTypeAdapter.read(reader) }
 
-    if (attempt.isFailure) {
-      reader.position = originalPosition
-      reader.skipValue()
-    }
+    attempt match {
+      case self @ Success(value) ⇒
+        self
 
-    attempt
+      case Failure(cause) ⇒
+        reader.position = originalPosition
+        reader.skipValue()
+
+        val lengthOfUnreadableJson = reader.position - originalPosition
+
+        val exception= new UnreadableJsonException(cause) {
+          override def write(writer: Writer): Unit = {
+            writer.writeRaw(reader.source, originalPosition, lengthOfUnreadableJson)
+          }
+        }
+        Failure(exception)
+    }
   }
 
-  override def write(value: Try[T], writer: Writer): Unit = ???
+  override def write(value: Try[T], writer: Writer): Unit =
+    value match {
+      case Success(v) ⇒
+
+      case Failure(e: UnreadableJsonException) ⇒
+        e.write(writer)
+
+      case Failure(e) ⇒
+        throw e
+    }
 
 }

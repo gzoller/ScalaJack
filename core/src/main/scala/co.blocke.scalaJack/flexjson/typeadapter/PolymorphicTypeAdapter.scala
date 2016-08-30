@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{Context, ForwardingWriter, Reader, TypeAdapter, TypeAdapterFactory, Writer}
 
 import scala.reflect.runtime.universe.{ClassSymbol, Type}
 
@@ -12,6 +12,30 @@ object PolymorphicTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     } else {
       None
     }
+
+}
+
+class PolymorphicWriter(override val delegate: Writer,
+                        typeFieldName: String,
+                        tpe: Type,
+                        typeTypeAdapter: TypeAdapter[Type]) extends ForwardingWriter {
+
+  var depth = 0
+
+  override def beginObject(): Unit = {
+    depth += 1
+    super.beginObject()
+
+    if (depth == 1) {
+      writeName(typeFieldName)
+      typeTypeAdapter.write(tpe, this)
+    }
+  }
+
+  override def endObject(): Unit = {
+    depth -= 1
+    super.endObject()
+  }
 
 }
 
@@ -46,6 +70,8 @@ case class PolymorphicTypeAdapter[T](typeFieldName: String,
     concreteTypeAdapter.read(reader).asInstanceOf[T]
   }
 
-  override def write(value: T, writer: Writer): Unit = ???
+  override def write(value: T, writer: Writer): Unit = {
+    ???
+  }
 
 }

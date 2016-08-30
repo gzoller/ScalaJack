@@ -27,7 +27,13 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
       Some(valueTypeAdapter.read(reader))
     }
 
-  override def write(value: Option[T], writer: Writer): Unit =
-    valueTypeAdapter.write(value.get, writer) // FIXME
+  override def write(optionalValue: Option[T], writer: Writer): Unit =
+    optionalValue match {
+      case Some(value) ⇒
+        valueTypeAdapter.write(value, writer)
+
+      case None ⇒
+        writer.writeNothing()
+    }
 
 }

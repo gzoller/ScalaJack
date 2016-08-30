@@ -8,7 +8,7 @@ object JavaIntegerTypeAdapter extends SimpleTypeAdapter[java.lang.Integer] {
   override def read(reader: Reader): java.lang.Integer =
     reader.peek match {
       case TokenType.Null ⇒
-        null
+        reader.readNull()
 
       case TokenType.Number ⇒
         reader.read(expected = TokenType.Number)

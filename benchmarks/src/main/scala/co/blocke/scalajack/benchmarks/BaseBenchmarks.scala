@@ -66,10 +66,10 @@ class BaseBenchmarksState {
   val flexScalaJack = ScalaJack[String](FlexJsonFlavor)
 
   val vc = VisitorContext(
-    hintMap = Map("co.blocke.scalajack.benchmarks.Human" -> "gender"),
-    hintValueRead = Map("co.blocke.scalajack.benchmarks.Human" -> {
-      case "Male" => "co.blocke.scalajack.benchmarks.Male"
-      case "Female" => "co.blocke.scalajack.benchmarks.Female"
+    hintMap = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
+    hintValueRead = Map("co.blocke.scalajack.benchmarks.Human" → {
+      case "Male" ⇒ new String("co.blocke.scalajack.benchmarks.Male")
+      case "Female" ⇒ new String("co.blocke.scalajack.benchmarks.Female")
     })
   )
 

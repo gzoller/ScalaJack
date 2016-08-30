@@ -20,6 +20,11 @@ trait Reader {
 
   def readString(): String
 
+  def readNull[T]()(implicit ev: Null <:< T): T = {
+    read(expected = TokenType.Null)
+    ev(null)
+  }
+
   def readIdentifier(): String
 
   def skipValue(): Unit = {

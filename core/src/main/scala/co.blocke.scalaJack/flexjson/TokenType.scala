@@ -9,6 +9,7 @@ object TokenType extends Enumeration {
       BeginArray,
       EndArray,
       Identifier,
+      LiteralName, // null, true, false
       Number,
       String,
       True,

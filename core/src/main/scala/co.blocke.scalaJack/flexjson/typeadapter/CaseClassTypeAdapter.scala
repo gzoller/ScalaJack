@@ -3,9 +3,10 @@ package co.blocke.scalajack.flexjson.typeadapter
 import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Parameter
 import co.blocke.scalajack.flexjson.{Context, EmptyReader, Reader, TypeAdapter, TypeAdapterFactory, Writer}
 
+import scala.collection.mutable
+import scala.reflect.ClassTag
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
-import scala.reflect.ClassTag
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -58,7 +59,7 @@ case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
     val numberOfParameters = parameters.length
 
     val arguments = new Array[Any](numberOfParameters)
-    val found = new Array[Boolean](numberOfParameters)
+    val found = new mutable.BitSet(numberOfParameters)
 
     reader.beginObject()
 

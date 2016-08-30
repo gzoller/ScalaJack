@@ -28,11 +28,67 @@ class Tokenizer {
       tokenLengths(i) = tokenLength
     }
 
-    @inline def isInitialIdentifierChar(ch: Char): Boolean = ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z')
+    @inline def isLetter(ch: Char): Boolean = ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z')
 
-    @inline def isSubsequentIdentifierChar(ch: Char): Boolean = ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_'
+    @inline def isDigit(ch: Char): Boolean = '0' <= ch && ch <= '9'
+
+    @inline def isSign(ch: Char): Boolean = ch == '+' || ch == '-'
+
+    @inline def isDecimalPoint(ch: Char): Boolean = ch == '.'
+
+    @inline def isUnderscore(ch: Char): Boolean = ch == '_'
+
+    @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch)
+
+    @inline def isSubsequentLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch) || isDigit(ch)
 
     @inline def isIntegerChar(ch: Char): Boolean = ('0' <= ch && ch <= '9') || ch == '.' || ch == '-' || ch == '+' || ch == 'e' || ch == 'E'
+
+    @inline def isE(ch: Char): Boolean = ch == 'e' || ch == 'E'
+
+    @inline def skipInteger(): Boolean =
+      if (isSign(source(position))) {
+        position += 1
+
+        while (isDigit(source(position))) {
+          position += 1
+        }
+
+        true
+      } else if (isDigit(source(position))) {
+        while (isDigit(source(position))) {
+          position += 1
+        }
+
+        true
+      } else {
+        false
+      }
+
+    @inline def skipFraction(): Boolean =
+      if (isDecimalPoint(source(position))) {
+        position += 1
+
+        while (isDigit(source(position))) {
+          position += 1
+        }
+
+        true
+      } else {
+        false
+      }
+
+    @inline def skipExponent(): Boolean = {
+      if (isE(source(position))) {
+        position += 1
+
+        skipInteger()
+
+        true
+      } else {
+        false
+      }
+    }
 
     while (position < maxPosition) {
       source(position) match {
@@ -114,6 +170,27 @@ class Tokenizer {
           appendToken(TokenType.Number, start, position - start)
 
         case ch ⇒
+          // Literal name
+          if (isInitialLiteralNameChar(ch)) {
+            val literalNameOffset = position
+
+            position += 1 // Skip initial character
+
+            while (isSubsequentLiteralNameChar(source(position))) {
+              position += 1
+            }
+
+            val literalNameLength = position - literalNameOffset
+
+            appendToken(TokenType.LiteralName, literalNameOffset, literalNameLength)
+          } else if (isSign(ch)) {
+
+          } else if (isDigit(ch)) {
+
+          } else if (isDecimalPoint(ch)) {
+
+          }
+
           throw new IllegalArgumentException(s"Unknown character: $ch")
       }
     }
