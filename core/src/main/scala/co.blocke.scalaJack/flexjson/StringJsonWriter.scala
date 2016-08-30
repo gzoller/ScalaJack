@@ -236,4 +236,5 @@ class StringJsonWriter extends Writer {
     builder.append(value)
     endValue(ValueType.Boolean)
   }
+
 }
