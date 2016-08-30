@@ -19,11 +19,12 @@ object JodaDateTimeTypeAdapter extends SimpleTypeAdapter[DateTime] {
         new DateTime(reader.tokenText.toLong).toDateTime(DateTimeZone.forID("UTC"))
     }
 
-  override def write(value: DateTime, writer: Writer): Unit =
-    if (value == null) {
+  override def write(dateTime: DateTime, writer: Writer): Unit =
+    if (dateTime == null) {
       writer.writeNull()
     } else {
-      writer.writeString(value.toString)
+      // TODO Why do we default to UNIX timestamps instead of the ISO-formatted date?
+      writer.writeLong(dateTime.getMillis)
     }
 
 }

@@ -15,25 +15,20 @@ object MemberPart extends Enumeration {
   val MemberName, MemberValue = Value
 }
 
-import StructureType.StructureType
-import ValueType.ValueType
-import MemberPart.MemberPart
+import co.blocke.scalajack.flexjson.StructureType.StructureType
+import co.blocke.scalajack.flexjson.ValueType.ValueType
+import co.blocke.scalajack.flexjson.MemberPart.MemberPart
 
 class Structure(var structureType: StructureType) {
 
-  var numberOfElementsWrittenSoFar: Int = 0
-  var numberOfFieldsWrittenSoFar: Int = 0
-  var nextPartOfMemberToBeWritten: MemberPart = MemberPart.MemberName
+  // structureType == StructureType.Object
+  var numberOfMembersWrittenSoFar: Int = 0
+  var nextMemberPartToBeWritten: MemberPart = MemberPart.MemberName
   var builderLengthBeforeMemberNameWritten: Int = 0
-  var builderLengthBeforeElementWritten: Int = 0
 
-  def reset(): Unit = {
-    structureType = null
-    numberOfElementsWrittenSoFar = 0
-    numberOfFieldsWrittenSoFar = 0
-    nextPartOfMemberToBeWritten = MemberPart.MemberName
-    builderLengthBeforeMemberNameWritten = 0
-  }
+  // structureType == StructureType.Array
+  var numberOfElementsWrittenSoFar: Int = 0
+  var builderLengthBeforeElementWritten: Int = 0
 
 }
 
@@ -55,10 +50,10 @@ class StringJsonWriter extends Writer {
       structure.structureType match {
         case StructureType.Object ⇒
 
-          structure.nextPartOfMemberToBeWritten match {
+          structure.nextMemberPartToBeWritten match {
             case MemberPart.MemberName ⇒
               structure.builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
-              if (structure.numberOfFieldsWrittenSoFar > 0) {
+              if (structure.numberOfMembersWrittenSoFar > 0) {
                 writeValueSeparator()
               }
 
@@ -97,10 +92,12 @@ class StringJsonWriter extends Writer {
   @inline def endValue(valueType: ValueType): Unit = {
     valueType match {
       case ValueType.Object ⇒
-        structures.pop() // TODO verify that the structure is of the correct type
+        val structure = structures.pop()
+        assert(structure.structureType == StructureType.Object)
 
       case ValueType.Array ⇒
-        structures.pop() // TODO verify that the structure is of the correct type
+        val structure = structures.pop()
+        assert(structure.structureType == StructureType.Array)
 
       case _ ⇒
     }
@@ -110,8 +107,8 @@ class StringJsonWriter extends Writer {
 
       structure.structureType match {
         case StructureType.Object ⇒
-          structure.numberOfFieldsWrittenSoFar += 1
-          structure.nextPartOfMemberToBeWritten = structure.nextPartOfMemberToBeWritten match {
+          structure.numberOfMembersWrittenSoFar += 1
+          structure.nextMemberPartToBeWritten = structure.nextMemberPartToBeWritten match {
             case MemberPart.MemberName ⇒ MemberPart.MemberValue
             case MemberPart.MemberValue ⇒ MemberPart.MemberName
           }
@@ -144,10 +141,6 @@ class StringJsonWriter extends Writer {
 
   override def writeRaw(source: Array[Char], offset: Int, length: Int): Unit =
     builder.appendAll(source, offset, length)
-
-  def writeValueSeparatorIfSubsequent(): Unit = {
-    ???
-  }
 
   override def writeNothing(): Unit = {
     beginValue(ValueType.Nothing)
@@ -211,7 +204,7 @@ class StringJsonWriter extends Writer {
 
   override def writeChar(value: Char): Unit = {
     beginValue(ValueType.String)
-    builder.append(value)
+    builder.append('"').append(value).append('"')
     endValue(ValueType.String)
   }
 
