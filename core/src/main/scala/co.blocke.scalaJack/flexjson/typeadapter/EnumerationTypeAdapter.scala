@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.flexjson.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 import scala.reflect.runtime.universe.{ ClassSymbol, Type, typeOf }
 
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
@@ -21,10 +21,15 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 case class EnumerationTypeAdapter(enum: Enumeration) extends TypeAdapter[Enumeration#Value] {
 
   override def read(reader: Reader): Enumeration#Value =
-    enum.withName(reader.readString())
+    reader.peek match {
+      case TokenType.String ⇒ enum.withName(reader.readString())
+      case TokenType.Null   ⇒ reader.readNull()
+    }
 
-  override def write(value: Enumeration#Value, writer: Writer): Unit = {
-    // writer.writeChar(value)
-  }
-
+  override def write(value: Enumeration#Value, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeString(value.toString)
+    }
 }
