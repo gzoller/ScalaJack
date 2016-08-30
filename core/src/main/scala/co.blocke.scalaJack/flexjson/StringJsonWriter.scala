@@ -42,11 +42,12 @@ class StringJsonWriter extends Writer {
 
     var numberOfMembersWrittenSoFar: Int = 0
     var nextMemberPartToBeWritten: MemberPart = MemberPart.MemberName
+    var memberPartCurrentlyBeingWritten: MemberPart = null
     var builderLengthBeforeMemberNameWritten: Int = 0
 
     override val structureType = StructureType.Object
 
-    override def beginNestedValue(valueType: ValueType): Unit = {
+    override def beginNestedValue(nestedValueType: ValueType): Unit = {
       nextMemberPartToBeWritten match {
         case MemberPart.MemberName ⇒
           builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
@@ -54,20 +55,26 @@ class StringJsonWriter extends Writer {
             writeValueSeparator()
           }
 
+          memberPartCurrentlyBeingWritten = MemberPart.MemberName
+          nextMemberPartToBeWritten = MemberPart.MemberValue
+
         case MemberPart.MemberValue ⇒
           writeNameSeparator()
-          if (valueType == ValueType.Nothing) {
+          if (nestedValueType == ValueType.Nothing) {
             builder.length = builderLengthBeforeMemberNameWritten
           }
+
+          memberPartCurrentlyBeingWritten = MemberPart.MemberValue
+          nextMemberPartToBeWritten = MemberPart.MemberName
       }
     }
 
-    override def endNestedValue(valueType: ValueType): Unit = {
-      numberOfMembersWrittenSoFar += 1
-      nextMemberPartToBeWritten = nextMemberPartToBeWritten match {
-        case MemberPart.MemberName ⇒ MemberPart.MemberValue
-        case MemberPart.MemberValue ⇒ MemberPart.MemberName
+    override def endNestedValue(nestedValueType: ValueType): Unit = {
+      if (memberPartCurrentlyBeingWritten == MemberPart.MemberValue && nestedValueType != ValueType.Nothing) {
+        numberOfMembersWrittenSoFar += 1
       }
+
+      memberPartCurrentlyBeingWritten = null
     }
 
   }
@@ -79,18 +86,20 @@ class StringJsonWriter extends Writer {
 
     override val structureType = StructureType.Array
 
-    override def beginNestedValue(valueType: ValueType): Unit = {
+    override def beginNestedValue(nestedValueType: ValueType): Unit = {
       builderLengthBeforeElementWritten = builder.length
       if (numberOfElementsWrittenSoFar > 0) {
         writeValueSeparator()
       }
-      if (valueType == ValueType.Nothing) {
+      if (nestedValueType == ValueType.Nothing) {
         builder.length = builderLengthBeforeElementWritten
       }
     }
 
-    override def endNestedValue(valueType: ValueType): Unit = {
-      numberOfElementsWrittenSoFar += 1
+    override def endNestedValue(nestedValueType: ValueType): Unit = {
+      if (nestedValueType != ValueType.Nothing) {
+        numberOfElementsWrittenSoFar += 1
+      }
     }
 
   }
@@ -106,29 +115,9 @@ class StringJsonWriter extends Writer {
     if (structures.nonEmpty) {
       structures.top.beginNestedValue(valueType)
     }
-
-    valueType match {
-      case ValueType.Object ⇒
-        structures.push(new ObjectStructure)
-
-      case ValueType.Array ⇒
-        structures.push(new ArrayStructure)
-
-      case _ ⇒
-    }
   }
 
   @inline def endValue(valueType: ValueType): Unit = {
-    valueType match {
-      case ValueType.Object ⇒
-        structures.pop().endStructure(expectedStructureType = StructureType.Object)
-
-      case ValueType.Array ⇒
-        structures.pop().endStructure(expectedStructureType = StructureType.Array)
-
-      case _ ⇒
-    }
-
     if (structures.nonEmpty) {
       structures.top.endNestedValue(valueType)
     }
@@ -136,21 +125,25 @@ class StringJsonWriter extends Writer {
 
   override def beginObject(): Unit = {
     beginValue(ValueType.Object)
+    structures.push(new ObjectStructure)
     builder.append("{")
   }
 
   override def endObject(): Unit = {
     builder.append("}")
+    structures.pop().endStructure(expectedStructureType = StructureType.Object)
     endValue(ValueType.Object)
   }
 
   override def beginArray(): Unit = {
     beginValue(ValueType.Array)
+    structures.push(new ArrayStructure)
     builder.append("[")
   }
 
   override def endArray(): Unit = {
     builder.append("]")
+    structures.pop().endStructure(expectedStructureType = StructureType.Array)
     endValue(ValueType.Array)
   }
 
