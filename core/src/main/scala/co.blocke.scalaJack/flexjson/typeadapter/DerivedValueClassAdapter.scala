@@ -29,9 +29,9 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class DerivedValueClassAdapter[DerivedValueClass, Value](
-  constructorMirror: MethodMirror,
-  accessor:          MethodSymbol,
-  valueTypeAdapter:  TypeAdapter[Value]
+    constructorMirror: MethodMirror,
+    accessor:          MethodSymbol,
+    valueTypeAdapter:  TypeAdapter[Value]
 ) extends TypeAdapter[DerivedValueClass] {
 
   override def read(reader: Reader): DerivedValueClass = {

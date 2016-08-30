@@ -1,17 +1,19 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.typeadapter.TupleTypeAdapter.TupleField
-import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
 
 object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class TupleField(fieldValueTypeAdapter: TypeAdapter[_],
-                        fieldValueAccessorSymbol: MethodSymbol) {
+  case class TupleField(
+      fieldValueTypeAdapter:    TypeAdapter[_],
+      fieldValueAccessorSymbol: MethodSymbol
+  ) {
 
     def read(reader: Reader): Any = {
       fieldValueTypeAdapter.read(reader)
@@ -31,13 +33,12 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         val numberOfFields = numberOfFieldsAsString.toInt
         val fieldTypes = tpe.typeArgs
 
-        val fields = for (i ← 0 until numberOfFields)
-          yield {
-            val fieldType = fieldTypes(i)
-            val fieldTypeAdapter = context.typeAdapter(fieldType)
-            val fieldAccessorSymbol = tpe.member(TermName(s"_${i + 1}")).asMethod
-            TupleField(fieldTypeAdapter, fieldAccessorSymbol)
-          }
+        val fields = for (i ← 0 until numberOfFields) yield {
+          val fieldType = fieldTypes(i)
+          val fieldTypeAdapter = context.typeAdapter(fieldType)
+          val fieldAccessorSymbol = tpe.member(TermName(s"_${i + 1}")).asMethod
+          TupleField(fieldTypeAdapter, fieldAccessorSymbol)
+        }
 
         val classMirror = currentMirror.reflectClass(classSymbol)
         val constructorMirror = classMirror.reflectConstructor(classSymbol.primaryConstructor.asMethod)
@@ -50,8 +51,10 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 }
 
-case class TupleTypeAdapter[T](fields: List[TupleField],
-                               constructorMirror: MethodMirror) extends TypeAdapter[T] {
+case class TupleTypeAdapter[T](
+    fields:            List[TupleField],
+    constructorMirror: MethodMirror
+) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     reader.beginArray()

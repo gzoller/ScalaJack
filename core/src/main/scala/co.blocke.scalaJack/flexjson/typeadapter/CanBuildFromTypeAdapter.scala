@@ -7,8 +7,8 @@ import scala.collection.generic.CanBuildFrom
 import scala.language.existentials
 
 case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
-  canBuildFrom:       CanBuildFrom[_, Elem, To],
-  elementTypeAdapter: TypeAdapter[Elem]
+    canBuildFrom:       CanBuildFrom[_, Elem, To],
+    elementTypeAdapter: TypeAdapter[Elem]
 ) extends TypeAdapter[To] {
 
   override def read(reader: Reader): To = {

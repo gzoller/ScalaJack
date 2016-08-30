@@ -22,8 +22,8 @@ object MapTypeAdapter extends TypeAdapterFactory {
 }
 
 case class MapTypeAdapter[K, V](
-  keyTypeAdapter:   TypeAdapter[K],
-  valueTypeAdapter: TypeAdapter[V]
+    keyTypeAdapter:   TypeAdapter[K],
+    valueTypeAdapter: TypeAdapter[V]
 ) extends TypeAdapter[Map[K, V]] {
 
   override def read(reader: Reader): Map[K, V] = {

@@ -12,14 +12,14 @@ import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol,
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   case class Parameter[T](
-    index:              Int,
-    name:               String,
-    valueTypeAdapter:   TypeAdapter[T],
-    accessor:           MethodSymbol,
-    defaultValueMirror: Option[MethodMirror]
+      index:              Int,
+      name:               String,
+      valueTypeAdapter:   TypeAdapter[T],
+      accessor:           MethodSymbol,
+      defaultValueMirror: Option[MethodMirror]
   ) {
 
-    def writeValue(parameterValue: T, writer: Writer): Unit = {
+    def writeValue(parameterValue: Any, writer: Writer): Unit = {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
     }
 
@@ -65,9 +65,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class CaseClassTypeAdapter[T](
-  constructorMirror:     MethodMirror,
-  parameters:            List[Parameter[_]],
-  memberNameTypeAdapter: TypeAdapter[MemberName]
+    constructorMirror:     MethodMirror,
+    parameters:            List[Parameter[_]],
+    memberNameTypeAdapter: TypeAdapter[MemberName]
 ) extends TypeAdapter[T] {
 
   val parametersByName = parameters.map(parameter ⇒ parameter.name → parameter.asInstanceOf[Parameter[Any]]).toMap

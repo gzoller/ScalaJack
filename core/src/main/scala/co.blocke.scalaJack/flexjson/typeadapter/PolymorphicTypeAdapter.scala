@@ -18,11 +18,11 @@ object PolymorphicTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 class PolymorphicWriter(
-  override val delegate: Writer,
-  typeFieldName:         String,
-  tpe:                   Type,
-  typeTypeAdapter:       TypeAdapter[Type],
-  memberNameTypeAdapter: TypeAdapter[MemberName]
+    override val delegate: Writer,
+    typeFieldName:         String,
+    tpe:                   Type,
+    typeTypeAdapter:       TypeAdapter[Type],
+    memberNameTypeAdapter: TypeAdapter[MemberName]
 ) extends ForwardingWriter {
 
   var depth = 0
@@ -45,10 +45,10 @@ class PolymorphicWriter(
 }
 
 case class PolymorphicTypeAdapter[T](
-  typeFieldName:         String,
-  typeTypeAdapter:       TypeAdapter[Type],
-  memberNameTypeAdapter: TypeAdapter[MemberName],
-  context:               Context
+    typeFieldName:         String,
+    typeTypeAdapter:       TypeAdapter[Type],
+    memberNameTypeAdapter: TypeAdapter[MemberName],
+    context:               Context
 ) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {

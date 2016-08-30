@@ -21,10 +21,10 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 }
 
 case class AnyTypeAdapter(
-  mapTypeAdapter:     TypeAdapter[Map[String, Any]],
-  listTypeAdapter:    TypeAdapter[List[Any]],
-  stringTypeAdapter:  TypeAdapter[String],
-  booleanTypeAdapter: TypeAdapter[Boolean]
+    mapTypeAdapter:     TypeAdapter[Map[String, Any]],
+    listTypeAdapter:    TypeAdapter[List[Any]],
+    stringTypeAdapter:  TypeAdapter[String],
+    booleanTypeAdapter: TypeAdapter[Boolean]
 ) extends SimpleTypeAdapter[Any] {
 
   override def read(reader: Reader): Any = {
