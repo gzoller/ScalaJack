@@ -10,94 +10,115 @@ object ValueType extends Enumeration {
   val String, Number, Boolean, Identifier, Object, Array, Unreadable, Nothing = Value
 }
 
+object MemberPart extends Enumeration {
+  type MemberPart = Value
+  val MemberName, MemberValue = Value
+}
+
 import StructureType.StructureType
 import ValueType.ValueType
+import MemberPart.MemberPart
 
-class Structure {
+class Structure(var structureType: StructureType) {
 
-  var structureType: StructureType = _
-  var numberOfElementsSoFar: Int = 0
-  var numberOfFieldsSoFar: Int = 0
-  var fieldNameWritten: Boolean = false
-  var builderLengthBeforeFieldName: Int = 0
+  var numberOfElementsWrittenSoFar: Int = 0
+  var numberOfFieldsWrittenSoFar: Int = 0
+  var nextPartOfMemberToBeWritten: MemberPart = MemberPart.MemberName
+  var builderLengthBeforeMemberNameWritten: Int = 0
+  var builderLengthBeforeElementWritten: Int = 0
 
   def reset(): Unit = {
     structureType = null
-    numberOfElementsSoFar = 0
-    numberOfFieldsSoFar = 0
-    fieldNameWritten = false
-    builderLengthBeforeFieldName = 0
+    numberOfElementsWrittenSoFar = 0
+    numberOfFieldsWrittenSoFar = 0
+    nextPartOfMemberToBeWritten = MemberPart.MemberName
+    builderLengthBeforeMemberNameWritten = 0
   }
 
 }
 
 class StringJsonWriter extends Writer {
 
+  import scala.collection.mutable
+
   val builder = new StringBuilder
-
-  var optionalPendingName: Option[String] = None
-
-  val structureStack = new Array[Structure](16)
-  var structureDepth = 0
-  var maxDepth = 0
+  val structures = new mutable.Stack[Structure]
 
   def jsonString: String = builder.toString
 
-  @inline def createStructureIfAbsent(depth: Int): Structure = {
-    structureStack(depth) match {
-      case null ⇒
-        val structure = new Structure
-        structureStack(depth) = structure
-        structure
-
-      case structure ⇒
-        structure
-    }
-  }
-
-  @inline def structure: Structure = structureStack(structureDepth)
+  @inline def structure: Structure = structures.last
 
   @inline def beginValue(valueType: ValueType): Unit = {
-    val currentStructure = this.structure
+    if (structures.nonEmpty) {
+      val structure = structures.top
 
-    currentStructure.structureType match {
-      case StructureType.Object ⇒
-        if (currentStructure.fieldNameWritten) {
-          // Writing the value
-          if (valueType == ValueType.Nothing) {
-            // Undo the name
-            builder.length = currentStructure.builderLengthBeforeFieldName
+      structure.structureType match {
+        case StructureType.Object ⇒
+
+          structure.nextPartOfMemberToBeWritten match {
+            case MemberPart.MemberName ⇒
+              structure.builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
+              if (structure.numberOfFieldsWrittenSoFar > 0) {
+                writeValueSeparator()
+              }
+
+            case MemberPart.MemberValue ⇒
+              writeNameSeparator()
+              if (valueType == ValueType.Nothing) {
+                builder.length = structure.builderLengthBeforeMemberNameWritten
+              }
           }
-        } else {
-          if (structure.numberOfFieldsSoFar > 0) {
+
+        case StructureType.Array ⇒
+          structure.builderLengthBeforeElementWritten = builder.length
+          if (structure.numberOfElementsWrittenSoFar > 0) {
             writeValueSeparator()
-            structure.numberOfFieldsSoFar += 1
+          }
+          if (valueType == ValueType.Nothing) {
+            builder.length = structure.builderLengthBeforeElementWritten
           }
 
-          // Writing the key
-          currentStructure.builderLengthBeforeFieldName = builder.length // Just in case the value is Nothing
-        }
+      }
     }
 
-    structureDepth += 1
+    valueType match {
+      case ValueType.Object ⇒
+        val structure = new Structure(StructureType.Object)
+        structures.push(structure)
 
-    val nextStackFrame = this.structure
+      case ValueType.Array ⇒
+        val structure = new Structure(StructureType.Array)
+        structures.push(structure)
 
-
-
-    val stackFrame = createStructureIfAbsent(structureDepth)
-//    stackFrame.structureType = valueType
-
-    writeValueSeparatorIfSubsequent()
-    writeNameIfPending()
+      case _ ⇒
+    }
   }
 
   @inline def endValue(valueType: ValueType): Unit = {
     valueType match {
-      case ValueType.Object | ValueType.Array ⇒
-        structureDepth -= 1
+      case ValueType.Object ⇒
+        structures.pop() // TODO verify that the structure is of the correct type
+
+      case ValueType.Array ⇒
+        structures.pop() // TODO verify that the structure is of the correct type
 
       case _ ⇒
+    }
+
+    if (structures.nonEmpty) {
+      val structure = structures.top
+
+      structure.structureType match {
+        case StructureType.Object ⇒
+          structure.numberOfFieldsWrittenSoFar += 1
+          structure.nextPartOfMemberToBeWritten = structure.nextPartOfMemberToBeWritten match {
+            case MemberPart.MemberName ⇒ MemberPart.MemberValue
+            case MemberPart.MemberValue ⇒ MemberPart.MemberName
+          }
+
+        case StructureType.Array ⇒
+          structure.numberOfElementsWrittenSoFar += 1
+      }
     }
   }
 
@@ -124,23 +145,9 @@ class StringJsonWriter extends Writer {
   override def writeRaw(source: Array[Char], offset: Int, length: Int): Unit =
     builder.appendAll(source, offset, length)
 
-  override def writeName(name: String): Unit =
-    writeString(name)
-
   def writeValueSeparatorIfSubsequent(): Unit = {
     ???
   }
-
-  def writeNameIfPending(): Unit =
-    optionalPendingName match {
-      case Some(pendingName) ⇒
-        writeValueSeparatorIfSubsequent()
-        writeName(pendingName)
-        writeNameSeparator()
-
-      case None ⇒
-        // Do nothing
-    }
 
   override def writeNothing(): Unit = {
     beginValue(ValueType.Nothing)
@@ -159,11 +166,10 @@ class StringJsonWriter extends Writer {
     endValue(ValueType.Number)
   }
 
-  override def writeNameSeparator(): Unit =
+  def writeNameSeparator(): Unit =
     builder.append(":")
 
-  override def writeValueSeparator(): Unit = {
-    writeNameIfPending()
+  def writeValueSeparator(): Unit = {
     builder.append(",")
   }
 

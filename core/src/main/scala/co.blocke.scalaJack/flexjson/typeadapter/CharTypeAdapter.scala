@@ -9,6 +9,6 @@ object CharTypeAdapter extends SimpleTypeAdapter[Char] {
   }
 
   override def write(value: Char, writer: Writer): Unit =
-    writer.writeString(s"'$value'")
+    writer.writeChar(value)
 
 }

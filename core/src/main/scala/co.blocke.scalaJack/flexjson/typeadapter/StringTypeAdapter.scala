@@ -13,12 +13,15 @@ object StringTypeAdapter extends SimpleTypeAdapter[String] {
         reader.readIdentifier()
 
       case TokenType.Null ⇒
-        reader.read(expected = TokenType.Null)
-        null
+        reader.readNull()
     }
   }
 
   override def write(value: String, writer: Writer): Unit =
-    writer.writeString(value)
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeString(value)
+    }
 
 }

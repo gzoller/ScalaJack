@@ -24,21 +24,17 @@ case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](canBuil
     builder.result()
   }
 
-  override def write(value: To, writer: Writer): Unit = {
-    writer.beginArray()
+  override def write(value: To, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.beginArray()
 
-    var isFirstElement = true
-    for (element <- value) {
-      if (isFirstElement) {
-        isFirstElement = false
-      } else {
-        writer.writeValueSeparator()
+      for (element ← value) {
+        elementTypeAdapter.write(element, writer)
       }
 
-      elementTypeAdapter.write(element, writer)
+      writer.endArray()
     }
-
-    writer.endArray()
-  }
 
 }

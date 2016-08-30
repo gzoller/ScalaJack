@@ -1,5 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
+import co.blocke.scalajack.flexjson.FlexJsonFlavor.MemberName
 import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Parameter
 import co.blocke.scalajack.flexjson.{Context, EmptyReader, Reader, TypeAdapter, TypeAdapterFactory, Writer}
 
@@ -14,7 +15,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                           name: String,
                           valueTypeAdapter: TypeAdapter[T],
                           accessor: MethodSymbol,
-                          defaultValueMirror: Option[MethodMirror])
+                          defaultValueMirror: Option[MethodMirror]) {
+
+    def writeValue(parameterValue: Any, writer: Writer): Unit = {
+      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
+    }
+
+  }
 
   override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
     if (classSymbol.isCaseClass) {
@@ -42,8 +49,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           Parameter(index, parameterName, context.typeAdapter(param.info), accessor, defaultValueAccessorMirror)
       })
 
+      val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-      Some(CaseClassTypeAdapter(constructorMirror, parameters))
+      Some(CaseClassTypeAdapter(constructorMirror, parameters, memberNameTypeAdapter))
     } else {
       None
     }
@@ -51,7 +59,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
-                                   parameters: List[Parameter[_]]) extends TypeAdapter[T] {
+                                   parameters: List[Parameter[_]],
+                                   memberNameTypeAdapter: TypeAdapter[MemberName]) extends TypeAdapter[T] {
 
   val parametersByName = parameters.map(parameter ⇒ parameter.name → parameter.asInstanceOf[Parameter[Any]]).toMap
 
@@ -101,24 +110,14 @@ case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
   override def write(value: T, writer: Writer): Unit = {
     writer.beginObject()
 
-    var isFirstParameter = true
-
     for (parameter ← parameters) {
       val parameterValue = currentMirror.reflect(value)(ClassTag(value.getClass)).reflectMethod(parameter.accessor).apply()
 
-      if (isFirstParameter) {
-        isFirstParameter = false
-      } else {
-        writer.writeValueSeparator()
-      }
-
-      writer.writeName(parameter.name)
-      writer.writeNameSeparator()
-      parameter.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
+      memberNameTypeAdapter.write(parameter.name, writer)
+      parameter.writeValue(parameterValue, writer)
     }
 
     writer.endObject()
-//    currentMirror.reflect(value).reflectMethod()
   }
 
 }

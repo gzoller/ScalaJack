@@ -8,6 +8,8 @@ import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with JackFlavor[String] {
 
+  type MemberName = String
+
   override val makeScalaJack = this
 
   override val rr = FlexReadRenderer
@@ -82,7 +84,8 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
     override def render[T](value: T)(implicit valueTypeTag: TypeTag[T], visitorContext: VisitorContext): String = {
       val writer = new StringJsonWriter
       context(visitorContext).typeAdapterOf[T].write(value, writer)
-      writer.jsonString
+      val jsonString = writer.jsonString
+      jsonString
     }
 
   }

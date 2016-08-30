@@ -12,13 +12,7 @@ trait Writer {
 
   def writeRaw(source: Array[Char], offset: Int, length: Int): Unit
 
-  def writeName(name: String): Unit
-
   def writeNothing(): Unit
-
-  def writeNameSeparator(): Unit
-
-  def writeValueSeparator(): Unit
 
   def writeString(string: String): Unit
 
@@ -60,13 +54,7 @@ trait ForwardingWriter extends Writer {
 
   override def writeRaw(source: Array[Char], offset: Int, length: Int): Unit = delegate.writeRaw(source, offset, length)
 
-  override def writeName(name: String): Unit = delegate.writeName(name)
-
   override def writeNothing(): Unit = delegate.writeNothing()
-
-  override def writeNameSeparator(): Unit = delegate.writeNameSeparator()
-
-  override def writeValueSeparator(): Unit = delegate.writeValueSeparator()
 
   override def writeString(string: String): Unit = delegate.writeString(string)
 
