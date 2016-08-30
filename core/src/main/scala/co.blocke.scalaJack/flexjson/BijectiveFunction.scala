@@ -36,8 +36,10 @@ trait BijectiveFunction[A, B] extends Function[A, B] {
 
 }
 
-case class BijectiveFunctionPair[A, B](applyFn: A ⇒ B,
-                                       unapplyFn: B ⇒ A) extends BijectiveFunction[A, B] {
+case class BijectiveFunctionPair[A, B](
+  applyFn:   A ⇒ B,
+  unapplyFn: B ⇒ A
+) extends BijectiveFunction[A, B] {
 
   override def apply(a: A): B = applyFn(a)
 
@@ -55,8 +57,10 @@ case class InvertedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends B
 
 }
 
-case class ComposedBijectiveFunction[A, B, C](f: BijectiveFunction[A, B],
-                                              g: BijectiveFunction[B, C]) extends BijectiveFunction[A, C] {
+case class ComposedBijectiveFunction[A, B, C](
+  f: BijectiveFunction[A, B],
+  g: BijectiveFunction[B, C]
+) extends BijectiveFunction[A, C] {
 
   override def apply(a: A): C = g.apply(f.apply(a))
 

@@ -1,7 +1,7 @@
 package co.blocke.scalajack.flexjson.typeadapter.javaprimitives
 
 import co.blocke.scalajack.flexjson.typeadapter.SimpleTypeAdapter
-import co.blocke.scalajack.flexjson.{Reader, TokenType, Writer}
+import co.blocke.scalajack.flexjson.{ Reader, TokenType, Writer }
 
 object JavaDoubleTypeAdapter extends SimpleTypeAdapter[java.lang.Double] {
 

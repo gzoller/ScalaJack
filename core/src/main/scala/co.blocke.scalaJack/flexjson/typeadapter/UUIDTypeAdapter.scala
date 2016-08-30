@@ -2,7 +2,7 @@ package co.blocke.scalajack.flexjson.typeadapter
 
 import java.util.UUID
 
-import co.blocke.scalajack.flexjson.{Reader, Writer}
+import co.blocke.scalajack.flexjson.{ Reader, Writer }
 
 object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
 
