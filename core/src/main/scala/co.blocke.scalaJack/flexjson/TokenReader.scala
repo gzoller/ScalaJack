@@ -38,8 +38,8 @@ class TokenReader(override val source: Array[Char],
     tokenTypes(position)
   }
 
-  override def tokenOffset: Int = tokenOffsets(position)
+  override def tokenOffsetAt(position: Int): Int = tokenOffsets(position)
 
-  override def tokenLength: Int = tokenLengths(position)
+  override def tokenLengthAt(position: Int): Int = tokenLengths(position)
 
 }

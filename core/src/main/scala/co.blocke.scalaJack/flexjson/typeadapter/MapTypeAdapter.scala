@@ -29,7 +29,7 @@ case class MapTypeAdapter[K, V](keyTypeAdapter: TypeAdapter[K],
 
     reader.beginObject()
 
-    while (reader.hasMoreFields) {
+    while (reader.hasMoreMembers) {
       val key = keyTypeAdapter.read(reader)
       val value = valueTypeAdapter.read(reader)
 

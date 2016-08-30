@@ -8,9 +8,13 @@ trait Reader {
 
   def source: Array[Char]
 
-  def tokenOffset: Int
+  def tokenOffset: Int = tokenOffsetAt(position)
 
-  def tokenLength: Int
+  def tokenOffsetAt(position: Int): Int
+
+  def tokenLength: Int = tokenLengthAt(position)
+
+  def tokenLengthAt(position: Int): Int
 
   def peek: TokenType
 
@@ -61,7 +65,7 @@ trait Reader {
 
   def hasMoreElements: Boolean = peek != TokenType.EndArray
 
-  def hasMoreFields: Boolean = peek != TokenType.EndObject
+  def hasMoreMembers: Boolean = peek != TokenType.EndObject
 
   def beginObject() = read(expected = TokenType.BeginObject)
 

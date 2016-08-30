@@ -194,7 +194,7 @@ class Tokenizer {
           throw new IllegalArgumentException(s"Unknown character: $ch")
       }
     }
-    appendToken(TokenType.End, position, 1)
+    appendToken(TokenType.End, position, 0)
 
     new TokenReader(source, numberOfTokens, tokenTypes, tokenOffsets, tokenLengths)
   }

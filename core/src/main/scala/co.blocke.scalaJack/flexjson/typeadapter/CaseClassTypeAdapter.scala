@@ -17,9 +17,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                           accessor: MethodSymbol,
                           defaultValueMirror: Option[MethodMirror]) {
 
-    def writeValue(parameterValue: Any, writer: Writer): Unit = {
+    def writeValue(parameterValue: T, writer: Writer): Unit = {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
     }
+
+    def hasDefaultValue: Boolean = defaultValueMirror.isDefined
+
+    def defaultValue: T = defaultValueMirror.get.apply().asInstanceOf[T]
 
   }
 
@@ -72,10 +76,10 @@ case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
 
     reader.beginObject()
 
-    while (reader.hasMoreFields) {
-      val name = reader.readIdentifier()
+    while (reader.hasMoreMembers) {
+      val memberName = memberNameTypeAdapter.read(reader)
 
-      val optionalParameter = parametersByName.get(name)
+      val optionalParameter = parametersByName.get(memberName)
       optionalParameter match {
         case Some(parameter) ⇒
           arguments(parameter.index) = parameter.valueTypeAdapter.read(reader)

@@ -8,6 +8,7 @@ object EmptyReader extends Reader {
   override def read(expected: TokenType): Unit = ???
 
   override def readString(): String = ???
+
   override def readIdentifier(): String = ???
 
   override def tokenText: String = ???
@@ -21,5 +22,9 @@ object EmptyReader extends Reader {
   override def tokenOffset: Int = ???
 
   override def tokenLength: Int = ???
+
+  override def tokenOffsetAt(position: Int): Int = ???
+
+  override def tokenLengthAt(position: Int): Int = ???
 
 }

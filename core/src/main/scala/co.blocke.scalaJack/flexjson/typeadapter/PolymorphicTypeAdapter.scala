@@ -54,7 +54,7 @@ case class PolymorphicTypeAdapter[T](typeFieldName: String,
 
     var optionalConcreteType: Option[Type] = None
 
-    while (optionalConcreteType.isEmpty && reader.hasMoreFields) {
+    while (optionalConcreteType.isEmpty && reader.hasMoreMembers) {
       val fieldName = reader.readIdentifier()
 
       if (fieldName == typeFieldName) {
