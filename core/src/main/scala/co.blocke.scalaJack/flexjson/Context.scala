@@ -2,7 +2,7 @@ package co.blocke.scalajack.flexjson
 
 import co.blocke.scalajack.flexjson.typeadapter.javaprimitives.{JavaBooleanTypeAdapter, JavaByteTypeAdapter, JavaCharacterTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaShortTypeAdapter}
 import co.blocke.scalajack.flexjson.typeadapter.joda.JodaDateTimeTypeAdapter
-import co.blocke.scalajack.flexjson.typeadapter.{BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DoubleTypeAdapter, FloatTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter}
+import co.blocke.scalajack.flexjson.typeadapter.{BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DoubleTypeAdapter, EnumerationTypeAdapter, FloatTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter}
 
 import scala.reflect.runtime.universe.{Type, TypeTag}
 
@@ -26,6 +26,7 @@ object Context {
     .withFactory(DoubleTypeAdapter)
     .withFactory(StringTypeAdapter)
     .withFactory(DerivedValueClassAdapter)
+    .withFactory(EnumerationTypeAdapter)
 // FIXME    .withFactory(PolymorphicTypeAdapter)
     .withFactory(JavaBooleanTypeAdapter)
     .withFactory(JavaByteTypeAdapter)
@@ -48,23 +49,16 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
     copy(factories = factories :+ factory)
 
   def typeAdapter(tpe: Type): TypeAdapter[_] =
+
     resolvedTypeAdapters.get(tpe) match {
       case Some(typeAdapter) ⇒
         typeAdapter
 
       case None ⇒
-        var optionalTypeAdapter: Option[TypeAdapter[_]] = None
-
-        resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
-
-        var remainingFactories = factories
-        while (optionalTypeAdapter.isEmpty && remainingFactories.nonEmpty) {
-          optionalTypeAdapter = remainingFactories.head.typeAdapter(tpe, this)
-          remainingFactories = remainingFactories.tail
-        }
-
+        val optionalTypeAdapter:Option[TypeAdapter[_]] = factories.find( f => f.typeAdapter(tpe,this).isDefined ).flatMap( f => f.typeAdapter(tpe,this) )
         val typeAdapter = optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
 
+        resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
         resolvedTypeAdapters += tpe → typeAdapter
 
         typeAdapter
