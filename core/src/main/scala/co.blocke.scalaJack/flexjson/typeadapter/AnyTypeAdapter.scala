@@ -1,8 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
@@ -20,10 +20,12 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class AnyTypeAdapter(mapTypeAdapter: TypeAdapter[Map[String, Any]],
-                          listTypeAdapter: TypeAdapter[List[Any]],
-                          stringTypeAdapter: TypeAdapter[String],
-                          booleanTypeAdapter: TypeAdapter[Boolean]) extends SimpleTypeAdapter[Any] {
+case class AnyTypeAdapter(
+  mapTypeAdapter:     TypeAdapter[Map[String, Any]],
+  listTypeAdapter:    TypeAdapter[List[Any]],
+  stringTypeAdapter:  TypeAdapter[String],
+  booleanTypeAdapter: TypeAdapter[Boolean]
+) extends SimpleTypeAdapter[Any] {
 
   override def read(reader: Reader): Any = {
     reader.peek match {

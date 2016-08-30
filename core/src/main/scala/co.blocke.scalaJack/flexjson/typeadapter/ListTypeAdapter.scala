@@ -1,8 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, TypeAdapter, TypeAdapterFactory}
+import co.blocke.scalajack.flexjson.{ Context, TypeAdapter, TypeAdapterFactory }
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object ListTypeAdapter extends TypeAdapterFactory {
 

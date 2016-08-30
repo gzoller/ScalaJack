@@ -1,8 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object MapTypeAdapter extends TypeAdapterFactory {
 
@@ -21,8 +21,10 @@ object MapTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class MapTypeAdapter[K, V](keyTypeAdapter: TypeAdapter[K],
-                                valueTypeAdapter: TypeAdapter[V]) extends TypeAdapter[Map[K, V]] {
+case class MapTypeAdapter[K, V](
+  keyTypeAdapter:   TypeAdapter[K],
+  valueTypeAdapter: TypeAdapter[V]
+) extends TypeAdapter[Map[K, V]] {
 
   override def read(reader: Reader): Map[K, V] = {
     val builder = Map.canBuildFrom[K, V]()

@@ -1,8 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter.joda
 
 import co.blocke.scalajack.flexjson.typeadapter.SimpleTypeAdapter
-import co.blocke.scalajack.flexjson.{Reader, TokenType, Writer}
-import org.joda.time.{DateTime, DateTimeZone}
+import co.blocke.scalajack.flexjson.{ Reader, TokenType, Writer }
+import org.joda.time.{ DateTime, DateTimeZone }
 
 object JodaDateTimeTypeAdapter extends SimpleTypeAdapter[DateTime] {
 

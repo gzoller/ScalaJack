@@ -1,8 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object OptionTypeAdapter extends TypeAdapterFactory {
 

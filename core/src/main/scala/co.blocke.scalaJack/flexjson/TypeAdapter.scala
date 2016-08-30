@@ -11,8 +11,10 @@ trait TypeAdapter[T] {
 
 }
 
-case class TransformedTypeAdapter[A, B](typeAdapter: TypeAdapter[A],
-                                        f: BijectiveFunction[A, B]) extends TypeAdapter[B] {
+case class TransformedTypeAdapter[A, B](
+  typeAdapter: TypeAdapter[A],
+  f:           BijectiveFunction[A, B]
+) extends TypeAdapter[B] {
 
   override def read(reader: Reader): B =
     f.apply(typeAdapter.read(reader))

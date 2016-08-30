@@ -2,6 +2,8 @@ import sbt._
 import sbt.Keys._
 import bintray.BintrayKeys._
 import pl.project13.scala.sbt.JmhPlugin
+import com.typesafe.sbt.SbtScalariform._
+import scalariform.formatter.preferences._
 
 import scala.Some
 
@@ -16,6 +18,12 @@ object Build extends Build {
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
+		ScalariformKeys.preferences := ScalariformKeys.preferences.value
+			.setPreference(AlignArguments, true)
+			.setPreference(AlignParameters, true)
+			.setPreference(AlignSingleLineCaseStatements, true)
+			.setPreference(DoubleIndentClassDeclaration, true)
+			.setPreference(PreserveDanglingCloseParenthesis, true),
 		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF")
 	)
