@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson
 
-import scala.reflect.runtime.universe.{ClassSymbol, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, Type }
 
 object TypeAdapterFactory {
 

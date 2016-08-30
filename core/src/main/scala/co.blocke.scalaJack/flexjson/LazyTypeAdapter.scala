@@ -6,7 +6,7 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
 
   var resolvedTypeAdapter: TypeAdapter[T] = _
 
-  @inline def resolve(): TypeAdapter[T] ={
+  @inline def resolve(): TypeAdapter[T] = {
     var typeAdapter = resolvedTypeAdapter
 
     if (typeAdapter == null) {

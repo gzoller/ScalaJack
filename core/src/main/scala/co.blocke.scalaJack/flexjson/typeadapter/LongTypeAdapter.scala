@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Reader, TokenType, Writer}
+import co.blocke.scalajack.flexjson.{ Reader, TokenType, Writer }
 
 object LongTypeAdapter extends SimpleTypeAdapter[Long] {
 

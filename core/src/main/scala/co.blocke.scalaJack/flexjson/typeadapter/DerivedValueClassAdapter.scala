@@ -1,9 +1,9 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
 import scala.reflect.ClassTag
 
 object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
@@ -28,9 +28,11 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 }
 
-case class DerivedValueClassAdapter[DerivedValueClass, Value](constructorMirror: MethodMirror,
-                                                              accessor: MethodSymbol,
-                                                              valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[DerivedValueClass] {
+case class DerivedValueClassAdapter[DerivedValueClass, Value](
+  constructorMirror: MethodMirror,
+  accessor:          MethodSymbol,
+  valueTypeAdapter:  TypeAdapter[Value]
+) extends TypeAdapter[DerivedValueClass] {
 
   override def read(reader: Reader): DerivedValueClass = {
     val value = valueTypeAdapter.read(reader)
@@ -41,6 +43,5 @@ case class DerivedValueClassAdapter[DerivedValueClass, Value](constructorMirror:
     val v = currentMirror.reflect(value)(ClassTag(value.getClass)).reflectMethod(accessor).apply().asInstanceOf[Value]
     valueTypeAdapter.write(v, writer)
   }
-
 
 }

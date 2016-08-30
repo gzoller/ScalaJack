@@ -2,20 +2,22 @@ package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.FlexJsonFlavor.MemberName
 import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Parameter
-import co.blocke.scalajack.flexjson.{Context, EmptyReader, Reader, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.flexjson.{ Context, EmptyReader, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class Parameter[T](index: Int,
-                          name: String,
-                          valueTypeAdapter: TypeAdapter[T],
-                          accessor: MethodSymbol,
-                          defaultValueMirror: Option[MethodMirror]) {
+  case class Parameter[T](
+    index:              Int,
+    name:               String,
+    valueTypeAdapter:   TypeAdapter[T],
+    accessor:           MethodSymbol,
+    defaultValueMirror: Option[MethodMirror]
+  ) {
 
     def writeValue(parameterValue: Any, writer: Writer): Unit = {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
@@ -58,9 +60,11 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 }
 
-case class CaseClassTypeAdapter[T](constructorMirror: MethodMirror,
-                                   parameters: List[Parameter[_]],
-                                   memberNameTypeAdapter: TypeAdapter[MemberName]) extends TypeAdapter[T] {
+case class CaseClassTypeAdapter[T](
+  constructorMirror:     MethodMirror,
+  parameters:            List[Parameter[_]],
+  memberNameTypeAdapter: TypeAdapter[MemberName]
+) extends TypeAdapter[T] {
 
   val parametersByName = parameters.map(parameter ⇒ parameter.name → parameter.asInstanceOf[Parameter[Any]]).toMap
 

@@ -1,7 +1,7 @@
 package co.blocke.scalajack.flexjson
 
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ClassSymbol, Symbol, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, Symbol, Type }
 
 object BijectiveFunctions {
 

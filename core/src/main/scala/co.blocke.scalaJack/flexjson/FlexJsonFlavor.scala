@@ -1,10 +1,10 @@
 package co.blocke.scalajack.flexjson
 
 import co.blocke.scalajack.flexjson.typeadapter.PolymorphicTypeAdapter
-import co.blocke.scalajack.{FlavorKind, JackFlavor, ScalaJack, VisitorContext}
+import co.blocke.scalajack.{ FlavorKind, JackFlavor, ScalaJack, VisitorContext }
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{Type, TypeTag}
+import scala.reflect.runtime.universe.{ Type, TypeTag }
 
 object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with JackFlavor[String] {
 
@@ -51,7 +51,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
           val polymorphicTypeAdapterFactory = new TypeAdapterFactory {
 
             override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-// FIXME              if (tpe =:= polymorphicType) {
+              // FIXME              if (tpe =:= polymorphicType) {
               if (tpe.typeSymbol.fullName == polymorphicFullName) {
                 val stringTypeAdapter = context.typeAdapterOf[String]
 
