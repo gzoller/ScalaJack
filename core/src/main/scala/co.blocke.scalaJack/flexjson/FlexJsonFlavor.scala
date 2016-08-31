@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.PolymorphicTypeAdapter
+import co.blocke.scalajack.flexjson.typeadapter.{ PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory }
 import co.blocke.scalajack.{ FlavorKind, JackFlavor, ScalaJack, VisitorContext }
 
 import scala.collection.mutable
@@ -67,7 +67,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
 
         val initialContext = this.context
 
-        val finalContext = polymorphicTypeAdapterFactories.foldLeft(initialContext)((intermediateContext, factory) ⇒ intermediateContext withFactory factory) withFactory PolymorphicTypeAdapter
+        val finalContext = polymorphicTypeAdapterFactories.foldLeft(initialContext)((intermediateContext, factory) ⇒ intermediateContext withFactory factory) withFactory PolymorphicTypeAdapterFactory(defaultHintFieldName)
 
         finalContext
       })

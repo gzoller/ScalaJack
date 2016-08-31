@@ -2,7 +2,9 @@ package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.currentMirror
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
@@ -13,7 +15,7 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       val stringTypeAdapter = context.typeAdapterOf[String]
       val booleanTypeAdapter = context.typeAdapterOf[Boolean]
 
-      Some(AnyTypeAdapter(mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter))
+      Some(AnyTypeAdapter(mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context))
     } else {
       None
     }
@@ -24,7 +26,8 @@ case class AnyTypeAdapter(
     mapTypeAdapter:     TypeAdapter[Map[String, Any]],
     listTypeAdapter:    TypeAdapter[List[Any]],
     stringTypeAdapter:  TypeAdapter[String],
-    booleanTypeAdapter: TypeAdapter[Boolean]
+    booleanTypeAdapter: TypeAdapter[Boolean],
+    context:            Context
 ) extends SimpleTypeAdapter[Any] {
 
   override def read(reader: Reader): Any = {
@@ -43,6 +46,20 @@ case class AnyTypeAdapter(
     }
   }
 
-  override def write(value: Any, writer: Writer): Unit = ???
+  override def write(value: Any, writer: Writer): Unit = {
+    // TODO come up with a better way to obtain the value's type
+
+    value match {
+      case string: String ⇒
+        context.typeAdapterOf[String].write(string, writer)
+
+      case _ ⇒
+        val valueType = currentMirror.staticClass(value.getClass.getName).info
+        //    val valueType = currentMirror.reflectClass(currentMirror.classSymbol(value.getClass)).symbol.info
+        //    val valueType = currentMirror.reflect(value)(ClassTag(value.getClass)).symbol.info
+
+        context.typeAdapter(valueType).asInstanceOf[TypeAdapter[Any]].write(value, writer)
+    }
+  }
 
 }

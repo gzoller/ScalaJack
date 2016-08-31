@@ -6,11 +6,11 @@ import co.blocke.scalajack.flexjson.{ Context, ForwardingWriter, Reader, TypeAda
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, Type }
 
-object PolymorphicTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
+case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
     if (classSymbol.isTrait) {
-      Some(PolymorphicTypeAdapter("_hint", context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context))
+      Some(PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context))
     } else {
       None
     }

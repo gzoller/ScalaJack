@@ -1,9 +1,9 @@
 package co.blocke.scalajack.benchmarks
 
-import co.blocke.scalajack.{ScalaJack, VisitorContext}
+import co.blocke.scalajack.{ ScalaJack, VisitorContext }
 import co.blocke.scalajack.flexjson.FlexJsonFlavor
 import co.blocke.scalajack.json.JsonFlavor
-import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
+import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
 
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
@@ -66,9 +66,9 @@ class BaseBenchmarksState {
   val flexScalaJack = ScalaJack[String](FlexJsonFlavor)
 
   val vc = VisitorContext(
-    hintMap = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
+    hintMap       = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
     hintValueRead = Map("co.blocke.scalajack.benchmarks.Human" → {
-      case "Male" ⇒ new String("co.blocke.scalajack.benchmarks.Male")
+      case "Male"   ⇒ new String("co.blocke.scalajack.benchmarks.Male")
       case "Female" ⇒ new String("co.blocke.scalajack.benchmarks.Female")
     })
   )
