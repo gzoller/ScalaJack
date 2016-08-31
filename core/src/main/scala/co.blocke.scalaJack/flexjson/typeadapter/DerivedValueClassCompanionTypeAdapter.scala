@@ -24,9 +24,6 @@ object DerivedValueClassCompanionTypeAdapter extends TypeAdapterFactory.FromClas
           val parameterName = parameter.name.encodedName.toString
           val accessor = tpe.member(TermName(parameterName)).asMethod
 
-          val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
-          val valueTypeAdapter = context.typeAdapter(valueType)
-
           val anyTypeAdapter = context.typeAdapterOf[Any]
 
           Some(DerivedValueClassCompanionTypeAdapter(constructorMirror, accessor, valueClassCustom, anyTypeAdapter))
