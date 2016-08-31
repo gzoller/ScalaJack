@@ -11,8 +11,7 @@ object JavaLongTypeAdapter extends SimpleTypeAdapter[java.lang.Long] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Long.valueOf(reader.tokenText)
+        java.lang.Long.valueOf(reader.readLong())
     }
 
   override def write(value: java.lang.Long, writer: Writer): Unit =

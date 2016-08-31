@@ -1,13 +1,11 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{ Reader, TokenType, Writer }
+import co.blocke.scalajack.flexjson.{ Reader, Writer }
 
 object FloatTypeAdapter extends SimpleTypeAdapter[Float] {
 
-  override def read(reader: Reader): Float = {
-    reader.read(expected = TokenType.Number)
-    reader.tokenText.toFloat
-  }
+  override def read(reader: Reader): Float =
+    reader.readFloat()
 
   override def write(value: Float, writer: Writer): Unit =
     writer.writeFloat(value)

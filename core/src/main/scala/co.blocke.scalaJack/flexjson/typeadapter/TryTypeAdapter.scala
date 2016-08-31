@@ -27,7 +27,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
     val attempt = Try { valueTypeAdapter.read(reader) }
 
     attempt match {
-      case self @ Success(value) ⇒
+      case self @ Success(_) ⇒
         self
 
       case Failure(cause) ⇒

@@ -11,8 +11,7 @@ object JavaDoubleTypeAdapter extends SimpleTypeAdapter[java.lang.Double] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Double.valueOf(reader.tokenText)
+        java.lang.Double.valueOf(reader.readDouble())
     }
 
   override def write(value: java.lang.Double, writer: Writer): Unit =

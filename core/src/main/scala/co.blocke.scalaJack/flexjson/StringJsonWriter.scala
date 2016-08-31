@@ -160,7 +160,28 @@ class StringJsonWriter extends Writer {
 
   override def writeString(string: String): Unit = {
     beginValue(ValueType.String)
-    builder.append('"').append(string).append('"') // TODO escape values
+    builder.append('"')
+
+    for (i ← 0 until string.length) {
+      string.charAt(i) match {
+        case '\t' ⇒
+          builder.append("\\t")
+
+        case '\r' ⇒
+          builder.append("\\r")
+
+        case '\n' ⇒
+          builder.append("\\n")
+
+        case '"' ⇒
+          builder.append("\\\"")
+
+        case ch ⇒
+          builder.append(ch)
+      }
+    }
+
+    builder.append('"') // TODO escape values
     endValue(ValueType.String)
   }
 

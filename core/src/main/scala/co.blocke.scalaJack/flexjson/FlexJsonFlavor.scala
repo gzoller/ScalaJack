@@ -1,10 +1,11 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{ PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory }
-import co.blocke.scalajack.{ FlavorKind, JackFlavor, ScalaJack, VisitorContext }
+import co.blocke.scalajack.flexjson.typeadapter.{PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory}
+import co.blocke.scalajack.json.JsonKind
+import co.blocke.scalajack.{FlavorKind, JackFlavor, ScalaJack, VisitorContext}
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with JackFlavor[String] {
 
@@ -25,9 +26,38 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
         import BijectiveFunction.Implicits._
         import BijectiveFunctions._
 
-        val polymorphicFullNames: Set[String] = vc.hintValueRead.keySet ++ vc.hintValueRender.keySet ++ vc.hintMap.keySet.filter(_ != "default")
+        val polymorphicFullNames: Set[String] = Set() ++
+          vc.hintValueRead.keySet ++
+          vc.hintValueRender.keySet ++
+          vc.hintMap.keySet.filter(_ != "default")
 
         val defaultHintFieldName: String = vc.hintMap.getOrElse("default", "_hint")
+
+        val customHandlerTypeAdapterFactories = vc.customHandlers map {
+          case (fullName, customHandler) ⇒
+            new TypeAdapterFactory {
+              override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+                if (tpe.typeSymbol.fullName == fullName) {
+                  val anyTypeAdapter = context.typeAdapterOf[Any]
+
+                  Some(new TypeAdapter[Any] {
+
+                    override def read(reader: Reader): Any = {
+                      val raw = anyTypeAdapter.read(reader)
+                      customHandler.read((JsonKind(), raw))
+                    }
+
+                    override def write(value: Any, writer: Writer): Unit = {
+                      val raw = customHandler.render((JsonKind(), value))
+                      writer.writeRawValue(raw.toString)
+                    }
+
+                  })
+                } else {
+                  None
+                }
+            }
+        }
 
         val polymorphicTypeAdapterFactories = polymorphicFullNames map { polymorphicFullName ⇒
           val polymorphicType = fullNameToType(polymorphicFullName)
@@ -65,11 +95,9 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
           polymorphicTypeAdapterFactory
         }
 
-        val initialContext = this.context
-
-        val finalContext = polymorphicTypeAdapterFactories.foldLeft(initialContext)((intermediateContext, factory) ⇒ intermediateContext withFactory factory) withFactory PolymorphicTypeAdapterFactory(defaultHintFieldName)
-
-        finalContext
+        context.copy(
+          factories = customHandlerTypeAdapterFactories.toList ::: polymorphicTypeAdapterFactories.toList ::: context.factories
+        )
       })
 
     override def read[T](json: String)(implicit valueTypeTag: TypeTag[T], visitorContext: VisitorContext): T = {

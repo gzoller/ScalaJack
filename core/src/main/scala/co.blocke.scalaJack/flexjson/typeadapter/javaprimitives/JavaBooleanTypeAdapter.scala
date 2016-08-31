@@ -10,13 +10,8 @@ object JavaBooleanTypeAdapter extends SimpleTypeAdapter[java.lang.Boolean] {
       case TokenType.Null ⇒
         reader.readNull()
 
-      case TokenType.True ⇒
-        reader.read(expected = TokenType.True)
-        java.lang.Boolean.TRUE
-
-      case TokenType.False ⇒
-        reader.read(expected = TokenType.False)
-        java.lang.Boolean.FALSE
+      case _ ⇒
+        java.lang.Boolean.valueOf(reader.readBoolean())
     }
 
   override def write(value: java.lang.Boolean, writer: Writer): Unit =

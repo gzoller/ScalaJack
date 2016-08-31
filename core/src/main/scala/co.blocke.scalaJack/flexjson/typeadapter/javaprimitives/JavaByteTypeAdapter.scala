@@ -11,8 +11,7 @@ object JavaByteTypeAdapter extends SimpleTypeAdapter[java.lang.Byte] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Byte.valueOf(reader.tokenText)
+        java.lang.Byte.valueOf(reader.readByte())
     }
 
   override def write(value: java.lang.Byte, writer: Writer): Unit =

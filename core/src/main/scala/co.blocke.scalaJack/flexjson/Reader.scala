@@ -31,6 +31,46 @@ trait Reader {
 
   def readIdentifier(): String
 
+  def readBoolean(): Boolean = {
+    peek match {
+      case TokenType.False ⇒
+        false
+
+      case TokenType.True ⇒
+        true
+    }
+  }
+
+  def readByte(): Byte = {
+    read(expected = TokenType.Number)
+    tokenText.toByte
+  }
+
+  def readShort(): Short = {
+    read(expected = TokenType.Number)
+    tokenText.toShort
+  }
+
+  def readInt(): Int = {
+    read(expected = TokenType.Number)
+    tokenText.toInt
+  }
+
+  def readLong(): Long = {
+    read(expected = TokenType.Number)
+    tokenText.toLong
+  }
+
+  def readFloat(): Float = {
+    read(expected = TokenType.Number)
+    tokenText.toFloat
+  }
+
+  def readDouble(): Double = {
+    read(expected = TokenType.Number)
+    tokenText.toDouble
+  }
+
   def skipValue(): Unit = {
     peek match {
       case TokenType.BeginObject ⇒ skipOver(TokenType.BeginObject, TokenType.EndObject)

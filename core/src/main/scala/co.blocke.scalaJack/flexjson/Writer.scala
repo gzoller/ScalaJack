@@ -10,6 +10,11 @@ trait Writer {
 
   def endArray(): Unit
 
+  def writeRawValue(raw: String): Unit = {
+    val charArray = raw.toCharArray
+    writeRawValue(charArray, 0, charArray.length)
+  }
+
   def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit
 
   def writeNothing(): Unit

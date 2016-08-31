@@ -11,8 +11,7 @@ object JavaIntegerTypeAdapter extends SimpleTypeAdapter[java.lang.Integer] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Integer.valueOf(reader.tokenText)
+        java.lang.Integer.valueOf(reader.readInt())
     }
 
   override def write(value: java.lang.Integer, writer: Writer): Unit =

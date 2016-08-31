@@ -11,8 +11,7 @@ object JavaShortTypeAdapter extends SimpleTypeAdapter[java.lang.Short] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Short.valueOf(reader.tokenText)
+        java.lang.Short.valueOf(reader.readShort())
     }
 
   override def write(value: java.lang.Short, writer: Writer): Unit =

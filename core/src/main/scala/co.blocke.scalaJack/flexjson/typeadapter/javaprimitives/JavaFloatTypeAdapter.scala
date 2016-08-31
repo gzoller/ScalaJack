@@ -11,8 +11,7 @@ object JavaFloatTypeAdapter extends SimpleTypeAdapter[java.lang.Float] {
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.read(expected = TokenType.Number)
-        java.lang.Float.valueOf(reader.tokenText)
+        java.lang.Float.valueOf(reader.readFloat())
     }
 
   override def write(value: java.lang.Float, writer: Writer): Unit =
