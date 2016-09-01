@@ -7,7 +7,7 @@ import co.blocke.scalajack.flexjson.{ Context, EmptyReader, Reader, TypeAdapter,
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, typeOf }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -32,6 +32,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
   override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
+      println("HERE: " + constructorSymbol.infoIn(tpe))
 
       val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
@@ -39,7 +40,16 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val companionObject = currentMirror.reflectModule(classSymbol.companion.asModule).instance
       val companionMirror = currentMirror.reflect(companionObject)
 
-      val parameters = constructorSymbol.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs).paramLists.flatten.zipWithIndex.map({
+      val typeBeforeSubstitution = constructorSymbol.infoIn(tpe)
+
+      val typeAfterSubstitution =
+        if (tpe.typeArgs.isEmpty) {
+          typeBeforeSubstitution.substituteTypes(tpe.typeParams, tpe.typeParams.map(_ => typeOf[Any]))
+        } else {
+          typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
+        }
+
+      val parameters = typeAfterSubstitution.paramLists.flatten.zipWithIndex.map({
         case (param, index) ⇒
           val parameterName = param.name.encodedName.toString
           val accessor = tpe.member(TermName(parameterName)).asMethod
@@ -57,7 +67,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-      Some(CaseClassTypeAdapter(constructorMirror, parameters, memberNameTypeAdapter))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, parameters, memberNameTypeAdapter))
     } else {
       None
     }
@@ -65,6 +75,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class CaseClassTypeAdapter[T](
+    caseClassType:         Type,
     constructorMirror:     MethodMirror,
     parameters:            List[Parameter[_]],
     memberNameTypeAdapter: TypeAdapter[MemberName]
@@ -119,7 +130,10 @@ case class CaseClassTypeAdapter[T](
     writer.beginObject()
 
     for (parameter ← parameters) {
-      val parameterValue = currentMirror.reflect(value)(ClassTag(value.getClass)).reflectMethod(parameter.accessor).apply()
+      val classTag = ClassTag[T](value.getClass)
+      val instanceMirror = currentMirror.reflect(value)(classTag)
+      val accessorMirror = instanceMirror.reflectMethod(parameter.accessor)
+      val parameterValue = accessorMirror.apply()
 
       memberNameTypeAdapter.write(parameter.name, writer)
       parameter.writeValue(parameterValue, writer)
