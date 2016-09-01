@@ -96,7 +96,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
         }
 
         context.copy(
-          factories = customHandlerTypeAdapterFactories.toList ::: polymorphicTypeAdapterFactories.toList ::: context.factories
+          factories = customHandlerTypeAdapterFactories.toList ::: polymorphicTypeAdapterFactories.toList ::: context.factories ::: List(PolymorphicTypeAdapterFactory(defaultHintFieldName))
         )
       })
 
