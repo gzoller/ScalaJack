@@ -31,7 +31,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     classSymbol.fullName match {
       case tupleFullName(numberOfFieldsAsString) ⇒
         val numberOfFields = numberOfFieldsAsString.toInt
-        val fieldTypes = tpe.typeArgs
+        val fieldTypes = tpe.dealias.typeArgs
 
         val fields = for (i ← 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)

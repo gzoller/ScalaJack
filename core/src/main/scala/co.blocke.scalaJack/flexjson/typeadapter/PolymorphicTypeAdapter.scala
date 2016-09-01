@@ -45,7 +45,7 @@ class PolymorphicWriter(
 }
 
 case class PolymorphicTypeAdapter[T](
-    typeFieldName:         String,
+    typeMemberName:        MemberName,
     typeTypeAdapter:       TypeAdapter[Type],
     memberNameTypeAdapter: TypeAdapter[MemberName],
     context:               Context
@@ -59,9 +59,9 @@ case class PolymorphicTypeAdapter[T](
     var optionalConcreteType: Option[Type] = None
 
     while (optionalConcreteType.isEmpty && reader.hasMoreMembers) {
-      val fieldName = reader.readIdentifier()
+      val memberName = memberNameTypeAdapter.read(reader)
 
-      if (fieldName == typeFieldName) {
+      if (memberName == typeMemberName) {
         val concreteType = typeTypeAdapter.read(reader)
         optionalConcreteType = Some(concreteType)
       } else {
@@ -69,7 +69,7 @@ case class PolymorphicTypeAdapter[T](
       }
     }
 
-    val concreteType = optionalConcreteType.getOrElse(throw new Exception(s"""Could not find type field named "$typeFieldName" """))
+    val concreteType = optionalConcreteType.getOrElse(throw new Exception(s"""Could not find type field named "$typeMemberName" """))
 
     val concreteTypeAdapter = context.typeAdapter(concreteType)
 
@@ -83,7 +83,7 @@ case class PolymorphicTypeAdapter[T](
     val valueType = currentMirror.classSymbol(value.getClass).info
     val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[T]]
 
-    val polymorphicWriter = new PolymorphicWriter(writer, typeFieldName, valueType, typeTypeAdapter, memberNameTypeAdapter)
+    val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, valueType, typeTypeAdapter, memberNameTypeAdapter)
     valueTypeAdapter.write(value, polymorphicWriter)
   }
 
