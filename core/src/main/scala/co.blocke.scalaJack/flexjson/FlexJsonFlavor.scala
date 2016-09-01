@@ -70,7 +70,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
 
             if (optionalCustomApply.isDefined || optionalCustomUnapply.isDefined) {
               val customApply: (String ⇒ Type) = optionalCustomApply.getOrElse(_ ⇒ throw new Exception(s"""Cannot serialize ${typeToFullName(polymorphicType)} because the visitor context's hintValueReader lacks an entry whose key is "$polymorphicFullName""""))
-              val customUnapply: (Type ⇒ String) = optionalCustomUnapply.getOrElse(_ ⇒ throw new Exception(s"""Cannot deserialize ${typeToFullName(polymorphicType)} because the visitor context's hintValueRead lacks an entry whose key is "$polymorphicFullName""""))
+              val customUnapply: (Type ⇒ String) = optionalCustomUnapply.getOrElse(_ ⇒ throw new Exception(s"""Cannot deserialize ${typeToFullName(polymorphicType)} because the visitor context's hintValueRender lacks an entry whose key is "$polymorphicFullName""""))
 
               customApply ⇄ customUnapply
             } else {

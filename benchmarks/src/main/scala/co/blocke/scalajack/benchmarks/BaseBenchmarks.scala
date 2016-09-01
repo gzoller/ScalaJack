@@ -66,12 +66,18 @@ class BaseBenchmarksState {
   val flexScalaJack = ScalaJack[String](FlexJsonFlavor)
 
   val vc = VisitorContext(
-    hintMap       = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
-    hintValueRead = Map("co.blocke.scalajack.benchmarks.Human" → {
+    hintMap         = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
+    hintValueRead   = Map("co.blocke.scalajack.benchmarks.Human" → {
       case "Male"   ⇒ new String("co.blocke.scalajack.benchmarks.Male")
       case "Female" ⇒ new String("co.blocke.scalajack.benchmarks.Female")
+    }),
+    hintValueRender = Map("co.blocke.scalajack.benchmarks.Human" → {
+      case "co.blocke.scalajack.benchmarks.Male"   ⇒ new String("Male")
+      case "co.blocke.scalajack.benchmarks.Female" ⇒ new String("Female")
     })
   )
+
+  val listOfHumans = flexScalaJack.read[List[Human]](jsonString, vc)
 
 }
 
@@ -79,13 +85,23 @@ class BaseBenchmarksState {
 class BaseBenchmarks {
 
   @Benchmark
-  def testNativeScalaJack(state: BaseBenchmarksState): List[Human] = {
+  def readNativeScalaJack(state: BaseBenchmarksState): List[Human] = {
     state.nativeScalaJack.read[List[Human]](state.jsonString, state.vc)
   }
 
   @Benchmark
-  def testFlexScalaJack(state: BaseBenchmarksState): List[Human] = {
+  def readFlexScalaJack(state: BaseBenchmarksState): List[Human] = {
     state.flexScalaJack.read[List[Human]](state.jsonString, state.vc)
+  }
+
+  @Benchmark
+  def writeNativeScalaJack(state: BaseBenchmarksState): String = {
+    state.nativeScalaJack.render[List[Human]](state.listOfHumans, state.vc)
+  }
+
+  @Benchmark
+  def writeFlexScalaJack(state: BaseBenchmarksState): String = {
+    state.flexScalaJack.render[List[Human]](state.listOfHumans, state.vc)
   }
 
 }

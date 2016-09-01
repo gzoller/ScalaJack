@@ -2,7 +2,10 @@ package co.blocke.scalajack.flexjson
 
 import co.blocke.scalajack.flexjson.TokenType.TokenType
 
-class Tokenizer {
+class Tokenizer(val capacity: Int = 1024) {
+
+  @inline final val ObjectStructureType: Byte = 1
+  @inline final val ArrayStructureType: Byte = 2
 
   def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
     val maxPosition = offset + length
@@ -14,10 +17,9 @@ class Tokenizer {
 
     var numberOfTokens = 0
     var isIdentifier = false
-    val CTX_OBJ: Byte = 1
-    val CTX_ARRAY: Byte = 2
-    val ctxStack = new Array[Byte](256)
-    var ctxPtr = -1
+
+    val structureTypeStack = new Array[Byte](256)
+    var indexOfTopStructure = -1
 
     @inline def appendToken(tokenType: TokenType, tokenOffset: Int, tokenLength: Int): Unit = {
       val i = numberOfTokens
@@ -93,25 +95,25 @@ class Tokenizer {
     while (position < maxPosition) {
       source(position) match {
         case '{' ⇒
-          ctxPtr += 1 // stack push
-          ctxStack(ctxPtr) = CTX_OBJ
+          indexOfTopStructure += 1 // stack push
+          structureTypeStack(indexOfTopStructure) = ObjectStructureType
           appendToken(TokenType.BeginObject, position, 1)
           position += 1
           isIdentifier = true
 
         case '}' ⇒
-          ctxPtr -= 1 // stack pop
+          indexOfTopStructure -= 1 // stack pop
           appendToken(TokenType.EndObject, position, 1)
           position += 1
 
         case '[' ⇒
-          ctxPtr += 1 // stack push
-          ctxStack(ctxPtr) = CTX_ARRAY
+          indexOfTopStructure += 1 // stack push
+          structureTypeStack(indexOfTopStructure) = ArrayStructureType
           appendToken(TokenType.BeginArray, position, 1)
           position += 1
 
         case ']' ⇒
-          ctxPtr -= 1 // stack pop
+          indexOfTopStructure -= 1 // stack pop
           appendToken(TokenType.EndArray, position, 1)
           position += 1
 
@@ -120,10 +122,16 @@ class Tokenizer {
 
         case ',' ⇒
           position += 1
-          if (ctxStack(ctxPtr) == CTX_OBJ) // , inside object is a field separator... identifier expected
+          if (structureTypeStack(indexOfTopStructure) == ObjectStructureType) // , inside object is a field separator... identifier expected
             isIdentifier = true
 
-        case ' ' | '\n' | '\t' ⇒ // skip whitespace
+        case ' ' ⇒ // skip whitespace
+          position += 1
+
+        case '\n' ⇒ // skip whitespace
+          position += 1
+
+        case '\t' ⇒ // skip whitespace
           position += 1
 
         case '"' ⇒
@@ -158,18 +166,17 @@ class Tokenizer {
           appendToken(TokenType.False, position, 5)
           position += 5
 
-        case ch if (isIntegerChar(ch)) ⇒
-          val start = position
-
-          while (isIntegerChar(source(position))) {
-            position += 1
-          }
-
-          appendToken(TokenType.Number, start, position - start)
-
         case ch ⇒
-          // Literal name
-          if (isInitialLiteralNameChar(ch)) {
+          // Integer
+          if (isIntegerChar(ch)) {
+            val start = position
+
+            while (isIntegerChar(source(position))) {
+              position += 1
+            }
+
+            appendToken(TokenType.Number, start, position - start)
+          } else if (isInitialLiteralNameChar(ch)) { // Literal name
             val literalNameOffset = position
 
             position += 1 // Skip initial character
@@ -187,9 +194,9 @@ class Tokenizer {
 
           } else if (isDecimalPoint(ch)) {
 
+          } else {
+            throw new IllegalArgumentException(s"Unknown character: $ch")
           }
-
-          throw new IllegalArgumentException(s"Unknown character: $ch")
       }
     }
     appendToken(TokenType.End, position, 0)
