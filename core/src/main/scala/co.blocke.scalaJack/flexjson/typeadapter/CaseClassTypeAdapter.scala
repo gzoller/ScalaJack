@@ -44,9 +44,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val typeAfterSubstitution =
         if (tpe.typeArgs.isEmpty) {
-          typeBeforeSubstitution.substituteTypes(tpe.typeParams, tpe.typeParams.map(_ => typeOf[Any]))
+          typeBeforeSubstitution.typeConstructor.substituteTypes(tpe.typeParams, tpe.typeParams.map(_ ⇒ typeOf[Any]))
         } else {
-          typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
+          typeBeforeSubstitution.typeConstructor.substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
         }
 
       val parameters = typeAfterSubstitution.paramLists.flatten.zipWithIndex.map({
@@ -62,7 +62,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               None
             }
 
-          Parameter(index, parameterName, context.typeAdapter(param.info), accessor, defaultValueAccessorMirror)
+          val parameterValueTypeAdapter = context.typeAdapter(param.info)
+          Parameter(index, parameterName, parameterValueTypeAdapter, accessor, defaultValueAccessorMirror)
       })
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]

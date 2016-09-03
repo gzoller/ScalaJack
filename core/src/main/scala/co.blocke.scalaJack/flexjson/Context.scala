@@ -1,10 +1,11 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.javaprimitives.{ JavaBooleanTypeAdapter, JavaByteTypeAdapter, JavaCharacterTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaShortTypeAdapter }
+import co.blocke.scalajack.flexjson.typeadapter.BigDecimalTypeAdapter
+import co.blocke.scalajack.flexjson.typeadapter.javaprimitives.{JavaBooleanTypeAdapter, JavaByteTypeAdapter, JavaCharacterTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaShortTypeAdapter}
 import co.blocke.scalajack.flexjson.typeadapter.joda.JodaDateTimeTypeAdapter
-import co.blocke.scalajack.flexjson.typeadapter.{ AnyTypeAdapter, BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DerivedValueClassCompanionTypeAdapter, DoubleTypeAdapter, EnumerationTypeAdapter, FloatTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TupleTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter }
+import co.blocke.scalajack.flexjson.typeadapter.{AnyTypeAdapter, BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DerivedValueClassCompanionTypeAdapter, DoubleTypeAdapter, EnumerationTypeAdapter, FloatTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TupleTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter}
 
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object Context {
 
@@ -26,6 +27,7 @@ object Context {
     .withFactory(LongTypeAdapter)
     .withFactory(FloatTypeAdapter)
     .withFactory(DoubleTypeAdapter)
+    .withFactory(BigDecimalTypeAdapter)
     .withFactory(StringTypeAdapter)
     .withFactory(DerivedValueClassCompanionTypeAdapter)
     .withFactory(DerivedValueClassAdapter)

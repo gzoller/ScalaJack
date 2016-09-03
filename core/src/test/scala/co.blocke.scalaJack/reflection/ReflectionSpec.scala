@@ -2,7 +2,7 @@ package co.blocke.scalajack.reflection
 
 import org.scalatest.{FunSpec, Matchers}
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{typeOf, ClassSymbol, InstanceMirror, TypeName}
+import scala.reflect.runtime.universe.{typeOf, ClassSymbol, InstanceMirror, TypeName, TermName}
 import scala.reflect.runtime.universe
 
 trait Drink
@@ -13,6 +13,14 @@ case class Breakfast[D <: Drink](numberOfPancakes: Int, drink: D)
 
 //noinspection EmptyCheck
 class ReflectionSpec extends FunSpec with Matchers {
+
+  describe("type substitution") {
+    val t = typeOf[Breakfast[OrangeJuice]]
+
+    val typeArgs = List(typeOf[String])
+
+    println(t)
+  }
 
   describe("non-erased types") {
     val breakfastType = typeOf[Breakfast[OrangeJuice]]

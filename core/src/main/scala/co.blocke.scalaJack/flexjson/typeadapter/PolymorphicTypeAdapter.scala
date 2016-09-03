@@ -4,12 +4,13 @@ import co.blocke.scalajack.flexjson.FlexJsonFlavor.MemberName
 import co.blocke.scalajack.flexjson.{ Context, ForwardingWriter, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, Type }
+import scala.reflect.runtime.universe.{ ClassSymbol, Type, typeOf }
 
 case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
     if (classSymbol.isTrait) {
+      println("POLY.FACTORY: " + tpe)
       Some(PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context))
     } else {
       None
@@ -80,10 +81,20 @@ case class PolymorphicTypeAdapter[T](
 
   override def write(value: T, writer: Writer): Unit = {
     // TODO figure out a better way to infer the type (perhaps infer the type arguments?)
-    val valueType = currentMirror.classSymbol(value.getClass).info
-    val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[T]]
+    val t0 = currentMirror.classSymbol(value.getClass).info
 
-    val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, valueType, typeTypeAdapter, memberNameTypeAdapter)
+    val t1 =
+      if (t0.typeArgs.isEmpty) {
+        val typeParams = t0.typeParams
+        val typeArgs = t0.typeParams.map(_ ⇒ typeOf[Any])
+        t0.typeConstructor.substituteTypes(typeParams, typeArgs)
+      } else {
+        t0
+      }
+
+    val valueTypeAdapter = context.typeAdapter(t1).asInstanceOf[TypeAdapter[T]]
+
+    val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, t1, typeTypeAdapter, memberNameTypeAdapter)
     valueTypeAdapter.write(value, polymorphicWriter)
   }
 
