@@ -20,7 +20,7 @@ trait Thing2[T, U] {
   val t: T
   val u: U
 }
-case class TwoThing[P](x: P, t: String, u: P) extends Thing2[String, P]
+case class TwoThing[P](x: List[P], t: String, u: P) extends Thing2[String, P]
 case class Wow2[A](a: String, b: Thing2[String, A])
 
 // Case 4 -------- > Parameterized case class implementing a parameterized trait
@@ -50,7 +50,7 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     // }
     it("Works 2") {
       scala.util.Try {
-        val m = TwoThing(1, "xix", 5)
+        val m = TwoThing(List(1, 2), "xix", 5)
         val js = sj.render(Wow2("ok", m))
         println(js)
         val obj = sj.read[Wow2[Int]](js)

@@ -33,7 +33,6 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
       println(tpe)
-      // println("GREG: " + tpe.dealias)
       println("HERE: " + constructorSymbol.infoIn(tpe))
       println("Super: " + superParamTypes)
 
