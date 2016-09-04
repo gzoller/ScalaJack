@@ -8,9 +8,9 @@ import scala.reflect.runtime.universe.{ ClassSymbol, Type }
 
 case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]] =
     if (classSymbol.isTrait) {
-      Some(PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context))
+      Some(PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context, tpe.typeArgs))
     } else {
       None
     }
@@ -48,7 +48,8 @@ case class PolymorphicTypeAdapter[T](
     typeMemberName:        MemberName,
     typeTypeAdapter:       TypeAdapter[Type],
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    context:               Context
+    context:               Context,
+    paramTypes:            List[Type]
 ) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
@@ -81,7 +82,34 @@ case class PolymorphicTypeAdapter[T](
   override def write(value: T, writer: Writer): Unit = {
     // TODO figure out a better way to infer the type (perhaps infer the type arguments?)
     val valueType = currentMirror.classSymbol(value.getClass).info
-    val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[T]]
+    // println("VALUE : " + valueType)
+    // val g = valueType.baseClasses.map { b =>
+    //   (b.toString, b.typeSignature.typeParams)
+    // }
+    // println(g)
+    // println("ARGS: " + paramTypes)
+
+    /*
+PREREQ:  Need an ordered list of resolved parameter types passed in when this TypeAdapter was created.
+         This is reasonable because our (current) assumption is that top-level call always gives us
+         the specific type, so we just need to navigate that information thru the stack.
+         Note this should be an empty list if the trait takes no parameters.
+
+         paramTypes: List[Type]   (List(String,Int) for our example)
+
+STEPS:  (with the valueType)  -- navigate paramTypes thru context to CaseClassTypeAdapter
+  1. Find the "with" of this trait.  It should contain an ordered list of its parameters, e.g.. Thing2[String,P]
+  2. Map the given/known parameters passed in against this discovered list from valueType
+  3. Create a Symbol -> Type map (resolvedTypes) of any non-concrete types, so Map(P -> Int) here
+  4. Go back and substitute symbols in resolvedTypes in the class (replace P with Int)
+  5. Now discover the class with context
+
+Note that if valueType has unresolved Symbols then this will (rightfully) explode.  We have no way of knowing.
+Perhaps a refinement would be to support an Any type for _ that would resolve primitive types and maybe
+simple collections of primitive types.
+*/
+
+    val valueTypeAdapter = context.typeAdapter(valueType, paramTypes).asInstanceOf[TypeAdapter[T]]
 
     val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, valueType, typeTypeAdapter, memberNameTypeAdapter)
     valueTypeAdapter.write(value, polymorphicWriter)

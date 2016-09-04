@@ -36,7 +36,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
         val customHandlerTypeAdapterFactories = vc.customHandlers map {
           case (fullName, customHandler) ⇒
             new TypeAdapterFactory {
-              override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+              override def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type] = List.empty[Type]): Option[TypeAdapter[_]] =
                 if (tpe.toString == fullName) {
                   val anyTypeAdapter = context.typeAdapterOf[Any]
 
@@ -80,12 +80,12 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
 
           val polymorphicTypeAdapterFactory = new TypeAdapterFactory {
 
-            override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+            override def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type] = List.empty[Type]): Option[TypeAdapter[_]] =
               // FIXME              if (tpe =:= polymorphicType) {
               if (tpe.typeSymbol.fullName == polymorphicFullName) {
                 val stringTypeAdapter = context.typeAdapterOf[String]
 
-                Some(PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context.typeAdapterOf[MemberName], context))
+                Some(PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context.typeAdapterOf[MemberName], context, List.empty[Type]))
               } else {
                 None
               }

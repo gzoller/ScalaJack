@@ -6,16 +6,16 @@ object TypeAdapterFactory {
 
   trait FromClassSymbol extends TypeAdapterFactory {
 
-    override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = {
+    override def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]] = {
       val typeSymbol = tpe.typeSymbol
       if (typeSymbol.isClass) {
-        typeAdapter(tpe, typeSymbol.asClass, context)
+        typeAdapter(tpe, typeSymbol.asClass, context, superParamTypes)
       } else {
         None
       }
     }
 
-    def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]]
+    def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]]
 
   }
 
@@ -23,6 +23,6 @@ object TypeAdapterFactory {
 
 trait TypeAdapterFactory {
 
-  def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]]
+  def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]]
 
 }

@@ -29,10 +29,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, superParamTypes: List[Type] = List.empty[Type]): Option[TypeAdapter[_]] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
+      println(tpe)
+      // println("GREG: " + tpe.dealias)
       println("HERE: " + constructorSymbol.infoIn(tpe))
+      println("Super: " + superParamTypes)
 
       val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
@@ -41,13 +44,17 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val companionMirror = currentMirror.reflect(companionObject)
 
       val typeBeforeSubstitution = constructorSymbol.infoIn(tpe)
+      println("BEFORE: " + typeBeforeSubstitution)
 
       val typeAfterSubstitution =
-        if (tpe.typeArgs.isEmpty) {
+        if (superParamTypes.isEmpty) {
+          println(":::1:::")
           typeBeforeSubstitution.substituteTypes(tpe.typeParams, tpe.typeParams.map(_ => typeOf[Any]))
         } else {
-          typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
+          println(":::2::: " + superParamTypes)
+          typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, superParamTypes)
         }
+      println("AFTER : " + typeAfterSubstitution)
 
       val parameters = typeAfterSubstitution.paramLists.flatten.zipWithIndex.map({
         case (param, index) ⇒
