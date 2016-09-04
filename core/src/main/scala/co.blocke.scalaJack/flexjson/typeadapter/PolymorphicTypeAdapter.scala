@@ -84,9 +84,9 @@ case class PolymorphicTypeAdapter[T](
     val valueType = currentMirror.classSymbol(value.getClass).info
     // println("VALUE : " + valueType)
     // val g = valueType.baseClasses.map { b =>
-    //   (b.toString, b.typeSignature.typeParams)
+    //   (b.toString, b.info.decls)
     // }
-    // println(g)
+    // println("GREG: " + g)
     // println("ARGS: " + paramTypes)
 
     /*
