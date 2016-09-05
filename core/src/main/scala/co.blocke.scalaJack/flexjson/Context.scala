@@ -23,7 +23,6 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
   def typeAdapter(tpe: Type, superParamTypes: List[Type] = List.empty[Type]): TypeAdapter[_] = {
     val tsym = tpe.typeSymbol.asType.typeParams
     val args = tpe.typeArgs
-    // println("Find... " + tpe.typeSymbol.fullName + " : " + tsym + " -> " + args)
 
     resolvedTypeAdapters.get(tpe) match {
       case Some(typeAdapter) ⇒
