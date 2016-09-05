@@ -33,14 +33,22 @@ case class Mine[A, B](a: A, b: B) extends Xis[A, B]
 class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
   val old = ScalaJack(json.JsonFlavor())
-  describe("--1--") {
-    // it("Works") {
-    //   val m = OneThing("xix", 5)
-    //   val js = sj.render(Wow("ok", m))
-    //   println(js)
-    //   val obj = sj.read[Wow](js)
-    //   println(obj)
-    // }
+  describe("-- Cases --") {
+    it("Case 1") {
+      val b = Boom(true)
+      val js = sj.render(b)
+      println(js)
+      val obj = sj.read[Boom[Boolean]](js)
+      println(obj)
+    }
+    it("Case 2") {
+      val m = OneThing("xix", 5)
+      val js = sj.render(Wow("ok", m))
+      println(js)
+      val obj = sj.read[Wow](js)
+      println(obj)
+    }
+    // Broken in old version!!!  Yay!
     // it("Old") {
     //   val m = TwoThing(1, "xix", 5)
     //   val js = old.render(Wow2("ok", m))
@@ -48,7 +56,7 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     //   val obj = old.read[Wow2[Int]](js)
     //   println(obj)
     // }
-    it("Works 2") {
+    it("Case 3") {
       scala.util.Try {
         val m = TwoThing(99, "xix", 5)
         val js = sj.render(Wow2("ok", m))
