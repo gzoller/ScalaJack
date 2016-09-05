@@ -9,7 +9,7 @@ object OptionTypeAdapter extends TypeAdapterFactory {
   override def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]] =
     if (tpe <:< typeOf[Option[_]]) {
       val valueType = tpe.typeArgs.head
-      val valueTypeAdapter = context.typeAdapter(valueType)
+      val valueTypeAdapter = context.typeAdapter(valueType, valueType.typeArgs)
 
       Some(OptionTypeAdapter(valueTypeAdapter))
     } else {

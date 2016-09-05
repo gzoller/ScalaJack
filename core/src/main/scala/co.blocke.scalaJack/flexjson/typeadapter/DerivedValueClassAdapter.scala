@@ -18,7 +18,7 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
       val accessor = tpe.member(TermName(parameterName)).asMethod
 
       val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
-      val valueTypeAdapter = context.typeAdapter(valueType)
+      val valueTypeAdapter = context.typeAdapter(valueType, valueType.typeArgs)
 
       Some(DerivedValueClassAdapter(constructorMirror, accessor, valueTypeAdapter))
     } else {

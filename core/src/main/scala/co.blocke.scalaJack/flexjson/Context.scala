@@ -54,30 +54,35 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
     val tsym = tpe.typeSymbol.asType.typeParams
     val args = tpe.typeArgs
 
-    resolvedTypeAdapters.get(tpe) match {
+    // resolvedTypeAdapters.get(tpe) match {
+    /*
       case Some(typeAdapter) ⇒
+        println("Found! " + tpe.typeSymbol.fullName + superParamTypes.map(_.typeSymbol.fullName).mkString("(", ",", ")"))
         typeAdapter
 
       case None ⇒
+        println("Not Found! " + tpe.typeSymbol.fullName + superParamTypes.map(_.typeSymbol.fullName).mkString("(", ",", ")"))
         resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
+*/
 
-        var optionalTypeAdapter: Option[TypeAdapter[_]] = None
+    var optionalTypeAdapter: Option[TypeAdapter[_]] = None
 
-        var remainingFactories = factories
-        while (optionalTypeAdapter.isEmpty && remainingFactories.nonEmpty) {
-          optionalTypeAdapter = remainingFactories.head.typeAdapter(tpe, this, superParamTypes)
-          remainingFactories = remainingFactories.tail
-        }
-
-        val typeAdapter = optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
-
-        resolvedTypeAdapters += tpe → typeAdapter
-
-        typeAdapter
+    var remainingFactories = factories
+    while (optionalTypeAdapter.isEmpty && remainingFactories.nonEmpty) {
+      optionalTypeAdapter = remainingFactories.head.typeAdapter(tpe, this, superParamTypes)
+      remainingFactories = remainingFactories.tail
     }
+
+    val typeAdapter = optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
+
+    // println(">> Saved: " + tpe.typeSymbol.fullName + superParamTypes.map(_.typeSymbol.fullName).mkString("(", ",", ")"))
+    // resolvedTypeAdapters += tpe → typeAdapter
+
+    typeAdapter
+    // }
   }
 
   def typeAdapterOf[T](implicit valueTypeTag: TypeTag[T]): TypeAdapter[T] =
-    typeAdapter(valueTypeTag.tpe).asInstanceOf[TypeAdapter[T]]
+    typeAdapter(valueTypeTag.tpe, valueTypeTag.tpe.typeArgs).asInstanceOf[TypeAdapter[T]]
 
 }

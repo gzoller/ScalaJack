@@ -60,7 +60,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               None
             }
 
-          Parameter(index, parameterName, context.typeAdapter(param.info), accessor, defaultValueAccessorMirror)
+          Parameter(index, parameterName, context.typeAdapter(param.info, param.info.typeArgs), accessor, defaultValueAccessorMirror)
       })
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]

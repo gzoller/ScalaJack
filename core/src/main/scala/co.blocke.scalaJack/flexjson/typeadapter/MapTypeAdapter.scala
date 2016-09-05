@@ -9,10 +9,10 @@ object MapTypeAdapter extends TypeAdapterFactory {
   override def typeAdapter(tpe: Type, context: Context, superParamTypes: List[Type]): Option[TypeAdapter[_]] =
     if (tpe <:< typeOf[Map[_, _]]) {
       val keyType = tpe.dealias.typeArgs(0)
-      val keyTypeAdapter = context.typeAdapter(keyType)
+      val keyTypeAdapter = context.typeAdapter(keyType, keyType.typeArgs)
 
       val valueType = tpe.dealias.typeArgs(1)
-      val valueTypeAdapter = context.typeAdapter(valueType)
+      val valueTypeAdapter = context.typeAdapter(valueType, valueType.typeArgs)
 
       Some(MapTypeAdapter(keyTypeAdapter, valueTypeAdapter))
     } else {

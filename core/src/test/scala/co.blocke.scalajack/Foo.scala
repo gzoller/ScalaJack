@@ -28,10 +28,22 @@ trait Thing2[T, U] {
 case class TwoThing[P](x: P, t: String, u: P) extends Thing2[String, P]
 case class Wow2[A](a: String, b: Thing2[String, A])
 
+// Case X
+case class Two(
+  foo: String,
+  bar: Boolean
+)
+trait Tart[T] {
+  val yum: T
+}
+case class Toast[D](g: Int, val yum: D) extends Tart[D]
+case class Breakfast[K](y: Boolean, bread: Tart[K])
+
 class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
   val old = ScalaJack(json.JsonFlavor())
   describe("-- Cases --") {
+    /*
     it("Case 1") {
       val b = Boom(true)
       val js = sj.render(b)
@@ -72,6 +84,22 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val obj = sj.read[Wow2[Int]](js)
         println(obj)
       }
+    }
+    */
+    it("Case class having an embedded parameterized trait") {
+      val w = Breakfast(true, Toast(7, "Burnt"))
+      val js = ScalaJack().render(w)
+      println(js)
+      js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":"Burnt"}}""")
+      ScalaJack().read[Breakfast[String]](js) should equal(w)
+      println("-----------------------")
+    }
+    it("Case class having an embedded parameterized trait, with the trait's parameter another case class") {
+      val w = Breakfast(true, Toast(7, Two("two", true)))
+      val js = sj.render(w)
+      println(js)
+      js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":{"foo":"two","bar":true}}}""")
+      sj.read[Breakfast[Two]](js) should equal(w)
     }
   }
 }
