@@ -1,16 +1,46 @@
 package co.blocke.scalajack.flexjson
 
 import typeadapter._
+import typeadapter.javaprimitives._
+import typeadapter.joda._
 
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 
 object Context {
 
   val StandardContext = Context()
+    .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
+    .withFactory(ListTypeAdapter)
+    .withFactory(SetTypeAdapter)
+    .withFactory(MapTypeAdapter)
+    .withFactory(TupleTypeAdapter)
     .withFactory(CaseClassTypeAdapter)
+    .withFactory(OptionTypeAdapter)
+    .withFactory(TryTypeAdapter)
+    .withFactory(BooleanTypeAdapter)
+    .withFactory(CharTypeAdapter)
+    .withFactory(ByteTypeAdapter)
+    .withFactory(ShortTypeAdapter)
     .withFactory(IntTypeAdapter)
+    .withFactory(LongTypeAdapter)
+    .withFactory(FloatTypeAdapter)
+    .withFactory(DoubleTypeAdapter)
     .withFactory(StringTypeAdapter)
+    .withFactory(DerivedValueClassCompanionTypeAdapter)
+    .withFactory(DerivedValueClassAdapter)
+    .withFactory(EnumerationTypeAdapter)
+    // FIXME    .withFactory(PolymorphicTypeAdapter)
+    .withFactory(JavaBooleanTypeAdapter)
+    .withFactory(JavaByteTypeAdapter)
+    .withFactory(JavaCharacterTypeAdapter)
+    .withFactory(JavaDoubleTypeAdapter)
+    .withFactory(JavaFloatTypeAdapter)
+    .withFactory(JavaIntegerTypeAdapter)
+    .withFactory(JavaLongTypeAdapter)
+    .withFactory(JavaShortTypeAdapter)
+    .withFactory(UUIDTypeAdapter)
+    .withFactory(JodaDateTimeTypeAdapter)
 }
 
 case class Context(factories: List[TypeAdapterFactory] = Nil) {

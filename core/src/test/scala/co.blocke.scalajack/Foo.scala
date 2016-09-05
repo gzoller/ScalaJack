@@ -16,19 +16,17 @@ case class OneThing(t: String, u: Int) extends Thing[String, Int]
 case class Wow(a: String, b: Thing[String, Int])
 
 // Case 3 -------- > Parameterized class having a parameterized trait
+trait Baba[T] { val a: T }
+case class Mibu[X](a: X, q: Boolean) extends Baba[X]
+case class Wawa[A](a: Baba[A], b: String)
+
+// Case 4 -------- > Parameterized case class implementing a parameterized trait
 trait Thing2[T, U] {
   val t: T
   val u: U
 }
 case class TwoThing[P](x: P, t: String, u: P) extends Thing2[String, P]
 case class Wow2[A](a: String, b: Thing2[String, A])
-
-// Case 4 -------- > Parameterized case class implementing a parameterized trait
-trait Xis[T, U] {
-  val a: T
-  val b: U
-}
-case class Mine[A, B](a: A, b: B) extends Xis[A, B]
 
 class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
@@ -57,6 +55,16 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     //   println(obj)
     // }
     it("Case 3") {
+      scala.util.Try {
+        val mb = Mibu(5, true)
+        val ww = Wawa(mb, "yep")
+        val js = sj.render(ww)
+        println(js)
+        val obj = sj.read[Wawa[Int]](js)
+        println(obj)
+      }
+    }
+    it("Case 4") {
       scala.util.Try {
         val m = TwoThing(99, "xix", 5)
         val js = sj.render(Wow2("ok", m))
