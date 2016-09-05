@@ -169,13 +169,13 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Handles null values - Double") {
         val js = """{"a":5.1,"b":null}"""
-        val o = ScalaJack().read[Map[String, Double]](js)
-        o should contain only (("a" -> 5.1), ("b" -> null))
+        val thrown = the[IllegalStateException] thrownBy ScalaJack().read[Map[String, Double]](js)
+        thrown.getMessage should equal("Expected token of type Number, not Null")
       }
       it("Handles null values - Boolean") {
         val js = """{"a":true,"b":null}"""
-        val o = ScalaJack().read[Map[String, Boolean]](js)
-        o should contain only (("a" -> true), ("b" -> null))
+        val thrown = the[IllegalStateException] thrownBy ScalaJack().read[Map[String, Boolean]](js)
+        thrown.getMessage should equal("Expected token of type Boolean, not Null")
       }
       it("Handles null values - String") {
         val js = """{"a":"wow","b":null}"""
@@ -184,13 +184,13 @@ class TestSpec1 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Handles null values - Int") {
         val js = """{"a":5,"b":null}"""
-        val o = ScalaJack().read[Map[String, Int]](js)
-        o should contain only (("a" -> 5), ("b" -> null))
+        val thrown = the[IllegalStateException] thrownBy ScalaJack().read[Map[String, Int]](js)
+        thrown.getMessage should equal("Expected token of type Number, not Null")
       }
       it("Handles null values - Long") {
         val js = """{"a":5,"b":null}"""
-        val o = ScalaJack().read[Map[String, Long]](js)
-        o should contain only (("a" -> 5L), ("b" -> null))
+        val thrown = the[IllegalStateException] thrownBy ScalaJack().read[Map[String, Long]](js)
+        thrown.getMessage should equal("Expected token of type Number, not Null")
       }
       it("Handles null values - UUID") {
         val js = """{"a":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","b":null}"""
