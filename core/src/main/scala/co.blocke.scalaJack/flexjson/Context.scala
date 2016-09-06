@@ -61,7 +61,7 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
 
       case None ⇒
         // println("Not Found! " + tpe.typeSymbol.fullName + superParamTypes.map(_.typeSymbol.fullName).mkString("(", ",", ")"))
-        resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
+        //resolvedTypeAdapters += tpe → LazyTypeAdapter(this, tpe)
 
         var optionalTypeAdapter: Option[TypeAdapter[_]] = None
 
