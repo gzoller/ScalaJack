@@ -65,7 +65,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, parameters, memberNameTypeAdapter))
+      Some(CaseClassTypeAdapter(typeAfterSubstitution, constructorMirror, parameters, memberNameTypeAdapter))
     } else {
       None
     }

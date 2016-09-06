@@ -43,7 +43,6 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
   val old = ScalaJack(json.JsonFlavor())
   describe("-- Cases --") {
-    /*
     it("Case 1") {
       val b = Boom(true)
       val js = sj.render(b)
@@ -85,7 +84,6 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         println(obj)
       }
     }
-    */
     it("Case class having an embedded parameterized trait") {
       val w = Breakfast(true, Toast(7, "Burnt"))
       val js = ScalaJack().render(w)
