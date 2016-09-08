@@ -29,6 +29,9 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {
+      case null ⇒
+        writer.writeNull()
+
       case Some(value) ⇒
         valueTypeAdapter.write(value, writer)
 

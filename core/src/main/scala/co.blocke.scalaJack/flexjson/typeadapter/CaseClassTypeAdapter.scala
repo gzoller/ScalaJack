@@ -128,19 +128,23 @@ case class CaseClassTypeAdapter[T](
   }
 
   override def write(value: T, writer: Writer): Unit = {
-    writer.beginObject()
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.beginObject()
 
-    for (parameter ← parameters) {
-      val classTag = ClassTag[T](value.getClass)
-      val instanceMirror = currentMirror.reflect(value)(classTag)
-      val accessorMirror = instanceMirror.reflectMethod(parameter.accessor)
-      val parameterValue = accessorMirror.apply()
+      for (parameter ← parameters) {
+        val classTag = ClassTag[T](value.getClass)
+        val instanceMirror = currentMirror.reflect(value)(classTag)
+        val accessorMirror = instanceMirror.reflectMethod(parameter.accessor)
+        val parameterValue = accessorMirror.apply()
 
-      memberNameTypeAdapter.write(parameter.name, writer)
-      parameter.writeValue(parameterValue, writer)
+        memberNameTypeAdapter.write(parameter.name, writer)
+        parameter.writeValue(parameterValue, writer)
+      }
+
+      writer.endObject()
     }
-
-    writer.endObject()
   }
 
 }
