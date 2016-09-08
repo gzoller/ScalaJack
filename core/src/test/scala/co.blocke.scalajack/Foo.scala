@@ -39,6 +39,8 @@ trait Tart[T] {
 case class Toast[D](g: Int, val yum: D) extends Tart[D]
 case class Breakfast[K](y: Boolean, bread: Tart[K])
 
+case class Person(name: String, mom: Option[Person], dad: Option[Person])
+
 class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
   val old = ScalaJack(json.JsonFlavor())
@@ -98,6 +100,16 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       println(js)
       js should equal("""{"y":true,"bread":{"_hint":"co.blocke.scalajack.test.Toast","g":7,"yum":{"foo":"two","bar":true}}}""")
       sj.read[Breakfast[Two]](js) should equal(w)
+    }
+    it("Self references 1") {
+      scala.util.Try {
+        val dad = Person("Dad", None, None)
+        val p = Person("Me", None, Some(dad))
+        val js = sj.render(p)
+        println(js)
+        js should equal("""{"name":"Me"}""")
+        sj.read[Person](js) should equal(p)
+      }
     }
   }
 }

@@ -24,11 +24,17 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
     if (reader.peek == TokenType.Nothing) {
       None
     } else {
-      Some(valueTypeAdapter.read(reader))
+      valueTypeAdapter.read(reader) match {
+        case null ⇒ null
+        case v    ⇒ Some(v)
+      }
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {
+      case null ⇒
+        writer.writeNull()
+
       case Some(value) ⇒
         valueTypeAdapter.write(value, writer)
 

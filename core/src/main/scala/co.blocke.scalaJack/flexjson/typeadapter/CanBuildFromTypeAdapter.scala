@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{ Reader, TypeAdapter, Writer }
+import co.blocke.scalajack.flexjson.{ Reader, TokenType, TypeAdapter, Writer }
 
 import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
@@ -14,16 +14,20 @@ case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
   override def read(reader: Reader): To = {
     val builder = canBuildFrom()
 
-    reader.beginArray()
+    if (reader.peek == TokenType.Null) {
+      reader.readNull().asInstanceOf[To]
+    } else {
+      reader.beginArray()
 
-    while (reader.hasMoreElements) {
-      val element = elementTypeAdapter.read(reader)
-      builder += element
+      while (reader.hasMoreElements) {
+        val element = elementTypeAdapter.read(reader)
+        builder += element
+      }
+
+      reader.endArray()
+
+      builder.result()
     }
-
-    reader.endArray()
-
-    builder.result()
   }
 
   override def write(value: To, writer: Writer): Unit =
