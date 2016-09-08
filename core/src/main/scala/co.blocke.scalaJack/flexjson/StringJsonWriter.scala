@@ -15,11 +15,12 @@ object MemberPart extends Enumeration {
   val MemberName, MemberValue = Value
 }
 
+import co.blocke.scalajack.RenderException
 import co.blocke.scalajack.flexjson.StructureType.StructureType
 import co.blocke.scalajack.flexjson.ValueType.ValueType
 import co.blocke.scalajack.flexjson.MemberPart.MemberPart
 
-class StringJsonWriter extends Writer {
+class StringJsonWriter(canonical: Boolean = true) extends Writer {
 
   sealed trait Structure {
 
@@ -50,6 +51,11 @@ class StringJsonWriter extends Writer {
     override def beginNestedValue(nestedValueType: ValueType): Unit = {
       nextMemberPartToBeWritten match {
         case MemberPart.MemberName ⇒
+
+          if (canonical && nestedValueType != ValueType.String) {
+            throw new RenderException(s"Member names must be of type ${TokenType.String}, not $nestedValueType")
+          }
+
           builderLengthBeforeMemberNameWritten = builder.length // Just in case the value is Nothing
           if (numberOfMembersWrittenSoFar > 0) {
             writeValueSeparator()

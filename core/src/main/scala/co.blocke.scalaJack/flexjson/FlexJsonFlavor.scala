@@ -133,7 +133,7 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
     }
 
     override def render[T](value: T)(implicit valueTypeTag: TypeTag[T], visitorContext: VisitorContext): String = {
-      val writer = new StringJsonWriter
+      val writer = new StringJsonWriter(visitorContext.isCanonical)
       context(visitorContext).typeAdapterOf[T].write(value, writer)
       val jsonString = writer.jsonString
       jsonString
