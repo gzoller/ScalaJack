@@ -1,8 +1,8 @@
 package co.blocke.scalajack.reflection
 
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.{ FunSpec, Matchers }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{typeOf, ClassSymbol, InstanceMirror, TypeName, TermName}
+import scala.reflect.runtime.universe.{ typeOf, ClassSymbol, InstanceMirror, TypeName, TermName }
 import scala.reflect.runtime.universe
 
 trait Drink
@@ -32,7 +32,7 @@ class ReflectionSpec extends FunSpec with Matchers {
     assert(breakfastType.typeParams == List())
     assert(breakfastType.typeArgs == List(typeOf[OrangeJuice]))
 
-//    assert(breakfastType.typeConstructor.dealias == typeOf[Breakfast])
+    //    assert(breakfastType.typeConstructor.dealias == typeOf[Breakfast])
     assert(breakfastType.typeConstructor.erasure =:= typeOf[Breakfast[_ <: Drink]])
     assert(breakfastType.typeConstructor.erasure != typeOf[Breakfast[_ <: Drink]])
     assert(breakfastType.typeConstructor.typeParams.length == 1)

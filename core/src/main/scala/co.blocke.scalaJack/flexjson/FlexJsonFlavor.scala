@@ -1,11 +1,12 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{ PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory }
+import co.blocke.scalajack.flexjson.typeadapter.{FallbackTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory}
 import co.blocke.scalajack.json.JsonKind
-import co.blocke.scalajack.{ FlavorKind, JackFlavor, ScalaJack, VisitorContext }
+import co.blocke.scalajack.{FlavorKind, JackFlavor, ScalaJack, VisitorContext}
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.universe.{Type, TypeTag}
+import scala.reflect.runtime.currentMirror
 
 object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with JackFlavor[String] {
 
@@ -95,8 +96,30 @@ object FlexJsonFlavor extends FlavorKind[String] with ScalaJack[String] with Jac
           polymorphicTypeAdapterFactory
         }
 
-        context.copy(
+        val intermediateContext = context.copy(
           factories = customHandlerTypeAdapterFactories.toList ::: polymorphicTypeAdapterFactories.toList ::: context.factories ::: List(PolymorphicTypeAdapterFactory(defaultHintFieldName))
+        )
+
+        val fallbackFactories = vc.parseOrElse.map({
+          case (attemptedFullName, fallbackFullName) ⇒
+            val attemptedType = currentMirror.staticClass(attemptedFullName).asType.toType
+            val attemptedTypeAdapter = intermediateContext.typeAdapter(attemptedType)
+
+            val fallbackType = currentMirror.staticClass(fallbackFullName).asType.toType
+            val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
+
+            new TypeAdapterFactory {
+              override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+                if (tpe =:= attemptedType) {
+                  Some(FallbackTypeAdapter[Any](attemptedTypeAdapter.asInstanceOf[TypeAdapter[Any]], fallbackTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+                } else {
+                  None
+                }
+            }
+        })
+
+        intermediateContext.copy(
+          factories = fallbackFactories.toList ::: intermediateContext.factories
         )
       })
 

@@ -9,7 +9,12 @@ object TypeTypeAdapter extends SimpleTypeAdapter[Type] {
 
   override def read(reader: Reader): Type = {
     val fullName = reader.readString()
-    currentMirror.staticClass(fullName).info
+    try {
+      currentMirror.staticClass(fullName).info
+    } catch {
+      case e: ScalaReflectionException ⇒
+        throw new ClassNotFoundException(s"""Unable to find class named "$fullName"""", e)
+    }
   }
 
   override def write(value: Type, writer: Writer): Unit = {
