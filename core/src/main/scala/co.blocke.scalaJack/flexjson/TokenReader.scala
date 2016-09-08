@@ -23,13 +23,73 @@ class TokenReader(
     }
   }
 
+  def unescapedTokenText: String = {
+    val escapedTokenText = tokenText
+
+    val builder = new StringBuilder(escapedTokenText.length)
+
+    var position = 0
+    val maxPosition = escapedTokenText.length
+
+    while (position < maxPosition) {
+      escapedTokenText(position) match {
+        case '\\' ⇒
+          escapedTokenText(position + 1) match {
+            case '"' ⇒
+              builder.append('"')
+              position += 2
+
+            case '\\' ⇒
+              builder.append('\\')
+              position += 2
+
+            case '/' ⇒
+              builder.append('/')
+              position += 2
+
+            case 'b' ⇒
+              builder.append('\b')
+              position += 2
+
+            case 'f' ⇒
+              builder.append('\f')
+              position += 2
+
+            case 'n' ⇒
+              builder.append('\n')
+              position += 2
+
+            case 'r' ⇒
+              builder.append('\r')
+              position += 2
+
+            case 't' ⇒
+              builder.append('\t')
+              position += 2
+
+            case 'u' ⇒
+              val hexEncoded = escapedTokenText.substring(position + 2, position + 6)
+              val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
+              builder.append(unicodeChar)
+              position += 6
+          }
+
+        case ch ⇒
+          builder.append(ch)
+          position += 1
+      }
+    }
+
+    builder.toString()
+  }
+
   override def readString(): String = {
     read(expected = TokenType.String)
-    tokenText
+    unescapedTokenText
   }
   override def readIdentifier(): String = {
     read(expected = TokenType.Identifier)
-    tokenText
+    unescapedTokenText
   }
 
   override def tokenText: String =
