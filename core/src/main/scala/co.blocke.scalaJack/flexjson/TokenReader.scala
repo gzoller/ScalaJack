@@ -24,17 +24,25 @@ class TokenReader(
   }
 
   def unescapedTokenText: String = {
-    val escapedTokenText = tokenText
+    var builder: StringBuilder = null
+    var startOfUnescapedCharacters = 0
 
-    val builder = new StringBuilder(escapedTokenText.length)
+    val source = this.source
+    val tokenOffset = this.tokenOffset
+    val tokenLength = this.tokenLength
 
-    var position = 0
-    val maxPosition = escapedTokenText.length
+    var position = tokenOffset
+    val maxPosition = tokenOffset + tokenLength
 
     while (position < maxPosition) {
-      escapedTokenText(position) match {
+      source(position) match {
         case '\\' ⇒
-          escapedTokenText(position + 1) match {
+
+          if (builder == null) builder = new StringBuilder(tokenLength)
+
+          builder.appendAll(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
+
+          source(position + 1) match {
             case '"' ⇒
               builder.append('"')
               position += 2
@@ -68,25 +76,32 @@ class TokenReader(
               position += 2
 
             case 'u' ⇒
-              val hexEncoded = escapedTokenText.substring(position + 2, position + 6)
+              val hexEncoded = new String(source, position + 2, position + 6)
               val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
               builder.append(unicodeChar)
               position += 6
           }
 
+          startOfUnescapedCharacters = position
+
         case ch ⇒
-          builder.append(ch)
           position += 1
       }
     }
 
-    builder.toString()
+    if (builder == null) {
+      tokenText
+    } else {
+      builder.appendAll(source, startOfUnescapedCharacters, maxPosition - startOfUnescapedCharacters)
+      builder.toString()
+    }
   }
 
   override def readString(): String = {
     read(expected = TokenType.String)
     unescapedTokenText
   }
+
   override def readIdentifier(): String = {
     read(expected = TokenType.Identifier)
     unescapedTokenText
