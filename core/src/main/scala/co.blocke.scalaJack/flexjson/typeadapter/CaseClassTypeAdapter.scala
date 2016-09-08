@@ -2,7 +2,7 @@ package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.FlexJsonFlavor.MemberName
 import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Parameter
-import co.blocke.scalajack.flexjson.{ Context, EmptyReader, Reader, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.flexjson.{ Context, EmptyReader, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -75,7 +75,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 }
 
-case class CaseClassTypeAdapter[T](
+case class CaseClassTypeAdapter[T >: Null](
     caseClassType:         Type,
     constructorMirror:     MethodMirror,
     parameters:            List[Parameter[_]],
@@ -85,46 +85,52 @@ case class CaseClassTypeAdapter[T](
   val parametersByName = parameters.map(parameter ⇒ parameter.name → parameter.asInstanceOf[Parameter[Any]]).toMap
 
   override def read(reader: Reader): T = {
-    val numberOfParameters = parameters.length
+    reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
 
-    val arguments = new Array[Any](numberOfParameters)
-    val found = new mutable.BitSet(numberOfParameters)
+      case TokenType.BeginObject ⇒
+        val numberOfParameters = parameters.length
 
-    reader.beginObject()
+        val arguments = new Array[Any](numberOfParameters)
+        val found = new mutable.BitSet(numberOfParameters)
 
-    while (reader.hasMoreMembers) {
-      val memberName = memberNameTypeAdapter.read(reader)
+        reader.beginObject()
 
-      val optionalParameter = parametersByName.get(memberName)
-      optionalParameter match {
-        case Some(parameter) ⇒
-          arguments(parameter.index) = parameter.valueTypeAdapter.read(reader)
-          found(parameter.index) = true
+        while (reader.hasMoreMembers) {
+          val memberName = memberNameTypeAdapter.read(reader)
 
-        case None ⇒
-          reader.skipValue()
-      }
-    }
+          val optionalParameter = parametersByName.get(memberName)
+          optionalParameter match {
+            case Some(parameter) ⇒
+              arguments(parameter.index) = parameter.valueTypeAdapter.read(reader)
+              found(parameter.index) = true
 
-    var index = 0
-    while (index < numberOfParameters) {
-      if (!found(index)) {
-        val parameter = parameters(index)
-        parameter.defaultValueMirror match {
-          case Some(mirror) ⇒
-            arguments(index) = mirror.apply()
-
-          case None ⇒
-            arguments(index) = parameter.valueTypeAdapter.read(EmptyReader)
+            case None ⇒
+              reader.skipValue()
+          }
         }
-      }
 
-      index += 1
+        var index = 0
+        while (index < numberOfParameters) {
+          if (!found(index)) {
+            val parameter = parameters(index)
+            parameter.defaultValueMirror match {
+              case Some(mirror) ⇒
+                arguments(index) = mirror.apply()
+
+              case None ⇒
+                arguments(index) = parameter.valueTypeAdapter.read(EmptyReader)
+            }
+          }
+
+          index += 1
+        }
+
+        reader.endObject()
+
+        constructorMirror.apply(arguments: _*).asInstanceOf[T]
     }
-
-    reader.endObject()
-
-    constructorMirror.apply(arguments: _*).asInstanceOf[T]
   }
 
   override def write(value: T, writer: Writer): Unit = {

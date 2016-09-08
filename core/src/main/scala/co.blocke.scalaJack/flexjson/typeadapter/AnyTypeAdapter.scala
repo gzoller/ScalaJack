@@ -49,6 +49,9 @@ case class AnyTypeAdapter(
       case TokenType.Number ⇒
         bigDecimalTypeAdapter.read(reader)
 
+      case TokenType.Null ⇒
+        reader.readNull()
+
     }
   }
 

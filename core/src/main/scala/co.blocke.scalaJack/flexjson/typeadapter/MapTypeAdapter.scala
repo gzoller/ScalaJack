@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.flexjson.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.reflect.runtime.universe.{ Type, typeOf }
 
@@ -26,32 +26,40 @@ case class MapTypeAdapter[K, V](
     valueTypeAdapter: TypeAdapter[V]
 ) extends TypeAdapter[Map[K, V]] {
 
-  override def read(reader: Reader): Map[K, V] = {
-    val builder = Map.canBuildFrom[K, V]()
+  override def read(reader: Reader): Map[K, V] =
+    reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
 
-    reader.beginObject()
+      case TokenType.BeginObject ⇒
+        val builder = Map.canBuildFrom[K, V]()
 
-    while (reader.hasMoreMembers) {
-      val key = keyTypeAdapter.read(reader)
-      val value = valueTypeAdapter.read(reader)
+        reader.beginObject()
 
-      builder += key → value
+        while (reader.hasMoreMembers) {
+          val key = keyTypeAdapter.read(reader)
+          val value = valueTypeAdapter.read(reader)
+
+          builder += key → value
+        }
+
+        reader.endObject()
+
+        builder.result()
     }
 
-    reader.endObject()
+  override def write(map: Map[K, V], writer: Writer): Unit =
+    if (map == null) {
+      writer.writeNull()
+    } else {
+      writer.beginObject()
 
-    builder.result()
-  }
+      for ((key, value) ← map) {
+        keyTypeAdapter.write(key, writer)
+        valueTypeAdapter.write(value, writer)
+      }
 
-  override def write(map: Map[K, V], writer: Writer): Unit = {
-    writer.beginObject()
-
-    for ((key, value) ← map) {
-      keyTypeAdapter.write(key, writer)
-      valueTypeAdapter.write(value, writer)
+      writer.endObject()
     }
-
-    writer.endObject()
-  }
 
 }
