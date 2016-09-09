@@ -77,6 +77,7 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
       // NOTE/TODO: We may need a similar thing done for other parameterized types, e.g. collections.  To clean up code smell
       // we may want to subtype TypeAdapter, i.e. ParameterizedTypeAdapter or something
       //
+
       typeAdapter match {
         case ta: CaseClassTypeAdapter[_] =>
           resolvedTypeAdapters += ta.caseClassType → ta
