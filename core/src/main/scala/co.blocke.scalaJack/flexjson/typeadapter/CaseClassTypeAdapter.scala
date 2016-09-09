@@ -1,7 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
 import co.blocke.scalajack.flexjson.FlexJsonFlavor.MemberName
-import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Parameter
+
+import co.blocke.scalajack.flexjson.typeadapter.CaseClassTypeAdapter.Member
 import co.blocke.scalajack.flexjson.{ Context, EmptyReader, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.collection.mutable
@@ -11,7 +12,7 @@ import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol,
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class Parameter[T](
+  case class Member[T](
       index:              Int,
       name:               String,
       valueTypeAdapter:   TypeAdapter[T],
@@ -42,10 +43,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val typeBeforeSubstitution = constructorSymbol.infoIn(tpe)
 
       val typeAfterSubstitution =
-        if (superParamTypes.isEmpty)
+        if (superParamTypes.isEmpty) {
+          // tpe
+          // typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, superParamTypes)
           typeBeforeSubstitution.substituteTypes(tpe.typeParams, tpe.typeParams.map(_ => typeOf[Any]))
-        else
+        } else {
           typeBeforeSubstitution.substituteTypes(tpe.typeConstructor.typeParams, superParamTypes)
+        }
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
@@ -66,19 +70,19 @@ case class CaseClassTypeAdapter[T](
     memberNameTypeAdapter: TypeAdapter[MemberName]
 ) extends TypeAdapter[T] {
 
-  var ccMembers: Option[List[Parameter[_]]] = None
-  def parameters = ccMembers.getOrElse(unpackMembers())
+  var ccMembers: Option[List[Member[_]]] = None
+  def members = ccMembers.getOrElse(unpackMembers())
 
   // This code is here, not in the CaseClassTypeAdapter object, because we need to return the adapter immediately,
   // incase there are other threads trying to descend the members of this class, or self-references within the class.
   // This adapter, in turn, lazily reflects its members, which this time will find the CaseClassTypeAdapter, and populate
   // the member details.
-  def unpackMembers(): List[Parameter[_]] = {
+  def unpackMembers(): List[Member[_]] = {
     if (ccMembers.isEmpty) {
       ccMembers = Some(caseClassType.paramLists.flatten.zipWithIndex.map({
-        case (param, index) ⇒
-          val parameterName = param.name.encodedName.toString
-          val accessor = tpe.member(TermName(parameterName)).asMethod
+        case (member, index) ⇒
+          val memberName = member.name.encodedName.toString
+          val accessor = tpe.member(TermName(memberName)).asMethod
 
           val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
           val defaultValueAccessorMirror =
@@ -88,19 +92,19 @@ case class CaseClassTypeAdapter[T](
               None
             }
 
-          Parameter(index, parameterName, context.typeAdapter(param.info, param.info.typeArgs), accessor, defaultValueAccessorMirror)
+          Member(index, memberName, context.typeAdapter(member.info, member.info.typeArgs), accessor, defaultValueAccessorMirror)
       }))
     }
     ccMembers.get
   }
 
-  lazy val parametersByName = parameters.map(parameter ⇒ parameter.name → parameter.asInstanceOf[Parameter[Any]]).toMap
+  lazy val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
 
   override def read(reader: Reader): T = {
-    val numberOfParameters = parameters.length
+    val numberOfMembers = members.length
 
-    val arguments = new Array[Any](numberOfParameters)
-    val found = new mutable.BitSet(numberOfParameters)
+    val arguments = new Array[Any](numberOfMembers)
+    val found = new mutable.BitSet(numberOfMembers)
 
     if (reader.peek == TokenType.Null) {
       reader.readNull().asInstanceOf[T]
@@ -110,11 +114,11 @@ case class CaseClassTypeAdapter[T](
       while (reader.hasMoreMembers) {
         val memberName = memberNameTypeAdapter.read(reader)
 
-        val optionalParameter = parametersByName.get(memberName)
-        optionalParameter match {
-          case Some(parameter) ⇒
-            arguments(parameter.index) = parameter.valueTypeAdapter.read(reader)
-            found(parameter.index) = true
+        val optionalMember = membersByName.get(memberName)
+        optionalMember match {
+          case Some(member) ⇒
+            arguments(member.index) = member.valueTypeAdapter.read(reader)
+            found(member.index) = true
 
           case None ⇒
             reader.skipValue()
@@ -122,15 +126,15 @@ case class CaseClassTypeAdapter[T](
       }
 
       var index = 0
-      while (index < numberOfParameters) {
+      while (index < numberOfMembers) {
         if (!found(index)) {
-          val parameter = parameters(index)
-          parameter.defaultValueMirror match {
+          val member = members(index)
+          member.defaultValueMirror match {
             case Some(mirror) ⇒
               arguments(index) = mirror.apply()
 
             case None ⇒
-              arguments(index) = parameter.valueTypeAdapter.read(EmptyReader)
+              arguments(index) = member.valueTypeAdapter.read(EmptyReader)
           }
         }
 
@@ -149,14 +153,14 @@ case class CaseClassTypeAdapter[T](
     else {
       writer.beginObject()
 
-      for (parameter ← parameters) {
+      for (member ← members) {
         val classTag = ClassTag[T](value.getClass)
         val instanceMirror = currentMirror.reflect(value)(classTag)
-        val accessorMirror = instanceMirror.reflectMethod(parameter.accessor)
-        val parameterValue = accessorMirror.apply()
+        val accessorMirror = instanceMirror.reflectMethod(member.accessor)
+        val memberValue = accessorMirror.apply()
 
-        memberNameTypeAdapter.write(parameter.name, writer)
-        parameter.writeValue(parameterValue, writer)
+        memberNameTypeAdapter.write(member.name, writer)
+        member.writeValue(memberValue, writer)
       }
 
       writer.endObject()

@@ -77,6 +77,7 @@ class BaseBenchmarksState {
     })
   )
 
+  // val listOfHumans = flexScalaJack.read[List[Person]](jsonString, vc)
   val listOfHumans = flexScalaJack.read[List[Human]](jsonString, vc)
 
 }
@@ -86,21 +87,25 @@ class BaseBenchmarks {
 
   @Benchmark
   def readNativeScalaJack(state: BaseBenchmarksState): List[Human] = {
+    // state.nativeScalaJack.read[List[Person]](state.jsonString, state.vc)
     state.nativeScalaJack.read[List[Human]](state.jsonString, state.vc)
   }
 
   @Benchmark
   def readFlexScalaJack(state: BaseBenchmarksState): List[Human] = {
+    // state.flexScalaJack.read[List[Person]](state.jsonString, state.vc)
     state.flexScalaJack.read[List[Human]](state.jsonString, state.vc)
   }
 
   @Benchmark
   def writeNativeScalaJack(state: BaseBenchmarksState): String = {
+    // state.nativeScalaJack.render[List[Person]](state.listOfHumans, state.vc)
     state.nativeScalaJack.render[List[Human]](state.listOfHumans, state.vc)
   }
 
   @Benchmark
   def writeFlexScalaJack(state: BaseBenchmarksState): String = {
+    // state.flexScalaJack.render[List[Person]](state.listOfHumans, state.vc)
     state.flexScalaJack.render[List[Human]](state.listOfHumans, state.vc)
   }
 
