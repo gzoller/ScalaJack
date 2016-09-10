@@ -23,13 +23,88 @@ class TokenReader(
     }
   }
 
+  def unescapedTokenText: String = {
+    var builder: StringBuilder = null
+    var startOfUnescapedCharacters = 0
+
+    val source = this.source
+    val tokenOffset = this.tokenOffset
+    val tokenLength = this.tokenLength
+
+    var position = tokenOffset
+    val maxPosition = tokenOffset + tokenLength
+
+    while (position < maxPosition) {
+      source(position) match {
+        case '\\' ⇒
+
+          if (builder == null) builder = new StringBuilder(tokenLength)
+
+          builder.appendAll(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
+
+          source(position + 1) match {
+            case '"' ⇒
+              builder.append('"')
+              position += 2
+
+            case '\\' ⇒
+              builder.append('\\')
+              position += 2
+
+            case '/' ⇒
+              builder.append('/')
+              position += 2
+
+            case 'b' ⇒
+              builder.append('\b')
+              position += 2
+
+            case 'f' ⇒
+              builder.append('\f')
+              position += 2
+
+            case 'n' ⇒
+              builder.append('\n')
+              position += 2
+
+            case 'r' ⇒
+              builder.append('\r')
+              position += 2
+
+            case 't' ⇒
+              builder.append('\t')
+              position += 2
+
+            case 'u' ⇒
+              val hexEncoded = new String(source, position + 2, position + 6)
+              val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
+              builder.append(unicodeChar)
+              position += 6
+          }
+
+          startOfUnescapedCharacters = position
+
+        case ch ⇒
+          position += 1
+      }
+    }
+
+    if (builder == null) {
+      tokenText
+    } else {
+      builder.appendAll(source, startOfUnescapedCharacters, maxPosition - startOfUnescapedCharacters)
+      builder.toString()
+    }
+  }
+
   override def readString(): String = {
     read(expected = TokenType.String)
-    tokenText
+    unescapedTokenText
   }
+
   override def readIdentifier(): String = {
     read(expected = TokenType.Identifier)
-    tokenText
+    unescapedTokenText
   }
 
   override def tokenText: String =

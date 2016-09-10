@@ -6,29 +6,30 @@ import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
 import scala.language.existentials
 
-case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
+case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](
     canBuildFrom:       CanBuildFrom[_, Elem, To],
     elementTypeAdapter: TypeAdapter[Elem]
 ) extends TypeAdapter[To] {
 
-  override def read(reader: Reader): To = {
-    val builder = canBuildFrom()
+  override def read(reader: Reader): To =
+    reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
 
-    if (reader.peek == TokenType.Null) {
-      reader.readNull().asInstanceOf[To]
-    } else {
-      reader.beginArray()
+      case TokenType.BeginArray ⇒
+        val builder = canBuildFrom()
 
-      while (reader.hasMoreElements) {
-        val element = elementTypeAdapter.read(reader)
-        builder += element
-      }
+        reader.beginArray()
 
-      reader.endArray()
+        while (reader.hasMoreElements) {
+          val element = elementTypeAdapter.read(reader)
+          builder += element
+        }
 
-      builder.result()
+        reader.endArray()
+
+        builder.result()
     }
-  }
 
   override def write(value: To, writer: Writer): Unit =
     if (value == null) {

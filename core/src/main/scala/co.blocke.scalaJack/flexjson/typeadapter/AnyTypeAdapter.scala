@@ -14,8 +14,9 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       val listTypeAdapter = context.typeAdapterOf[List[Any]]
       val stringTypeAdapter = context.typeAdapterOf[String]
       val booleanTypeAdapter = context.typeAdapterOf[Boolean]
+      val bigDecimalTypeAdapter = context.typeAdapterOf[BigDecimal]
 
-      Some(AnyTypeAdapter(mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context))
+      Some(AnyTypeAdapter(mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, bigDecimalTypeAdapter, context))
     } else {
       None
     }
@@ -23,11 +24,12 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 }
 
 case class AnyTypeAdapter(
-    mapTypeAdapter:     TypeAdapter[Map[String, Any]],
-    listTypeAdapter:    TypeAdapter[List[Any]],
-    stringTypeAdapter:  TypeAdapter[String],
-    booleanTypeAdapter: TypeAdapter[Boolean],
-    context:            Context
+    mapTypeAdapter:        TypeAdapter[Map[String, Any]],
+    listTypeAdapter:       TypeAdapter[List[Any]],
+    stringTypeAdapter:     TypeAdapter[String],
+    booleanTypeAdapter:    TypeAdapter[Boolean],
+    bigDecimalTypeAdapter: TypeAdapter[BigDecimal],
+    context:               Context
 ) extends SimpleTypeAdapter[Any] {
 
   override def read(reader: Reader): Any = {
@@ -43,6 +45,13 @@ case class AnyTypeAdapter(
 
       case TokenType.True | TokenType.False ⇒
         booleanTypeAdapter.read(reader)
+
+      case TokenType.Number ⇒
+        bigDecimalTypeAdapter.read(reader)
+
+      case TokenType.Null ⇒
+        reader.readNull()
+
     }
   }
 

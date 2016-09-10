@@ -8,16 +8,18 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
 
   override def read(reader: Reader): UUID =
     reader.peek match {
+      case TokenType.Null ⇒
+        null
+
       case TokenType.String ⇒
         UUID.fromString(reader.readString())
-
-      case TokenType.Null ⇒
-        reader.readNull()
     }
 
   override def write(value: UUID, writer: Writer): Unit =
-    if (value == null)
+    if (value == null) {
       writer.writeNull()
-    else
+    } else {
       writer.writeString(value.toString)
+    }
+
 }

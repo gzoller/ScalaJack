@@ -149,8 +149,9 @@ class Tokenizer(val capacity: Int = 1024) {
           if (isIdentifier) {
             appendToken(TokenType.Identifier, start, position - start)
             isIdentifier = false
-          } else
+          } else {
             appendToken(TokenType.String, start, position - start)
+          }
 
           position += 1 // Skip the trailing double-quote
 
