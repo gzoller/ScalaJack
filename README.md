@@ -1,3 +1,5 @@
+# NOTE: This 4.8.3 branch of ScalaJack is now in cryosleep in preparation for the all-new 5.x series product.
+
 CI service | Status | Description
 -----------|--------|------------
 Travis | [![Build Status](https://travis-ci.org/gzoller/ScalaJack.png?branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Linux container tests
