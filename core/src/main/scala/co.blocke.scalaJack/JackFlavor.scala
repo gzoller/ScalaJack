@@ -2,7 +2,6 @@ package co.blocke.scalajack
 
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
-import PrimitiveTypes._
 
 // Behold, the sublime power of the Cake Pattern!
 // The wiring is accomplished in the ScalaJack trait.

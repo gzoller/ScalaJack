@@ -31,13 +31,13 @@ trait ScalaJack[S] {
 	}
 }
 
-object ScalaJack extends ViewSplice {
-	def apply[R]( flavor:FlavorKind[R] = JsonFlavor() ) = flavor.makeScalaJack
+object ScalaJack { //extends ViewSplice {
+	def apply[R]( flavor:FlavorKind[R] = JsonFlavor ) = flavor.makeScalaJack
 }
 
 //-----------------------------------------------------------
 
 // MOVE TO UTIL CLASS OR SOMETHING!
-object JSON {
-	def toCollection( js:String, size:Int = 500 ) : Either[Map[String,Any],List[Any]] = json.FastTokenizer(size).tokenize(js.toCharArray).toCollection()
-}
+// object JSON {
+// 	def toCollection( js:String, size:Int = 500 ) : Either[Map[String,Any],List[Any]] = json.FastTokenizer(size).tokenize(js.toCharArray).toCollection()
+// }

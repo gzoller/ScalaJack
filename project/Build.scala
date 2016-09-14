@@ -28,7 +28,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack, scalajack_mongo)
+		.aggregate(scalajack)//, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
