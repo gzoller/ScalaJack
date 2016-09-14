@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import co.blocke.scalajack.json.typeadapter.javaprimitives.{ JavaBooleanTypeAdapter, JavaByteTypeAdapter, JavaCharacterTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaNumberTypeAdapter, JavaShortTypeAdapter }
 import co.blocke.scalajack.json.typeadapter.joda.JodaDateTimeTypeAdapter
+import co.blocke.scalajack.json.typeadapter.javatime.{ DurationTypeAdapter, InstantTypeAdapter, LocalDateTimeTypeAdapter, LocalDateTypeAdapter, LocalTimeTypeAdapter, OffsetDateTimeTypeAdapter, OffsetTimeTypeAdapter, PeriodTypeAdapter, ZonedDateTimeTypeAdapter }
 import co.blocke.scalajack.json.typeadapter.{ AnyTypeAdapter, BigDecimalTypeAdapter, BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DerivedValueClassAdapter, DoubleTypeAdapter, EnumerationTypeAdapter, FloatTypeAdapter, IntTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TryTypeAdapter, TupleTypeAdapter, TypeParameterTypeAdapter, TypeTypeAdapter, UUIDTypeAdapter }
 
 import scala.language.existentials
@@ -46,6 +47,15 @@ object Context {
     .withFactory(JavaShortTypeAdapter)
     .withFactory(UUIDTypeAdapter)
     .withFactory(JodaDateTimeTypeAdapter)
+    .withFactory(DurationTypeAdapter)
+    .withFactory(InstantTypeAdapter)
+    .withFactory(LocalDateTimeTypeAdapter)
+    .withFactory(LocalDateTypeAdapter)
+    .withFactory(LocalTimeTypeAdapter)
+    .withFactory(OffsetDateTimeTypeAdapter)
+    .withFactory(OffsetTimeTypeAdapter)
+    .withFactory(PeriodTypeAdapter)
+    .withFactory(ZonedDateTimeTypeAdapter)
 }
 
 case class Context(factories: List[TypeAdapterFactory] = Nil) {
