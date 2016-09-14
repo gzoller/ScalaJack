@@ -259,9 +259,9 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("Must read & render custom JSON for value class") {
         val vc = VisitorContext().withAdapter(SpecialAdapter)
         val ss = SomethingSpecial("hey", new CustomVC(new DateTime(2015, 7, 1, 0, 0)))
-        val js = sjJS.render(ss,vc)
+        val js = sjJS.render(ss, vc)
         js should equal("""{"what":"hey","when":"July, 2015"}""")
-        (sjJS.read[SomethingSpecial](js.toString,vc) == ss) should be(true)
+        (sjJS.read[SomethingSpecial](js.toString, vc) == ss) should be(true)
       }
     }
     describe("Type Hint Handling") {

@@ -1,6 +1,9 @@
 import sbt._
 import sbt.Keys._
 import bintray.BintrayKeys._
+import pl.project13.scala.sbt.JmhPlugin
+import com.typesafe.sbt.SbtScalariform._
+import scalariform.formatter.preferences._
 
 import scala.Some
 
@@ -15,6 +18,12 @@ object Build extends Build {
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
+		ScalariformKeys.preferences := ScalariformKeys.preferences.value
+			.setPreference(AlignArguments, true)
+			.setPreference(AlignParameters, true)
+			.setPreference(AlignSingleLineCaseStatements, true)
+			.setPreference(DoubleIndentClassDeclaration, true)
+			.setPreference(PreserveDanglingCloseParenthesis, true),
 		scalacOptions				:= Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
 		testOptions in Test += Tests.Argument("-oDF")
 	)
@@ -57,6 +66,16 @@ object Build extends Build {
 			compile( mongo_scala ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
+
+
+	lazy val scalajack_benchmarks = project.in(file("benchmarks"))
+		.enablePlugins(JmhPlugin)
+		.settings(basicSettings: _*)
+		.settings(pubSettings: _*)
+		.settings(libraryDependencies ++=
+			compile( mongo_scala ) ++
+				test( scalatest, slf4j_simple )
+		).dependsOn( scalajack )
 }
 
 object Dependencies {
@@ -76,7 +95,6 @@ object Dependencies {
 	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver" % "1.1.0"
 	val joda 			= "joda-time"				% "joda-time"			% "2.3"
 	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
-	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "2.2.1"
+	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "3.0.0"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
-	// val mysql_jdbc  	= "mysql" 					% "mysql-connector-java" % "5.1.33"
 }

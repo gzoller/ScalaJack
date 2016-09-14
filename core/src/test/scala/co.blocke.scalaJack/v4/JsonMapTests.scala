@@ -16,7 +16,7 @@ class JsonMapSpec extends FunSpec {
     describe("JSON-to-Collection tests") {
       it("Simple Map") {
         val js = """{"name":"Greg","age":49,"likesFood":true,"balance":12.32}"""
-        sj.read[Map[String,Any]](js) should equal(Map("name" -> "Greg", "age" -> 49, "likesFood" -> true, "balance" -> 12.32))
+        sj.read[Map[String, Any]](js) should equal(Map("name" -> "Greg", "age" -> 49, "likesFood" -> true, "balance" -> 12.32))
       }
       it("Simple List") {
         val js = """[12.34,54.2,0.2]"""
@@ -24,7 +24,7 @@ class JsonMapSpec extends FunSpec {
       }
       it("Complex Map") {
         val js = """{"kind":{"name":"Greg","stuff":[1,2,3]},"other":["a","b","c"]}"""
-        sj.read[Map[String,Any]](js) should equal(Map("kind" -> Map("name" -> "Greg", "stuff" -> List(1, 2, 3)), "other" -> List("a", "b", "c")))
+        sj.read[Map[String, Any]](js) should equal(Map("kind" -> Map("name" -> "Greg", "stuff" -> List(1, 2, 3)), "other" -> List("a", "b", "c")))
       }
       it("Complex List of Lists") {
         val js = """[[1,2,3],[4,5,6],[7,8,9]]"""
@@ -32,7 +32,7 @@ class JsonMapSpec extends FunSpec {
       }
       it("Complex List of Maps") {
         val js = """[{"foo":"bar","hey":true},{"foo":"wow","hey":false}]"""
-        sj.read[List[Map[String,Any]]](js) should equal(List(Map("foo" -> "bar", "hey" -> true), Map("foo" -> "wow", "hey" -> false)))
+        sj.read[List[Map[String, Any]]](js) should equal(List(Map("foo" -> "bar", "hey" -> true), Map("foo" -> "wow", "hey" -> false)))
       }
     }
   }

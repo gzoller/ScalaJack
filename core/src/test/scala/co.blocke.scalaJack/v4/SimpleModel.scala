@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package test.v4
 
 import json.JsonKind
-import json.{Reader, TokenType, Writer}
+import json.{ Reader, TokenType, Writer }
 import json.typeadapter.BasicTypeAdapter
 
 import org.joda.time.DateTime

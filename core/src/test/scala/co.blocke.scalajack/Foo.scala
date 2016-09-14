@@ -58,7 +58,7 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     it("Case 2") {
       val m = OneThing("xix", 5)
-      val w = Wow("ok",m)
+      val w = Wow("ok", m)
       val js = sj.render(w)
       js should equal("""{"a":"ok","b":{"_hint":"co.blocke.scalajack.test.OneThing","t":"xix","u":5}}""")
       val obj = sj.read[Wow](js)
@@ -77,7 +77,7 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     it("Case 4") {
       scala.util.Try {
         val m = TwoThing(99, "xix", 5)
-        val w2 = Wow2("ok",m)
+        val w2 = Wow2("ok", m)
         val js = sj.render(w2)
         js should equal("""{"a":"ok","b":{"_hint":"co.blocke.scalajack.test.TwoThing","x":99,"t":"xix","u":5}}""")
         val obj = sj.read[Wow2[Int]](js)
