@@ -32,7 +32,7 @@ object Reflection {
 
   // Here's the deep magic... This associates the child's "unpopulated" symbols (Z, X, P) with the populated (known types)
   // in the parent.  It is looking for a specific association, e.g. Z, and attempts to find it.
-  // 
+  //
   // If you uncomment the println with our example you'd see output like this:
   //
   // Solve: co.blocke.scalajack.test.OuterTrait[co.blocke.scalajack.test.InnerTrait[Z],co.blocke.scalajack.test.InnerTrait[X],P] --> co.blocke.scalajack.test.OuterTrait[co.blocke.scalajack.test.InnerTrait[Char],co.blocke.scalajack.test.InnerTrait[Boolean],Int] :: Z
@@ -44,60 +44,70 @@ object Reflection {
   //
   // It was looking for Z so it would match Some(Char)
   //
-  private def solveFor(unpopulatedChildAsParentType: Type, populatedChildAsParentType: Type, needle: Type): Option[Type] = {
-    // println("Solve: " + unpopulatedChildAsParentType + " --> " + populatedChildAsParentType + " :: " + needle)
-    if (needle == unpopulatedChildAsParentType) {
-      Some(populatedChildAsParentType)
+  private def solveForNeedleAfterSubstitution(
+    haystackBeforeSubstitution: Type,
+    haystackAfterSubstitution:  Type,
+    needleBeforeSubstitution:   Type
+  ): Option[Type] = {
+    // println("Solve: " + haystackBeforeSubstitution + " --> " + haystackAfterSubstitution + " :: " + needleBeforeSubstitution)
+    if (needleBeforeSubstitution == haystackBeforeSubstitution) {
+      Some(haystackAfterSubstitution)
     } else {
-      val pairs = unpopulatedChildAsParentType.typeArgs zip populatedChildAsParentType.typeArgs
+      val needlesAfterSubstitution =
+        for {
+          (typeArgBeforeSubstitution, typeArgAfterSubstitution) ← haystackBeforeSubstitution.typeArgs zip haystackAfterSubstitution.typeArgs
+          needleAfterSubstitution ← solveForNeedleAfterSubstitution(typeArgBeforeSubstitution, typeArgAfterSubstitution, needleBeforeSubstitution)
+        } yield needleAfterSubstitution
 
-      pairs.flatMap({ case (a, b) ⇒ solveFor(a, b, needle) }).headOption
+      needlesAfterSubstitution.toSet.headOption
     }
   }
 
-  def populateChildTypeArgs(parentType: Type, childType: Type): Type = {
-    if (childType.typeSymbol.isParameter) {
+  def populateChildTypeArgs(parentType: Type, childTypeBeforeSubstitution: Type): Type = {
+    if (childTypeBeforeSubstitution.typeSymbol.isParameter) {
       parentType
     } else {
       val parentTypeConstructor = parentType.typeConstructor
       val parentTypeArgs = parentType.typeArgs
 
-      val childTypeConstructor = childType.typeConstructor
+      val childTypeConstructor = childTypeBeforeSubstitution.typeConstructor
       val childTypeParams = childTypeConstructor.typeParams
 
-      val childAsParentType = childType.baseType(parentType.typeSymbol)
-      val childAsParentTypeArgs = childAsParentType.typeArgs
+      val childAsParentTypeBeforeSubstitution = appliedType(childTypeConstructor, childTypeConstructor.typeParams.map(_.asType.toType)).baseType(parentType.typeSymbol)
+      val childAsParentTypeArgsBeforeSubstitution = childAsParentTypeBeforeSubstitution.typeArgs
 
       // When reflecting OuterClass these values are:
       //
-      // parentTypeArgs        = List(co.blocke.scalajack.test.InnerTrait[Char], co.blocke.scalajack.test.InnerTrait[Boolean], Int)
-      // childTypeParams       = List(type Z, type X, type P)
-      // childAsParentTypeArgs = List(co.blocke.scalajack.test.InnerTrait[Z], co.blocke.scalajack.test.InnerTrait[X], P)
+      // parentTypeArgs                          = List(co.blocke.scalajack.test.InnerTrait[Char], co.blocke.scalajack.test.InnerTrait[Boolean], Int)
+      // childTypeParams                         = List(type Z, type X, type P)
+      // childAsParentTypeArgsBeforeSubstitution = List(co.blocke.scalajack.test.InnerTrait[Z], co.blocke.scalajack.test.InnerTrait[X], P)
 
-      // REMEBER: The goal here is to express the child in terms of the parent, essentially building a map of the 
-      // childs type parameters (symbols) to the parent's (known) type parameter types.  Up to here we've extracted
-      // all the raw material to build this assication.
+      // REMEMBER: The goal here is to express the child in terms of the parent, essentially building a map of the
+      // child's type parameters (symbols) to the parent's (known) type parameter types.  Up to here we've extracted
+      // all the raw material to build this association.
 
-      val populatedChildAsParentTypeArgs =
-        for ((parentTypeArg, childAsParentTypeArg) ← parentTypeArgs zip childAsParentTypeArgs) yield {
-          populateChildTypeArgs(parentTypeArg, childAsParentTypeArg)
+      val childAsParentTypeArgsAfterSubstitution =
+        for ((parentTypeArg, childAsParentTypeArgBeforeSubstitution) ← parentTypeArgs zip childAsParentTypeArgsBeforeSubstitution) yield {
+          populateChildTypeArgs(parentTypeArg, childAsParentTypeArgBeforeSubstitution)
         }
 
-      val populatedChildAsParentType = appliedType(parentTypeConstructor, populatedChildAsParentTypeArgs)
+      val childAsParentTypeAfterSubstitution = appliedType(parentTypeConstructor, childAsParentTypeArgsAfterSubstitution)
       // co.blocke.scalajack.test.OuterTrait[co.blocke.scalajack.test.InnerTrait[Char],co.blocke.scalajack.test.InnerTrait[Boolean],Int]
 
-      if (childTypeConstructor == parentTypeConstructor) {
-        // ??? WHAT'S THIS DO? ???
-        appliedType(parentTypeConstructor, populatedChildAsParentTypeArgs)
-      } else {
-        val childTypeArgs =
-          for (childTypeParam ← childTypeParams) yield {
-            val optionalMatch = solveFor(childAsParentType, populatedChildAsParentType, childTypeParam.asType.toType)
-            optionalMatch.getOrElse(throw new RuntimeException(s"Cannot solve for $childTypeParam"))
-          }
+      val childTypeArgs =
+        for (childTypeParam ← childTypeParams.map(_.asType.toType)) yield {
+          val optionalChildTypeArgAfterSubstitution = solveForNeedleAfterSubstitution(
+            haystackBeforeSubstitution = childAsParentTypeBeforeSubstitution,
+            haystackAfterSubstitution  = childAsParentTypeAfterSubstitution,
+            needleBeforeSubstitution   = childTypeParam
+          )
 
-        appliedType(childType, childTypeArgs)
-      }
+          optionalChildTypeArgAfterSubstitution.getOrElse(childTypeParam)
+        }
+
+      val childTypeAfterSubstitution = appliedType(childTypeConstructor, childTypeArgs)
+
+      childTypeAfterSubstitution
     }
   }
 
