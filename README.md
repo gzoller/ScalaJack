@@ -1,6 +1,7 @@
 CI service | Status | Description
 -----------|--------|------------
 Travis | [![Build Status](https://travis-ci.org/gzoller/ScalaJack.png?branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Linux container tests
+Coveralls | [![Coverage Status](https://coveralls.io/repos/github/gzoller/ScalaJack/badge.svg?branch=master)](https://coveralls.io/github/gzoller/ScalaJack?branch=master) | Test coverage
 
 # ScalaJack
 
