@@ -28,7 +28,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack, scalajack_mongo)//, scalajack_mysql)  // mysql support disabled for now
+		.aggregate(scalajack, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -57,17 +57,6 @@ object Build extends Build {
 			compile( mongo_scala ) ++
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
-/*
-	Don't build DB modules for now; until parse/render bit is done.
-
-	lazy val scalajack_mysql = project.in(file("mysql"))
-		.settings(basicSettings: _*)
-		.settings(pubSettings: _*)
-		.settings(libraryDependencies ++=
-			compile( mysql_jdbc ) ++
-			test( scalatest, slf4j_simple )
-		).dependsOn( scalajack )
-*/
 }
 
 object Dependencies {
