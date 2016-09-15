@@ -37,7 +37,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack)//, scalajack_mongo)
+		.aggregate(scalajack, dummy)//, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -58,6 +58,12 @@ object Build extends Build {
 			test(scalatest)
 		)
 
+	lazy val dummy = project.in(file("dummy"))
+		.settings(basicSettings: _*)
+		.settings(pubSettings: _*)
+		.settings(libraryDependencies ++=
+			test( scalatest )
+		)
 
 	lazy val scalajack_mongo = project.in(file("mongo"))
 		.settings(basicSettings: _*)
