@@ -1,9 +1,10 @@
 package co.blocke.scalajack.benchmarks
 
 import co.blocke.scalajack.{ ScalaJack, VisitorContext }
-import co.blocke.scalajack.json.JsonFlavor
-import co.blocke.scalajack.json.JsonFlavor
+import co.blocke.scalajack.json.{ JsonFlavor, Tokenizer }
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
+
+import scala.util.Try
 
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
@@ -78,17 +79,104 @@ class BaseBenchmarksState {
 
   val listOfPersons = scalaJack.read[List[Person]](jsonString, vc)
 
+  implicit val personFormat = {
+    import spray.json._
+    import DefaultJsonProtocol._
+
+    jsonFormat6(Person)
+  }
+
 }
 
 @State(Scope.Thread)
 class BaseBenchmarks {
+
+  //  @Benchmark
+  def writePlayJson(state: BaseBenchmarksState): Unit = {
+    println(Try { play.libs.Json.stringify(play.libs.Json.toJson(state.listOfPersons)) })
+  }
+
+  @Benchmark
+  def readHandwritten(state: BaseBenchmarksState): List[Person] = {
+
+    val charArray: Array[Char] = state.jsonCharArray
+
+    val reader = new Tokenizer(1024).tokenize(charArray, 0, charArray.length)
+
+    val listBuilder = List.canBuildFrom[Person]()
+
+    reader.beginArray()
+
+    while (reader.hasMoreElements) {
+      reader.beginObject()
+
+      //id: Long, first_name: String, last_name: String, email: String, gender: String, ip_address
+      reader.skipValue() // "id"
+      val id = reader.readLong()
+
+      reader.skipValue() // "first_name"
+      val firstName = reader.readString()
+
+      reader.skipValue() // "last_name"
+      val lastName = reader.readString()
+
+      reader.skipValue() // "email"
+      val email = reader.readString()
+
+      reader.skipValue() // "gender"
+      val gender = reader.readString()
+
+      reader.skipValue() // "ip_address"
+      val ipAddress = reader.readString()
+
+      listBuilder += Person(id, firstName, lastName, email, gender, ipAddress)
+
+      reader.endObject()
+    }
+
+    reader.endArray()
+
+    listBuilder.result()
+  }
+
+  @Benchmark
+  def readJson4s(state: BaseBenchmarksState): List[Person] = {
+    import org.json4s._
+    import org.json4s.native.Serialization
+    import org.json4s.native.Serialization.{ read, write }
+    implicit val formats = org.json4s.DefaultFormats
+
+    //    implicit val formats = Serialization.formats(NoTypeHints)
+
+    //    println(write(state.listOfPersons))
+
+    read[List[Person]](state.jsonString)
+  }
+
+  //  @Benchmark
+  //  def readLiftJson(state: BaseBenchmarksState): List[Person] = {
+  //    import net.liftweb.json._
+  //    implicit val formats = DefaultFormats
+  //
+  //    parse(state.jsonString).extract[List[Person]]
+  //  }
+
+  @Benchmark
+  def readSpray(state: BaseBenchmarksState): List[Person] = {
+    import spray.json._
+    import DefaultJsonProtocol._
+
+    import state.personFormat
+
+    state.jsonString.parseJson.convertTo[List[Person]]
+  }
 
   @Benchmark
   def readScalaJack(state: BaseBenchmarksState): List[Person] = {
     state.scalaJack.read[List[Person]](state.jsonString, state.vc)
   }
 
-  @Benchmark
+  //  @Benchmark
   def writeScalaJack(state: BaseBenchmarksState): String = {
     state.scalaJack.render[List[Person]](state.listOfPersons, state.vc)
   }

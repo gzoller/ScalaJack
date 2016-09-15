@@ -55,6 +55,7 @@ object Build extends Build {
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
 			compile(joda, joda_convert, scala_reflect) ++
+			List("org.json4s" %% "json4s-native" % "3.4.0") ++
 			test(scalatest)
 		)
 
@@ -74,7 +75,13 @@ object Build extends Build {
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
 			compile( mongo_scala ) ++
-				test( scalatest, slf4j_simple )
+				test( scalatest, slf4j_simple ) ++
+				List(
+					"com.typesafe.play" %% "play-json" % "2.5.8",
+					"org.json4s" %% "json4s-native" % "3.4.0",
+//					"net.liftweb" %% "lift-json" % "2.6.2,",
+					"io.spray" %% "spray-json" % "1.3.2"
+				)
 		).dependsOn( scalajack )
 }
 
