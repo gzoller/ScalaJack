@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 
 import co.blocke.scalajack.json.Writer
-import org.bson.{BsonArray, BsonDocument, BsonInt32, BsonString, BsonValue}
+import org.bson.{BsonArray, BsonBoolean, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonString, BsonValue}
+import org.mongodb.scala.bson.BsonNull
 
 class BsonWriter extends Writer {
 
@@ -75,9 +76,13 @@ class BsonWriter extends Writer {
 
   class ArrayStructure(override val parent: Structure, val array: BsonArray) extends Structure {
 
-    override def beginChildValue(childValue: BsonValue): Unit = ???
+    override def beginChildValue(childValue: BsonValue): Unit = {
 
-    override def endChildValue(childValue: BsonValue): Unit = ???
+    }
+
+    override def endChildValue(childValue: BsonValue): Unit = {
+      array.add(childValue)
+    }
 
     override def end(): Unit = {}
 
@@ -99,13 +104,25 @@ class BsonWriter extends Writer {
     structure.endChildValue(document)
   }
 
-  override def beginArray(): Unit = ???
+  override def beginArray(): Unit = {
+    val array = new BsonArray
 
-  override def endArray(): Unit = ???
+    structure.beginChildValue(array)
+    structure = new ArrayStructure(structure, array)
+  }
+
+  override def endArray(): Unit = {
+    structure.end()
+    val array = structure.asInstanceOf[ArrayStructure].array
+    structure = structure.parent
+    structure.endChildValue(array)
+  }
 
   override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = ???
 
-  override def writeNothing(): Unit = ???
+  override def writeNothing(): Unit = {
+
+  }
 
   override def writeString(string: String): Unit = {
     val value = new BsonString(string)
@@ -123,19 +140,47 @@ class BsonWriter extends Writer {
     structure.endChildValue(bsonValue)
   }
 
-  override def writeFloat(value: Float): Unit = ???
+  override def writeFloat(value: Float): Unit = {
+    val bsonValue = new BsonDouble(value)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeDouble(value: Double): Unit = ???
+  override def writeDouble(value: Double): Unit = {
+    val bsonValue = new BsonDouble(value)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeLong(value: Long): Unit = ???
+  override def writeLong(value: Long): Unit = {
+    val bsonValue = new BsonInt64(value)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeBoolean(value: Boolean): Unit = ???
+  override def writeBoolean(value: Boolean): Unit = {
+    val bsonValue = new BsonBoolean(value)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeFalse(): Unit = ???
+  override def writeFalse(): Unit = {
+    val bsonValue = new BsonBoolean(false)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeTrue(): Unit = ???
+  override def writeTrue(): Unit = {
+    val bsonValue = new BsonBoolean(true)
+    structure.beginChildValue(bsonValue)
+    structure.endChildValue(bsonValue)
+  }
 
-  override def writeNull(): Unit = ???
+  override def writeNull(): Unit = {
+    val bsonNull = BsonNull()
+    structure.beginChildValue(bsonNull)
+    structure.endChildValue(bsonNull)
+  }
 
   override def writeChar(value: Char): Unit = ???
 

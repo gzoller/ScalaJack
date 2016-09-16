@@ -64,7 +64,9 @@ class BsonParser {
     }
 
     def consumeValue(value: BsonValue): Unit = {
-      if (value.isArray) {
+      if (value == null) {
+        appendToken(TokenType.Null, value)
+      } else if (value.isArray) {
         val valueAsArray = value.asArray
 
         appendToken(TokenType.BeginArray, valueAsArray)
