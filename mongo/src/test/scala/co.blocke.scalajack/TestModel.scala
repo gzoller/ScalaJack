@@ -209,6 +209,7 @@ case class WithDefaults(
 	pet      : Pet = NicePet(Dog("Fido"),"bones")
 	)
 
+/*
 object CustomVC extends ValueClassCustom {
 	def read:PartialFunction[(KindMarker,_), Any] = {
 	  case (jk:JsonKind,js:String) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js)
@@ -219,5 +220,6 @@ object CustomVC extends ValueClassCustom {
 	  case (mk:MongoKind,dt:DateTime) => BsonDateTime(dt.toDate)
 	}
 }
+*/
 class CustomVC(val underlying: DateTime) extends AnyVal
 case class SomethingSpecial( what:String, when:CustomVC )

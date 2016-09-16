@@ -15,7 +15,7 @@ package object mongo {
 import mongo._
 
 class ObjectId( val bsonObjectId:BsonObjectId ) extends AnyVal
-object ObjectId extends ValueClassCustom {
+/*object ObjectId extends ValueClassCustom {
 	def read:PartialFunction[(KindMarker,_), Any] = {
 	  case (jk:JsonKind,js:String) => BsonObjectId(js)
 	  case (mk:MongoKind,boid:BsonObjectId) => boid
@@ -25,3 +25,4 @@ object ObjectId extends ValueClassCustom {
 	  case (mk:MongoKind,boid:BsonObjectId) => boid
 	}
 }
+*/

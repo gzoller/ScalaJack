@@ -5,7 +5,7 @@ import scala.reflect.runtime.universe._
 import scala.collection.mutable.{Map => MMap,ListBuffer => MList}
 import scala.collection.JavaConversions._
 import json._
-import JsonTokens._
+//import JsonTokens._
 import org.joda.time.DateTime
 
 import org.mongodb.scala._
@@ -29,19 +29,36 @@ case class MongoFlavor() extends FlavorKind[Document] {
 }
 
 trait MongoJackFlavor extends JackFlavor[Document] {
+
+	val bsonParser = new BsonParser
+
+	val context = Context.StandardContext
+
 	def rr = new MongoReadRenderer()
 	class MongoReadRenderer() extends ReadRenderer {
-		def read[T](src:Document)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : T = 
-			parse(Analyzer.inspectByName(tt.tpe.typeSymbol.fullName), src.toBsonDocument, true)
+		def read[T](src: Document)(implicit tt: TypeTag[T], vc: VisitorContext = VisitorContext()): T = {
+			val bsonDocument: BsonDocument = null
+			val bsonReader = bsonParser.parse(bsonDocument)
+			val typeAdapter = context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[Any]]
+			typeAdapter.read(bsonReader).asInstanceOf[T]
+		}
 
-		def render[T](instance:T)(implicit tt:TypeTag[T], vc:VisitorContext=VisitorContext()) : Document = 
-			_render(Analyzer.inspect(instance), instance).map( _ match {
-				case bsdoc:BsonDocument => Document(bsdoc)
-				case _ => throw new MongoParseException("Unexpected result where Document was expected.")
-			}).getOrElse(throw new MongoParseException("Unable to render JSON to MongoDB"))
+		//			parse(Analyzer.inspectByName(tt.tpe.typeSymbol.fullName), src.toBsonDocument, true)
+
+		def render[T](instance: T)(implicit tt: TypeTag[T], vc: VisitorContext = VisitorContext()): Document = {
+			val bsonWriter = new BsonWriter
+			val typeAdapter = context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[Any]]
+			typeAdapter.write(instance, bsonWriter)
+			Document(bsonWriter.value.asDocument)
+		}
+	}
+//			_render(Analyzer.inspect(instance), instance).map( _ match {
+//				case bsdoc:BsonDocument => Document(bsdoc)
+//				case _ => throw new MongoParseException("Unexpected result where Document was expected.")
+//			}).getOrElse(throw new MongoParseException("Unable to render JSON to MongoDB"))
 
 	//-------------------------------------------------------------- Read ------
-
+/*
 		private def _makeClass[U]( ccTypeFn : ()=>CCType, t:AType, src:BsonValue )(implicit ty:TypeTag[U], vc:VisitorContext) = src match {
 			case doc:BsonDocument =>
 				val sjT = ccTypeFn()
@@ -645,5 +662,5 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 				mdbo
 			case bs => throw new MongoParseException(s"Can't explode Any value for $bs")
 		}
-	}
+	}*/
 }
