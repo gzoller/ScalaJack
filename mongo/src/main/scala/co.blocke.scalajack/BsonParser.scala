@@ -31,9 +31,9 @@ object BsonParser extends App {
 
   typeAdapter.write(person1, writer)
 
-  println(writer.value)
+  println(writer.RootStructure.value)
 
-  val reader2 = parser.parse(writer.value)
+  val reader2 = parser.parse(writer.RootStructure.value)
   val person2 = typeAdapter.read(reader2)
   println(s"Person #2: $person2")
 }

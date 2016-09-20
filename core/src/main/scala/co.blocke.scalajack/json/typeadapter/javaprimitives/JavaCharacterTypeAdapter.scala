@@ -10,8 +10,7 @@ object JavaCharacterTypeAdapter extends SimpleTypeAdapter[java.lang.Character] {
         reader.readNull()
 
       case TokenType.String ⇒
-        reader.read(expected = TokenType.String)
-        java.lang.Character.valueOf(reader.tokenText.head)
+        java.lang.Character.valueOf(reader.readString().head)
     }
 
   override def write(value: java.lang.Character, writer: Writer): Unit =

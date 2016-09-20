@@ -97,7 +97,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 			}
 
 			val intermediateContext = context.copy(
-				factories = customHandlerTypeAdapterFactories.toList ::: polymorphicTypeAdapterFactories.toList ::: context.factories ::: List(PolymorphicTypeAdapterFactory(defaultHintFieldName))
+				factories = List(BsonDateTimeTypeAdapter, JodaDateTimeTypeAdapter, BsonObjectIdTypeAdapter) ::: customHandlerTypeAdapterFactories ::: polymorphicTypeAdapterFactories.toList ::: context.factories ::: List(PolymorphicTypeAdapterFactory(defaultHintFieldName))
 			)
 
 			val fallbackFactories = vc.parseOrElse.map({
@@ -140,7 +140,7 @@ trait MongoJackFlavor extends JackFlavor[Document] {
 			val bsonWriter = new BsonWriter
 			val typeAdapter = c.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[Any]]
 			typeAdapter.write(instance, bsonWriter)
-			Document(bsonWriter.value.asDocument)
+			Document(bsonWriter.RootStructure.value.asDocument)
 		}
 	}
 //			_render(Analyzer.inspect(instance), instance).map( _ match {

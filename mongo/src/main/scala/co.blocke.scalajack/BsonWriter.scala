@@ -16,27 +16,31 @@ class BsonWriter extends Writer {
 
     val parent: Structure
 
-    def beginChildValue(childValue: BsonValue): Unit
+    def beginChildValue(): Unit
 
     def endChildValue(childValue: BsonValue): Unit
+
+    def onChildValue(childValue: BsonValue): Unit = {
+      beginChildValue()
+      endChildValue(childValue)
+    }
 
     def end(): Unit
 
   }
 
-  var value: BsonValue = _
-
   object RootStructure extends Structure {
 
     override val parent: Structure = null
+    var value: BsonValue = _
 
-    override def beginChildValue(childValue: BsonValue): Unit = {}
+    override def beginChildValue(): Unit = {}
 
     override def endChildValue(childValue: BsonValue): Unit = {
       value = childValue
     }
 
-    override def end(): Unit = ???
+    override def end(): Unit = {}
 
   }
 
@@ -47,14 +51,14 @@ class BsonWriter extends Writer {
 
     var memberName: BsonValue = _
 
-    override def beginChildValue(childValue: BsonValue): Unit = {
+    override def beginChildValue(): Unit = {
       nextMemberPartToBeWritten match {
-        case MemberName =>
+        case MemberName ⇒
           memberName = null
           memberPartCurrentlyBeingWritten = MemberName
           nextMemberPartToBeWritten = MemberValue
 
-        case MemberValue =>
+        case MemberValue ⇒
           memberPartCurrentlyBeingWritten = MemberValue
           nextMemberPartToBeWritten = MemberName
       }
@@ -62,11 +66,16 @@ class BsonWriter extends Writer {
 
     override def endChildValue(childValue: BsonValue): Unit = {
       memberPartCurrentlyBeingWritten match {
-        case MemberName =>
+        case MemberName ⇒
           memberName = childValue
 
-        case MemberValue =>
-          document.append(memberName.asString.getValue, childValue)
+        case MemberValue ⇒
+          if (childValue != null) {
+            val memberNameAsString = memberName.asString.getValue
+            document.append(memberNameAsString, childValue)
+          }
+
+          memberPartCurrentlyBeingWritten = null
       }
     }
 
@@ -76,12 +85,14 @@ class BsonWriter extends Writer {
 
   class ArrayStructure(override val parent: Structure, val array: BsonArray) extends Structure {
 
-    override def beginChildValue(childValue: BsonValue): Unit = {
+    override def beginChildValue(): Unit = {
 
     }
 
     override def endChildValue(childValue: BsonValue): Unit = {
-      array.add(childValue)
+      if (childValue != null) {
+        array.add(childValue)
+      }
     }
 
     override def end(): Unit = {}
@@ -93,7 +104,7 @@ class BsonWriter extends Writer {
   override def beginObject(): Unit = {
     val document = new BsonDocument
 
-    structure.beginChildValue(document)
+    structure.beginChildValue()
     structure = new ObjectStructure(structure, document)
   }
 
@@ -107,7 +118,7 @@ class BsonWriter extends Writer {
   override def beginArray(): Unit = {
     val array = new BsonArray
 
-    structure.beginChildValue(array)
+    structure.beginChildValue()
     structure = new ArrayStructure(structure, array)
   }
 
@@ -121,67 +132,43 @@ class BsonWriter extends Writer {
   override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = ???
 
   override def writeNothing(): Unit = {
-
+    structure.onChildValue(null)
   }
 
-  override def writeString(string: String): Unit = {
-    val value = new BsonString(string)
-    structure.beginChildValue(value)
-    structure.endChildValue(value)
-  }
+  override def writeString(string: String): Unit =
+    structure.onChildValue(new BsonString(string))
 
-  override def writeByte(value: Byte): Unit = ???
+  override def writeByte(value: Byte): Unit =
+    structure.onChildValue(new BsonInt32(value.toInt))
 
-  override def writeShort(value: Short): Unit = ???
+  override def writeShort(value: Short): Unit =
+    structure.onChildValue(new BsonInt32(value.toInt))
 
-  override def writeInt(value: Int): Unit = {
-    val bsonValue = new BsonInt32(value)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeInt(value: Int): Unit =
+    structure.onChildValue(new BsonInt32(value))
 
-  override def writeFloat(value: Float): Unit = {
-    val bsonValue = new BsonDouble(value)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeFloat(value: Float): Unit =
+    structure.onChildValue(new BsonDouble(value))
 
-  override def writeDouble(value: Double): Unit = {
-    val bsonValue = new BsonDouble(value)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeDouble(value: Double): Unit =
+    structure.onChildValue(new BsonDouble(value))
 
-  override def writeLong(value: Long): Unit = {
-    val bsonValue = new BsonInt64(value)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeLong(value: Long): Unit =
+    structure.onChildValue(new BsonInt64(value))
 
-  override def writeBoolean(value: Boolean): Unit = {
-    val bsonValue = new BsonBoolean(value)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeBoolean(value: Boolean): Unit =
+    structure.onChildValue(new BsonBoolean(value))
 
-  override def writeFalse(): Unit = {
-    val bsonValue = new BsonBoolean(false)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeFalse(): Unit =
+    structure.onChildValue(new BsonBoolean(false))
 
-  override def writeTrue(): Unit = {
-    val bsonValue = new BsonBoolean(true)
-    structure.beginChildValue(bsonValue)
-    structure.endChildValue(bsonValue)
-  }
+  override def writeTrue(): Unit =
+    structure.onChildValue(new BsonBoolean(true))
 
-  override def writeNull(): Unit = {
-    val bsonNull = BsonNull()
-    structure.beginChildValue(bsonNull)
-    structure.endChildValue(bsonNull)
-  }
+  override def writeNull(): Unit =
+    structure.onChildValue(BsonNull())
 
-  override def writeChar(value: Char): Unit = ???
+  override def writeChar(value: Char): Unit =
+    structure.onChildValue(new BsonString(value.toString))
 
 }

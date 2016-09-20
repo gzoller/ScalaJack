@@ -9,7 +9,7 @@ object BijectiveFunctions {
 
   val typeToSymbol: BijectiveFunction[Type, Symbol] = {
     val apply = (tpe: Type) ⇒ tpe.typeSymbol
-    val unapply = (typeSymbol: Symbol) ⇒ typeSymbol.info
+    val unapply = (typeSymbol: Symbol) ⇒ typeSymbol.asType.toType
     apply ⇄ unapply
   }
   val symbolToType: BijectiveFunction[Symbol, Type] = typeToSymbol.inverse
