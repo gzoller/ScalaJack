@@ -13,10 +13,12 @@ case class Hop(name: String, avail: Boolean)
 
 class TupleSpec extends FunSpec {
   val sjJS = ScalaJack()
+  /*
   val vc_nc_v = VisitorContext().copy(isCanonical = false, isValidating = true)
   val vc_c_v = VisitorContext().copy(isValidating = true)
   val vc_nc_nv = VisitorContext().copy(isCanonical = false)
   // No vc = c_nv canonical (c) and non-validating (nv)
+  */
 
   type tupA = (String, String)
   type tupB = List[(String, Int)]
@@ -59,6 +61,7 @@ class TupleSpec extends FunSpec {
       sjJS.read[tupE](JSMaster.e) should be(ScalaMaster.e)
       sjJS.read[Hip](JSMaster.f) should be(ScalaMaster.f)
     }
+    /*
     it("Render Tests - NCNV") {
       sjJS.render(ScalaMaster.a, vc_nc_v) should be(JSMaster.a)
       sjJS.render(ScalaMaster.b, vc_nc_v) should be(JSMaster.b)
@@ -107,5 +110,6 @@ class TupleSpec extends FunSpec {
       sjJS.read[tupE](JSMaster.e, vc_nc_v) should be(ScalaMaster.e)
       sjJS.read[Hip](JSMaster.f, vc_nc_v) should be(ScalaMaster.f)
     }
+    */
   }
 }

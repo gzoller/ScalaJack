@@ -73,10 +73,12 @@ case class Harness(
 
 class AnySpec extends FunSpec {
   val sjJS = ScalaJack()
+  /*
   val vc_nc_v = VisitorContext().copy(isCanonical = false, isValidating = true)
   val vc_c_v = VisitorContext().copy(isValidating = true)
   val vc_nc_nv = VisitorContext().copy(isCanonical = false)
   // No vc = c_nv canonical (c) and non-validating (nv)
+  */
 
   object JSMaster {
     val a = """{"name":"Fred","stuff":{"a":1,"b":true}}"""
@@ -132,6 +134,7 @@ class AnySpec extends FunSpec {
       sjJS.read[Command](JSMaster.x) should be(ScalaMaster.x)
       sjJS.read[Harness](JSMaster.y) should be(ScalaMaster.y)
     }
+    /*
     it("Render Tests - NCNV") {
       sjJS.render(ScalaMaster.a, vc_nc_nv) should be(JSMaster.a)
       sjJS.render(ScalaMaster.b, vc_nc_nv) should be(JSMaster.b)
@@ -204,5 +207,6 @@ class AnySpec extends FunSpec {
       sjJS.read[Command](JSMaster.x, vc_nc_v) should be(ScalaMaster.x)
       sjJS.read[Harness](JSMaster.y, vc_nc_v) should be(ScalaMaster.y)
     }
+    */
   }
 }

@@ -7,6 +7,7 @@ import scala.language.postfixOps
 import scala.util.Try
 import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.DateTimeFormat
+import scala.reflect.runtime.universe.typeOf
 
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sjJS = ScalaJack()
@@ -44,6 +45,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sjJS.render(all) should equal("""{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":520560000000}""")
       }
       it("Must render all collections (non-nested & non-canonical)") {
+        (pending)
+        /*
         val all = AllColl(
           List(1, 2),
           List(Foo("one", 1), Foo("two", 2)),
@@ -55,15 +58,19 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         )
         // println(sjJS.render(all,VisitorContext("_hint",true)))
         sjJS.render(all, VisitorContext(isCanonical = false)) should equal("""{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1},"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}""")
+        */
       }
       it("Must render traits") {
         val t = Stuff("wow", Foo("me", 9))
         sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.v4.Foo","name":"me","age":9}}""")
       }
       it("Must render traits with hint function value mappings") {
+        (pending)
+        /*
         val t = Stuff("wow", Foo("me", 9))
         val vcx = VisitorContext().copy(hintValueRender = Map("co.blocke.scalajack.test.v4.Blah" -> { (x: String) => x.split('.').last }))
         sjJS.render(t, vcx) should equal("""{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}""")
+        */
       }
       it("Must render typed classes") {
         val a1 = WithType("hey")
@@ -104,12 +111,12 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     describe("Read Tests") {
       it("Must read simple JSON") {
         val js = """{"name":"Fred","age":29,"bogus":false,"addr":{"street":"123 Main","zip":29384}}"""
-        val z = sjJS.read[Pristine](js, VisitorContext().copy(isValidating = true))
+        val z = sjJS.read[Pristine](js)
         (z == Pristine("Fred", 29, None, Address("123 Main", 29384))) should be(true)
       }
       it("Must read all primitive types") {
         val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":520560000000,"o":null}"""
-        val z = sjJS.read[All](js, VisitorContext().copy(isValidating = true))
+        val z = sjJS.read[All](js)
         val pattern = "MM-dd-yy"
         val dt = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
         val all = All(
@@ -132,7 +139,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Must read naked collections") {
         sjJS.read[List[Int]]("""[1,2,3]""") should equal(List(1, 2, 3))
-        sjJS.read[List[Map[Int, Boolean]]]("""[{5:false,6:true},{10:false,11:true}]""", VisitorContext().copy(isValidating = true, isCanonical = false)) should equal(List(Map(5 -> false, 6 -> true), Map(11 -> true, 10 -> false)))
+        // Pending non-canonical support
+        // sjJS.read[List[Map[Int, Boolean]]]("""[{5:false,6:true},{10:false,11:true}]""", VisitorContext().copy(isValidating = true, isCanonical = false)) should equal(List(Map(5 -> false, 6 -> true), Map(11 -> true, 10 -> false)))
         sjJS.read[Map[String, Boolean]]("""{"a":false,"b":true}""") should equal(Map("a" -> false, "b" -> true))
         sjJS.read[Set[Int]]("""[1,2,3]""") should equal(Set(1, 2, 3))
       }
@@ -147,20 +155,23 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           Map(Foo("a", 1) -> Some(WithType(5)), Foo("b", 2) -> Some(WithType(7)), Foo("c", 3) -> None)
         )
         val js = """{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1},"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}"""
-        val z = sjJS.read[AllColl](js, VisitorContext().copy(isValidating = true, isCanonical = false))
+        val z = sjJS.read[AllColl](js)
         // filter out the None values for comparison
         (all.copy(e = all.e.filter(_.isDefined), g = all.g.filter(_._2.isDefined)) == z) should be(true)
       }
       it("Must read traits") {
         val js = """{"item":"wow","other":{"name":"me","_hint":"co.blocke.scalajack.test.v4.Foo","age":9}}"""
-        val z = sjJS.read[Stuff](js, VisitorContext().copy(isValidating = true))
+        val z = sjJS.read[Stuff](js)
         val t = Stuff("wow", Foo("me", 9))
         (z == t) should equal(true)
       }
       it("Must read traits with hint function value mappings") {
+        (pending)
+        /*
         val js = """{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}"""
         val vcx = VisitorContext().copy(hintValueRead = Map("co.blocke.scalajack.test.v4.Blah" -> { (x: String) => "co.blocke.scalajack.test.v4." + x }))
         sjJS.read[Stuff](js, vcx) should equal(Stuff("wow", Foo("me", 9)))
+        */
       }
       it("Must read parameterized classes - Basic") {
         val a1 = WithType("hey")
@@ -212,7 +223,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Must read Enumerations") {
         val js = """{"a":"Red","b":"JSON"}"""
-        val z = sjJS.read[EnumExer](js, VisitorContext().copy(isValidating = true))
+        val z = sjJS.read[EnumExer](js)
         val all = EnumExer(Colors.Red, Formats.JSON)
         (all == z) should be(true)
       }
@@ -257,29 +268,24 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     describe("Support Custom JSON for Value Class") {
       it("Must read & render custom JSON for value class") {
-        val vc = VisitorContext().withAdapter(SpecialAdapter)
+        val sj = ScalaJack().withAdapters(SpecialAdapter)
         val ss = SomethingSpecial("hey", new CustomVC(new DateTime(2015, 7, 1, 0, 0)))
-        val js = sjJS.render(ss, vc)
+        val js = sj.render(ss)
         js should equal("""{"what":"hey","when":"July, 2015"}""")
-        (sjJS.read[SomethingSpecial](js.toString, vc) == ss) should be(true)
+        (sj.read[SomethingSpecial](js.toString) == ss) should be(true)
       }
     }
     describe("Type Hint Handling") {
       it("Must handle changing default type hint") {
         val pets = List(Dog("Fido"), Cat("Meow"))
-        sjJS.render[List[Animal]](pets, VisitorContext(hintMap = Map("default" -> "kind"))) should equal("""[{"kind":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},{"kind":"co.blocke.scalajack.test.v4.Cat","name":"Meow"}]""")
+        ScalaJack().withDefaultHint("kind").render[List[Animal]](pets) should equal("""[{"kind":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},{"kind":"co.blocke.scalajack.test.v4.Cat","name":"Meow"}]""")
       }
       it("Must handle per-trait (trait specific) type hinting") {
         val pets = List(NicePet(Dog("Fido"), "kibbles"), GrumpyPet(Cat("Meow"), "fish"))
-        val js = sjJS.render[List[Pet]](pets, VisitorContext(hintMap = Map(
-          "default" -> "_hint",
-          "co.blocke.scalajack.test.v4.Pet" -> "_happy", "co.blocke.scalajack.test.v4.Animal" -> "_kind"
-        )))
+        val sj = ScalaJack().withHints((typeOf[Pet] -> "_happy"), (typeOf[Animal] -> "_kind"))
+        val js = sj.render[List[Pet]](pets)
         js should equal("""[{"_happy":"co.blocke.scalajack.test.v4.NicePet","kind":{"_kind":"co.blocke.scalajack.test.v4.Dog","name":"Fido"},"food":"kibbles"},{"_happy":"co.blocke.scalajack.test.v4.GrumpyPet","kind":{"_kind":"co.blocke.scalajack.test.v4.Cat","name":"Meow"},"food":"fish"}]""")
-        sjJS.read[List[Pet]](js, VisitorContext(hintMap = Map(
-          "default" -> "_hint",
-          "co.blocke.scalajack.test.v4.Pet" -> "_happy", "co.blocke.scalajack.test.v4.Animal" -> "_kind"
-        ))) should equal(pets)
+        sj.read[List[Pet]](js) should equal(pets)
       }
     }
     describe("View/Splice Tests") {

@@ -2,9 +2,8 @@ package co.blocke.scalajack
 package test.v4
 
 import json._
-import json.TokenType._
+import TokenType._
 import typeadapter.{ BasicTypeAdapter, SimpleTypeAdapter }
-import json.JsonKind
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 import org.scalatest.Matchers._
 
@@ -106,11 +105,7 @@ class CustomSpec extends FunSpec {
   //   "java.nio.charset.Charset" -> charsetHandler
   // )
 
-  val sjJS = ScalaJack()
-  val vc = VisitorContext()
-    .withAdapter(CharsetTypeAdapter)
-    .withAdapter(CCNumTypeAdapter)
-    .withAdapter(ISOTimeAdapter)
+  val sjJS = ScalaJack().withAdapters(CharsetTypeAdapter, CCNumTypeAdapter, ISOTimeAdapter)
   // val vc_nc_v = VisitorContext().copy(customHandlers = handlerMap, isCanonical = false, isValidating = true)
   // val vc_c_v = VisitorContext().copy(customHandlers = handlerMap, isValidating = true)
   // val vc_nc_nv = VisitorContext().copy(customHandlers = handlerMap, isCanonical = false)
@@ -135,36 +130,34 @@ class CustomSpec extends FunSpec {
   describe("=========================\n| -- Custom VC Tests -- |\n=========================") {
     describe("Value class custom rendering") {
       it("Render Tests - CNV") {
-        sjJS.render(ScalaMaster.a, vc) should be(JSMaster.a)
+        sjJS.render(ScalaMaster.a) should be(JSMaster.a)
       }
       it("Read custom value class - CNV") {
-        sjJS.read[TestTime](JSMaster.a, vc) should be(ScalaMaster.a)
+        sjJS.read[TestTime](JSMaster.a) should be(ScalaMaster.a)
       }
     }
     describe("Java class custom rendering - Single") {
       it("Render Tests - CNV") {
-        sjJS.render(ScalaMaster.b, vc) should be(JSMaster.b)
+        sjJS.render(ScalaMaster.b) should be(JSMaster.b)
       }
       it("Read custom Java class - CNV") {
-        sjJS.read[Naked](JSMaster.b, vc) should be(ScalaMaster.b)
+        sjJS.read[Naked](JSMaster.b) should be(ScalaMaster.b)
       }
     }
-    /*
     describe("Java class custom rendering - Collections") {
       it("Render Tests - CNV") {
-        sjJS.render(ScalaMaster.c, vc) should be(JSMaster.c)
+        sjJS.render(ScalaMaster.c) should be(JSMaster.c)
       }
       it("Read custom Java class - CNV") {
-        sjJS.read[Bunched](JSMaster.c, vc) should be(ScalaMaster.c)
+        sjJS.read[Bunched](JSMaster.c) should be(ScalaMaster.c)
       }
     }
-    */
     describe("Java class custom rendering - Custom type parameter renderings") {
       it("Render Tests - CNV") {
-        sjJS.render(ScalaMaster.d, vc) should be(JSMaster.d)
+        sjJS.render(ScalaMaster.d) should be(JSMaster.d)
       }
       it("Read custom Java class - CNV") {
-        sjJS.read[WithCustomType[SpecialTime, Charset]](JSMaster.d, vc) should be(ScalaMaster.d)
+        sjJS.read[WithCustomType[SpecialTime, Charset]](JSMaster.d) should be(ScalaMaster.d)
       }
     }
   }

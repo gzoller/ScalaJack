@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package test.v4
 
-import json.JsonKind
-import json.{ Reader, TokenType, Writer }
-import json.typeadapter.BasicTypeAdapter
+import typeadapter.BasicTypeAdapter
 
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
@@ -94,16 +92,7 @@ case class Address(street: String, zip: Int)
 case class Pristine(name: String, age: Int, stuff: Option[Boolean], addr: Address)
 
 class CustomVC(val underlying: DateTime) extends AnyVal
-/*
-object CustomVC extends ValueClassCustom {
-  def read: PartialFunction[(KindMarker, _), Any] = {
-    case (jk: JsonKind, js: String) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js)
-  }
-  def render: PartialFunction[(KindMarker, _), Any] = {
-    case (jk: JsonKind, dt: DateTime) => '"' + DateTimeFormat.forPattern("MMMM, yyyy").print(dt) + '"'
-  }
-}
-*/
+
 object SpecialAdapter extends BasicTypeAdapter[DateTime] {
   override def read(reader: Reader): DateTime = {
     reader.peek match {
