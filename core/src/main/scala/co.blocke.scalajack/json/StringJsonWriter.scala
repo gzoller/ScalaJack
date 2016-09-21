@@ -1,4 +1,5 @@
-package co.blocke.scalajack.json
+package co.blocke.scalajack
+package json
 
 object StructureType extends Enumeration {
   type StructureType = Value

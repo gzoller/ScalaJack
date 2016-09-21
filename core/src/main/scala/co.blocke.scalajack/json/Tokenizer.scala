@@ -1,6 +1,7 @@
-package co.blocke.scalajack.json
+package co.blocke.scalajack
+package json
 
-import co.blocke.scalajack.json.TokenType.TokenType
+import TokenType.TokenType
 
 class Tokenizer(val capacity: Int = 1024) {
 
