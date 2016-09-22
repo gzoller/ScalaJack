@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package test
 
 import json._
-import json.typeadapter.BasicTypeAdapter
+import typeadapter.BasicTypeAdapter
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
@@ -74,7 +74,7 @@ case class InnerClass[Z](x: Z) extends InnerTrait[Z]
 case class OuterClass[Z, X, P](c: Z, a: InnerTrait[Z], b: List[InnerTrait[X]], d: P) extends OuterTrait[InnerTrait[Z], InnerTrait[X], P]
 
 class Bar extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
-  val sj = ScalaJack()
+  val sj = ScalaJack().withAdapters(PhoneAdapter, CreditCardAdapter) //.asInstanceOf[JackFlavor[String] with ScalaJackLike]
   describe("-- More Cases --") {
     it("Nested") {
       val t2 = OuterClass('z', InnerClass('a'), List(InnerClass(false), InnerClass(true)), 5)
@@ -83,19 +83,17 @@ class Bar extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       sj.read[OuterTrait[InnerTrait[Char], InnerTrait[Boolean], Int]](js) should equal(t2)
     }
     it("Case 1 - Primitive adapter") {
-      val vc = VisitorContext().withAdapter(PhoneAdapter)
       val c = Contact("Greg", "123-456-7890")
-      val js = sj.render(c, vc)
+      val js = sj.render(c)
       js should equal("""{"name":"Greg","phone":"1234567890"}""")
-      val obj = sj.read[Contact](js, vc)
+      val obj = sj.read[Contact](js)
       obj should equal(c)
     }
     it("Case 2 - Value class") {
-      val vc = VisitorContext().withAdapter(CreditCardAdapter)
       val c = Payment("Greg", new CardWrapper("1234 5678 9012 3456"))
-      val js = sj.render(c, vc)
+      val js = sj.render(c)
       js should equal("""{"name":"Greg","cc":"1234567890123456"}""")
-      val obj = sj.read[Payment](js, vc)
+      val obj = sj.read[Payment](js)
       obj should equal(c)
       obj.cc.underlying should equal("1234 5678 9012 3456")
       // Just create a BasicTypeAdapter then define a value class wrapping that basic type and see what happens...

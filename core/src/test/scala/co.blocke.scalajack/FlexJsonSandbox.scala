@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.json.{ Context, Tokenizer }
+import json.Tokenizer
 
 import scala.reflect.runtime.universe.typeOf
 

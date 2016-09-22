@@ -3,6 +3,7 @@ package test
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 // Case 1 -------- > Simple parameterized case class
 case class Boom[T](a: T)
@@ -47,7 +48,6 @@ case class Female(name: String) extends Human
 
 class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sj = ScalaJack()
-  val old = ScalaJack(json.JsonFlavor)
   describe("-- Cases --") {
     it("Case 1") {
       val b = Boom(true)
@@ -105,24 +105,25 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sj.read[Person](js) should equal(p)
       }
     }
-    /*
+
     it("VC overrides work") {
-      val vc = VisitorContext(
-        hintMap         = Map("co.blocke.scalajack.test.Human" → "gender"),
-        hintValueRead   = Map("co.blocke.scalajack.test.Human" → {
-          case "Male"   ⇒ new String("co.blocke.scalajack.test.Male")
-          case "Female" ⇒ new String("co.blocke.scalajack.test.Female")
-        }),
-        hintValueRender = Map("co.blocke.scalajack.test.Human" → {
-          case "co.blocke.scalajack.test.Male"   ⇒ new String("Male")
-          case "co.blocke.scalajack.test.Female" ⇒ new String("Female")
-        })
-      )
-      val js = """{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
+      val humanHintMod = new HintModifier {
+        def apply(rawHint: String) = rawHint match {
+          case "Male"   ⇒ typeOf[Male]
+          case "Female" ⇒ typeOf[Female]
+        }
+        def unapply(hintFieldType: Type) = hintFieldType match {
+          case t if (t == typeOf[Male])   ⇒ "Male"
+          case t if (t == typeOf[Female]) ⇒ "Female"
+        }
+      }
+      val sj2 = ScalaJack()
+        .withHints((typeOf[Human] -> "gender"))
+        .withHintModifiers((typeOf[Human] -> humanHintMod))
+      val js = """{"id":1,"name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
       val h = Male("Kenneth")
-      println(sj.read[Human](js, vc))
-      println(sj.render(h, vc))
+      sj2.read[Human](js) should equal(h)
+      sj2.render(h) should equal("""{"name":"Kenneth"}""")
     }
-    */
   }
 }
