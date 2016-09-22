@@ -13,10 +13,7 @@ import BijectiveFunctions.fullNameToType
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sjJS = ScalaJack()
 
-  val hintMod = new HintModifier {
-    def apply(rawHint: String) = fullNameToType.apply("co.blocke.scalajack.test.v4." + rawHint)
-    def unapply(hintFieldType: Type) = fullNameToType.unapply(hintFieldType).split('.').last
-  }
+  val hintMod = ClassNameHintModifier((hint: String) => "co.blocke.scalajack.test.v4." + hint, (cname: String) => cname.split('.').last)
 
   describe("==================\n| -- V4 Tests -- |\n==================") {
     describe("Render Tests") {
@@ -288,16 +285,15 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     describe("View/Splice Tests") {
       it("Must process view") {
-        (pending)
-        // val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
-        // ScalaJack.view[OneSub2](data) should equal(OneSub2("Greg", true, Map("hey" -> 17, "you" -> 21)))
+        val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
+        ScalaJack().view[OneSub2](data) should equal(OneSub2("Greg", true, Map("hey" -> 17, "you" -> 21)))
       }
       it("Must spliceWith") {
-        (pending)
-        // val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
-        // val x = ScalaJack.view[OneSub1](data)
-        // val y: One = ScalaJack.spliceInto(x.copy(name = "Fred", big = 2L), data)
-        // y should equal(data.copy(name = "Fred", big = 2L))
+        val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
+        val sj = ScalaJack()
+        val x = sj.view[OneSub1](data)
+        val y: One = sj.spliceInto(x.copy(name = "Fred", big = 2L), data)
+        y should equal(data.copy(name = "Fred", big = 2L))
       }
     }
   }
