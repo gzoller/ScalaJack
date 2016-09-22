@@ -11,12 +11,14 @@ object ScalaJack {
   def apply[S](kind: JackFlavor[S] with ScalaJackLike[S] = JsonFlavor()): JackFlavor[S] with ScalaJackLike[S] = kind
 }
 
+trait HintModifier extends BijectiveFunction[String, Type]
+
 trait ScalaJackLike[S] {
   self: JackFlavor[S] => // require a JackFlavor to be mixed in
 
   private var customAdapters = List.empty[TypeAdapterFactory]
   private var hintMap = Map.empty[Type, String]
-  private var hintModifiers = Map.empty[Type, BijectiveFunction[String, Type]]
+  private var hintModifiers = Map.empty[Type, HintModifier]
   private var parseOrElseMap = Map.empty[Type, Type]
   private var defaultHint = "_hint"
   private var _context: Context = bakeContext()
@@ -36,7 +38,7 @@ trait ScalaJackLike[S] {
     hintMap = hintMap ++ h
     rebuild()
   }
-  def withHintModifiers(hm: (Type, BijectiveFunction[String, Type])*) = {
+  def withHintModifiers(hm: (Type, HintModifier)*) = {
     hintModifiers = hintModifiers ++ hm
     rebuild()
   }

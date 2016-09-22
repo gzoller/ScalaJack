@@ -7,10 +7,16 @@ import scala.language.postfixOps
 import scala.util.Try
 import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.DateTimeFormat
-import scala.reflect.runtime.universe.typeOf
+import scala.reflect.runtime.universe.{ Type, typeOf }
+import BijectiveFunctions.fullNameToType
 
 class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   val sjJS = ScalaJack()
+
+  val hintMod = new HintModifier {
+    def apply(rawHint: String) = fullNameToType.apply("co.blocke.scalajack.test.v4." + rawHint)
+    def unapply(hintFieldType: Type) = fullNameToType.unapply(hintFieldType).split('.').last
+  }
 
   describe("==================\n| -- V4 Tests -- |\n==================") {
     describe("Render Tests") {
@@ -65,12 +71,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sjJS.render(t) should equal("""{"item":"wow","other":{"_hint":"co.blocke.scalajack.test.v4.Foo","name":"me","age":9}}""")
       }
       it("Must render traits with hint function value mappings") {
-        (pending)
-        /*
         val t = Stuff("wow", Foo("me", 9))
-        val vcx = VisitorContext().copy(hintValueRender = Map("co.blocke.scalajack.test.v4.Blah" -> { (x: String) => x.split('.').last }))
-        sjJS.render(t, vcx) should equal("""{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}""")
-        */
+        ScalaJack().withHintModifiers((typeOf[Blah] -> hintMod)).render(t) should equal("""{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}""")
       }
       it("Must render typed classes") {
         val a1 = WithType("hey")
@@ -166,12 +168,8 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         (z == t) should equal(true)
       }
       it("Must read traits with hint function value mappings") {
-        (pending)
-        /*
         val js = """{"item":"wow","other":{"_hint":"Foo","name":"me","age":9}}"""
-        val vcx = VisitorContext().copy(hintValueRead = Map("co.blocke.scalajack.test.v4.Blah" -> { (x: String) => "co.blocke.scalajack.test.v4." + x }))
-        sjJS.read[Stuff](js, vcx) should equal(Stuff("wow", Foo("me", 9)))
-        */
+        ScalaJack().withHintModifiers((typeOf[Blah] -> hintMod)).read[Stuff](js) should equal(Stuff("wow", Foo("me", 9)))
       }
       it("Must read parameterized classes - Basic") {
         val a1 = WithType("hey")
@@ -238,7 +236,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val js4 = """{"hey":true,"you":9}"""
         val js5 = """["a","b","c"]"""
         sjJS.read[Wrapper](js1) should equal(a1)
-        // (sjJS.read[Wrapper2[Int]](js2) == a2) should be( true )  <-- Can't parse "7"
+        // (sjJS.read[Wrapper2[Int]](js2) == a2) should be(true) //<-- Can't parse "7"
         sjJS.read[Wrapped](js3) should equal(a3)
         sjJS.read[Wrapped2[Boolean]](js4) should equal(a4)
       }

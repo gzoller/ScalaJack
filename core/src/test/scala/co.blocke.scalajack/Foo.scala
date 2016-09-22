@@ -4,7 +4,6 @@ package test
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.reflect.runtime.universe.{ Type, typeOf }
-import BijectiveFunction.Implicits._
 
 // Case 1 -------- > Simple parameterized case class
 case class Boom[T](a: T)
@@ -107,27 +106,24 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
     }
 
-    /* BROKEN!
     it("VC overrides work") {
-      val humanHintMod: BijectiveFunction[String, Type] = {
-        val apply: (String) => Type = (rawHint: String) ⇒ rawHint match {
+      val humanHintMod = new HintModifier {
+        def apply(rawHint: String) = rawHint match {
           case "Male"   ⇒ typeOf[Male]
           case "Female" ⇒ typeOf[Female]
         }
-        val unapply: (Type) => String = (hintFieldType: Type) ⇒ hintFieldType match {
+        def unapply(hintFieldType: Type) = hintFieldType match {
           case t if (t == typeOf[Male])   ⇒ "Male"
           case t if (t == typeOf[Female]) ⇒ "Female"
         }
-        apply ⇄ unapply
       }
       val sj2 = ScalaJack()
         .withHints((typeOf[Human] -> "gender"))
         .withHintModifiers((typeOf[Human] -> humanHintMod))
-      val js = """{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
+      val js = """{"id":1,"name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
       val h = Male("Kenneth")
-      println(sj2.read[Human](js))
-      println(sj2.render(h))
+      sj2.read[Human](js) should equal(h)
+      sj2.render(h) should equal("""{"name":"Kenneth"}""")
     }
-    */
   }
 }
