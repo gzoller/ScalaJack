@@ -11,6 +11,11 @@ object JavaNumberTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lang
 
       case TokenType.Number ⇒
         reader.readNumber()
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Number value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
     }
 
   override def write(nullableValue: java.lang.Number, writer: Writer): Unit =
@@ -18,11 +23,8 @@ object JavaNumberTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lang
       case null ⇒
         writer.writeNull()
 
-      case value: java.lang.Integer ⇒
-        writer.writeInt(value.intValue)
-
-      case value: java.lang.Long ⇒
-        writer.writeLong(value.longValue)
+      case value: java.lang.Byte ⇒
+        writer.writeByte(value.byteValue)
 
       case value: java.lang.Double ⇒
         writer.writeDouble(value.doubleValue)
@@ -30,8 +32,21 @@ object JavaNumberTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lang
       case value: java.lang.Float ⇒
         writer.writeFloat(value.floatValue)
 
-      case value: java.lang.Byte ⇒
-        writer.writeByte(value.byteValue)
+      case value: java.lang.Integer ⇒
+        writer.writeInt(value.intValue)
+
+      case value: java.lang.Long ⇒
+        writer.writeLong(value.longValue)
+
+      case value: java.lang.Short ⇒
+        writer.writeShort(value.shortValue)
+
+      case value: java.math.BigInteger ⇒
+        writer.writeRawValue(value.toString)
+
+      case value: java.math.BigDecimal ⇒
+        writer.writeRawValue(value.toString)
+
     }
 
 }

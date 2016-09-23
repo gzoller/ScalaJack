@@ -1,7 +1,10 @@
 package co.blocke.scalajack
 package typeadapter
+package javaprimitives
 
-object BigDecimalTypeAdapter extends SimpleTypeAdapter[BigDecimal] {
+import java.math.BigDecimal
+
+object JavaBigDecimalTypeAdapter extends SimpleTypeAdapter[BigDecimal] {
 
   override def read(reader: Reader): BigDecimal =
     reader.peek match {
@@ -10,7 +13,7 @@ object BigDecimalTypeAdapter extends SimpleTypeAdapter[BigDecimal] {
 
       case TokenType.Number ⇒
         reader.read(expected = TokenType.Number)
-        BigDecimal(reader.tokenText)
+        new BigDecimal(reader.tokenText)
 
       case actual ⇒ {
         reader.read()

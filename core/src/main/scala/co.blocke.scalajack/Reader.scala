@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 
 import TokenType.TokenType
+import scala.util.{ Try, Success }
+import java.lang.NumberFormatException
 
 trait Reader {
 
@@ -16,6 +18,8 @@ trait Reader {
 
   def tokenLengthAt(position: Int): Int
 
+  def showError(): String
+
   def peek: TokenType
 
   def read(): TokenType
@@ -30,49 +34,101 @@ trait Reader {
   }
 
   def readBoolean(): Boolean = {
-    peek match {
+    val bool = peek match {
       case TokenType.False ⇒
         false
 
       case TokenType.True ⇒
         true
     }
+    position += 1
+    bool
   }
 
+  // This guy has to do type inference, as a Number could be: Byte, Double, Float, Integer, Long, or Short.
+  // For reads that means the safest thing to do is always read the largest Number: Double or Long.
+  // We need to decide if the text is an integer value or not to choose.
   def readNumber(): java.lang.Number = {
     read(expected = TokenType.Number)
     val tokenText = this.tokenText
-    java.lang.Integer.valueOf(tokenText)
+    tokenText match {
+      case floatVal if (tokenText.contains('.')) =>
+        BigDecimal(tokenText) match {
+          case f if (f.isDecimalFloat)  => f.toFloat
+          case f if (f.isDecimalDouble) => f.toDouble
+          case f                        => f.bigDecimal
+        }
+      case intVal =>
+        Try(tokenText.toLong) match {
+          case Success(v) => v match {
+            case v if (v.isValidByte)  => v.toByte
+            case v if (v.isValidShort) => v.toShort
+            case v if (v.isValidInt)   => v.toInt
+            case v                     => v
+          }
+          case _ => new java.math.BigInteger(tokenText)
+        }
+    }
   }
 
   def readByte(): Byte = {
     read(expected = TokenType.Number)
-    tokenText.toByte
+    try {
+      tokenText.toByte
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def readShort(): Short = {
     read(expected = TokenType.Number)
-    tokenText.toShort
+    try {
+      tokenText.toShort
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def readInt(): Int = {
     read(expected = TokenType.Number)
-    tokenText.toInt
+    try {
+      tokenText.toInt
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def readLong(): Long = {
     read(expected = TokenType.Number)
-    tokenText.toLong
+    try {
+      tokenText.toLong
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def readFloat(): Float = {
     read(expected = TokenType.Number)
-    tokenText.toFloat
+    try {
+      tokenText.toFloat
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def readDouble(): Double = {
     read(expected = TokenType.Number)
-    tokenText.toDouble
+    try {
+      tokenText.toDouble
+    } catch {
+      case nfe: NumberFormatException =>
+        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    }
   }
 
   def skipValue(): Unit = {

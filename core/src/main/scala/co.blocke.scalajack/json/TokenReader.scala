@@ -15,12 +15,23 @@ class TokenReader(
 
   override def peek: TokenType = tokenTypes(position + 1)
 
+  override def showError(): String = {
+    val charPos = tokenOffsets(position)
+    val startPosOffset = if (charPos - 50 < 0) charPos else 50
+    val startPos = charPos - startPosOffset
+    val endPos = if (charPos + 50 > source.length) source.length else charPos + 50
+    val buf = new StringBuffer()
+    buf.append(source.subSequence(startPos, endPos).toString + "\n")
+    buf.append("-" * startPosOffset + "^")
+    buf.toString
+  }
+
   override def read(expected: TokenType): Unit = {
     position += 1
 
     val actual = tokenTypes(position)
     if (actual != expected) {
-      throw new IllegalStateException(s"Expected token of type $expected, not $actual")
+      throw new IllegalStateException(s"Expected token of type $expected, not $actual\n" + showError())
     }
   }
 

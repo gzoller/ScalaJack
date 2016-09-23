@@ -10,6 +10,11 @@ object StringTypeAdapter extends SimpleTypeAdapter[String] {
 
       case TokenType.Null ⇒
         reader.readNull()
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading String value.\n" + reader.showError())
+      }
     }
   }
 

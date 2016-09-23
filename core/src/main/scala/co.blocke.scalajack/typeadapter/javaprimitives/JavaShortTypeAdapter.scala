@@ -11,6 +11,11 @@ object JavaShortTypeAdapter extends SimpleTypeAdapter[java.lang.Short] {
 
       case TokenType.Number ⇒
         java.lang.Short.valueOf(reader.readShort())
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Short value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
     }
 
   override def write(value: java.lang.Short, writer: Writer): Unit =

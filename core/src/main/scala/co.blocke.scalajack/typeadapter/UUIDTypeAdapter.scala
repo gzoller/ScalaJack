@@ -11,7 +11,16 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
         reader.readNull()
 
       case TokenType.String ⇒
-        UUID.fromString(reader.readString())
+        try {
+          UUID.fromString(reader.readString())
+        } catch {
+          case u: java.lang.IllegalArgumentException => throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
+        }
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading UUID value.\n" + reader.showError())
+      }
     }
 
   override def write(value: UUID, writer: Writer): Unit =
