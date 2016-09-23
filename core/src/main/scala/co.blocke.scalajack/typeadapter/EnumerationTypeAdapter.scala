@@ -22,8 +22,16 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
 
   override def read(reader: Reader): E#Value =
     reader.peek match {
-      case TokenType.String ⇒ enum.withName(reader.readString())
-      case TokenType.Null   ⇒ reader.readNull()
+      case TokenType.String ⇒
+        try {
+          enum.withName(reader.readString())
+        } catch {
+          case nse: java.util.NoSuchElementException ⇒ throw new java.util.NoSuchElementException(nse.getMessage + "\n" + reader.showError())
+        }
+      case TokenType.Null ⇒ reader.readNull()
+      case actual ⇒
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Enumeration value.\n" + reader.showError())
     }
 
   override def write(value: E#Value, writer: Writer): Unit =

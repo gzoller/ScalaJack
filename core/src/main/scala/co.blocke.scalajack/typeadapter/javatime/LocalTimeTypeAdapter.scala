@@ -13,7 +13,17 @@ object LocalTimeTypeAdapter extends SimpleTypeAdapter[LocalTime] {
         reader.readNull()
 
       case TokenType.String ⇒
-        LocalTime.parse(reader.readString(), ISO_LOCAL_TIME)
+        try {
+          LocalTime.parse(reader.readString())
+        } catch {
+          case dtpe: java.time.format.DateTimeParseException ⇒ throw new java.time.format.DateTimeParseException(dtpe.getMessage + "\n" + reader.showError(), dtpe.getParsedString, dtpe.getErrorIndex)
+        }
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading LocalTime value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
+
     }
 
   override def write(value: LocalTime, writer: Writer): Unit =

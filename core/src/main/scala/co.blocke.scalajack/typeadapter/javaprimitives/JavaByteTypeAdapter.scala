@@ -11,6 +11,11 @@ object JavaByteTypeAdapter extends SimpleTypeAdapter[java.lang.Byte] {
 
       case TokenType.Number ⇒
         java.lang.Byte.valueOf(reader.readByte())
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Byte value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
     }
 
   override def write(value: java.lang.Byte, writer: Writer): Unit =

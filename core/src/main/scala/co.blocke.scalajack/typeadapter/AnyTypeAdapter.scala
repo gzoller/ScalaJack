@@ -15,9 +15,8 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       val listTypeAdapter = context.typeAdapterOf[List[Any]]
       val stringTypeAdapter = context.typeAdapterOf[String]
       val booleanTypeAdapter = context.typeAdapterOf[Boolean]
-      val bigDecimalTypeAdapter = context.typeAdapterOf[BigDecimal]
 
-      Some(AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, bigDecimalTypeAdapter, context))
+      Some(AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context))
     } else {
       None
     }
@@ -31,7 +30,6 @@ case class AnyTypeAdapter(
     listTypeAdapter:       TypeAdapter[List[Any]],
     stringTypeAdapter:     TypeAdapter[String],
     booleanTypeAdapter:    TypeAdapter[Boolean],
-    bigDecimalTypeAdapter: TypeAdapter[BigDecimal],
     context:               Context
 ) extends SimpleTypeAdapter[Any] {
 
@@ -50,7 +48,7 @@ case class AnyTypeAdapter(
         booleanTypeAdapter.read(reader)
 
       case TokenType.Number ⇒
-        bigDecimalTypeAdapter.read(reader)
+        reader.readNumber() // Use Scala numerical inference (see Reader.readNumber())
 
       case TokenType.Null ⇒
         reader.readNull()
@@ -67,6 +65,9 @@ case class AnyTypeAdapter(
 
       case string: String ⇒
         stringTypeAdapter.write(string, writer)
+
+      case enum: Enumeration#Value ⇒
+        stringTypeAdapter.write(enum.toString, writer)
 
       case list: List[_] ⇒
         listTypeAdapter.write(list, writer)

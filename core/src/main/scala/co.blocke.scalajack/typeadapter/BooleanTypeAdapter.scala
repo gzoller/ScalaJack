@@ -15,6 +15,11 @@ object BooleanTypeAdapter extends SimpleTypeAdapter[Boolean] {
 
       case TokenType.Null ⇒
         throw new IllegalStateException("Expected token of type Boolean, not Null")
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type True or False, not $actual when reading Boolean value.  (Is your value wrapped in quotes or a number?)\n" + reader.showError())
+      }
     }
   }
 

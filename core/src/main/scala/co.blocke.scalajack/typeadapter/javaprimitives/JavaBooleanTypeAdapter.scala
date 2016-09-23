@@ -11,6 +11,11 @@ object JavaBooleanTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lan
 
       case TokenType.False | TokenType.True ⇒
         java.lang.Boolean.valueOf(reader.readBoolean())
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Boolean value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
     }
 
   override def write(value: java.lang.Boolean, writer: Writer): Unit =

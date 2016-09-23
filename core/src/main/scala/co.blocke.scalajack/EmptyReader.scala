@@ -6,6 +6,8 @@ object EmptyReader extends Reader {
 
   override def peek: TokenType = TokenType.Nothing
 
+  override def showError(): String = ""
+
   override def read(expected: TokenType): Unit = ???
 
   override def readString(): String = ???

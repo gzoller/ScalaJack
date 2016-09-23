@@ -76,9 +76,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val (derivedValueClassConstructorMirror, memberClass) =
             if (member.typeSignature.typeSymbol.isClass) {
               val memberClassSymbol = member.typeSignature.typeSymbol.asClass
-              val memberClass = currentMirror.runtimeClass(memberClassSymbol)
 
               if (memberClassSymbol.isDerivedValueClass) {
+                val memberClass = currentMirror.runtimeClass(memberClassSymbol)
                 // The accessor will actually return the "inner" value, not the value class.
                 val constructorMethodSymbol = memberClassSymbol.primaryConstructor.asMethod
                 //              val innerClass = currentMirror.runtimeClass(constructorMethodSymbol.paramLists.flatten.head.info.typeSymbol.asClass)

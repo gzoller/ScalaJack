@@ -11,6 +11,11 @@ object JavaIntegerTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lan
 
       case TokenType.Number ⇒
         java.lang.Integer.valueOf(reader.readInt())
+
+      case actual ⇒ {
+        reader.read()
+        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Integer value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+      }
     }
 
   override def write(value: java.lang.Integer, writer: Writer): Unit =
