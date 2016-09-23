@@ -50,3 +50,6 @@ case class SampleOffsetDateTime(o1: OffsetDateTime, o2: OffsetDateTime, o3: Offs
 case class SampleOffsetTime(o1: OffsetTime, o2: OffsetTime, o3: OffsetTime, o4: OffsetTime)
 case class SamplePeriod(p1: Period, p2: Period, p3: Period)
 case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
+
+// === Any primitives
+case class AnyShell(a: Any)

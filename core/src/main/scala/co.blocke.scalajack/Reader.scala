@@ -48,7 +48,7 @@ trait Reader {
   // This guy has to do type inference, as a Number could be: Byte, Double, Float, Integer, Long, or Short.
   // For reads that means the safest thing to do is always read the largest Number: Double or Long.
   // We need to decide if the text is an integer value or not to choose.
-  def readNumber(): java.lang.Number = {
+  def readNumber(forJava: Boolean = false): java.lang.Number = {
     read(expected = TokenType.Number)
     val tokenText = this.tokenText
     tokenText match {
@@ -56,7 +56,7 @@ trait Reader {
         BigDecimal(tokenText) match {
           case f if (f.isDecimalFloat)  => f.toFloat
           case f if (f.isDecimalDouble) => f.toDouble
-          case f                        => f.bigDecimal
+          case f                        => if (forJava) f.bigDecimal else f
         }
       case intVal =>
         Try(tokenText.toLong) match {
@@ -66,7 +66,7 @@ trait Reader {
             case v if (v.isValidInt)   => v.toInt
             case v                     => v
           }
-          case _ => new java.math.BigInteger(tokenText)
+          case _ => if (forJava) new java.math.BigInteger(tokenText) else BigInt(tokenText)
         }
     }
   }

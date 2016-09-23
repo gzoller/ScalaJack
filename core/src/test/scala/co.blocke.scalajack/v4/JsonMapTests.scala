@@ -16,7 +16,7 @@ class JsonMapSpec extends FunSpec {
     describe("JSON-to-Collection tests") {
       it("Simple Map") {
         val js = """{"name":"Greg","age":49,"likesFood":true,"balance":12.32}"""
-        sj.read[Map[String, Any]](js) should equal(Map("name" -> "Greg", "age" -> 49, "likesFood" -> true, "balance" -> 12.32))
+        sj.read[Map[String, Any]](js) should equal(Map("name" -> "Greg", "age" -> 49, "likesFood" -> true, "balance" -> 12.32F))
       }
       it("Simple List") {
         val js = """[12.34,54.2,0.2]"""

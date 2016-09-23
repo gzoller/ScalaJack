@@ -10,7 +10,7 @@ object JavaNumberTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lang
         reader.readNull()
 
       case TokenType.Number ⇒
-        reader.readNumber()
+        reader.readNumber(true)
 
       case actual ⇒ {
         reader.read()
