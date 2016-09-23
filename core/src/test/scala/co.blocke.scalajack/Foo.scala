@@ -107,16 +107,7 @@ class Foo extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
 
     it("VC overrides work") {
-      val humanHintMod = new HintModifier {
-        def apply(rawHint: String) = rawHint match {
-          case "Male"   ⇒ typeOf[Male]
-          case "Female" ⇒ typeOf[Female]
-        }
-        def unapply(hintFieldType: Type) = hintFieldType match {
-          case t if (t == typeOf[Male])   ⇒ "Male"
-          case t if (t == typeOf[Female]) ⇒ "Female"
-        }
-      }
+      val humanHintMod = StringMatchHintModifier(Map("Male" -> typeOf[Male], "Female" -> typeOf[Female]))
       val sj2 = ScalaJack()
         .withHints((typeOf[Human] -> "gender"))
         .withHintModifiers((typeOf[Human] -> humanHintMod))
