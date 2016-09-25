@@ -143,7 +143,7 @@ class Tokenizer(val capacity: Int = 1024) {
           if (isIntegerChar(ch)) {
             val start = position
 
-            while (isIntegerChar(source(position))) {
+            while (position < maxPosition && isIntegerChar(source(position))) {
               position += 1
             }
 
@@ -153,7 +153,7 @@ class Tokenizer(val capacity: Int = 1024) {
 
             position += 1 // Skip initial character
 
-            while (isSubsequentLiteralNameChar(source(position))) {
+            while (position < maxPosition && isSubsequentLiteralNameChar(source(position))) {
               position += 1
             }
 
