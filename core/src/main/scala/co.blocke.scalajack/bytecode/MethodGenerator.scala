@@ -420,6 +420,10 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
     mv.visitJumpInsn(IFEQ, destination)
   }
 
+  def ifne(destination: Label): Unit = {
+    mv.visitJumpInsn(IFNE, destination)
+  }
+
   def `new`(instanceType: Type): Unit = {
     mv.visitTypeInsn(NEW, instanceType.internalClassName)
   }

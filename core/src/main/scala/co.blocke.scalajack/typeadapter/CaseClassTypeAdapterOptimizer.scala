@@ -1,9 +1,10 @@
 package co.blocke.scalajack.typeadapter
 
-import java.nio.file.{ Files, Paths, StandardOpenOption }
+import java.nio.file.{Files, Paths, StandardOpenOption}
 
-import co.blocke.scalajack.bytecode.{ BytecodeGenerator, MethodGenerator }
-import co.blocke.scalajack.{ EmptyReader, _ }
+import co.blocke.scalajack.bytecode.{BytecodeGenerator, MethodGenerator}
+import co.blocke.scalajack.{EmptyReader, _}
+import org.objectweb.asm.Label
 
 abstract class AbstractCaseClassTypeAdapter[T >: Null] extends TypeAdapter[T] {
 
@@ -79,6 +80,7 @@ object CaseClassTypeAdapterOptimizer {
         import m._
 
         val `reader.local` = local("reader")
+        val `emptyReader.local` = allocateLocal("emptyReader", `Reader`)
         val `memberNameTypeAdapter.local` = allocateLocal(`memberNameTypeAdapter.field`.name, `memberNameTypeAdapter.field`.valueType)
         val `memberName.local` = allocateLocal("memberName", `java.lang.String`)
         val `memberIndex.local` = allocateLocal("memberIndex", `int`)
@@ -153,6 +155,29 @@ object CaseClassTypeAdapterOptimizer {
 
         load(`reader.local`)
         invokeinterface(`Reader.endObject()`)
+
+        val trtrt = new Label
+        load(`membersPresent.local`)
+        ifeq(trtrt)
+        load(`this`)
+        getfield(`emptyReader.field`)
+        store(`emptyReader.local`)
+
+        for (member <- memberL) {
+          load(`membersPresent.local`)
+          loadConstant(1 << member.index)
+          val end = new Label
+          iand()
+          ifne(end)
+          load(`this`)
+          getfield(member.valueTypeAdapterField)
+          load(`emptyReader.local`)
+          invokeinterface(`TypeAdapter.read(Reader)`)
+          cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueType)
+          store(member.valueLocal)
+          label(end)
+        }
+        label(trtrt)
 
         `new`(caseClassType)
         dup()
