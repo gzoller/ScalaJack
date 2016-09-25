@@ -279,6 +279,9 @@ case class ClassType(className: String, typeArguments: List[Type]) extends Refer
 
   override def internalClassName = s"${className.replaceAllLiterally(".", "/")}"
 
+  override def boxed: ReferenceType =
+    ClassType(className, typeArguments.map(_.boxed))
+
   override def unboxed = {
     import Type._
 

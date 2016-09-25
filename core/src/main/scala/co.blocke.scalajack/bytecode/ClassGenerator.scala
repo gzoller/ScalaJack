@@ -2,7 +2,7 @@ package co.blocke.scalajack.bytecode
 
 import org.objectweb.asm
 
-class ClassGenerator(classType: Type, cv: asm.ClassVisitor) {
+class ClassGenerator(classType: Type, superType: Type, cv: asm.ClassVisitor) {
 
   import Type._
 
@@ -22,13 +22,15 @@ class ClassGenerator(classType: Type, cv: asm.ClassVisitor) {
       import c._
 
       load(`this`)
-      invokespecial(`java.lang.Object.<init>()`)
+      invokespecial(superType.invocation("<init>", `void`, List(), isInterface = false))
 
       for (field ← fields) {
         load(`this`)
         load(local(field.name))
         putfield(field)
       }
+
+      `return`()
     }
   }
 
@@ -52,6 +54,8 @@ class ClassGenerator(classType: Type, cv: asm.ClassVisitor) {
     val startOfBody = new asm.Label
     body(methodGenerator)
     val endOfBody = new asm.Label
+
+    mv.visitMaxs(100, 100)
 
     methodGenerator.declareLocalVariables(startOfBody, endOfBody)
 

@@ -2,19 +2,22 @@ package co.blocke.scalajack
 package typeadapter
 
 import java.lang.reflect.Method
+import java.nio.file.{Files, Paths, StandardOpenOption}
 
 import CaseClassTypeAdapter.Member
+import co.blocke.scalajack.bytecode.{BytecodeGenerator, MethodGenerator}
 
 import scala.collection.mutable
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.{existentials, reflectiveCalls}
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   case class Member[T](
       index:                              Int,
       name:                               String,
+      valueType:                          Type,
       valueTypeAdapter:                   TypeAdapter[T],
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
@@ -104,10 +107,11 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
           val memberType = member.asTerm.typeSignature
           val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          Member(index, memberName, memberType, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members))
+      val caseClassTypeAdapter = CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members)
+      Some(CaseClassTypeAdapterOptimizer.optimize(caseClassTypeAdapter))
     } else {
       None
     }

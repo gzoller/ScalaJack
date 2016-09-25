@@ -170,7 +170,7 @@ object Thing2 extends App {
 
 object Thing {
 
-  val classGenerator = new ClassGenerator(null, null)
+  val classGenerator = new ClassGenerator(null, null, null)
 
   import classGenerator._
 
@@ -263,9 +263,9 @@ object BytecodeGenerator {
 
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)
 
-    classWriter.visit(asm.Opcodes.V1_8, asm.Opcodes.ACC_PUBLIC, classType.internalClassName, null, superType.internalClassName, null)
+    classWriter.visit(asm.Opcodes.V1_8, asm.Opcodes.ACC_PUBLIC, classType.internalClassName, superType.signature, superType.internalClassName, null)
 
-    val classGenerator = new ClassGenerator(classType, classWriter)
+    val classGenerator = new ClassGenerator(classType, superType, classWriter)
     body(classGenerator)
 
     classWriter.visitEnd()

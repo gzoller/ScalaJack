@@ -5,7 +5,7 @@ import asm.{Label, MethodVisitor}
 import asm.Opcodes._
 import Type._
 
-class MethodGenerator(ownerType: Type, mv: MethodVisitor) {
+class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
 
   var nextLocalVariableIndex = 0
   var localVariables = List[LocalVariable]()
@@ -327,6 +327,10 @@ class MethodGenerator(ownerType: Type, mv: MethodVisitor) {
 
   def nop(): Unit = {
     mv.visitInsn(NOP)
+  }
+
+  def `return`(): Unit = {
+    mv.visitInsn(RETURN)
   }
 
   def `return`(valueType: Type): Unit = {
