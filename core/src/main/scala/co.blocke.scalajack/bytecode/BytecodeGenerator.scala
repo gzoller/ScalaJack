@@ -3,6 +3,7 @@ package co.blocke.scalajack.bytecode
 import java.nio.file.{Files, Paths}
 
 import co.blocke.scalajack.{MemberName, Reader, TypeAdapter, Writer}
+import org.objectweb.asm.Label
 
 object Thing2 extends App {
 
@@ -20,16 +21,19 @@ object Thing2 extends App {
     import c._
 
     val `memberNameTypeAdapter.field` = defineField("memberNameTypeAdapter", typeOf[TypeAdapter[MemberName]])
-
-    val caseClassType = ClassType("my.CaseClass", List())
+    val `emptyReader.field` = defineField("emptyReader", `Reader.type`)
 
     case class Member(name: String, valueType: Type, accessor: Invocation)
+
+    val caseClassType = ClassType("my.CaseClass", List())
 
     val members = List(
       Member("id", `long`, caseClassType.invocation("id", `long`, List(), isInterface = false)),
       Member("name", `java.lang.String`, caseClassType.invocation("name", `java.lang.String`, List(), isInterface = false)),
       Member("children", typeOf[List[String]], caseClassType.invocation("children", typeOf[List[String]], List(), isInterface = false))
     )
+
+    val caseClassConstructor = caseClassType.invocation("<init>", `void`, members.map(_.valueType), isInterface = false)
 
 
     val memberTypeAdapterFields = for (member ← members) yield
@@ -51,9 +55,11 @@ object Thing2 extends App {
       import m._
 
       val `reader.local` = m.local("reader")
+      val `emptyReader.local` = m.allocateLocal(`emptyReader.field`.name, `emptyReader.field`.valueType)
       val `memberNameTypeAdapter.local` = allocateLocal(`memberNameTypeAdapter.field`.name, `memberNameTypeAdapter.field`.valueType)
       val `memberName.local` = m.allocateLocal("memberName", `java.lang.String`)
       val `memberIndex.local` = m.allocateLocal("memberIndex", `int`)
+      val `memberPresences.local` = m.allocateLocal("memberPresences", `int`)
 
       val `Reader.type` = typeOf[Reader]
       val `Reader.hasMoreMembers()` = `Reader.type`.invocation("hasMoreMembers", `boolean`, List(), isInterface = true)
@@ -67,8 +73,18 @@ object Thing2 extends App {
       getfield(`memberNameTypeAdapter.field`)
       store(`memberNameTypeAdapter.local`)
 
+      val memberLocals = members.map(member ⇒ allocateLocal(member.name, member.valueType))
+
+      for ((member, memberLocal) <- members zip memberLocals) {
+        loadDefaultValue(member.valueType)
+        store(memberLocal)
+      }
+
       load(`reader.local`)
       invokeinterface(`Reader.beginObject()`)
+
+      loadConstant(0)
+      store(`memberPresences.local`)
 
       whileLoop(
         condition = { _ ⇒
@@ -85,13 +101,19 @@ object Thing2 extends App {
           stringSwitch(
             keyLocal = `memberName.local`,
             indexLocal = `memberIndex.local`,
-            cases = for ((member, memberTypeAdapterField) ← members zip memberTypeAdapterFields) yield {
+            cases = for ((((member, memberTypeAdapterField), memberLocal), memberIndex) ← ((members zip memberTypeAdapterFields) zip memberLocals).zipWithIndex) yield {
               member.name → { (_: MethodGenerator) ⇒
                 load(`this`)
                 getfield(memberTypeAdapterField)
                 load(`reader.local`)
                 invokeinterface(`TypeAdapter.read(Reader)`)
-                pop()
+                cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueType)
+                store(memberLocal)
+
+                load(`memberPresences.local`)
+                loadConstant(1 << memberIndex)
+                ior()
+                store(`memberPresences.local`)
               }
             },
             defaultCase = { _ ⇒
@@ -104,7 +126,38 @@ object Thing2 extends App {
       load(`reader.local`)
       invokeinterface(`Reader.endObject()`)
 
-      loadConstant(null)
+      val endOfDefaults = new Label
+
+      load(`memberPresences.local`)
+      ifeq(endOfDefaults)
+
+      load(`this`)
+      getfield(`emptyReader.field`)
+      store(`emptyReader.local`)
+
+      for ((((member, memberIndex), memberTypeAdapterField), memberLocal) <- (members.zipWithIndex zip memberTypeAdapterFields) zip memberLocals) {
+        val end = new Label
+        load(`memberPresences.local`)
+        loadConstant(1 << memberIndex)
+        iand()
+        ifeq(end)
+        load(`this`)
+        getfield(memberTypeAdapterField)
+        load(`emptyReader.local`)
+        invokeinterface(`TypeAdapter.read(Reader)`)
+        cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueType)
+        store(memberLocal)
+        label(end)
+      }
+
+      label(endOfDefaults)
+
+      `new`(caseClassType)
+      dup()
+      for ((member, memberLocal) <- members zip memberLocals) {
+        load(memberLocal)
+      }
+      invokespecial(caseClassConstructor)
       `return`(`java.lang.Object`)
     }
   }

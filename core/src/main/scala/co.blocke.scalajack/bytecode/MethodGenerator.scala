@@ -10,6 +10,32 @@ class MethodGenerator(ownerType: Type, mv: MethodVisitor) {
   var nextLocalVariableIndex = 0
   var localVariables = List[LocalVariable]()
 
+  val `java.lang.Byte.valueOf(byte)` = `java.lang.Byte`.invocation("valueOf", `java.lang.Byte`, List(`byte`), isInterface = false)
+  val `java.lang.Byte.byteValue()` = `java.lang.Byte`.invocation("byteValue", `byte`, List(), isInterface = false)
+
+  val `java.lang.Character.valueOf(char)` = `java.lang.Character`.invocation("valueOf", `java.lang.Character`, List(`char`), isInterface = false)
+  val `java.lang.Character.charValue()` = `java.lang.Character`.invocation("charValue", `char`, List(), isInterface = false)
+
+  val `java.lang.Double.valueOf(double)` = `java.lang.Double`.invocation("valueOf", `java.lang.Double`, List(`double`), isInterface = false)
+  val `java.lang.Double.doubleValue()` = `java.lang.Double`.invocation("doubleValue", `double`, List(), isInterface = false)
+
+  val `java.lang.Float.valueOf(float)` = `java.lang.Float`.invocation("valueOf", `java.lang.Float`, List(`float`), isInterface = false)
+  val `java.lang.Float.floatValue()` = `java.lang.Float`.invocation("floatValue", `float`, List(), isInterface = false)
+
+  val `java.lang.Integer.valueOf(int)` = `java.lang.Integer`.invocation("valueOf", `java.lang.Integer`, List(`int`), isInterface = false)
+  val `java.lang.Integer.intValue()` = `java.lang.Integer`.invocation("intValue", `int`, List(), isInterface = false)
+
+  val `java.lang.Long.valueOf(long)` = `java.lang.Long`.invocation("valueOf", `java.lang.Long`, List(`long`), isInterface = false)
+  val `java.lang.Long.longValue()` = `java.lang.Long`.invocation("longValue", `long`, List(), isInterface = false)
+
+  val `java.lang.Short.valueOf(short)` = `java.lang.Short`.invocation("valueOf", `java.lang.Short`, List(`short`), isInterface = false)
+  val `java.lang.Short.shortValue()` = `java.lang.Short`.invocation("shortValue", `short`, List(), isInterface = false)
+
+  val `java.lang.Boolean.valueOf(boolean)` = `java.lang.Boolean`.invocation("valueOf", `java.lang.Boolean`, List(`boolean`), isInterface = false)
+  val `java.lang.Boolean.booleanValue()` = `java.lang.Boolean`.invocation("booleanValue", `boolean`, List(), isInterface = false)
+
+
+
   def allocateLocal(name: String, valueType: Type): LocalVariable = {
     val index = nextLocalVariableIndex
     nextLocalVariableIndex += valueType.size
@@ -112,6 +138,10 @@ class MethodGenerator(ownerType: Type, mv: MethodVisitor) {
 
   def putfield(field: Field): Unit = {
     mv.visitFieldInsn(asm.Opcodes.PUTFIELD, ownerType.internalClassName, field.name, field.valueType.descriptor)
+  }
+
+  def invokestatic(invocation: Invocation): Unit = {
+    mv.visitMethodInsn(INVOKESTATIC, invocation.ownerType.internalClassName, invocation.name, invocation.descriptor, invocation.isInterface)
   }
 
   def invokevirtual(invocation: Invocation): Unit = {
@@ -305,6 +335,101 @@ class MethodGenerator(ownerType: Type, mv: MethodVisitor) {
 
   def checkcast(t: Type): Unit = {
     mv.visitTypeInsn(CHECKCAST, t.internalClassName)
+  }
+
+  def cast(from: Type, to: Type): Unit = {
+    if (from == to) {
+      // Do nothing
+    } else {
+      (from, to) match {
+
+        case (primitiveType, `java.lang.Object`) if primitiveType.isPrimitive ⇒
+          cast(from = primitiveType, to = primitiveType.boxed)
+          cast(from = primitiveType.boxed, to = `java.lang.Object`)
+
+        case (`java.lang.Object`, primitiveType) if primitiveType.isPrimitive ⇒
+          cast(from = `java.lang.Object`, to = primitiveType.boxed)
+          cast(from = primitiveType.boxed, to = primitiveType)
+
+        case (fromReferenceType, `java.lang.Object`) if fromReferenceType.isReference ⇒
+          // Do nothing
+
+        case (fromReferenceType, toReferenceType) if fromReferenceType.isReference && toReferenceType.isReference ⇒
+          checkcast(toReferenceType)
+
+
+        case (`byte`, `java.lang.Byte`) ⇒
+          invokestatic(`java.lang.Byte.valueOf(byte)`)
+
+        case (`java.lang.Byte`, `byte`) ⇒
+          invokevirtual(`java.lang.Byte.byteValue()`)
+
+
+        case (`char`, `java.lang.Character`) ⇒
+          invokestatic(`java.lang.Character.valueOf(char)`)
+
+        case (`java.lang.Character`, `char`) ⇒
+          invokevirtual(`java.lang.Character.charValue()`)
+
+
+        case (`double`, `java.lang.Double`) ⇒
+          invokestatic(`java.lang.Double.valueOf(double)`)
+
+        case (`java.lang.Double`, `double`) ⇒
+          invokevirtual(`java.lang.Double.doubleValue()`)
+
+
+        case (`float`, `java.lang.Float`) ⇒
+          invokestatic(`java.lang.Float.valueOf(float)`)
+
+        case (`java.lang.Float`, `float`) ⇒
+          invokevirtual(`java.lang.Float.floatValue()`)
+
+
+        case (`int`, `java.lang.Integer`) ⇒
+          invokestatic(`java.lang.Integer.valueOf(int)`)
+
+        case (`java.lang.Integer`, `int`) ⇒
+          invokevirtual(`java.lang.Integer.intValue()`)
+
+
+        case (`long`, `java.lang.Long`) ⇒
+          invokestatic(`java.lang.Long.valueOf(long)`)
+
+        case (`java.lang.Long`, `long`) ⇒
+          invokevirtual(`java.lang.Long.longValue()`)
+
+
+        case (`short`, `java.lang.Short`) ⇒
+          invokestatic(`java.lang.Short.valueOf(short)`)
+
+        case (`java.lang.Short`, `short`) ⇒
+          invokevirtual(`java.lang.Short.shortValue()`)
+
+
+        case (`boolean`, `java.lang.Boolean`) ⇒
+          invokestatic(`java.lang.Boolean.valueOf(boolean)`)
+
+        case (`java.lang.Boolean`, `boolean`) ⇒
+          invokevirtual(`java.lang.Boolean.booleanValue()`)
+      }
+    }
+  }
+
+  def ior(): Unit = {
+    mv.visitInsn(IOR)
+  }
+
+  def iand(): Unit = {
+    mv.visitInsn(IAND)
+  }
+
+  def ifeq(destination: Label): Unit = {
+    mv.visitJumpInsn(IFEQ, destination)
+  }
+
+  def `new`(instanceType: Type): Unit = {
+    mv.visitTypeInsn(NEW, instanceType.internalClassName)
   }
 
 }
