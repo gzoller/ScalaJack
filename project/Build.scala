@@ -54,7 +54,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(joda, joda_convert, scala_reflect) ++
+			compile(joda, joda_convert, scala_reflect, asm) ++
 			test(scalatest)
 		)
 
@@ -97,10 +97,11 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver" % "1.1.0"
-	val joda 			= "joda-time"				% "joda-time"			% "2.3"
-	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
-	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "3.0.0"
-	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
+	val scala_reflect = "org.scala-lang"     %  "scala-reflect"       % Build.scalaVer
+	val mongo_scala   = "org.mongodb.scala"  %% "mongo-scala-driver"  % "1.1.0"
+	val joda          = "joda-time"          %  "joda-time"           % "2.3"
+	val joda_convert  = "org.joda"           %  "joda-convert"        % "1.7"
+	val scalatest     = "org.scalatest"      %% "scalatest"           % "3.0.0"
+	val slf4j_simple  = "org.slf4j"          %  "slf4j-simple"        % "1.7.7"
+	val asm           = "org.ow2.asm"        %  "asm"                 % "5.1"
 }

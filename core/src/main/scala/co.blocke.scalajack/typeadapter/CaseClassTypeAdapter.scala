@@ -2,15 +2,15 @@ package co.blocke.scalajack
 package typeadapter
 
 import java.lang.reflect.Method
-import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.nio.file.{ Files, Paths, StandardOpenOption }
 
 import CaseClassTypeAdapter.Member
-import co.blocke.scalajack.bytecode.{BytecodeGenerator, MethodGenerator}
+import co.blocke.scalajack.bytecode.{ BytecodeGenerator, MethodGenerator }
 
 import scala.collection.mutable
-import scala.language.{existentials, reflectiveCalls}
+import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 

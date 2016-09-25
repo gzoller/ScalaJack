@@ -1,7 +1,7 @@
 package co.blocke.scalajack.bytecode
 
 import org.objectweb.asm
-import asm.{Label, MethodVisitor}
+import asm.{ Label, MethodVisitor }
 import asm.Opcodes._
 import Type._
 
@@ -33,8 +33,6 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
 
   val `java.lang.Boolean.valueOf(boolean)` = `java.lang.Boolean`.invocation("valueOf", `java.lang.Boolean`, List(`boolean`), isInterface = false)
   val `java.lang.Boolean.booleanValue()` = `java.lang.Boolean`.invocation("booleanValue", `boolean`, List(), isInterface = false)
-
-
 
   def allocateLocal(name: String, valueType: Type): LocalVariable = {
     val index = nextLocalVariableIndex
@@ -172,7 +170,6 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
     val startOfBody = new Label
     val endOfBody = new Label
 
-
     label(startOfLoop)
 
     {
@@ -197,7 +194,6 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
 
     val hashCodes = keys.map(_.hashCode).distinct.sorted
     val hashCodeLabels = hashCodes.map(_ ⇒ new Label)
-
 
     val startOfHashCodeSwitch = new Label
     val endOfHashCodeSwitch = new Label
@@ -226,25 +222,25 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
       invokevirtual(`java.lang.String.hashCode()`)
 
       lookupSwitch(
-        cases = for (hashCode ← hashCodes) yield hashCode → { (_: MethodGenerator) ⇒
-          val filteredStringCases = stringCases.filter(_.key.hashCode == hashCode)
+        cases       = for (hashCode ← hashCodes) yield hashCode → { (_: MethodGenerator) ⇒
+        val filteredStringCases = stringCases.filter(_.key.hashCode == hashCode)
 
-          val hashCodeCaseLabels = filteredStringCases.map(_ ⇒ new Label)
-          val nextHashCodeCaseLabels = hashCodeCaseLabels.drop(1) :+ endOfHashCodeSwitch
+        val hashCodeCaseLabels = filteredStringCases.map(_ ⇒ new Label)
+        val nextHashCodeCaseLabels = hashCodeCaseLabels.drop(1) :+ endOfHashCodeSwitch
 
-          for ((stringCase, (caseLabel, nextCaseLabel)) ← filteredStringCases zip (hashCodeCaseLabels zip nextHashCodeCaseLabels)) {
-            label(caseLabel)
-            load(keyLocal)
-            loadConstant(stringCase.key)
-            invokevirtual(`java.lang.String.equals(Object)`)
-            jumpIfEqualToZero(nextCaseLabel)
-            loadConstant(stringCase.index)
-            store(indexLocal)
-            goto(endOfHashCodeSwitch)
-          }
-        },
-        defaultCase = { _ ⇒
+        for ((stringCase, (caseLabel, nextCaseLabel)) ← filteredStringCases zip (hashCodeCaseLabels zip nextHashCodeCaseLabels)) {
+          label(caseLabel)
+          load(keyLocal)
+          loadConstant(stringCase.key)
+          invokevirtual(`java.lang.String.equals(Object)`)
+          jumpIfEqualToZero(nextCaseLabel)
+          loadConstant(stringCase.index)
+          store(indexLocal)
+          goto(endOfHashCodeSwitch)
         }
+      },
+        defaultCase = { _ ⇒
+      }
       )
 
       label(endOfHashCodeSwitch)
@@ -255,15 +251,15 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
 
       load(indexLocal)
       tableSwitch(
-        minKey = 0,
-        cases = for ((stringCase, keyLabel) ← stringCases zip keyLabels) yield {
-          { (_: MethodGenerator) ⇒
-            stringCase.caseGenerator(this)
-          }
-        },
-        defaultCase = { _ ⇒
-          defaultCase(this)
+        minKey      = 0,
+        cases       = for ((stringCase, keyLabel) ← stringCases zip keyLabels) yield {
+        { (_: MethodGenerator) ⇒
+          stringCase.caseGenerator(this)
         }
+      },
+        defaultCase = { _ ⇒
+        defaultCase(this)
+      }
       )
 
       label(endOfStringIndexSwitch)
@@ -356,11 +352,10 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
           cast(from = primitiveType.boxed, to = primitiveType)
 
         case (fromReferenceType, `java.lang.Object`) if fromReferenceType.isReference ⇒
-          // Do nothing
+        // Do nothing
 
         case (fromReferenceType, toReferenceType) if fromReferenceType.isReference && toReferenceType.isReference ⇒
           checkcast(toReferenceType)
-
 
         case (`byte`, `java.lang.Byte`) ⇒
           invokestatic(`java.lang.Byte.valueOf(byte)`)
@@ -368,13 +363,11 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
         case (`java.lang.Byte`, `byte`) ⇒
           invokevirtual(`java.lang.Byte.byteValue()`)
 
-
         case (`char`, `java.lang.Character`) ⇒
           invokestatic(`java.lang.Character.valueOf(char)`)
 
         case (`java.lang.Character`, `char`) ⇒
           invokevirtual(`java.lang.Character.charValue()`)
-
 
         case (`double`, `java.lang.Double`) ⇒
           invokestatic(`java.lang.Double.valueOf(double)`)
@@ -382,13 +375,11 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
         case (`java.lang.Double`, `double`) ⇒
           invokevirtual(`java.lang.Double.doubleValue()`)
 
-
         case (`float`, `java.lang.Float`) ⇒
           invokestatic(`java.lang.Float.valueOf(float)`)
 
         case (`java.lang.Float`, `float`) ⇒
           invokevirtual(`java.lang.Float.floatValue()`)
-
 
         case (`int`, `java.lang.Integer`) ⇒
           invokestatic(`java.lang.Integer.valueOf(int)`)
@@ -396,20 +387,17 @@ class MethodGenerator(ownerType: Type, val mv: MethodVisitor) {
         case (`java.lang.Integer`, `int`) ⇒
           invokevirtual(`java.lang.Integer.intValue()`)
 
-
         case (`long`, `java.lang.Long`) ⇒
           invokestatic(`java.lang.Long.valueOf(long)`)
 
         case (`java.lang.Long`, `long`) ⇒
           invokevirtual(`java.lang.Long.longValue()`)
 
-
         case (`short`, `java.lang.Short`) ⇒
           invokestatic(`java.lang.Short.valueOf(short)`)
 
         case (`java.lang.Short`, `short`) ⇒
           invokevirtual(`java.lang.Short.shortValue()`)
-
 
         case (`boolean`, `java.lang.Boolean`) ⇒
           invokestatic(`java.lang.Boolean.valueOf(boolean)`)

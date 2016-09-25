@@ -1,8 +1,8 @@
 package co.blocke.scalajack.bytecode
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{ Files, Paths }
 
-import co.blocke.scalajack.{MemberName, Reader, TypeAdapter, Writer}
+import co.blocke.scalajack.{ MemberName, Reader, TypeAdapter, Writer }
 import org.objectweb.asm.Label
 
 object Thing2 extends App {
@@ -35,19 +35,16 @@ object Thing2 extends App {
 
     val caseClassConstructor = caseClassType.invocation("<init>", `void`, members.map(_.valueType), isInterface = false)
 
-
-    val memberTypeAdapterFields = for (member ← members) yield
-      defineField(s"${member.name}TypeAdapter", typeOf[TypeAdapter[_]](member.valueType))
-
+    val memberTypeAdapterFields = for (member ← members) yield defineField(s"${member.name}TypeAdapter", typeOf[TypeAdapter[_]](member.valueType))
 
     //    val `java.lang.Object.<init>()` = `java.lang.Object`.invocation("<init>", `void`, List(), isInterface = false)
-//
-//    defineConstructor(`memberNameTypeAdapter.field`.name → `memberNameTypeAdapter.field`.valueType) { c ⇒
-//      import c._
-//
-//      load(`this`)
-//      invokespecial(`java.lang.Object.<init>()`)
-//    }
+    //
+    //    defineConstructor(`memberNameTypeAdapter.field`.name → `memberNameTypeAdapter.field`.valueType) { c ⇒
+    //      import c._
+    //
+    //      load(`this`)
+    //      invokespecial(`java.lang.Object.<init>()`)
+    //    }
 
     defineConstructorFromFields()
 
@@ -88,39 +85,39 @@ object Thing2 extends App {
 
       whileLoop(
         condition = { _ ⇒
-          load(`reader.local`)
-          invokeinterface(`Reader.hasMoreMembers()`)
+        load(`reader.local`)
+        invokeinterface(`Reader.hasMoreMembers()`)
+      },
+        body      = { _ ⇒
+        load(`memberNameTypeAdapter.local`)
+        load(`reader.local`)
+        invokeinterface(`TypeAdapter.read(Reader)`)
+        checkcast(`java.lang.String`)
+        store(`memberName.local`)
+
+        stringSwitch(
+          keyLocal    = `memberName.local`,
+          indexLocal  = `memberIndex.local`,
+          cases       = for ((((member, memberTypeAdapterField), memberLocal), memberIndex) ← ((members zip memberTypeAdapterFields) zip memberLocals).zipWithIndex) yield {
+          member.name → { (_: MethodGenerator) ⇒
+            load(`this`)
+            getfield(memberTypeAdapterField)
+            load(`reader.local`)
+            invokeinterface(`TypeAdapter.read(Reader)`)
+            cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueType)
+            store(memberLocal)
+
+            load(`memberPresences.local`)
+            loadConstant(1 << memberIndex)
+            ior()
+            store(`memberPresences.local`)
+          }
         },
-        body = { _ ⇒
-          load(`memberNameTypeAdapter.local`)
-          load(`reader.local`)
-          invokeinterface(`TypeAdapter.read(Reader)`)
-          checkcast(`java.lang.String`)
-          store(`memberName.local`)
+          defaultCase = { _ ⇒
 
-          stringSwitch(
-            keyLocal = `memberName.local`,
-            indexLocal = `memberIndex.local`,
-            cases = for ((((member, memberTypeAdapterField), memberLocal), memberIndex) ← ((members zip memberTypeAdapterFields) zip memberLocals).zipWithIndex) yield {
-              member.name → { (_: MethodGenerator) ⇒
-                load(`this`)
-                getfield(memberTypeAdapterField)
-                load(`reader.local`)
-                invokeinterface(`TypeAdapter.read(Reader)`)
-                cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueType)
-                store(memberLocal)
-
-                load(`memberPresences.local`)
-                loadConstant(1 << memberIndex)
-                ior()
-                store(`memberPresences.local`)
-              }
-            },
-            defaultCase = { _ ⇒
-
-            }
-          )
         }
+        )
+      }
       )
 
       load(`reader.local`)
@@ -202,28 +199,28 @@ object Thing {
 
     whileLoop(
       condition = { _ ⇒
-        load(`reader.local`)
-        invokeinterface(`Reader.hasMoreMembers()`)
-      },
-      body = { _ ⇒
-        stringSwitch(
-          keyLocal = null,
-          indexLocal = null,
-          cases = List(
-            "foo" → { _ ⇒
-              getField(`foo.field`)
-            },
-            "bar" → { _ ⇒
-
-            }
-          ),
-          defaultCase = { _ ⇒
+      load(`reader.local`)
+      invokeinterface(`Reader.hasMoreMembers()`)
+    },
+      body      = { _ ⇒
+      stringSwitch(
+        keyLocal    = null,
+        indexLocal  = null,
+        cases       = List(
+          "foo" → { _ ⇒
+            getField(`foo.field`)
+          },
+          "bar" → { _ ⇒
 
           }
-        )
-        loadConstant("DONE")
-        pop()
-      }
+        ),
+        defaultCase = { _ ⇒
+
+        }
+      )
+      loadConstant("DONE")
+      pop()
+    }
     )
 
     for (member ← members) {
@@ -247,7 +244,7 @@ object Thing {
     getField(`foo.field`)
     putfield(`foo.field`)
 
-//    invokevirtual()
+    //    invokevirtual()
 
   }
 

@@ -1,9 +1,9 @@
 package co.blocke.scalajack.typeadapter
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.nio.file.{ Files, Paths, StandardOpenOption }
 
-import co.blocke.scalajack.bytecode.BytecodeGenerator
-import co.blocke.scalajack.{EmptyReader, _}
+import co.blocke.scalajack.bytecode.{ BytecodeGenerator, MethodGenerator }
+import co.blocke.scalajack.{ EmptyReader, _ }
 
 abstract class AbstractCaseClassTypeAdapter[T >: Null] extends TypeAdapter[T] {
 
@@ -34,7 +34,7 @@ abstract class AbstractCaseClassTypeAdapter[T >: Null] extends TypeAdapter[T] {
 object CaseClassTypeAdapterOptimizer {
 
   def optimize[T >: Null](ta: CaseClassTypeAdapter[T]): TypeAdapter[T] = {
-    import co.blocke.scalajack.bytecode.{ClassType, Field, LocalVariable, Type}
+    import co.blocke.scalajack.bytecode.{ ClassType, Field, LocalVariable, Type }
     import Type._
 
     val tpe = ta.tpe
@@ -61,10 +61,12 @@ object CaseClassTypeAdapterOptimizer {
       val `emptyReader.field` = defineField("emptyReader", `Reader`)
       val `memberNameTypeAdapter.field` = defineField("memberNameTypeAdapter", typeOf[TypeAdapter[MemberName]])
 
-      case class MemberField(name: String,
-                             index: Int,
-                             valueType: Type,
-                             valueTypeAdapterField: Field)
+      case class MemberField(
+        name:                  String,
+        index:                 Int,
+        valueType:             Type,
+        valueTypeAdapterField: Field
+      )
 
       val memberFields = ta.members map { member =>
         val valueType = typeOf(member.valueType)
@@ -82,11 +84,13 @@ object CaseClassTypeAdapterOptimizer {
         val `memberIndex.local` = allocateLocal("memberIndex", `int`)
         val `membersPresent.local` = allocateLocal("membersPresent", `int`)
 
-        case class MemberLocal(name: String,
-                               index: Int,
-                               valueType: Type,
-                               valueTypeAdapterField: Field,
-                               valueLocal: LocalVariable)
+        case class MemberLocal(
+          name:                  String,
+          index:                 Int,
+          valueType:             Type,
+          valueTypeAdapterField: Field,
+          valueLocal:            LocalVariable
+        )
 
         val memberL = memberFields map { memberField =>
           val valueType = memberField.valueType
@@ -103,52 +107,48 @@ object CaseClassTypeAdapterOptimizer {
         getfield(`memberNameTypeAdapter.field`)
         store(`memberNameTypeAdapter.local`)
 
+        loadConstant(0)
+        store(`membersPresent.local`)
+
         load(`reader.local`)
         invokeinterface(`Reader.beginObject()`)
 
         whileLoop(
           condition = { _ =>
-            load(`reader.local`)
-            invokeinterface(`Reader.hasMoreMembers()`)
-          },
-          body = { _ =>
-            load(`memberNameTypeAdapter.local`)
-            load(`reader.local`)
-            invokeinterface(`TypeAdapter.read(Reader)`)
-            cast(from = `TypeAdapter.read(Reader)`.returnType, to = `memberName.local`.valueType)
-            store(`memberName.local`)
+          load(`reader.local`)
+          invokeinterface(`Reader.hasMoreMembers()`)
+        },
+          body      = { _ =>
+          load(`memberNameTypeAdapter.local`)
+          load(`reader.local`)
+          invokeinterface(`TypeAdapter.read(Reader)`)
+          cast(from = `TypeAdapter.read(Reader)`.returnType, to = `memberName.local`.valueType)
+          store(`memberName.local`)
 
+          stringSwitch(
+            keyLocal    = `memberName.local`,
+            indexLocal  = `memberIndex.local`,
+            cases       =
+            memberL map { member =>
+              member.name -> { (_: MethodGenerator) =>
+                load(`this`)
+                getfield(member.valueTypeAdapterField)
+                load(`reader.local`)
+                invokeinterface(`TypeAdapter.read(Reader)`)
+                cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueLocal.valueType)
+                store(member.valueLocal)
+                load(`membersPresent.local`)
+                loadConstant(1 << member.index)
+                ior()
+                store(`membersPresent.local`)
+              }
+            },
+            defaultCase = { _ =>
             load(`reader.local`)
             invokeinterface(`Reader.skipValue()`)
-
-            //                load(`memberName.local`)
-            //                stringSwitch(
-            //                  keyLocal = `memberName.local`,
-            //                  indexLocal = `memberIndex.local`,
-            //                  cases =
-            //                    memberL map { member =>
-            //                      member.name -> { (_: MethodGenerator) =>
-            //                        load(`this`)
-            //                        getfield(member.valueTypeAdapterField)
-            //                        load(`reader.local`)
-            //                        invokeinterface(`TypeAdapter.read(Reader)`)
-            //                        cast(from = `TypeAdapter.read(Reader)`.returnType, to = member.valueLocal.valueType)
-            //                        store(member.valueLocal)
-
-            //                        load(`membersPresent.local`)
-            //                        loadConstant(1 << member.index)
-            //                        ior()
-            //                        store(`membersPresent.local`)
-            //                      }
-            //                    },
-            //                  defaultCase = { _ =>
-            //                  }
-            //                )
-
-            //                load(`this`)
-            //                load(`reader.local`)
-            //                invokeinterface(`Reader.skipValue()`)
           }
+          )
+        }
         )
 
         load(`reader.local`)

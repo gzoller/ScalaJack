@@ -31,16 +31,16 @@ object Type {
     val asmType = asm.Type.getType(currentMirror.runtimeClass(tpe))
 
     asmType match {
-      case asm.Type.VOID_TYPE ⇒ `void`
-      case asm.Type.BYTE_TYPE ⇒ `byte`
-      case asm.Type.CHAR_TYPE ⇒ `char`
-      case asm.Type.DOUBLE_TYPE ⇒ `double`
-      case asm.Type.FLOAT_TYPE ⇒ `float`
-      case asm.Type.INT_TYPE ⇒ `int`
-      case asm.Type.LONG_TYPE ⇒ `long`
-      case asm.Type.SHORT_TYPE ⇒ `short`
+      case asm.Type.VOID_TYPE    ⇒ `void`
+      case asm.Type.BYTE_TYPE    ⇒ `byte`
+      case asm.Type.CHAR_TYPE    ⇒ `char`
+      case asm.Type.DOUBLE_TYPE  ⇒ `double`
+      case asm.Type.FLOAT_TYPE   ⇒ `float`
+      case asm.Type.INT_TYPE     ⇒ `int`
+      case asm.Type.LONG_TYPE    ⇒ `long`
+      case asm.Type.SHORT_TYPE   ⇒ `short`
       case asm.Type.BOOLEAN_TYPE ⇒ `boolean`
-      case _ ⇒ ClassType(asmType.getClassName, tpe.typeArgs.map(typeOf(_)))
+      case _                     ⇒ ClassType(asmType.getClassName, tpe.typeArgs.map(typeOf(_)))
     }
   }
 
@@ -286,15 +286,15 @@ case class ClassType(className: String, typeArguments: List[Type]) extends Refer
     import Type._
 
     className match {
-      case "java.lang.Byte" ⇒ `byte`
+      case "java.lang.Byte"      ⇒ `byte`
       case "java.lang.Character" ⇒ `char`
-      case "java.lang.Double" ⇒ `double`
-      case "java.lang.Float" ⇒ `float`
-      case "java.lang.Integer" ⇒ `int`
-      case "java.lang.Long" ⇒ `long`
-      case "java.lang.Short" ⇒ `short`
-      case "java.lang.Boolean" ⇒ `boolean`
-      case _ ⇒ this
+      case "java.lang.Double"    ⇒ `double`
+      case "java.lang.Float"     ⇒ `float`
+      case "java.lang.Integer"   ⇒ `int`
+      case "java.lang.Long"      ⇒ `long`
+      case "java.lang.Short"     ⇒ `short`
+      case "java.lang.Boolean"   ⇒ `boolean`
+      case _                     ⇒ this
     }
   }
 
