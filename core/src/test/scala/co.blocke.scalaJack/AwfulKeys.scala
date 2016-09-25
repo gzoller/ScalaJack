@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import org.scalatest.Matchers._
-import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
+import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
 import scala.language.postfixOps
 
@@ -22,7 +22,7 @@ class AwfulKeys extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       ))
 
       val json = sjJS.render(before)
-      json should be ("""{"map":{"{\"f1\":\"cat\",\"f2\":1}":{"f3":1.0,"f4":[false,true]},"{\"f1\":\"dog\",\"f2\":2}":{"f3":2.0,"f4":[true]}}}""")
+      json should be("""{"map":{"{\"f1\":\"cat\",\"f2\":1}":{"f3":1.0,"f4":[false,true]},"{\"f1\":\"dog\",\"f2\":2}":{"f3":2.0,"f4":[true]}}}""")
 
       val after = sjJS.read[AwfulContainer](json)
 

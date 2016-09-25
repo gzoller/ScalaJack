@@ -1,11 +1,13 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.json.{StringJsonWriter, Tokenizer}
-import co.blocke.scalajack.{Reader, TypeAdapter, Writer}
+import co.blocke.scalajack.json.{ StringJsonWriter, Tokenizer }
+import co.blocke.scalajack.{ Reader, TypeAdapter, Writer }
 
-case class StringParsingTypeAdapter[T](tokenizer: Tokenizer,
-                                       stringTypeAdapter: TypeAdapter[String],
-                                       valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] {
+case class StringParsingTypeAdapter[T](
+  tokenizer:         Tokenizer,
+  stringTypeAdapter: TypeAdapter[String],
+  valueTypeAdapter:  TypeAdapter[T]
+) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     val json = stringTypeAdapter.read(reader)

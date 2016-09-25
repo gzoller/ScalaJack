@@ -3,7 +3,7 @@ package typeadapter
 
 import co.blocke.scalajack.json.Tokenizer
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.language.existentials
 
 object MapTypeAdapter extends TypeAdapterFactory {
