@@ -111,7 +111,7 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("Must read simple JSON") {
         val js = """{"name":"Fred","age":29,"bogus":false,"addr":{"street":"123 Main","zip":29384}}"""
         val z = sjJS.read[Pristine](js)
-        (z == Pristine("Fred", 29, None, Address("123 Main", 29384))) should be(true)
+        z should be(Pristine("Fred", 29, None, Address("123 Main", 29384)))
       }
       it("Must read all primitive types") {
         val js = """{"a":5,"b":17,"c":false,"d":"hey","e":"you","f":1.2,"g":1.2,"h":9223372036854775800,"i":"Z","j":null,"k":-14,"l":2,"m":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","n":520560000000,"o":null}"""

@@ -16,7 +16,7 @@ object EmptyReader extends Reader {
 
   override var position: Int = _
 
-  override def read(): TokenType = ???
+  override def read(): TokenType = { TokenType.Nothing }
 
   override def source: Array[Char] = ???
 

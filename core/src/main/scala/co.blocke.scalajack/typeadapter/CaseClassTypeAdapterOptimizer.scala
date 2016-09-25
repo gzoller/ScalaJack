@@ -1,9 +1,9 @@
 package co.blocke.scalajack.typeadapter
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.nio.file.{ Files, Paths, StandardOpenOption }
 
-import co.blocke.scalajack.bytecode.{BytecodeGenerator, MethodGenerator}
-import co.blocke.scalajack.{EmptyReader, _}
+import co.blocke.scalajack.bytecode.{ BytecodeGenerator, MethodGenerator }
+import co.blocke.scalajack.{ EmptyReader, _ }
 import org.objectweb.asm.Label
 
 abstract class AbstractCaseClassTypeAdapter[T >: Null] extends TypeAdapter[T] {
