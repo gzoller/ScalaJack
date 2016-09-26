@@ -195,45 +195,45 @@ class JavaPrimKeys() extends FunSpec with Matchers {
       describe("Simple Primitives:") {
         it("Bad BigDecimal Key") {
           val js = """{"m":{"fred":1,"789.123":2}}"""
-          val msg = """Can't read BigDecimal with given value fred
+          val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789.123":2}}
           |-------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
         }
         it("Bad BigInt Key") {
           val js = """{"m":{"fred":1,"789":2}}"""
-          val msg = """Can't read BigInteger with given value fred
+          val msg = """Expected value token of type Number, not String when reading BigInteger value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789":2}}
           |-------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Bad Boolean Key") {
           val js = """{"m":{"true":false,"123":true}}"""
-          val msg = """For input string: "123"
+          val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes?)
           |{"m":{"true":false,"123":true}}
           |--------------------^""".stripMargin
-          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJBoolean](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg
         }
         it("Bad Byte Key") {
           val js = """{"m":{"16":2,"x48":9}}"""
-          val msg = """For input string: "x48"
+          val msg = """Expected value token of type Number, not String when reading Byte value.  (Is your value wrapped in quotes?)
           |{"m":{"16":2,"x48":9}}
           |--------------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJByte](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJByte](js) should have message msg
         }
         it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
           val js = """{"m":{null:"A","z":"Z"}}"""
-          val msg = """Expected value token of type String, not Null when reading Character value.  (Is your value wrapped in quotes?)
+          val msg = """Map keys cannot be null.
           |{"m":{null:"A","z":"Z"}}
           |------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJChar](js) should have message msg
         }
         it("Bad Double Key") {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-          val msg = """For input string: "true"
+          val msg = """Expected value token of type Number, not True when reading Double value.  (Is your value wrapped in quotes?)
           |{"m":{"12.34":56.78,"true":34.56}}
           |---------------------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJDouble](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
@@ -251,17 +251,17 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("Bad Long Key") {
           val js = """{"m":{"12":56,"hey":34}}"""
-          val msg = """For input string: "hey"
+          val msg = """Expected value token of type Number, not String when reading Long value.  (Is your value wrapped in quotes?)
           |{"m":{"12":56,"hey":34}}
           |---------------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJLong](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
         }
         it("Bad Number Key") {
           val js = """{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          val msg = """For input string: "x"
+          val msg = """Cannot parse value into intended type
           |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"
           |-------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJNumber](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Bad Short Key") {
           val js = """{"m":{"99999":56,"90":34}}"""

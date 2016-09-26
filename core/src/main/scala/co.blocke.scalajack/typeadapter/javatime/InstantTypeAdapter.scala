@@ -6,6 +6,8 @@ import java.time.Instant
 
 object InstantTypeAdapter extends SimpleTypeAdapter[Instant] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): Instant =
     reader.peek match {
       case TokenType.Null ⇒

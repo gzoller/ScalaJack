@@ -68,8 +68,8 @@ case class AllColl(
   c: Option[Int],
   d: Option[String],
   e: List[Option[Int]],
-  f: Map[String, Int],
-  g: Map[Foo, Option[WithType[Int]]] // test sloppy
+  f: Map[String, Int]
+// g: Map[Foo, Option[WithType[Int]]] // test sloppy
 )
 
 object Colors extends Enumeration {

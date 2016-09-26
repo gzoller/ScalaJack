@@ -169,7 +169,7 @@ class ScalaPrim() extends FunSpec with Matchers {
           |-------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleEnum](js) should have message msg
         val js2 = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}"""
-        val msg2 = """No value found for 'Bogus'
+        val msg2 = """No value found in enumeration co.blocke.scalajack.test.primitives.Size$ for 'Bogus'
           |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}
           |--------------------^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js2) should have message msg2

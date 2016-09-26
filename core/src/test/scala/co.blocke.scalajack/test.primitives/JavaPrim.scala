@@ -192,9 +192,6 @@ class JavaPrim() extends FunSpec with Matchers {
         }
       }
     }
-    //
-    // TODO: (negative) Attempt to parse JSON into wrong object
-    //
     describe("--- Negative Tests ---") {
       describe("Simple Primitives:") {
         it("BigDecimal must break") {
@@ -213,7 +210,7 @@ class JavaPrim() extends FunSpec with Matchers {
         }
         it("Boolean must break") {
           val js = """{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}"""
-          val msg = """Expected value token of type Number, not String when reading Boolean value.  (Is your value wrapped in quotes?)
+          val msg = """Expected value token of type True or False, not String when reading Boolean value.  (Is your value wrapped in quotes?)
             |{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}
             |--------------------------------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg

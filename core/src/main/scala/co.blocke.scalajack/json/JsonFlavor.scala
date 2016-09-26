@@ -18,7 +18,7 @@ case class JsonFlavor() extends JackFlavor[String] with ScalaJackLike[String] {
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
-    val writer = new StringJsonWriter(true) // only canonical JSON supported for now
+    val writer = new StringJsonWriter()
     val typeAdapter = context.typeAdapterOf[T]
     typeAdapter.write(value, writer)
     val jsonString = writer.jsonString

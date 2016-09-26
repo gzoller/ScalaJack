@@ -6,14 +6,15 @@ import TokenType.TokenType
 class TokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
-    tokenTypes:          Array[TokenType],
-    tokenOffsets:        Array[Int],
+    val tokenTypes:      Array[TokenType],
+    val tokenOffsets:    Array[Int],
     tokenLengths:        Array[Int]
 ) extends Reader {
 
   override var position = -1
 
   override def peek: TokenType = tokenTypes(position + 1)
+  def poke(tt: TokenType) = tokenTypes(position + 1) = tt
 
   override def showError(): String = {
     val charPos = tokenOffsets(position)

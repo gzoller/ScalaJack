@@ -18,7 +18,7 @@ object MapTypeAdapter extends TypeAdapterFactory {
         if (keyType =:= typeOf[String]) {
           stringTypeAdapter
         } else {
-          StringParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, context.typeAdapter(keyType))
+          NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, context.typeAdapter(keyType))
         }
 
       val valueType = tpe.dealias.typeArgs(1)

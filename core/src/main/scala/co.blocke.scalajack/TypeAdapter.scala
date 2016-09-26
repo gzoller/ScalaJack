@@ -2,6 +2,8 @@ package co.blocke.scalajack
 
 trait TypeAdapter[T] {
 
+  val isStringKind: Boolean = false
+
   def read(reader: Reader): T
 
   def write(value: T, writer: Writer): Unit

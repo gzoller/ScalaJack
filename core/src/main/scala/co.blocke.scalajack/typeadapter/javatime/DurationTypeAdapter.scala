@@ -6,6 +6,8 @@ import java.time.Duration
 
 object DurationTypeAdapter extends SimpleTypeAdapter[Duration] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): Duration =
     reader.peek match {
       case TokenType.Null ⇒

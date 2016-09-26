@@ -13,7 +13,6 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       it("With Any Key") {
         val inst = AnyShell(Map(123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
         val js = sj.render(inst)
-        println(js)
         assertResult("""{"m":{"false":"16","123.456":true,"Fred":"Wilma","293845":"Greg","16":null}}""") { js }
         val read = sj.read[AnyShell](js)
         assertResult("""List((Fred,java.lang.String), (293845,java.lang.Integer), (123.456,java.lang.Float), (16,java.lang.Byte), (false,java.lang.Boolean))""") {
@@ -23,7 +22,6 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       it("With BigDecimal Key") {
         val inst = SampleBigDecimal(Map(BigDecimal(123.456) -> BigDecimal(1), BigDecimal(789.123) -> BigDecimal(2)))
         val js = sj.render(inst)
-        println(js)
         assertResult("""{"m":{"123.456":1,"789.123":2}}""") { js }
         assertResult(inst) {
           sj.read[SampleBigDecimal](js)
@@ -112,32 +110,32 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
     }
     describe("--- Negative Tests ---") {
       it("Bad BigDecimal Key") {
-        val js = """{"m":{"fred":1,"789.123":2}}"""
-        val msg = """Can't read BigDecimal with given value fred
-          |{"m":{"fred":1,"789.123":2}}
-          |-------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
+        val js = """{"m":{"789.123":1,"fred":2}}"""
+        val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
+          |{"m":{"789.123":1,"fred":2}}
+          |-------------------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"fred":1,"789":2}}"""
-        val msg = """Can't read BigInt with given value fred
+        val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789":2}}
           |-------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleBigInt](js) should have message msg
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
-        val msg = """For input string: "123"
+        val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
           |{"m":{"true":false,"123":true}}
           |--------------------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleBoolean](js) should have message msg
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js) should have message msg
       }
       it("Bad Byte Key") {
         val js = """{"m":{"16":2,"x48":9}}"""
-        val msg = """For input string: "x48"
+        val msg = """Expected token of type Number, not String
           |{"m":{"16":2,"x48":9}}
           |--------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleByte](js) should have message msg
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleByte](js) should have message msg
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
         val js = """{"m":{null:"A","z":"Z"}}"""
@@ -148,10 +146,10 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-        val msg = """For input string: "true"
+        val msg = """Expected token of type Number, not True
           |{"m":{"12.34":56.78,"true":34.56}}
           |---------------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
@@ -176,10 +174,10 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Long Key") {
         val js = """{"m":{"12":56,"hey":34}}"""
-        val msg = """For input string: "hey"
+        val msg = """Expected token of type Number, not String
           |{"m":{"12":56,"hey":34}}
           |---------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleLong](js) should have message msg
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleLong](js) should have message msg
       }
       it("Bad Short Key") {
         val js = """{"m":{"99999":56,"90":34}}"""

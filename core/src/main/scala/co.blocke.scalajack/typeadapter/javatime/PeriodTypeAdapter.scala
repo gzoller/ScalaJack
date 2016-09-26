@@ -6,6 +6,8 @@ import java.time.Period
 
 object PeriodTypeAdapter extends SimpleTypeAdapter[Period] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): Period =
     reader.peek match {
       case TokenType.Null ⇒

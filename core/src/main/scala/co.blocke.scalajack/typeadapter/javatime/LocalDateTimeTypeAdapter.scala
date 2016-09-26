@@ -7,6 +7,8 @@ import java.time.LocalDateTime
 
 object LocalDateTimeTypeAdapter extends SimpleTypeAdapter[LocalDateTime] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): LocalDateTime =
     reader.peek match {
       case TokenType.Null ⇒
