@@ -4,9 +4,9 @@ import co.blocke.scalajack.json.{ StringJsonWriter, Tokenizer }
 import co.blocke.scalajack.{ Reader, TypeAdapter, Writer }
 
 case class StringParsingTypeAdapter[T](
-  tokenizer:         Tokenizer,
-  stringTypeAdapter: TypeAdapter[String],
-  valueTypeAdapter:  TypeAdapter[T]
+    tokenizer:         Tokenizer,
+    stringTypeAdapter: TypeAdapter[String],
+    valueTypeAdapter:  TypeAdapter[T]
 ) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
