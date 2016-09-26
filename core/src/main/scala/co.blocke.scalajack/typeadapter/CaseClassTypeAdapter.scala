@@ -43,14 +43,14 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
     }
 
-    def defaultValue: T =
-      defaultValueMirror match {
-        case Some(mirror) ⇒
-          mirror.apply().asInstanceOf[T]
+    def defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T])
+    // defaultValueMirror match {
+    //   case Some(mirror) ⇒
+    //     mirror.apply().asInstanceOf[T]
 
-        case None ⇒
-          valueTypeAdapter.read(EmptyReader)
-      }
+    //   case None ⇒
+    //     valueTypeAdapter.read(EmptyReader)
+    // }
 
   }
 
@@ -154,7 +154,9 @@ case class CaseClassTypeAdapter[T >: Null](
         reader.endObject()
 
         for (member ← members if !found(member.index)) {
-          arguments(member.index) = member.defaultValue
+          arguments(member.index) = member.defaultValue.getOrElse(
+            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+          )
         }
 
         constructorMirror.apply(arguments: _*).asInstanceOf[T]

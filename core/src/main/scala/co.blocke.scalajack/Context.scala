@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 
 import typeadapter._
-import typeadapter.joda._
 import typeadapter.javatime._
 import typeadapter.javaprimitives._
 
@@ -49,7 +48,6 @@ object Context {
     .withFactory(JavaBigDecimalTypeAdapter)
     .withFactory(JavaBigIntegerTypeAdapter)
     .withFactory(UUIDTypeAdapter)
-    .withFactory(JodaDateTimeTypeAdapter)
     .withFactory(DurationTypeAdapter)
     .withFactory(InstantTypeAdapter)
     .withFactory(LocalDateTimeTypeAdapter)

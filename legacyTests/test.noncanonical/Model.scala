@@ -50,29 +50,3 @@ case class SampleZonedDateTime(m: Map[ZonedDateTime, ZonedDateTime])
 
 // === Any primitives
 case class AnyShell(m: Map[Any, Any])
-
-// === Class Keys
-case class SimpleClass(name: String, age: Int, isOk: Boolean, favorite: Any)
-case class SampleSimple(m: Map[SimpleClass, SimpleClass])
-case class ComplexClass(id: UUID, simple: SimpleClass, allDone: Boolean)
-case class SampleComplex(m: Map[ComplexClass, ComplexClass])
-
-object Food extends Enumeration {
-  val Seeds, Meat, Pellets, Veggies = Value
-}
-trait Pet {
-  val name: String
-  val food: Food.Value
-}
-case class FishPet(name: String, food: Food.Value, waterTemp: Double) extends Pet
-case class DogPet(name: String, food: Food.Value, numLegs: Int) extends Pet
-case class CompoundPet(name: String, food: Food.Value, pet: Pet) extends Pet
-trait PetHolder {
-  val address: String
-  val pet: Pet
-}
-case class ShinyPetHolder(address: String, pet: Pet) extends PetHolder
-case class SamplePet(m: Map[Pet, Pet])
-case class PolyClass(lookup: Map[String, Int], favs: List[String])
-case class SamplePolyClass(m: Map[PolyClass, PolyClass])
-case class SampleShiny(m: Map[PetHolder, PetHolder])
