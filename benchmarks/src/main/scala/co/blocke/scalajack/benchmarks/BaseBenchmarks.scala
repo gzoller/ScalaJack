@@ -77,7 +77,6 @@ class BaseBenchmarksState {
     .withHintModifiers((typeOf[Human] -> humanHintMod))
 
   val listOfPersons = scalaJack.read[List[Person]](jsonString)
-  println(":::::: HERE: " + listOfPersons.size)
 }
 
 @State(Scope.Thread)
