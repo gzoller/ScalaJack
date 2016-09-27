@@ -105,8 +105,15 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           sj2.read[SampleShiny](js)
         }
       }
-      it("Noncanonical where key value is a class having a noncanoncial map") {
-        (pending)
+      it("Key value is a class having a noncanoncial map") {
+        val a = NCKey(Map(0 -> false, 1 -> true), "truth")
+        val b = NCKey(Map(1 -> false, 0 -> true), "lie")
+        val inst = SampleNCKey(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"nc\":{\"0\":false,\"1\":true},\"name\":\"truth\"}":{"nc":{"1":false,"0":true},"name":"lie"}}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleNCKey](js)
+        }
       }
       it("Parameterized class") {
         (pending)
@@ -120,12 +127,13 @@ class ClassPrimKeys() extends FunSpec with Matchers {
     }
     describe("--- Negative Tests ---") {
       it("Bad (invalid--missing field) class json as map key") {
-        (pending)
-        // TODO: Parsing should fail here but it doesn't.  Failure is post-parse, which is wrong since
-        // json is not well-formed
-        //
-        // val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        // sj.read[SampleSimple](js)
+        val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
+        val msg = """Character out of place. ',' not expected here.
+          |{"nameLarry","age":32,"favorite":"golf"
+          |------------^ Extracted from source here:
+          |{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{
+          |-------^""".stripMargin
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleSimple](js) should have message msg
       }
       it("Bad class json as map key (valid json, but wrong for given class)") {
         val js = """{"m":{"{\"name\":\"Larry\",\"age\":32,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
@@ -142,31 +150,73 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleComplex](js) should have message msg
       }
       it("Bad (invalid) trait json as map key") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        val msg = """Character out of place. ':' not expected here.
+          |t":"co.blocke.scalajack.test.noncanonical.FishPet":"Flipper","food":"Veggies","waterTemp":74.33}
+          |--------------------------------------------------^ Extracted from source here:
+          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical
+          |-------^""".stripMargin
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) as map key") {
-        (pending)
+        val js = """{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        val msg = """Could not find type field named "_hint"
+          |{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"water
+          |-------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) as map key") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        val msg = """Unable to find class named "co.blocke.scalajack.test.noncanonical.Bogus"
+          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical
+          |-------^""".stripMargin
+        the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad (invalid) trait json for member trait") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}"""
+        val msg = """Character out of place. String not expected here.
+        |blocke.scalajack.test.noncanonical.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}
+        |--------------------------------------------------^""".stripMargin
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) for member trait") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
+        val msg = """Could not find type field named "_hint""""
+        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.test.noncanonical.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
+        val msg = """Unable to find class named "co.blocke.scalajack.test.noncanonical.Bogus""""
+        the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad collection value in map key class having collections") {
-        (pending)
+        val js = """{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\",\"two\"]}":{"lookup":{"x":9,"y":10},"favs":["aye","you"]}}}"""
+        val msg = """Expected token of type Number, not True
+        |{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\"
+        |-------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePolyClass](js) should have message msg
       }
       it("Bad custom hint value for map key trait") {
-        (pending)
+        val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
+        val sj2 = ScalaJack()
+          .withHints((typeOf[Pet] -> "kind"))
+          .withHintModifiers((typeOf[Pet] -> petHintMod))
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"sort\":\"BreathsWater\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.noncanonical.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
+        val msg = """Could not find type field named "kind"
+        |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical
+        |-------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj2.read[SamplePet](js) should have message msg
       }
       it("Bad custom hint value for key member's trait") {
-        (pending)
+        val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
+        val sj2 = ScalaJack()
+          .withHints((typeOf[Pet] -> "kind"))
+          .withHintModifiers((typeOf[Pet] -> petHintMod))
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsLava\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.noncanonical.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
+        val msg = """Could not find type field named "kind"
+        |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical
+        |-------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj2.read[SamplePet](js) should have message msg
       }
     }
   }

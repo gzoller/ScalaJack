@@ -1,8 +1,7 @@
 
+	test.tokenizer
 	test.primitives
 	test.collections
 	test.parameterized
-	test.corner
+	test.misc
 	test.custom
-	test.hints
-	test.tokenizer

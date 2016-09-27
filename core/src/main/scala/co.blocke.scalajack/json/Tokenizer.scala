@@ -14,19 +14,23 @@ class Tokenizer(val capacity: Int = 1024) {
   private val ExpectComma: Int = ExpectColon << 1
   private val ExpectEndOfStructure: Int = ExpectComma << 1
 
-  def showError(source: Array[Char], charPos: Int): String = {
-    val startPosOffset = if (charPos - 50 < 0) charPos else 50
-    val startPos = charPos - startPosOffset
-    val endPos = if (charPos + 50 > source.length) source.length else charPos + 50
+  def showError(): String = {
+    val startPosOffset = if (position - 50 < 0) position else 50
+    val startPos = position - startPosOffset
+    val endPos = if (position + 50 > source.length) source.length else position + 50
     val buf = new StringBuffer()
     buf.append(source.subSequence(startPos, endPos).toString + "\n")
     buf.append("-" * startPosOffset + "^")
     buf.toString
   }
 
-  def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
+  private var position: Int = 0
+  private var source = Array.empty[Char]
+
+  def tokenize(src: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
     val maxPosition = offset + length
-    var position = offset
+    position = offset
+    source = src
 
     val tokenTypes = new Array[TokenType](capacity)
     val tokenOffsets = new Array[Int](capacity)
@@ -125,7 +129,7 @@ class Tokenizer(val capacity: Int = 1024) {
     while (position < maxPosition) {
       source(position) match {
         case '{' ⇒
-          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError(source, position))
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError())
           pushValid()
           setValidBit(ObjectContext)
           setValidBit(ExpectKey)
@@ -134,7 +138,7 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case '}' ⇒
-          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma) && !isValidSet(ExpectKey)) || isValidSet(ArrayContext)) throw new IllegalArgumentException("Character out of place. '}' not expected here.\n" + showError(source, position))
+          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma) && !isValidSet(ExpectKey)) || isValidSet(ArrayContext)) throw new IllegalArgumentException("Character out of place. '}' not expected here.\n" + showError())
           unsetValidBit(ObjectContext)
           unsetValidBit(ExpectComma)
           unsetValidBit(ExpectKey)
@@ -148,7 +152,7 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case '[' ⇒
-          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '[' not expected here.\n" + showError(source, position))
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '[' not expected here.\n" + showError())
           pushValid()
           setValidBit(ArrayContext)
           setValidBit(ExpectValue)
@@ -157,7 +161,7 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case ']' ⇒
-          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError(source, position))
+          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError())
           unsetValidBit(ArrayContext)
           unsetValidBit(ExpectComma)
           unsetValidBit(ExpectValue)
@@ -171,13 +175,13 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case ':' ⇒
-          if (!isValidSet(ExpectColon)) throw new IllegalArgumentException("Character out of place. ':' not expected here.\n" + showError(source, position))
+          if (!isValidSet(ExpectColon)) throw new IllegalArgumentException("Character out of place. ':' not expected here.\n" + showError())
           unsetValidBit(ExpectColon)
           setValidBit(ExpectValue)
           position += 1
 
         case ',' ⇒
-          if (!isValidSet(ExpectComma)) throw new IllegalArgumentException("Character out of place. ',' not expected here.\n" + showError(source, position))
+          if (!isValidSet(ExpectComma)) throw new IllegalArgumentException("Character out of place. ',' not expected here.\n" + showError())
           unsetValidBit(ExpectComma)
           if (isValidSet(ObjectContext))
             setValidBit(ExpectKey)
@@ -198,7 +202,7 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case '"' ⇒
-          if (!isValidSet(ExpectKey) && !isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. String not expected here.\n" + showError(source, position))
+          if (!isValidSet(ExpectKey) && !isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. String not expected here.\n" + showError())
 
           position += 1 // Skip the leading double-quote
 
@@ -211,7 +215,7 @@ class Tokenizer(val capacity: Int = 1024) {
               position += 1
             }
           }
-          if (position == maxPosition) throw new IllegalArgumentException("Unterminated string\n" + showError(source, position))
+          if (position == maxPosition) throw new IllegalArgumentException("Unterminated string\n" + showError())
 
           appendToken(TokenType.String, start, position - start)
           position += 1 // Skip the trailing double-quote
@@ -227,7 +231,7 @@ class Tokenizer(val capacity: Int = 1024) {
           }
 
         case ch ⇒
-          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError(source, position))
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
           // Integer
           if (isIntegerChar(ch)) {
             val start = position
@@ -277,7 +281,7 @@ class Tokenizer(val capacity: Int = 1024) {
           } else if (isDecimalPoint(ch)) {
 
           } else {
-            throw new IllegalArgumentException(s"Unknown character: $ch\n" + showError(source, position))
+            throw new IllegalArgumentException(s"Unknown character: $ch\n" + showError())
           }
           unsetValidBit(ExpectValue)
           unsetValidBit(ExpectEndOfStructure)
@@ -287,9 +291,9 @@ class Tokenizer(val capacity: Int = 1024) {
     }
     if (validPos > 0) {
       if (isValidSet(ArrayContext))
-        throw new IllegalArgumentException("Unterminated array\n" + showError(source, position))
+        throw new IllegalArgumentException("Unterminated array\n" + showError())
       else
-        throw new IllegalArgumentException("Unterminated object\n" + showError(source, position))
+        throw new IllegalArgumentException("Unterminated object\n" + showError())
     }
     appendToken(TokenType.End, position, 0)
 

@@ -139,10 +139,10 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
         val js = """{"m":{null:"A","z":"Z"}}"""
-        val msg = """Expected token of type String, not Null
+        val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
           |{"m":{null:"A","z":"Z"}}
           |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleChar](js) should have message msg
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""

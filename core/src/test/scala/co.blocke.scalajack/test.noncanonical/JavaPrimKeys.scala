@@ -223,10 +223,10 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
           val js = """{"m":{null:"A","z":"Z"}}"""
-          val msg = """Map keys cannot be null.
+          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
           |{"m":{null:"A","z":"Z"}}
           |------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJChar](js) should have message msg
+          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJChar](js) should have message msg
         }
         it("Bad Double Key") {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
@@ -258,10 +258,12 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("Bad Number Key") {
           val js = """{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          val msg = """Cannot parse value into intended type
+          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
+          |0x
+          |-^ Extracted from source here:
           |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"
           |-------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
+          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Bad Short Key") {
           val js = """{"m":{"99999":56,"90":34}}"""

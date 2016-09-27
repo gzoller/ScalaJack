@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.json.{ StringJsonWriter, Tokenizer }
+import co.blocke.scalajack.json.{ StringJsonWriter, Tokenizer, TokenReader }
 import co.blocke.scalajack.{ Reader, TypeAdapter, Writer }
 
 case class NoncanonicalMapKeyParsingTypeAdapter[T](
@@ -16,18 +16,27 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
     else {
       val json = stringTypeAdapter.read(reader)
       val jsonCharArray = json.toCharArray
-      val nestedReader = tokenizer.tokenize(jsonCharArray, 0, jsonCharArray.length)
+      val nestedReader = try {
+        tokenizer.tokenize(jsonCharArray, 0, jsonCharArray.length)
+      } catch {
+        case t: java.lang.IllegalArgumentException ⇒
+          val msg = t.getMessage.split("\n")(0)
+          throw new java.lang.IllegalArgumentException(msg + "\n" + tokenizer.showError() + " Extracted from source here:\n" + reader.showError())
+      }
       if (nestedReader.peek == TokenType.UnknownLiteralName) // String values in Any type
         nestedReader.poke(TokenType.String)
       val valueParsed = try {
         valueTypeAdapter.read(nestedReader)
       } catch {
-        case t: java.lang.IllegalStateException => // Re-work the error message to point to the src text, not nested text for better clarity
+        case t: java.lang.IllegalStateException ⇒ // Re-work the error message to point to the src text, not nested text for better clarity
           val msg = t.getMessage.split("\n")(0)
           throw new java.lang.IllegalStateException(msg + "\n" + reader.showError())
-        case t: java.lang.NumberFormatException => // Re-work the error message to point to the src text, not nested text for better clarity
+        case t: java.lang.NumberFormatException ⇒ // Re-work the error message to point to the src text, not nested text for better clarity
           val msg = t.getMessage.split("\n")(0)
           throw new java.lang.NumberFormatException(msg + "\n" + reader.showError())
+        case t: java.lang.ClassNotFoundException ⇒
+          val msg = t.getMessage.split("\n")(0)
+          throw new java.lang.ClassNotFoundException(msg + "\n" + reader.showError())
       }
       if (nestedReader.hasNext)
         throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
