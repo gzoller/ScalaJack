@@ -86,6 +86,19 @@ class BaseBenchmarksState {
     jsonFormat6(Person)
   }
 
+  val series4vc = co.blocke.series4.VisitorContext(
+    hintMap         = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
+    hintValueRead   = Map("co.blocke.scalajack.benchmarks.Human" → {
+      case "Male"   ⇒ new String("co.blocke.scalajack.benchmarks.Male")
+      case "Female" ⇒ new String("co.blocke.scalajack.benchmarks.Female")
+    }),
+    hintValueRender = Map("co.blocke.scalajack.benchmarks.Human" → {
+      case "co.blocke.scalajack.benchmarks.Male"   ⇒ new String("Male")
+      case "co.blocke.scalajack.benchmarks.Female" ⇒ new String("Female")
+    })
+  )
+  val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
+
 }
 
 @State(Scope.Thread)
@@ -179,6 +192,16 @@ class BaseBenchmarks {
   //  @Benchmark
   def writeScalaJack(state: BaseBenchmarksState): String = {
     state.scalaJack.render[List[Person]](state.listOfPersons, state.vc)
+  }
+
+  @Benchmark
+  def readSeries4ScalaJack(state: BaseBenchmarksState): List[Person] = {
+    state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
+  }
+
+  @Benchmark
+  def writeSeries4ScalaJack(state: BaseBenchmarksState): String = {
+    state.series4ScalaJack.render[List[Person]](state.listOfPersons, state.series4vc)
   }
 
 }
