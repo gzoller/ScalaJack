@@ -16,6 +16,8 @@ class TokenReader(
   override def peek: TokenType = tokenTypes(position + 1)
   def poke(tt: TokenType) = tokenTypes(position + 1) = tt
 
+  private[scalajack] def getTokens() = tokenTypes.take(numberOfTokens).toList
+
   override def showError(): String = {
     val charPos = tokenOffsets(position)
     val startPosOffset = if (charPos - 50 < 0) charPos else 50
