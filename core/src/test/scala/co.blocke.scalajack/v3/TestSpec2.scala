@@ -25,10 +25,10 @@ class TestSpec2 extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Support changing type hint") {
         val t = Three("three", Num.A, Wow1("foo", 17))
-        val vc = VisitorContext().withDefaultHint("hey")
-        val js2 = ScalaJack().render(t, vc)
+        val sj = ScalaJack().withDefaultHint("hey")
+        val js2 = sj.render(t)
         js2 should equal("""{"name":"three","two":"A","pp":{"hey":"co.blocke.scalajack.test.v3.Wow1","a":"foo","b":17}}""")
-        val u = ScalaJack().read[Three](js2, vc)
+        val u = sj.read[Three](js2)
         u should equal(t)
       }
       it("Top-level trait") {
