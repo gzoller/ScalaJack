@@ -44,7 +44,7 @@ object Reflection {
   //
   // It was looking for Z so it would match Some(Char)
   //
-  private def solveForNeedleAfterSubstitution(
+  def solveForNeedleAfterSubstitution(
     haystackBeforeSubstitution: Type,
     haystackAfterSubstitution:  Type,
     needleBeforeSubstitution:   Type
