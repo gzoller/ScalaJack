@@ -6,7 +6,7 @@ import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
-class CustomHandler() extends FunSpec with Matchers {
+class CustomAdapter() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
