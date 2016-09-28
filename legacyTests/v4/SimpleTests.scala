@@ -151,13 +151,14 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           None,
           Some("Me"),
           List(Some(1), None, Some(3), None),
-          Map("a" -> 1),
-          Map(Foo("a", 1) -> Some(WithType(5)), Foo("b", 2) -> Some(WithType(7)), Foo("c", 3) -> None)
+          Map("a" -> 1)
+        // Map(Foo("a", 1) -> Some(WithType(5)), Foo("b", 2) -> Some(WithType(7)), Foo("c", 3) -> None)
         )
-        val js = """{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1},"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}"""
+        val js = """{"a":[1,2],"b":[{"name":"one","age":1},{"name":"two","age":2}],"d":"Me","e":[1,3],"f":{"a":1}}}""" //,"g":{{"name":"a","age":1}:{"me":5},{"name":"b","age":2}:{"me":7}}}"""
         val z = sjJS.read[AllColl](js)
         // filter out the None values for comparison
-        (all.copy(e = all.e.filter(_.isDefined), g = all.g.filter(_._2.isDefined)) == z) should be(true)
+        (all.copy(e = all.e.filter(_.isDefined)) == z) should be(true)
+        // (all.copy(e = all.e.filter(_.isDefined), g = all.g.filter(_._2.isDefined)) == z) should be(true)
       }
       */
       it("Must read traits") {

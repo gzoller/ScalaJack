@@ -4,14 +4,15 @@ package javaprimitives
 
 object JavaCharacterTypeAdapter extends SimpleTypeAdapter[java.lang.Character] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): java.lang.Character =
     reader.peek match {
       case TokenType.Null ⇒
         reader.readNull()
 
       case TokenType.String ⇒
-        reader.read(expected = TokenType.String)
-        java.lang.Character.valueOf(reader.tokenText.head)
+        java.lang.Character.valueOf(reader.readString().head)
 
       case actual ⇒ {
         reader.read()

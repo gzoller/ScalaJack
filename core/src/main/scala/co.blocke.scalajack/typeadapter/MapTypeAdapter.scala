@@ -1,14 +1,25 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.json.Tokenizer
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.language.existentials
 
 object MapTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
     if (tpe <:< typeOf[Map[_, _]]) {
       val keyType = tpe.dealias.typeArgs(0)
-      val keyTypeAdapter = context.typeAdapter(keyType)
+
+      val stringTypeAdapter = context.typeAdapterOf[String]
+
+      val keyTypeAdapter =
+        if (keyType =:= typeOf[String]) {
+          stringTypeAdapter
+        } else {
+          NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, context.typeAdapter(keyType))
+        }
 
       val valueType = tpe.dealias.typeArgs(1)
       val valueTypeAdapter = context.typeAdapter(valueType)

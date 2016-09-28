@@ -33,6 +33,13 @@ case class AnyTypeAdapter(
     context:               Context
 ) extends SimpleTypeAdapter[Any] {
 
+  // For writes
+  def inspectStringKind(value: Any): Boolean = value match {
+    case string: String          ⇒ true
+    case enum: Enumeration#Value ⇒ true
+    case _                       ⇒ false
+  }
+
   override def read(reader: Reader): Any = {
     reader.peek match {
       case TokenType.BeginObject ⇒

@@ -21,7 +21,7 @@ import co.blocke.scalajack.json.StructureType.StructureType
 import co.blocke.scalajack.json.ValueType.ValueType
 import co.blocke.scalajack.json.MemberPart.MemberPart
 
-class StringJsonWriter(canonical: Boolean = true) extends Writer {
+class StringJsonWriter() extends Writer {
 
   sealed trait Structure {
 
@@ -67,7 +67,7 @@ class StringJsonWriter(canonical: Boolean = true) extends Writer {
       nextMemberPartToBeWritten match {
         case MemberPart.MemberName ⇒
 
-          if (canonical && childValueType != ValueType.String) {
+          if (childValueType != ValueType.String) {
             throw new RenderException(s"Member names must be of type ${TokenType.String}, not $childValueType")
           }
 

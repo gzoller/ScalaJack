@@ -3,6 +3,8 @@ package typeadapter
 
 object StringTypeAdapter extends SimpleTypeAdapter[String] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): String = {
     reader.peek match {
       case TokenType.String ⇒

@@ -145,7 +145,6 @@ trait Reader {
   private def skipOver(beginToken: TokenType.Value, endToken: TokenType.Value): Unit = {
     var depth = 0
     while (depth > 0 || peek != endToken) {
-      println(s"Peek ${depth}:${position}: ${peek}")
       position += 1
       peek match {
         case `beginToken` ⇒

@@ -7,6 +7,8 @@ import java.time.ZonedDateTime
 
 object ZonedDateTimeTypeAdapter extends SimpleTypeAdapter[ZonedDateTime] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): ZonedDateTime =
     reader.peek match {
       case TokenType.Null ⇒

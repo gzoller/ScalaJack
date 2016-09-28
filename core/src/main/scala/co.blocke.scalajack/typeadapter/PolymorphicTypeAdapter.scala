@@ -83,7 +83,7 @@ case class PolymorphicTypeAdapter[T](
         }
       }
 
-      val concreteType = optionalConcreteType.getOrElse(throw new Exception(s"""Could not find type field named "$typeMemberName" """))
+      val concreteType = optionalConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeMemberName""""))
       val populatedConcreteType = populateConcreteType(concreteType)
       val concreteTypeAdapter = context.typeAdapter(populatedConcreteType)
 

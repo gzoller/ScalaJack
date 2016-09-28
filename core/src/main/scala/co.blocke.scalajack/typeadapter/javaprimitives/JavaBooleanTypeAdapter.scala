@@ -14,7 +14,7 @@ object JavaBooleanTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lan
 
       case actual ⇒ {
         reader.read()
-        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Boolean value.  (Is your value wrapped in quotes?)\n" + reader.showError())
+        throw new IllegalStateException(s"Expected value token of type True or False, not $actual when reading Boolean value.  (Is your value wrapped in quotes?)\n" + reader.showError())
       }
     }
 

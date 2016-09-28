@@ -7,6 +7,8 @@ import java.time.OffsetDateTime
 
 object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] {
 
+  override val isStringKind: Boolean = true
+
   override def read(reader: Reader): OffsetDateTime =
     reader.peek match {
       case TokenType.Null ⇒
