@@ -1,19 +1,32 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package custom
 
 import org.scalatest.{ FunSpec, Matchers }
-import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
 class CustomAdapter() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("--------------------------------\n:  Custom Handler Hints Tests  :\n--------------------------------") {
-    describe("+++ Positive Tests +++") {
+  describe("--------------------------\n:  Custom Adapter Tests  :\n--------------------------") {
+    it("Overrides type adapter for specific (given) type") {
+      val sj = ScalaJack().withAdapters(PhoneAdapter)
+      val inst = Person("Bartholomew", "5555555555")
+      val js = sj.render(inst)
+      assertResult("""{"name":"Bartholomew","phone":"555-555-5555"}""") { js }
+      assertResult(inst) {
+        sj.read[Person](js)
+      }
     }
-    describe("--- Negative Tests ---") {
+    it("Overrides type adapter for general type (given type and any parents)") {
+      val sj = ScalaJack().withAdapters(OopsPhoneAdapter)
+      val inst = Person("Bartholomew", "5555555555")
+      val js = sj.render(inst)
+      assertResult("""{"name":"Bar-tho-lomew","phone":"555-555-5555"}""") { js }
+      assertResult(inst) {
+        sj.read[Person](js)
+      }
     }
   }
 }

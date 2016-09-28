@@ -190,7 +190,9 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad trait json (missing hint) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Could not find type field named "_hint""""
+        val msg = """Could not find type field named "_hint"
+        |}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}
+        |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
