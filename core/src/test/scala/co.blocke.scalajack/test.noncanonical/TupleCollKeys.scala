@@ -3,7 +3,6 @@ package test
 package noncanonical
 
 import org.scalatest.{ FunSpec, Matchers }
-import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
 class TupleCollPrimKeys() extends FunSpec with Matchers {
@@ -13,25 +12,75 @@ class TupleCollPrimKeys() extends FunSpec with Matchers {
   describe("------------------------------\n:  Tuple Noncanonical Tests  :\n------------------------------") {
     describe("+++ Positive Tests +++") {
       it("Tuple as key") {
-        (pending)
+        val a = (2, "Blather", 'Q')
+        val b = ("Foo", true)
+        val inst = SampleTuple(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[2,\"Blather\",\"Q\"]":["Foo",true]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTuple](js)
+        }
       }
       it("Tuple of Lists as key") {
-        (pending)
-      }
-      it("Tuple of Tuples as key") {
-        (pending)
+        val a = (List("one", "two", "three"), List(1, 2, 3))
+        val b = (List("four", "five", "six"), List(4, 5, 6))
+        val inst = SampleTupleList(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[[\"one\",\"two\",\"three\"],[1,2,3]]":[["four","five","six"],[4,5,6]]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleList](js)
+        }
       }
       it("Tuple of Maps as key") {
-        (pending)
+        val a = (Map("one" -> 1), Map(2 -> "two"))
+        val b = (Map("three" -> 3), Map(4 -> "four"))
+        val inst = SampleTupleMap(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[{\"one\":1},{\"2\":\"two\"}]":[{"three":3},{"4":"four"}]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleMap](js)
+        }
+      }
+      it("Tuple of Tuples as key") {
+        val a = (("yes", true), (1, 0.25))
+        val b = (("no", false), (2, 0.5))
+        val inst = SampleTupleTuple(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[[\"yes\",true],[1,0.25]]":[["no",false],[2,0.5]]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleTuple](js)
+        }
       }
       it("Tuple of Case Class as key") {
-        (pending)
+        val a = (SampleChar(Map('a' -> 'A')), SampleInt(Map(1 -> 2)))
+        val b = (SampleChar(Map('z' -> 'Z')), SampleInt(Map(99 -> 100)))
+        val inst = SampleTupleClass(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[{\"m\":{\"a\":\"A\"}},{\"m\":{\"1\":2}}]":[{"m":{"z":"Z"}},{"m":{"99":100}}]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleClass](js)
+        }
       }
       it("Tuple of Trait as key") {
-        (pending)
+        val a = (DogPet("Fido", Food.Meat, 4), FishPet("Jaws", Food.Meat, 69.8))
+        val b = (DogPet("Chey", Food.Meat, 3), FishPet("Flipper", Food.Seeds, 80.1))
+        val inst = SampleTupleTrait(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleTrait](js)
+        }
       }
+      // case class SampleTupleAny(m: Map[Tuple2[Any,Any],Tuple2[Any,Any]])
       it("Tuple of Any as key") {
-        (pending)
+        val a = (DogPet("Fido", Food.Meat, 4), FishPet("Jaws", Food.Meat, 69.8))
+        val b = (DogPet("Chey", Food.Meat, 3), FishPet("Flipper", Food.Seeds, 80.1))
+        val inst = SampleTupleTrait(Map(a -> b))
+        val js = sj.render(inst)
+        // assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+        // assertResult(inst) {
+        //   sj.read[SampleTupleTrait](js)
+        // }
       }
       it("Tuple of parameterized class as key") {
         (pending)

@@ -79,6 +79,15 @@ case class SampleShiny(m: Map[PetHolder, PetHolder])
 case class NCKey(nc: Map[Int, Boolean], name: String)
 case class SampleNCKey(m: Map[NCKey, NCKey])
 
+// === Collections - Tuple
+case class SampleTuple(m: Map[Tuple3[Int, String, Char], Tuple2[String, Boolean]])
+case class SampleTupleList(m: Map[Tuple2[List[String], List[Int]], Tuple2[List[String], List[Int]]])
+case class SampleTupleMap(m: Map[Tuple2[Map[String, Int], Map[Int, String]], Tuple2[Map[String, Int], Map[Int, String]]])
+case class SampleTupleTuple(m: Map[Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]], Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]]])
+case class SampleTupleClass(m: Map[Tuple2[SampleChar, SampleInt], Tuple2[SampleChar, SampleInt]])
+case class SampleTupleTrait(m: Map[Tuple2[Pet, Pet], Tuple2[Pet, Pet]])
+case class SampleTupleAny(m: Map[Tuple2[Any, Any], Tuple2[Any, Any]])
+
 // === Value Classes
 case class VCBigDecimal(vc: BigDecimal) extends AnyVal
 case class SampleVCBigDecimal(m: Map[VCBigDecimal, VCBigDecimal])

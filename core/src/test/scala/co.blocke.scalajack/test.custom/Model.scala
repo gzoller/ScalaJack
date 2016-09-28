@@ -59,5 +59,6 @@ case class Person(name: String, phone: Phone)
 trait Address { val postalCode: String }
 case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
 case class CanadaAddress(street: String, city: String, province: String, postalCode: String) extends Address
+case class DefaultAddress(postalCode: String) extends Address
 trait Demographic { val address: Address }
 case class USDemographic(age: Int, address: Address) extends Demographic

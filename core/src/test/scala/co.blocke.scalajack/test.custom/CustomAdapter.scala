@@ -7,8 +7,6 @@ import scala.reflect.runtime.universe.typeOf
 
 class CustomAdapter() extends FunSpec with Matchers {
 
-  val sj = ScalaJack()
-
   describe("--------------------------\n:  Custom Adapter Tests  :\n--------------------------") {
     it("Overrides type adapter for specific (given) type") {
       val sj = ScalaJack().withAdapters(PhoneAdapter)
