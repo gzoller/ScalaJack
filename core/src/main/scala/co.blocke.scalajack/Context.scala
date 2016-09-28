@@ -19,6 +19,10 @@ object Context {
     .withFactory(CanBuildFromTypeAdapter)
     .withFactory(MapTypeAdapter)
     .withFactory(TupleTypeAdapter)
+
+    .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all 
+    //              ValueClasses will be interpreted as case classes!
+
     .withFactory(CaseClassTypeAdapter)
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
@@ -33,7 +37,6 @@ object Context {
     .withFactory(BigDecimalTypeAdapter)
     .withFactory(BigIntTypeAdapter)
     .withFactory(StringTypeAdapter)
-    .withFactory(DerivedValueClassAdapter)
     .withFactory(EnumerationTypeAdapter)
     .withFactory(JavaNumberTypeAdapter)
     .withFactory(JavaBooleanTypeAdapter)

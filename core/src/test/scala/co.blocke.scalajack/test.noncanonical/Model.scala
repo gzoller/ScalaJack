@@ -87,6 +87,8 @@ case class SampleTupleTuple(m: Map[Tuple2[Tuple2[String, Boolean], Tuple2[Int, D
 case class SampleTupleClass(m: Map[Tuple2[SampleChar, SampleInt], Tuple2[SampleChar, SampleInt]])
 case class SampleTupleTrait(m: Map[Tuple2[Pet, Pet], Tuple2[Pet, Pet]])
 case class SampleTupleAny(m: Map[Tuple2[Any, Any], Tuple2[Any, Any]])
+case class SampleTupleOptional(m: Map[Tuple2[Option[Int], Option[String]], Tuple2[Option[Boolean], Option[Food.Value]]])
+case class SampleTupleVC(m: Map[Tuple2[VCChar, VCChar], Tuple2[VCChar, VCChar]])
 
 // === Value Classes
 case class VCBigDecimal(vc: BigDecimal) extends AnyVal

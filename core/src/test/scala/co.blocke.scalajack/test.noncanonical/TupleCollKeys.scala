@@ -71,16 +71,15 @@ class TupleCollPrimKeys() extends FunSpec with Matchers {
           sj.read[SampleTupleTrait](js)
         }
       }
-      // case class SampleTupleAny(m: Map[Tuple2[Any,Any],Tuple2[Any,Any]])
       it("Tuple of Any as key") {
         val a = (DogPet("Fido", Food.Meat, 4), FishPet("Jaws", Food.Meat, 69.8))
         val b = (DogPet("Chey", Food.Meat, 3), FishPet("Flipper", Food.Seeds, 80.1))
         val inst = SampleTupleTrait(Map(a -> b))
         val js = sj.render(inst)
-        // assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
-        // assertResult(inst) {
-        //   sj.read[SampleTupleTrait](js)
-        // }
+        assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleTrait](js)
+        }
       }
       it("Tuple of parameterized class as key") {
         (pending)
@@ -90,9 +89,25 @@ class TupleCollPrimKeys() extends FunSpec with Matchers {
       }
       it("Tuple of Optional as key") {
         (pending)
+        // val a = (Some(5), Some("Fred"))
+        // val b = (None, Some(Food.Meat))
+        // val inst = SampleTupleOptional(Map(a -> b))
+        // val js = sj.render(inst)
+        // println(js)
+        // assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+        // assertResult(inst) {
+        //   sj.read[SampleTupleOptional](js)
+        // }
       }
       it("Tuple of ValueClass as key") {
-        (pending)
+        val a = (VCChar('a'), VCChar('A'))
+        val b = (VCChar('z'), VCChar('Z'))
+        val inst = SampleTupleVC(Map(a -> b))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"[\"a\",\"A\"]":["z","Z"]}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleTupleVC](js)
+        }
       }
 
       /*
