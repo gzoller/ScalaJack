@@ -1,7 +1,9 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.GenTraversableOnce
+import co.blocke.scalajack.json.Tokenizer
+
+import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.collection.generic.CanBuildFrom
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
@@ -21,7 +23,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
       val methods = for (member ← companionType.members if member.isMethod) yield member.asMethod
 
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
-      val implicitConversions = for (method ← methods if method.isImplicit && method.typeParams.size == 1 && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
+      val implicitConversions = for (method ← methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
 
       val matchingTypeAdapters = implicitConversions flatMap { method ⇒
         // returnTypeAsCanBuildFrom == CanBuildFrom[Coll, A, List[A]]
@@ -56,12 +58,72 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         val companionInstance = currentMirror.reflectModule(companionSymbol).instance
         val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
 
-        Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        if (tpe <:< typeOf[GenTraversableOnce[_]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+          val keyType = elementTypeAfterSubstitution.typeArgs(0)
+
+          val stringTypeAdapter = context.typeAdapterOf[String]
+
+          val keyTypeAdapter =
+            if (keyType =:= typeOf[String]) {
+              stringTypeAdapter
+            } else {
+              NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, context.typeAdapter(keyType))
+            }
+
+          val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
+          Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        } else {
+          Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        }
       }
 
       matchingTypeAdapters.headOption
     } else {
       None
+    }
+
+}
+
+case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Value, To]](
+    canBuildFrom:     CanBuildFrom[_, (Key, Value), To],
+    keyTypeAdapter:   TypeAdapter[Key],
+    valueTypeAdapter: TypeAdapter[Value]
+) extends TypeAdapter[To] {
+
+  override def read(reader: Reader): To =
+    reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
+
+      case TokenType.BeginObject ⇒
+        val builder = canBuildFrom()
+
+        reader.beginObject()
+
+        while (reader.hasMoreMembers) {
+          val key = keyTypeAdapter.read(reader)
+          val value = valueTypeAdapter.read(reader)
+          builder += key → value
+        }
+
+        reader.endObject()
+
+        builder.result()
+    }
+
+  override def write(map: To, writer: Writer): Unit =
+    if (map == null) {
+      writer.writeNull()
+    } else {
+      writer.beginObject()
+
+      map foreach {
+        case (key, value) ⇒
+          keyTypeAdapter.write(key, writer)
+          valueTypeAdapter.write(value, writer)
+      }
+
+      writer.endObject()
     }
 
 }
