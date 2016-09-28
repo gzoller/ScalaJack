@@ -124,6 +124,15 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       it("Parameterized trait having parameterized trait members") {
         (pending)
       }
+      it("Extra/unneeded fields in key's JSON harmlessly ignored") {
+        val js = """{"m":{"{\"name\":\"Larry\",\"bogus\":false,\"age\":32,\"isOk\":true,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
+        val a = SimpleClass("Larry", 32, true, "golf")
+        val b = SimpleClass("Mike", 27, false, 125)
+        val inst = SampleSimple(Map(a -> b))
+        assertResult(inst) {
+          sj.read[SampleSimple](js)
+        }
+      }
     }
     describe("--- Negative Tests ---") {
       it("Bad (invalid--missing field) class json as map key") {

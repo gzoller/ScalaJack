@@ -38,8 +38,8 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
           val msg = t.getMessage.split("\n")(0)
           throw new java.lang.ClassNotFoundException(msg + "\n" + reader.showError())
       }
-      if (nestedReader.hasNext)
-        throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
+      // if (nestedReader.hasNext)
+      //   throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
       valueParsed
     }
     if (readValue == null) throw new java.lang.IllegalStateException("Map keys cannot be null.\n" + reader.showError())
