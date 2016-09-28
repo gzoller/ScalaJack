@@ -18,56 +18,45 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
       // Examples in comments reference Scala's List[A] type.
 
-      val allImplicitMethods = for (member ← companionType.members if member.isMethod && member.isImplicit) yield member.asMethod
+      val methods = for (member ← companionType.members if member.isMethod) yield member.asMethod
 
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
-      val allImplicitConversions = for (method ← allImplicitMethods if method.typeParams.size == 1 && method.paramLists.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
+      val implicitConversions = for (method ← methods if method.isImplicit && method.typeParams.size == 1 && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
 
-      val matchingTypeAdapters = allImplicitConversions flatMap { method ⇒
+      val matchingTypeAdapters = implicitConversions flatMap { method ⇒
         // returnTypeAsCanBuildFrom == CanBuildFrom[Coll, A, List[A]]
         val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[CanBuildFrom[_, _, _]].typeSymbol)
 
         // typeParam == A
         val typeParams = method.typeParams
 
-        // elementTypeBeforeSubstitution == A
-        val elementTypeBeforeSubstitution = returnTypeAsCanBuildFrom.typeArgs(1)
-
         // toType == List[A]
         val toType = returnTypeAsCanBuildFrom.typeArgs(2)
 
-        val tpeAsToType = tpe.baseType(toType.typeSymbol)
-
-        // Does List[A].typeConstructor =:= List[String].typeConstructor ?
-        if (toType.typeConstructor =:= tpeAsToType.typeConstructor) {
-
-          val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam ⇒
-            // typeParam == A
-            // optionalTypeArg == Some(String)
-            val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-              haystackBeforeSubstitution = toType,
-              haystackAfterSubstitution  = tpeAsToType,
-              needleBeforeSubstitution   = typeParam.asType.toType
-            )
-            optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
-          }
-
-          // elementTypeBeforeSubstitution == A
-          // elementTypeAfterSubstitution == String
-          val elementTypeAfterSubstitution = elementTypeBeforeSubstitution.substituteTypes(typeParamSubstitutions.map(_._1), typeParamSubstitutions.map(_._2))
-
-          // elementTypeAdapter == TypeAdapter[String]
-          val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution)
-
-          val companionInstance = currentMirror.reflectModule(companionSymbol).instance
-          val methodMirror = currentMirror.reflect(companionInstance).reflectMethod(method)
-
-          val canBuildFrom = methodMirror()
-
-          Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
-        } else {
-          None
+        val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam ⇒
+          // typeParam == A
+          // optionalTypeArg == Some(String)
+          val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
+            haystackBeforeSubstitution = toType,
+            haystackAfterSubstitution  = tpe.baseType(toType.typeSymbol),
+            needleBeforeSubstitution   = typeParam.asType.toType
+          )
+          optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
         }
+
+        // elementTypeBeforeSubstitution == A
+        val elementTypeBeforeSubstitution = returnTypeAsCanBuildFrom.typeArgs(1)
+
+        // elementTypeAfterSubstitution == String
+        val elementTypeAfterSubstitution = elementTypeBeforeSubstitution.substituteTypes(typeParamSubstitutions.map(_._1), typeParamSubstitutions.map(_._2))
+
+        // elementTypeAdapter == TypeAdapter[String]
+        val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution)
+
+        val companionInstance = currentMirror.reflectModule(companionSymbol).instance
+        val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
+
+        Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
       }
 
       matchingTypeAdapters.headOption
