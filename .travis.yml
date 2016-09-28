@@ -8,6 +8,9 @@ notifications:
       - gzoller@gmail.com
 jdk:
   - oraclejdk8
+script:
+  - curl -v https://jcenter.bintray.com/org/scala-lang/modules/scala-pickling_2.10/0.10.0/scala-pickling_2.10-0.10.0.jar
+  - curl -v https://jcenter.bintray.com/org/scalamacros/quasiquotes_2.10/2.0.1/quasiquotes_2.10-2.0.1.jar
 script: "sbt clean coverage test"
 after_success: "sbt coverageReport coveralls"
 script:
