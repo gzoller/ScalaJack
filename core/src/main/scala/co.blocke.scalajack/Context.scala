@@ -17,7 +17,7 @@ object Context {
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
     .withFactory(CanBuildFromTypeAdapter)
-    .withFactory(MapTypeAdapter)
+    //    .withFactory(MapTypeAdapter)
     .withFactory(TupleTypeAdapter)
     .withFactory(CaseClassTypeAdapter)
     .withFactory(OptionTypeAdapter)
