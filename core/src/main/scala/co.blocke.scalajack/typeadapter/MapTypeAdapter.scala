@@ -6,6 +6,7 @@ import co.blocke.scalajack.json.Tokenizer
 import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.language.existentials
 
+@deprecated(message = "This functionality handled by CanBuildFromTypeAdapter companion object", since = "2016-09-27")
 object MapTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
@@ -31,6 +32,7 @@ object MapTypeAdapter extends TypeAdapterFactory {
 
 }
 
+@deprecated(message = "This functionality handled by CanBuildMapTypeAdapter", since = "2016-09-27")
 case class MapTypeAdapter[K, V](
     keyTypeAdapter:   TypeAdapter[K],
     valueTypeAdapter: TypeAdapter[V]
