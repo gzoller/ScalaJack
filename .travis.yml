@@ -13,10 +13,6 @@ script:
   - curl -v https://jcenter.bintray.com/org/scalamacros/quasiquotes_2.10/2.0.1/quasiquotes_2.10-2.0.1.jar
   - curl -v https://jcenter.bintray.com/org/scala-lang/scala-reflect/2.10.5/scala-reflect-2.10.5.jar
   - curl -v https://jcenter.bintray.com/org/scala-sbt/ivy/ivy/2.3.0-sbt-c5d1b95fdcc1e1007740ffbecf4eb07abc51ec93/ivy-2.3.0-sbt-c5d1b95fdcc1e1007740ffbecf4eb07abc51ec93.jar
-script: "sbt clean coverage test"
-after_success: "sbt coverageReport coveralls"
-script:
-  - sbt clean coverage test coverageReport &&
-    sbt coverageAggregate
+  - sbt clean coverage test coverageReport && sbt coverageAggregate
 after_success:
-  - sbt coveralls
+  - sbt coverageReport coveralls
