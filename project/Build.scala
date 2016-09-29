@@ -54,8 +54,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(joda, joda_convert, scala_reflect) ++
-			List("org.json4s" %% "json4s-native" % "3.4.0") ++
+			compile(scala_reflect) ++
 			test(scalatest)
 		)
 
@@ -106,8 +105,6 @@ object Dependencies {
 
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
 	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver" % "1.1.0"
-	val joda 			= "joda-time"				% "joda-time"			% "2.3"
-	val joda_convert    = "org.joda"				% "joda-convert"		% "1.7"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "3.0.0"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
 }
