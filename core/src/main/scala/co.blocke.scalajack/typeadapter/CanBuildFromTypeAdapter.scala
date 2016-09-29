@@ -58,7 +58,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         val companionInstance = currentMirror.reflectModule(companionSymbol).instance
         val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
 
-        if (tpe <:< typeOf[GenTraversableOnce[_]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+        if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
 
           val stringTypeAdapter = context.typeAdapterOf[String]
