@@ -43,14 +43,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
     }
 
-    def defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T])
-    // defaultValueMirror match {
-    //   case Some(mirror) ⇒
-    //     mirror.apply().asInstanceOf[T]
-
-    //   case None ⇒
-    //     valueTypeAdapter.read(EmptyReader)
-    // }
+    def defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
 
   }
 

@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.json.Writer
-import org.bson.{BsonArray, BsonBoolean, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonString, BsonValue}
+import org.bson.{ BsonArray, BsonBoolean, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonString, BsonValue }
 import org.mongodb.scala.bson.BsonNull
 
 class BsonWriter extends Writer {

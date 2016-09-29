@@ -1,13 +1,14 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.json.{Reader, TokenType}
-import co.blocke.scalajack.json.TokenType.TokenType
+import co.blocke.scalajack.TokenType.TokenType
 import org.bson.BsonValue
 
-class BsonReader(numberOfTokens: Int,
-                 tokenTypes: Array[TokenType],
-                 strings: Array[String],
-                 values: Array[BsonValue]) extends Reader {
+class BsonReader(
+  numberOfTokens: Int,
+  tokenTypes:     Array[TokenType],
+  strings:        Array[String],
+  values:         Array[BsonValue]
+) extends Reader {
 
   override var position: Int = -1
 
@@ -42,5 +43,7 @@ class BsonReader(numberOfTokens: Int,
   }
 
   override def tokenText: String = ???
+
+  override def showError(): String = ???
 
 }

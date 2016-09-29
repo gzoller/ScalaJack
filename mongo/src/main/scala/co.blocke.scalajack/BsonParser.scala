@@ -1,8 +1,7 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.json.{Context, TokenType}
-import co.blocke.scalajack.json.TokenType.TokenType
-import org.bson.{BsonDocument, BsonInt32, BsonString, BsonValue}
+import co.blocke.scalajack.TokenType.TokenType
+import org.bson.{ BsonDocument, BsonInt32, BsonString, BsonValue }
 
 import scala.collection.JavaConversions._
 

@@ -19,6 +19,8 @@ object OptionTypeAdapter extends TypeAdapterFactory {
 
 case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
+  override def defaultValue: Option[Option[T]] = Some(None)
+
   override def read(reader: Reader): Option[T] =
     if (reader.peek == TokenType.Nothing) {
       None

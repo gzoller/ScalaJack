@@ -33,6 +33,19 @@ trait ScalaJackLike[S] {
     customAdapters = customAdapters ++ ta.toList
     rebuild()
   }
+
+  def withAdapter[T](adapter: TypeAdapter[T])(implicit valueTypeTag: TypeTag[T]) = {
+    customAdapters :+= new TypeAdapterFactory {
+      override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+        if (tpe =:= valueTypeTag.tpe) {
+          Some(adapter.asInstanceOf[TypeAdapter[Any]])
+        } else {
+          None
+        }
+    }
+    rebuild()
+  }
+
   def withHints(h: (Type, String)*) = {
     hintMap = hintMap ++ h
     rebuild()

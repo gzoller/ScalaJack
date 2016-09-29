@@ -1,10 +1,9 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.json.{Context, Reader, TypeAdapter, TypeAdapterFactory, Writer}
 import org.bson.BsonDateTime
 import org.joda.time.DateTime
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
 case class DateTimeContainer($date: Long)
 
