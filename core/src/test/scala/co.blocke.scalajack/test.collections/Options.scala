@@ -7,6 +7,7 @@ import scala.reflect.runtime.universe.typeOf
 
 case class OptionBigInt(o: Option[BigInt])
 case class OptionClass(name: String, age: Option[Int])
+case class OptionTuple(foo: Int, t: (Boolean, Option[String], Int))
 
 class Options() extends FunSpec with Matchers {
 
@@ -31,14 +32,6 @@ class Options() extends FunSpec with Matchers {
         }
       }
       // <sigh>  One type is enough here.  Not going thru all the primitive variants again... It works.
-      // it("Option is None (naked)") {
-      //   val inst: Option[Int] = None
-      //   val js = sj.render(inst)
-      //   assertResult("null") { js }
-      //   assertResult(inst) {
-      //     sj.read[Option[Int]](js)
-      //   }
-      // }
       it("Option is None (in class)") {
         val inst = OptionClass("Mike", None)
         val js = sj.render(inst)
@@ -55,17 +48,29 @@ class Options() extends FunSpec with Matchers {
           sj.read[List[Option[Int]]](js)
         }
       }
+      it("Option is None (value in Map)") {
+        val inst: Map[Int, Option[String]] = Map(1 -> Some("one"), 2 -> None, 3 -> Some("three"))
+        val js = sj.render(inst)
+        assertResult("""{"1":"one","3":"three"}""") { js }
+        assertResult(Map(1 -> Some("one"), 3 -> Some("three"))) { // The None gets erased here
+          sj.read[Map[Int, Option[String]]](js)
+        }
+      }
       it("Option is None (key in Map)") {
         val inst: Map[Option[String], Int] = Map(Some("one") -> 1, None -> 2, Some("three") -> 3)
         val js = sj.render(inst)
-        println(js)
-        assertResult("""{"\"one\"":1,"":2,"\"three\"":3}""") { js }
+        assertResult("""{"one":1,"":2,"three":3}""") { js }
         assertResult(inst) { // The None gets erased here
           sj.read[Map[Option[String], Int]](js)
         }
       }
       it("Option is None (in Tuple)") {
-        (pending)
+        val inst = List(OptionTuple(1, (true, Some("ok"), 2)), OptionTuple(5, (false, None, 3)))
+        val js = sj.render(inst)
+        assertResult("""[{"foo":1,"t":[true,"ok",2]},{"foo":5,"t":[false,null,3]}]""") { js }
+        assertResult(inst) { // The None gets erased here
+          sj.read[List[OptionTuple]](js)
+        }
       }
       it("Reading null into optional (naked)") {
         (pending)

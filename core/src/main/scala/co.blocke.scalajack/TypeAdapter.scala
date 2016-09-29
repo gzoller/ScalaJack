@@ -2,8 +2,6 @@ package co.blocke.scalajack
 
 trait TypeAdapter[T] {
 
-  val isStringKind: Boolean = false
-
   def read(reader: Reader): T
 
   def write(value: T, writer: Writer): Unit
@@ -12,6 +10,11 @@ trait TypeAdapter[T] {
     TransformedTypeAdapter(this, f)
 
 }
+
+// Marker trait for those TypeAdapters which render as String
+// (Determines if a value will be wrapped in quotes or not for noncanonical 
+// processing in NoncanonicalMapKeyParsingTypeAdapter)
+trait StringKind
 
 case class TransformedTypeAdapter[A, B](
     typeAdapter: TypeAdapter[A],

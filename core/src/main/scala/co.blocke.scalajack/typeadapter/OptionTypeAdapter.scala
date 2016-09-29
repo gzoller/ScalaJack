@@ -46,6 +46,7 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
 
   // Must be called by parent of the Option when appropriate to get the null-writing version.
   def nullVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterNull(valueTypeAdapter)
+  def emptyVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
 
 }
 
@@ -53,8 +54,10 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null ⇒ None
-      case v                                  ⇒ Some(valueTypeAdapter.read(reader))
+      case TokenType.Nothing | TokenType.Null ⇒
+        reader.read()
+        None
+      case v ⇒ Some(valueTypeAdapter.read(reader))
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
@@ -67,6 +70,35 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 
       case None ⇒
         writer.writeNull()
+    }
+
+}
+
+// This is for noncanonical map keys, which can be None --> rendered as ""
+// Reads have to reverse-engineer the "" into a None
+case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
+
+  override def read(reader: Reader): Option[T] = {
+    reader.peek match {
+      case TokenType.Nothing | TokenType.Null ⇒ None
+      case v ⇒
+        valueTypeAdapter.read(reader) match {
+          case ""  ⇒ None
+          case res ⇒ Some(res)
+        }
+    }
+  }
+
+  override def write(optionalValue: Option[T], writer: Writer): Unit =
+    optionalValue match {
+      case null ⇒
+        writer.writeNull()
+
+      case Some(value) ⇒
+        valueTypeAdapter.write(value, writer)
+
+      case None ⇒
+        writer.writeString("")
     }
 
 }

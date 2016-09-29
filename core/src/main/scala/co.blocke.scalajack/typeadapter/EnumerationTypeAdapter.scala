@@ -18,9 +18,7 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     }
 }
 
-case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
-
-  override val isStringKind: Boolean = true
+case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] with StringKind {
 
   override def read(reader: Reader): E#Value =
     reader.peek match {
