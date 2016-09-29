@@ -23,6 +23,12 @@ class TokenizerSpec extends FunSpec {
         validTC.tokenize(js.toCharArray, 0, js.length).getTokens()
       }
     }
+    it("Must tokenize empty strings for map key values") {
+      val js = """{"a":1,"":2,"c":3}"""
+      assertResult(List(BeginObject, String, Number, String, Number, String, Number, EndObject, End)) {
+        validTC.tokenize(js.toCharArray, 0, js.length).getTokens()
+      }
+    }
     it("Must catch errors in json - open top-level object") {
       val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}"""
       val msg = """Unterminated object

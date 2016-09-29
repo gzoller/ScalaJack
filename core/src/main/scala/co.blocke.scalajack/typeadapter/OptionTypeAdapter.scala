@@ -17,16 +17,19 @@ object OptionTypeAdapter extends TypeAdapterFactory {
 
 }
 
+// We need 2 types of Option adapters here.  The "normal" one writes nothing for None.
+// This is used most places: Class members, list items, Map values.
+//
+// The second kind writes None as null.  This is used for naked Option and Tuples.
+//
+// Both flavors promote null -> None on read
+
 case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
   override def read(reader: Reader): Option[T] =
-    if (reader.peek == TokenType.Nothing) {
-      None
-    } else {
-      valueTypeAdapter.read(reader) match {
-        case null ⇒ null
-        case v    ⇒ Some(v)
-      }
+    reader.peek match {
+      case TokenType.Nothing | TokenType.Null ⇒ None
+      case v                                  ⇒ Some(valueTypeAdapter.read(reader))
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
@@ -39,6 +42,63 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
 
       case None ⇒
         writer.writeNothing()
+    }
+
+  // Must be called by parent of the Option when appropriate to get the null-writing version.
+  def nullVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterNull(valueTypeAdapter)
+  def emptyVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
+
+}
+
+case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
+
+  override def read(reader: Reader): Option[T] =
+    reader.peek match {
+      case TokenType.Nothing | TokenType.Null ⇒
+        reader.read()
+        None
+      case v ⇒ Some(valueTypeAdapter.read(reader))
+    }
+
+  override def write(optionalValue: Option[T], writer: Writer): Unit =
+    optionalValue match {
+      case null ⇒
+        writer.writeNull()
+
+      case Some(value) ⇒
+        valueTypeAdapter.write(value, writer)
+
+      case None ⇒
+        writer.writeNull()
+    }
+
+}
+
+// This is for noncanonical map keys, which can be None --> rendered as ""
+// Reads have to reverse-engineer the "" into a None
+case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
+
+  override def read(reader: Reader): Option[T] = {
+    reader.peek match {
+      case TokenType.Nothing | TokenType.Null ⇒ None
+      case v ⇒
+        valueTypeAdapter.read(reader) match {
+          case ""  ⇒ None
+          case res ⇒ Some(res)
+        }
+    }
+  }
+
+  override def write(optionalValue: Option[T], writer: Writer): Unit =
+    optionalValue match {
+      case null ⇒
+        writer.writeNull()
+
+      case Some(value) ⇒
+        valueTypeAdapter.write(value, writer)
+
+      case None ⇒
+        writer.writeString("")
     }
 
 }

@@ -23,6 +23,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       outerClass:                         Option[java.lang.Class[_]]
   ) {
 
+    val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
+
     def valueIn(instance: Any): T = {
       val value = valueAccessorMethod.invoke(instance)
 
@@ -43,7 +45,10 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
     }
 
-    def defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T])
+    // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
+    // otherwise fail the default lookup.
+    def defaultValue: Option[T] =
+      defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None)
     // defaultValueMirror match {
     //   case Some(mirror) ⇒
     //     mirror.apply().asInstanceOf[T]

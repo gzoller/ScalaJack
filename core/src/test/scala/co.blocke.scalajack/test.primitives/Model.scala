@@ -53,3 +53,20 @@ case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
 
 // === Any primitives
 case class AnyShell(a: Any)
+
+// === Value Classes
+case class VCBigDecimal(vc: BigDecimal) extends AnyVal
+case class VCBigInt(vc: BigInt) extends AnyVal
+case class VCBoolean(vc: Boolean) extends AnyVal
+case class VCByte(vc: Byte) extends AnyVal
+case class VCChar(vc: Char) extends AnyVal
+case class VCDouble(vc: Double) extends AnyVal
+case class VCEnumeration(vc: Size.Value) extends AnyVal
+case class VCFloat(vc: Float) extends AnyVal
+case class VCInt(vc: Int) extends AnyVal
+case class VCLong(vc: Long) extends AnyVal
+case class VCShort(vc: Short) extends AnyVal
+case class VCString(vc: String) extends AnyVal
+case class VCUUID(vc: UUID) extends AnyVal
+case class VCNumber(vc: Number) extends AnyVal
+

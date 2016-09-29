@@ -5,9 +5,7 @@ package javatime
 import java.time.format.DateTimeFormatter.ISO_ZONED_DATE_TIME
 import java.time.ZonedDateTime
 
-object ZonedDateTimeTypeAdapter extends SimpleTypeAdapter[ZonedDateTime] {
-
-  override val isStringKind: Boolean = true
+object ZonedDateTimeTypeAdapter extends SimpleTypeAdapter[ZonedDateTime] with StringKind {
 
   override def read(reader: Reader): ZonedDateTime =
     reader.peek match {

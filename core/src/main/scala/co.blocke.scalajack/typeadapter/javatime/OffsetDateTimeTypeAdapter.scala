@@ -5,9 +5,7 @@ package javatime
 import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
 import java.time.OffsetDateTime
 
-object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] {
-
-  override val isStringKind: Boolean = true
+object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] with StringKind {
 
   override def read(reader: Reader): OffsetDateTime =
     reader.peek match {
