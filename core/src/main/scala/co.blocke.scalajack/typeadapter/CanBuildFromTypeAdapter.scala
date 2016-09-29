@@ -67,7 +67,11 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
             if (keyType =:= typeOf[String]) {
               stringTypeAdapter
             } else {
-              NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, context.typeAdapter(keyType))
+              val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
+                case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+                case kta                       ⇒ kta
+              }
+              NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
             }
 
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))

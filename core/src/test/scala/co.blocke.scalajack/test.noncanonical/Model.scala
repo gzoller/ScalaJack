@@ -78,3 +78,59 @@ case class SamplePolyClass(m: Map[PolyClass, PolyClass])
 case class SampleShiny(m: Map[PetHolder, PetHolder])
 case class NCKey(nc: Map[Int, Boolean], name: String)
 case class SampleNCKey(m: Map[NCKey, NCKey])
+
+// === Collections - Tuple
+case class SampleTuple(m: Map[Tuple3[Int, String, Char], Tuple2[String, Boolean]])
+case class SampleTupleList(m: Map[Tuple2[List[String], List[Int]], Tuple2[List[String], List[Int]]])
+case class SampleTupleMap(m: Map[Tuple2[Map[String, Int], Map[Int, String]], Tuple2[Map[String, Int], Map[Int, String]]])
+case class SampleTupleTuple(m: Map[Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]], Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]]])
+case class SampleTupleClass(m: Map[Tuple2[SampleChar, SampleInt], Tuple2[SampleChar, SampleInt]])
+case class SampleTupleTrait(m: Map[Tuple2[Pet, Pet], Tuple2[Pet, Pet]])
+case class SampleTupleAny(m: Map[Tuple2[Any, Any], Tuple2[Any, Any]])
+case class SampleTupleOptional(m: Map[Tuple2[Option[Int], Option[String]], Tuple2[Option[Boolean], Option[Food.Value]]])
+case class SampleTupleVC(m: Map[Tuple2[VCChar, VCChar], Tuple2[VCChar, VCChar]])
+
+// === Value Classes
+case class VCBigDecimal(vc: BigDecimal) extends AnyVal
+case class SampleVCBigDecimal(m: Map[VCBigDecimal, VCBigDecimal])
+case class VCBigInt(vc: BigInt) extends AnyVal
+case class SampleVCBigInt(m: Map[VCBigInt, VCBigInt])
+case class VCBoolean(vc: Boolean) extends AnyVal
+case class SampleVCBoolean(m: Map[VCBoolean, VCBoolean])
+case class VCByte(vc: Byte) extends AnyVal
+case class SampleVCByte(m: Map[VCByte, VCByte])
+case class VCChar(vc: Char) extends AnyVal
+case class SampleVCChar(m: Map[VCChar, VCChar])
+case class VCDouble(vc: Double) extends AnyVal
+case class SampleVCDouble(m: Map[VCDouble, VCDouble])
+case class VCEnumeration(vc: Food.Value) extends AnyVal
+case class SampleVCEnumeration(m: Map[VCEnumeration, VCEnumeration])
+case class VCFloat(vc: Float) extends AnyVal
+case class SampleVCFloat(m: Map[VCFloat, VCFloat])
+case class VCInt(vc: Int) extends AnyVal
+case class SampleVCInt(m: Map[VCInt, VCInt])
+case class VCLong(vc: Long) extends AnyVal
+case class SampleVCLong(m: Map[VCLong, VCLong])
+case class VCShort(vc: Short) extends AnyVal
+case class SampleVCShort(m: Map[VCShort, VCShort])
+case class VCString(vc: String) extends AnyVal
+case class SampleVCString(m: Map[VCString, VCString])
+case class VCUUID(vc: UUID) extends AnyVal
+case class SampleVCUUID(m: Map[VCUUID, VCUUID])
+case class VCNumber(vc: Number) extends AnyVal
+case class SampleVCNumber(m: Map[VCNumber, VCNumber])
+case class VCList(vc: List[Int]) extends AnyVal
+case class SampleVCList(m: Map[VCList, VCList])
+case class VCMap(vc: Map[Int, Int]) extends AnyVal
+case class SampleVCMap(m: Map[VCMap, VCMap])
+case class VCTuple(vc: Tuple3[Int, String, Boolean]) extends AnyVal
+case class SampleVCTuple(m: Map[VCTuple, VCTuple])
+
+case class VCClass(vc: ComplexClass) extends AnyVal
+case class SampleVCClass(m: Map[VCClass, VCClass])
+case class VCTrait(vc: Pet) extends AnyVal
+case class SampleVCTrait(m: Map[VCTrait, VCTrait])
+case class VCOption(vc: Option[String]) extends AnyVal
+case class SampleVCOption(m: Map[VCOption, VCOption])
+case class VCNested(vc: List[Map[String, String]]) extends AnyVal
+case class SampleVCNested(m: Map[VCNested, VCNested])

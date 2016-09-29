@@ -4,9 +4,7 @@ package javatime
 
 import java.time.Period
 
-object PeriodTypeAdapter extends SimpleTypeAdapter[Period] {
-
-  override val isStringKind: Boolean = true
+object PeriodTypeAdapter extends SimpleTypeAdapter[Period] with StringKind {
 
   override def read(reader: Reader): Period =
     reader.peek match {

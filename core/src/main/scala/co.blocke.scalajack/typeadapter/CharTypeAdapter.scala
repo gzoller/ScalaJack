@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object CharTypeAdapter extends SimpleTypeAdapter[Char] {
-
-  override val isStringKind: Boolean = true
+object CharTypeAdapter extends SimpleTypeAdapter[Char] with StringKind {
 
   override def read(reader: Reader): Char = {
     reader.readString().head // TODO Ensure there is only one character

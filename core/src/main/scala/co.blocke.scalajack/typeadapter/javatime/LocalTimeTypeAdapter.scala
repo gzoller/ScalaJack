@@ -5,9 +5,7 @@ package javatime
 import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
 import java.time.LocalTime
 
-object LocalTimeTypeAdapter extends SimpleTypeAdapter[LocalTime] {
-
-  override val isStringKind: Boolean = true
+object LocalTimeTypeAdapter extends SimpleTypeAdapter[LocalTime] with StringKind {
 
   override def read(reader: Reader): LocalTime =
     reader.peek match {

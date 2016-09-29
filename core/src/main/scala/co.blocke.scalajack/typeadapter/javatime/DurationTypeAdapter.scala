@@ -4,9 +4,7 @@ package javatime
 
 import java.time.Duration
 
-object DurationTypeAdapter extends SimpleTypeAdapter[Duration] {
-
-  override val isStringKind: Boolean = true
+object DurationTypeAdapter extends SimpleTypeAdapter[Duration] with StringKind {
 
   override def read(reader: Reader): Duration =
     reader.peek match {
