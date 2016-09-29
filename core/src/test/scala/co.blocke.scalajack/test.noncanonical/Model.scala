@@ -89,6 +89,18 @@ case class SampleTupleTrait(m: Map[Tuple2[Pet, Pet], Tuple2[Pet, Pet]])
 case class SampleTupleAny(m: Map[Tuple2[Any, Any], Tuple2[Any, Any]])
 case class SampleTupleOptional(m: Map[Tuple2[Option[Int], Option[String]], Tuple2[Option[Boolean], Option[Food.Value]]])
 case class SampleTupleVC(m: Map[Tuple2[VCChar, VCChar], Tuple2[VCChar, VCChar]])
+case class SampleTupleComplex(m: Map[(ComplexClass, ComplexClass), (ComplexClass, ComplexClass)])
+case class SampleTuplePolyClass(m: Map[(PolyClass, PolyClass), (PolyClass, PolyClass)])
+
+case class SampleMap(m: Map[Map[String, Char], Map[String, Char]])
+case class SampleMapList(m: Map[Map[List[String], List[String]], Map[List[String], List[String]]])
+case class SampleMapMap(m: Map[Map[String, Int], Map[Int, String]])
+case class SampleMapTuple(m: Map[Map[(String, Boolean), (String, Boolean)], Map[(String, Boolean), (String, Boolean)]])
+case class SampleMapClass(m: Map[Map[SampleChar, SampleInt], Map[SampleChar, SampleInt]])
+case class SampleMapTrait(m: Map[Map[Pet, Pet], Map[Pet, Pet]])
+case class SampleMapAny(m: Map[Map[Any, Any], Map[Any, Any]])
+case class SampleMapOptional(m: Map[Map[Option[Int], Option[String]], Map[Option[Int], Option[String]]])
+case class SampleMapVC(m: Map[Map[VCChar, VCChar], Map[VCChar, VCChar]])
 
 // === Value Classes
 case class VCBigDecimal(vc: BigDecimal) extends AnyVal
