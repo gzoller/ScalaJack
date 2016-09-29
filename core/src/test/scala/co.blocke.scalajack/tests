@@ -1,0 +1,7 @@
+
+	test.tokenizer
+	test.primitives
+	test.collections
+	test.parameterized
+	test.misc
+	test.custom

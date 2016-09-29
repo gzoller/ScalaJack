@@ -1,18 +1,59 @@
-package co.blocke.scalajack.json
+package co.blocke.scalajack
+package json
 
-import co.blocke.scalajack.json.TokenType.TokenType
+import TokenType.TokenType
 
 class Tokenizer(val capacity: Int = 1024) {
 
-  def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
+  // RawContext == 0
+  private val ArrayContext: Int = 1
+  private val ObjectContext: Int = ArrayContext << 1
+  private val ExpectKey: Int = ObjectContext << 1
+  private val ExpectValue: Int = ExpectKey << 1
+  private val ExpectColon: Int = ExpectValue << 1
+  private val ExpectComma: Int = ExpectColon << 1
+  private val ExpectEndOfStructure: Int = ExpectComma << 1
+
+  def showError(): String = {
+    val startPosOffset = if (position - 50 < 0) position else 50
+    val startPos = position - startPosOffset
+    val endPos = if (position + 50 > source.length) source.length else position + 50
+    val buf = new StringBuffer()
+    buf.append(source.subSequence(startPos, endPos).toString + "\n")
+    buf.append("-" * startPosOffset + "^")
+    buf.toString
+  }
+
+  private var position: Int = 0
+  private var source = Array.empty[Char]
+
+  def tokenize(src: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
     val maxPosition = offset + length
-    var position = offset
+    position = offset
+    source = src
 
     val tokenTypes = new Array[TokenType](capacity)
     val tokenOffsets = new Array[Int](capacity)
     val tokenLengths = new Array[Int](capacity)
 
     var numberOfTokens = 0
+
+    val validate = new Array[Int](500)
+    var validPos = 0
+    setValidBit(ExpectValue)
+
+    @inline def setValidBit(bit: Int) = validate(validPos) |= bit
+    @inline def unsetValidBit(bit: Int) = validate(validPos) &= ~bit
+    @inline def isValidClear = validate(validPos) == 0
+    @inline def isValidSet(bit: Int) = (validate(validPos) | bit) == validate(validPos)
+    @inline def pushValid() {
+      validPos += 1
+      validate(validPos) = 0
+    }
+    @inline def popValid() {
+      if (validate(validPos) != 0) throw new IllegalArgumentException("Unfinished business: " + validate(validPos))
+      validPos -= 1
+    }
 
     @inline def appendToken(tokenType: TokenType, tokenOffset: Int, tokenLength: Int): Unit = {
       val i = numberOfTokens
@@ -88,25 +129,64 @@ class Tokenizer(val capacity: Int = 1024) {
     while (position < maxPosition) {
       source(position) match {
         case '{' ⇒
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError())
+          pushValid()
+          setValidBit(ObjectContext)
+          setValidBit(ExpectKey)
+          setValidBit(ExpectEndOfStructure)
           appendToken(TokenType.BeginObject, position, 1)
           position += 1
 
         case '}' ⇒
+          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma) && !isValidSet(ExpectKey)) || isValidSet(ArrayContext)) throw new IllegalArgumentException("Character out of place. '}' not expected here.\n" + showError())
+          unsetValidBit(ObjectContext)
+          unsetValidBit(ExpectComma)
+          unsetValidBit(ExpectKey)
+          unsetValidBit(ExpectEndOfStructure)
+          popValid()
+          unsetValidBit(ExpectValue)
+          if (isValidSet(ArrayContext) || isValidSet(ObjectContext))
+            setValidBit(ExpectComma)
+
           appendToken(TokenType.EndObject, position, 1)
           position += 1
 
         case '[' ⇒
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '[' not expected here.\n" + showError())
+          pushValid()
+          setValidBit(ArrayContext)
+          setValidBit(ExpectValue)
+          setValidBit(ExpectEndOfStructure)
           appendToken(TokenType.BeginArray, position, 1)
           position += 1
 
         case ']' ⇒
+          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError())
+          unsetValidBit(ArrayContext)
+          unsetValidBit(ExpectComma)
+          unsetValidBit(ExpectValue)
+          unsetValidBit(ExpectEndOfStructure)
+          popValid()
+          unsetValidBit(ExpectValue)
+          if (isValidSet(ArrayContext) || isValidSet(ObjectContext))
+            setValidBit(ExpectComma)
+
           appendToken(TokenType.EndArray, position, 1)
           position += 1
 
         case ':' ⇒
+          if (!isValidSet(ExpectColon)) throw new IllegalArgumentException("Character out of place. ':' not expected here.\n" + showError())
+          unsetValidBit(ExpectColon)
+          setValidBit(ExpectValue)
           position += 1
 
         case ',' ⇒
+          if (!isValidSet(ExpectComma)) throw new IllegalArgumentException("Character out of place. ',' not expected here.\n" + showError())
+          unsetValidBit(ExpectComma)
+          if (isValidSet(ObjectContext))
+            setValidBit(ExpectKey)
+          else
+            setValidBit(ExpectValue)
           position += 1
 
         case ' ' ⇒ // skip whitespace
@@ -122,27 +202,41 @@ class Tokenizer(val capacity: Int = 1024) {
           position += 1
 
         case '"' ⇒
+          if (!isValidSet(ExpectKey) && !isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. String not expected here.\n" + showError())
+
           position += 1 // Skip the leading double-quote
 
           val start = position
 
-          while (source(position) != '"') {
+          while (position < maxPosition && source(position) != '"') {
             if (source(position) == '\\') {
               position += 2
             } else {
               position += 1
             }
           }
+          if (position == maxPosition) throw new IllegalArgumentException("Unterminated string\n" + showError())
 
           appendToken(TokenType.String, start, position - start)
           position += 1 // Skip the trailing double-quote
 
+          if (isValidSet(ExpectKey)) {
+            unsetValidBit(ExpectKey)
+            unsetValidBit(ExpectEndOfStructure)
+            setValidBit(ExpectColon)
+          } else { // value 
+            unsetValidBit(ExpectValue)
+            if (!isValidClear)
+              setValidBit(ExpectComma)
+          }
+
         case ch ⇒
+          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
           // Integer
           if (isIntegerChar(ch)) {
             val start = position
 
-            while (isIntegerChar(source(position))) {
+            while (position < maxPosition && isIntegerChar(source(position))) {
               position += 1
             }
 
@@ -152,7 +246,7 @@ class Tokenizer(val capacity: Int = 1024) {
 
             position += 1 // Skip initial character
 
-            while (isSubsequentLiteralNameChar(source(position))) {
+            while (position < maxPosition && isSubsequentLiteralNameChar(source(position))) {
               position += 1
             }
 
@@ -187,9 +281,19 @@ class Tokenizer(val capacity: Int = 1024) {
           } else if (isDecimalPoint(ch)) {
 
           } else {
-            throw new IllegalArgumentException(s"Unknown character: $ch")
+            throw new IllegalArgumentException(s"Unknown character: $ch\n" + showError())
           }
+          unsetValidBit(ExpectValue)
+          unsetValidBit(ExpectEndOfStructure)
+          if (!isValidClear)
+            setValidBit(ExpectComma)
       }
+    }
+    if (validPos > 0) {
+      if (isValidSet(ArrayContext))
+        throw new IllegalArgumentException("Unterminated array\n" + showError())
+      else
+        throw new IllegalArgumentException("Unterminated object\n" + showError())
     }
     appendToken(TokenType.End, position, 0)
 
