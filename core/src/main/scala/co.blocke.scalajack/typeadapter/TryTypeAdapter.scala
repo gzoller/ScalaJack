@@ -52,7 +52,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         valueTypeAdapter.write(v, writer)
 
       case Failure(e: UnreadableException) ⇒
-        e.write(writer)
+        writer.writeNull
 
       case Failure(e) ⇒
         throw e
