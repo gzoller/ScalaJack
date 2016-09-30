@@ -18,6 +18,8 @@ object EmptyReader extends Reader {
 
   override def read(): TokenType = ???
 
+  override def captureValue(): Any = ???
+
   override def source: Array[Char] = ???
 
   override def tokenOffset: Int = ???

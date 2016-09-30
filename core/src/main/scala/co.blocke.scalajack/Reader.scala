@@ -142,6 +142,8 @@ trait Reader {
     }
   }
 
+  def captureValue(): Any
+
   private def skipOver(beginToken: TokenType.Value, endToken: TokenType.Value): Unit = {
     var depth = 0
     while (depth > 0 || peek != endToken) {
