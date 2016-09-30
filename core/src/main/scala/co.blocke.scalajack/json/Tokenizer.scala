@@ -68,9 +68,12 @@ class Tokenizer(val capacity: Int = 1024) {
 
     @inline def isDigit(ch: Char): Boolean = '0' <= ch && ch <= '9'
 
+    // Unused at present
+    /*
     @inline def isSign(ch: Char): Boolean = ch == '+' || ch == '-'
 
     @inline def isDecimalPoint(ch: Char): Boolean = ch == '.'
+    */
 
     @inline def isUnderscore(ch: Char): Boolean = ch == '_'
 
@@ -82,6 +85,7 @@ class Tokenizer(val capacity: Int = 1024) {
 
     @inline def isE(ch: Char): Boolean = ch == 'e' || ch == 'E'
 
+    /* Unused at present...
     @inline def skipInteger(): Boolean =
       if (isSign(source(position))) {
         position += 1
@@ -125,6 +129,7 @@ class Tokenizer(val capacity: Int = 1024) {
         false
       }
     }
+    */
 
     while (position < maxPosition) {
       source(position) match {
@@ -230,7 +235,7 @@ class Tokenizer(val capacity: Int = 1024) {
               setValidBit(ExpectComma)
           }
 
-        case ch ⇒
+        case ch ⇒ // Tokenize some literal
           if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
           // Integer
           if (isIntegerChar(ch)) {
@@ -274,11 +279,6 @@ class Tokenizer(val capacity: Int = 1024) {
             } else {
               appendToken(TokenType.UnknownLiteralName, literalNameOffset, literalNameLength)
             }
-          } else if (isSign(ch)) {
-
-          } else if (isDigit(ch)) {
-
-          } else if (isDecimalPoint(ch)) {
 
           } else {
             throw new IllegalArgumentException(s"Unknown character: $ch\n" + showError())

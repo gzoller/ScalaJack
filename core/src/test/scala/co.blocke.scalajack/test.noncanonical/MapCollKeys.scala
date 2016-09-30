@@ -21,17 +21,38 @@ class MapCollPrimKeys() extends FunSpec with Matchers {
   // case class SampleMapVC(m: Map[Map[VCChar, VCChar], Map[VCChar, VCChar]])
 
   describe("----------------------------\n:  Map Noncanonical Tests  :\n----------------------------") {
+/*
     it("Map as key") {
-      (pending)
+      val m1 = Map(1 -> 2)
+      val m2 = Map(3 -> 4)
+      val inst = Map(m1 -> m2)
+      val js = sj.render(inst)
+      assertResult("""{"{\"1\":2}":{"3":4}}""") { js }
+      assertResult(inst) {
+        sj.read[Map[Map[Int, Int], Map[Int, Int]]](js)
+      }
     }
     it("Map of Lists as key") {
-      (pending)
+      val m1 = List(Food.Meat, Food.Veggies)
+      val m2 = List(Food.Seeds, Food.Pellets)
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val js = sj.render(inst)
+      println(js)
     }
     it("Map of Maps as key") {
-      (pending)
+      val m1 = Map(Food.Meat -> Food.Veggies)
+      val m2 = Map(Food.Seeds -> Food.Pellets)
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val js = sj.render(inst)
+      println(js)
     }
+    */
     it("Map of Tuples as key") {
-      (pending)
+      val m1 = (Food.Meat, Food.Veggies)
+      val m2 = (Food.Seeds, Food.Pellets)
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val js = sj.render(inst)
+      println(js)
     }
     it("Map of Case Class as key") {
       (pending)
