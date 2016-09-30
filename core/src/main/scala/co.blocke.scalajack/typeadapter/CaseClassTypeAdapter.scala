@@ -142,6 +142,7 @@ case class CaseClassTypeAdapter[T >: Null](
 
         reader.beginObject()
 
+        println("CC Type: " + caseClassType)
         while (reader.hasMoreMembers) {
           val memberName = memberNameTypeAdapter.read(reader)
 
