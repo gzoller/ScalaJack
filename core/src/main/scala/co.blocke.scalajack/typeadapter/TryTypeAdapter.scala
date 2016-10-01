@@ -1,26 +1,8 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.json.Tokenizer
-
 import scala.util.{ Failure, Success, Try }
 import scala.reflect.runtime.universe.{ Type, typeOf }
-
-trait Drink
-case class OrangeJuice(pulp: Boolean) extends Drink
-case class Meal(drink: Try[Drink])
-
-object TrySandbox extends App {
-
-  val scalaJack = ScalaJack()
-
-  val json = """{"drink": "bill"}"""
-
-  val meal = scalaJack.read[Meal](json)
-  println(meal)
-  println(scalaJack.render[Meal](meal))
-
-}
 
 object TryTypeAdapter extends TypeAdapterFactory {
 
