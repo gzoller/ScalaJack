@@ -42,8 +42,13 @@ class BsonReader(
     values(position).asInt32.intValue
   }
 
-  override def tokenText: String = ???
+  override def readLong(): Long = {
+    read(expected = TokenType.Number)
+    values(position).asInt64.longValue
+  }
 
-  override def showError(): String = ???
+  override def tokenText: String = "TOKEN TEXT"
+
+  override def showError(): String = "SOMETHING WENT WRONG"
 
 }

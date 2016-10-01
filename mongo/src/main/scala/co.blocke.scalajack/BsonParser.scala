@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import co.blocke.scalajack.TokenType.TokenType
-import org.bson.{ BsonDocument, BsonInt32, BsonString, BsonValue }
+import org.bson.{BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue}
 
 import scala.collection.JavaConversions._
 
@@ -85,7 +85,10 @@ class BsonParser {
           appendToken(TokenType.False, valueAsBoolean)
         }
       } else if (value.isDateTime) {
-        ???
+        appendToken(TokenType.BeginObject, null)
+        appendString(TokenType.String, "$date")
+        appendToken(TokenType.Number, new BsonInt64(value.asDateTime.getValue))
+        appendToken(TokenType.EndObject, null)
       } else if (value.isDBPointer) {
         ???
       } else if (value.isDocument) {

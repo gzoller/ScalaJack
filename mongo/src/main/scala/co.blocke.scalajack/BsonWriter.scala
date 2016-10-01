@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import org.bson.{ BsonArray, BsonBoolean, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonString, BsonValue }
+import org.bson.{BsonArray, BsonBinary, BsonBoolean, BsonDateTime, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonMaxKey, BsonMinKey, BsonObjectId, BsonString, BsonTimestamp, BsonUndefined, BsonValue}
 import org.mongodb.scala.bson.BsonNull
 
 class BsonWriter extends Writer {
@@ -24,7 +24,7 @@ class BsonWriter extends Writer {
       endChildValue(childValue)
     }
 
-    def end(): Unit
+    def end(): BsonValue
 
   }
 
@@ -39,16 +39,20 @@ class BsonWriter extends Writer {
       value = childValue
     }
 
-    override def end(): Unit = {}
+    override def end(): BsonValue = value
 
   }
 
-  class ObjectStructure(override val parent: Structure, val document: BsonDocument) extends Structure {
+  class ObjectStructure(override val parent: Structure) extends Structure {
+
+    val document = new BsonDocument
 
     var nextMemberPartToBeWritten: MemberPart = MemberPart.MemberName
     var memberPartCurrentlyBeingWritten: MemberPart = _
 
     var memberName: BsonValue = _
+
+    var memberNames = Set[BsonValue]()
 
     override def beginChildValue(): Unit = {
       nextMemberPartToBeWritten match {
@@ -67,6 +71,7 @@ class BsonWriter extends Writer {
       memberPartCurrentlyBeingWritten match {
         case MemberName ⇒
           memberName = childValue
+          memberNames += memberName
 
         case MemberValue ⇒
           if (childValue != null) {
@@ -78,11 +83,41 @@ class BsonWriter extends Writer {
       }
     }
 
-    override def end(): Unit = {}
+    override def end(): BsonValue = {
+      val keys = document.keySet
+
+      val value =
+        if (keys contains "$date") {
+          new BsonDateTime(document.getNumber("$date").longValue)
+        } else if (keys contains "$undefined") {
+          new BsonUndefined
+        } else if (keys contains "$binary") {
+          ???
+        } else if (keys contains "$timestamp") {
+          //new BsonTimestamp()
+          ???
+        } else if (keys contains "$regex") {
+          ???
+        } else if (keys contains "$ref") {
+          ???
+        } else if (keys contains "$minKey") {
+          new BsonMinKey
+        } else if (keys contains "$maxKey") {
+          new BsonMaxKey
+        } else if (keys contains "$oid") {
+          new BsonObjectId(null)
+        } else {
+          document
+        }
+
+      value
+    }
 
   }
 
-  class ArrayStructure(override val parent: Structure, val array: BsonArray) extends Structure {
+  class ArrayStructure(override val parent: Structure) extends Structure {
+
+    val array = new BsonArray
 
     override def beginChildValue(): Unit = {
 
@@ -94,38 +129,34 @@ class BsonWriter extends Writer {
       }
     }
 
-    override def end(): Unit = {}
+    override def end(): BsonArray = array
 
   }
 
   var structure: Structure = RootStructure
 
   override def beginObject(): Unit = {
-    val document = new BsonDocument
-
     structure.beginChildValue()
-    structure = new ObjectStructure(structure, document)
+    structure = new ObjectStructure(structure)
   }
 
   override def endObject(): Unit = {
-    structure.end() // TODO expected structure type
-    val document = structure.asInstanceOf[ObjectStructure].document
+    val value = structure.end() // TODO expected structure type
+
     structure = structure.parent
-    structure.endChildValue(document)
+    structure.endChildValue(value)
   }
 
   override def beginArray(): Unit = {
-    val array = new BsonArray
-
     structure.beginChildValue()
-    structure = new ArrayStructure(structure, array)
+    structure = new ArrayStructure(structure)
   }
 
   override def endArray(): Unit = {
-    structure.end()
-    val array = structure.asInstanceOf[ArrayStructure].array
+    val value = structure.end() // TODO expected structure type
+
     structure = structure.parent
-    structure.endChildValue(array)
+    structure.endChildValue(value)
   }
 
   override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = ???

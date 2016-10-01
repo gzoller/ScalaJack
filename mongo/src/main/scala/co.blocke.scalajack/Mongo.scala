@@ -13,12 +13,12 @@ package object mongo {
 class ObjectId(val bsonObjectId: BsonObjectId) extends AnyVal
 /*object ObjectId extends ValueClassCustom {
 	def read:PartialFunction[(KindMarker,_), Any] = {
-	  case (jk:JsonKind,js:String) => BsonObjectId(js)
-	  case (mk:MongoKind,boid:BsonObjectId) => boid
+	  case (jk:JsonKind,js:String) ⇒ BsonObjectId(js)
+	  case (mk:MongoKind,boid:BsonObjectId) ⇒ boid
 	}
 	def render:PartialFunction[(KindMarker,_), Any] = {
-	  case (jk:JsonKind,boid:BsonObjectId) => '"'+boid.getValue.toString+'"'
-	  case (mk:MongoKind,boid:BsonObjectId) => boid
+	  case (jk:JsonKind,boid:BsonObjectId) ⇒ '"'+boid.getValue.toString+'"'
+	  case (mk:MongoKind,boid:BsonObjectId) ⇒ boid
 	}
 }
 */ 
