@@ -197,22 +197,22 @@ class JavaPrim() extends FunSpec with Matchers {
         it("BigDecimal must break") {
           val js = """{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.1499999999999999944488848768742172978818416595458984375","bd5":null}"""
           val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-            |{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.149999999999999994448884876874217297881841659545
-            |---------------------------------^""".stripMargin
+            |{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.14999999999999999444888487687421729788184165954
+            |--------------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
         }
         it("BigInteger must break") {
           val js = """{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}"""
           val msg = """Expected value token of type Number, not String when reading BigInteger value.  (Is your value wrapped in quotes?)
-            |{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345
-            |--------^""".stripMargin
+            |{"bi1":"0","bi2":1,"bi3":10,"bi4":-9018273645192837465334
+            |-------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Boolean must break") {
           val js = """{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}"""
           val msg = """Expected value token of type True or False, not String when reading Boolean value.  (Is your value wrapped in quotes?)
             |{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}
-            |--------------------------------------------------^""".stripMargin
+            |-------------------------------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg
         }
         it("Byte must break") {
@@ -238,14 +238,14 @@ class JavaPrim() extends FunSpec with Matchers {
           val js = """{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}"""
           val msg = """Expected value token of type Number, not String when reading Double value.  (Is your value wrapped in quotes?)
             |{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}
-            |-------------------------------------------------^""".stripMargin
+            |------------------------------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Float must break") {
           val js = """{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}"""
           val msg = """Expected value token of type Number, not String when reading Float value.  (Is your value wrapped in quotes?)
             |{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}
-            |-------------------------^""".stripMargin
+            |------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJFloat](js) should have message msg
           // sj.read[SampleJFloat](js)
         }
@@ -264,7 +264,7 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Long must break") {
           val js = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}"""
           val msg = """Expected value token of type Number, not String when reading Long value.  (Is your value wrapped in quotes?)
-            |23372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}
+            |223372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}
             |--------------------------------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
           val js2 = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123,"l5":null}"""
@@ -276,8 +276,8 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Number must break") {
           val js = """{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":9923372036854755810,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":1.8E+308,"n16":0.0,"n17":null}"""
           val msg = """Expected value token of type Number, not String when reading Number value.  (Is your value wrapped in quotes?)
-            |{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":214748364
-            |--------------------------^""".stripMargin
+            |{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":21474836
+            |-------------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Short must break") {
@@ -306,7 +306,7 @@ class JavaPrim() extends FunSpec with Matchers {
           val js2 = """{"u1":"bogus","u2":null}"""
           val msg2 = """Invalid UUID string: bogus
             |{"u1":"bogus","u2":null}
-            |-------^""".stripMargin
+            |------^""".stripMargin
           the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleUUID](js2) should have message msg2
         }
       }
@@ -320,7 +320,7 @@ class JavaPrim() extends FunSpec with Matchers {
           val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}"""
           val msg2 = """Text cannot be parsed to a Duration
             |{"d1":"PT0S","d2":"bogus","d3":null}
-            |-------------------^""".stripMargin
+            |------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleDuration](js2) should have message msg2
         }
         it("Instant must break") {
@@ -331,8 +331,8 @@ class JavaPrim() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleInstant](js) should have message msg
           val js2 = """{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}"""
           val msg2 = """Text 'bogus' could not be parsed at index 0
-            |{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"20
-            |-----------------------------------^""".stripMargin
+            |{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2
+            |----------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleInstant](js2) should have message msg2
         }
         it("LocalDateTime must break") {
@@ -343,8 +343,8 @@ class JavaPrim() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
           val js2 = """{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d4":null}"""
           val msg2 = """Text 'bogus' could not be parsed at index 0
-            |{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007
-            |-------^""".stripMargin
+            |{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"200
+            |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDateTime](js2) should have message msg2
         }
         it("LocalTime must break") {
@@ -355,7 +355,7 @@ class JavaPrim() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleLocalTime](js) should have message msg
           val js2 = """{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}"""
           val msg2 = """Text 'Bogus' could not be parsed at index 0
-            |:"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}
+            |":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}
             |--------------------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalTime](js2) should have message msg2
         }
@@ -367,7 +367,7 @@ class JavaPrim() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
           val js2 = """{"o1":"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}"""
           val msg2 = """Text '-999999999-01T00:00:00+18:00' could not be parsed at index 13
-            |"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:
+            |:"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10
             |--------------------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetDateTime](js2) should have message msg2
         }
@@ -379,8 +379,8 @@ class JavaPrim() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleOffsetTime](js) should have message msg
           val js2 = """{"o1":"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null}"""
           val msg2 = """Text '00:00:00:00+18:00' could not be parsed at index 8
-            |{"o1":"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null
-            |---------------------------------------^""".stripMargin
+            |{"o1":"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":nul
+            |--------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetTime](js2) should have message msg2
         }
         it("Period must break") {
@@ -392,7 +392,7 @@ class JavaPrim() extends FunSpec with Matchers {
           val js2 = """{"p1":"P0D","p2":"bogus","p3":null}"""
           val msg2 = """Text cannot be parsed to a Period
             |{"p1":"P0D","p2":"bogus","p3":null}
-            |------------------^""".stripMargin
+            |-----------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SamplePeriod](js2) should have message msg2
         }
         it("ZonedDateTime must break") {
@@ -404,7 +404,7 @@ class JavaPrim() extends FunSpec with Matchers {
           val js2 = """{"o1":"2007-12-03T10:15:30+01:00 Earth","o2":null}"""
           val msg2 = """Text '2007-12-03T10:15:30+01:00 Earth' could not be parsed, unparsed text found at index 25
             |{"o1":"2007-12-03T10:15:30+01:00 Earth","o2":null}
-            |-------^""".stripMargin
+            |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleZonedDateTime](js2) should have message msg2
         }
       }

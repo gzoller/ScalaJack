@@ -53,7 +53,7 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"bogus":"co.blocke.scalajack.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}"""
         val msg = """Could not find type field named "which"
-          |ain","city":"New York","state":"NY","postalCode":"39822"}
+          |Main","city":"New York","state":"NY","postalCode":"39822"}
           |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
       }

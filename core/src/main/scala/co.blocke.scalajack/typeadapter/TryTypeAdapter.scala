@@ -1,8 +1,26 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.json.Tokenizer
+
 import scala.util.{ Failure, Success, Try }
 import scala.reflect.runtime.universe.{ Type, typeOf }
+
+trait Drink
+case class OrangeJuice(pulp: Boolean) extends Drink
+case class Meal(drink: Try[Drink])
+
+object TrySandbox extends App {
+
+  val scalaJack = ScalaJack()
+
+  val json = """{"drink": "bill"}"""
+
+  val meal = scalaJack.read[Meal](json)
+  println(meal)
+  println(scalaJack.render[Meal](meal))
+
+}
 
 object TryTypeAdapter extends TypeAdapterFactory {
 
@@ -33,14 +51,10 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         reader.position = originalPosition
         reader.skipValue()
 
-        val unreadableJsonOffset = reader.tokenOffsetAt(originalPosition)
-        val unreadableJsonLength = reader.tokenOffsetAt(reader.position) - unreadableJsonOffset
+        val unreadableJsonOffset = reader.tokenOffsetAt(originalPosition + 1)
+        val unreadableJsonLength = reader.tokenOffsetAt(reader.position + 1) - unreadableJsonOffset
 
-        val exception = new UnreadableException(cause) {
-          override def write(writer: Writer): Unit = {
-            writer.writeRawValue(reader.source, unreadableJsonOffset, unreadableJsonLength)
-          }
-        }
+        val exception = new UnreadableException(reader.source, unreadableJsonOffset, unreadableJsonLength, cause)
 
         Failure(exception)
     }
@@ -52,7 +66,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         valueTypeAdapter.write(v, writer)
 
       case Failure(e: UnreadableException) ⇒
-        writer.writeNull
+        e.write(writer)
 
       case Failure(e) ⇒
         throw e

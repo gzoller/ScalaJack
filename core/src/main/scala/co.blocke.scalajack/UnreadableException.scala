@@ -1,7 +1,9 @@
 package co.blocke.scalajack
 
-abstract class UnreadableException(cause: Throwable) extends RuntimeException(cause) {
+class UnreadableException(source: Array[Char], offset: Int, length: Int, cause: Throwable) extends RuntimeException(cause) {
 
-  def write(writer: Writer): Unit
+  def write(writer: Writer): Unit = {
+    writer.writeRawValue(source, offset, length)
+  }
 
 }
