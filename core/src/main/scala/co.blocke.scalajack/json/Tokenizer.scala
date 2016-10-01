@@ -209,9 +209,9 @@ class Tokenizer(val capacity: Int = 1024) {
         case '"' ⇒
           if (!isValidSet(ExpectKey) && !isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. String not expected here.\n" + showError())
 
-          position += 1 // Skip the leading double-quote
-
           val start = position
+
+          position += 1 // Skip the leading double-quote
 
           while (position < maxPosition && source(position) != '"') {
             if (source(position) == '\\') {
@@ -222,8 +222,8 @@ class Tokenizer(val capacity: Int = 1024) {
           }
           if (position == maxPosition) throw new IllegalArgumentException("Unterminated string\n" + showError())
 
-          appendToken(TokenType.String, start, position - start)
           position += 1 // Skip the trailing double-quote
+          appendToken(TokenType.String, start, position - start)
 
           if (isValidSet(ExpectKey)) {
             unsetValidBit(ExpectKey)

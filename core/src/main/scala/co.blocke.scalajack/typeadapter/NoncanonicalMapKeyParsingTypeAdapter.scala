@@ -25,7 +25,11 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
             throw new java.lang.IllegalArgumentException(msg + "\n" + tokenizer.showError() + " Extracted from source here:\n" + reader.showError())
         }
         if (nestedReader.peek == TokenType.UnknownLiteralName) // String values in Any type
-          nestedReader.poke(TokenType.String)
+          nestedReader.poke(
+            TokenType.String,
+            newTokenOffset = oldTokenOffset => oldTokenOffset - 1, // Simulate the leading double-quote
+            newTokenLength = oldTokenLength => oldTokenLength + 2 // Simulate both the leading and trailing double-quotes
+          )
         val valueParsed = try {
           valueTypeAdapter.read(nestedReader)
         } catch {

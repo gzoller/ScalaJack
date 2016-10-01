@@ -112,22 +112,22 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("BigDecimal must break") {
         val js = """{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.1499999999999999944488848768742172978818416595458984375","bd6":null}"""
         val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.149999999999999994448884876874217297881841659545
+          |{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.14999999999999999444888487687421729788184165954
           |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("BigInt must break") {
         val js = """{"bi1":"-90182736451928374653345","bi2":90182736451928374653345,"bi3":0,"bi4":null}"""
         val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
-          |{"bi1":"-90182736451928374653345","bi2":901827364519283746
-          |--------^""".stripMargin
+          |{"bi1":"-90182736451928374653345","bi2":90182736451928374
+          |-------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Boolean must break") {
         val js = """{"bool1":true,"bool2":"false"}"""
         val msg = """Expected value token of type True or False, not String when reading Boolean value.  (Is your value wrapped in quotes or a number?)
           |{"bool1":true,"bool2":"false"}
-          |-----------------------^""".stripMargin
+          |----------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js) should have message msg
         val js2 = """{"bool1":true,"bool2":123}"""
         val msg2 = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
@@ -157,7 +157,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("Double must break") {
         val js = """{"d1":1.7976931348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}"""
         val msg = """Expected token of type Number, not String
-          |1348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}
+          |31348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}
           |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
@@ -169,23 +169,23 @@ class ScalaPrim() extends FunSpec with Matchers {
           |-------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleEnum](js) should have message msg
         val js2 = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}"""
-        val msg2 = """No value found in enumeration co.blocke.scalajack.test.primitives.Size$ for 'Bogus'
+        val msg2 = """No value found in enumeration co.blocke.scalajack.test.primitives.Size$ for "Bogus"
           |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}
-          |--------------------^""".stripMargin
+          |-------------------^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js2) should have message msg2
       }
       it("Float must break") {
         val js = """{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}"""
         val msg = """Expected token of type Number, not String
           |{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}
-          |-------------------------^""".stripMargin
+          |------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Int must break") {
         val js = """{"i1":2147483647,"i2":-2147483648,"i3":"0","i4":123}"""
         val msg = """Expected token of type Number, not String
           |{"i1":2147483647,"i2":-2147483648,"i3":"0","i4":123}
-          |----------------------------------------^""".stripMargin
+          |---------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleInt](js) should have message msg
         val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}"""
         val msg2 = """For input string: "2.3"

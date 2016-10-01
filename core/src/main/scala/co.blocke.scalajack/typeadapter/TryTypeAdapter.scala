@@ -33,14 +33,10 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         reader.position = originalPosition
         reader.skipValue()
 
-        val unreadableJsonOffset = reader.tokenOffsetAt(originalPosition)
-        val unreadableJsonLength = reader.tokenOffsetAt(reader.position) - unreadableJsonOffset
+        val unreadableJsonOffset = reader.tokenOffsetAt(originalPosition + 1)
+        val unreadableJsonLength = reader.tokenOffsetAt(reader.position + 1) - unreadableJsonOffset
 
-        val exception = new UnreadableException(cause) {
-          override def write(writer: Writer): Unit = {
-            writer.writeRawValue(reader.source, unreadableJsonOffset, unreadableJsonLength)
-          }
-        }
+        val exception = new UnreadableException(reader.source, unreadableJsonOffset, unreadableJsonLength, cause)
 
         Failure(exception)
     }
@@ -52,7 +48,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         valueTypeAdapter.write(v, writer)
 
       case Failure(e: UnreadableException) ⇒
-        writer.writeNull
+        e.write(writer)
 
       case Failure(e) ⇒
         throw e
