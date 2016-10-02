@@ -26,7 +26,7 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         try {
           enum.withName(reader.readString())
         } catch {
-          case nse: java.util.NoSuchElementException ⇒ throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for '${reader.tokenText}'" + "\n" + reader.showError())
+          case nse: java.util.NoSuchElementException ⇒ throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
         }
       case TokenType.Null ⇒ reader.readNull()
       case actual ⇒
