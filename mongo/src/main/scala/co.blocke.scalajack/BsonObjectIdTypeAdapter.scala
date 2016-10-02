@@ -9,7 +9,7 @@ case class BsonObjectIdContainer($oid: String)
 object BsonObjectIdTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-    if (tpe =:= typeOf[org.mongodb.scala.bson.BsonObjectId]) {
+    if (tpe =:= typeOf[BsonObjectId]) {
       val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
       Some(BsonObjectIdTypeAdapter(typeAdapter))
     } else {

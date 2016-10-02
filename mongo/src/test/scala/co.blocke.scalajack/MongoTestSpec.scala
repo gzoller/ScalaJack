@@ -19,9 +19,9 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
 
-  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 
-  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 
   describe("=====================\n| -- Mongo Tests -- |\n=====================") {
     describe("MongoDB/Casbah Support") {

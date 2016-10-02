@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import co.blocke.scalajack.TokenType.TokenType
-import org.bson.{BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue}
+import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
 import scala.collection.JavaConversions._
 
@@ -116,7 +116,10 @@ class BsonParser {
       } else if (value.isNumber) {
         appendToken(TokenType.Number, value.asNumber)
       } else if (value.isObjectId) {
-        ???
+        appendToken(TokenType.BeginObject, null)
+        appendString(TokenType.String, "$oid")
+        appendString(TokenType.String, value.asObjectId.getValue.toHexString)
+        appendToken(TokenType.EndObject, null)
       } else if (value.isRegularExpression) {
         ???
       } else if (value.isString) {

@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import org.bson.{BsonArray, BsonBinary, BsonBoolean, BsonDateTime, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonMaxKey, BsonMinKey, BsonObjectId, BsonString, BsonTimestamp, BsonUndefined, BsonValue}
+import org.bson.{ BsonArray, BsonBinary, BsonBoolean, BsonDateTime, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonMaxKey, BsonMinKey, BsonObjectId, BsonString, BsonTimestamp, BsonUndefined, BsonValue }
 import org.mongodb.scala.bson.BsonNull
 
 class BsonWriter extends Writer {
@@ -98,14 +98,14 @@ class BsonWriter extends Writer {
           ???
         } else if (keys contains "$regex") {
           ???
-        } else if (keys contains "$ref") {
-          ???
+          //        } else if (keys contains "$ref") {
+          //          ???
         } else if (keys contains "$minKey") {
           new BsonMinKey
         } else if (keys contains "$maxKey") {
           new BsonMaxKey
         } else if (keys contains "$oid") {
-          new BsonObjectId(null)
+          new BsonObjectId(new org.bson.types.ObjectId(document.getString("$oid").getValue))
         } else {
           document
         }
