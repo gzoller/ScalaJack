@@ -6,8 +6,8 @@ import TokenType.TokenType
 class TokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
-    val tokenTypes:      Array[TokenType],
-    val tokenOffsets:    Array[Int],
+    tokenTypes:          Array[TokenType],
+    tokenOffsets:        Array[Int],
     tokenLengths:        Array[Int]
 ) extends Reader {
 
@@ -121,24 +121,10 @@ class TokenReader(
   }
 
   override def captureValue(): Any = {
-    val startPos = tokenOffsets(position + 1)
-    source(startPos) match {
-      case '{' ⇒
-        skipContext('}', startPos)
-      case '[' ⇒
-        skipContext(']', startPos)
-      case c if (source(startPos - 1) == '"') ⇒
-        read(expected = TokenType.String)
-        '"' + tokenText + '"'
-      case c ⇒ // literal
-        skipContext(',', startPos).reverse.tail.reverse.trim
-    }
-  }
-  private def skipContext(c: Char, startPos: Int) = {
+    val startTok = position + 1
     skipValue()
-    var endPos = tokenOffsets(position + 1)
-    while (source(endPos) != c && source(endPos) != '}' && endPos > 0) endPos -= 1
-    new String(source, startPos, (endPos + 1) - startPos)
+    val endTok = Math.max(startTok, position)
+    new String(source.slice(tokenOffsets(startTok), tokenOffsets(endTok) + tokenLengths(endTok)))
   }
 
   override def readString(): String = {
