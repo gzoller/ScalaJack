@@ -14,7 +14,12 @@ class TokenReader(
   override var position = -1
 
   override def peek: TokenType = tokenTypes(position + 1)
-  def poke(tt: TokenType) = tokenTypes(position + 1) = tt
+  def poke(tt: TokenType, newTokenOffset: Int => Int, newTokenLength: Int => Int) = {
+    val nextPosition = position + 1
+    tokenTypes(nextPosition) = tt
+    tokenOffsets(nextPosition) = newTokenOffset(tokenOffsets(nextPosition))
+    tokenLengths(nextPosition) = newTokenLength(tokenLengths(nextPosition))
+  }
 
   private[scalajack] def getTokens() = tokenTypes.take(numberOfTokens).toList
 
@@ -45,8 +50,10 @@ class TokenReader(
     val tokenOffset = this.tokenOffset
     val tokenLength = this.tokenLength
 
-    var position = tokenOffset
-    val maxPosition = tokenOffset + tokenLength
+    val minPosition = tokenOffset + 1 // ignore the leading double-quote
+    val maxPosition = tokenOffset + tokenLength - 1 // ignore the trailing double-quote
+
+    var position = minPosition
 
     var startOfUnescapedCharacters = position
 
@@ -106,7 +113,7 @@ class TokenReader(
     }
 
     if (builder == null) {
-      tokenText
+      new String(source, minPosition, maxPosition - minPosition)
     } else {
       builder.appendAll(source, startOfUnescapedCharacters, maxPosition - startOfUnescapedCharacters)
       builder.toString()

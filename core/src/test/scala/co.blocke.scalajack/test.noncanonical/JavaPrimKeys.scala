@@ -197,28 +197,28 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           val js = """{"m":{"fred":1,"789.123":2}}"""
           val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789.123":2}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
         }
         it("Bad BigInt Key") {
           val js = """{"m":{"fred":1,"789":2}}"""
           val msg = """Expected value token of type Number, not String when reading BigInteger value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789":2}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Bad Boolean Key") {
           val js = """{"m":{"true":false,"123":true}}"""
           val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes?)
           |{"m":{"true":false,"123":true}}
-          |--------------------^""".stripMargin
+          |-------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg
         }
         it("Bad Byte Key") {
           val js = """{"m":{"16":2,"x48":9}}"""
           val msg = """Expected value token of type Number, not String when reading Byte value.  (Is your value wrapped in quotes?)
           |{"m":{"16":2,"x48":9}}
-          |--------------^""".stripMargin
+          |-------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJByte](js) should have message msg
         }
         it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
@@ -232,28 +232,28 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
           val msg = """Expected value token of type Number, not True when reading Double value.  (Is your value wrapped in quotes?)
           |{"m":{"12.34":56.78,"true":34.56}}
-          |---------------------^""".stripMargin
+          |--------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
           val msg = """multiple points
           |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |---------------------^""".stripMargin
+          |--------------------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJFloat](js) should have message msg
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.0":56,"90":34}}"""
           val msg = """For input string: "12.0"
           |{"m":{"12.0":56,"90":34}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJInteger](js) should have message msg
         }
         it("Bad Long Key") {
           val js = """{"m":{"12":56,"hey":34}}"""
           val msg = """Expected value token of type Number, not String when reading Long value.  (Is your value wrapped in quotes?)
           |{"m":{"12":56,"hey":34}}
-          |---------------^""".stripMargin
+          |--------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
         }
         it("Bad Number Key") {
@@ -261,15 +261,15 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
           |0x
           |-^ Extracted from source here:
-          |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"
-          |-------^""".stripMargin
+          |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,
+          |------^""".stripMargin
           the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Bad Short Key") {
           val js = """{"m":{"99999":56,"90":34}}"""
           val msg = """Value out of range. Value:"99999" Radix:10
           |{"m":{"99999":56,"90":34}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJShort](js) should have message msg
         }
       }
@@ -278,20 +278,20 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           val js = """{"m":{"PT0SXXX":"PT51H4M"}}"""
           val msg = """Text cannot be parsed to a Duration
           |{"m":{"PT0SXXX":"PT51H4M"}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleDuration](js) should have message msg
         }
         it("Bad Instant Key") {
           val js = """{"m":{"1970-01-01T00:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}"""
           val msg = """Text 'bogus' could not be parsed at index 0
-          |:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
+          |0:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
           |--------------------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleInstant](js) should have message msg
         }
         it("Bad LocalDateTime Key") {
           val js = """{"m":{"+999999999-12-31T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}"""
           val msg = """Text 'bogus' could not be parsed at index 0
-          |T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
+          |1T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
           |--------------------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
         }
@@ -299,42 +299,42 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           val js = """{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}"""
           val msg = """Text 'bogus' could not be parsed at index 0
           |{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDate](js) should have message msg
         }
         it("Bad LocalTime Key") {
           val js = """{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}"""
           val msg = """Text 'nada' could not be parsed at index 0
           |{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}
-          |---------------------------------------^""".stripMargin
+          |--------------------------------------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalTime](js) should have message msg
         }
         it("Bad OffsetDateTime Key") {
           val js = """{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:15:30+01:00":null}}"""
           val msg = """Text 'false' could not be parsed at index 0
-          |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-
-          |-------^""".stripMargin
+          |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
         }
         it("Bad OffsetTime Key") {
           val js = """{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}"""
           val msg = """Text '2007-12-03T10:15:30+01:00[Europe/Bogus]' could not be parsed at index 2
           |{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetTime](js) should have message msg
         }
         it("Bad Period Key") {
           val js = """{"m":{"P0D???":"P1Y2M3D"}}"""
           val msg = """Text cannot be parsed to a Period
           |{"m":{"P0D???":"P1Y2M3D"}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SamplePeriod](js) should have message msg
         }
         it("Bad ZonedDateTime Key") {
           val js = """{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","10:15:30+01:00":null}}"""
           val msg = """Text 'FRED23:59:59.999999999-18:00' could not be parsed at index 0
-          |{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","10
-          |-------^""".stripMargin
+          |{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","1
+          |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleZonedDateTime](js) should have message msg
         }
       }

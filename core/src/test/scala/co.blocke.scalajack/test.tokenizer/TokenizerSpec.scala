@@ -29,6 +29,12 @@ class TokenizerSpec extends FunSpec {
         validTC.tokenize(js.toCharArray, 0, js.length).getTokens()
       }
     }
+    it("Must tokenize human-readable, multi-line JSON") {
+      val js = "{\"a\":true,\r\n\t\"b\" :  0}"
+      assertResult(List(BeginObject, String, True, String, Number, EndObject, End)) {
+        validTC.tokenize(js.toCharArray, 0, js.length).getTokens()
+      }
+    }
     it("Must catch errors in json - open top-level object") {
       val js = """{"a":1,"b":true,"c":[1,2],"d":{"one":1}"""
       val msg = """Unterminated object
@@ -89,6 +95,20 @@ class TokenizerSpec extends FunSpec {
       val msg = """Character out of place. ']' not expected here.
         |ue,"c":[{"fred":1,"wilma":2},{"barney":3,"betty":4],"d":{"one":1}}
         |--------------------------------------------------^""".stripMargin
+      the[java.lang.IllegalArgumentException] thrownBy validTC.tokenize(js.toCharArray, 0, js.length) should have message msg
+    }
+    it("Must catch errors in json - open array") {
+      val js = """[{"a":1,"b":true,"c":[1,2],"d":{"one":1}}"""
+      val msg = """Unterminated array
+        |[{"a":1,"b":true,"c":[1,2],"d":{"one":1}}
+        |-----------------------------------------^""".stripMargin
+      the[java.lang.IllegalArgumentException] thrownBy validTC.tokenize(js.toCharArray, 0, js.length) should have message msg
+    }
+    it("Must catch errors in json - unknown character") {
+      val js = """{"a":1,"b":true,"c":*,"d":{"one":1}}"""
+      val msg = """Unknown character: *
+        |{"a":1,"b":true,"c":*,"d":{"one":1}}
+        |--------------------^""".stripMargin
       the[java.lang.IllegalArgumentException] thrownBy validTC.tokenize(js.toCharArray, 0, js.length) should have message msg
     }
   }
