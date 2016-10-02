@@ -28,10 +28,10 @@ class TryAndCapture() extends FunSpec with Matchers {
       assertResult("""{"name":"Greg","other":{"stuff":["a","b","c"],"num":2}}""") { sj.render(obj) }
     }
     it("Try failure") {
-      val js = """{"name":"Greg","other":50}"""
+      val js = """{"name":"Greg","other":[1,2,3]}"""
       val obj = sj.read[Boom](js)
-      assertResult("scala.MatchError: Number (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
-      assertResult("""{"name":"Greg","other":null}""") { sj.render(obj) }
+      assertResult("scala.MatchError: BeginArray (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
+      assertResult(js) { sj.render(obj) }
     }
   }
 }
