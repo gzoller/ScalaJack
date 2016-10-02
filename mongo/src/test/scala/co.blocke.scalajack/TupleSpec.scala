@@ -6,8 +6,6 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.language.postfixOps
 import scala.util.Try
-import org.joda.time.{ DateTime, DateTimeZone }
-import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala._
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson._

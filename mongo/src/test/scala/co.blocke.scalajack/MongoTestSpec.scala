@@ -1,16 +1,16 @@
 package co.blocke.scalajack
 package test
 
+import java.time.{LocalDate, LocalTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.mongo._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson._
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.scalatest.Matchers._
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
 
 import scala.reflect.runtime.universe.typeOf
 import scala.util._
@@ -19,9 +19,9 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
 
-  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
+  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 
-  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 
   describe("=====================\n| -- Mongo Tests -- |\n=====================") {
     describe("MongoDB/Casbah Support") {
@@ -85,8 +85,8 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         b should equal(thing)
       }
       it("DateTime support") {
-        val pattern = "MM-dd-yy"
-        val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
+        val t = LocalDate.parse("1986-07-01").atTime(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))
+        val millis = t.toInstant.toEpochMilli
         val thing = JodaThing("Foo", t, List(t, t), Some(t))
         val dbo = mongoScalaJack.render(thing)
         dbo.asDocument.toJson should equal("""{ "name" : "Foo", "dt" : { "$date" : 520560000000 }, "many" : [{ "$date" : 520560000000 }, { "$date" : 520560000000 }], "maybe" : { "$date" : 520560000000 } }""")
@@ -179,11 +179,11 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[Carry[Wrapper]](db) should equal(w)
         }
         it("Case class having value class parameter - Foo[A](x:A) where A -> value class (WITH value class handler)") {
-          val w = Carry("Mike", Wrap("Sally", new CustomVC(new DateTime(2015, 7, 1, 0, 0)), "Fine"))
+          val w = Carry("Mike", Wrap("Sally", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)), "Fine"))
           val js = jsonScalaJack.render(w)
           val db = mongoScalaJack.render(w)
 
-          val timeval = (new DateTime(2015, 7, 1, 0, 0)).toDate.getTime
+          val timeval = ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault).toInstant.toEpochMilli
           db.asDocument.toJson should equal(s"""{ "s" : "Mike", "w" : { "name" : "Sally", "data" : { "$$date" : $timeval }, "stuff" : "Fine" } }""")
           jsonScalaJack.read[Carry[CustomVC]](js) should equal(w)
           mongoScalaJack.read[Carry[CustomVC]](db) should equal(w)

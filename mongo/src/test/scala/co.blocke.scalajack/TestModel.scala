@@ -1,8 +1,9 @@
 package co.blocke.scalajack
 package test
 
+import java.time.{OffsetDateTime, ZonedDateTime}
+
 import co.blocke.scalajack.typeadapter.StringTypeAdapter
-import org.joda.time.DateTime
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -112,9 +113,9 @@ case class UuidThing(
 
 case class JodaThing(
   name:  String,
-  dt:    DateTime,
-  many:  List[DateTime],
-  maybe: Option[DateTime]
+  dt:    OffsetDateTime,
+  many:  List[OffsetDateTime],
+  maybe: Option[OffsetDateTime]
 )
 
 trait Pop {
@@ -221,5 +222,5 @@ object CustomVC {
   //	}
 }
 
-class CustomVC(val underlying: DateTime) extends AnyVal
+class CustomVC(val underlying: ZonedDateTime) extends AnyVal
 case class SomethingSpecial(what: String, when: CustomVC)

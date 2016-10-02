@@ -9,7 +9,7 @@ case class MongoFlavor() extends JackFlavor[BsonValue] with ScalaJackLike[BsonVa
 
   val bsonParser = new BsonParser
 
-  context.withFactory(JodaDateTimeTypeAdapter)
+  context.withFactory(OffsetDateTimeTypeAdapter)
   context.withFactory(BsonDateTimeTypeAdapter)
 
   override def read[T](src: BsonValue)(implicit valueTypeTag: TypeTag[T]): T = {

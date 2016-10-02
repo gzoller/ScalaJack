@@ -1,15 +1,15 @@
 package co.blocke.scalajack
 package test
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalTime, OffsetDateTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.mongo._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson._
 import org.scalatest.Matchers._
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
 
 // Just some "bonus" parser read/render tests--not mongo specific.  Could go into core but they evolved here.
 
@@ -17,9 +17,9 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
 
-  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
 
-  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(JodaDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
 
   describe("=====================\n| -- Extra Tests -- |\n=====================") {
     describe("Basic Render/Read") {
@@ -41,8 +41,7 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         b should equal(thing)
       }
       it("Should handle DateTime types") {
-        val pattern = "MM-dd-yy"
-        val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
+        val t = LocalDate.parse("1986-07-01").atTime(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))
         val thing = JodaThing("Foo", t, List(t, t), Some(t))
         val js = jsonScalaJack.render(thing)
         js should equal("""{"name":"Foo","dt":520560000000,"many":[520560000000,520560000000],"maybe":520560000000}""")
@@ -83,11 +82,11 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Naked Lists of Joda") {
         val pattern = "MM-dd-yy"
-        val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
+        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
         val stuff = List(t, t)
         val js = jsonScalaJack.render(stuff)
         js should equal("""[520560000000,520560000000]""")
-        jsonScalaJack.read[List[DateTime]](js) should equal(stuff)
+        jsonScalaJack.read[List[ZonedDateTime]](js) should equal(stuff)
       }
       it("Naked Lists of objects") {
         val stuff = List(Three("three", Num.A, Wow1("foo", 17)), Three("four", Num.B, Wow1("bar", 18)))
@@ -215,9 +214,9 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Handles null values - DateTime") {
         val js = """{"a":520560000000,"b":null}"""
-        val o = jsonScalaJack.read[Map[String, DateTime]](js)
+        val o = jsonScalaJack.read[Map[String, ZonedDateTime]](js)
         val pattern = "MM-dd-yy"
-        val t = DateTime.parse("07-01-86", DateTimeFormat.forPattern(pattern).withZoneUTC())
+        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
         o should contain allOf (("a" -> t), ("b" -> null))
       }
     }
@@ -277,7 +276,7 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         }
         it("Must read & render custom JSON for value class") {
           val sj = jsonScalaJack
-          val ss = SomethingSpecial("hey", new CustomVC(new DateTime(2015, 7, 1, 0, 0)))
+          val ss = SomethingSpecial("hey", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)))
           val js = sj.render(ss)
           js should equal("""{"what":"hey","when":"July, 2015"}""")
           (sj.read[SomethingSpecial](js.toString) == ss) should be(true)
