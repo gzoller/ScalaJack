@@ -49,13 +49,6 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     // otherwise fail the default lookup.
     def defaultValue: Option[T] =
       defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None)
-    // defaultValueMirror match {
-    //   case Some(mirror) ⇒
-    //     mirror.apply().asInstanceOf[T]
-
-    //   case None ⇒
-    //     valueTypeAdapter.read(EmptyReader)
-    // }
 
   }
 

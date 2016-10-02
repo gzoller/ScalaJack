@@ -113,28 +113,28 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"789.123":1,"fred":2}}"""
         val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
           |{"m":{"789.123":1,"fred":2}}
-          |-------------------^""".stripMargin
+          |------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"fred":1,"789":2}}"""
         val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
           |{"m":{"fred":1,"789":2}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
         val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
           |{"m":{"true":false,"123":true}}
-          |--------------------^""".stripMargin
+          |-------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js) should have message msg
       }
       it("Bad Byte Key") {
         val js = """{"m":{"16":2,"x48":9}}"""
         val msg = """Expected token of type Number, not String
           |{"m":{"16":2,"x48":9}}
-          |--------------^""".stripMargin
+          |-------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleByte](js) should have message msg
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
@@ -148,42 +148,42 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
         val msg = """Expected token of type Number, not True
           |{"m":{"12.34":56.78,"true":34.56}}
-          |---------------------^""".stripMargin
+          |--------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.test.noncanonical.Size$ for 'Bogus'
+        val msg = """No value found in enumeration co.blocke.scalajack.test.noncanonical.Size$ for "Bogus"
           |{"m":{"Small":"Large","Bogus":"Medium"}}
-          |-----------------------^""".stripMargin
+          |----------------------^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnumeration](js) should have message msg
       }
       it("Bad Float Key") {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
         val msg = """multiple points
           |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |---------------------^""".stripMargin
+          |--------------------^""".stripMargin
         the[java.lang.NumberFormatException] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
         val msg = """For input string: "12.0"
           |{"m":{"12.0":56,"90":34}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
         the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js) should have message msg
       }
       it("Bad Long Key") {
         val js = """{"m":{"12":56,"hey":34}}"""
         val msg = """Expected token of type Number, not String
           |{"m":{"12":56,"hey":34}}
-          |---------------^""".stripMargin
+          |--------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleLong](js) should have message msg
       }
       it("Bad Short Key") {
         val js = """{"m":{"99999":56,"90":34}}"""
         val msg = """Value out of range. Value:"99999" Radix:10
           |{"m":{"99999":56,"90":34}}
-          |-------^""".stripMargin
+          |------^""".stripMargin
         the[java.lang.NumberFormatException] thrownBy sj.read[SampleShort](js) should have message msg
       }
     }

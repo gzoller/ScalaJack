@@ -17,19 +17,20 @@ object OptionTypeAdapter extends TypeAdapterFactory {
 
 }
 
-// We need 2 types of Option adapters here.  The "normal" one writes nothing for None.
-// This is used most places: Class members, list items, Map values.
+// We need 3 types of Option adapters here:
+//   1: The "normal" one writes nothing for None.  This is used most places: Class members, list items, Map values
+//   2: "Empty" one writes "" for None.  This is used for Map keys that are None
+//   3: "Null" one converts None into null.  This is used mainly for Tuple members
 //
-// The second kind writes None as null.  This is used for naked Option and Tuples.
-//
-// Both flavors promote null -> None on read
 
 case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null ⇒ None
-      case v                                  ⇒ Some(valueTypeAdapter.read(reader))
+      case TokenType.Nothing | TokenType.Null ⇒
+        reader.read()
+        None
+      case v ⇒ Some(valueTypeAdapter.read(reader))
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
@@ -78,16 +79,17 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 // Reads have to reverse-engineer the "" into a None
 case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
-  override def read(reader: Reader): Option[T] = {
+  override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null ⇒ None
+      case TokenType.Nothing | TokenType.Null | TokenType.End ⇒
+        reader.read()
+        None
       case v ⇒
         valueTypeAdapter.read(reader) match {
           case ""  ⇒ None
           case res ⇒ Some(res)
         }
     }
-  }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {

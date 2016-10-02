@@ -25,7 +25,11 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
             throw new java.lang.IllegalArgumentException(msg + "\n" + tokenizer.showError() + " Extracted from source here:\n" + reader.showError())
         }
         if (nestedReader.peek == TokenType.UnknownLiteralName) // String values in Any type
-          nestedReader.poke(TokenType.String)
+          nestedReader.poke(
+            TokenType.String,
+            newTokenOffset = oldTokenOffset => oldTokenOffset - 1, // Simulate the leading double-quote
+            newTokenLength = oldTokenLength => oldTokenLength + 2 // Simulate both the leading and trailing double-quotes
+          )
         val valueParsed = try {
           valueTypeAdapter.read(nestedReader)
         } catch {
@@ -47,10 +51,10 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
     else readValue
   }
 
-  override def write(value: T, writer: Writer): Unit =
+  override def write(value: T, writer: Writer): Unit = {
     valueTypeAdapter match {
       case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
-      case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind]) ⇒ valueTypeAdapter.write(value, writer)
+      case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
       case vta: StringKind ⇒ valueTypeAdapter.write(value, writer)
       case _ ⇒
         val nestedWriter = new StringJsonWriter()
@@ -58,5 +62,5 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
         val json = nestedWriter.jsonString
         stringTypeAdapter.write(json, writer)
     }
-
+  }
 }
