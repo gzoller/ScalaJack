@@ -35,6 +35,12 @@ class TryAndCapture() extends FunSpec with Matchers {
         assertResult("scala.MatchError: BeginArray (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult(js) { sj.render(obj) }
       }
+      it("Try failure 2") {
+        val js = """{"name":"Greg","other":  -12.45  ,"num":2}"""
+        val obj = sj.read[Boom](js)
+        assertResult("scala.MatchError: Number (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
+        assertResult("""{"name":"Greg","other":-12.45}""") { sj.render(obj) }
+      }
     }
     describe("Capture:") {
       it("Capture can write semantically equivalent JSON") {
