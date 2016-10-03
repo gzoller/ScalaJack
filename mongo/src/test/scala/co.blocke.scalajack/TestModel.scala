@@ -222,5 +222,7 @@ object CustomVC {
   //	}
 }
 
-class CustomVC(val underlying: ZonedDateTime) extends AnyVal
+class CustomVC(val underlying: ZonedDateTime) extends AnyVal {
+  override def toString = s"CustomVC($underlying)"
+}
 case class SomethingSpecial(what: String, when: CustomVC)
