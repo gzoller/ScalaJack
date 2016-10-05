@@ -3,47 +3,44 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import CaseClassTypeAdapter.Member
-
-import scala.collection.mutable
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.{existentials, reflectiveCalls}
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{Annotation, ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class Member[T](
+  case class Member(
       index:                              Int,
       name:                               String,
-      valueTypeAdapter:                   TypeAdapter[T],
+      annotations:                        List[Annotation],
+      valueTypeAdapter:                   TypeAdapter[Any],
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
       defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]]
-  ) {
+  ) extends ClassLikeTypeAdapter.Member {
 
-    def valueIn(instance: Any): T = {
-      val value = valueAccessorMethod.invoke(instance)
+    override type OwnerType = Any
+    override type MemberValueType = Any
+
+    def valueIn(owner: OwnerType): MemberValueType = {
+      val value = valueAccessorMethod.invoke(owner)
 
       if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[T]
+        value.asInstanceOf[MemberValueType]
       } else {
         derivedValueClassConstructorMirror match {
           case Some(methodMirror) ⇒
-            methodMirror.apply(value).asInstanceOf[T]
+            methodMirror.apply(value)
 
           case None ⇒
-            value.asInstanceOf[T]
+            value.asInstanceOf[MemberValueType]
         }
       }
     }
 
-    def writeValue(parameterValue: Any, writer: Writer): Unit = {
-      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
-    }
-
-    def defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
+    def defaultValue: Option[MemberValueType] = defaultValueMirror.map(_.apply()).orElse(valueTypeAdapter.defaultValue)
 
   }
 
@@ -96,11 +93,11 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             }
 
           val memberType = member.asTerm.typeSignature
-          val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
+          Member(index, memberName, accessorMethodSymbol.annotations, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, memberNameTypeAdapter, members))
     } else {
       None
     }
@@ -110,65 +107,12 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 case class CaseClassTypeAdapter[T >: Null](
     caseClassType:         Type,
     constructorMirror:     MethodMirror,
-    tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[Member[_]]
-) extends TypeAdapter[T] {
+    members:               List[CaseClassTypeAdapter.Member]
+) extends ClassLikeTypeAdapter[T] {
 
-  val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
-
-  override def read(reader: Reader): T =
-    reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
-      case TokenType.BeginObject ⇒
-        val numberOfMembers = members.length
-
-        val arguments = new Array[Any](numberOfMembers)
-        val found = new mutable.BitSet(numberOfMembers)
-
-        reader.beginObject()
-
-        while (reader.hasMoreMembers) {
-          val memberName = memberNameTypeAdapter.read(reader)
-
-          val optionalMember = membersByName.get(memberName)
-          optionalMember match {
-            case Some(member) ⇒
-              arguments(member.index) = member.valueTypeAdapter.read(reader)
-              found(member.index) = true
-
-            case None ⇒
-              reader.skipValue()
-          }
-        }
-
-        reader.endObject()
-
-        for (member ← members if !found(member.index)) {
-          arguments(member.index) = member.defaultValue.getOrElse(
-            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-          )
-        }
-
-        constructorMirror.apply(arguments: _*).asInstanceOf[T]
-    }
-
-  override def write(value: T, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      for (member ← members) {
-        val memberValue = member.valueIn(value)
-
-        memberNameTypeAdapter.write(member.name, writer)
-        member.writeValue(memberValue, writer)
-      }
-
-      writer.endObject()
-    }
+  override def instantiate(memberValues: Array[Any]): T = {
+    constructorMirror.apply(memberValues: _*).asInstanceOf[T]
+  }
 
 }
