@@ -52,8 +52,6 @@ class BsonWriter extends Writer {
 
     var memberName: BsonValue = _
 
-    var memberNames = Set[BsonValue]()
-
     override def beginChildValue(): Unit = {
       nextMemberPartToBeWritten match {
         case MemberName ⇒
@@ -71,7 +69,6 @@ class BsonWriter extends Writer {
       memberPartCurrentlyBeingWritten match {
         case MemberName ⇒
           memberName = childValue
-          memberNames += memberName
 
         case MemberValue ⇒
           if (childValue != null) {
