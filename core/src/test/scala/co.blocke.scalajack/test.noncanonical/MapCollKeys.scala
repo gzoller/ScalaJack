@@ -82,10 +82,24 @@ class MapCollPrimKeys() extends FunSpec with Matchers {
       }
     }
     it("Map of parameterized class as key") {
-      (pending)
+      val m1: Map[AThing[Int, String], AThing[Int, String]] = Map(AThing("one", 1) -> AThing("two", 2))
+      val m2: Map[AThing[Int, String], AThing[Int, String]] = Map(AThing("four", 4) -> AThing("three", 3))
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val js = sj.render(inst)
+      assertResult("""{"{\"{\\\"{\\\\\\\"a\\\\\\\":\\\\\\\"one\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\":{\\\"a\\\":\\\"two\\\",\\\"b\\\":2}}\":{\"{\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"a\":\"three\",\"b\":3}}}":{"{\"{\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"a\":\"three\",\"b\":3}}":{"{\"a\":\"one\",\"b\":1}":{"a":"two","b":2}}}}""") { js }
+      assertResult(true) {
+        sj.read[Map[Map[Map[AThing[Int, String], AThing[Int, String]], Map[AThing[Int, String], AThing[Int, String]]], Map[Map[AThing[Int, String], AThing[Int, String]], Map[AThing[Int, String], AThing[Int, String]]]]](js).isInstanceOf[Map[Map[Map[AThing[Int, String], AThing[Int, String]], Map[AThing[Int, String], AThing[Int, String]]], Map[Map[AThing[Int, String], AThing[Int, String]], Map[AThing[Int, String], AThing[Int, String]]]]]
+      }
     }
     it("Map of parameterized trait as key") {
-      (pending)
+      val m1: Map[Thing[String, Int], Thing[String, Int]] = Map(AThing("one", 1) -> AThing("two", 2))
+      val m2: Map[Thing[String, Int], Thing[String, Int]] = Map(AThing("four", 4) -> AThing("three", 3))
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val js = sj.render(inst)
+      assertResult("""{"{\"{\\\"{\\\\\\\"_hint\\\\\\\":\\\\\\\"co.blocke.scalajack.test.noncanonical.AThing\\\\\\\",\\\\\\\"a\\\\\\\":\\\\\\\"one\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\":{\\\"_hint\\\":\\\"co.blocke.scalajack.test.noncanonical.AThing\\\",\\\"a\\\":\\\"two\\\",\\\"b\\\":2}}\":{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.test.noncanonical.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"three\",\"b\":3}}}":{"{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.test.noncanonical.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"three\",\"b\":3}}":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"one\",\"b\":1}":{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":"two","b":2}}}}""") { js }
+      assertResult(true) {
+        sj.read[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]](js).isInstanceOf[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]]
+      }
     }
     it("Map of Optional as key") {
       val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)

@@ -187,13 +187,34 @@ class TupleCollPrimKeys() extends FunSpec with Matchers {
       }
     }
     it("Parameterized class") {
-      (pending)
+      val t1 = (AThing("wow", 4), AThing("boom", 1))
+      val t2 = (AThing("yep", 3), AThing("yikes", 11))
+      val inst = Map(t1 -> t2)
+      val js = sj.render(inst)
+      assertResult("""{"[{\"a\":\"wow\",\"b\":4},{\"a\":\"boom\",\"b\":1}]":[{"a":"yep","b":3},{"a":"yikes","b":11}]}""") { js }
+      assertResult(inst) {
+        sj.read[Map[(AThing[Int, String], AThing[Int, String]), (AThing[Int, String], AThing[Int, String])]](js)
+      }
     }
     it("Parameterized trait") {
-      (pending)
+      val t1: (Thing[String, Int], Thing[String, Int]) = (AThing("wow", 4), AThing("boom", 1))
+      val t2: (Thing[String, Int], Thing[String, Int]) = (AThing("yep", 3), AThing("yikes", 11))
+      val inst = Map(t1 -> t2)
+      val js = sj.render(inst)
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"wow\",\"b\":4},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"boom\",\"b\":1}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":"yep","b":3},{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":"yikes","b":11}]}""") { js }
+      assertResult(inst) {
+        sj.read[Map[(Thing[String, Int], Thing[String, Int]), (Thing[String, Int], Thing[String, Int])]](js)
+      }
     }
     it("Parameterized trait having parameterized trait members") {
-      (pending)
+      val t1: (Thing[String, Part[Double]], Thing[String, Part[Double]]) = (AThing("wow", APart(1.2)), AThing("boom", APart(2.3)))
+      val t2: (Thing[String, Part[Double]], Thing[String, Part[Double]]) = (AThing("yep", APart(4.5)), AThing("yikes", APart(6.7)))
+      val inst = Map(t1 -> t2)
+      val js = sj.render(inst)
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"wow\",\"b\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.APart\",\"p\":1.2}},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":\"boom\",\"b\":{\"_hint\":\"co.blocke.scalajack.test.noncanonical.APart\",\"p\":2.3}}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":"yep","b":{"_hint":"co.blocke.scalajack.test.noncanonical.APart","p":4.5}},{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":"yikes","b":{"_hint":"co.blocke.scalajack.test.noncanonical.APart","p":6.7}}]}""") { js }
+      assertResult(inst) {
+        sj.read[Map[(Thing[String, Part[Double]], Thing[String, Part[Double]]), (Thing[String, Part[Double]], Thing[String, Part[Double]])]](js)
+      }
     }
   }
 }

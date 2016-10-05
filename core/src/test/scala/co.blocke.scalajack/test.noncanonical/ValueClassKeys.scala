@@ -183,10 +183,24 @@ class ValueClassKeys() extends FunSpec with Matchers {
         }
       }
       it("Value class of Parameterized Case Class") {
-        (pending)
+        val a = AThing(5, "wow")
+        val b = AThing(6, "zoom")
+        val inst = SampleVCParamClass(Map(VCParamClass(a) -> VCParamClass(b)))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"a\":5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleVCParamClass[String, Int]](js)
+        }
       }
       it("Value class of Parameterized Trait") {
-        (pending)
+        val a: Thing[Int, String] = AThing(5, "wow")
+        val b: Thing[Int, String] = AThing(6, "zoom")
+        val inst = SampleVCParamTrait(Map(VCParamTrait(a) -> VCParamTrait(b)))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":6,"b":"zoom"}}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleVCParamTrait[Int, String]](js)
+        }
       }
       it("Value class of Option") {
         val inst = SampleVCOption(Map(VCOption(Some("here")) -> VCOption(Some("there"))))

@@ -11,6 +11,11 @@ object Size extends Enumeration {
   val Small, Medium, Large = Value
 }
 
+trait Thing[A, B] { val a: A; val b: B }
+case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
+trait Part[A] { val p: A }
+case class APart[A](p: A) extends Part[A]
+
 // === Scala Primitive Keys
 case class SampleBigDecimal(m: Map[BigDecimal, BigDecimal])
 case class SampleBigInt(m: Map[BigInt, BigInt])
@@ -136,3 +141,9 @@ case class VCOption(vc: Option[String]) extends AnyVal
 case class SampleVCOption(m: Map[VCOption, VCOption])
 case class VCNested(vc: List[Map[String, String]]) extends AnyVal
 case class SampleVCNested(m: Map[VCNested, VCNested])
+
+case class VCParamClass[A, B](vc: AThing[A, B]) extends AnyVal
+case class SampleVCParamClass[A, B](m: Map[VCParamClass[A, B], VCParamClass[A, B]])
+case class VCParamTrait[A, B](vc: Thing[A, B]) extends AnyVal
+case class SampleVCParamTrait[A, B](m: Map[VCParamTrait[A, B], VCParamTrait[A, B]])
+

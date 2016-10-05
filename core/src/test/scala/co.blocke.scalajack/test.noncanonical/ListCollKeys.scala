@@ -78,10 +78,20 @@ class ListCollKeys() extends FunSpec with Matchers {
       }
     }
     it("List of parameterized class as key") {
-      (pending)
+      val inst = Map(List(AThing(true, "True"), AThing(false, "False")) -> List(AThing(true, "Yes"), AThing(false, "No")))
+      val js = sj.render(inst)
+      assertResult("""{"[{\"a\":true,\"b\":\"True\"},{\"a\":false,\"b\":\"False\"}]":[{"a":true,"b":"Yes"},{"a":false,"b":"No"}]}""") { js }
+      assertResult(true) {
+        sj.read[Map[List[AThing[String, Boolean]], List[AThing[String, Boolean]]]](js).isInstanceOf[Map[List[AThing[String, Boolean]], List[AThing[String, Boolean]]]]
+      }
     }
     it("List of parameterized trait as key") {
-      (pending)
+      val inst: Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]] = Map(List(AThing(true, "True"), AThing(false, "False")) -> List(AThing(true, "Yes"), AThing(false, "No")))
+      val js = sj.render(inst)
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":true,\"b\":\"True\"},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":false,\"b\":\"False\"}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":true,"b":"Yes"},{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":false,"b":"No"}]}""") { js }
+      assertResult(true) {
+        sj.read[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]](js).isInstanceOf[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]]
+      }
     }
     it("List of Optional as key") {
       val inst: Map[List[Option[String]], List[Option[String]]] = Map(List(Some("hey"), Some("you")) -> List(Some("stop"), Some("go")))
