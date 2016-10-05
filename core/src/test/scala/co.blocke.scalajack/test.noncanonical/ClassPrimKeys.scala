@@ -115,15 +115,6 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           sj.read[SampleNCKey](js)
         }
       }
-      it("Parameterized class") {
-        (pending)
-      }
-      it("Parameterized trait") {
-        (pending)
-      }
-      it("Parameterized trait having parameterized trait members") {
-        (pending)
-      }
       it("Extra/unneeded fields in key's JSON harmlessly ignored") {
         val js = """{"m":{"{\"name\":\"Larry\",\"bogus\":false,\"age\":32,\"isOk\":true,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
         val a = SimpleClass("Larry", 32, true, "golf")

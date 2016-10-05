@@ -355,10 +355,18 @@ class ValueClassKeys() extends FunSpec with Matchers {
         the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCTrait](js) should have message msg
       }
       it("Bad Parameterized Case Class Key") {
-        (pending)
+        val js = """{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}"""
+        val msg = """For input string: "5.5"
+          |{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}
+          |------^""".stripMargin
+        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCParamClass[String, Int]](js) should have message msg
       }
       it("Bad Parameterized Trait Key") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.ZThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":6,"b":"zoom"}}}"""
+        val msg = """Unable to find class named "co.blocke.scalajack.test.noncanonical.ZThing"
+          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonica
+          |------^""".stripMargin
+        the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
       }
       it("Bad Option Key") {
         val js = """{"m":{"true":"there"}}"""
