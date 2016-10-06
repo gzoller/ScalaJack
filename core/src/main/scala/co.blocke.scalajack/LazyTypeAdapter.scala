@@ -6,7 +6,7 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
 
   var resolvedTypeAdapter: TypeAdapter[T] = _
 
-  @inline def resolve(): TypeAdapter[T] = {
+  @inline override def resolved: TypeAdapter[T] = {
     var typeAdapter = resolvedTypeAdapter
 
     if (typeAdapter == null) {
@@ -22,9 +22,9 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
   }
 
   override def read(reader: Reader): T =
-    resolve().read(reader)
+    resolved.read(reader)
 
   override def write(value: T, writer: Writer): Unit =
-    resolve().write(value, writer)
+    resolved.write(value, writer)
 
 }

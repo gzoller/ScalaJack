@@ -103,11 +103,11 @@ class MapCollPrimKeys() extends FunSpec with Matchers {
     }
     it("Map of Optional as key") {
       val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)
-      val m2: Map[Option[Int], Option[Int]] = Map(None -> Some(2))
+      val m2: Map[Option[Int], Option[Int]] = Map(None -> Some(2), Some(5) -> null)
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{"{\"{}\":{\"\":2}}":{"{\"\":2}":{}}}""") { js }
-      assertResult(Map(Map(Map() -> Map(None -> Some(2))) -> Map(Map(None -> Some(2)) -> Map()))) {
+      assertResult("""{"{\"{}\":{\"\":2,\"5\":null}}":{"{\"\":2,\"5\":null}":{}}}""") { js }
+      assertResult(Map(Map(Map() -> Map(None -> Some(2), Some(5) -> None)) -> Map(Map(None -> Some(2), Some(5) -> None) -> Map()))) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
     }

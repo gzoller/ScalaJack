@@ -32,13 +32,13 @@ class ListCollKeys() extends FunSpec with Matchers {
       }
     }
     it("List of Tuples as key") {
-      val l1: List[(Char, Char)] = List(('A', 'a'), ('B', 'b'))
-      val l2: List[(Char, Char)] = List(('X', 'x'), ('Y', 'y'))
+      val l1: List[(String, String)] = List(("A", "a"), ("B", "b"), (null, "c"))
+      val l2: List[(String, String)] = List(("X", "x"), ("Y", "y"), (null, "z"))
       val inst = Map(l1 -> l2)
       val js = sj.render(inst)
-      assertResult("""{"[[\"A\",\"a\"],[\"B\",\"b\"]]":[["X","x"],["Y","y"]]}""") { js }
+      assertResult("""{"[[\"A\",\"a\"],[\"B\",\"b\"],[null,\"c\"]]":[["X","x"],["Y","y"],[null,"z"]]}""") { js }
       assertResult(inst) {
-        sj.read[Map[List[(Char, Char)], List[(Char, Char)]]](js)
+        sj.read[Map[List[(String, String)], List[(String, String)]]](js)
       }
     }
     it("List of Maps as key") {

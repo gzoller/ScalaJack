@@ -44,17 +44,21 @@ class AnyColl() extends FunSpec with Matchers {
         sj.read[Any](js)
       }
     }
-    /*
     it("Map works (String,Int)") {
-      (pending)
-      // val inst: Any = Map("yes" -> 1, "no" -> 2)
-      // val js = sj.render(inst)
-      // println(js)
-      // assertResult("""{"yes":1,"no":2}""") { js }
-      // assertResult(Map("yes" -> 1, "no" -> 2)) {
-      //   sj.read[Any](js)
-      // }
+      val inst: Any = Map("yes" -> 1, "no" -> 2)
+      val js = sj.render(inst)
+      assertResult("""{"yes":1,"no":2}""") { js }
+      assertResult(Map("yes" -> 1, "no" -> 2)) {
+        sj.read[Any](js)
+      }
     }
-    */
+    it("Map works (Class,Int)") {
+      val inst: Any = Map(Player("Mike", 34) -> 1, Player("Sarah", 29) -> 2)
+      val js = sj.render(inst)
+      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.test.collections.Player\",\"name\":\"Mike\",\"age\":34}":1,"{\"_hint\":\"co.blocke.scalajack.test.collections.Player\",\"name\":\"Sarah\",\"age\":29}":2}""") { js }
+      assertResult(Map(Player("Mike", 34) -> 1, Player("Sarah", 29) -> 2)) {
+        sj.read[Any](js)
+      }
+    }
   }
 }

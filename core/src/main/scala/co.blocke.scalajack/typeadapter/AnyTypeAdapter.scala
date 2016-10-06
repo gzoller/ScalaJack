@@ -21,7 +21,6 @@ object AnyTypeAdapter extends TypeAdapterFactory {
     } else {
       None
     }
-
 }
 
 case class AnyTypeAdapter(
@@ -44,13 +43,13 @@ case class AnyTypeAdapter(
   override def read(reader: Reader): Any = {
     reader.peek match {
       case TokenType.BeginObject ⇒
-        reader.savePosition
+        reader.markPosition
         val mapRead = mapTypeAdapter.read(reader)
         // See if it's a serialized class (with default type hint).  Create class if so.
         val optionalClassType = mapRead.get(context.defaultHint).map(hint ⇒ fullNameToType.apply(hint.asInstanceOf[String]))
         optionalClassType match {
           case Some(t) ⇒
-            reader.revertPosition
+            reader.rewindToMark
             val classConstructed = context.typeAdapter(t).read(reader)
             classConstructed
           case None ⇒ mapRead
@@ -76,7 +75,6 @@ case class AnyTypeAdapter(
 
   override def write(value: Any, writer: Writer): Unit = {
     // TODO come up with a better way to obtain the value's type
-
     value match {
       case null ⇒
         writer.writeNull()
