@@ -21,6 +21,16 @@ class TupleCollPrimKeys() extends FunSpec with Matchers {
         sj.read[SampleTuple](js)
       }
     }
+    it("Tuple as key, null tuple as value") {
+      val a = (2, "Blather", 'Q')
+      val b: (String, Boolean) = null
+      val inst = SampleTuple(Map(a -> b))
+      val js = sj.render(inst)
+      assertResult("""{"m":{"[2,\"Blather\",\"Q\"]":null}}""") { js }
+      assertResult(inst) {
+        sj.read[SampleTuple](js)
+      }
+    }
     it("Tuple of Lists as key") {
       val a = (List("one", "two", "three"), List(1, 2, 3))
       val b = (List("four", "five", "six"), List(4, 5, 6))

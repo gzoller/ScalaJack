@@ -161,11 +161,11 @@ class ScalaPrim() extends FunSpec with Matchers {
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Double must break") {
-        val js = """{"d1":1.7976931348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}"""
-        val msg = """Expected token of type Number, not String
-          |31348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
+        val js = """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
+        val msg = """For input string: "1.79769313486E23157E308"
+          |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E3
+          |------^""".stripMargin
+        the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
         val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null)
