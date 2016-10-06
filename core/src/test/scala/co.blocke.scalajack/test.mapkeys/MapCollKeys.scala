@@ -21,6 +21,16 @@ class MapCollPrimKeys() extends FunSpec with Matchers {
         sj.read[Map[Map[Int, Int], Map[Int, Int]]](js)
       }
     }
+    it("Map as key, map value is null") {
+      val m1 = Map(1 -> 2)
+      val m2: Map[Int, Int] = null
+      val inst = Map(m1 -> m2)
+      val js = sj.render(inst)
+      assertResult("""{"{\"1\":2}":null}""") { js }
+      assertResult(inst) {
+        sj.read[Map[Map[Int, Int], Map[Int, Int]]](js)
+      }
+    }
     it("Map of Lists as key") {
       val m1 = List(Food.Meat, Food.Veggies)
       val m2 = List(Food.Seeds, Food.Pellets)
@@ -110,6 +120,15 @@ class MapCollPrimKeys() extends FunSpec with Matchers {
       assertResult(Map(Map(Map() -> Map(None -> Some(2), Some(5) -> None)) -> Map(Map(None -> Some(2), Some(5) -> None) -> Map()))) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
+    }
+    it("Map of Option as key where Option is null must fail") {
+      val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)
+      val m0 = Map.empty[Option[Int], Option[Int]]
+      val bad: Option[Int] = null
+      val m2 = m0 + (bad -> Some(99))
+      val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
+      val msg = """Attempting to write a null map key (map keys may not be null)."""
+      the[java.lang.IllegalStateException] thrownBy sj.render(inst) should have message msg
     }
     it("Map of ValueClass as key") {
       val m1: Map[VCChar, VCChar] = Map(VCChar('Z') -> VCChar('z'))

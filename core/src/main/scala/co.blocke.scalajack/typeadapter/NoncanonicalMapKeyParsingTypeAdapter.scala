@@ -51,7 +51,9 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
     else readValue
   }
 
-  override def write(value: T, writer: Writer): Unit =
+  override def write(value: T, writer: Writer): Unit = {
+    if (value == null)
+      throw new java.lang.IllegalStateException("Attempting to write a null map key (map keys may not be null).")
     valueTypeAdapter.resolved match {
       case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
@@ -62,4 +64,5 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
         val json = nestedWriter.jsonString
         stringTypeAdapter.write(json, writer)
     }
+  }
 }

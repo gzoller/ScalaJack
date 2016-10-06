@@ -230,6 +230,11 @@ class ScalaPrim() extends FunSpec with Matchers {
           |-----------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleString](js) should have message msg
       }
+      it("Can't find TypeAdapter for given type") {
+        val js = """{"hey":"you"}"""
+        val msg = """Cannot find a type adapter for java.lang.Process"""
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[java.lang.Process](js) should have message msg
+      }
     }
   }
 }
