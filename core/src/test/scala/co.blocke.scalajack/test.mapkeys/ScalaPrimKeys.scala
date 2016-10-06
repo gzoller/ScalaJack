@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -11,11 +11,11 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
   describe("----------------------------------------\n:  Scala Primitive Noncanonical Tests  :\n----------------------------------------") {
     describe("+++ Positive Tests +++") {
       it("With Any Key") {
-        val inst = AnyShell(Map(123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
+        val inst = AnyShell(Map(Size.Small -> "ok", 123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
         val js = sj.render(inst)
-        assertResult("""{"m":{"false":"16","123.456":true,"Fred":"Wilma","293845":"Greg","16":null}}""") { js }
+        assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"Fred":"Wilma","293845":"Greg","16":null}}""") { js }
         val read = sj.read[AnyShell](js)
-        assertResult("""List((Fred,java.lang.String), (293845,java.lang.Integer), (123.456,java.lang.Float), (16,java.lang.Byte), (false,java.lang.Boolean))""") {
+        assertResult("""List((Small,java.lang.String), (Fred,java.lang.String), (293845,java.lang.Integer), (123.456,java.lang.Float), (16,java.lang.Byte), (false,java.lang.Boolean))""") {
           read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
         }
       }
@@ -153,7 +153,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.test.noncanonical.Size$ for "Bogus"
+        val msg = """No value found in enumeration co.blocke.scalajack.test.mapkeys.Size$ for "Bogus"
           |{"m":{"Small":"Large","Bogus":"Medium"}}
           |----------------------^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnumeration](js) should have message msg

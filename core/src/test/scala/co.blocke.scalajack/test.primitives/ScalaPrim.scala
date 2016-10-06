@@ -100,9 +100,10 @@ class ScalaPrim() extends FunSpec with Matchers {
         }
       }
       it("String must work") {
-        val inst = SampleString("something", "", null)
+        val inst = SampleString("something\b\n\f\r\t☆", "", null)
         val js = sj.render(inst)
-        assertResult("""{"s1":"something","s2":"","s3":null}""") { js }
+        // The weird '+' here is to break up the unicode so it won't be interpreted and wreck the test.
+        assertResult("""{"s1":"something\b\n\f\r\t\""" + """u2606","s2":"","s3":null}""") { js }
         assertResult(inst) {
           sj.read[SampleString](js)
         }
@@ -134,6 +135,11 @@ class ScalaPrim() extends FunSpec with Matchers {
           |{"bool1":true,"bool2":123}
           |----------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js2) should have message msg2
+        val js3 = """{"bool1":true,"bool2":null}"""
+        val msg3 = """Expected token of type Boolean, not Null
+          |{"bool1":true,"bool2":null}
+          |--------------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js3) should have message msg3
       }
       it("Byte must break") {
         val js = """{"b1":927,"b2":-128,"b3":0,"b4":64}"""

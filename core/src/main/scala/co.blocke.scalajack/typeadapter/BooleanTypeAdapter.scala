@@ -14,7 +14,7 @@ object BooleanTypeAdapter extends SimpleTypeAdapter[Boolean] {
         true
 
       case TokenType.Null ⇒
-        throw new IllegalStateException("Expected token of type Boolean, not Null")
+        throw new IllegalStateException("Expected token of type Boolean, not Null\n" + reader.showError())
 
       case actual ⇒ {
         reader.read()

@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID

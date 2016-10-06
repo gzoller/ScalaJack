@@ -4,6 +4,7 @@ package typeadapter
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.reflect.runtime.currentMirror
+import BijectiveFunctions.fullNameToType
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
@@ -43,7 +44,17 @@ case class AnyTypeAdapter(
   override def read(reader: Reader): Any = {
     reader.peek match {
       case TokenType.BeginObject ⇒
-        mapTypeAdapter.read(reader)
+        reader.savePosition
+        val mapRead = mapTypeAdapter.read(reader)
+        // See if it's a serialized class (with default type hint).  Create class if so.
+        val optionalClassType = mapRead.get(context.defaultHint).map(hint ⇒ fullNameToType.apply(hint.asInstanceOf[String]))
+        optionalClassType match {
+          case Some(t) ⇒
+            reader.revertPosition
+            val classConstructed = context.typeAdapter(t).read(reader)
+            classConstructed
+          case None ⇒ mapRead
+        }
 
       case TokenType.BeginArray ⇒
         listTypeAdapter.read(reader)

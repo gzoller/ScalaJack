@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import java.util.UUID
 import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Number => JNumber, Short => JShort }

@@ -7,6 +7,7 @@ import java.lang.NumberFormatException
 trait Reader {
 
   var position: Int
+  private var savedPosition: Int = 0
 
   def source: Array[Char]
 
@@ -19,6 +20,9 @@ trait Reader {
   def tokenLengthAt(position: Int): Int
 
   def showError(): String
+
+  def savePosition() = savedPosition = position
+  def revertPosition() = position = savedPosition
 
   def peek: TokenType
 

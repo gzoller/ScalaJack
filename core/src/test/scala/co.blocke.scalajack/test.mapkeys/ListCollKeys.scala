@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
@@ -64,7 +64,7 @@ class ListCollKeys() extends FunSpec with Matchers {
       val fish: Pet = FishPet("Flipper", Food.Meat, 68.9)
       val inst = Map(List(fish, fish) -> List(fish, fish))
       val js = sj.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9}]}""") { js }
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9},{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9}]":[{"_hint":"co.blocke.scalajack.test.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9},{"_hint":"co.blocke.scalajack.test.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9}]}""") { js }
       assertResult(inst) {
         sj.read[Map[List[Pet], List[Pet]]](js)
       }
@@ -88,7 +88,7 @@ class ListCollKeys() extends FunSpec with Matchers {
     it("List of parameterized trait as key") {
       val inst: Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]] = Map(List(AThing(true, "True"), AThing(false, "False")) -> List(AThing(true, "Yes"), AThing(false, "No")))
       val js = sj.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":true,\"b\":\"True\"},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.AThing\",\"a\":false,\"b\":\"False\"}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":true,"b":"Yes"},{"_hint":"co.blocke.scalajack.test.noncanonical.AThing","a":false,"b":"No"}]}""") { js }
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.mapkeys.AThing\",\"a\":true,\"b\":\"True\"},{\"_hint\":\"co.blocke.scalajack.test.mapkeys.AThing\",\"a\":false,\"b\":\"False\"}]":[{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":true,"b":"Yes"},{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":false,"b":"No"}]}""") { js }
       assertResult(true) {
         sj.read[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]](js).isInstanceOf[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]]
       }

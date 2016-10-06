@@ -77,7 +77,7 @@ class Tokenizer(val capacity: Int = 1024) {
 
     @inline def isUnderscore(ch: Char): Boolean = ch == '_'
 
-    @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch)
+    @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch)
 
     @inline def isSubsequentLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch) || isDigit(ch)
 
