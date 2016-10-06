@@ -100,9 +100,10 @@ class ScalaPrim() extends FunSpec with Matchers {
         }
       }
       it("String must work") {
-        val inst = SampleString("something", "", null)
+        val inst = SampleString("something\b\n\f\r\t☆", "", null)
         val js = sj.render(inst)
-        assertResult("""{"s1":"something","s2":"","s3":null}""") { js }
+        // The weird '+' here is to break up the unicode so it won't be interpreted and wreck the test.
+        assertResult("""{"s1":"something\b\n\f\r\t\""" + """u2606","s2":"","s3":null}""") { js }
         assertResult(inst) {
           sj.read[SampleString](js)
         }
@@ -134,6 +135,11 @@ class ScalaPrim() extends FunSpec with Matchers {
           |{"bool1":true,"bool2":123}
           |----------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js2) should have message msg2
+        val js3 = """{"bool1":true,"bool2":null}"""
+        val msg3 = """Expected token of type Boolean, not Null
+          |{"bool1":true,"bool2":null}
+          |--------------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js3) should have message msg3
       }
       it("Byte must break") {
         val js = """{"b1":927,"b2":-128,"b3":0,"b4":64}"""
@@ -155,11 +161,11 @@ class ScalaPrim() extends FunSpec with Matchers {
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Double must break") {
-        val js = """{"d1":1.7976931348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}"""
-        val msg = """Expected token of type Number, not String
-          |31348623157E308,"d2":-1.7976931348623157E308,"d3":"0.0","d4":-123.4567}
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
+        val js = """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
+        val msg = """For input string: "1.79769313486E23157E308"
+          |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E3
+          |------^""".stripMargin
+        the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
         val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null)
@@ -223,6 +229,11 @@ class ScalaPrim() extends FunSpec with Matchers {
           |{"s1":"something","s2":-19,"s3":null}
           |-----------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleString](js) should have message msg
+      }
+      it("Can't find TypeAdapter for given type") {
+        val js = """{"hey":"you"}"""
+        val msg = """Cannot find a type adapter for java.lang.Process"""
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[java.lang.Process](js) should have message msg
       }
     }
   }

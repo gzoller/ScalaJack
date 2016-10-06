@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
@@ -177,16 +177,30 @@ class ValueClassKeys() extends FunSpec with Matchers {
         val b: Pet = DogPet("Fido", Food.Meat, 3)
         val inst = SampleVCTrait(Map(VCTrait(a) -> VCTrait(b)))
         val js = sj.render(inst)
-        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":3}}}""") { js }
+        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}""") { js }
         assertResult(inst) {
           sj.read[SampleVCTrait](js)
         }
       }
       it("Value class of Parameterized Case Class") {
-        (pending)
+        val a = AThing(5, "wow")
+        val b = AThing(6, "zoom")
+        val inst = SampleVCParamClass(Map(VCParamClass(a) -> VCParamClass(b)))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"a\":5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleVCParamClass[String, Int]](js)
+        }
       }
       it("Value class of Parameterized Trait") {
-        (pending)
+        val a: Thing[Int, String] = AThing(5, "wow")
+        val b: Thing[Int, String] = AThing(6, "zoom")
+        val inst = SampleVCParamTrait(Map(VCParamTrait(a) -> VCParamTrait(b)))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.AThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":6,"b":"zoom"}}}""") { js }
+        assertResult(inst) {
+          sj.read[SampleVCParamTrait[Int, String]](js)
+        }
       }
       it("Value class of Option") {
         val inst = SampleVCOption(Map(VCOption(Some("here")) -> VCOption(Some("there"))))
@@ -252,7 +266,7 @@ class ValueClassKeys() extends FunSpec with Matchers {
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"\"Bogus\"":"Meat"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.test.noncanonical.Food$ for "Bogus"
+        val msg = """No value found in enumeration co.blocke.scalajack.test.mapkeys.Food$ for "Bogus"
           |"Bogus"
           |^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleVCEnumeration](js) should have message msg
@@ -328,23 +342,31 @@ class ValueClassKeys() extends FunSpec with Matchers {
     describe("--- Negative Complex Tests ---") {
       it("Bad Case Class Key") {
         val js = """{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",\"simple\":{\"bogus\":\"Larry\",\"age\":32,\"isOk\":true,\"favorite\":\"golf\"},\"allDone\":true}":{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false}}}"""
-        val msg = """Required field name in class co.blocke.scalajack.test.noncanonical.SimpleClass is missing from input and has no specified default value
+        val msg = """Required field name in class co.blocke.scalajack.test.mapkeys.SimpleClass is missing from input and has no specified default value
           |{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",
           |------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCClass](js) should have message msg
       }
       it("Bad Trait Key") {
-        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonical.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.test.noncanonical.Bogus"
-          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.noncanonica
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        val msg = """Unable to find class named "co.blocke.scalajack.test.mapkeys.Bogus"
+          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Bog
           |------^""".stripMargin
         the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCTrait](js) should have message msg
       }
       it("Bad Parameterized Case Class Key") {
-        (pending)
+        val js = """{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}"""
+        val msg = """For input string: "5.5"
+          |{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}
+          |------^""".stripMargin
+        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCParamClass[String, Int]](js) should have message msg
       }
       it("Bad Parameterized Trait Key") {
-        (pending)
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ZThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":6,"b":"zoom"}}}"""
+        val msg = """Unable to find class named "co.blocke.scalajack.test.mapkeys.ZThing"
+          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ZTh
+          |------^""".stripMargin
+        the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
       }
       it("Bad Option Key") {
         val js = """{"m":{"true":"there"}}"""

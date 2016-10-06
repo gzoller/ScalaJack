@@ -9,6 +9,7 @@ trait TypeAdapter[T] {
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
 
+  def resolved: TypeAdapter[T] = this
 }
 
 // Marker trait for those TypeAdapters which render as String

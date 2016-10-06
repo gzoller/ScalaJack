@@ -17,7 +17,6 @@ object Context {
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
     .withFactory(CanBuildFromTypeAdapter)
-    //    .withFactory(MapTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
     .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all 
@@ -61,7 +60,7 @@ object Context {
     .withFactory(ZonedDateTimeTypeAdapter)
 }
 
-case class Context(factories: List[TypeAdapterFactory] = Nil) {
+case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory] = Nil) {
 
   sealed trait Phase
   case object Uninitialized extends Phase

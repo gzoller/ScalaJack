@@ -8,7 +8,7 @@ import CaseClassTypeAdapter.Member
 import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -65,6 +65,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
+      val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
+
       val members = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.zipWithIndex.map({
         case (member, index) ⇒
           val memberName = member.name.encodedName.toString
@@ -105,7 +107,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
     } else {
       None
     }
@@ -117,7 +119,8 @@ case class CaseClassTypeAdapter[T >: Null](
     constructorMirror:     MethodMirror,
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[Member[_]]
+    members:               List[Member[_]],
+    isSJCapture:           Boolean
 ) extends TypeAdapter[T] {
 
   val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
@@ -135,6 +138,7 @@ case class CaseClassTypeAdapter[T >: Null](
 
         reader.beginObject()
 
+        val captured = scala.collection.mutable.Map.empty[String, Any]
         while (reader.hasMoreMembers) {
           val memberName = memberNameTypeAdapter.read(reader)
 
@@ -143,6 +147,9 @@ case class CaseClassTypeAdapter[T >: Null](
             case Some(member) ⇒
               arguments(member.index) = member.valueTypeAdapter.read(reader)
               found(member.index) = true
+
+            case None if (isSJCapture) ⇒
+              captured.put(memberName, reader.captureValue())
 
             case None ⇒
               reader.skipValue()
@@ -157,7 +164,11 @@ case class CaseClassTypeAdapter[T >: Null](
           )
         }
 
-        constructorMirror.apply(arguments: _*).asInstanceOf[T]
+        // constructorMirror.apply(arguments: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
+        if (isSJCapture)
+          asBuilt.asInstanceOf[SJCapture].captured = captured
+        asBuilt
     }
 
   override def write(value: T, writer: Writer): Unit =
@@ -171,6 +182,15 @@ case class CaseClassTypeAdapter[T >: Null](
 
         memberNameTypeAdapter.write(member.name, writer)
         member.writeValue(memberValue, writer)
+      }
+      value match {
+        case sjc: SJCapture ⇒
+          sjc.captured.foreach {
+            case (memberName, valueString) ⇒
+              memberNameTypeAdapter.write(memberName, writer)
+              writer.writeRawValue(valueString.asInstanceOf[String])
+          }
+        case _ ⇒
       }
 
       writer.endObject()

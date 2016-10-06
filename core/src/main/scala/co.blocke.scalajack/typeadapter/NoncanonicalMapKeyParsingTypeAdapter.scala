@@ -52,7 +52,9 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
   }
 
   override def write(value: T, writer: Writer): Unit = {
-    valueTypeAdapter match {
+    if (value == null)
+      throw new java.lang.IllegalStateException("Attempting to write a null map key (map keys may not be null).")
+    valueTypeAdapter.resolved match {
       case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
       case vta: StringKind ⇒ valueTypeAdapter.write(value, writer)

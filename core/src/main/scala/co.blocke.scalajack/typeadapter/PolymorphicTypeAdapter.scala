@@ -66,7 +66,7 @@ case class PolymorphicTypeAdapter[T](
     if (reader.peek == TokenType.Null) {
       reader.readNull().asInstanceOf[T]
     } else {
-      val originalPosition = reader.position
+      reader.markPosition
 
       reader.beginObject()
 
@@ -87,7 +87,7 @@ case class PolymorphicTypeAdapter[T](
       val populatedConcreteType = populateConcreteType(concreteType)
       val concreteTypeAdapter = context.typeAdapter(populatedConcreteType)
 
-      reader.position = originalPosition
+      reader.rewindToMark
 
       concreteTypeAdapter.read(reader).asInstanceOf[T]
     }

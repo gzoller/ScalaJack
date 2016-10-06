@@ -10,6 +10,8 @@ case class OptionClass(name: String, age: Option[Int])
 case class OptionTuple(foo: Int, t: (Boolean, Option[String], Int))
 trait Person { val name: String }
 case class SomeClass(name: String, age: Int) extends Person
+trait Thing[A, B] { val a: A; val b: B }
+case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
 
 class Options() extends FunSpec with Matchers {
 
@@ -133,10 +135,42 @@ class Options() extends FunSpec with Matchers {
       }
     }
     it("Option of Parameterized Class") {
-      (pending)
+      val inst: Option[AThing[Int, String]] = Some(AThing("wow", 5))
+      val js = sj.render(inst)
+      assertResult("""{"a":"wow","b":5}""") { js }
+      assertResult(inst) {
+        sj.read[Option[AThing[Int, String]]](js)
+      }
+
+      val inst2: Option[AThing[Int, String]] = None
+      val js2 = sj.render(inst2)
+      assertResult("") { js2 }
+
+      val inst3: Map[Option[AThing[Int, String]], Int] = Map(None -> 2, Some(AThing("wow", 5)) -> 1)
+      val js3 = sj.render(inst3)
+      assertResult("""{"":2,"{\"a\":\"wow\",\"b\":5}":1}""") { js3 }
+      assertResult(inst3) {
+        sj.read[Map[Option[AThing[Int, String]], Int]](js3)
+      }
     }
     it("Option of Parameterized Trait") {
-      (pending)
+      val inst: Option[Thing[String, Int]] = Some(AThing("wow", 5))
+      val js = sj.render(inst)
+      assertResult("""{"_hint":"co.blocke.scalajack.test.collections.AThing","a":"wow","b":5}""") { js }
+      assertResult(inst) {
+        sj.read[Option[Thing[String, Int]]](js)
+      }
+
+      val inst2: Option[Thing[String, Int]] = None
+      val js2 = sj.render(inst2)
+      assertResult("") { js2 }
+
+      val inst3: Map[Option[Thing[String, Int]], Int] = Map(None -> 2, Some(AThing("wow", 5)) -> 1)
+      val js3 = sj.render(inst3)
+      assertResult("""{"":2,"{\"_hint\":\"co.blocke.scalajack.test.collections.AThing\",\"a\":\"wow\",\"b\":5}":1}""") { js3 }
+      assertResult(inst3) {
+        sj.read[Map[Option[Thing[String, Int]], Int]](js3)
+      }
     }
     it("Option is None (in class)") {
       val inst = OptionClass("Mike", None)

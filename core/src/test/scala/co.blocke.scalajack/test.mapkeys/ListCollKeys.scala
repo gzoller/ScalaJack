@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 package test
-package noncanonical
+package mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
@@ -32,13 +32,13 @@ class ListCollKeys() extends FunSpec with Matchers {
       }
     }
     it("List of Tuples as key") {
-      val l1: List[(Char, Char)] = List(('A', 'a'), ('B', 'b'))
-      val l2: List[(Char, Char)] = List(('X', 'x'), ('Y', 'y'))
+      val l1: List[(String, String)] = List(("A", "a"), ("B", "b"), (null, "c"))
+      val l2: List[(String, String)] = List(("X", "x"), ("Y", "y"), (null, "z"))
       val inst = Map(l1 -> l2)
       val js = sj.render(inst)
-      assertResult("""{"[[\"A\",\"a\"],[\"B\",\"b\"]]":[["X","x"],["Y","y"]]}""") { js }
+      assertResult("""{"[[\"A\",\"a\"],[\"B\",\"b\"],[null,\"c\"]]":[["X","x"],["Y","y"],[null,"z"]]}""") { js }
       assertResult(inst) {
-        sj.read[Map[List[(Char, Char)], List[(Char, Char)]]](js)
+        sj.read[Map[List[(String, String)], List[(String, String)]]](js)
       }
     }
     it("List of Maps as key") {
@@ -64,7 +64,7 @@ class ListCollKeys() extends FunSpec with Matchers {
       val fish: Pet = FishPet("Flipper", Food.Meat, 68.9)
       val inst = Map(List(fish, fish) -> List(fish, fish))
       val js = sj.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9},{\"_hint\":\"co.blocke.scalajack.test.noncanonical.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9}]":[{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9},{"_hint":"co.blocke.scalajack.test.noncanonical.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9}]}""") { js }
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9},{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\",\"name\":\"Flipper\",\"food\":\"Meat\",\"waterTemp\":68.9}]":[{"_hint":"co.blocke.scalajack.test.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9},{"_hint":"co.blocke.scalajack.test.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":68.9}]}""") { js }
       assertResult(inst) {
         sj.read[Map[List[Pet], List[Pet]]](js)
       }
@@ -78,10 +78,20 @@ class ListCollKeys() extends FunSpec with Matchers {
       }
     }
     it("List of parameterized class as key") {
-      (pending)
+      val inst = Map(List(AThing(true, "True"), AThing(false, "False")) -> List(AThing(true, "Yes"), AThing(false, "No")))
+      val js = sj.render(inst)
+      assertResult("""{"[{\"a\":true,\"b\":\"True\"},{\"a\":false,\"b\":\"False\"}]":[{"a":true,"b":"Yes"},{"a":false,"b":"No"}]}""") { js }
+      assertResult(true) {
+        sj.read[Map[List[AThing[String, Boolean]], List[AThing[String, Boolean]]]](js).isInstanceOf[Map[List[AThing[String, Boolean]], List[AThing[String, Boolean]]]]
+      }
     }
     it("List of parameterized trait as key") {
-      (pending)
+      val inst: Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]] = Map(List(AThing(true, "True"), AThing(false, "False")) -> List(AThing(true, "Yes"), AThing(false, "No")))
+      val js = sj.render(inst)
+      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.test.mapkeys.AThing\",\"a\":true,\"b\":\"True\"},{\"_hint\":\"co.blocke.scalajack.test.mapkeys.AThing\",\"a\":false,\"b\":\"False\"}]":[{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":true,"b":"Yes"},{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":false,"b":"No"}]}""") { js }
+      assertResult(true) {
+        sj.read[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]](js).isInstanceOf[Map[List[Thing[Boolean, String]], List[Thing[Boolean, String]]]]
+      }
     }
     it("List of Optional as key") {
       val inst: Map[List[Option[String]], List[Option[String]]] = Map(List(Some("hey"), Some("you")) -> List(Some("stop"), Some("go")))

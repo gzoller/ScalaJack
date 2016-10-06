@@ -73,17 +73,17 @@ class Tokenizer(val capacity: Int = 1024) {
     @inline def isSign(ch: Char): Boolean = ch == '+' || ch == '-'
 
     @inline def isDecimalPoint(ch: Char): Boolean = ch == '.'
+
+    @inline def isE(ch: Char): Boolean = ch == 'e' || ch == 'E'
     */
 
     @inline def isUnderscore(ch: Char): Boolean = ch == '_'
 
-    @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch)
+    @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch)
 
     @inline def isSubsequentLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch) || isDigit(ch)
 
     @inline def isIntegerChar(ch: Char): Boolean = ('0' <= ch && ch <= '9') || ch == '.' || ch == '-' || ch == '+' || ch == 'e' || ch == 'E'
-
-    @inline def isE(ch: Char): Boolean = ch == 'e' || ch == 'E'
 
     /* Unused at present...
     @inline def skipInteger(): Boolean =

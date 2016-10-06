@@ -6,8 +6,8 @@ import TokenType.TokenType
 class TokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
-    val tokenTypes:      Array[TokenType],
-    val tokenOffsets:    Array[Int],
+    tokenTypes:          Array[TokenType],
+    tokenOffsets:        Array[Int],
     tokenLengths:        Array[Int]
 ) extends Reader {
 
@@ -118,6 +118,13 @@ class TokenReader(
       builder.appendAll(source, startOfUnescapedCharacters, maxPosition - startOfUnescapedCharacters)
       builder.toString()
     }
+  }
+
+  override def captureValue(): Any = {
+    val startTok = position + 1
+    skipValue()
+    val endTok = Math.max(startTok, position)
+    new String(source.slice(tokenOffsets(startTok), tokenOffsets(endTok) + tokenLengths(endTok)))
   }
 
   override def readString(): String = {

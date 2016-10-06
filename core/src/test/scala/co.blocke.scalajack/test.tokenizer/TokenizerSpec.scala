@@ -111,6 +111,13 @@ class TokenizerSpec extends FunSpec {
         |--------------------^""".stripMargin
       the[java.lang.IllegalArgumentException] thrownBy validTC.tokenize(js.toCharArray, 0, js.length) should have message msg
     }
+    it("Must catch errors in json - unterminated string") {
+      val js = """{"a":1,"b":true,"c":"T","d":{"one:1}}"""
+      val msg = """Unterminated string
+        |{"a":1,"b":true,"c":"T","d":{"one:1}}
+        |-------------------------------------^""".stripMargin
+      the[java.lang.IllegalArgumentException] thrownBy validTC.tokenize(js.toCharArray, 0, js.length) should have message msg
+    }
   }
   /* For later reference if we ever develop a streaming adapter...
     describe("::: Streaming Adapter Tests") {

@@ -30,15 +30,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         self
 
       case Failure(cause) ⇒
-        reader.position = originalPosition
-        reader.skipValue()
-
-        val unreadableJsonOffset = reader.tokenOffsetAt(originalPosition + 1)
-        val unreadableJsonLength = reader.tokenOffsetAt(reader.position + 1) - unreadableJsonOffset
-
-        val exception = new UnreadableException(reader.source, unreadableJsonOffset, unreadableJsonLength, cause)
-
-        Failure(exception)
+        Failure(new UnreadableException(reader.captureValue(), cause))
     }
   }
 

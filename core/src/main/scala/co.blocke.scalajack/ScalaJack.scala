@@ -120,6 +120,7 @@ trait ScalaJackLike[S] {
     }.toList
 
     val intermediateContext = Context(
+      defaultHint,
       factories = customAdapters ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint))
     )
 

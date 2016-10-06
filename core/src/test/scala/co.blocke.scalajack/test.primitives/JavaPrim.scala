@@ -150,6 +150,14 @@ class JavaPrim() extends FunSpec with Matchers {
             sj.read[SampleLocalDateTime](js)
           }
         }
+        it("LocalDate must work") {
+          val inst = SampleLocalDate(LocalDate.MAX, LocalDate.MIN, LocalDate.parse("2007-12-03"), null)
+          val js = sj.render(inst)
+          assertResult("""{"d1":"+999999999-12-31","d2":"-999999999-01-01","d3":"2007-12-03","d4":null}""") { js }
+          assertResult(inst) {
+            sj.read[SampleLocalDate](js)
+          }
+        }
         it("LocalTime must work") {
           val inst = SampleLocalTime(LocalTime.MAX, LocalTime.MIN, LocalTime.MIDNIGHT, LocalTime.NOON, LocalTime.parse("10:15:30"), null)
           val js = sj.render(inst)
@@ -346,6 +354,18 @@ class JavaPrim() extends FunSpec with Matchers {
             |{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"200
             |------^""".stripMargin
           the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDateTime](js2) should have message msg2
+        }
+        it("LocalDate must break") {
+          val js = """{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":null}"""
+          val msg = """Expected value token of type String, not Number when reading LocalDate value.  (Is your value wrapped in quotes?)
+            |{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":
+            |------^""".stripMargin
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleLocalDate](js) should have message msg
+          val js2 = """{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03","d4":null}"""
+          val msg2 = """Text 'bogus' could not be parsed at index 0
+            |{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03",
+            |------^""".stripMargin
+          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDate](js2) should have message msg2
         }
         it("LocalTime must break") {
           val js = """{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":false,"d6":null}"""
