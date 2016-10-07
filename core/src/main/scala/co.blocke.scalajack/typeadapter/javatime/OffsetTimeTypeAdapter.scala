@@ -3,6 +3,7 @@ package typeadapter
 package javatime
 
 import java.time.format.DateTimeFormatter.ISO_OFFSET_TIME
+import java.time.format.DateTimeParseException
 import java.time.OffsetTime
 import scala.util.{ Try, Success, Failure }
 
@@ -16,8 +17,7 @@ object OffsetTimeTypeAdapter extends SimpleTypeAdapter[OffsetTime] with StringKi
       case TokenType.String ⇒
         Try(OffsetTime.parse(reader.readString())) match {
           case Success(u) ⇒ u
-          case Failure(u: java.time.format.DateTimeParseException) ⇒ throw new java.time.format.DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.getParsedString, u.getErrorIndex)
-          case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
+          case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
 
       case actual ⇒ {
