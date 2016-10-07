@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import java.util.UUID
+import scala.util.{ Try, Success, Failure }
 
 object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
 
@@ -11,10 +12,9 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
         reader.readNull()
 
       case TokenType.String ⇒
-        try {
-          UUID.fromString(reader.readString())
-        } catch {
-          case u: java.lang.IllegalArgumentException => throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
+        Try(UUID.fromString(reader.readString())) match {
+          case Success(u) ⇒ u
+          case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
         }
 
       case actual ⇒ {

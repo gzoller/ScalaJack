@@ -3,6 +3,7 @@ package typeadapter
 package javatime
 
 import java.time.Instant
+import scala.util.{ Try, Success, Failure }
 
 object InstantTypeAdapter extends SimpleTypeAdapter[Instant] with StringKind {
 
@@ -12,10 +13,10 @@ object InstantTypeAdapter extends SimpleTypeAdapter[Instant] with StringKind {
         reader.readNull()
 
       case TokenType.String ⇒
-        try {
-          Instant.parse(reader.readString())
-        } catch {
-          case dtpe: java.time.format.DateTimeParseException ⇒ throw new java.time.format.DateTimeParseException(dtpe.getMessage + "\n" + reader.showError(), dtpe.getParsedString, dtpe.getErrorIndex)
+        Try(Instant.parse(reader.readString())) match {
+          case Success(u) ⇒ u
+          case Failure(u: java.time.format.DateTimeParseException) ⇒ throw new java.time.format.DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.getParsedString, u.getErrorIndex)
+          case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
         }
 
       case actual ⇒ {

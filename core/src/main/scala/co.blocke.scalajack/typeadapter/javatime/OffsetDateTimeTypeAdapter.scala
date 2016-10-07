@@ -4,6 +4,7 @@ package javatime
 
 import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
 import java.time.OffsetDateTime
+import scala.util.{ Try, Success, Failure }
 
 object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] with StringKind {
 
@@ -13,10 +14,10 @@ object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] with 
         reader.readNull()
 
       case TokenType.String ⇒
-        try {
-          OffsetDateTime.parse(reader.readString(), ISO_OFFSET_DATE_TIME)
-        } catch {
-          case dtpe: java.time.format.DateTimeParseException ⇒ throw new java.time.format.DateTimeParseException(dtpe.getMessage + "\n" + reader.showError(), dtpe.getParsedString, dtpe.getErrorIndex)
+        Try(OffsetDateTime.parse(reader.readString(), ISO_OFFSET_DATE_TIME)) match {
+          case Success(u) ⇒ u
+          case Failure(u: java.time.format.DateTimeParseException) ⇒ throw new java.time.format.DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.getParsedString, u.getErrorIndex)
+          case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
         }
 
       case actual ⇒ {
