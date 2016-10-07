@@ -83,3 +83,14 @@ case class HooLoo6[T](
   x:    T,
   more: List[HooLoo6[T]]
 )
+
+// --- Complex Relationships
+
+trait Parent[A, B] { val a: A; val b: B }
+case class Child[A, B, C](a: A, b: B, c: C) extends Parent[A, B]
+
+object Kind extends Enumeration {
+  val Lab, Pug = Value
+}
+trait Pet { val name: String }
+case class Dog[A](name: String, kind: A) extends Pet
