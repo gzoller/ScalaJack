@@ -1,7 +1,10 @@
-CI service | Status | Description
+Service | Status | Description
 -----------|--------|------------
-Travis | [![Build Status](https://travis-ci.org/gzoller/ScalaJack.png?maxAge=360&branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Linux container tests
-Coveralls | [![Coverage Status](https://coveralls.io/repos/github/gzoller/ScalaJack/badge.svg?maxAge=360&branch=master)](https://coveralls.io/github/gzoller/ScalaJack?branch=master) | Test coverage
+License | [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)]() | MIT
+Version | [![Bintray](https://img.shields.io/bintray/v/blocke/releases/scalajack.svg?maxAge=360)](https://bintray.com/blocke/releases/scalajack) | Latest version
+Travis | [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Automated build/test
+Codacy | [![Codacy branch grade](https://img.shields.io/codacy/grade/e27821fb6289410b8f58338c7e0bc686/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack/dashboard) | Static code analysis
+Coveralls | [![Coveralls branch](https://img.shields.io/coveralls/jekyll/jekyll/master.svg?maxAge=360)]() | Unit test coverage
 
 # ScalaJack
 
