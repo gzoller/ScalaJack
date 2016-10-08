@@ -3,7 +3,7 @@ Service | Status | Description
 License | [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)]() | MIT
 Version | [![Bintray](https://img.shields.io/bintray/v/blocke/releases/scalajack.svg?maxAge=360)](https://bintray.com/blocke/releases/scalajack) | Latest version
 Travis | [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) | Automated build/test
-Codacy | [![Codacy branch grade](https://img.shields.io/codacy/grade/e27821fb6289410b8f58338c7e0bc686/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack/dashboard) | Static code analysis
+Codacy | [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) | Static code analysis
 Coveralls | [![Coveralls branch](https://img.shields.io/coveralls/jekyll/jekyll/master.svg?maxAge=360)]() | Unit test coverage
 
 # ScalaJack
