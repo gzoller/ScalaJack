@@ -76,7 +76,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
     masterTarget.constructorMirror.apply(args: _*).asInstanceOf[U]
   }
 
-  private def bakeContext(): Context = {
+  protected def bakeContext(): Context = {
 
     val polymorphicTypes: Set[Type] = hintModifiers.keySet ++ hintMap.keySet
 
