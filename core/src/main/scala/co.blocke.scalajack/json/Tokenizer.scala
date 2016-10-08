@@ -56,12 +56,10 @@ class Tokenizer(val capacity: Int = 1024) {
     }
 
     @inline def appendToken(tokenType: TokenType, tokenOffset: Int, tokenLength: Int): Unit = {
-      val i = numberOfTokens
+      tokenTypes(numberOfTokens) = tokenType
+      tokenOffsets(numberOfTokens) = tokenOffset
+      tokenLengths(numberOfTokens) = tokenLength
       numberOfTokens += 1
-
-      tokenTypes(i) = tokenType
-      tokenOffsets(i) = tokenOffset
-      tokenLengths(i) = tokenLength
     }
 
     @inline def isLetter(ch: Char): Boolean = ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z')

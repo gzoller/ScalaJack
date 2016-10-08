@@ -4,6 +4,7 @@ import bintray.BintrayKeys._
 import pl.project13.scala.sbt.JmhPlugin
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
+import scoverage.ScoverageKeys._
 
 import scala.Some
 
@@ -18,6 +19,8 @@ object Build extends Build {
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
+		coverageMinimum             := 96,
+		coverageFailOnMinimum       := true,
 		ScalariformKeys.preferences := ScalariformKeys.preferences.value
 			.setPreference(AlignArguments, true)
 			.setPreference(AlignParameters, true)
