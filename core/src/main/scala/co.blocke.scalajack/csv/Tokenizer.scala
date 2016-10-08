@@ -5,23 +5,9 @@ import TokenType.TokenType
 
 class Tokenizer(val capacity: Int = 1024) {
 
-  def showError(): String = {
-    val startPosOffset = if (position - 50 < 0) position else 50
-    val startPos = position - startPosOffset
-    val endPos = if (position + 50 > source.length) source.length else position + 50
-    val buf = new StringBuffer()
-    buf.append(source.subSequence(startPos, endPos).toString + "\n")
-    buf.append("-" * startPosOffset + "^")
-    buf.toString
-  }
-
-  private var position: Int = 0
-  private var source = Array.empty[Char]
-
-  def tokenize(src: Array[Char], offset: Int, length: Int, capacity: Int = 1024): CSVTokenReader = {
+  def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): CSVTokenReader = {
     val maxPosition = offset + length
-    position = offset
-    source = src
+    var position = offset
 
     val tokenTypes = new Array[TokenType](capacity)
     val tokenOffsets = new Array[Int](capacity)
@@ -36,32 +22,36 @@ class Tokenizer(val capacity: Int = 1024) {
       numberOfTokens += 1
     }
 
-    appendToken(TokenType.BeginObject, 0, 0)
-    while (position < maxPosition) {
-      source(position) match {
-        case ',' ⇒
-          if (position == offset || source(position - 1) == ',') // account for empty field
-            appendToken(TokenType.Null, position, 0)
-          position += 1 // skip comma
-        case '"' ⇒
-          val savePos = position + 1
-          do {
-            position += 1
-            if (position < maxPosition - 1 && source(position) == '"' && source(position + 1) == '"') position += 2 // skip escaped quote
-          } while (position < maxPosition && source(position) != '"')
-          appendToken(TokenType.String, savePos, position - savePos)
-          if (position < maxPosition) position += 1
-        case c ⇒
-          val savePos = position
-          do {
-            position += 1
-          } while (position < maxPosition && source(position) != ',')
-          inferKind(source, savePos, position - 1)
+    if (length == 0)
+      appendToken(TokenType.Null, 0, 0)
+    else {
+      appendToken(TokenType.BeginObject, 0, 0)
+      while (position < maxPosition) {
+        source(position) match {
+          case ',' ⇒
+            if (position == offset || source(position - 1) == ',') // account for empty field
+              appendToken(TokenType.Null, position, 0)
+            position += 1 // skip comma
+          case '"' ⇒
+            val savePos = position + 1
+            do {
+              position += 1
+              if (position < maxPosition - 1 && source(position) == '"' && source(position + 1) == '"') position += 2 // skip escaped quote
+            } while (position < maxPosition && source(position) != '"')
+            appendToken(TokenType.String, savePos, position - savePos)
+            if (position < maxPosition) position += 1
+          case c ⇒
+            val savePos = position
+            do {
+              position += 1
+            } while (position < maxPosition && source(position) != ',')
+            inferKind(source, savePos, position - 1)
+        }
       }
+      if (source(position - 1) == ',')
+        appendToken(TokenType.Null, position - 1, 0)
+      appendToken(TokenType.EndObject, position, 0)
     }
-    if (source(position - 1) == ',')
-      appendToken(TokenType.Null, position - 1, 0)
-    appendToken(TokenType.EndObject, position, 0)
     appendToken(TokenType.End, position, 0)
 
     @inline def isNumberChar(ch: Char): Boolean = ('0' <= ch && ch <= '9') || ch == '.' || ch == '-' || ch == '+' || ch == 'e' || ch == 'E'

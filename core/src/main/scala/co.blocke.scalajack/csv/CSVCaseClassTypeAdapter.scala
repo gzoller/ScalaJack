@@ -20,7 +20,6 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
-      defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]]
   ) {
 
@@ -42,14 +41,8 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       }
     }
 
-    def writeValue(parameterValue: Any, writer: Writer): Unit = {
+    def writeValue(parameterValue: Any, writer: Writer): Unit =
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
-    }
-
-    // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
-    // otherwise fail the default lookup.
-    def defaultValue: Option[T] =
-      defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None)
 
   }
 
@@ -87,21 +80,9 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               (None, None)
             }
 
-          val defaultValueAccessorMirror =
-            if (member.typeSignature.typeSymbol.isClass) {
-              val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
-              if (defaultValueAccessor.isMethod) {
-                Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
-              } else {
-                None
-              }
-            } else {
-              None
-            }
-
           val memberType = member.asTerm.typeSignature
           val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, memberClass)
       })
 
       Some(CSVCaseClassTypeAdapter(tpe, constructorMirror, tpe, members))

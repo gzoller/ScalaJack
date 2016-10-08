@@ -14,14 +14,6 @@ class CSVTokenReader(
   override var position = -1
 
   override def peek: TokenType = tokenTypes(position + 1)
-  def poke(tt: TokenType, newTokenOffset: Int => Int, newTokenLength: Int => Int) = {
-    val nextPosition = position + 1
-    tokenTypes(nextPosition) = tt
-    tokenOffsets(nextPosition) = newTokenOffset(tokenOffsets(nextPosition))
-    tokenLengths(nextPosition) = newTokenLength(tokenLengths(nextPosition))
-  }
-
-  private[scalajack] def getTokens() = tokenTypes.take(numberOfTokens).toList
 
   override def showError(): String = {
     val charPos = tokenOffsets(position)

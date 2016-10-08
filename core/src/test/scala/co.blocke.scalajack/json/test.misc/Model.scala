@@ -93,3 +93,6 @@ object Kind extends Enumeration {
 }
 trait Pet { val name: String }
 case class Dog[A](name: String, kind: A) extends Pet
+
+case class HasDefaults(name: String, age: Option[Int], pet: Pet = Dog("Fido", true))
+case class DefaultOpt(name: String, age: Option[Int] = Some(19))

@@ -114,6 +114,14 @@ class CSVTests() extends FunSpec with Matchers {
           sj.read[Maybe](csv)
         }
       }
+      it("Null objects") {
+        val inst: Maybe = null
+        val csv = sj.render(inst)
+        assertResult("") { csv }
+        assertResult(inst) { // null converts to None
+          sj.read[Maybe](csv)
+        }
+      }
       it("Renders null (empty field) - Option") {
         val inst = Maybe("oops", null, false)
         val csv = sj.render(inst)
