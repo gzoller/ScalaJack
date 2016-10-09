@@ -10,7 +10,8 @@ case class JsonFlavor(
     hintMap:        Map[Type, String]        = Map.empty[Type, String],
     hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-    defaultHint:    String                   = "_hint"
+    defaultHint:    String                   = "_hint",
+    isCanonical:    Boolean                  = true
 ) extends ScalaJackLike[String] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
@@ -18,9 +19,23 @@ case class JsonFlavor(
   def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
   def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
+  def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
+
+  override val context: Context = {
+    val ctx = bakeContext()
+    if (isCanonical)
+      ctx.copy(factories = JsonCanBuildFromTypeAdapter :: ctx.factories)
+    else
+      ctx
+  }
 
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
-    val tokenizer = new Tokenizer
+    val tokenizer = new Tokenizer2(isCanonical)
+    // val tokenizer: Tokenizable = if (isCanonical) {
+    //   new Tokenizer
+    // } else {
+    //   new Tokenizer2(false)
+    // }
 
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
@@ -29,7 +44,7 @@ case class JsonFlavor(
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
-    val writer = new StringJsonWriter()
+    val writer = new StringJsonWriter(isCanonical)
     context.typeAdapterOf[T].write(value, writer)
     writer.jsonString
   }

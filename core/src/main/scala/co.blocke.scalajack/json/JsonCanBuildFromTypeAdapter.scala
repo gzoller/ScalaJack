@@ -1,15 +1,20 @@
 package co.blocke.scalajack
-package typeadapter
+package json
 
-import co.blocke.scalajack.json.Tokenizer
+// This class is needed because canonical JSON can only render object (Map, class, etc.) keys as String.
+// This is a JSON requirement and not something other formats need to worry about, so this specialization
+// is located here.
 
 import scala.collection.{ GenMapLike, GenTraversableOnce }
+import scala.reflect.runtime.universe.{ Symbol, Type, typeOf }
+import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Symbol, Type, typeOf }
 
-object CanBuildFromTypeAdapter extends TypeAdapterFactory {
+import typeadapter.{ CanBuildFromTypeAdapter, CanBuildMapTypeAdapter, OptionTypeAdapter }
+
+object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
     if (tpe <:< typeOf[GenTraversableOnce[_]]) {
@@ -60,9 +65,21 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
         if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
-          val keyTypeAdapter = context.typeAdapter(keyType)
-          val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
+          val stringTypeAdapter = context.typeAdapterOf[String]
+
+          val keyTypeAdapter =
+            if (keyType =:= typeOf[String]) {
+              stringTypeAdapter
+            } else {
+              val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
+                case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+                case kta                       ⇒ kta
+              }
+              ComplexMapKeyTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
+            }
+
+          val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
           Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
         } else {
           Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
@@ -72,90 +89,6 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
       matchingTypeAdapters.headOption
     } else {
       None
-    }
-
-}
-
-case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Value, To]](
-    canBuildFrom:     CanBuildFrom[_, (Key, Value), To],
-    keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value]
-) extends TypeAdapter[To] {
-
-  override def read(reader: Reader): To =
-    reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
-      case TokenType.BeginObject ⇒
-        val builder = canBuildFrom()
-
-        reader.beginObject()
-
-        while (reader.hasMoreMembers) {
-          val key = keyTypeAdapter.read(reader)
-          val value = valueTypeAdapter.read(reader)
-          builder += key → value
-        }
-
-        reader.endObject()
-
-        builder.result()
-    }
-
-  override def write(map: To, writer: Writer): Unit =
-    if (map == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      map foreach {
-        case (key, value) ⇒
-          keyTypeAdapter.write(key, writer)
-          valueTypeAdapter.write(value, writer)
-      }
-
-      writer.endObject()
-    }
-
-}
-
-case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](
-    canBuildFrom:       CanBuildFrom[_, Elem, To],
-    elementTypeAdapter: TypeAdapter[Elem]
-) extends TypeAdapter[To] {
-
-  override def read(reader: Reader): To =
-    reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
-      case TokenType.BeginArray ⇒
-        val builder = canBuildFrom()
-
-        reader.beginArray()
-
-        while (reader.hasMoreElements) {
-          val element = elementTypeAdapter.read(reader)
-          builder += element
-        }
-
-        reader.endArray()
-
-        builder.result()
-    }
-
-  override def write(value: To, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.beginArray()
-
-      for (element ← value) {
-        elementTypeAdapter.write(element, writer)
-      }
-
-      writer.endArray()
     }
 
 }

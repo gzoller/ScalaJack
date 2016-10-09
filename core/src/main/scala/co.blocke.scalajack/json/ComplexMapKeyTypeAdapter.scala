@@ -1,10 +1,9 @@
 package co.blocke.scalajack
-package typeadapter
+package json
 
-import co.blocke.scalajack.json.{ StringJsonWriter, Tokenizer, TokenReader }
-import co.blocke.scalajack.{ Reader, TypeAdapter, Writer }
+import typeadapter.{ AnyTypeAdapter, OptionTypeAdapterEmpty }
 
-case class NoncanonicalMapKeyParsingTypeAdapter[T](
+case class ComplexMapKeyTypeAdapter[T](
     tokenizer:         Tokenizer,
     stringTypeAdapter: TypeAdapter[String],
     valueTypeAdapter:  TypeAdapter[T]
@@ -59,7 +58,7 @@ case class NoncanonicalMapKeyParsingTypeAdapter[T](
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
       case vta: StringKind ⇒ valueTypeAdapter.write(value, writer)
       case _ ⇒
-        val nestedWriter = new StringJsonWriter()
+        val nestedWriter = new StringJsonWriter(true)
         valueTypeAdapter.write(value, nestedWriter)
         val json = nestedWriter.jsonString
         stringTypeAdapter.write(json, writer)

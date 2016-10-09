@@ -188,6 +188,10 @@ class CSVTests() extends FunSpec with Matchers {
         the[java.lang.UnsupportedOperationException] thrownBy
           ScalaJack(CSVFlavor()).parseOrElse(null.asInstanceOf[(Type, Type)]) should have message "Not available for CSV formatting"
       }
+      it("No isCanonical") {
+        the[java.lang.UnsupportedOperationException] thrownBy
+          ScalaJack(CSVFlavor()).isCanonical(false) should have message "Not available for CSV formatting"
+      }
     }
   }
 }

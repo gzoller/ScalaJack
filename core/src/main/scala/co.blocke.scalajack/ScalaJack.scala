@@ -18,6 +18,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
   val hintModifiers: Map[Type, HintModifier]
   val parseOrElseMap: Map[Type, Type]
   val defaultHint: String
+  val isCanonical: Boolean
 
   val context: Context = bakeContext()
 
@@ -26,6 +27,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
   def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[S]
   def withDefaultHint(hint: String): ScalaJackLike[S]
   def parseOrElse(poe: (Type, Type)*): ScalaJackLike[S]
+  def isCanonical(canonical: Boolean): ScalaJackLike[S]
 
   /**
    * Project fields from given master object to a view object of type T.  Field names/types must match master
