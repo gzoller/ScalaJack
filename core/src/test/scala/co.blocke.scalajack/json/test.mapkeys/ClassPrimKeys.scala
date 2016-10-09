@@ -9,7 +9,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("------------------------------\n:  Class Noncanonical Tests  :\n------------------------------") {
+  describe("-------------------------\n:  Class Map Key Tests  :\n-------------------------") {
     describe("+++ Positive Tests +++") {
       it("Simple (flat) class as key") {
         val a = SimpleClass("Larry", 32, true, "golf")

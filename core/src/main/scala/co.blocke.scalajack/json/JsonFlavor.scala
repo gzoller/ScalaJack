@@ -30,16 +30,9 @@ case class JsonFlavor(
   }
 
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
-    val tokenizer = new Tokenizer2(isCanonical)
-    // val tokenizer: Tokenizable = if (isCanonical) {
-    //   new Tokenizer
-    // } else {
-    //   new Tokenizer2(false)
-    // }
-
+    val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
-
     context.typeAdapterOf[T].read(reader)
   }
 

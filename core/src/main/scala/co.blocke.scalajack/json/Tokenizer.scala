@@ -3,16 +3,13 @@ package json
 
 import TokenType.TokenType
 
-trait Tokenizable {
-  def tokenize(src: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader
-}
-
-class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
-
+class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
   // RawContext == 0
   private val ArrayContext: Int = 1
-  private val ObjectContext: Int = ArrayContext << 1
-  private val ExpectKey: Int = ObjectContext << 1
+  private val ArrayKeyContext: Int = ArrayContext << 1
+  private val ObjectContext: Int = ArrayKeyContext << 1
+  private val ObjectKeyContext: Int = ObjectContext << 1
+  private val ExpectKey: Int = ObjectKeyContext << 1
   private val ExpectValue: Int = ExpectKey << 1
   private val ExpectColon: Int = ExpectValue << 1
   private val ExpectComma: Int = ExpectColon << 1
@@ -45,6 +42,19 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
     val validate = new Array[Int](500)
     var validPos = 0
     setValidBit(ExpectValue)
+
+    def show() = {
+      println("ArrayContext        : " + isValidSet(ArrayContext))
+      println("ArrayKeyContext     : " + isValidSet(ArrayKeyContext))
+      println("ObjectContext       : " + isValidSet(ObjectContext))
+      println("ObjectKeyContext    : " + isValidSet(ObjectKeyContext))
+      println("ExpectKey           : " + isValidSet(ExpectKey))
+      println("ExpectValue         : " + isValidSet(ExpectValue))
+      println("ExpectColon         : " + isValidSet(ExpectColon))
+      println("ExpectComma         : " + isValidSet(ExpectComma))
+      println("ExpectEndOfStructure: " + isValidSet(ExpectEndOfStructure))
+      println("-------")
+    }
 
     @inline def setValidBit(bit: Int) = validate(validPos) |= bit
     @inline def unsetValidBit(bit: Int) = validate(validPos) &= ~bit
@@ -136,24 +146,40 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
     while (position < maxPosition) {
       source(position) match {
         case '{' ⇒
-          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError())
+          if (!isValidSet(ExpectValue) && (isCanonical || !isValidSet(ExpectKey))) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError())
+          val objAsKey = isValidSet(ExpectKey)
           pushValid()
-          setValidBit(ObjectContext)
+          if (objAsKey)
+            setValidBit(ObjectKeyContext)
+          else
+            setValidBit(ObjectContext)
           setValidBit(ExpectKey)
           setValidBit(ExpectEndOfStructure)
           appendToken(TokenType.BeginObject, position, 1)
           position += 1
 
         case '}' ⇒
+          // Fix ExpectKey logic here for noncanonical!
           if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma) && !isValidSet(ExpectKey)) || isValidSet(ArrayContext)) throw new IllegalArgumentException("Character out of place. '}' not expected here.\n" + showError())
           unsetValidBit(ObjectContext)
           unsetValidBit(ExpectComma)
+          unsetValidBit(ExpectColon)
           unsetValidBit(ExpectKey)
           unsetValidBit(ExpectEndOfStructure)
+          val wasInObjKeyContext = isValidSet(ObjectKeyContext)
+          unsetValidBit(ObjectKeyContext)
           popValid()
           unsetValidBit(ExpectValue)
-          if (isValidSet(ArrayContext) || isValidSet(ObjectContext))
+
+          // Detect {{key object...}:...}
+          // If we just closed a context that was ObjectKeyContext then expect a colon
+          if (isValidSet(ObjectContext) && wasInObjKeyContext) {
+            unsetValidBit(ExpectValue)
+            setValidBit(ExpectColon)
+            // Else expect a comma (i.e. next field)
+          } else if (isValidSet(ArrayContext) || isValidSet(ObjectContext) || isValidSet(ObjectKeyContext)) {
             setValidBit(ExpectComma)
+          }
 
           appendToken(TokenType.EndObject, position, 1)
           position += 1
@@ -168,14 +194,14 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
           position += 1
 
         case ']' ⇒
-          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError())
+          if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext) || isValidSet(ObjectKeyContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError())
           unsetValidBit(ArrayContext)
           unsetValidBit(ExpectComma)
           unsetValidBit(ExpectValue)
           unsetValidBit(ExpectEndOfStructure)
           popValid()
           unsetValidBit(ExpectValue)
-          if (isValidSet(ArrayContext) || isValidSet(ObjectContext))
+          if (isValidSet(ArrayContext) || isValidSet(ObjectContext) || isValidSet(ObjectKeyContext))
             setValidBit(ExpectComma)
 
           appendToken(TokenType.EndArray, position, 1)
@@ -190,7 +216,7 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
         case ',' ⇒
           if (!isValidSet(ExpectComma)) throw new IllegalArgumentException("Character out of place. ',' not expected here.\n" + showError())
           unsetValidBit(ExpectComma)
-          if (isValidSet(ObjectContext))
+          if (isValidSet(ObjectContext) || isValidSet(ObjectKeyContext))
             setValidBit(ExpectKey)
           else
             setValidBit(ExpectValue)
@@ -238,7 +264,7 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
           }
 
         case ch ⇒ // Tokenize some literal
-          if (!isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
+          if (!isValidSet(ExpectValue) && (isCanonical || !isValidSet(ExpectKey))) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
           // Integer
           if (isIntegerChar(ch)) {
             val start = position
@@ -287,8 +313,11 @@ class Tokenizer(val capacity: Int = 1024) extends Tokenizable {
           }
           unsetValidBit(ExpectValue)
           unsetValidBit(ExpectEndOfStructure)
-          if (!isValidClear)
+          if (!isValidClear) {
             setValidBit(ExpectComma)
+            if (!isCanonical)
+              setValidBit(ExpectColon)
+          }
       }
     }
     if (validPos > 0) {
