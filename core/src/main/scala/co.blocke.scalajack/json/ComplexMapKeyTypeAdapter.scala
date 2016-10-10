@@ -46,8 +46,7 @@ case class ComplexMapKeyTypeAdapter[T](
         //   throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
         valueParsed
     }
-    if (readValue == null) throw new java.lang.IllegalStateException("Map keys cannot be null.\n" + reader.showError())
-    else readValue
+    readValue
   }
 
   override def write(value: T, writer: Writer): Unit = {

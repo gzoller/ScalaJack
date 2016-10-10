@@ -54,6 +54,17 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           sj.read[SamplePet](js)
         }
       }
+      it("Complex trait (having members that are traits) as key where trait member is null") {
+        val a: Pet = FishPet("Flipper", Food.Veggies, 74.33)
+        val b: Pet = null.asInstanceOf[Pet] // DogPet("Fido", Food.Meat, 3)
+        val c: Pet = CompoundPet("Legion", Food.Pellets, b)
+        val inst = SamplePet(Map(c -> a))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":null}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Veggies","waterTemp":74.33}}}""") { js }
+        assertResult(inst) {
+          sj.read[SamplePet](js)
+        }
+      }
       it("Class having collections as members") {
         val a = PolyClass(Map("a" -> 1, "b" -> 2), List("one", "two"))
         val b = PolyClass(Map("x" -> 9, "y" -> 10), List("aye", "you"))

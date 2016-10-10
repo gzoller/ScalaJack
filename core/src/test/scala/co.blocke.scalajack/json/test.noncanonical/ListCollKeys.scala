@@ -25,7 +25,6 @@ class ListCollKeys() extends FunSpec with Matchers {
       val l2 = List(List(4, 5, 6), List(1, 3, 5))
       val inst = Map(l1 -> l2)
       val js = sj.render(inst)
-      println(js)
       assertResult("""{[[1,2,3],[9,8,7]]:[[4,5,6],[1,3,5]]}""") { js }
       assertResult(inst) {
         sj.read[Map[List[List[Int]], List[List[Int]]]](js)
