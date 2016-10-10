@@ -44,6 +44,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
     setValidBit(ExpectValue)
 
     /*  For Debugging...
+    // $COVERAGE-OFF$Debugging code
     def show() = {
       println("ArrayContext        : " + isValidSet(ArrayContext))
       println("ArrayKeyContext     : " + isValidSet(ArrayKeyContext))
@@ -57,6 +58,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
       println("-------")
     }
     */
+    // $COVERAGE-ON$
 
     @inline def setValidBit(bit: Int) = validate(validPos) |= bit
     @inline def unsetValidBit(bit: Int) = validate(validPos) &= ~bit

@@ -24,7 +24,7 @@ case class FallbackTypeAdapter[T](
     }
   }
 
-  // $COVERAGE-OFF$Disabling highlighting by default until a workaround for https://issues.scala-lang.org/browse/SI-8596 is found
+  // $COVERAGE-OFF$Should never be used semantically
   // Should never be called... fallback object "becomes" the asked-for object
   override def write(value: T, writer: Writer): Unit =
     primaryTypeAdapter.write(value, writer)

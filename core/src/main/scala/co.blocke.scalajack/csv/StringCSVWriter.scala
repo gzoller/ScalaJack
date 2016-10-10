@@ -12,7 +12,7 @@ class StringCSVWriter() extends Writer {
 
   def beginObject(): Unit = if (level < 0) level = 0 else throw new UnsupportedOperationException("Writing a nested object is not supported in CSV format")
 
-  // $COVERAGE-OFF$Disabling highlighting by default until a workaround for https://issues.scala-lang.org/browse/SI-8596 is found
+  // $COVERAGE-OFF$Unused/untested code in CSV context
   def endObject(): Unit = if (level != 0) throw new UnsupportedOperationException("Writing a nested object is not supported in CSV format")
   def endArray(): Unit = throw new UnsupportedOperationException("Writing a nested array is not supported in CSV format")
   def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = throw new UnsupportedOperationException("Raw array otuput not supported for CSV format")
