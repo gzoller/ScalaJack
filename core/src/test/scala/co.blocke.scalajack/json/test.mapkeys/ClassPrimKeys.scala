@@ -187,7 +187,9 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus""""
+        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+        |ido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","nam
+        |--------------------------------------------------^""".stripMargin
         the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad collection value in map key class having collections") {

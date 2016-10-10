@@ -60,7 +60,10 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
         if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
-          val keyTypeAdapter = context.typeAdapter(keyType)
+          val keyTypeAdapter = context.typeAdapter(keyType) match {
+            case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+            case kta                       ⇒ kta
+          }
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
           Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))

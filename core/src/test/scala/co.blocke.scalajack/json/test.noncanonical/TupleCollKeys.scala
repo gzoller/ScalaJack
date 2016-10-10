@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.mapkeys
+package json.test.noncanonical
 
 import org.scalatest.{ FunSpec, Matchers }
 import scala.reflect.runtime.universe.typeOf
@@ -7,15 +7,15 @@ import java.util.UUID
 
 class TupleCollKeys() extends FunSpec with Matchers {
 
-  val sj = ScalaJack()
+  val sj = ScalaJack().isCanonical(false)
 
-  describe("-------------------------\n:  Tuple Map Key Tests  :\n-------------------------") {
+  describe("------------------------------\n:  Tuple Noncanonical Tests  :\n------------------------------") {
     it("Tuple as key") {
       val a = (2, "Blather", 'Q')
       val b = ("Foo", true)
       val inst = SampleTuple(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[2,\"Blather\",\"Q\"]":["Foo",true]}}""") { js }
+      assertResult("""{"m":{[2,"Blather","Q"]:["Foo",true]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTuple](js)
       }
@@ -25,7 +25,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b: (String, Boolean) = null
       val inst = SampleTuple(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[2,\"Blather\",\"Q\"]":null}}""") { js }
+      assertResult("""{"m":{[2,"Blather","Q"]:null}}""") { js }
       assertResult(inst) {
         sj.read[SampleTuple](js)
       }
@@ -35,7 +35,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (List("four", "five", "six"), List(4, 5, 6))
       val inst = SampleTupleList(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[[\"one\",\"two\",\"three\"],[1,2,3]]":[["four","five","six"],[4,5,6]]}}""") { js }
+      assertResult("""{"m":{[["one","two","three"],[1,2,3]]:[["four","five","six"],[4,5,6]]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleList](js)
       }
@@ -45,7 +45,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (Map("three" -> 3), Map(4 -> "four"))
       val inst = SampleTupleMap(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"one\":1},{\"2\":\"two\"}]":[{"three":3},{"4":"four"}]}}""") { js }
+      assertResult("""{"m":{[{"one":1},{2:"two"}]:[{"three":3},{4:"four"}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleMap](js)
       }
@@ -55,7 +55,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (("no", false), (2, 0.5))
       val inst = SampleTupleTuple(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[[\"yes\",true],[1,0.25]]":[["no",false],[2,0.5]]}}""") { js }
+      assertResult("""{"m":{[["yes",true],[1,0.25]]:[["no",false],[2,0.5]]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleTuple](js)
       }
@@ -65,7 +65,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (SampleChar(Map('z' -> 'Z')), SampleInt(Map(99 -> 100)))
       val inst = SampleTupleClass(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"m\":{\"a\":\"A\"}},{\"m\":{\"1\":2}}]":[{"m":{"z":"Z"}},{"m":{"99":100}}]}}""") { js }
+      assertResult("""{"m":{[{"m":{"a":"A"}},{"m":{1:2}}]:[{"m":{"z":"Z"}},{"m":{99:100}}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleClass](js)
       }
@@ -75,7 +75,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (DogPet("Chey", Food.Meat, 3), FishPet("Flipper", Food.Seeds, 80.1))
       val inst = SampleTupleTrait(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+      assertResult("""{"m":{[{"_hint":"co.blocke.scalajack.json.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":4},{"_hint":"co.blocke.scalajack.json.test.noncanonical.FishPet","name":"Jaws","food":"Meat","waterTemp":69.8}]:[{"_hint":"co.blocke.scalajack.json.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.json.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleTrait](js)
       }
@@ -85,7 +85,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (DogPet("Chey", Food.Meat, 3), FishPet("Flipper", Food.Seeds, 80.1))
       val inst = SampleTupleTrait(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4},{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.FishPet\",\"name\":\"Jaws\",\"food\":\"Meat\",\"waterTemp\":69.8}]":[{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
+      assertResult("""{"m":{[{"_hint":"co.blocke.scalajack.json.test.noncanonical.DogPet","name":"Fido","food":"Meat","numLegs":4},{"_hint":"co.blocke.scalajack.json.test.noncanonical.FishPet","name":"Jaws","food":"Meat","waterTemp":69.8}]:[{"_hint":"co.blocke.scalajack.json.test.noncanonical.DogPet","name":"Chey","food":"Meat","numLegs":3},{"_hint":"co.blocke.scalajack.json.test.noncanonical.FishPet","name":"Flipper","food":"Seeds","waterTemp":80.1}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleTrait](js)
       }
@@ -95,7 +95,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (None, Some(Food.Meat))
       val inst = SampleTupleOptional(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[5,\"Fred\"]":[null,"Meat"]}}""") { js }
+      assertResult("""{"m":{[5,"Fred"]:[null,"Meat"]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleOptional](js)
       }
@@ -105,7 +105,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val b = (VCChar('z'), VCChar('Z'))
       val inst = SampleTupleVC(Map(a -> b))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[\"a\",\"A\"]":["z","Z"]}}""") { js }
+      assertResult("""{"m":{["a","A"]:["z","Z"]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleVC](js)
       }
@@ -120,7 +120,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (c2, c1)
       val inst = SampleTupleComplex(Map(t1 -> t2))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",\"simple\":{\"name\":\"Larry\",\"age\":32,\"isOk\":true,\"favorite\":\"golf\"},\"allDone\":true},{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d\",\"simple\":{\"name\":\"Mike\",\"age\":27,\"isOk\":false,\"favorite\":125},\"allDone\":false}]":[{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false},{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","simple":{"name":"Larry","age":32,"isOk":true,"favorite":"golf"},"allDone":true}]}}""") { js }
+      assertResult("""{"m":{[{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","simple":{"name":"Larry","age":32,"isOk":true,"favorite":"golf"},"allDone":true},{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false}]:[{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false},{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c","simple":{"name":"Larry","age":32,"isOk":true,"favorite":"golf"},"allDone":true}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTupleComplex](js)
       }
@@ -132,7 +132,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (b, a)
       val inst = SampleTuplePolyClass(Map(t1 -> t2))
       val js = sj.render(inst)
-      assertResult("""{"m":{"[{\"lookup\":{\"a\":1,\"b\":2},\"favs\":[\"one\",\"two\"]},{\"lookup\":{\"x\":9,\"y\":10},\"favs\":[\"aye\",\"you\"]}]":[{"lookup":{"x":9,"y":10},"favs":["aye","you"]},{"lookup":{"a":1,"b":2},"favs":["one","two"]}]}}""") { js }
+      assertResult("""{"m":{[{"lookup":{"a":1,"b":2},"favs":["one","two"]},{"lookup":{"x":9,"y":10},"favs":["aye","you"]}]:[{"lookup":{"x":9,"y":10},"favs":["aye","you"]},{"lookup":{"a":1,"b":2},"favs":["one","two"]}]}}""") { js }
       assertResult(inst) {
         sj.read[SampleTuplePolyClass](js)
       }
@@ -144,14 +144,14 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (b, a)
       val inst = Map(t1 -> t2)
       val js = sj.render(inst)
-      assertResult("""{"[{\"lookup\":{},\"favs\":[]},{\"lookup\":{},\"favs\":[]}]":[{"lookup":{},"favs":[]},{"lookup":{},"favs":[]}]}""") { js }
+      assertResult("""{[{"lookup":{},"favs":[]},{"lookup":{},"favs":[]}]:[{"lookup":{},"favs":[]},{"lookup":{},"favs":[]}]}""") { js }
       assertResult(inst) {
         sj.read[Map[(PolyClass, PolyClass), (PolyClass, PolyClass)]](js)
       }
     }
     it("Custom trait hint field and value for key trait") {
       val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
-      val sj2 = ScalaJack()
+      val sj2 = ScalaJack().isCanonical(false)
         .withHints((typeOf[Pet] -> "kind"))
         .withHintModifiers((typeOf[Pet] -> petHintMod))
 
@@ -161,14 +161,14 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (b, a)
       val inst = Map(t1 -> t2)
       val js = sj2.render(inst)
-      assertResult("""{"[{\"kind\":\"BreathsWater\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33},{\"kind\":\"BreathsAir\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}]":[{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3},{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33}]}""") { js }
+      assertResult("""{[{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33},{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}]:[{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3},{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33}]}""") { js }
       assertResult(inst) {
         sj2.read[Map[(Pet, Pet), (Pet, Pet)]](js)
       }
     }
     it("Custom trait hint field and value for key member's trait") {
       val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
-      val sj2 = ScalaJack()
+      val sj2 = ScalaJack().isCanonical(false)
         .withHints((typeOf[Pet] -> "kind"))
         .withHintModifiers((typeOf[Pet] -> petHintMod))
 
@@ -178,7 +178,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (b, a)
       val inst = Map(t1 -> t2)
       val js = sj2.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsWater\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}},{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder\",\"address\":\"210 North\",\"pet\":{\"kind\":\"BreathsAir\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}]":[{"_hint":"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}},{"_hint":"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder","address":"123 Main","pet":{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33}}]}""") { js }
+      assertResult("""{[{"_hint":"co.blocke.scalajack.json.test.noncanonical.ShinyPetHolder","address":"123 Main","pet":{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33}},{"_hint":"co.blocke.scalajack.json.test.noncanonical.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}]:[{"_hint":"co.blocke.scalajack.json.test.noncanonical.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}},{"_hint":"co.blocke.scalajack.json.test.noncanonical.ShinyPetHolder","address":"123 Main","pet":{"kind":"BreathsWater","name":"Flipper","food":"Veggies","waterTemp":74.33}}]}""") { js }
       assertResult(inst) {
         sj2.read[Map[(PetHolder, PetHolder), (PetHolder, PetHolder)]](js)
       }
@@ -190,7 +190,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (b, a)
       val inst = Map(t1 -> t2)
       val js = sj.render(inst)
-      assertResult("""{"[{\"nc\":{\"0\":false,\"1\":true},\"name\":\"truth\"},{\"nc\":{\"1\":false,\"0\":true},\"name\":\"lie\"}]":[{"nc":{"1":false,"0":true},"name":"lie"},{"nc":{"0":false,"1":true},"name":"truth"}]}""") { js }
+      assertResult("""{[{"nc":{0:false,1:true},"name":"truth"},{"nc":{1:false,0:true},"name":"lie"}]:[{"nc":{1:false,0:true},"name":"lie"},{"nc":{0:false,1:true},"name":"truth"}]}""") { js }
       assertResult(inst) {
         sj.read[Map[(NCKey, NCKey), (NCKey, NCKey)]](js)
       }
@@ -200,7 +200,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2 = (AThing("yep", 3), AThing("yikes", 11))
       val inst = Map(t1 -> t2)
       val js = sj.render(inst)
-      assertResult("""{"[{\"a\":\"wow\",\"b\":4},{\"a\":\"boom\",\"b\":1}]":[{"a":"yep","b":3},{"a":"yikes","b":11}]}""") { js }
+      assertResult("""{[{"a":"wow","b":4},{"a":"boom","b":1}]:[{"a":"yep","b":3},{"a":"yikes","b":11}]}""") { js }
       assertResult(inst) {
         sj.read[Map[(AThing[Int, String], AThing[Int, String]), (AThing[Int, String], AThing[Int, String])]](js)
       }
@@ -210,7 +210,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2: (Thing[String, Int], Thing[String, Int]) = (AThing("yep", 3), AThing("yikes", 11))
       val inst = Map(t1 -> t2)
       val js = sj.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"wow\",\"b\":4},{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"boom\",\"b\":1}]":[{"_hint":"co.blocke.scalajack.json.test.mapkeys.AThing","a":"yep","b":3},{"_hint":"co.blocke.scalajack.json.test.mapkeys.AThing","a":"yikes","b":11}]}""") { js }
+      assertResult("""{[{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"wow","b":4},{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"boom","b":1}]:[{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"yep","b":3},{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"yikes","b":11}]}""") { js }
       assertResult(inst) {
         sj.read[Map[(Thing[String, Int], Thing[String, Int]), (Thing[String, Int], Thing[String, Int])]](js)
       }
@@ -220,7 +220,7 @@ class TupleCollKeys() extends FunSpec with Matchers {
       val t2: (Thing[String, Part[Double]], Thing[String, Part[Double]]) = (AThing("yep", APart(4.5)), AThing("yikes", APart(6.7)))
       val inst = Map(t1 -> t2)
       val js = sj.render(inst)
-      assertResult("""{"[{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"wow\",\"b\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.APart\",\"p\":1.2}},{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"boom\",\"b\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.APart\",\"p\":2.3}}]":[{"_hint":"co.blocke.scalajack.json.test.mapkeys.AThing","a":"yep","b":{"_hint":"co.blocke.scalajack.json.test.mapkeys.APart","p":4.5}},{"_hint":"co.blocke.scalajack.json.test.mapkeys.AThing","a":"yikes","b":{"_hint":"co.blocke.scalajack.json.test.mapkeys.APart","p":6.7}}]}""") { js }
+      assertResult("""{[{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"wow","b":{"_hint":"co.blocke.scalajack.json.test.noncanonical.APart","p":1.2}},{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"boom","b":{"_hint":"co.blocke.scalajack.json.test.noncanonical.APart","p":2.3}}]:[{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"yep","b":{"_hint":"co.blocke.scalajack.json.test.noncanonical.APart","p":4.5}},{"_hint":"co.blocke.scalajack.json.test.noncanonical.AThing","a":"yikes","b":{"_hint":"co.blocke.scalajack.json.test.noncanonical.APart","p":6.7}}]}""") { js }
       assertResult(inst) {
         sj.read[Map[(Thing[String, Part[Double]], Thing[String, Part[Double]]), (Thing[String, Part[Double]], Thing[String, Part[Double]])]](js)
       }
