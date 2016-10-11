@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.mapkeys
+package json.test.noncanonical
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
@@ -9,15 +9,15 @@ import java.time._
 
 class JavaPrimKeys() extends FunSpec with Matchers {
 
-  val sj = ScalaJack()
+  val sj = ScalaJack().isCanonical(false)
 
-  describe("----------------------------------\n:  Java Primitive Map Key Tests  :\n----------------------------------") {
+  describe("---------------------------------------\n:  Java Primitive Noncanonical Tests  :\n---------------------------------------") {
     describe("+++ Positive Tests +++") {
       describe("Simple Primitives:") {
         it("With BigDecimal Key") {
           val inst = SampleJBigDecimal(Map(new JBigDecimal("123.456") -> new JBigDecimal("1"), new JBigDecimal("789.123") -> new JBigDecimal("2")))
           val js = sj.render(inst)
-          assertResult("""{"m":{"123.456":1,"789.123":2}}""") { js }
+          assertResult("""{"m":{123.456:1,789.123:2}}""") { js }
           assertResult(inst) {
             sj.read[SampleJBigDecimal](js)
           }
@@ -25,7 +25,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With BigInteger Key") {
           val inst = SampleJBigInteger(Map(new JBigInteger("123") -> new JBigInteger("1"), new JBigInteger("789") -> new JBigInteger("2")))
           val js = sj.render(inst)
-          assertResult("""{"m":{"123":1,"789":2}}""") { js }
+          assertResult("""{"m":{123:1,789:2}}""") { js }
           assertResult(inst) {
             sj.read[SampleJBigInteger](js)
           }
@@ -33,7 +33,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Boolean Key") {
           val inst = SampleJBoolean(Map(true.asInstanceOf[JBoolean] -> false.asInstanceOf[JBoolean], false.asInstanceOf[JBoolean] -> true.asInstanceOf[JBoolean]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"true":false,"false":true}}""") { js }
+          assertResult("""{"m":{true:false,false:true}}""") { js }
           assertResult(inst) {
             sj.read[SampleJBoolean](js)
           }
@@ -41,7 +41,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Byte Key") {
           val inst = SampleJByte(Map(16.toByte.asInstanceOf[JByte] -> 2.toByte.asInstanceOf[JByte], 48.toByte.asInstanceOf[JByte] -> 9.toByte.asInstanceOf[JByte]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"16":2,"48":9}}""") { js }
+          assertResult("""{"m":{16:2,48:9}}""") { js }
           assertResult(inst) {
             sj.read[SampleJByte](js)
           }
@@ -57,7 +57,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Double Key") {
           val inst = SampleJDouble(Map(12.34.asInstanceOf[JDouble] -> 56.78.asInstanceOf[JDouble], 90.12.asInstanceOf[JDouble] -> 34.56.asInstanceOf[JDouble]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"12.34":56.78,"90.12":34.56}}""") { js }
+          assertResult("""{"m":{12.34:56.78,90.12:34.56}}""") { js }
           assertResult(inst) {
             sj.read[SampleJDouble](js)
           }
@@ -65,7 +65,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Float Key") {
           val inst = SampleJFloat(Map(12.34F.asInstanceOf[JFloat] -> 56.78F.asInstanceOf[JFloat], 90.12F.asInstanceOf[JFloat] -> 34.56F.asInstanceOf[JFloat]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"12.34":56.78,"90.12":34.56}}""") { js }
+          assertResult("""{"m":{12.34:56.78,90.12:34.56}}""") { js }
           assertResult(inst) {
             sj.read[SampleJFloat](js)
           }
@@ -73,7 +73,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Integer Key") {
           val inst = SampleJInteger(Map(12.asInstanceOf[JInteger] -> 56.asInstanceOf[JInteger], 90.asInstanceOf[JInteger] -> 34.asInstanceOf[JInteger]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"12":56,"90":34}}""") { js }
+          assertResult("""{"m":{12:56,90:34}}""") { js }
           assertResult(inst) {
             sj.read[SampleJInteger](js)
           }
@@ -81,7 +81,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Long Key") {
           val inst = SampleJLong(Map(12L.asInstanceOf[JLong] -> 56L.asInstanceOf[JLong], 90L.asInstanceOf[JLong] -> 34L.asInstanceOf[JLong]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"12":56,"90":34}}""") { js }
+          assertResult("""{"m":{12:56,90:34}}""") { js }
           assertResult(inst) {
             sj.read[SampleJLong](js)
           }
@@ -98,7 +98,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
             new JBigDecimal("1.8e+308") -> new JFloat("0.0")
           ))
           val js = sj.render(inst)
-          assertResult("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}""") { js }
+          assertResult("""{"m":{0:9923372036854755810,-2147483648:2147483647,-9223372036854775808:9223372036854755807,-128:127,3.4E-38:3.4E38,-32768:32767,1.8E+308:0.0,1.7E-308:1.7E308}}""") { js }
           val read = sj.read[SampleJNumber](js)
           assertResult(inst) { read }
           assertResult("List((1.8E+308,java.math.BigDecimal), (-32768,java.lang.Short), (-9223372036854775808,java.lang.Long), (-2147483648,java.lang.Integer), (3.4E-38,java.lang.Float), (1.7E-308,java.lang.Double), (0,java.lang.Byte), (-128,java.lang.Byte))") {
@@ -109,7 +109,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With Short Key") {
           val inst = SampleJShort(Map(12.toShort.asInstanceOf[JShort] -> 56.toShort.asInstanceOf[JShort], 90.toShort.asInstanceOf[JShort] -> 34.toShort.asInstanceOf[JShort]))
           val js = sj.render(inst)
-          assertResult("""{"m":{"12":56,"90":34}}""") { js }
+          assertResult("""{"m":{12:56,90:34}}""") { js }
           assertResult(inst) {
             sj.read[SampleJShort](js)
           }
@@ -193,81 +193,79 @@ class JavaPrimKeys() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       describe("Simple Primitives:") {
         it("Bad BigDecimal Key") {
-          val js = """{"m":{"fred":1,"789.123":2}}"""
+          val js = """{"m":{"fred":1,789.123:2}}"""
           val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789.123":2}}
+          |{"m":{"fred":1,789.123:2}}
           |------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
         }
         it("Bad BigInt Key") {
-          val js = """{"m":{"fred":1,"789":2}}"""
+          val js = """{"m":{"fred":1,789:2}}"""
           val msg = """Expected value token of type Number, not String when reading BigInteger value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789":2}}
+          |{"m":{"fred":1,789:2}}
           |------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Bad Boolean Key") {
-          val js = """{"m":{"true":false,"123":true}}"""
+          val js = """{"m":{true:false,123:true}}"""
           val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes?)
-          |{"m":{"true":false,"123":true}}
-          |-------------------^""".stripMargin
+          |{"m":{true:false,123:true}}
+          |-----------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg
         }
         it("Bad Byte Key") {
-          val js = """{"m":{"16":2,"x48":9}}"""
+          val js = """{"m":{16:2,"x48":9}}"""
           val msg = """Expected value token of type Number, not String when reading Byte value.  (Is your value wrapped in quotes?)
-          |{"m":{"16":2,"x48":9}}
-          |-------------^""".stripMargin
+          |{"m":{16:2,"x48":9}}
+          |-----------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJByte](js) should have message msg
         }
-        it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
-          val js = """{"m":{null:"A","z":"Z"}}"""
-          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |{"m":{null:"A","z":"Z"}}
+        it("Bad Char Key") {
+          val js = """{"m":{-3:"A","z":"Z"}}"""
+          val msg = """Expected value token of type String, not Number when reading Character value.  (Is your value wrapped in quotes?)
+          |{"m":{-3:"A","z":"Z"}}
           |------^""".stripMargin
-          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJChar](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJChar](js) should have message msg
         }
         it("Bad Double Key") {
-          val js = """{"m":{"12.34":56.78,"true":34.56}}"""
+          val js = """{"m":{12.34:56.78,true:34.56}}"""
           val msg = """Expected value token of type Number, not True when reading Double value.  (Is your value wrapped in quotes?)
-          |{"m":{"12.34":56.78,"true":34.56}}
-          |--------------------^""".stripMargin
+          |{"m":{12.34:56.78,true:34.56}}
+          |------------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Bad Float Key") {
-          val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
+          val js = """{"m":{12.34:56.78,90.12.3:34.56}}"""
           val msg = """multiple points
-          |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |--------------------^""".stripMargin
+          |{"m":{12.34:56.78,90.12.3:34.56}}
+          |------------------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJFloat](js) should have message msg
         }
         it("Bad Int Key") {
-          val js = """{"m":{"12.0":56,"90":34}}"""
+          val js = """{"m":{12.0:56,90:34}}"""
           val msg = """For input string: "12.0"
-          |{"m":{"12.0":56,"90":34}}
+          |{"m":{12.0:56,90:34}}
           |------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJInteger](js) should have message msg
         }
         it("Bad Long Key") {
-          val js = """{"m":{"12":56,"hey":34}}"""
+          val js = """{"m":{12:56,"hey":34}}"""
           val msg = """Expected value token of type Number, not String when reading Long value.  (Is your value wrapped in quotes?)
-          |{"m":{"12":56,"hey":34}}
-          |--------------^""".stripMargin
+          |{"m":{12:56,"hey":34}}
+          |------------^""".stripMargin
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
         }
         it("Bad Number Key") {
-          val js = """{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |0x
-          |-^ Extracted from source here:
-          |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,
+          val js = """{"m":{"0x":9923372036854755810,-2147483648:2147483647,-9223372036854775808:9223372036854755807,-128:127,3.4E-38:3.4E38,-32768:32767,1.8E+308:0.0,1.7E-308:1.7E308}}"""
+          val msg = """Expected value token of type Number, not String when reading Number value.  (Is your value wrapped in quotes?)
+          |{"m":{"0x":9923372036854755810,-2147483648:2147483647,-9
           |------^""".stripMargin
-          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJNumber](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Bad Short Key") {
-          val js = """{"m":{"99999":56,"90":34}}"""
+          val js = """{"m":{99999:56,90:34}}"""
           val msg = """Value out of range. Value:"99999" Radix:10
-          |{"m":{"99999":56,"90":34}}
+          |{"m":{99999:56,90:34}}
           |------^""".stripMargin
           the[java.lang.NumberFormatException] thrownBy sj.read[SampleJShort](js) should have message msg
         }

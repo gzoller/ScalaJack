@@ -79,17 +79,31 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 // Reads have to reverse-engineer the "" into a None
 case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
-  override def read(reader: Reader): Option[T] =
+  // Special logic for TokenType.String.  A map key of value None for any value type (Int, ...) will be "".
+  // So we must test for String and infer None if value is "".  Note that means there's no real way to 
+  // infer Some("") as this will always devolve into None.  Have to make a compromose somewhere.
+  private def read(reader: Reader, testStringForNull: Boolean): Option[T] = {
     reader.peek match {
       case TokenType.Nothing | TokenType.Null | TokenType.End ⇒
         reader.read()
         None
+      case TokenType.String if (testStringForNull) ⇒
+        reader.markPosition()
+        if (reader.readString() == "")
+          None
+        else {
+          reader.rewindToMark
+          read(reader, false)
+        }
       case v ⇒
         valueTypeAdapter.read(reader) match {
-          case ""  ⇒ None
           case res ⇒ Some(res)
         }
     }
+  }
+
+  override def read(reader: Reader): Option[T] =
+    read(reader, true)
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {

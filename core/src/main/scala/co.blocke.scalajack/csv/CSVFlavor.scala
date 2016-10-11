@@ -8,19 +8,21 @@ import java.lang.{ UnsupportedOperationException => UOE }
 
 import typeadapter.DerivedValueClassAdapter
 
-case class CSVFlavor(
-    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-    hintMap:        Map[Type, String]        = Map.empty[Type, String],
-    hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
-    parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-    defaultHint:    String                   = "_hint"
-) extends ScalaJackLike[String] {
+case class CSVFlavor() extends {
+  val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
+  val hintMap: Map[Type, String] = Map.empty[Type, String]
+  val hintModifiers: Map[Type, HintModifier] = Map.empty[Type, HintModifier]
+  val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
+  val defaultHint: String = "_hint"
+  val isCanonical: Boolean = true
+} with ScalaJackLike[String] {
 
   def withAdapters(ta: TypeAdapterFactory*) = throw new UOE("Not available for CSV formatting")
   def withHints(h: (Type, String)*) = throw new UOE("Not available for CSV formatting")
   def withHintModifiers(hm: (Type, HintModifier)*) = throw new UOE("Not available for CSV formatting")
   def withDefaultHint(hint: String) = throw new UOE("Not available for CSV formatting")
   def parseOrElse(poe: (Type, Type)*) = throw new UOE("Not available for CSV formatting")
+  def isCanonical(canonical: Boolean) = throw new UOE("Not available for CSV formatting")
 
   override val context: Context = {
     val ctx = bakeContext()

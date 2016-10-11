@@ -9,7 +9,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("------------------------------\n:  Class Noncanonical Tests  :\n------------------------------") {
+  describe("-------------------------\n:  Class Map Key Tests  :\n-------------------------") {
     describe("+++ Positive Tests +++") {
       it("Simple (flat) class as key") {
         val a = SimpleClass("Larry", 32, true, "golf")
@@ -50,6 +50,17 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         val inst = SamplePet(Map(c -> a))
         val js = sj.render(inst)
         assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Veggies","waterTemp":74.33}}}""") { js }
+        assertResult(inst) {
+          sj.read[SamplePet](js)
+        }
+      }
+      it("Complex trait (having members that are traits) as key where trait member is null") {
+        val a: Pet = FishPet("Flipper", Food.Veggies, 74.33)
+        val b: Pet = null.asInstanceOf[Pet] // DogPet("Fido", Food.Meat, 3)
+        val c: Pet = CompoundPet("Legion", Food.Pellets, b)
+        val inst = SamplePet(Map(c -> a))
+        val js = sj.render(inst)
+        assertResult("""{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":null}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Veggies","waterTemp":74.33}}}""") { js }
         assertResult(inst) {
           sj.read[SamplePet](js)
         }
@@ -187,7 +198,9 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus""""
+        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+        |ido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","nam
+        |--------------------------------------------------^""".stripMargin
         the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad collection value in map key class having collections") {

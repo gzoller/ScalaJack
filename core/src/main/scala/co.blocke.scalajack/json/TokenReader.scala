@@ -44,11 +44,10 @@ class TokenReader(
   }
 
   def unescapedTokenText: String = {
+    var builder: StringBuilder = null
     val source = this.source
     val tokenOffset = this.tokenOffset
     val tokenLength = this.tokenLength
-
-    val builder = new StringBuilder(tokenLength)
 
     val minPosition = tokenOffset + 1 // ignore the leading double-quote
     val maxPosition = tokenOffset + tokenLength - 1 // ignore the trailing double-quote
@@ -60,7 +59,7 @@ class TokenReader(
     while (position < maxPosition) {
       source(position) match {
         case '\\' ⇒
-
+          if (builder == null) builder = new StringBuilder(tokenLength)
           builder.appendAll(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
 
           source(position + 1) match {
