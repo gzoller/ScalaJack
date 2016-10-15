@@ -55,7 +55,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
     // otherwise fail the default lookup.
-    def defaultValue: Option[T] = None
+    def defaultValue: Option[T] = if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None
 
   }
 
@@ -149,10 +149,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val members = reflectJavaGetterSetterFields
           Some(PlainClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
         case x =>
-          println("BOOM: " + x)
           None
-        // case _ ⇒
-        //   throw new Exception("Must have 0 params!")
       }
 
     } else
@@ -205,7 +202,9 @@ case class PlainClassTypeAdapter[T >: Null](
         reader.endObject()
 
         for (member ← members if !found(member.index)) {
-          throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+          member.defaultValue.getOrElse(
+            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+          )
         }
 
         if (isSJCapture)

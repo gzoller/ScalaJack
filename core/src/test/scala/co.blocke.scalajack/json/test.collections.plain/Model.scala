@@ -11,6 +11,24 @@ class PlayerMix() {
   def age_=(a: Int) = _age = a
 }
 
+class PlayerOptionMix() {
+  def someConfusingThing() = true
+  var name: String = "" // public var member
+
+  private var _age: Option[Int] = None
+  def age: Option[Int] = _age // getter/setter member
+  def age_=(a: Option[Int]) = _age = a
+}
+
+class PlayerParamMix[T]() {
+  def someConfusingThing() = true
+  var name: String = ""
+
+  private var _age: Option[T] = None
+  def age: Option[T] = _age // getter/setter member
+  def age_=(a: Option[T]) = _age = a
+}
+
 // class OptionBigInt(o: Option[BigInt])
 // class OptionClass(name: String, age: Option[Int])
 // class OptionTuple(foo: Int, t: (Boolean, Option[String], Int))
