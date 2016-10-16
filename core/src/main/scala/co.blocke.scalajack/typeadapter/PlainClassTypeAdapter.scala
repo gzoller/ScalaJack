@@ -20,11 +20,15 @@ import java.beans.Introspector
 object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   case class PlainMember[T](
-      index:                              Int,
-      name:                               String,
-      valueTypeAdapter:                   TypeAdapter[T],
-      valueGetterMethod:                  Method,
-      valueSetterMethod:                  Method,
+      index:             Int,
+      name:              String,
+      valueTypeAdapter:  TypeAdapter[T],
+      valueGetterMethod: Method,
+      // Java & Scala need different setters.  Scala needs to properly set ValueClass values,
+      // which can't be done using a Java method call.  Of course Java can *only* use a Java
+      // method call, so... we have both.
+      valueSetterMethodSymbol:            Option[MethodSymbol], // for Scala
+      valueSetterMethod:                  Option[Method], // for Java
       derivedValueClassConstructorMirror: Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]]
   ) extends ClassMember[T] {
@@ -47,7 +51,11 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       }
     }
 
-    def valueSet(instance: Any, value: Object): Unit = valueSetterMethod.invoke(instance, value)
+    def valueSet(instance: Any, value: Object): Unit =
+      valueSetterMethodSymbol match {
+        case Some(vsms) ⇒ currentMirror.reflect(instance).reflectMethod(vsms)(value)
+        case None       ⇒ valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
+      }
 
     def writeValue(parameterValue: Any, writer: Writer): Unit = {
       valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
@@ -108,14 +116,33 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           case p if (tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol) ⇒
             val memberType = p.asMethod.returnType
             val memberTypeAdapter = context.typeAdapter(memberType)
+
+            val (derivedValueClassConstructorMirror, memberClass) =
+              if (memberType.typeSymbol.isClass) {
+                val memberClassSymbol = memberType.typeSymbol.asClass
+
+                if (memberClassSymbol.isDerivedValueClass) {
+                  val memberClass = currentMirror.runtimeClass(memberClassSymbol)
+                  // The accessor will actually return the "inner" value, not the value class.
+                  val constructorMethodSymbol = memberClassSymbol.primaryConstructor.asMethod
+                  //              val innerClass = currentMirror.runtimeClass(constructorMethodSymbol.paramLists.flatten.head.info.typeSymbol.asClass)
+                  (Some(currentMirror.reflectClass(memberClassSymbol).reflectConstructor(constructorMethodSymbol)), Some(memberClass))
+                } else {
+                  (None, None)
+                }
+              } else {
+                (None, None)
+              }
+
             PlainMember(
               0,
               p.name.encodedName.toString,
               memberTypeAdapter,
               Reflection.methodToJava(p.asMethod),
-              Reflection.methodToJava(tpe.member(TermName(p.name.toString + "_$eq")).asMethod),
+              Some(tpe.member(TermName(p.name.toString + "_$eq")).asMethod),
               None,
-              None
+              derivedValueClassConstructorMirror,
+              memberClass
             )
         }.toList.zipWithIndex.map { case (pm, index) ⇒ pm.copy(index = index) }
       }
@@ -130,7 +157,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             propertyDescriptor.getName,
             memberTypeAdapter,
             propertyDescriptor.getReadMethod,
-            propertyDescriptor.getWriteMethod,
+            None,
+            Some(propertyDescriptor.getWriteMethod),
             None,
             None
           )
