@@ -1,6 +1,6 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{Reader, TokenType, TypeAdapter, Writer, _}
+import co.blocke.scalajack.{ Reader, TokenType, TypeAdapter, Writer, _ }
 
 import scala.collection.mutable
 
@@ -27,16 +27,16 @@ object ClassLikeTypeAdapter {
 
   }
 
-//  case class ConcreteMember2(index: Int, name: MemberName, valueTypeAdapter: TypeAdapter[Any]) extends Member2 {
-//
-//    override type OwnerType = Any
-//    override type MemberValueType = Any
-//
-//    override def defaultValue: Option[MemberValueType] = ???
-//
-//    override def valueIn(owner: OwnerType): MemberValueType = ???
-//
-//  }
+  //  case class ConcreteMember2(index: Int, name: MemberName, valueTypeAdapter: TypeAdapter[Any]) extends Member2 {
+  //
+  //    override type OwnerType = Any
+  //    override type MemberValueType = Any
+  //
+  //    override def defaultValue: Option[MemberValueType] = ???
+  //
+  //    override def valueIn(owner: OwnerType): MemberValueType = ???
+  //
+  //  }
 
   trait MemberOld[C, V] {
 

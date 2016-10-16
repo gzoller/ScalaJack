@@ -51,4 +51,12 @@ class BsonReader(
 
   override def showError(): String = "SOMETHING WENT WRONG"
 
+  override def captureValue(): Any = {
+//    val startTok = position + 1
+//    skipValue()
+//    val endTok = Math.max(startTok, position)
+//    new String(source.slice(tokenOffsets(startTok), tokenOffsets(endTok) + tokenLengths(endTok)))
+    ???
+  }
+
 }

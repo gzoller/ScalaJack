@@ -107,7 +107,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
     } else {
       None
     }
