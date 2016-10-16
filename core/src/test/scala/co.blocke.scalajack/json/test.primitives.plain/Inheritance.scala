@@ -15,7 +15,6 @@ class Inheritance() extends FunSpec with Matchers {
       p1.age = VCDouble(1.23)
       p1.more = 25
       val js = sj.render(p1)
-      println(js)
       assertResult("""{"more":25,"age":1.23,"name":"Mike"}""") { js }
       assertResult(true) {
         val r = sj.read[BigPlayer](js)

@@ -113,7 +113,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       def reflectScalaGetterSetterFields: List[ClassMember[_]] = {
         tpe.members.filter(p ⇒ p.isPublic && p.isMethod).collect {
           // Scala case
-          case p if (tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol) ⇒
+          case p if (tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol && p.owner != typeOf[SJCapture].typeSymbol) ⇒
             val memberType = p.asMethod.returnType
             val memberTypeAdapter = context.typeAdapter(memberType)
 
