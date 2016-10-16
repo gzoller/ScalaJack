@@ -10,3 +10,7 @@ class PlayerMix() {
   def age: VCDouble = _age // getter/setter member
   def age_=(a: VCDouble) = _age = a
 }
+
+class BigPlayer() extends PlayerMix {
+  var more: Int = 0
+}
