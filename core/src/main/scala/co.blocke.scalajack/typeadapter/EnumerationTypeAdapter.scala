@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.reflect.runtime.universe.{ ClassSymbol, Type, typeOf }
+import scala.util.{ Try, Success, Failure }
 
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -23,10 +24,9 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
   override def read(reader: Reader): E#Value =
     reader.peek match {
       case TokenType.String ⇒
-        try {
-          enum.withName(reader.readString())
-        } catch {
-          case nse: java.util.NoSuchElementException ⇒ throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
+        Try(enum.withName(reader.readString())) match {
+          case Success(u) ⇒ u
+          case Failure(u) ⇒ throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
         }
       case TokenType.Null ⇒ reader.readNull()
       case actual ⇒

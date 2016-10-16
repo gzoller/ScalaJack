@@ -11,6 +11,7 @@ trait TypeAdapter[T] {
 
   def defaultValue: Option[T] = None
 
+  def resolved: TypeAdapter[T] = this
 }
 
 // Marker trait for those TypeAdapters which render as String

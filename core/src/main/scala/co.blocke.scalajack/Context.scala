@@ -17,7 +17,6 @@ object Context {
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
     .withFactory(CanBuildFromTypeAdapter)
-    //    .withFactory(MapTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
     .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all 
@@ -61,7 +60,7 @@ object Context {
     .withFactory(ZonedDateTimeTypeAdapter)
 }
 
-case class Context(factories: List[TypeAdapterFactory] = Nil) {
+case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory] = Nil) {
 
   sealed trait Phase
   case object Uninitialized extends Phase
@@ -73,6 +72,10 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
   }
 
   class TypeEntry(tpe: Type) {
+
+    object FactoryExtractor {
+      def unapply(factory: TypeAdapterFactory): Option[TypeAdapter[_]] = factory.typeAdapter(tpe, Context.this)
+    }
 
     @volatile
     private var phase: Phase = Uninitialized
@@ -90,15 +93,9 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
                   phase = Initializing
 
                   val typeAdapterAttempt = Try {
-                    var optionalTypeAdapter: Option[TypeAdapter[_]] = None
-
-                    var remainingFactories = factories
-                    while (optionalTypeAdapter.isEmpty && remainingFactories.nonEmpty) {
-                      optionalTypeAdapter = remainingFactories.head.typeAdapter(tpe, Context.this)
-                      remainingFactories = remainingFactories.tail
-                    }
-
-                    optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
+                    factories.collectFirst {
+                      case FactoryExtractor(ta) => ta
+                    }.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
                   }
 
                   phase = Initialized(typeAdapterAttempt)

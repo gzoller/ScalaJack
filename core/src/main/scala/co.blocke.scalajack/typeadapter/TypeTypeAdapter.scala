@@ -14,7 +14,7 @@ object TypeTypeAdapter extends SimpleTypeAdapter[Type] {
       t2
     } catch {
       case e: ScalaReflectionException ⇒
-        throw new ClassNotFoundException(s"""Unable to find class named "$fullName"""", e)
+        throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
     }
   }
 

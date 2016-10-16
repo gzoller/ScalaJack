@@ -3,6 +3,8 @@ package typeadapter
 package javatime
 
 import java.time.Duration
+import java.time.format.DateTimeParseException
+import scala.util.{ Try, Success, Failure }
 
 object DurationTypeAdapter extends SimpleTypeAdapter[Duration] with StringKind {
 
@@ -12,10 +14,9 @@ object DurationTypeAdapter extends SimpleTypeAdapter[Duration] with StringKind {
         reader.readNull()
 
       case TokenType.String ⇒
-        try {
-          Duration.parse(reader.readString())
-        } catch {
-          case dtpe: java.time.format.DateTimeParseException ⇒ throw new java.time.format.DateTimeParseException(dtpe.getMessage + "\n" + reader.showError(), dtpe.getParsedString, dtpe.getErrorIndex)
+        Try(Duration.parse(reader.readString())) match {
+          case Success(u) ⇒ u
+          case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
 
       case actual ⇒ {

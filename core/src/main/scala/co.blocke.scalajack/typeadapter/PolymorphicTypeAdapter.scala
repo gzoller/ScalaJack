@@ -66,7 +66,7 @@ case class PolymorphicTypeAdapter[T](
     if (reader.peek == TokenType.Null) {
       reader.readNull().asInstanceOf[T]
     } else {
-      val originalPosition = reader.position
+      reader.markPosition
 
       reader.beginObject()
 
@@ -87,7 +87,7 @@ case class PolymorphicTypeAdapter[T](
       val populatedConcreteType = populateConcreteType(concreteType)
       val concreteTypeAdapter = context.typeAdapter(populatedConcreteType)
 
-      reader.position = originalPosition
+      reader.rewindToMark
 
       concreteTypeAdapter.read(reader).asInstanceOf[T]
     }
@@ -95,12 +95,16 @@ case class PolymorphicTypeAdapter[T](
 
   override def write(value: T, writer: Writer): Unit = {
     // TODO figure out a better way to infer the type (perhaps infer the type arguments?)
-    val concreteType = currentMirror.classSymbol(value.getClass).toType
-    val populatedConcreteType = populateConcreteType(concreteType)
-    val valueTypeAdapter = context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]]
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      val concreteType = currentMirror.classSymbol(value.getClass).toType
+      val populatedConcreteType = populateConcreteType(concreteType)
+      val valueTypeAdapter = context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]]
 
-    val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, populatedConcreteType, typeTypeAdapter, memberNameTypeAdapter)
-    valueTypeAdapter.write(value, polymorphicWriter)
+      val polymorphicWriter = new PolymorphicWriter(writer, typeMemberName, populatedConcreteType, typeTypeAdapter, memberNameTypeAdapter)
+      valueTypeAdapter.write(value, polymorphicWriter)
+    }
   }
 
 }

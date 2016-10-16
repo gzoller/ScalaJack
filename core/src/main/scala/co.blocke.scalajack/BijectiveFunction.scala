@@ -10,7 +10,6 @@ object BijectiveFunction {
     implicit final class FunctionReverse[A, B](private val apply: A ⇒ B) extends AnyVal {
       @inline def reversedBy(unapply: B ⇒ A): BijectiveFunction[A, B] = BijectiveFunction(apply, unapply)
       def ⇄(unapply: B ⇒ A): BijectiveFunction[A, B] = reversedBy(unapply)
-      def =/=(unapply: B ⇒ A): BijectiveFunction[A, B] = reversedBy(unapply) // For those who don't like Unicode
     }
 
   }

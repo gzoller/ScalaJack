@@ -3,44 +3,52 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import scala.language.{existentials, reflectiveCalls}
+import CaseClassTypeAdapter.Member
+
+import scala.collection.mutable
+import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{Annotation, ClassSymbol, MethodMirror, MethodSymbol, TermName, Type}
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class Member(
+  case class Member[T](
       index:                              Int,
       name:                               String,
-      annotations:                        List[Annotation],
-      valueTypeAdapter:                   TypeAdapter[Any],
+      valueTypeAdapter:                   TypeAdapter[T],
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
       defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]]
-  ) extends ClassLikeTypeAdapter.Member {
+  ) {
 
-    override type OwnerType = Any
-    override type MemberValueType = Any
+    val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
-    def valueIn(owner: OwnerType): MemberValueType = {
-      val value = valueAccessorMethod.invoke(owner)
+    def valueIn(instance: Any): T = {
+      val value = valueAccessorMethod.invoke(instance)
 
       if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[MemberValueType]
+        value.asInstanceOf[T]
       } else {
         derivedValueClassConstructorMirror match {
           case Some(methodMirror) ⇒
-            methodMirror.apply(value)
+            methodMirror.apply(value).asInstanceOf[T]
 
           case None ⇒
-            value.asInstanceOf[MemberValueType]
+            value.asInstanceOf[T]
         }
       }
     }
 
-    def defaultValue: Option[MemberValueType] = defaultValueMirror.map(_.apply()).orElse(valueTypeAdapter.defaultValue)
+    def writeValue(parameterValue: Any, writer: Writer): Unit = {
+      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
+    }
+
+    // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
+    // otherwise fail the default lookup.
+    def defaultValue: Option[T] =
+      defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None)
 
   }
 
@@ -56,6 +64,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val companionMirror = currentMirror.reflect(companionObject)
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
+
+      val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
       val members = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.zipWithIndex.map({
         case (member, index) ⇒
@@ -93,11 +103,11 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             }
 
           val memberType = member.asTerm.typeSignature
-          val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-          Member(index, memberName, accessorMethodSymbol.annotations, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          val memberTypeAdapter = context.typeAdapter(memberType)
+          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, memberNameTypeAdapter, members))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members))
     } else {
       None
     }
@@ -107,12 +117,83 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 case class CaseClassTypeAdapter[T >: Null](
     caseClassType:         Type,
     constructorMirror:     MethodMirror,
+    tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[CaseClassTypeAdapter.Member]
-) extends ClassLikeTypeAdapter[T] {
+    members:               List[Member[_]],
+    isSJCapture:           Boolean
+) extends TypeAdapter[T] {
 
-  override def instantiate(memberValues: Array[Any]): T = {
-    constructorMirror.apply(memberValues: _*).asInstanceOf[T]
-  }
+  val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
+
+  override def read(reader: Reader): T =
+    reader.peek match {
+      case TokenType.Null ⇒
+        reader.readNull()
+
+      case TokenType.BeginObject ⇒
+        val numberOfMembers = members.length
+
+        val arguments = new Array[Any](numberOfMembers)
+        val found = new mutable.BitSet(numberOfMembers)
+
+        reader.beginObject()
+
+        val captured = scala.collection.mutable.Map.empty[String, Any]
+        while (reader.hasMoreMembers) {
+          val memberName = memberNameTypeAdapter.read(reader)
+
+          val optionalMember = membersByName.get(memberName)
+          optionalMember match {
+            case Some(member) ⇒
+              arguments(member.index) = member.valueTypeAdapter.read(reader)
+              found(member.index) = true
+
+            case None if (isSJCapture) ⇒
+              captured.put(memberName, reader.captureValue())
+
+            case None ⇒
+              reader.skipValue()
+          }
+        }
+
+        reader.endObject()
+
+        for (member ← members if !found(member.index)) {
+          arguments(member.index) = member.defaultValue.getOrElse(
+            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+          )
+        }
+
+        // constructorMirror.apply(arguments: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
+        if (isSJCapture)
+          asBuilt.asInstanceOf[SJCapture].captured = captured
+        asBuilt
+    }
+
+  override def write(value: T, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.beginObject()
+
+      for (member ← members) {
+        val memberValue = member.valueIn(value)
+
+        memberNameTypeAdapter.write(member.name, writer)
+        member.writeValue(memberValue, writer)
+      }
+      value match {
+        case sjc: SJCapture ⇒
+          sjc.captured.foreach {
+            case (memberName, valueString) ⇒
+              memberNameTypeAdapter.write(memberName, writer)
+              writer.writeRawValue(valueString.asInstanceOf[String])
+          }
+        case _ ⇒
+      }
+
+      writer.endObject()
+    }
 
 }

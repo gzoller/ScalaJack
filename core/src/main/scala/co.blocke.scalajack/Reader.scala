@@ -1,12 +1,13 @@
 package co.blocke.scalajack
 
 import TokenType.TokenType
-import scala.util.{ Try, Success }
+import scala.util.{ Try, Success, Failure }
 import java.lang.NumberFormatException
 
 trait Reader {
 
   var position: Int
+  private var savedPosition: Int = 0
 
   def source: Array[Char]
 
@@ -19,6 +20,9 @@ trait Reader {
   def tokenLengthAt(position: Int): Int
 
   def showError(): String
+
+  def markPosition() = savedPosition = position
+  def rewindToMark() = position = savedPosition
 
   def peek: TokenType
 
@@ -73,61 +77,49 @@ trait Reader {
 
   def readByte(): Byte = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toByte
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toByte) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readShort(): Short = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toShort
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toShort) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readInt(): Int = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toInt
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toInt) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readLong(): Long = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toLong
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toLong) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readFloat(): Float = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toFloat
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toFloat) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readDouble(): Double = {
     read(expected = TokenType.Number)
-    try {
-      tokenText.toDouble
-    } catch {
-      case nfe: NumberFormatException =>
-        throw new NumberFormatException(nfe.getMessage + "\n" + showError())
+    Try(tokenText.toDouble) match {
+      case Success(u) ⇒ u
+      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
@@ -141,6 +133,8 @@ trait Reader {
         position += 1
     }
   }
+
+  def captureValue(): Any
 
   private def skipOver(beginToken: TokenType.Value, endToken: TokenType.Value): Unit = {
     var depth = 0

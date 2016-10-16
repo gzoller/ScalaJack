@@ -24,7 +24,10 @@ case class FallbackTypeAdapter[T](
     }
   }
 
+  // $COVERAGE-OFF$Should never be used semantically
+  // Should never be called... fallback object "becomes" the asked-for object
   override def write(value: T, writer: Writer): Unit =
     primaryTypeAdapter.write(value, writer)
+  // $COVERAGE-ON$
 
 }

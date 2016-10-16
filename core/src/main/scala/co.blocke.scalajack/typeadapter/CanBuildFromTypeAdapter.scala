@@ -60,21 +60,12 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
         if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
-
-          val stringTypeAdapter = context.typeAdapterOf[String]
-
-          val keyTypeAdapter =
-            if (keyType =:= typeOf[String]) {
-              stringTypeAdapter
-            } else {
-              val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
-                case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
-                case kta                       ⇒ kta
-              }
-              NoncanonicalMapKeyParsingTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
-            }
-
+          val keyTypeAdapter = context.typeAdapter(keyType) match {
+            case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+            case kta                       ⇒ kta
+          }
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
+
           Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
         } else {
           Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))

@@ -3,7 +3,9 @@ package typeadapter
 package javatime
 
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeParseException
 import java.time.LocalDate
+import scala.util.{ Try, Success, Failure }
 
 object LocalDateTypeAdapter extends SimpleTypeAdapter[LocalDate] with StringKind {
 
@@ -13,10 +15,9 @@ object LocalDateTypeAdapter extends SimpleTypeAdapter[LocalDate] with StringKind
         reader.readNull()
 
       case TokenType.String ⇒
-        try {
-          LocalDate.parse(reader.readString())
-        } catch {
-          case dtpe: java.time.format.DateTimeParseException ⇒ throw new java.time.format.DateTimeParseException(dtpe.getMessage + "\n" + reader.showError(), dtpe.getParsedString, dtpe.getErrorIndex)
+        Try(LocalDate.parse(reader.readString())) match {
+          case Success(u) ⇒ u
+          case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
 
       case actual ⇒ {
