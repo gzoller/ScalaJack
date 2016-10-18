@@ -10,18 +10,26 @@ import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
 
+trait ClassMember[T] {
+  val index: Int
+  val name: String
+  val valueTypeAdapter: TypeAdapter[T]
+  def valueIn(instance: Any): T
+  def writeValue(parameterValue: Any, writer: Writer): Unit
+  def defaultValue: Option[T]
+}
+
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   case class Member[T](
       index:                              Int,
       name:                               String,
       valueTypeAdapter:                   TypeAdapter[T],
-      valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
       defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]]
-  ) {
+  ) extends ClassMember[T] {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -104,7 +112,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
           val memberType = member.asTerm.typeSignature
           val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          Member(index, memberName, memberTypeAdapter, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
       })
 
       Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
@@ -119,7 +127,7 @@ case class CaseClassTypeAdapter[T >: Null](
     constructorMirror:     MethodMirror,
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[Member[_]],
+    members:               List[ClassMember[_]],
     isSJCapture:           Boolean
 ) extends TypeAdapter[T] {
 
@@ -164,7 +172,6 @@ case class CaseClassTypeAdapter[T >: Null](
           )
         }
 
-        // constructorMirror.apply(arguments: _*).asInstanceOf[T]
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
         if (isSJCapture)
           asBuilt.asInstanceOf[SJCapture].captured = captured
