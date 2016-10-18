@@ -4,8 +4,6 @@ package json.test.collections
 import org.scalatest.{ FunSpec, Matchers }
 import scala.reflect.runtime.universe.typeOf
 
-case class Player(name: String, age: Int)
-
 class AnyColl() extends FunSpec with Matchers {
 
   val sj = ScalaJack()

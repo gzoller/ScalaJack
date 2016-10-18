@@ -10,6 +10,16 @@ import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
 
+trait ClassMember[T] {
+  val index: Int
+  val name: String
+  val valueTypeAdapter: TypeAdapter[T]
+  def valueIn(instance: Any): T
+  def writeValue(parameterValue: Any, writer: Writer): Unit
+  def defaultValue: Option[T]
+  def dbKeyIndex: Option[Int]
+}
+
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   case class Member[T](
@@ -22,7 +32,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int]
-  ) {
+  ) extends ClassMember[T] {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -133,15 +143,13 @@ case class CaseClassTypeAdapter[T >: Null](
     constructorMirror:     MethodMirror,
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[Member[_]],
+    members:               List[ClassMember[_]],
     isSJCapture:           Boolean,
-    dbKeys:                List[Member[_]],
+    dbKeys:                List[ClassMember[_]],
     collectionName:        Option[String]          = None
 ) extends TypeAdapter[T] {
 
   val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
-
-  def getDbKeys() = dbKeys
 
   override def read(reader: Reader): T =
     reader.peek match {
@@ -182,7 +190,6 @@ case class CaseClassTypeAdapter[T >: Null](
           )
         }
 
-        // constructorMirror.apply(arguments: _*).asInstanceOf[T]
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
         if (isSJCapture)
           asBuilt.asInstanceOf[SJCapture].captured = captured

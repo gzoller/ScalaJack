@@ -6,8 +6,7 @@ import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
 import scala.collection.JavaConverters._
 
-import typeadapter.CaseClassTypeAdapter
-import CaseClassTypeAdapter.Member
+import typeadapter.{ CaseClassTypeAdapter, ClassMember, PlainClassTypeAdapter }
 
 import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.model.{ AttributeDefinition, CreateTableRequest, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType }
@@ -48,13 +47,16 @@ case class DynamoFlavor(
   // This is Dynamo-Only.  User will have to case ScalaJack to DynamoFlavor to call this.
   def createTableRequest[T](provisionedThroughput: ProvisionedThroughput)(implicit tt: TypeTag[T]): CreateTableRequest = {
     val tpe = tt.tpe
-    val typeAdapter = context.typeAdapter(tpe).asInstanceOf[CaseClassTypeAdapter[_]]
-    val tableName = typeAdapter.collectionName.getOrElse(
+
+    val (optionalTableName, keys) = context.typeAdapter(tpe) match {
+      case ta: CaseClassTypeAdapter[_]  ⇒ (ta.collectionName, ta.dbKeys)
+      case ta: PlainClassTypeAdapter[_] ⇒ (ta.collectionName, ta.dbKeys)
+    }
+    val tableName = optionalTableName.getOrElse(
       throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name.")
     )
-    val keys: List[Member[_]] = typeAdapter.getDbKeys()
+
     if (keys.isEmpty) throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must define at least a primary key with @DBKey.")
-    // val (keySchema, attrDefs) = keys.zipWithIndex.collect {
     val attrDetail = keys.zipWithIndex.collect {
       case (key, idx) if (idx == 0) ⇒ (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.HASH))
       case (key, idx) if (idx == 1) ⇒ (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.RANGE))
@@ -62,7 +64,7 @@ case class DynamoFlavor(
     new CreateTableRequest(attrDetail.map(_._1).asJava, tableName, attrDetail.map(_._2).asJava, provisionedThroughput)
   }
 
-  private def getAttrType(key: Member[_]) =
+  private def getAttrType(key: ClassMember[_]) =
     if (key.valueTypeAdapter.isInstanceOf[StringKind])
       ScalarAttributeType.S
     else

@@ -73,3 +73,21 @@ case class PersonWithPhone(name: String, phone: Phone)
 trait Address { val postalCode: String }
 case class DefaultAddress(postalCode: String) extends Address
 case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
+
+@Collection(name = "people")
+class PersonPlain1(
+  @DBKey(index = 1) val name:String,
+  @DBKey(index = 0) val age:Int,
+  val likes:                List[String],
+  val stuff:                Misc,
+  val foo:                  Option[Boolean] = None
+)
+
+@Collection(name = "people")
+class PersonPlain2() {
+  @DBKey(index = 1) var name: String = ""
+  @DBKey(index = 0) var age: Int = 0
+  var likes: List[String] = List.empty[String]
+  var stuff: Misc = null
+  var foo: Option[Boolean] = None
+}

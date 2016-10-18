@@ -61,13 +61,6 @@ object Build extends Build {
 			test(scalatest)
 		)
 
-	// lazy val dummy = project.in(file("dummy"))
-	// 	.settings(basicSettings: _*)
-	// 	.settings(pubSettings: _*)
-	// 	.settings(libraryDependencies ++=
-	// 		test( scalatest )
-	// 	)
-
 	lazy val scalajack_dynamodb = project.in(file("dynamodb"))
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
