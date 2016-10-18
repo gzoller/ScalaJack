@@ -20,7 +20,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
       defaultValueMirror:                 Option[MethodMirror],
-      outerClass:                         Option[java.lang.Class[_]]
+      outerClass:                         Option[java.lang.Class[_]],
+      dbKeyIndex:                         Option[Int]
   ) {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
@@ -103,11 +104,24 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             }
 
           val memberType = member.asTerm.typeSignature
+
+          // Exctract DBKey annotation if present
+          val dbkeyAnnotation = member.annotations.find(_.tree.tpe =:= typeOf[DBKey])
+            .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+              .value().value).asInstanceOf[Option[Int]]
+
           val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass)
+          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, dbkeyAnnotation)
       })
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
+      // Exctract Collection name annotation if present
+      val collectionAnnotation = classSymbol.annotations.find(_.tree.tpe =:= typeOf[Collection])
+        .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+          .value().value).asInstanceOf[Option[String]]
+
+      val dbKeys = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys, collectionAnnotation))
     } else {
       None
     }
@@ -120,10 +134,14 @@ case class CaseClassTypeAdapter[T >: Null](
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
     members:               List[Member[_]],
-    isSJCapture:           Boolean
+    isSJCapture:           Boolean,
+    dbKeys:                List[Member[_]],
+    collectionName:        Option[String]          = None
 ) extends TypeAdapter[T] {
 
   val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[Member[Any]]).toMap
+
+  def getDbKeys() = dbKeys
 
   override def read(reader: Reader): T =
     reader.peek match {

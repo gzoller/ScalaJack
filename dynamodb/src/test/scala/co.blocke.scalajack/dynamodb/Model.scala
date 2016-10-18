@@ -33,7 +33,42 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
 
 trait Human { val name: String; val age: Int }
 case class Misc(wow: Double, bing: String)
-case class Person(name: String, age: Int, likes: List[String], stuff: Misc, foo: Option[Boolean] = None) extends Human
+
+@Collection(name = "people")
+case class Person(
+  @DBKey(index = 1) name:String,
+  @DBKey(index = 0) age:Int,
+  likes:                List[String],
+  stuff:                Misc,
+  foo:                  Option[Boolean] = None
+) extends Human
+
+@Collection(name = "people2")
+case class PersonOneKey(
+  @DBKey(index = 0) name:String,
+  age:                  Int,
+  likes:                List[String],
+  stuff:                Misc,
+  foo:                  Option[Boolean] = None
+) extends Human
+
+@Collection(name = "bogus")
+case class ErrorNoKey(
+  name:  String,
+  age:   Int,
+  likes: List[String],
+  stuff: Misc,
+  foo:   Option[Boolean] = None
+) extends Human
+
+case class ErrorNoTable(
+  @DBKey(index = 0) name:String,
+  age:                  Int,
+  likes:                List[String],
+  stuff:                Misc,
+  foo:                  Option[Boolean] = None
+) extends Human
+
 case class PersonWithPhone(name: String, phone: Phone)
 trait Address { val postalCode: String }
 case class DefaultAddress(postalCode: String) extends Address
