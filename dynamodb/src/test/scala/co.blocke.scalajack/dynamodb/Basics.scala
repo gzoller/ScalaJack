@@ -10,12 +10,6 @@ import java.util.UUID
 
 import com.amazonaws.services.dynamodbv2.document.Item
 
-trait Human { val name: String; val age: Int }
-case class Misc(wow: Double, bing: String)
-case class Person(name: String, age: Int, likes: List[String], stuff: Misc, foo: Option[Boolean] = None) extends Human
-trait Address { val postalCode: String }
-case class DefaultAddress(postalCode: String) extends Address
-
 class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack(DynamoFlavor())
@@ -49,6 +43,34 @@ class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
 
     describe("Extended Serialization:") {
+      it("Custom type adapter") {
+        val sj = ScalaJack(DynamoFlavor()).withAdapters(PhoneAdapter)
+        val inst = PersonWithPhone("Bartholomew", "5555555555")
+        val item = sj.render(inst)
+        assertResult("""{ Item: {name=Bartholomew, phone=555-555-5555} }""") { item.toString }
+        assertResult(inst) {
+          sj.read[PersonWithPhone](item)
+        }
+      }
+      it("With Hints") {
+        val sj = ScalaJack(DynamoFlavor()).withHints((typeOf[Address] -> "addr_kind"))
+        val inst: Address = USAddress("123 Main", "New York", "NY", "39822")
+        val item = sj.render(inst)
+        assertResult("""{ Item: {addr_kind=co.blocke.scalajack.dynamodb.test.USAddress, street=123 Main, city=New York, state=NY, postalCode=39822} }""") { item.toString }
+        assertResult(inst) {
+          sj.read[Address](item)
+        }
+      }
+      it("With Hint Modifiers") {
+        val prependHintMod = ClassNameHintModifier((hint: String) => "co.blocke.scalajack.dynamodb.test." + hint, (cname: String) => cname.split('.').last)
+        val sj = ScalaJack(DynamoFlavor()).withHintModifiers((typeOf[Address], prependHintMod))
+        val inst: Address = USAddress("123 Main", "New York", "NY", "39822")
+        val item = sj.render(inst)
+        assertResult("""{ Item: {_hint=USAddress, street=123 Main, city=New York, state=NY, postalCode=39822} }""") { item.toString }
+        assertResult(inst) {
+          sj.read[Address](item)
+        }
+      }
       it("Default Hint") {
         val sj = ScalaJack(DynamoFlavor()).withDefaultHint("kind")
         val inst: Human = Person("Greg", 50, List("Woodworking", "Diet Coke"), Misc(1.23, "boom"), Some(false))
@@ -72,7 +94,3 @@ class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
   }
 }
-
-// def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
-// def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
-// def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
