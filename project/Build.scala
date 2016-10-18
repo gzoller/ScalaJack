@@ -40,7 +40,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack, dummy)//, scalajack_mongo)
+		.aggregate(scalajack, scalajack_dynamodb)//, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -61,12 +61,13 @@ object Build extends Build {
 			test(scalatest)
 		)
 
-	lazy val dummy = project.in(file("dummy"))
+	lazy val scalajack_dynamodb = project.in(file("dynamodb"))
 		.settings(basicSettings: _*)
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			test( scalatest )
-		)
+			compile( dynamo ) ++
+			test( scalatest, slf4j_simple )
+		).dependsOn( scalajack )
 
 	lazy val scalajack_mongo = project.in(file("mongo"))
 		.settings(basicSettings: _*)
@@ -106,8 +107,9 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		% Build.scalaVer
-	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver" % "1.1.0"
-	val scalatest 		= "org.scalatest" 			%% "scalatest"			% "3.0.0"
-	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		% "1.7.7"
+	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		  % Build.scalaVer
+	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.1.0"
+	val scalatest 		= "org.scalatest" 			%% "scalatest"			  % "3.0.0"
+	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		  % "1.7.7"
+	val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.43"
 }

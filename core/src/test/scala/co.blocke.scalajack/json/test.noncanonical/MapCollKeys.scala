@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.noncanonical
 
 import org.scalatest.{ FunSpec, Matchers }
-import co.blocke.test.tags.OnlyMe
 import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
