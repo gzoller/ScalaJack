@@ -30,7 +30,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueSetterMethodSymbol:            Option[MethodSymbol], // for Scala
       valueSetterMethod:                  Option[Method], // for Java
       derivedValueClassConstructorMirror: Option[MethodMirror],
-      outerClass:                         Option[java.lang.Class[_]]
+      outerClass:                         Option[java.lang.Class[_]],
+      dbKeyIndex:                         Option[Int]
   ) extends ClassMember[T] {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
@@ -102,8 +103,14 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                 }
 
               val memberType = member.asTerm.typeSignature
+
+              // Exctract DBKey annotation if present
+              val dbkeyAnnotation = member.annotations.find(_.tree.tpe =:= typeOf[DBKey])
+                .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+                  .value().value).asInstanceOf[Option[Int]]
+
               val memberTypeAdapter = context.typeAdapter(memberType)
-              Member(index, memberName, memberTypeAdapter, accessorMethod, derivedValueClassConstructorMirror, None, memberClass)
+              Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, None, memberClass, dbkeyAnnotation)
           })
         } match {
           case Success(m) ⇒ m
@@ -134,6 +141,12 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                 (None, None)
               }
 
+            // Exctract DBKey annotation if present (Note: Here the annotation is not on the getter/setter but the private backing variable!)
+            var foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
+            val dbkeyAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[DBKey])
+              .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+                .value().value).asInstanceOf[Option[Int]])
+
             PlainMember(
               0,
               p.name.encodedName.toString,
@@ -142,7 +155,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               Some(tpe.member(TermName(p.name.toString + "_$eq")).asMethod),
               None,
               derivedValueClassConstructorMirror,
-              memberClass
+              memberClass,
+              dbkeyAnno
             )
         }.toList.zipWithIndex.map { case (pm, index) ⇒ pm.copy(index = index) }
       }
@@ -160,22 +174,30 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             None,
             Some(propertyDescriptor.getWriteMethod),
             None,
+            None,
             None
           )
-        }.zipWithIndex.map { case (pm, index) ⇒ pm.copy(index = index) }
+        }.zipWithIndex.map { case (pm, index) ⇒ pm.asInstanceOf[PlainMember[_]].copy(index = index) }
       }
+
+      // Exctract Collection name annotation if present
+      val collectionAnnotation = classSymbol.annotations.find(_.tree.tpe =:= typeOf[Collection])
+        .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+          .value().value).asInstanceOf[Option[String]]
+
+      def dbKeys(members: List[ClassMember[_]]): List[ClassMember[_]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
       val hasEmptyConstructor = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.isEmpty
       inferConstructorValFields match {
         case members if (!members.isEmpty) ⇒
           // Because all the val fields were found in the constructor we can use a normal CaseClassTypeAdapter
-          Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
+          Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation))
         case _ if (!classSymbol.isJava && hasEmptyConstructor) ⇒
           val members = reflectScalaGetterSetterFields
-          Some(PlainClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
+          Some(PlainClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation))
         case _ if (classSymbol.isJava && hasEmptyConstructor) ⇒
           val members = reflectJavaGetterSetterFields
-          Some(PlainClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture))
+          Some(PlainClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation))
         case x =>
           None
       }
@@ -190,7 +212,9 @@ case class PlainClassTypeAdapter[T >: Null](
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
     members:               List[ClassMember[_]],
-    isSJCapture:           Boolean
+    isSJCapture:           Boolean,
+    dbKeys:                List[ClassMember[_]],
+    collectionName:        Option[String]          = None
 ) extends TypeAdapter[T] {
 
   val membersByName = members.map(member ⇒ member.name → member.asInstanceOf[ClassMember[Any]]).toMap
