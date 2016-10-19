@@ -21,9 +21,6 @@ trait Reader {
 
   def showError(): String
 
-  def markPosition() = savedPosition = position
-  def rewindToMark() = position = savedPosition
-
   def peek: TokenType
 
   def read(): TokenType

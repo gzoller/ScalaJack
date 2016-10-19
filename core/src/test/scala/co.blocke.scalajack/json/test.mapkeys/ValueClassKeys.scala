@@ -323,10 +323,13 @@ class ValueClassKeys() extends FunSpec with Matchers {
       }
       it("Bad Map Key") {
         val js = """{"m":{"{[true]:2}":{"3":4}}}"""
-        val msg = """Expected value token of type String, not BeginArray when reading String value.
+        val msg = """Character out of place. '[' not expected here.
+          |{[true]:2}
+          |-^
+          |Extracted from JSON here:
           |{"m":{"{[true]:2}":{"3":4}}}
           |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCMap](js) should have message msg
+        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleVCMap](js) should have message msg
       }
       it("Bad Tupple Key") {
         val js = """{"m":{"[1,\"one\",true,1]":[2,"two",false]}}"""
