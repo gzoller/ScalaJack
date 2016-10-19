@@ -8,14 +8,14 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
 
   override def read(reader: Reader): UUID =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.String ⇒
         Try(UUID.fromString(reader.readString())) match {
           case Success(u) ⇒ u
           case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
         }
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

@@ -6,11 +6,11 @@ object JavaLongTypeAdapter extends SimpleTypeAdapter[java.lang.Long] {
 
   override def read(reader: Reader): java.lang.Long =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         java.lang.Long.valueOf(reader.readLong())
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

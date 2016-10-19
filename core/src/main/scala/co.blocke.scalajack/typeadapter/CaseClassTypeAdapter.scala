@@ -131,7 +131,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val dbKeys = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
-      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys, collectionAnnotation))
+      Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys, collectionAnnotation))
     } else {
       None
     }
@@ -144,6 +144,7 @@ case class CaseClassTypeAdapter[T >: Null](
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
     members:               List[ClassMember[_]],
+    numberOfMembers:       Int,
     isSJCapture:           Boolean,
     dbKeys:                List[ClassMember[_]],
     collectionName:        Option[String]          = None
@@ -153,29 +154,20 @@ case class CaseClassTypeAdapter[T >: Null](
 
   override def read(reader: Reader): T =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.BeginObject ⇒
-        val numberOfMembers = members.length
-
         val arguments = new Array[Any](numberOfMembers)
-        val found = new mutable.BitSet(numberOfMembers)
+        val found = new Array[Boolean](numberOfMembers)
+        var foundCount = 0
 
         reader.beginObject()
 
-        val captured = scala.collection.mutable.Map.empty[String, Any]
+        var savedPos = reader.position
         while (reader.hasMoreMembers) {
-          val memberName = memberNameTypeAdapter.read(reader)
-
-          val optionalMember = membersByName.get(memberName)
-          optionalMember match {
+          membersByName.get(memberNameTypeAdapter.read(reader)) match {
             case Some(member) ⇒
               arguments(member.index) = member.valueTypeAdapter.read(reader)
               found(member.index) = true
-
-            case None if (isSJCapture) ⇒
-              captured.put(memberName, reader.captureValue())
+              foundCount += 1
 
             case None ⇒
               reader.skipValue()
@@ -184,16 +176,31 @@ case class CaseClassTypeAdapter[T >: Null](
 
         reader.endObject()
 
-        for (member ← members if !found(member.index)) {
-          arguments(member.index) = member.defaultValue.getOrElse(
-            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-          )
-        }
+        if (foundCount != numberOfMembers)
+          for (member ← members if !found(member.index)) {
+            arguments(member.index) = member.defaultValue.getOrElse(
+              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+            )
+          }
 
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
-        if (isSJCapture)
+        if (isSJCapture) {
+          reader.position = savedPos
+          val captured = scala.collection.mutable.Map.empty[String, Any]
+          while (reader.hasMoreMembers) {
+            val memberName = memberNameTypeAdapter.read(reader)
+            membersByName.get(memberName) match {
+              case Some(member) ⇒ reader.skipValue // do nothing... already built class
+              case None ⇒
+                captured.put(memberName, reader.captureValue())
+            }
+          }
           asBuilt.asInstanceOf[SJCapture].captured = captured
+        }
         asBuilt
+
+      case TokenType.Null ⇒
+        reader.readNull()
     }
 
   override def write(value: T, writer: Writer): Unit =

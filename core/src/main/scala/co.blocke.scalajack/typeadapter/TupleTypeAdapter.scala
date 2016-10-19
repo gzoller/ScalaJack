@@ -69,9 +69,6 @@ case class TupleTypeAdapter[T >: Null](
 
   override def read(reader: Reader): T =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.BeginArray ⇒
         val fieldValues = new Array[Any](fields.length)
 
@@ -85,6 +82,9 @@ case class TupleTypeAdapter[T >: Null](
         reader.endArray()
 
         constructorMirror.apply(fieldValues: _*).asInstanceOf[T]
+
+      case TokenType.Null ⇒
+        reader.readNull()
     }
 
   override def write(tuple: T, writer: Writer): Unit =

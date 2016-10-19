@@ -6,11 +6,11 @@ object JavaCharacterTypeAdapter extends SimpleTypeAdapter[java.lang.Character] w
 
   override def read(reader: Reader): java.lang.Character =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.String ⇒
         java.lang.Character.valueOf(reader.readString().head)
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

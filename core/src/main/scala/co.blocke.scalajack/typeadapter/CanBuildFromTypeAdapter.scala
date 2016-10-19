@@ -87,9 +87,6 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
 
   override def read(reader: Reader): To =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.BeginObject ⇒
         val builder = canBuildFrom()
 
@@ -104,6 +101,9 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
         reader.endObject()
 
         builder.result()
+
+      case TokenType.Null ⇒
+        reader.readNull()
     }
 
   override def write(map: To, writer: Writer): Unit =
@@ -130,9 +130,6 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
 
   override def read(reader: Reader): To =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.BeginArray ⇒
         val builder = canBuildFrom()
 
@@ -146,6 +143,9 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
         reader.endArray()
 
         builder.result()
+
+      case TokenType.Null ⇒
+        reader.readNull()
     }
 
   override def write(value: To, writer: Writer): Unit =

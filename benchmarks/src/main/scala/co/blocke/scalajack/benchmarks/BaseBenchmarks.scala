@@ -76,6 +76,7 @@ class BaseBenchmarksState {
   }
 
   val scalaJack = ScalaJack()
+    // .withAdapters(PersonTypeAdapter)
     .withHints((typeOf[Human] -> "gender"))
     .withHintModifiers((typeOf[Human] -> humanHintMod))
 
@@ -124,24 +125,23 @@ class BaseBenchmarks {
     while (reader.hasMoreElements) {
       reader.beginObject()
 
-      //id: Long, first_name: String, last_name: String, email: String, gender: String, ip_address
-      reader.skipValue() // "id"
-      val id = reader.readLong()
+      var id: Long = 0L
+      var firstName: String = ""
+      var lastName: String = ""
+      var email: String = ""
+      var gender: String = ""
+      var ipAddress: String = ""
 
-      reader.skipValue() // "first_name"
-      val firstName = reader.readString()
-
-      reader.skipValue() // "last_name"
-      val lastName = reader.readString()
-
-      reader.skipValue() // "email"
-      val email = reader.readString()
-
-      reader.skipValue() // "gender"
-      val gender = reader.readString()
-
-      reader.skipValue() // "ip_address"
-      val ipAddress = reader.readString()
+      while (reader.hasMoreMembers) {
+        reader.readString match {
+          case "id"         => id = reader.readLong
+          case "first_name" => firstName = reader.readString
+          case "last_name"  => lastName = reader.readString
+          case "email"      => email = reader.readString
+          case "gender"     => gender = reader.readString
+          case "ip_address" => ipAddress = reader.readString
+        }
+      }
 
       listBuilder += Person(id, firstName, lastName, email, gender, ipAddress)
 
@@ -188,6 +188,7 @@ class BaseBenchmarks {
   @Benchmark
   def readScalaJack(state: BaseBenchmarksState): List[Person] = {
     state.scalaJack.read[List[Person]](state.jsonString)
+    // state.scalaJack.read[List[Person]](state.jsonString)
   }
 
   //  @Benchmark
