@@ -228,23 +228,18 @@ case class PlainClassTypeAdapter[T >: Null](
         val numberOfMembers = members.length
 
         val found = new mutable.BitSet(numberOfMembers)
+        var foundCount = 0
 
         reader.beginObject()
 
         val asBuilt = constructorMirror.apply().asInstanceOf[T] // call 0-parameter constructor
 
-        val captured = scala.collection.mutable.Map.empty[String, Any]
+        var savedPos = reader.position
         while (reader.hasMoreMembers) {
-          val memberName = memberNameTypeAdapter.read(reader)
-
-          val optionalMember = membersByName.get(memberName)
-          optionalMember match {
+          membersByName.get(memberNameTypeAdapter.read(reader)) match {
             case Some(member) ⇒
               member.asInstanceOf[PlainMember[_]].valueSet(asBuilt, member.valueTypeAdapter.read(reader).asInstanceOf[Object])
               found(member.index) = true
-
-            case None if (isSJCapture) ⇒
-              captured.put(memberName, reader.captureValue())
 
             case None ⇒
               reader.skipValue()
@@ -253,14 +248,27 @@ case class PlainClassTypeAdapter[T >: Null](
 
         reader.endObject()
 
-        for (member ← members if !found(member.index)) {
-          member.defaultValue.getOrElse(
-            throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-          )
+        if (foundCount != numberOfMembers)
+          for (member ← members if !found(member.index)) {
+            member.defaultValue.getOrElse(
+              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
+            )
+          }
+
+        if (isSJCapture) {
+          reader.position = savedPos
+          val captured = scala.collection.mutable.Map.empty[String, Any]
+          while (reader.hasMoreMembers) {
+            val memberName = memberNameTypeAdapter.read(reader)
+            membersByName.get(memberName) match {
+              case Some(member) ⇒ reader.skipValue // do nothing... already built class
+              case None ⇒
+                captured.put(memberName, reader.captureValue())
+            }
+          }
+          asBuilt.asInstanceOf[SJCapture].captured = captured
         }
 
-        if (isSJCapture)
-          asBuilt.asInstanceOf[SJCapture].captured = captured
         asBuilt
     }
 
