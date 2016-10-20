@@ -55,7 +55,7 @@ Couldn't be simpler!
 * Trait Type Hint Customization
 * Custom Type Adapters (custom read/render)
 * Try and Capture
-* ParseOrElse
+* [ParseOrElse](doc/parseOrElse.md)
 * Null and None treatment
 * Non-Canonical JSON
 * MongoDB
