@@ -88,7 +88,7 @@ object Build extends Build {
 				List(
 					"com.typesafe.play" %% "play-json" % "2.5.8",
 					"org.json4s" %% "json4s-native" % "3.4.0",
-//					"net.liftweb" %% "lift-json" % "2.6.2,",
+					"net.liftweb" %% "lift-json" % "3.0-RC4",
 					"io.spray" %% "spray-json" % "1.3.2"
 				)
 		).dependsOn( scalajack )

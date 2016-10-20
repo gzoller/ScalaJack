@@ -167,13 +167,13 @@ class BaseBenchmarks {
     read[List[Person]](state.jsonString)
   }
 
-  //  @Benchmark
-  //  def readLiftJson(state: BaseBenchmarksState): List[Person] = {
-  //    import net.liftweb.json._
-  //    implicit val formats = DefaultFormats
-  //
-  //    parse(state.jsonString).extract[List[Person]]
-  //  }
+  @Benchmark
+  def readLiftJson(state: BaseBenchmarksState): List[Person] = {
+    import net.liftweb.json._
+    implicit val formats = DefaultFormats
+
+    parse(state.jsonString).extract[List[Person]]
+  }
 
   @Benchmark
   def readSpray(state: BaseBenchmarksState): List[Person] = {
@@ -192,18 +192,18 @@ class BaseBenchmarks {
   }
 
   //  @Benchmark
-  def writeScalaJack(state: BaseBenchmarksState): String = {
-    state.scalaJack.render[List[Person]](state.listOfPersons)
-  }
+  // def writeScalaJack(state: BaseBenchmarksState): String = {
+  //   state.scalaJack.render[List[Person]](state.listOfPersons)
+  // }
 
   @Benchmark
   def readSeries4ScalaJack(state: BaseBenchmarksState): List[Person] = {
     state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
   }
 
-  @Benchmark
-  def writeSeries4ScalaJack(state: BaseBenchmarksState): String = {
-    state.series4ScalaJack.render[List[Person]](state.listOfPersons, state.series4vc)
-  }
+  // @Benchmark
+  // def writeSeries4ScalaJack(state: BaseBenchmarksState): String = {
+  //   state.series4ScalaJack.render[List[Person]](state.listOfPersons, state.series4vc)
+  // }
 
 }
