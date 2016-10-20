@@ -6,11 +6,11 @@ object JavaBooleanTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lan
 
   override def read(reader: Reader): java.lang.Boolean =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.False | TokenType.True ⇒
         java.lang.Boolean.valueOf(reader.readBoolean())
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

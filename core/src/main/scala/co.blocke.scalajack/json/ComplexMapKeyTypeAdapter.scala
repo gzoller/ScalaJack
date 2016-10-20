@@ -20,8 +20,7 @@ case class ComplexMapKeyTypeAdapter[T](
           tokenizer.tokenize(jsonCharArray, 0, jsonCharArray.length)
         } catch {
           case t: java.lang.IllegalArgumentException ⇒
-            val msg = t.getMessage.split("\n")(0)
-            throw new java.lang.IllegalArgumentException(msg + "\n" + tokenizer.showError() + " Extracted from source here:\n" + reader.showError())
+            throw new java.lang.IllegalArgumentException(t.getMessage + "\nExtracted from JSON here:\n" + reader.showError())
         }
         if (nestedReader.peek == TokenType.UnknownLiteralName) // String values in Any type
           nestedReader.poke(

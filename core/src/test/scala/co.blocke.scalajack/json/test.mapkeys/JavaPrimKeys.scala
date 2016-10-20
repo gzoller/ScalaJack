@@ -256,13 +256,11 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
         }
         it("Bad Number Key") {
-          val js = """{"m":{"0x":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |0x
-          |-^ Extracted from source here:
-          |{"m":{"0x":9923372036854755810,"-2147483648":2147483647,
+          val js = """{"m":{"flume":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
+          val msg = """Expected value token of type Number, not String when reading Number value.  (Is your value wrapped in quotes?)
+          |{"m":{"flume":9923372036854755810,"-2147483648":21474836
           |------^""".stripMargin
-          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJNumber](js) should have message msg
+          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
         it("Bad Short Key") {
           val js = """{"m":{"99999":56,"90":34}}"""

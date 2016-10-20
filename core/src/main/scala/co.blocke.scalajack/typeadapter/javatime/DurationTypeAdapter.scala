@@ -10,14 +10,14 @@ object DurationTypeAdapter extends SimpleTypeAdapter[Duration] with StringKind {
 
   override def read(reader: Reader): Duration =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.String ⇒
         Try(Duration.parse(reader.readString())) match {
           case Success(u) ⇒ u
           case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

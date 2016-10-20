@@ -6,11 +6,11 @@ object JavaDoubleTypeAdapter extends SimpleTypeAdapter[java.lang.Double] {
 
   override def read(reader: Reader): java.lang.Double =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         java.lang.Double.valueOf(reader.readDouble())
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

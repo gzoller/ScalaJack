@@ -6,11 +6,11 @@ object JavaFloatTypeAdapter extends SimpleTypeAdapter[java.lang.Float] {
 
   override def read(reader: Reader): java.lang.Float =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         java.lang.Float.valueOf(reader.readFloat())
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

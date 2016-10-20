@@ -325,7 +325,8 @@ class ValueClassKeys() extends FunSpec with Matchers {
         val js = """{"m":{"{[true]:2}":{"3":4}}}"""
         val msg = """Character out of place. '[' not expected here.
           |{[true]:2}
-          |-^ Extracted from source here:
+          |-^
+          |Extracted from JSON here:
           |{"m":{"{[true]:2}":{"3":4}}}
           |------^""".stripMargin
         the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleVCMap](js) should have message msg

@@ -8,12 +8,12 @@ object JavaBigIntegerTypeAdapter extends SimpleTypeAdapter[BigInteger] {
 
   override def read(reader: Reader): BigInteger =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         reader.read(expected = TokenType.Number)
         new BigInteger(reader.tokenText)
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

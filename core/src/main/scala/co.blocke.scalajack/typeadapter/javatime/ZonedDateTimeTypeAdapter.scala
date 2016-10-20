@@ -11,14 +11,14 @@ object ZonedDateTimeTypeAdapter extends SimpleTypeAdapter[ZonedDateTime] with St
 
   override def read(reader: Reader): ZonedDateTime =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.String ⇒
         Try(ZonedDateTime.parse(reader.readString(), ISO_ZONED_DATE_TIME)) match {
           case Success(u) ⇒ u
           case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

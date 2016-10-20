@@ -11,14 +11,14 @@ object LocalDateTimeTypeAdapter extends SimpleTypeAdapter[LocalDateTime] with St
 
   override def read(reader: Reader): LocalDateTime =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.String ⇒
         Try(LocalDateTime.parse(reader.readString(), ISO_LOCAL_DATE_TIME)) match {
           case Success(u) ⇒ u
           case Failure(u) ⇒ throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()

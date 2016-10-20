@@ -140,7 +140,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
         val msg = """Character out of place. ',' not expected here.
           |{"nameLarry","age":32,"favorite":"golf"
-          |------------^ Extracted from source here:
+          |------------^
+          |Extracted from JSON here:
           |{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":
           |------^""".stripMargin
         the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleSimple](js) should have message msg
@@ -163,7 +164,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
         val msg = """Character out of place. ':' not expected here.
           |"_hint":"co.blocke.scalajack.test.mapkeys.FishPet":"Flipper","food":"Veggies","waterTemp":74.33}
-          |--------------------------------------------------^ Extracted from source here:
+          |--------------------------------------------------^
+          |Extracted from JSON here:
           |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Fis
           |------^""".stripMargin
         the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
@@ -185,8 +187,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       it("Bad (invalid) trait json for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}"""
         val msg = """Character out of place. String not expected here.
-        |blocke.scalajack.json.test.mapkeys.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}
-        |--------------------------------------------------^""".stripMargin
+          |blocke.scalajack.json.test.mapkeys.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}
+          |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) for member trait") {

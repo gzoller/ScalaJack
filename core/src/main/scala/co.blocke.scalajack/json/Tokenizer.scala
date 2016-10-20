@@ -15,27 +15,23 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
   private val ExpectComma: Int = ExpectColon << 1
   private val ExpectEndOfStructure: Int = ExpectComma << 1
 
-  def showError(): String = {
-    val startPosOffset = if (position - 50 < 0) position else 50
-    val startPos = position - startPosOffset
-    val endPos = if (position + 50 > source.length) source.length else position + 50
-    val buf = new StringBuffer()
-    buf.append(source.subSequence(startPos, endPos).toString + "\n")
-    buf.append("-" * startPosOffset + "^")
-    buf.toString
-  }
-
-  private var position: Int = 0
-  private var source = Array.empty[Char]
-
-  def tokenize(src: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
+  def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): TokenReader = {
     val maxPosition = offset + length
-    position = offset
-    source = src
+    var position = offset
 
     val tokenTypes = new Array[TokenType](capacity)
     val tokenOffsets = new Array[Int](capacity)
     val tokenLengths = new Array[Int](capacity)
+
+    def showError(): String = {
+      val startPosOffset = if (position - 50 < 0) position else 50
+      val startPos = position - startPosOffset
+      val endPos = if (position + 50 > source.length) source.length else position + 50
+      val buf = new StringBuffer()
+      buf.append(source.subSequence(startPos, endPos).toString + "\n")
+      buf.append("-" * startPosOffset + "^")
+      buf.toString
+    }
 
     var numberOfTokens = 0
 
@@ -84,15 +80,6 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
 
     @inline def isDigit(ch: Char): Boolean = '0' <= ch && ch <= '9'
 
-    // Unused at present
-    /*
-    @inline def isSign(ch: Char): Boolean = ch == '+' || ch == '-'
-
-    @inline def isDecimalPoint(ch: Char): Boolean = ch == '.'
-
-    @inline def isE(ch: Char): Boolean = ch == 'e' || ch == 'E'
-    */
-
     @inline def isUnderscore(ch: Char): Boolean = ch == '_'
 
     @inline def isInitialLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch)
@@ -100,52 +87,6 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
     @inline def isSubsequentLiteralNameChar(ch: Char): Boolean = isLetter(ch) || isUnderscore(ch) || isDigit(ch)
 
     @inline def isIntegerChar(ch: Char): Boolean = ('0' <= ch && ch <= '9') || ch == '.' || ch == '-' || ch == '+' || ch == 'e' || ch == 'E'
-
-    /* Unused at present...
-    @inline def skipInteger(): Boolean =
-      if (isSign(source(position))) {
-        position += 1
-
-        while (isDigit(source(position))) {
-          position += 1
-        }
-
-        true
-      } else if (isDigit(source(position))) {
-        while (isDigit(source(position))) {
-          position += 1
-        }
-
-        true
-      } else {
-        false
-      }
-
-    @inline def skipFraction(): Boolean =
-      if (isDecimalPoint(source(position))) {
-        position += 1
-
-        while (isDigit(source(position))) {
-          position += 1
-        }
-
-        true
-      } else {
-        false
-      }
-
-    @inline def skipExponent(): Boolean = {
-      if (isE(source(position))) {
-        position += 1
-
-        skipInteger()
-
-        true
-      } else {
-        false
-      }
-    }
-    */
 
     while (position < maxPosition) {
       source(position) match {

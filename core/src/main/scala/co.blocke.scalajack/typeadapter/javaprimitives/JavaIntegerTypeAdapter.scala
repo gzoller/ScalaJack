@@ -6,11 +6,11 @@ object JavaIntegerTypeAdapter extends SimpleTypeAdapter.ForTypeSymbolOf[java.lan
 
   override def read(reader: Reader): java.lang.Integer =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         java.lang.Integer.valueOf(reader.readInt())
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()
