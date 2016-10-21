@@ -54,24 +54,24 @@ Couldn't be simpler!
 * Value Class Support
 * Trait Type Hint Customization
 * Custom Type Adapters (custom read/render)
-* Try and Capture
+* [Try and Capture](doc/tryAndCapture.md)
 * [ParseOrElse](doc/parseOrElse.md)
 * Null and None treatment
 * Non-Canonical JSON
 * MongoDB
-* CSV
+* [CSV](doc/csv.md)
 * DynamoDB
 
 ## Benchmarks
 
-|Benchmark   |Score   |Error   |Units
-|---|---:|---:|---|
-|Hand-written   |28683.250   |± 3505.351   |ops/s
-|**ScalaJack 5.0** |20632.580  |±  306.105   |ops/s | :thumbsup:
-|Spray          |10314.990 |±  120.898   |ops/s
-|LiftJson   |9313.326   |±  212.206   |ops/s
-|ScalaJack 4.8.3|6525.699  |±  36.103    |ops/s
-|Json4s   |5840.046   |±  201.42   |ops/s
+|Benchmark         |Score      |Error        |Units
+|------------------|----------:|------------:|-----|
+|Hand-written      |28683.250  |± 3505.351   |ops/s
+|**ScalaJack 5.0** |20632.580  |±  306.105   |ops/s
+|Spray             |10314.990  |±  120.898   |ops/s
+|LiftJson          |9313.326   |±  212.206   |ops/s
+|ScalaJack 4.8.3   |6525.699   |±  36.103    |ops/s
+|Json4s            |5840.046   |±  201.42    |ops/s
 
 ## Series 5
 
