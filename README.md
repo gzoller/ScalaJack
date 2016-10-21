@@ -51,7 +51,7 @@ Couldn't be simpler!
 * Case Classes and Traits
 * Non-Case Classes and Java Class Support
 * [Any Support](doc/any.md)
-* Value Class Support
+* [Value Class Support](doc/valueClass.md)
 * Trait Type Hint Customization
 * Custom Type Adapters (custom read/render)
 * [Try and Capture](doc/tryAndCapture.md)
@@ -77,7 +77,7 @@ Couldn't be simpler!
 
 The entire ScalaJack engine and test suite was redesigned for 5.0.  This new design streamlines processing tremendously while maintaining both flexibility and simplicity.  In addition to reaching new levels of performance, a major design goal was to allow a flexible way to implement new serialization targets beyond JSON.
 
-This project welcomes our newest team member and core comitter, Adam Paynter!  The design for ScalaJack 5's new engine was made possible by his thought leadership and sense of adventure.
+This project welcomes our newest team member and core committer, Adam Paynter!  The design for ScalaJack 5's new engine was made possible by his thought leadership and sense of adventure.
 
 We hope you'll enjoy using the latest ScalaJack!
 

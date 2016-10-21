@@ -6,11 +6,13 @@ import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
 import scala.util._
+import java.util.UUID
 
 case class Amorphous(
   thing: Any
 )
 case class Small(num: Int)
+case class UUID_VC(underlying: UUID) extends AnyVal
 
 class Greg() extends FunSpec with Matchers {
 
@@ -25,18 +27,16 @@ class Greg() extends FunSpec with Matchers {
         Amorphous(List(1, 2, 3)),
         Amorphous(Map("a" -> 1, "b" -> 2)),
         Amorphous(null),
-        Amorphous(None),
         Amorphous(Small(99))
       )
 
       println(sj.render(all))
     }
-    // it("Map key - String") {
-    //   println("------------------")
-    //   val js = """[5,null,"hey"]"""
-    //   val obj = sj.read[(Int, Option[String], String)](js)
-    //   println(obj)
-    //   println(sj.render(obj))
-    // }
+    it("Tuples") {
+      println("------------------")
+      val x = UUID_VC(UUID.randomUUID)
+      val js = sj.render(x)
+      println(sj.read[UUID_VC](js))
+    }
   }
 }
