@@ -62,10 +62,8 @@ trait Reader {
       case intVal =>
         Try(tokenText.toLong) match {
           case Success(v) => v match {
-            case v if (v.isValidByte)  => v.toByte
-            case v if (v.isValidShort) => v.toShort
-            case v if (v.isValidInt)   => v.toInt
-            case v                     => v
+            case v if (v.isValidInt) => v.toInt
+            case v                   => v
           }
           case _ => if (forJava) new java.math.BigInteger(tokenText) else BigInt(tokenText)
         }

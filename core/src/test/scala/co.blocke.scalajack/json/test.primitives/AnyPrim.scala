@@ -50,7 +50,7 @@ class AnyPrim() extends FunSpec with Matchers {
         assertResult("""{"a":16}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Byte] // byte becomes Byte
+          (parsed == payload) && parsed.isInstanceOf[Integer] // byte becomes Integer
         }
       }
       it("Char works") {
@@ -90,12 +90,12 @@ class AnyPrim() extends FunSpec with Matchers {
         }
       }
       it("Int works") {
-        val payload: Int = 1234
+        val payload: Int = 1234567
         val js = sj.render(AnyShell(payload))
-        assertResult("""{"a":1234}""") { js }
+        assertResult("""{"a":1234567}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Short] // int becomes Short
+          (parsed == payload) && parsed.isInstanceOf[Int] // int becomes Int
         }
       }
       it("Long works") {
@@ -104,14 +104,14 @@ class AnyPrim() extends FunSpec with Matchers {
         assertResult("""{"a":123456789012345}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Long] // long becomes Long (Note this could become Integer if smaller number parsed)
+          (parsed == payload) && parsed.isInstanceOf[java.lang.Long] // long becomes Long (Note this could become Integer if smaller number parsed)
         }
         val payload2: Long = 123L
         val js2 = sj.render(AnyShell(payload2))
         assertResult("""{"a":123}""") { js2 }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js2).a
-          (parsed == payload2) && parsed.isInstanceOf[Byte] // long becomes Byte due to small number size
+          (parsed == payload2) && parsed.isInstanceOf[Int] // long becomes Byte due to small number size
         }
       }
       it("Short works") {
@@ -120,7 +120,7 @@ class AnyPrim() extends FunSpec with Matchers {
         assertResult("""{"a":16234}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Short] // short becomes Short
+          (parsed == payload) && parsed.isInstanceOf[Int] // short becomes Int
         }
       }
       it("String works") {

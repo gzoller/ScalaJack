@@ -1,0 +1,42 @@
+package co.blocke.scalajack
+package json.test.misc
+
+import org.scalatest.{ FunSpec, Matchers }
+import java.util.UUID
+import scala.reflect.runtime.universe.typeOf
+
+import scala.util._
+
+case class Amorphous(
+  thing: Any
+)
+case class Small(num: Int)
+
+class Greg() extends FunSpec with Matchers {
+
+  val sj = ScalaJack()
+
+  describe("---------------------------\n:  Try and Capture Tests  :\n---------------------------") {
+    it("Map key - Option") {
+      val all = List(
+        Amorphous(true),
+        Amorphous("blather"),
+        Amorphous(1.234),
+        Amorphous(List(1, 2, 3)),
+        Amorphous(Map("a" -> 1, "b" -> 2)),
+        Amorphous(null),
+        Amorphous(None),
+        Amorphous(Small(99))
+      )
+
+      println(sj.render(all))
+    }
+    // it("Map key - String") {
+    //   println("------------------")
+    //   val js = """[5,null,"hey"]"""
+    //   val obj = sj.read[(Int, Option[String], String)](js)
+    //   println(obj)
+    //   println(sj.render(obj))
+    // }
+  }
+}

@@ -44,8 +44,8 @@ Wow!  Did you catch that?  Parsing a Try captured, but didn't throw, the excepti
 
 The assumption here is that we're getting 3rd party JSON.  Maybe types change and we can't read them, but we don't want to screw things up for others in the ecosystem that perhaps do expect the given type.
 
-#### Case 4: I don't care about "extra" fields in the JSON, but I want to keep them
-This case is along the lines of Case 3 except that here we don't care at all about fields we're not going to use.  For the same reasons (maybe our code is a proxy or pass-through) we need to re-render all those "don't-care" fields in their original format.
+#### Case 4: I don't care about any "extra" fields in the JSON, but don't lose them!
+This case is along the lines of Case 3 except that here we don't care about any fields we're not going to use.  For the same reasons (maybe our code is a proxy or pass-through) we may need to re-render all those "don't-care" fields in their original format.
 
 We accomplish this behavior like this:
 
