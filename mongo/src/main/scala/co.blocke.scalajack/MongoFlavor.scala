@@ -22,7 +22,11 @@ case class MongoFlavor(
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
 
-  withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+//  withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+
+  override protected def bakeContext(): Context = {
+    super.bakeContext().withFactory(OffsetDateTimeTypeAdapter).withFactory(ZonedDateTimeTypeAdapter).withFactory(BsonDateTimeTypeAdapter)
+  }
 
   override def read[T](src: BsonValue)(implicit valueTypeTag: TypeTag[T]): T = {
     val bsonReader = bsonParser.parse(src)

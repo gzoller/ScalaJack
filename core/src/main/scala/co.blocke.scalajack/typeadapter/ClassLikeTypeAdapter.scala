@@ -1,54 +1,31 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{ Reader, TokenType, TypeAdapter, Writer, _ }
+import co.blocke.scalajack.{Reader, TokenType, TypeAdapter, Writer, _}
 
+import scala.annotation.Annotation
 import scala.collection.mutable
+
+import scala.reflect.runtime.universe.TypeTag
 
 object ClassLikeTypeAdapter {
 
-  trait Member {
+  trait Member[Owner] {
 
-    type OwnerType
-    type MemberValueType
-
-    val index: Int
-
-    val name: MemberName
-
-    val valueTypeAdapter: TypeAdapter[MemberValueType]
-
-    def defaultValue: Option[MemberValueType]
-
-    def valueIn(owner: OwnerType): MemberValueType
-
-    def writeValue(memberValue: MemberValueType, writer: Writer): Unit = {
-      valueTypeAdapter.write(memberValue, writer)
-    }
-
-  }
-
-  //  case class ConcreteMember2(index: Int, name: MemberName, valueTypeAdapter: TypeAdapter[Any]) extends Member2 {
-  //
-  //    override type OwnerType = Any
-  //    override type MemberValueType = Any
-  //
-  //    override def defaultValue: Option[MemberValueType] = ???
-  //
-  //    override def valueIn(owner: OwnerType): MemberValueType = ???
-  //
-  //  }
-
-  trait MemberOld[C, V] {
+    type Value
 
     def index: Int
 
     def name: MemberName
 
-    def valueIn(instanceOfClass: C): V
+    def defaultValue: Option[Value]
 
-    def valueTypeAdapter: TypeAdapter[V]
+    def valueIn(owner: Owner): Value
 
-    def defaultValue: Option[V]
+    def readValue(reader: Reader): Value
+
+    def writeValue(value: Value, writer: Writer): Unit
+
+    def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A]
 
   }
 
@@ -56,46 +33,52 @@ object ClassLikeTypeAdapter {
 
 trait ClassLikeTypeAdapter[C >: Null] extends TypeAdapter[C] {
 
-  def memberNameTypeAdapter: TypeAdapter[MemberName]
+  type Member = ClassLikeTypeAdapter.Member[C]
 
-  def members: List[ClassLikeTypeAdapter.Member]
+  def members: List[Member]
+
+  def member(memberName: MemberName): Option[Member]
+
+  def readMemberName(reader: Reader): MemberName
+
+  def writeMemberName(memberName: MemberName, writer: Writer): Unit
 
   def instantiate(memberValues: Array[Any]): C
 
   override def read(reader: Reader): C =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
-      case TokenType.BeginObject ⇒
+      case TokenType.BeginObject =>
         reader.beginObject()
 
-        val membersByName = members.map(member ⇒ member.name → member).toMap
+        val membersByName = members.map(member => member.name -> member).toMap
 
         val numberOfMembers = members.size
         val memberValues = new Array[Any](numberOfMembers)
         val found = new mutable.BitSet(numberOfMembers)
 
         while (reader.hasMoreMembers) {
-          val memberName = memberNameTypeAdapter.read(reader)
+          val memberName = readMemberName(reader)
           membersByName.get(memberName) match {
-            case Some(member) ⇒
-              val memberValue = member.valueTypeAdapter.read(reader)
+            case Some(member) =>
+              val memberValue = member.readValue(reader)
               memberValues(member.index) = memberValue
               found(member.index) = true
 
-            case None ⇒
+            case None =>
               reader.skipValue()
           }
         }
 
         reader.endObject()
 
-        for (member ← members if !found(member.index)) {
+        for (member <- members if !found(member.index)) {
           memberValues(member.index) = member.defaultValue.getOrElse(throw new RuntimeException(s"No default value for ${member.name}"))
         }
 
         instantiate(memberValues)
+
+      case TokenType.Null =>
+        reader.readNull()
     }
 
   override def write(instanceOfClass: C, writer: Writer): Unit =
@@ -104,12 +87,11 @@ trait ClassLikeTypeAdapter[C >: Null] extends TypeAdapter[C] {
     } else {
       writer.beginObject()
 
-      val membersByName = members.map(member ⇒ member.name → member).toMap
+      for (member <- members) {
+        writeMemberName(member.name, writer)
 
-      for (member ← membersByName.values) {
-        val value = member.valueIn(instanceOfClass.asInstanceOf[member.OwnerType])
-        memberNameTypeAdapter.write(member.name, writer)
-        member.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(value, writer)
+        val value = member.valueIn(instanceOfClass)
+        member.writeValue(value, writer)
       }
 
       writer.endObject()
