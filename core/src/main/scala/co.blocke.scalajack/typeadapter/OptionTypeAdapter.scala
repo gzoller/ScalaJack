@@ -90,11 +90,11 @@ case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends T
         reader.read()
         None
       case TokenType.String if (testStringForNull) ⇒
-        reader.markPosition()
+        val savedPos = reader.position
         if (reader.readString() == "")
           None
         else {
-          reader.rewindToMark
+          reader.position = savedPos
           read(reader, false)
         }
       case v ⇒

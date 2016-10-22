@@ -5,12 +5,12 @@ object BigIntTypeAdapter extends SimpleTypeAdapter[BigInt] {
 
   override def read(reader: Reader): BigInt =
     reader.peek match {
-      case TokenType.Null ⇒
-        reader.readNull()
-
       case TokenType.Number ⇒
         reader.read(expected = TokenType.Number)
         BigInt(reader.tokenText)
+
+      case TokenType.Null ⇒
+        reader.readNull()
 
       case actual ⇒ {
         reader.read()
