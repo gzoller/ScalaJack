@@ -8,12 +8,14 @@ import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, rest: TypeAdapterFactoryChain): Option[TypeAdapter[_]] =
-    rest.typeAdapter(tpe, context) map {
-      case realClassTypeAdapter: ClassLikeTypeAdapter[_] =>
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactoryChain)(implicit typeTag: TypeTag[T]): Option[TypeAdapter[T]] = {
+    val optionalRealClassTypeAdapter = next.typeAdapterOf[T](context)
+
+    optionalRealClassTypeAdapter map {
+      case realClassTypeAdapter: ClassLikeTypeAdapter[T] =>
         val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-        type RealClass = AnyRef
+        type RealClass = T
 
         val membersOfRealClass = realClassTypeAdapter.members.map(_.asInstanceOf[Member[RealClass]])
         val numberOfRealMembers = membersOfRealClass.length
@@ -55,7 +57,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
                 override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = memberOfRealClass.annotation[A]
 
-            })
+              })
 
             val idMemberOfSyntheticClass = new ClassLikeTypeAdapter.Member[SyntheticClass] {
 
@@ -80,7 +82,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             }
 
-            val otherMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
+            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
               new ClassLikeTypeAdapter.Member[SyntheticClass] {
 
                 override type Value = memberOfRealClass.Value
@@ -107,9 +109,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               }
 
-            val membersOfSyntheticClass = idMemberOfSyntheticClass :: otherMembersOfSyntheticClass
+            val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
             val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap
-            val numberOfSyntheticMembers = membersOfSyntheticClass.length
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
@@ -181,7 +182,10 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
       case other =>
         other
     }
+  }
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = ???
+  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = {
+    None
+  }
 
 }

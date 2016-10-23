@@ -23,10 +23,10 @@ object TypeAdapterFactory {
 
 trait TypeAdapterFactory {
 
-  def typeAdapter(tpe: Type, context: Context, rest: TypeAdapterFactoryChain): Option[TypeAdapter[_]] =
-    typeAdapter(tpe, context).orElse(rest.typeAdapter(tpe, context))
+  def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactoryChain): Option[TypeAdapter[_]] =
+    typeAdapter(tpe, context).orElse(next.typeAdapter(tpe, context))
 
-  def typeAdapterOf[T](context: Context, rest: TypeAdapterFactoryChain)(implicit typeTag: TypeTag[T]): Option[TypeAdapter[T]] = ???
+  def typeAdapterOf[T](context: Context, next: TypeAdapterFactoryChain)(implicit typeTag: TypeTag[T]): Option[TypeAdapter[T]] = ???
 
   def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]]
 

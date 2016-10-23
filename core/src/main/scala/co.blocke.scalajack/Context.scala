@@ -83,29 +83,30 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
     def typeAdapter: TypeAdapter[_] = {
       val attempt =
         phase match {
-          case Initialized(a) ⇒
+          case Initialized(a) =>
             a
 
-          case Uninitialized | Initializing ⇒
+          case Uninitialized | Initializing =>
             synchronized {
               phase match {
-                case Uninitialized ⇒
+                case Uninitialized =>
                   phase = Initializing
 
                   val typeAdapterAttempt = Try {
-                    factories.collectFirst {
-                      case FactoryExtractor(ta) => ta
-                    }.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
+                    val head :: tail = factories
+                    val chain = TypeAdapterFactoryChain(tail)
+                    val optionalTypeAdapter = head.typeAdapter(tpe, Context.this, chain)
+                    optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
                   }
 
                   phase = Initialized(typeAdapterAttempt)
 
                   typeAdapterAttempt
 
-                case Initializing ⇒
+                case Initializing =>
                   Success(LazyTypeAdapter(Context.this, tpe))
 
-                case Initialized(a) ⇒
+                case Initialized(a) =>
                   a
               }
             }

@@ -25,7 +25,8 @@ case class MongoFlavor(
 //  withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
 
   override protected def bakeContext(): Context = {
-    super.bakeContext().withFactory(OffsetDateTimeTypeAdapter).withFactory(ZonedDateTimeTypeAdapter).withFactory(BsonDateTimeTypeAdapter)
+    val c = super.bakeContext().withFactory(OffsetDateTimeTypeAdapter).withFactory(ZonedDateTimeTypeAdapter).withFactory(BsonDateTimeTypeAdapter)
+    c.copy(factories = MongoCaseClassTypeAdapter :: c.factories)
   }
 
   override def read[T](src: BsonValue)(implicit valueTypeTag: TypeTag[T]): T = {

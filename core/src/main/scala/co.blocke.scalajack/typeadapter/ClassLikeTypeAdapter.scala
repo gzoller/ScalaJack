@@ -1,6 +1,6 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{Reader, TokenType, TypeAdapter, Writer, _}
+import co.blocke.scalajack.{ Reader, TokenType, TypeAdapter, Writer, _ }
 
 import scala.annotation.Annotation
 import scala.collection.mutable
