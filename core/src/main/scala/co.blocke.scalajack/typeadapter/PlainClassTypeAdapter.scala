@@ -117,10 +117,19 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           case Failure(x) ⇒ List.empty[ClassMember[_]]
         }
 
+      def dontIgnore(p: Symbol) = {
+        // Annoying... @Ignore may be on backing field in a superclass...so we must go find it.
+        val includeSuper = tpe.members ++ tpe.typeSymbol.asClass.baseClasses.map(c => c.typeSignature.members).flatten
+        var foundPrivateVar = includeSuper.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
+        val ignoreAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[Ignore]))
+        ignoreAnno.isEmpty
+      }
+
       def reflectScalaGetterSetterFields: List[ClassMember[_]] = {
+        println(tpe.member(TermName("bogus")))
         tpe.members.filter(p ⇒ p.isPublic && p.isMethod).collect {
           // Scala case
-          case p if (tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol && p.owner != typeOf[SJCapture].typeSymbol) ⇒
+          case p if (dontIgnore(p) && tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol && p.owner != typeOf[SJCapture].typeSymbol) ⇒
             val memberType = p.asMethod.returnType
             val memberTypeAdapter = context.typeAdapter(memberType)
 

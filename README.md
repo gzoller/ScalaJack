@@ -48,10 +48,11 @@ Couldn't be simpler!
 
 ## Features
 
-* Case Classes and Traits
-* Non-Case Classes and Java Class Support
+* [Case Classes and Traits](doc/classesAndTraits.md)
+* [Non-Case Classes and Java Class Support](doc/noncase.md)
 * [Any Support](doc/any.md)
 * [Value Class Support](doc/valueClass.md)
+* Parameterized Classes
 * Trait Type Hint Customization
 * Custom Type Adapters (custom read/render)
 * [Try and Capture](doc/tryAndCapture.md)

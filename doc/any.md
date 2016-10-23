@@ -37,7 +37,7 @@ This renders:
   {"thing":[1,2,3]},
   {"thing":{"a":1,"b":2}},
   {"thing":null},
-  {"thing":{"_hint":"co.blocke.scalajack.json.test.misc.Small","num":99}}
+  {"thing":{"_hint":"com.me.Small","num":99}}
 ]
 ```
 
