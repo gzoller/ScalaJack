@@ -1,21 +1,21 @@
 package co.blocke.scalajack
 
+import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter.Member
-import co.blocke.scalajack.typeadapter.{CaseClassTypeAdapter, ClassLikeTypeAdapter}
 
 import scala.annotation.Annotation
 import scala.reflect.runtime.universe.{Type, TypeTag}
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactoryChain)(implicit typeTag: TypeTag[T]): Option[TypeAdapter[T]] = {
-    val optionalRealClassTypeAdapter = next.typeAdapterOf[T](context)
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] = {
+    val optionalRealClassTypeAdapter = next.typeAdapter(tpe, context)
 
     optionalRealClassTypeAdapter map {
-      case realClassTypeAdapter: ClassLikeTypeAdapter[T] =>
+      case realClassTypeAdapter: ClassLikeTypeAdapter[_] =>
         val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-        type RealClass = T
+        type RealClass = AnyRef
 
         val membersOfRealClass = realClassTypeAdapter.members.map(_.asInstanceOf[Member[RealClass]])
         val numberOfRealMembers = membersOfRealClass.length
@@ -182,10 +182,6 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
       case other =>
         other
     }
-  }
-
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = {
-    None
   }
 
 }

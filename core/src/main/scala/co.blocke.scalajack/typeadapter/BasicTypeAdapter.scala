@@ -24,11 +24,11 @@ abstract class BasicTypeAdapter[T](implicit valueTypeTag: TypeTag[T]) extends Ty
 
   val valueType = valueTypeTag.tpe
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (tpe == valueType) { // stricter type test than SimpleTypeAdapter:  == vs =:=
       Some(this)
     } else {
-      None
+      next.typeAdapter(tpe, context)
     }
 
 }

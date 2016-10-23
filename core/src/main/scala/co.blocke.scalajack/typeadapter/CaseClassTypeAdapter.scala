@@ -68,7 +68,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
@@ -135,7 +135,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       Some(CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys, collectionAnnotation))
     } else {
-      None
+      next.typeAdapter(tpe, context)
     }
 
 }

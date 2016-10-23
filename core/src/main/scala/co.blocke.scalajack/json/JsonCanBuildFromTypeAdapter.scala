@@ -16,7 +16,7 @@ import typeadapter.{ CanBuildFromTypeAdapter, CanBuildMapTypeAdapter, OptionType
 
 object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (tpe <:< typeOf[GenTraversableOnce[_]]) {
       val requiredClassSymbol = tpe.typeSymbol.asClass
 
@@ -88,7 +88,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
       matchingTypeAdapters.headOption
     } else {
-      None
+      next.typeAdapter(tpe, context)
     }
 
 }

@@ -8,12 +8,12 @@ import scala.reflect.runtime.universe.{Type, typeOf}
 
 object OffsetDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (tpe =:= typeOf[OffsetDateTime]) {
       val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
       Some(OffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter))
     } else {
-      None
+      next.typeAdapter(tpe, context)
     }
 
 }

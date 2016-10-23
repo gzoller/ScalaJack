@@ -8,7 +8,7 @@ import BijectiveFunctions.fullNameToType
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (tpe =:= typeOf[Any]) {
       val typeTypeAdapter = context.typeAdapterOf[Type]
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
@@ -19,7 +19,7 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 
       Some(AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context))
     } else {
-      None
+      next.typeAdapter(tpe, context)
     }
 }
 

@@ -34,7 +34,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   val tupleFullName = """scala.Tuple(\d+)""".r
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     classSymbol.fullName match {
       case tupleFullName(numberOfFieldsAsString) ⇒
         val numberOfFields = numberOfFieldsAsString.toInt
@@ -57,7 +57,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         Some(TupleTypeAdapter(fields.toList, constructorMirror))
 
       case _ ⇒
-        None
+        next.typeAdapter(tpe, context)
     }
 
 }

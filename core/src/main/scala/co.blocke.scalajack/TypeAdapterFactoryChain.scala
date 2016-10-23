@@ -4,29 +4,20 @@ import scala.reflect.runtime.universe.{ Type, TypeTag }
 
 object TypeAdapterFactoryChain {
 
-  def apply(factories: List[TypeAdapterFactory]): TypeAdapterFactoryChain =
+  def apply(factories: List[TypeAdapterFactory]): TypeAdapterFactory =
     factories match {
       case Nil =>
-        new TypeAdapterFactoryChain {
-          override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = {
-            None
-          }
+        new TypeAdapterFactory {
+          override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+            next.typeAdapter(tpe, context)
         }
 
-      case head :: tail =>
-        new TypeAdapterFactoryChain {
-          override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] = {
-            head.typeAdapter(tpe, context, TypeAdapterFactoryChain(tail))
+      case head :: tail => // FIXME are we passing the correct "next"?
+        new TypeAdapterFactory {
+          override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] = {
+            head.typeAdapter(tpe, context, next = TypeAdapterFactoryChain(tail))
           }
         }
     }
-
-}
-
-trait TypeAdapterFactoryChain {
-
-  def typeAdapterOf[T](context: Context)(implicit typeTag: TypeTag[T]): Option[TypeAdapter[T]] = ???
-
-  def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]]
 
 }

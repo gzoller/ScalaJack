@@ -76,7 +76,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
     if (classSymbol.isClass) {
 
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
@@ -210,8 +210,9 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           None
       }
 
-    } else
-      None
+    } else {
+      next.typeAdapter(tpe, context)
+    }
 }
 
 case class PlainClassTypeAdapter[T >: Null](
