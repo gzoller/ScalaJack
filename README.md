@@ -58,7 +58,7 @@ Couldn't be simpler!
 * [Try and Capture](doc/tryAndCapture.md)
 * [ParseOrElse](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
-* Non-Canonical JSON
+* [Non-Canonical JSON](doc/noncanonical.md)
 
 Non-JSON Formats:
 * MongoDB
