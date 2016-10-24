@@ -31,7 +31,7 @@ object ClassLikeTypeAdapter {
 
 }
 
-trait ClassLikeTypeAdapter[C >: Null] extends TypeAdapter[C] {
+trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
 
   type Member = ClassLikeTypeAdapter.Member[C]
 
@@ -78,7 +78,7 @@ trait ClassLikeTypeAdapter[C >: Null] extends TypeAdapter[C] {
         instantiate(memberValues)
 
       case TokenType.Null =>
-        reader.readNull()
+        reader.readNull().asInstanceOf[C]
     }
 
   override def write(instanceOfClass: C, writer: Writer): Unit =

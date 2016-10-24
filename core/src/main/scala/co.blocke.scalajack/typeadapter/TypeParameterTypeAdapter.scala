@@ -1,15 +1,15 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.TypeTag
 
 object TypeParameterTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe.typeSymbol.isParameter) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe.typeSymbol.isParameter) {
       TypeParameterTypeAdapter(context.typeAdapterOf[Any])
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 }
 

@@ -2,18 +2,18 @@ package co.blocke.scalajack
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 case class DateContainer($date: Long)
 
 object BsonDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe =:= typeOf[BsonDateTime]) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[BsonDateTime]) {
       val containerTypeAdapter = context.typeAdapterOf[DateContainer]
-      BsonDateTimeTypeAdapter(containerTypeAdapter)
+      BsonDateTimeTypeAdapter(containerTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

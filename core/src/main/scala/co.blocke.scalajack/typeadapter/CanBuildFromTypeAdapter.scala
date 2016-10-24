@@ -1,19 +1,17 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.json.Tokenizer
-
-import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.collection.generic.CanBuildFrom
+import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Symbol, Type, typeOf }
+import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe <:< typeOf[GenTraversableOnce[_]]) {
-      val requiredClassSymbol = tpe.typeSymbol.asClass
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
+      val requiredClassSymbol = tt.tpe.typeSymbol.asClass
 
       val companionSymbol = requiredClassSymbol.companion.asModule
       val companionType = companionSymbol.info
@@ -40,7 +38,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
           // optionalTypeArg == Some(String)
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = toType,
-            haystackAfterSubstitution  = tpe.baseType(toType.typeSymbol),
+            haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
             needleBeforeSubstitution   = typeParam.asType.toType
           )
           optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
@@ -58,7 +56,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         val companionInstance = currentMirror.reflectModule(companionSymbol).instance
         val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
 
-        if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+        if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
           val keyTypeAdapter = context.typeAdapter(keyType) match {
             case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
@@ -72,9 +70,9 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         }
       }
 
-      matchingTypeAdapters.headOption.getOrElse(next.typeAdapter(tpe, context))
+      matchingTypeAdapters.headOption.map(_.asInstanceOf[TypeAdapter[T]]).getOrElse(next.typeAdapterOf[T](context))
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

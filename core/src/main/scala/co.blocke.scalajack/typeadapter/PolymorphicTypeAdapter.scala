@@ -1,17 +1,17 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, Type, appliedType, typeOf }
 import scala.collection.mutable.{ Map => MMap }
+import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe.{ ClassSymbol, Type, TypeTag }
 
 case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isTrait) {
-      PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context, tpe)
+      PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context, tt.tpe)
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

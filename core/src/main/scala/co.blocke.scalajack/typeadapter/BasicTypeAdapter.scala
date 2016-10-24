@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.universe.TypeTag
 
 /**
  * This class is virtually identical to SimpleTypeAdapter, except... it uses == rather than =:= type compare
@@ -20,15 +20,16 @@ import scala.reflect.runtime.universe.{ Type, TypeTag }
  *
  * This means all TypeAdapter overrides for primitives should extend BasicTypeAdapter, not SimpleTypeAdapter.
  */
-abstract class BasicTypeAdapter[T](implicit valueTypeTag: TypeTag[T]) extends TypeAdapterFactory with TypeAdapter[T] {
+abstract class BasicTypeAdapter[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
   val valueType = valueTypeTag.tpe
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe == valueType) { // stricter type test than SimpleTypeAdapter:  == vs =:=
-      this
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe == valueType) {
+      // stricter type test than SimpleTypeAdapter:  == vs =:=
+      this.asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

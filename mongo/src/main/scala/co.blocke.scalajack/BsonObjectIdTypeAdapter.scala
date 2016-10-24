@@ -2,18 +2,18 @@ package co.blocke.scalajack
 
 import org.bson.BsonObjectId
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 case class BsonObjectIdContainer($oid: String)
 
 object BsonObjectIdTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe =:= typeOf[BsonObjectId]) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[BsonObjectId]) {
       val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
-      BsonObjectIdTypeAdapter(typeAdapter)
+      BsonObjectIdTypeAdapter(typeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

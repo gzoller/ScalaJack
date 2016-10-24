@@ -1,19 +1,19 @@
 package co.blocke.scalajack
 
-import java.time.{Instant, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe =:= typeOf[ZonedDateTime]) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[ZonedDateTime]) {
       val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
-      ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter)
+      ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

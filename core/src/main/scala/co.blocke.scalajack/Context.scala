@@ -6,6 +6,7 @@ import typeadapter.javaprimitives._
 
 import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
 
 import java.util.concurrent.ConcurrentHashMap
@@ -91,7 +92,7 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
                   val typeAdapterAttempt = Try {
                     val head :: tail = factories
                     val chain = TypeAdapterFactoryChain(tail)
-                    head.typeAdapter(tpe, Context.this, chain)
+                    head.typeAdapterOf(Context.this, chain)(TypeTags.of(currentMirror, tpe))
                   }
 
                   phase = Initialized(typeAdapterAttempt)

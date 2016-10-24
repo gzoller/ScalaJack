@@ -1,19 +1,19 @@
 package co.blocke.scalajack
 package typeadapter
 
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
-import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object TryTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe <:< typeOf[Try[_]]) {
-      val valueType = tpe.typeArgs.head
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe <:< typeOf[Try[_]]) {
+      val valueType = tt.tpe.typeArgs.head
       val valueTypeAdapter = context.typeAdapter(valueType)
 
-      TryTypeAdapter(valueTypeAdapter)
+      TryTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

@@ -2,27 +2,28 @@ package co.blocke.scalajack
 package typeadapter
 
 import java.lang.reflect.Method
+
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, TypeTag }
 
 object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isDerivedValueClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
       val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
       val parameter = constructorSymbol.paramLists.head.head
       val parameterName = parameter.name.encodedName.toString
-      val accessorMethodSymbol = tpe.member(TermName(parameterName)).asMethod
+      val accessorMethodSymbol = tt.tpe.member(TermName(parameterName)).asMethod
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-      val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
+      val valueType = parameter.infoIn(tt.tpe).substituteTypes(tt.tpe.typeConstructor.typeParams, tt.tpe.typeArgs)
       val valueTypeAdapter = context.typeAdapter(valueType)
 
       DerivedValueClassAdapter(constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

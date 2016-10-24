@@ -3,13 +3,10 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import CaseClassTypeAdapter.Member
-
 import scala.annotation.Annotation
-import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf, TypeTag, Annotation => UAnnotation }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, TypeTag, typeOf, Annotation => UAnnotation }
 
 trait ClassMember[Owner, T] extends ClassLikeTypeAdapter.Member[Owner] {
   def dbKeyIndex: Option[Int]
@@ -68,7 +65,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
@@ -81,12 +78,12 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-      val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
+      val isSJCapture = !(tt.tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
-      val members = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.zipWithIndex.map({
+      val members = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
         case (member, index) =>
           val memberName = member.name.encodedName.toString
-          val accessorMethodSymbol = tpe.member(TermName(memberName)).asMethod
+          val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
           val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
           val (derivedValueClassConstructorMirror, memberClass) =
@@ -123,7 +120,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val optionalDbKeyIndex = member.annotations.find(_.isInstanceOf[DBKey]).map(_.asInstanceOf[DBKey]).map(_.index)
 
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-          Member[Any, Any](index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, member.annotations)
+          Member[T, Any](index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, member.annotations)
       })
 
       // Exctract Collection name annotation if present
@@ -133,14 +130,14 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val dbKeys = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
-      CaseClassTypeAdapter(tpe, constructorMirror, tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys, collectionAnnotation)
+      CaseClassTypeAdapter[T](tt.tpe, constructorMirror, tt.tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys, collectionAnnotation)
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }
 
-case class CaseClassTypeAdapter[T >: Null](
+case class CaseClassTypeAdapter[T](
     caseClassType:         Type,
     constructorMirror:     MethodMirror,
     tpe:                   Type,
@@ -202,7 +199,7 @@ case class CaseClassTypeAdapter[T >: Null](
         asBuilt
 
       case TokenType.Null =>
-        reader.readNull()
+        reader.readNull().asInstanceOf[T]
     }
 
   override def write(value: T, writer: Writer): Unit =

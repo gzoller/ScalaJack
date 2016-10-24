@@ -1,15 +1,15 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import co.blocke.scalajack.BijectiveFunctions.fullNameToType
+
 import scala.reflect.runtime.currentMirror
-import BijectiveFunctions.fullNameToType
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe =:= typeOf[Any]) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[Any]) {
       val typeTypeAdapter = context.typeAdapterOf[Type]
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
       val mapTypeAdapter = context.typeAdapterOf[Map[Any, Any]]
@@ -17,10 +17,11 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       val stringTypeAdapter = context.typeAdapterOf[String]
       val booleanTypeAdapter = context.typeAdapterOf[Boolean]
 
-      AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context)
+      AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
+
 }
 
 case class AnyTypeAdapter(

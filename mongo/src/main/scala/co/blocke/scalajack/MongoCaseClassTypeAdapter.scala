@@ -4,18 +4,18 @@ import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter.Member
 
 import scala.annotation.Annotation
-import scala.reflect.runtime.universe.{Type, TypeTag}
+import scala.reflect.runtime.universe.TypeTag
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] = {
-    next.typeAdapter(tpe, context) match {
-      case realClassTypeAdapter: ClassLikeTypeAdapter[_] =>
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    next.typeAdapterOf[T](context) match {
+      case realClassTypeAdapter: ClassLikeTypeAdapter[T] =>
         val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 
-        type RealClass = AnyRef
+        type RealClass = T
 
-        val membersOfRealClass = realClassTypeAdapter.members.map(_.asInstanceOf[Member[RealClass]])
+        val membersOfRealClass = realClassTypeAdapter.members
         val numberOfRealMembers = membersOfRealClass.length
 
         val (keyMembersOfRealClass, nonKeyMembersOfRealClass) = membersOfRealClass.partition(_.annotation[DBKey].isDefined)
@@ -24,8 +24,122 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
             // Easy!
             realClassTypeAdapter
 
-          case onlyKeyMember :: Nil =>
-            ???
+          case keyMemberOfRealClass :: Nil =>
+            type SyntheticClass = Array[Any]
+            type MemberOfSyntheticClass = ClassLikeTypeAdapter.Member[SyntheticClass]
+
+            val idMemberOfSyntheticClass = new MemberOfSyntheticClass {
+
+              override type Value = keyMemberOfRealClass.Value
+
+              override def index = 0
+
+              override def name = "_id"
+
+              override def defaultValue =
+                keyMemberOfRealClass.defaultValue
+
+              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
+                instanceOfSyntheticClass(0).asInstanceOf[Value]
+
+              override def readValue(reader: Reader): Value =
+                keyMemberOfRealClass.readValue(reader)
+
+              override def writeValue(value: Value, writer: Writer): Unit =
+                keyMemberOfRealClass.writeValue(value, writer)
+
+              override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
+                keyMemberOfRealClass.annotation[A]
+
+            }
+
+            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
+              new MemberOfSyntheticClass {
+
+                override type Value = memberOfRealClass.Value
+
+                override def index = 1 + i
+
+                override def name =
+                  memberOfRealClass.name
+
+                override def defaultValue =
+                  memberOfRealClass.defaultValue
+
+                override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
+                  instanceOfSyntheticClass(1 + i).asInstanceOf[Value]
+
+                override def readValue(reader: Reader): Value =
+                  memberOfRealClass.readValue(reader)
+
+                override def writeValue(value: Value, writer: Writer): Unit =
+                  memberOfRealClass.writeValue(value, writer)
+
+                override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
+                  memberOfRealClass.annotation[A]
+
+              }
+
+            val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
+            val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap
+
+            val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
+
+              override def members: List[Member] =
+                membersOfSyntheticClass
+
+              override def member(memberName: MemberName): Option[Member] =
+                membersOfSyntheticClassByName.get(memberName)
+
+              override def readMemberName(reader: Reader): MemberName =
+                memberNameTypeAdapter.read(reader)
+
+              override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
+                memberNameTypeAdapter.write(memberName, writer)
+
+              override def instantiate(memberValuesOfSyntheticClass: Array[Any]): SyntheticClass =
+                memberValuesOfSyntheticClass
+
+            }
+
+            new TypeAdapter[RealClass] {
+
+              override def read(reader: Reader): RealClass =
+                syntheticClassTypeAdapter.read(reader) match {
+                  case null =>
+                    null.asInstanceOf[RealClass]
+
+                  case instanceOfSyntheticClass =>
+                    val memberValuesOfSyntheticClass = instanceOfSyntheticClass
+
+                    val memberValuesOfRealClass = new Array[Any](numberOfRealMembers)
+
+                    memberValuesOfRealClass(keyMemberOfRealClass.index) = memberValuesOfSyntheticClass(0)
+
+                    for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
+                      memberValuesOfRealClass(memberOfRealClass.index) = memberValuesOfSyntheticClass(1 + i)
+                    }
+
+                    realClassTypeAdapter.instantiate(memberValuesOfRealClass)
+                }
+
+              override def write(instanceOfRealClass: RealClass, writer: Writer): Unit =
+                if (instanceOfRealClass == null) {
+                  writer.writeNull()
+                } else {
+                  val memberValuesOfSyntheticClass = new Array[Any](1 + nonKeyMembersOfRealClass.length)
+                  memberValuesOfSyntheticClass(0) = keyMemberOfRealClass.valueIn(instanceOfRealClass)
+
+                  for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
+                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                  }
+
+                  val instanceOfSyntheticClass: SyntheticClass = memberValuesOfSyntheticClass
+
+                  syntheticClassTypeAdapter.write(instanceOfSyntheticClass, writer)
+                }
+
+            }
 
           case allKeyMembers =>
 
@@ -33,31 +147,57 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
             // We are effectively inventing two fictional classes. One class represents the "_id" field. The other represents
             // an alternative form of the original class-like type adapter.
 
-            type SyntheticClass = Array[Any]
             type SyntheticId = Array[Any]
+            type SyntheticClass = Array[Any]
 
-            val idTypeAdapter = new CompositeKeyTypeAdapter(memberNameTypeAdapter, for ((memberOfRealClass, i) <- allKeyMembers.zipWithIndex) yield
-              new ClassLikeTypeAdapter.Member[SyntheticId] {
+            type MemberOfSyntheticId = ClassLikeTypeAdapter.Member[SyntheticId]
+            type MemberOfSyntheticClass = ClassLikeTypeAdapter.Member[SyntheticClass]
 
-                override type Value = memberOfRealClass.Value
+            val idTypeAdapter = {
+              val membersOfSyntheticId: List[MemberOfSyntheticId] = for ((memberOfRealClass, i) <- allKeyMembers.zipWithIndex) yield
+                new MemberOfSyntheticId {
 
-                override def index = i
+                  override type Value = memberOfRealClass.Value
 
-                override def name = memberOfRealClass.name
+                  override def index = i
 
-                override def defaultValue = memberOfRealClass.defaultValue
+                  override def name = memberOfRealClass.name
 
-                override def valueIn(syntheticId: SyntheticId): Value = syntheticId(i).asInstanceOf[Value]
+                  override def defaultValue = memberOfRealClass.defaultValue
 
-                override def readValue(reader: Reader): Value = memberOfRealClass.readValue(reader)
+                  override def valueIn(syntheticId: SyntheticId): Value = syntheticId(i).asInstanceOf[Value]
 
-                override def writeValue(value: Value, writer: Writer): Unit = memberOfRealClass.writeValue(value, writer)
+                  override def readValue(reader: Reader): Value = memberOfRealClass.readValue(reader)
 
-                override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = memberOfRealClass.annotation[A]
+                  override def writeValue(value: Value, writer: Writer): Unit = memberOfRealClass.writeValue(value, writer)
 
-              })
+                  override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = memberOfRealClass.annotation[A]
 
-            val idMemberOfSyntheticClass = new ClassLikeTypeAdapter.Member[SyntheticClass] {
+                }
+
+              val membersOfSyntheticIdByName = membersOfSyntheticId.map(member => member.name -> member).toMap
+
+              new ClassLikeTypeAdapter[SyntheticId] {
+
+                override def members: List[Member] =
+                  membersOfSyntheticId
+
+                override def member(memberName: MemberName): Option[Member] =
+                  membersOfSyntheticIdByName.get(memberName)
+
+                override def readMemberName(reader: Reader): MemberName =
+                  memberNameTypeAdapter.read(reader)
+
+                override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
+                  memberNameTypeAdapter.write(memberName, writer)
+
+                override def instantiate(memberValues: Array[Any]): SyntheticId =
+                  memberValues
+
+              }
+            }
+
+            val idMemberOfSyntheticClass = new MemberOfSyntheticClass {
 
               override type Value = SyntheticId
 
@@ -81,11 +221,11 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
             }
 
             val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
-              new ClassLikeTypeAdapter.Member[SyntheticClass] {
+              new MemberOfSyntheticClass {
 
                 override type Value = memberOfRealClass.Value
 
-                override def index = i + 1
+                override def index = 1 + i
 
                 override def name =
                   memberOfRealClass.name
@@ -94,7 +234,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   memberOfRealClass.defaultValue
 
                 override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                  instanceOfSyntheticClass(i + 1).asInstanceOf[Value]
+                  instanceOfSyntheticClass(1 + i).asInstanceOf[Value]
 
                 override def readValue(reader: Reader): Value =
                   memberOfRealClass.readValue(reader)
@@ -112,7 +252,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
-              override def members: List[Member] = membersOfSyntheticClass
+              override def members: List[Member] =
+                membersOfSyntheticClass
 
               override def member(memberName: MemberName): Option[Member] =
                 membersOfSyntheticClassByName.get(memberName)
@@ -128,15 +269,15 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             }
 
-            val t: TypeAdapter[RealClass] = new TypeAdapter[RealClass] {
+            new TypeAdapter[RealClass] {
 
               override def read(reader: Reader): RealClass =
                 syntheticClassTypeAdapter.read(reader) match {
                   case null =>
-                    null
+                    null.asInstanceOf[RealClass]
 
                   case instanceOfSyntheticClass =>
-                    val memberValuesOfSyntheticClass = instanceOfSyntheticClass
+                    val memberValuesOfSyntheticClass = instanceOfSyntheticClass // Surprise! They're one and the same!
 
                     val syntheticId = memberValuesOfSyntheticClass(0).asInstanceOf[SyntheticId]
 
@@ -150,36 +291,36 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                       memberValuesOfRealClass(memberOfRealClass.index) = memberValuesOfSyntheticClass(1 + i)
                     }
 
-                    realClassTypeAdapter.instantiate(memberValuesOfRealClass).asInstanceOf[RealClass]
+                    realClassTypeAdapter.instantiate(memberValuesOfRealClass)
                 }
 
-              override def write(instanceOfRealClass: RealClass, writer: Writer): Unit = {
-                val syntheticId = new Array[Any](keyMembersOfRealClass.length)
+              override def write(instanceOfRealClass: RealClass, writer: Writer): Unit =
+                if (instanceOfRealClass == null) {
+                  writer.writeNull()
+                } else {
+                  val syntheticId = new Array[Any](keyMembersOfRealClass.length)
 
-                for ((memberOfRealClass, i) <- keyMembersOfRealClass.zipWithIndex) {
-                  syntheticId(i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                  for ((memberOfRealClass, i) <- keyMembersOfRealClass.zipWithIndex) {
+                    syntheticId(i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                  }
+
+                  val memberValuesOfSyntheticClass = new Array[Any](1 + nonKeyMembersOfRealClass.length)
+                  memberValuesOfSyntheticClass(0) = syntheticId
+
+                  for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
+                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                  }
+
+                  val instanceOfSyntheticClass: SyntheticClass = memberValuesOfSyntheticClass
+
+                  syntheticClassTypeAdapter.write(instanceOfSyntheticClass, writer)
                 }
-
-                val memberValuesOfSyntheticClass = new Array[Any](1 + nonKeyMembersOfRealClass.length)
-                memberValuesOfSyntheticClass(0) = syntheticId
-
-                for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
-                  memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(instanceOfRealClass)
-                }
-
-                val instanceOfSyntheticClass: SyntheticClass = memberValuesOfSyntheticClass
-
-                syntheticClassTypeAdapter.write(instanceOfSyntheticClass, writer)
-              }
 
             }
-
-            ??? // FIXME return the actual type adapter
         }
 
       case other =>
         other
     }
-  }
 
 }

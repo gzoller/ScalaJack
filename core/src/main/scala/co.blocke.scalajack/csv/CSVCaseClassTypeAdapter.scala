@@ -3,13 +3,12 @@ package csv
 
 import java.lang.reflect.Method
 
-import CSVCaseClassTypeAdapter.Member
-import typeadapter.OptionTypeAdapter
+import co.blocke.scalajack.csv.CSVCaseClassTypeAdapter.Member
+import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
-import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag }
 
 object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -46,7 +45,7 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
@@ -57,10 +56,10 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val companionObject = currentMirror.reflectModule(classSymbol.companion.asModule).instance
       val companionMirror = currentMirror.reflect(companionObject)
 
-      val members = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.zipWithIndex.map({
+      val members = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
         case (member, index) ⇒
           val memberName = member.name.encodedName.toString
-          val accessorMethodSymbol = tpe.member(TermName(memberName)).asMethod
+          val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
           val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
           val (derivedValueClassConstructorMirror, memberClass) =
@@ -85,9 +84,9 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, memberClass)
       })
 
-      CSVCaseClassTypeAdapter(tpe, constructorMirror, tpe, members)
+      CSVCaseClassTypeAdapter(tt.tpe, constructorMirror, tt.tpe, members).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }

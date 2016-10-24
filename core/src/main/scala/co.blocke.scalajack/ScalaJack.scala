@@ -88,12 +88,12 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
       val hintToType = hintModifiers.getOrElse(polymorphicType, fullNameToType)
 
       new TypeAdapterFactory {
-        override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] = {
-          if (tpe.typeSymbol == polymorphicType.typeSymbol) {
+        override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit typeTag: TypeTag[T]): TypeAdapter[T] = {
+          if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
             val stringTypeAdapter = context.typeAdapterOf[String]
-            PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context.typeAdapterOf[MemberName], context, tpe)
+            PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context.typeAdapterOf[MemberName], context, typeTag.tpe)
           } else {
-            next.typeAdapter(tpe, context)
+            next.typeAdapterOf[T](context)
           }
         }
       }
@@ -111,11 +111,11 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
         val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
 
         new TypeAdapterFactory {
-          override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-            if (tpe =:= attemptedType) {
-              FallbackTypeAdapter[Any](attemptedTypeAdapter.asInstanceOf[TypeAdapter[Any]], fallbackTypeAdapter.asInstanceOf[TypeAdapter[Any]])
+          override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit typeTag: TypeTag[T]): TypeAdapter[T] =
+            if (typeTag.tpe =:= attemptedType) {
+              FallbackTypeAdapter[T](attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]], fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]])
             } else {
-              next.typeAdapter(tpe, context)
+              next.typeAdapterOf[T](context)
             }
         }
     }.toList

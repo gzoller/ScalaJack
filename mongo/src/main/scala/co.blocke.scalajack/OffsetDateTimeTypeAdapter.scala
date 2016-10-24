@@ -4,16 +4,16 @@ import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{Type, typeOf}
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object OffsetDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
-    if (tpe =:= typeOf[OffsetDateTime]) {
+  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[OffsetDateTime]) {
       val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
-      OffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter)
+      OffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapter(tpe, context)
+      next.typeAdapterOf[T](context)
     }
 
 }
