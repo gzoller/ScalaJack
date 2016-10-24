@@ -5,11 +5,11 @@ import scala.reflect.runtime.universe.TypeTag
 
 object TypeParameterTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe.typeSymbol.isParameter) {
       TypeParameterTypeAdapter(context.typeAdapterOf[Any])
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 }
 

@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object AnyTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe =:= typeOf[Any]) {
       val typeTypeAdapter = context.typeAdapterOf[Type]
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
@@ -19,7 +19,7 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 
       AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

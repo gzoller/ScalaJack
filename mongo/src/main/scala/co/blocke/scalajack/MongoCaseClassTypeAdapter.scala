@@ -8,8 +8,8 @@ import scala.reflect.runtime.universe.TypeTag
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
-    next.typeAdapterOf[T](context) match {
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    next.typeAdapterOf[T] match {
       case realClassTypeAdapter: ClassLikeTypeAdapter[T] =>
         val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
 

@@ -8,14 +8,14 @@ object TypeAdapterFactoryChain {
     factories match {
       case Nil =>
         new TypeAdapterFactory {
-          override def typeAdapterOf[T: TypeTag](context: Context, next: TypeAdapterFactory): TypeAdapter[T] =
-            next.typeAdapterOf[T](context)
+          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+            next.typeAdapterOf[T]
         }
 
       case head :: tail => // FIXME are we passing the correct "next"?
         new TypeAdapterFactory {
-          override def typeAdapterOf[T: TypeTag](context: Context, next: TypeAdapterFactory): TypeAdapter[T] = {
-            head.typeAdapterOf[T](context, next = TypeAdapterFactoryChain(tail))
+          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+            head.typeAdapterOf[T](next = TypeAdapterFactoryChain(tail))
           }
         }
     }

@@ -15,7 +15,7 @@ import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
 
 object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
       val requiredClassSymbol = tt.tpe.typeSymbol.asClass
 
@@ -85,9 +85,9 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
         }
       }
 
-      matchingTypeAdapters.headOption.map(_.asInstanceOf[TypeAdapter[T]]).getOrElse(next.typeAdapterOf[T](context))
+      matchingTypeAdapters.headOption.map(_.asInstanceOf[TypeAdapter[T]]).getOrElse(next.typeAdapterOf[T])
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

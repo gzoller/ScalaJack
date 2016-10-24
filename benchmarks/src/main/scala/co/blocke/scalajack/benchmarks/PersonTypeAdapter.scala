@@ -8,12 +8,12 @@ import scala.reflect.runtime.universe.{ClassSymbol, TypeTag, typeOf}
 
 object PersonTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe == typeOf[Person]) {
       println("YES!  PersonTypeAdapter")
       PersonTypeAdapter(context.typeAdapterOf[String], context.typeAdapterOf[Long]).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

@@ -5,14 +5,14 @@ import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object OptionTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[Option[_]]) {
       val valueType = tt.tpe.typeArgs.head
       val valueTypeAdapter = context.typeAdapter(valueType)
 
       OptionTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

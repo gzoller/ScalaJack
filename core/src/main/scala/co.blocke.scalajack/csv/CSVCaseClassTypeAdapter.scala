@@ -45,7 +45,7 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
@@ -86,7 +86,7 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       CSVCaseClassTypeAdapter(tt.tpe, constructorMirror, tt.tpe, members).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

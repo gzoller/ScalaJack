@@ -8,12 +8,12 @@ case class DateContainer($date: Long)
 
 object BsonDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe =:= typeOf[BsonDateTime]) {
       val containerTypeAdapter = context.typeAdapterOf[DateContainer]
       BsonDateTimeTypeAdapter(containerTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

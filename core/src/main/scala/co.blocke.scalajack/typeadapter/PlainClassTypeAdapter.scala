@@ -78,7 +78,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit typeTag: TypeTag[T]): TypeAdapter[T] = {
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] = {
     val tpe = typeTag.tpe
     if (classSymbol.isClass) {
 
@@ -211,11 +211,11 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val members = reflectJavaGetterSetterFields
           PlainClassTypeAdapter[T](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
         case x =>
-          next.typeAdapterOf[T](context)
+          next.typeAdapterOf[T]
       }
 
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
   }
 

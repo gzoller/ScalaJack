@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol,
 
 object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isDerivedValueClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
       val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
@@ -23,7 +23,7 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       DerivedValueClassAdapter(constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

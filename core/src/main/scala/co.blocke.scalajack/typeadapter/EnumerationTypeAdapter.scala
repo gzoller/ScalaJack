@@ -6,7 +6,7 @@ import scala.util.{ Failure, Success, Try }
 
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe.typeSymbol.fullName == "scala.Enumeration.Value") {
       // Can't use tpe <:< because Enumeration has no companion object
       val erasedEnumClassName = tt.tpe.toString match {
@@ -16,7 +16,7 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val enum = Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
       EnumerationTypeAdapter(enum).asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[T](context)
+      next.typeAdapterOf[T]
     }
 
 }

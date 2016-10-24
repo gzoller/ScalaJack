@@ -12,26 +12,26 @@ object SimpleTypeAdapter {
 
   abstract class ForTypeSymbolOf[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
-    override def typeAdapterOf[T](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] =
+    override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
       if (tt.tpe.typeSymbol == valueTypeTag.tpe.typeSymbol) {
         this.asInstanceOf[TypeAdapter[T]]
       } else {
-        next.typeAdapterOf[T](context)
+        next.typeAdapterOf[T]
       }
 
   }
 
 }
 
-abstract class SimpleTypeAdapter[T](implicit valueTypeTag: TypeTag[T]) extends TypeAdapterFactory with TypeAdapter[T] {
+abstract class SimpleTypeAdapter[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
   val valueType = valueTypeTag.tpe
 
-  override def typeAdapterOf[U](context: Context, next: TypeAdapterFactory)(implicit tt: TypeTag[U]): TypeAdapter[U] =
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe =:= valueType) {
-      this.asInstanceOf[TypeAdapter[U]]
+      this.asInstanceOf[TypeAdapter[T]]
     } else {
-      next.typeAdapterOf[U](context)
+      next.typeAdapterOf[T]
     }
 
 }

@@ -92,7 +92,7 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
                   val typeAdapterAttempt = Try {
                     val head :: tail = factories
                     val chain = TypeAdapterFactoryChain(tail)
-                    head.typeAdapterOf(Context.this, chain)(TypeTags.of(currentMirror, tpe))
+                    head.typeAdapterOf(chain)(Context.this, TypeTags.of(currentMirror, tpe))
                   }
 
                   phase = Initialized(typeAdapterAttempt)
