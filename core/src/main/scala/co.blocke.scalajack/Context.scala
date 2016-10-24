@@ -73,10 +73,6 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
 
   class TypeEntry(tpe: Type) {
 
-    object FactoryExtractor {
-      def unapply(factory: TypeAdapterFactory): Option[TypeAdapter[_]] = factory.typeAdapter(tpe, Context.this)
-    }
-
     @volatile
     private var phase: Phase = Uninitialized
 
@@ -95,8 +91,7 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
                   val typeAdapterAttempt = Try {
                     val head :: tail = factories
                     val chain = TypeAdapterFactoryChain(tail)
-                    val optionalTypeAdapter = head.typeAdapter(tpe, Context.this, chain)
-                    optionalTypeAdapter.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
+                    head.typeAdapter(tpe, Context.this, chain)
                   }
 
                   phase = Initialized(typeAdapterAttempt)

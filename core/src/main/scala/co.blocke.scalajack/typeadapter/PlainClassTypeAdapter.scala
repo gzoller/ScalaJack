@@ -62,7 +62,9 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case None       ⇒ valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
       }
 
-    override def readValue(reader: Reader): Value = ???
+    override def readValue(reader: Reader): Value = {
+      valueTypeAdapter.read(reader)
+    }
 
     override def writeValue(value: T, writer: Writer): Unit = {
       valueTypeAdapter.write(value, writer)
@@ -76,7 +78,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   }
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (classSymbol.isClass) {
 
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
@@ -199,15 +201,15 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       inferConstructorValFields match {
         case members if (!members.isEmpty) ⇒
           // Because all the val fields were found in the constructor we can use a normal CaseClassTypeAdapter
-          Some(CaseClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys(members), collectionAnnotation))
+          CaseClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, members.length, isSJCapture, dbKeys(members), collectionAnnotation)
         case _ if (!classSymbol.isJava && hasEmptyConstructor) ⇒
           val members = reflectScalaGetterSetterFields
-          Some(PlainClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation))
+          PlainClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation)
         case _ if (classSymbol.isJava && hasEmptyConstructor) ⇒
           val members = reflectJavaGetterSetterFields
-          Some(PlainClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation))
+          PlainClassTypeAdapter[Any](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation)
         case x =>
-          None
+          next.typeAdapter(tpe, context)
       }
 
     } else {

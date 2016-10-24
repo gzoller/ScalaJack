@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe.{ Symbol, Type, typeOf }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (tpe <:< typeOf[GenTraversableOnce[_]]) {
       val requiredClassSymbol = tpe.typeSymbol.asClass
 
@@ -72,7 +72,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         }
       }
 
-      matchingTypeAdapters.headOption
+      matchingTypeAdapters.headOption.getOrElse(next.typeAdapter(tpe, context))
     } else {
       next.typeAdapter(tpe, context)
     }

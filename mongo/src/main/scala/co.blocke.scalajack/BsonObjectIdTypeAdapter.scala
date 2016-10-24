@@ -8,10 +8,10 @@ case class BsonObjectIdContainer($oid: String)
 
 object BsonObjectIdTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (tpe =:= typeOf[BsonObjectId]) {
       val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
-      Some(BsonObjectIdTypeAdapter(typeAdapter))
+      BsonObjectIdTypeAdapter(typeAdapter)
     } else {
       next.typeAdapter(tpe, context)
     }

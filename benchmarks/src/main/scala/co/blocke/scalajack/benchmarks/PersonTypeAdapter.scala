@@ -12,10 +12,10 @@ import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol,
 
 object PersonTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (tpe == typeOf[Person]) {
       println("YES!  PersonTypeAdapter")
-      Some(PersonTypeAdapter(context.typeAdapterOf[String], context.typeAdapterOf[Long]))
+      PersonTypeAdapter(context.typeAdapterOf[String], context.typeAdapterOf[Long])
     } else {
       next.typeAdapter(tpe, context)
     }

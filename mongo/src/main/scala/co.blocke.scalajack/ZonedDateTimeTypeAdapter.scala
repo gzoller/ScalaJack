@@ -8,10 +8,10 @@ import scala.reflect.runtime.universe.{Type, typeOf}
 
 object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (tpe =:= typeOf[ZonedDateTime]) {
       val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
-      Some(ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter))
+      ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter)
     } else {
       next.typeAdapter(tpe, context)
     }

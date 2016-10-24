@@ -5,9 +5,9 @@ import scala.reflect.runtime.universe.Type
 
 object TypeParameterTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): Option[TypeAdapter[_]] =
+  override def typeAdapter(tpe: Type, context: Context, next: TypeAdapterFactory): TypeAdapter[_] =
     if (tpe.typeSymbol.isParameter) {
-      Some(TypeParameterTypeAdapter(context.typeAdapterOf[Any]))
+      TypeParameterTypeAdapter(context.typeAdapterOf[Any])
     } else {
       next.typeAdapter(tpe, context)
     }
