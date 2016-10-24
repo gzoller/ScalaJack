@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.mutable.{ Map => MMap }
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, Type, TypeTag }
 
@@ -41,10 +40,6 @@ class PolymorphicWriter(
     super.endObject()
   }
 
-}
-
-object PolymorphicTypeAdapter {
-  private val resolved: MMap[(Type, List[Type]), List[Type]] = MMap.empty[(Type, List[Type]), List[Type]]
 }
 
 case class PolymorphicTypeAdapter[T](

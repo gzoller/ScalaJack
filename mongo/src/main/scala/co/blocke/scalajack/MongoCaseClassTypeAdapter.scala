@@ -1,12 +1,13 @@
 package co.blocke.scalajack
 
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
-import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter.Member
 
 import scala.annotation.Annotation
 import scala.reflect.runtime.universe.TypeTag
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
+
+  val IdMemberName: MemberName = "_id"
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     next.typeAdapterOf[T] match {
@@ -34,13 +35,13 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def index = 0
 
-              override def name = "_id"
+              override def name = IdMemberName
 
               override def defaultValue =
                 keyMemberOfRealClass.defaultValue
 
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(0).asInstanceOf[Value]
+                instanceOfSyntheticClass(index).asInstanceOf[Value]
 
               override def readValue(reader: Reader): Value =
                 keyMemberOfRealClass.readValue(reader)
@@ -67,7 +68,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   memberOfRealClass.defaultValue
 
                 override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                  instanceOfSyntheticClass(1 + i).asInstanceOf[Value]
+                  instanceOfSyntheticClass(index).asInstanceOf[Value]
 
                 override def readValue(reader: Reader): Value =
                   memberOfRealClass.readValue(reader)
@@ -165,13 +166,17 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
                   override def defaultValue = memberOfRealClass.defaultValue
 
-                  override def valueIn(syntheticId: SyntheticId): Value = syntheticId(i).asInstanceOf[Value]
+                  override def valueIn(syntheticId: SyntheticId): Value =
+                    syntheticId(index).asInstanceOf[Value]
 
-                  override def readValue(reader: Reader): Value = memberOfRealClass.readValue(reader)
+                  override def readValue(reader: Reader): Value =
+                    memberOfRealClass.readValue(reader)
 
-                  override def writeValue(value: Value, writer: Writer): Unit = memberOfRealClass.writeValue(value, writer)
+                  override def writeValue(value: Value, writer: Writer): Unit =
+                    memberOfRealClass.writeValue(value, writer)
 
-                  override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = memberOfRealClass.annotation[A]
+                  override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
+                    memberOfRealClass.annotation[A]
 
                 }
 
@@ -203,12 +208,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def index = 0
 
-              override def name = "_id"
+              override def name = IdMemberName
 
               override def defaultValue = None
 
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(0).asInstanceOf[Value]
+                instanceOfSyntheticClass(index).asInstanceOf[Value]
 
               override def readValue(reader: Reader): Value =
                 idTypeAdapter.read(reader)
@@ -234,7 +239,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   memberOfRealClass.defaultValue
 
                 override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                  instanceOfSyntheticClass(1 + i).asInstanceOf[Value]
+                  instanceOfSyntheticClass(index).asInstanceOf[Value]
 
                 override def readValue(reader: Reader): Value =
                   memberOfRealClass.readValue(reader)

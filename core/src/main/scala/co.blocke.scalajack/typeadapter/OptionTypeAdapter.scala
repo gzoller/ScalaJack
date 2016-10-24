@@ -1,18 +1,19 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
+import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
 
 object OptionTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe <:< typeOf[Option[_]]) {
-      val valueType = tt.tpe.typeArgs.head
-      val valueTypeAdapter = context.typeAdapter(valueType)
+    tt.tpe.baseType(typeOf[Option[_]].typeSymbol) match {
+      case NoType =>
+        next.typeAdapterOf[T]
 
-      OptionTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    } else {
-      next.typeAdapterOf[T]
+      case asOption =>
+        val valueType :: Nil = asOption.typeArgs
+        val valueTypeAdapter = context.typeAdapter(valueType)
+        OptionTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
     }
 
 }
@@ -29,21 +30,21 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null ⇒
+      case TokenType.Nothing | TokenType.Null =>
         reader.read()
         None
-      case v ⇒ Some(valueTypeAdapter.read(reader))
+      case v => Some(valueTypeAdapter.read(reader))
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {
-      case null ⇒
+      case null =>
         writer.writeNull()
 
-      case Some(value) ⇒
+      case Some(value) =>
         valueTypeAdapter.write(value, writer)
 
-      case None ⇒
+      case None =>
         writer.writeNothing()
     }
 
@@ -57,21 +58,21 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null ⇒
+      case TokenType.Nothing | TokenType.Null =>
         reader.read()
         None
-      case v ⇒ Some(valueTypeAdapter.read(reader))
+      case v => Some(valueTypeAdapter.read(reader))
     }
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {
-      case null ⇒
+      case null =>
         writer.writeNull()
 
-      case Some(value) ⇒
+      case Some(value) =>
         valueTypeAdapter.write(value, writer)
 
-      case None ⇒
+      case None =>
         writer.writeNull()
     }
 
@@ -86,10 +87,10 @@ case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends T
   // infer Some("") as this will always devolve into None.  Have to make a compromose somewhere.
   private def read(reader: Reader, testStringForNull: Boolean): Option[T] = {
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null | TokenType.End ⇒
+      case TokenType.Nothing | TokenType.Null | TokenType.End =>
         reader.read()
         None
-      case TokenType.String if (testStringForNull) ⇒
+      case TokenType.String if (testStringForNull) =>
         val savedPos = reader.position
         if (reader.readString() == "")
           None
@@ -97,9 +98,9 @@ case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends T
           reader.position = savedPos
           read(reader, false)
         }
-      case v ⇒
+      case v =>
         valueTypeAdapter.read(reader) match {
-          case res ⇒ Some(res)
+          case res => Some(res)
         }
     }
   }
@@ -109,13 +110,13 @@ case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends T
 
   override def write(optionalValue: Option[T], writer: Writer): Unit =
     optionalValue match {
-      case null ⇒
+      case null =>
         writer.writeNull()
 
-      case Some(value) ⇒
+      case Some(value) =>
         valueTypeAdapter.write(value, writer)
 
-      case None ⇒
+      case None =>
         writer.writeString("")
     }
 

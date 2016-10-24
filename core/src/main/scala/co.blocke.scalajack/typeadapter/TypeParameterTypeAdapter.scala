@@ -11,6 +11,7 @@ object TypeParameterTypeAdapter extends TypeAdapterFactory {
     } else {
       next.typeAdapterOf[T]
     }
+
 }
 
 case class TypeParameterTypeAdapter[T](anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[T] {
