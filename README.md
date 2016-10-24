@@ -52,16 +52,18 @@ Couldn't be simpler!
 * [Non-Case Classes and Java Class Support](doc/noncase.md)
 * [Any Support](doc/any.md)
 * [Value Class Support](doc/valueClass.md)
-* Parameterized Classes
-* Trait Type Hint Customization
-* Custom Type Adapters (custom read/render)
+* [Parameterized Classes](doc/parameterized.md)
+* [Trait Type Hint Customization](doc/typeHint.md)
+* [Custom Type Adapters (custom read/render)](doc/custom.md)
 * [Try and Capture](doc/tryAndCapture.md)
 * [ParseOrElse](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
 * Non-Canonical JSON
+
+Non-JSON Formats:
 * MongoDB
 * [CSV](doc/csv.md)
-* DynamoDB
+* [DynamoDB](doc/dynamo.md)
 
 ## Benchmarks
 

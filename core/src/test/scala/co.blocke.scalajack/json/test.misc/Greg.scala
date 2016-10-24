@@ -2,41 +2,29 @@ package co.blocke.scalajack
 package json.test.misc
 
 import org.scalatest.{ FunSpec, Matchers }
-import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
-import scala.util._
-import java.util.UUID
-
-case class Amorphous(
-  thing: Any
-)
-case class Small(num: Int)
-case class UUID_VC(underlying: UUID) extends AnyVal
+trait Foo { val a: Int }
+trait Bar { val b: Int; val c: Foo }
+case class One(a: Int) extends Foo
+case class Two(b: Int, c: Foo) extends Bar
 
 class Greg() extends FunSpec with Matchers {
 
-  val sj = ScalaJack()
+  // val sj = ScalaJack()
 
   describe("---------------------------\n:  Try and Capture Tests  :\n---------------------------") {
     it("Map key - Option") {
-      val all = List(
-        Amorphous(true),
-        Amorphous("blather"),
-        Amorphous(1.234),
-        Amorphous(List(1, 2, 3)),
-        Amorphous(Map("a" -> 1, "b" -> 2)),
-        Amorphous(null),
-        Amorphous(Small(99))
-      )
 
-      println(sj.render(all))
-    }
-    it("Tuples") {
-      println("------------------")
-      val x = UUID_VC(UUID.randomUUID)
-      val js = sj.render(x)
-      println(sj.read[UUID_VC](js))
+      val strMatchHintMod = StringMatchHintModifier(Map("Ace" -> typeOf[One], "Big" -> typeOf[Two]))
+      val sj = ScalaJack()
+        .withHintModifiers((typeOf[Foo] -> strMatchHintMod), (typeOf[Bar] -> strMatchHintMod))
+        .withHints((typeOf[Foo] -> "mark"), (typeOf[Bar] -> "size"))
+      val inst: Bar = Two(3, One(2))
+      println(sj.render(inst))
+
+      // val c = Car(4)
+      // println(sj.render[Vehicle[Land.type]](c))
     }
   }
 }
