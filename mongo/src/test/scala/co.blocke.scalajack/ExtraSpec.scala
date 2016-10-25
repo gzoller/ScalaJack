@@ -43,9 +43,9 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   }
 
-  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
+  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
 
-  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
 
   describe("=====================\n| -- Extra Tests -- |\n=====================") {
     describe("Basic Render/Read") {
@@ -107,8 +107,9 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         jsonScalaJack.read[List[UUID]](js) should equal(stuff)
       }
       it("Naked Lists of Joda") {
-        val pattern = "MM-dd-yy"
-        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
+        val pattern = "MM-dd-yyyy"
+//        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
+        val t = LocalDate.parse("07-01-1986", DateTimeFormatter.ofPattern(pattern)).atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
         val stuff = List(t, t)
         val js = jsonScalaJack.render(stuff)
         js should equal("""[520560000000,520560000000]""")
@@ -242,7 +243,8 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val js = """{"a":520560000000,"b":null}"""
         val o = jsonScalaJack.read[Map[String, ZonedDateTime]](js)
         val pattern = "MM-dd-yy"
-        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
+        val t = LocalDate.parse("07-01-86", DateTimeFormatter.ofPattern(pattern)).atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
+//        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
         o should contain allOf (("a" -> t), ("b" -> null))
       }
     }

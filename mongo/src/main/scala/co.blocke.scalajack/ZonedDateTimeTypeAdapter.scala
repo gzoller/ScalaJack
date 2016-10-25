@@ -1,10 +1,10 @@
 package co.blocke.scalajack
 
-import java.time.{ Instant, ZoneId, ZonedDateTime }
+import java.time.{Instant, ZoneId, ZoneOffset, ZonedDateTime}
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 
@@ -20,20 +20,27 @@ object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 
 case class ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter: TypeAdapter[BsonDateTime]) extends TypeAdapter[ZonedDateTime] {
 
-  override def read(reader: Reader): ZonedDateTime = {
-    val bsonDateTime = bsonDateTimeTypeAdapter.read(reader)
-    if (bsonDateTime == null) {
-      null
-    } else {
-      ZonedDateTime.ofInstant(Instant.ofEpochMilli(bsonDateTime.getValue), ZoneId.systemDefault)
+  override def read(reader: Reader): ZonedDateTime =
+    reader.peek match {
+      case TokenType.Number =>
+        val millis = reader.readLong()
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.ofOffset("UTC", ZoneOffset.UTC))
+
+      case _ =>
+        val bsonDateTime = bsonDateTimeTypeAdapter.read(reader)
+        if (bsonDateTime == null) {
+          null
+        } else {
+          ZonedDateTime.ofInstant(Instant.ofEpochMilli(bsonDateTime.getValue), ZoneId.systemDefault)
+        }
     }
-  }
 
   override def write(value: ZonedDateTime, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()
     } else {
-      bsonDateTimeTypeAdapter.write(new BsonDateTime(value.toInstant.toEpochMilli), writer)
+//      bsonDateTimeTypeAdapter.write(new BsonDateTime(value.toInstant.toEpochMilli), writer)
+      writer.writeLong(value.toInstant.toEpochMilli)
     }
 
 }
