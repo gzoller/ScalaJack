@@ -30,7 +30,7 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null =>
+      case TokenType.Null =>
         reader.read()
         None
       case v => Some(valueTypeAdapter.read(reader))
@@ -58,7 +58,7 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 
   override def read(reader: Reader): Option[T] =
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null =>
+      case TokenType.Null =>
         reader.read()
         None
       case v => Some(valueTypeAdapter.read(reader))
@@ -87,7 +87,7 @@ case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends T
   // infer Some("") as this will always devolve into None.  Have to make a compromose somewhere.
   private def read(reader: Reader, testStringForNull: Boolean): Option[T] = {
     reader.peek match {
-      case TokenType.Nothing | TokenType.Null | TokenType.End =>
+      case TokenType.Null | TokenType.End =>
         reader.read()
         None
       case TokenType.String if (testStringForNull) =>
