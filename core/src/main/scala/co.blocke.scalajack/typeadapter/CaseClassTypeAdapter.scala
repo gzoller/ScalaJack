@@ -187,7 +187,7 @@ case class CaseClassTypeAdapter[T](
           while (reader.hasMoreMembers) {
             val memberName = memberNameTypeAdapter.read(reader)
             membersByName.get(memberName) match {
-              case Some(member) => reader.skipValue // do nothing... already built class
+              case Some(member) => reader.skipValue() // do nothing... already built class
               case None =>
                 captured.put(memberName, reader.captureValue())
             }

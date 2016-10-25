@@ -3,8 +3,8 @@ package co.blocke.scalajack.benchmarks
 import co.blocke.scalajack._
 import co.blocke.scalajack.typeadapter._
 
-import scala.language.{existentials, reflectiveCalls}
-import scala.reflect.runtime.universe.{ClassSymbol, TypeTag, typeOf}
+import scala.language.{ existentials, reflectiveCalls }
+import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag, typeOf }
 
 object PersonTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
