@@ -2,14 +2,15 @@ package co.blocke.scalajack
 package test
 
 import java.time.format.DateTimeFormatter
-import java.time.{ LocalDate, LocalTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime }
+import java.time.{LocalDate, LocalTime, OffsetTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.mongo._
+import co.blocke.scalajack.typeadapter.SimpleTypeAdapter
 import org.mongodb.scala.bson._
 import org.scalatest.Matchers._
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
 
 // Just some "bonus" parser read/render tests--not mongo specific.  Could go into core but they evolved here.
 
@@ -17,9 +18,34 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val data = One("Greg", List("a", "b"), List(Two("x", false), Two("y", true)), Two("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
 
-  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+  object CustomVCTypeAdapter extends SimpleTypeAdapter[CustomVC] {
 
-  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
+    /*
+    *   //	def read:PartialFunction[(KindMarker,_), Any] = {
+  //	  case (jk:JsonKind,js:String) => DateTimeFormat.forPattern("MMMM, yyyy").parseDateTime(js)
+  //	  case (mk:MongoKind,bdt:BsonDateTime) => new DateTime(bdt.getValue)
+  //	}
+  //	def render:PartialFunction[(KindMarker,_), Any] = {
+  //	  case (jk:JsonKind,dt:DateTime) => '"'+DateTimeFormat.forPattern("MMMM, yyyy").print(dt)+'"'
+  //	  case (mk:MongoKind,dt:DateTime) => BsonDateTime(dt.toDate)
+  //	}*/
+
+    val formatter = DateTimeFormatter.ofPattern("MMMM, yyyy")
+
+    override def read(reader: Reader): CustomVC =
+      reader.peek match {
+        case TokenType.String =>
+          new CustomVC(YearMonth.parse(reader.readString(), formatter))
+      }
+
+    override def write(value: CustomVC, writer: Writer): Unit =
+      writer.writeString(value.underlying.format(formatter))
+
+  }
+
+  def mongoScalaJack = ScalaJack(MongoFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
+
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(OffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, CustomVCTypeAdapter)
 
   describe("=====================\n| -- Extra Tests -- |\n=====================") {
     describe("Basic Render/Read") {
@@ -276,7 +302,8 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         }
         it("Must read & render custom JSON for value class") {
           val sj = jsonScalaJack
-          val ss = SomethingSpecial("hey", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)))
+//          val ss = SomethingSpecial("hey", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)))
+          val ss = SomethingSpecial("hey", new CustomVC(YearMonth.of(2015, 7)))
           val js = sj.render(ss)
           js should equal("""{"what":"hey","when":"July, 2015"}""")
           (sj.read[SomethingSpecial](js.toString) == ss) should be(true)

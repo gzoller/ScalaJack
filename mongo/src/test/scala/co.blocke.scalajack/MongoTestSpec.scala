@@ -1,14 +1,14 @@
 package co.blocke.scalajack
 package test
 
-import java.time.{ LocalDate, LocalTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime }
+import java.time.{LocalDate, LocalTime, OffsetTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.mongo._
 import org.mongodb.scala.bson._
 import org.scalatest.Matchers._
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
 
 import scala.reflect.runtime.universe.typeOf
 import scala.util._
@@ -177,7 +177,7 @@ class MongoTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[Carry[Wrapper]](db) should equal(w)
         }
         it("Case class having value class parameter - Foo[A](x:A) where A -> value class (WITH value class handler)") {
-          val w = Carry("Mike", Wrap("Sally", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)), "Fine"))
+          val w = Carry("Mike", Wrap("Sally", new CustomVC(YearMonth.of(2015, 7)), "Fine"))
           val js = jsonScalaJack.render(w)
           val db = mongoScalaJack.render(w)
 

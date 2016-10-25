@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package test
 
-import java.time.{ OffsetDateTime, ZonedDateTime }
+import java.time.{OffsetDateTime, YearMonth}
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -220,7 +220,7 @@ object CustomVC {
   //	}
 }
 
-class CustomVC(val underlying: ZonedDateTime) extends AnyVal {
+class CustomVC(val underlying: YearMonth) extends AnyVal {
   override def toString = s"CustomVC($underlying)"
 }
 case class SomethingSpecial(what: String, when: CustomVC)

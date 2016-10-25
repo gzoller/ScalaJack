@@ -47,6 +47,21 @@ class BsonReader(
     values(position).asInt64.longValue
   }
 
+  // This guy has to do type inference, as a Number could be: Byte, Double, Float, Integer, Long, or Short.
+  override def readNumber(forJava: Boolean): Number = {
+    read(expected = TokenType.Number)
+    val value = values(position)
+    if (value.isDouble) {
+      value.asDouble.doubleValue
+    } else if (value.isInt32) {
+      value.asInt32.intValue
+    } else if (value.isInt64) {
+      value.asInt64.longValue
+    } else {
+      throw new IllegalStateException(s"Cannot convert $value to a number")
+    }
+  }
+
   override def tokenText: String = "TOKEN TEXT"
 
   override def showError(): String = "SOMETHING WENT WRONG"
