@@ -40,7 +40,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack, scalajack_dynamodb)//, scalajack_mongo)
+		.aggregate(scalajack, scalajack_dynamodb, scalajack_msgpack)//, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -77,6 +77,14 @@ object Build extends Build {
 			test( scalatest, slf4j_simple )
 		).dependsOn( scalajack )
 
+	lazy val scalajack_msgpack = project.in(file("msgpack"))
+		.settings(basicSettings: _*)
+		.settings(pubSettings: _*)
+		.settings(libraryDependencies ++=
+			compile( msgpack ) ++
+			test( scalatest, slf4j_simple )
+		).dependsOn( scalajack )
+
 
 	lazy val scalajack_benchmarks = project.in(file("benchmarks"))
 		.enablePlugins(JmhPlugin)
@@ -108,6 +116,7 @@ object Dependencies {
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		  % Build.scalaVer
+	val msgpack         = "org.msgpack"             % "msgpack"               % "0.6.12"
 	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.1.0"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			  % "3.0.0"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		  % "1.7.7"
