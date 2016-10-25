@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 
-import scala.annotation.Annotation
+import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
@@ -19,7 +19,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
         val membersOfRealClass = realClassTypeAdapter.members
         val numberOfRealMembers = membersOfRealClass.length
 
-        val (keyMembersOfRealClass, nonKeyMembersOfRealClass) = membersOfRealClass.partition(_.annotation[DBKey].isDefined)
+        val (keyMembersOfRealClass, nonKeyMembersOfRealClass) = membersOfRealClass.partition(_.annotationOf[DBKey].isDefined)
         keyMembersOfRealClass match {
           case Nil =>
             // Easy!
@@ -49,8 +49,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def writeValue(value: Value, writer: Writer): Unit =
                 keyMemberOfRealClass.writeValue(value, writer)
 
-              override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
-                keyMemberOfRealClass.annotation[A]
+              override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                keyMemberOfRealClass.annotationOf[A]
 
             }
 
@@ -76,8 +76,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                 override def writeValue(value: Value, writer: Writer): Unit =
                   memberOfRealClass.writeValue(value, writer)
 
-                override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
-                  memberOfRealClass.annotation[A]
+                override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                  memberOfRealClass.annotationOf[A]
 
               }
 
@@ -175,8 +175,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   override def writeValue(value: Value, writer: Writer): Unit =
                     memberOfRealClass.writeValue(value, writer)
 
-                  override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
-                    memberOfRealClass.annotation[A]
+                  override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                    memberOfRealClass.annotationOf[A]
 
                 }
 
@@ -221,7 +221,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def writeValue(value: Value, writer: Writer): Unit =
                 idTypeAdapter.write(value, writer)
 
-              override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = None
+              override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
 
             }
 
@@ -247,8 +247,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                 override def writeValue(value: Value, writer: Writer): Unit =
                   memberOfRealClass.writeValue(value, writer)
 
-                override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
-                  memberOfRealClass.annotation[A]
+                override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                  memberOfRealClass.annotationOf[A]
 
               }
 

@@ -49,8 +49,8 @@ case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAd
     }
 
   // Must be called by parent of the Option when appropriate to get the null-writing version.
-  def nullVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterNull(valueTypeAdapter)
-  def emptyVersion(): TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
+  def noneAsNull: TypeAdapter[Option[T]] = OptionTypeAdapterNull(valueTypeAdapter)
+  def noneAsEmptyString: TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
 
 }
 

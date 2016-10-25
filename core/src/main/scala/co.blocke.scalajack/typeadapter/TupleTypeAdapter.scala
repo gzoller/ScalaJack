@@ -43,7 +43,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         val fields = for (i ← 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
           val fieldTypeAdapter = context.typeAdapter(fieldType) match {
-            case vta: OptionTypeAdapter[_] ⇒ vta.nullVersion
+            case vta: OptionTypeAdapter[_] ⇒ vta.noneAsNull
             case vta                       ⇒ vta
           }
           val valueAccessorMethodSymbol = tt.tpe.member(TermName(s"_${i + 1}")).asMethod

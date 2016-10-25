@@ -4,6 +4,22 @@ import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag }
 
 object TypeAdapterFactory {
 
+  def apply(factories: List[TypeAdapterFactory]): TypeAdapterFactory =
+    factories match {
+      case Nil =>
+        new TypeAdapterFactory {
+          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+            next.typeAdapterOf[T]
+        }
+
+      case head :: tail =>
+        new TypeAdapterFactory {
+          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+            head.typeAdapterOf[T](next = TypeAdapterFactory(tail))
+          }
+        }
+    }
+
   def apply[V](typeAdapter: TypeAdapter[V])(implicit expectedTypeTag: TypeTag[V]): TypeAdapterFactory =
     new TypeAdapterFactory {
       override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, actualTypeTag: TypeTag[T]): TypeAdapter[T] =

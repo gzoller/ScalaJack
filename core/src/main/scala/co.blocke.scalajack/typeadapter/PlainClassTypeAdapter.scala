@@ -1,19 +1,17 @@
 package co.blocke.scalajack
 package typeadapter
 
+import java.beans.Introspector
 import java.lang.reflect.Method
 
-import CaseClassTypeAdapter.Member
-import PlainClassTypeAdapter.PlainMember
+import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.Member
+import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainMember
 
-import scala.util.{ Failure, Success, Try }
 import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
-import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe._
-import java.beans.Introspector
-
-import scala.annotation.Annotation
+import scala.util.{ Failure, Success, Try }
 
 // WARNING: This adapter should be last in the list!  This classSymbol.isClass will match pretty much
 // anything all the other adapters before it failed to match, so nothing after this adapter will be
@@ -74,7 +72,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     // otherwise fail the default lookup.
     override def defaultValue: Option[T] = if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None
 
-    override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] = None
+    override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
 
   }
 

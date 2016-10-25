@@ -3,9 +3,8 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import scala.annotation.Annotation
 import scala.language.{ existentials, reflectiveCalls }
-import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, TypeTag, typeOf, Annotation => UAnnotation }
 
 trait ClassMember[Owner, T] extends ClassLikeTypeAdapter.Member[Owner] {
@@ -59,9 +58,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def writeValue(value: Value, writer: Writer): Unit =
       valueTypeAdapter.write(value, writer)
 
-    override def annotation[A <: Annotation](implicit tt: TypeTag[A]): Option[A] =
-      //      annotations.find(_.tree.productElement(0))
-      ???
+    override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+      annotations.find(_.tree.tpe =:= tt.tpe)
 
   }
 

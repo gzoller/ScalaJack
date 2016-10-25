@@ -90,9 +90,11 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
                   phase = Initializing
 
                   val typeAdapterAttempt = Try {
+                    implicit val context: Context = Context.this
+                    implicit val tt: TypeTag[Any] = TypeTags.of(currentMirror, tpe)
+
                     val head :: tail = factories
-                    val chain = TypeAdapterFactoryChain(tail)
-                    head.typeAdapterOf(chain)(Context.this, TypeTags.of(currentMirror, tpe))
+                    head.typeAdapterOf(next = TypeAdapterFactory(tail))
                   }
 
                   phase = Initialized(typeAdapterAttempt)

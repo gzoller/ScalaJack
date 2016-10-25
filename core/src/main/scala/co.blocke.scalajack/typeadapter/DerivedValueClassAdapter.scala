@@ -10,15 +10,17 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isDerivedValueClass) {
+      val tpe = tt.tpe
+
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
       val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
-      val parameter = constructorSymbol.paramLists.head.head
+      val (parameter :: Nil) :: Nil = constructorSymbol.paramLists
       val parameterName = parameter.name.encodedName.toString
-      val accessorMethodSymbol = tt.tpe.member(TermName(parameterName)).asMethod
+      val accessorMethodSymbol = tpe.member(TermName(parameterName)).asMethod
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-      val valueType = parameter.infoIn(tt.tpe).substituteTypes(tt.tpe.typeConstructor.typeParams, tt.tpe.typeArgs)
+      val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
       val valueTypeAdapter = context.typeAdapter(valueType)
 
       DerivedValueClassAdapter(constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
@@ -42,7 +44,7 @@ case class DerivedValueClassAdapter[DerivedValueClass, Value](
 
   override def write(value: DerivedValueClass, writer: Writer): Unit = {
     val wrappedValue = accessorMethod.invoke(value).asInstanceOf[Value]
-    valueTypeAdapter.write(wrappedValue.asInstanceOf[Value], writer)
+    valueTypeAdapter.write(wrappedValue, writer)
   }
 
 }

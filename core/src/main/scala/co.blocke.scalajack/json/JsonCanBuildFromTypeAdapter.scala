@@ -72,7 +72,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
               stringTypeAdapter
             } else {
               val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
-                case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+                case kta: OptionTypeAdapter[_] ⇒ kta.noneAsEmptyString // output "" for None for map keys
                 case kta                       ⇒ kta
               }
               ComplexMapKeyTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
