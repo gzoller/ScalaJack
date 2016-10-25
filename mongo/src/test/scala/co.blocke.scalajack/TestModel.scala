@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package test
 
-import java.time.{OffsetDateTime, ZonedDateTime}
-
-import co.blocke.scalajack.typeadapter.StringTypeAdapter
+import java.time.{ OffsetDateTime, ZonedDateTime }
 
 object Num extends Enumeration {
   val A, B, C = Value

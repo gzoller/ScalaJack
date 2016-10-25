@@ -54,32 +54,31 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             }
 
-            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
-              new MemberOfSyntheticClass {
+            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield new MemberOfSyntheticClass {
 
-                override type Value = memberOfRealClass.Value
+              override type Value = memberOfRealClass.Value
 
-                override def index = 1 + i
+              override def index = 1 + i
 
-                override def name =
-                  memberOfRealClass.name
+              override def name =
+                memberOfRealClass.name
 
-                override def defaultValue =
-                  memberOfRealClass.defaultValue
+              override def defaultValue =
+                memberOfRealClass.defaultValue
 
-                override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                  instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
+                instanceOfSyntheticClass(index).asInstanceOf[Value]
 
-                override def readValue(reader: Reader): Value =
-                  memberOfRealClass.readValue(reader)
+              override def readValue(reader: Reader): Value =
+                memberOfRealClass.readValue(reader)
 
-                override def writeValue(value: Value, writer: Writer): Unit =
-                  memberOfRealClass.writeValue(value, writer)
+              override def writeValue(value: Value, writer: Writer): Unit =
+                memberOfRealClass.writeValue(value, writer)
 
-                override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
-                  memberOfRealClass.annotationOf[A]
+              override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                memberOfRealClass.annotationOf[A]
 
-              }
+            }
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
             val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap
@@ -155,30 +154,29 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
             type MemberOfSyntheticClass = ClassLikeTypeAdapter.Member[SyntheticClass]
 
             val idTypeAdapter = {
-              val membersOfSyntheticId: List[MemberOfSyntheticId] = for ((memberOfRealClass, i) <- allKeyMembers.zipWithIndex) yield
-                new MemberOfSyntheticId {
+              val membersOfSyntheticId: List[MemberOfSyntheticId] = for ((memberOfRealClass, i) <- allKeyMembers.zipWithIndex) yield new MemberOfSyntheticId {
 
-                  override type Value = memberOfRealClass.Value
+                override type Value = memberOfRealClass.Value
 
-                  override def index = i
+                override def index = i
 
-                  override def name = memberOfRealClass.name
+                override def name = memberOfRealClass.name
 
-                  override def defaultValue = memberOfRealClass.defaultValue
+                override def defaultValue = memberOfRealClass.defaultValue
 
-                  override def valueIn(syntheticId: SyntheticId): Value =
-                    syntheticId(index).asInstanceOf[Value]
+                override def valueIn(syntheticId: SyntheticId): Value =
+                  syntheticId(index).asInstanceOf[Value]
 
-                  override def readValue(reader: Reader): Value =
-                    memberOfRealClass.readValue(reader)
+                override def readValue(reader: Reader): Value =
+                  memberOfRealClass.readValue(reader)
 
-                  override def writeValue(value: Value, writer: Writer): Unit =
-                    memberOfRealClass.writeValue(value, writer)
+                override def writeValue(value: Value, writer: Writer): Unit =
+                  memberOfRealClass.writeValue(value, writer)
 
-                  override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
-                    memberOfRealClass.annotationOf[A]
+                override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                  memberOfRealClass.annotationOf[A]
 
-                }
+              }
 
               val membersOfSyntheticIdByName = membersOfSyntheticId.map(member => member.name -> member).toMap
 
@@ -225,32 +223,31 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             }
 
-            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield
-              new MemberOfSyntheticClass {
+            val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield new MemberOfSyntheticClass {
 
-                override type Value = memberOfRealClass.Value
+              override type Value = memberOfRealClass.Value
 
-                override def index = 1 + i
+              override def index = 1 + i
 
-                override def name =
-                  memberOfRealClass.name
+              override def name =
+                memberOfRealClass.name
 
-                override def defaultValue =
-                  memberOfRealClass.defaultValue
+              override def defaultValue =
+                memberOfRealClass.defaultValue
 
-                override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                  instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
+                instanceOfSyntheticClass(index).asInstanceOf[Value]
 
-                override def readValue(reader: Reader): Value =
-                  memberOfRealClass.readValue(reader)
+              override def readValue(reader: Reader): Value =
+                memberOfRealClass.readValue(reader)
 
-                override def writeValue(value: Value, writer: Writer): Unit =
-                  memberOfRealClass.writeValue(value, writer)
+              override def writeValue(value: Value, writer: Writer): Unit =
+                memberOfRealClass.writeValue(value, writer)
 
-                override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
-                  memberOfRealClass.annotationOf[A]
+              override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
+                memberOfRealClass.annotationOf[A]
 
-              }
+            }
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
             val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap

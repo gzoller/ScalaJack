@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.runtime.{ currentMirror, universe }
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, TypeTag, typeOf, Annotation => UAnnotation }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, TypeTag, typeOf }
 
 trait ClassMember[Owner, T] extends ClassLikeTypeAdapter.Member[Owner] {
   def dbKeyIndex: Option[Int]
@@ -24,7 +24,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       defaultValueMirror:                 Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
-      annotations:                        List[UAnnotation]
+      annotations:                        List[universe.Annotation]
   ) extends ClassMember[Owner, T] {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]

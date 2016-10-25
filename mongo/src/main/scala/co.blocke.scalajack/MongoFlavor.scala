@@ -3,15 +3,16 @@ package mongo
 
 import org.bson.BsonValue
 
-import scala.reflect.runtime.universe.{TypeTag, Type}
+import scala.reflect.runtime.universe.{ TypeTag, Type }
 
 case class MongoFlavor(
-                        customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-                        hintMap:        Map[Type, String]        = Map.empty[Type, String],
-                        hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
-                        parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-                        defaultHint:    String                   = "_hint",
-                        isCanonical:    Boolean                  = true) extends ScalaJackLike[BsonValue] with JackFlavor[BsonValue] {
+    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    hintMap:        Map[Type, String]        = Map.empty[Type, String],
+    hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
+    parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
+    defaultHint:    String                   = "_hint",
+    isCanonical:    Boolean                  = true
+) extends ScalaJackLike[BsonValue] with JackFlavor[BsonValue] {
 
   val bsonParser = new BsonParser
 
@@ -21,8 +22,6 @@ case class MongoFlavor(
   def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
-
-//  withAdapters(OffsetDateTimeTypeAdapter, ZonedDateTimeTypeAdapter, BsonDateTimeTypeAdapter)
 
   override protected def bakeContext(): Context = {
     val c = super.bakeContext().withFactory(OffsetDateTimeTypeAdapter).withFactory(ZonedDateTimeTypeAdapter).withFactory(BsonDateTimeTypeAdapter)

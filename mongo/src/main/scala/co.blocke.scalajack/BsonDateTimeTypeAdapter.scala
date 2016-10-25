@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 case class DateContainer($date: Long)
 

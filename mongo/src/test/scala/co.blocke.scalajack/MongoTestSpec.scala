@@ -1,14 +1,14 @@
 package co.blocke.scalajack
 package test
 
-import java.time.{LocalDate, LocalTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{ LocalDate, LocalTime, OffsetTime, ZoneId, ZoneOffset, ZonedDateTime }
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.mongo._
 import org.mongodb.scala.bson._
 import org.scalatest.Matchers._
-import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
+import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
 import scala.reflect.runtime.universe.typeOf
 import scala.util._

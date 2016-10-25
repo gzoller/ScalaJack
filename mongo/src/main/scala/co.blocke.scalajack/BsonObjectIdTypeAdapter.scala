@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 import org.bson.BsonObjectId
 
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 case class BsonObjectIdContainer($oid: String)
 

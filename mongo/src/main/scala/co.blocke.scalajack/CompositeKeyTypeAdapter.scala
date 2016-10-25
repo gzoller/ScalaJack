@@ -3,9 +3,9 @@ package co.blocke.scalajack
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 
 class CompositeKeyTypeAdapter(
-                               memberNameTypeAdapter: TypeAdapter[MemberName],
-                               override val members: List[ClassLikeTypeAdapter.Member[Array[Any]]]
-                             ) extends ClassLikeTypeAdapter[Array[Any]] {
+    memberNameTypeAdapter: TypeAdapter[MemberName],
+    override val members:  List[ClassLikeTypeAdapter.Member[Array[Any]]]
+) extends ClassLikeTypeAdapter[Array[Any]] {
 
   val membersByName = members.map(member => member.name -> member).toMap
 

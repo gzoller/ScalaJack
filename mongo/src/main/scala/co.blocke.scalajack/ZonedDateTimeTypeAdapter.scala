@@ -1,10 +1,10 @@
 package co.blocke.scalajack
 
-import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.{ Instant, ZoneId, ZonedDateTime }
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 

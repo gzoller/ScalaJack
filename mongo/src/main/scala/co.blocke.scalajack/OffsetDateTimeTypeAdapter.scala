@@ -1,10 +1,10 @@
 package co.blocke.scalajack
 
-import java.time.{Instant, OffsetDateTime, ZoneOffset}
+import java.time.{ Instant, OffsetDateTime, ZoneOffset }
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object OffsetDateTimeTypeAdapter extends TypeAdapterFactory {
 
