@@ -124,7 +124,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           })
         } match {
           case Success(m) ⇒ m
-          case Failure(x) ⇒ List.empty[ClassMember[T, Any]]
+          case Failure(x) ⇒
+            List.empty[ClassMember[T, Any]]
         }
 
       def reflectScalaGetterSetterFields: List[ClassMember[T, Any]] = {

@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package test
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalTime, OffsetTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{ LocalDate, LocalTime, OffsetTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime }
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
@@ -10,7 +10,7 @@ import co.blocke.scalajack.mongo._
 import co.blocke.scalajack.typeadapter.SimpleTypeAdapter
 import org.mongodb.scala.bson._
 import org.scalatest.Matchers._
-import org.scalatest.{BeforeAndAfterAll, FunSpec, GivenWhenThen}
+import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
 // Just some "bonus" parser read/render tests--not mongo specific.  Could go into core but they evolved here.
 
@@ -108,7 +108,7 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("Naked Lists of Joda") {
         val pattern = "MM-dd-yyyy"
-//        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
+        //        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
         val t = LocalDate.parse("07-01-1986", DateTimeFormatter.ofPattern(pattern)).atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
         val stuff = List(t, t)
         val js = jsonScalaJack.render(stuff)
@@ -242,9 +242,9 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("Handles null values - DateTime") {
         val js = """{"a":520560000000,"b":null}"""
         val o = jsonScalaJack.read[Map[String, ZonedDateTime]](js)
-        val pattern = "MM-dd-yy"
-        val t = LocalDate.parse("07-01-86", DateTimeFormatter.ofPattern(pattern)).atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
-//        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
+        val pattern = "MM-dd-yyyy"
+        val t = LocalDate.parse("07-01-1986", DateTimeFormatter.ofPattern(pattern)).atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
+        //        val t = ZonedDateTime.parse("07-01-86", DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault))
         o should contain allOf (("a" -> t), ("b" -> null))
       }
     }
@@ -304,7 +304,7 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         }
         it("Must read & render custom JSON for value class") {
           val sj = jsonScalaJack
-//          val ss = SomethingSpecial("hey", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)))
+          //          val ss = SomethingSpecial("hey", new CustomVC(ZonedDateTime.of(2015, 7, 1, 0, 0, 0, 0, ZoneId.systemDefault)))
           val ss = SomethingSpecial("hey", new CustomVC(YearMonth.of(2015, 7)))
           val js = sj.render(ss)
           js should equal("""{"what":"hey","when":"July, 2015"}""")

@@ -1,10 +1,10 @@
 package co.blocke.scalajack
 
-import java.time.{Instant, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{ Instant, ZoneId, ZoneOffset, ZonedDateTime }
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object ZonedDateTimeTypeAdapter extends TypeAdapterFactory {
 
@@ -39,7 +39,7 @@ case class ZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter: TypeAdapter[BsonDat
     if (value == null) {
       writer.writeNull()
     } else {
-//      bsonDateTimeTypeAdapter.write(new BsonDateTime(value.toInstant.toEpochMilli), writer)
+      //      bsonDateTimeTypeAdapter.write(new BsonDateTime(value.toInstant.toEpochMilli), writer)
       writer.writeLong(value.toInstant.toEpochMilli)
     }
 

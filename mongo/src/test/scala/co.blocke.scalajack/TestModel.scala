@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package test
 
-import java.time.{OffsetDateTime, YearMonth}
+import java.time.{ OffsetDateTime, YearMonth }
 
 object Num extends Enumeration {
   val A, B, C = Value
