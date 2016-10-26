@@ -70,7 +70,7 @@ class ExtraSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val t = LocalDate.parse("1986-07-01").atTime(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))
         val thing = JodaThing("Foo", t, List(t, t), Some(t))
         val js = jsonScalaJack.render(thing)
-        js should equal("""{"name":"Foo","dt":520560000000,"many":[520560000000,520560000000],"maybe":520560000000}""")
+        js should equal("""{"name":"Foo","dt":{"$date":520560000000},"many":[{"$date":520560000000},{"$date":520560000000}],"maybe":{"$date":520560000000}}""")
         val b = jsonScalaJack.read[JodaThing](js)
         b should equal(thing)
       }
