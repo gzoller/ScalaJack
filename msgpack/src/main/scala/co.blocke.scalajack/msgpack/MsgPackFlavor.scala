@@ -27,11 +27,11 @@ case class MsgPackFlavor(
     val ctx = bakeContext()
     ctx.copy(factories = customAdapters ::: DerivedValueClassAdapter :: MsgPackCaseClassTypeAdapter :: MsgPackCanBuildFromTypeAdapter :: MsgPackPolymorphicTypeAdapterFactory(defaultHint) :: ctx.factories)
   }
-  // factories = customAdapters ::: polymorphicTypeAdapterFactories ::: ctx.factories ::: List(MsgPackPolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter)
 
   def read[T](bytes: Array[Byte])(implicit valueTypeTag: TypeTag[T]): T = {
-    null.asInstanceOf[T]
-    // sj.read[T](item.toJSON())
+    val tokenizer = new MsgPackTokenizer()
+    val reader = tokenizer.tokenize(bytes)
+    context.typeAdapterOf[T].read(reader)
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): Array[Byte] = {

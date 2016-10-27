@@ -167,7 +167,6 @@ case class MsgPackCaseClassTypeAdapter[T >: Null](
       for (member ← members) {
         val memberValue = member.valueIn(value)
         if (memberValue != None) {
-          println("Member write: " + member.name)
           memberNameTypeAdapter.write(member.name, writer)
           member.writeValue(memberValue, writer)
         }

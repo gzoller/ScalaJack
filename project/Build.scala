@@ -99,7 +99,7 @@ object Build extends Build {
 //					"net.liftweb" %% "lift-json" % "2.6.2,",
 					"io.spray" %% "spray-json" % "1.3.2"
 				)
-		).dependsOn( scalajack )
+		).dependsOn( scalajack, scalajack_msgpack )
 }
 
 object Dependencies {

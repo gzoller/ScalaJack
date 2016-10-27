@@ -2,6 +2,7 @@ package co.blocke.scalajack.benchmarks
 
 import co.blocke.scalajack.{ ScalaJack, HintModifier }
 import co.blocke.scalajack.json.Tokenizer
+import co.blocke.scalajack.msgpack.MsgPackFlavor
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
 import scala.reflect.runtime.universe.{ Type, typeOf }
 
@@ -80,6 +81,10 @@ class BaseBenchmarksState {
     .withHints((typeOf[Human] -> "gender"))
     .withHintModifiers((typeOf[Human] -> humanHintMod))
 
+  val scalaJackMsgPack = ScalaJack(MsgPackFlavor())
+    .withHints((typeOf[Human] -> "gender"))
+    .withHintModifiers((typeOf[Human] -> humanHintMod))
+
   implicit val personFormat = {
     import spray.json._
     import DefaultJsonProtocol._
@@ -101,6 +106,8 @@ class BaseBenchmarksState {
   val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
 
   val listOfPersons = scalaJack.read[List[Person]](jsonString)
+
+  val inputBytes = scalaJackMsgPack.render(listOfPersons)
 }
 
 @State(Scope.Thread)
@@ -189,6 +196,11 @@ class BaseBenchmarks {
   def readScalaJack(state: BaseBenchmarksState): List[Person] = {
     state.scalaJack.read[List[Person]](state.jsonString)
     // state.scalaJack.read[List[Person]](state.jsonString)
+  }
+
+  @Benchmark
+  def readScalaJackMsgPack(state: BaseBenchmarksState): List[Person] = {
+    state.scalaJackMsgPack.read[List[Person]](state.inputBytes)
   }
 
   //  @Benchmark

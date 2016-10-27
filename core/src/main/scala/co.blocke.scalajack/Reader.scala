@@ -9,8 +9,6 @@ trait Reader {
   var position: Int
   private var savedPosition: Int = 0
 
-  def source: Array[Char]
-
   def tokenOffset: Int = tokenOffsetAt(position)
 
   def tokenOffsetAt(position: Int): Int
