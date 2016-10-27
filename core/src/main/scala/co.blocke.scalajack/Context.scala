@@ -6,6 +6,7 @@ import typeadapter.javaprimitives._
 
 import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
 
 import java.util.concurrent.ConcurrentHashMap
@@ -73,42 +74,40 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
 
   class TypeEntry(tpe: Type) {
 
-    object FactoryExtractor {
-      def unapply(factory: TypeAdapterFactory): Option[TypeAdapter[_]] = factory.typeAdapter(tpe, Context.this)
-    }
-
     @volatile
     private var phase: Phase = Uninitialized
 
     def typeAdapter: TypeAdapter[_] = {
       val attempt =
         phase match {
-          case Uninitialized | Initializing ⇒
+          case Initialized(a) =>
+            a
+
+          case Uninitialized | Initializing =>
             synchronized {
               phase match {
-                case Uninitialized ⇒
+                case Uninitialized =>
                   phase = Initializing
 
                   val typeAdapterAttempt = Try {
-                    factories.collectFirst {
-                      case FactoryExtractor(ta) => ta
-                    }.getOrElse(throw new IllegalArgumentException(s"Cannot find a type adapter for $tpe"))
+                    implicit val context: Context = Context.this
+                    implicit val tt: TypeTag[Any] = TypeTags.of(currentMirror, tpe)
+
+                    val head :: tail = factories
+                    head.typeAdapterOf(next = TypeAdapterFactory(tail))
                   }
 
                   phase = Initialized(typeAdapterAttempt)
 
                   typeAdapterAttempt
 
-                case Initializing ⇒
+                case Initializing =>
                   Success(LazyTypeAdapter(Context.this, tpe))
 
-                case Initialized(a) ⇒
+                case Initialized(a) =>
                   a
               }
             }
-
-          case Initialized(a) ⇒
-            a
         }
 
       attempt.get

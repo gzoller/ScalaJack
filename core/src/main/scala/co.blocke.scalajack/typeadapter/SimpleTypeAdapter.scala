@@ -10,28 +10,28 @@ import scala.reflect.runtime.universe.{ Type, TypeTag }
  */
 object SimpleTypeAdapter {
 
-  abstract class ForTypeSymbolOf[T](implicit valueTypeTag: TypeTag[T]) extends TypeAdapterFactory with TypeAdapter[T] {
+  abstract class ForTypeSymbolOf[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
-    override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-      if (tpe.typeSymbol == valueTypeTag.tpe.typeSymbol) {
-        Some(this)
+    override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+      if (tt.tpe.typeSymbol == valueTypeTag.tpe.typeSymbol) {
+        this.asInstanceOf[TypeAdapter[T]]
       } else {
-        None
+        next.typeAdapterOf[T]
       }
 
   }
 
 }
 
-abstract class SimpleTypeAdapter[T](implicit valueTypeTag: TypeTag[T]) extends TypeAdapterFactory with TypeAdapter[T] {
+abstract class SimpleTypeAdapter[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
   val valueType = valueTypeTag.tpe
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-    if (tpe =:= valueType) {
-      Some(this)
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= valueType) {
+      this.asInstanceOf[TypeAdapter[T]]
     } else {
-      None
+      next.typeAdapterOf[T]
     }
 
 }

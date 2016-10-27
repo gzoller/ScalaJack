@@ -5,20 +5,19 @@ package json
 // This is a JSON requirement and not something other formats need to worry about, so this specialization
 // is located here.
 
+import co.blocke.scalajack.typeadapter.{ CanBuildFromTypeAdapter, CanBuildMapTypeAdapter, OptionTypeAdapter }
+
 import scala.collection.{ GenMapLike, GenTraversableOnce }
-import scala.reflect.runtime.universe.{ Symbol, Type, typeOf }
-import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-
-import typeadapter.{ CanBuildFromTypeAdapter, CanBuildMapTypeAdapter, OptionTypeAdapter }
+import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
 
 object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
-  override def typeAdapter(tpe: Type, context: Context): Option[TypeAdapter[_]] =
-    if (tpe <:< typeOf[GenTraversableOnce[_]]) {
-      val requiredClassSymbol = tpe.typeSymbol.asClass
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
+      val requiredClassSymbol = tt.tpe.typeSymbol.asClass
 
       val companionSymbol = requiredClassSymbol.companion.asModule
       val companionType = companionSymbol.info
@@ -45,7 +44,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
           // optionalTypeArg == Some(String)
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = toType,
-            haystackAfterSubstitution  = tpe.baseType(toType.typeSymbol),
+            haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
             needleBeforeSubstitution   = typeParam.asType.toType
           )
           optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
@@ -63,7 +62,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
         val companionInstance = currentMirror.reflectModule(companionSymbol).instance
         val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
 
-        if (tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+        if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
 
           val stringTypeAdapter = context.typeAdapterOf[String]
@@ -73,7 +72,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
               stringTypeAdapter
             } else {
               val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
-                case kta: OptionTypeAdapter[_] ⇒ kta.emptyVersion // output "" for None for map keys
+                case kta: OptionTypeAdapter[_] ⇒ kta.noneAsEmptyString // output "" for None for map keys
                 case kta                       ⇒ kta
               }
               ComplexMapKeyTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
@@ -86,9 +85,9 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
         }
       }
 
-      matchingTypeAdapters.headOption
+      matchingTypeAdapters.headOption.map(_.asInstanceOf[TypeAdapter[T]]).getOrElse(next.typeAdapterOf[T])
     } else {
-      None
+      next.typeAdapterOf[T]
     }
 
 }

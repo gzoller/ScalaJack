@@ -1,23 +1,19 @@
 package co.blocke.scalajack.benchmarks
 
-import java.lang.reflect.Method
-
 import co.blocke.scalajack._
-import typeadapter._
+import co.blocke.scalajack.typeadapter._
 
-import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, TermName, Type, typeOf }
+import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag, typeOf }
 
 object PersonTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
-    if (tpe == typeOf[Person]) {
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe == typeOf[Person]) {
       println("YES!  PersonTypeAdapter")
-      Some(PersonTypeAdapter(context.typeAdapterOf[String], context.typeAdapterOf[Long]))
+      PersonTypeAdapter(context.typeAdapterOf[String], context.typeAdapterOf[Long]).asInstanceOf[TypeAdapter[T]]
     } else {
-      None
+      next.typeAdapterOf[T]
     }
 
 }

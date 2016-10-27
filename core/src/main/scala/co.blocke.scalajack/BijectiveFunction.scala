@@ -2,14 +2,14 @@ package co.blocke.scalajack
 
 object BijectiveFunction {
 
-  def apply[A, B](apply: A ⇒ B, unapply: B ⇒ A): BijectiveFunction[A, B] =
+  def apply[A, B](apply: A => B, unapply: B => A): BijectiveFunction[A, B] =
     BijectiveFunctionPair(apply, unapply)
 
   object Implicits {
 
-    implicit final class FunctionReverse[A, B](private val apply: A ⇒ B) extends AnyVal {
-      @inline def reversedBy(unapply: B ⇒ A): BijectiveFunction[A, B] = BijectiveFunction(apply, unapply)
-      def ⇄(unapply: B ⇒ A): BijectiveFunction[A, B] = reversedBy(unapply)
+    implicit final class FunctionReverse[A, B](private val apply: A => B) extends AnyVal {
+      @inline def <=>(unapply: B => A): BijectiveFunction[A, B] = BijectiveFunction(apply, unapply)
+      def ⇄(unapply: B => A): BijectiveFunction[A, B] = <=>(unapply)
     }
 
   }
@@ -37,8 +37,8 @@ trait BijectiveFunction[A, B] extends Function[A, B] {
 }
 
 case class BijectiveFunctionPair[A, B](
-    applyFn:   A ⇒ B,
-    unapplyFn: B ⇒ A
+    applyFn:   A => B,
+    unapplyFn: B => A
 ) extends BijectiveFunction[A, B] {
 
   override def apply(a: A): B = applyFn(a)
