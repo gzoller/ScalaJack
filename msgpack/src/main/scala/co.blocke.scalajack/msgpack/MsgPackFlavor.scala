@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package msgpack
 
-import typeadapter.DerivedValueClassAdapter
+import co.blocke.scalajack.msgpack.typeadapter._
+import co.blocke.scalajack.typeadapter._
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import org.msgpack.MessagePack
 
@@ -25,7 +26,9 @@ case class MsgPackFlavor(
 
   override val context: Context = {
     val ctx = bakeContext()
-    ctx.copy(factories = customAdapters ::: DerivedValueClassAdapter :: MsgPackBigDecimalTypeAdapter :: MsgPackBigIntTypeAdapter :: MsgPackCaseClassTypeAdapter :: MsgPackCanBuildFromTypeAdapter :: MsgPackPolymorphicTypeAdapterFactory(defaultHint) :: ctx.factories)
+    val filteredFactories = ctx.factories.diff(DerivedValueClassAdapter :: BigDecimalTypeAdapter :: BigIntTypeAdapter :: CaseClassTypeAdapter :: CanBuildFromTypeAdapter :: PlainClassTypeAdapter :: Nil).toList
+    val newFactories = (DerivedValueClassAdapter :: MsgPackBigDecimalTypeAdapter :: MsgPackBigIntTypeAdapter :: MsgPackCaseClassTypeAdapter :: MsgPackCanBuildFromTypeAdapter :: MsgPackPolymorphicTypeAdapterFactory(defaultHint) :: Nil).toList
+    ctx.copy(factories = customAdapters ::: newFactories ::: filteredFactories ::: List(MsgPackPlainClassTypeAdapter))
   }
 
   def read[T](bytes: Array[Byte])(implicit valueTypeTag: TypeTag[T]): T = {

@@ -1,8 +1,9 @@
 package co.blocke.scalajack
 package msgpack
+package typeadapter
 
 import co.blocke.scalajack.json.Tokenizer
-import typeadapter.OptionTypeAdapter
+import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
 import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.collection.generic.CanBuildFrom

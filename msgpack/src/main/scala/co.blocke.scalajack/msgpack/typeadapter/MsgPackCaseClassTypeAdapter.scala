@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 package msgpack
+package typeadapter
 
 import java.lang.reflect.Method
 
-import typeadapter.CaseClassTypeAdapter.Member
-import typeadapter.ClassMember
+import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.Member
+import co.blocke.scalajack.typeadapter.ClassMember
 
 import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }

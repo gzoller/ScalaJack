@@ -4,6 +4,7 @@ package msgpack
 import TokenType._
 import scala.math.BigInt
 import java.nio.ByteBuffer
+import java.lang.Number
 
 class MsgPackReader(
     source:         Array[Byte],
@@ -64,34 +65,10 @@ class MsgPackReader(
 
   override def readNumber(forJava: Boolean = false): java.lang.Number = {
     read(expected = TokenType.Number)
-    readRawNumber().asInstanceOf[java.lang.Number]
-    // read(expected = TokenType.Number)
-    // tokenTypes(position) match {
-    //   case b if ((b >> 7) == 0) => 2 // 7-bit unsigned
-    // }
-
-    // val tokenText = this.tokenText
-    // tokenText match {
-    //   case floatVal if (tokenText.contains('.')) =>
-    //     BigDecimal(tokenText) match {
-    //       case f if (f.isDecimalFloat)  => f.toFloat
-    //       case f if (f.isDecimalDouble) => f.toDouble
-    //       case f                        => if (forJava) f.bigDecimal else f
-    //     }
-    //   case intVal =>
-    //     Try(tokenText.toLong) match {
-    //       case Success(v) => v match {
-    //         case v if (v.isValidByte)  => v.toByte
-    //         case v if (v.isValidShort) => v.toShort
-    //         case v if (v.isValidInt)   => v.toInt
-    //         case v                     => v
-    //       }
-    //       case _ => if (forJava) new java.math.BigInteger(tokenText) else BigInt(tokenText)
-    //     }
-    // }
+    readRawNumber()
   }
 
-  private def readRawNumber() =
+  private def readRawNumber(): Number =
     source(tokenOffsets(position)) match {
       // --- Unsigned Integers
       case b if ((b >> 7) == 0) => // unsigned 5-bit
@@ -112,7 +89,10 @@ class MsgPackReader(
       case b if (b == 0xd0.toByte) => // signed 8-bit
         source(tokenOffsets(position) + 1)
       case b if (b == 0xd1.toByte) => // signed 16-bit
-        ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt
+        if (source(tokenOffsets(position) + 1) >> 7 != 0)
+          ByteBuffer.wrap(Array(0xFF.toByte, 0xFF.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt
+        else
+          ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt
       case b if (b == 0xd2.toByte) => // signed 32-bit
         ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 5)).getInt
       case b if (b == 0xd3.toByte) => // signed 64-bit
@@ -133,59 +113,32 @@ class MsgPackReader(
 
   override def readByte(): Byte = {
     read(expected = TokenType.Number)
-    val raw = readRawNumber()
-    readRawNumber() match {
-      case n: Double => n.toByte
-      case n: Int    => n.toByte
-      case n: Long   => n.toByte
-      case n: BigInt => n.toByte
-    }
+    readRawNumber().byteValue
   }
 
   override def readShort(): Short = {
     read(expected = TokenType.Number)
-    readRawNumber() match {
-      case n: Double => n.toShort
-      case n: Int    => n.toShort
-      case n: Long   => n.toShort
-      case n: BigInt => n.toShort
-    }
+    readRawNumber.intValue.toShort
   }
 
   override def readInt(): Int = {
     read(expected = TokenType.Number)
-    readRawNumber() match {
-      case n: Double => n.toInt
-      case n: Int    => n.toInt
-      case n: Long   => n.toInt
-      case n: BigInt => n.toInt
-    }
+    readRawNumber.intValue
   }
 
   override def readLong(): Long = {
     read(expected = TokenType.Number)
-    readRawNumber() match {
-      case n: Double => n.toLong
-      case n: Int    => n.toLong
-      case n: Long   => n.toLong
-      case n: BigInt => n.toLong
-    }
+    readRawNumber.longValue
   }
 
   override def readFloat(): Float = {
     read(expected = TokenType.Number)
-    readRawNumber() match {
-      case n: Float  => n.toFloat
-      case n: Double => n.toFloat
-    }
+    readRawNumber.floatValue
   }
 
   override def readDouble(): Double = {
     read(expected = TokenType.Number)
-    readRawNumber() match {
-      case n: Float  => n.toDouble
-      case n: Double => n.toDouble
-    }
+    readRawNumber.doubleValue
   }
 
   def tokenLengthAt(position: Int): Int = tokenLengths(position)

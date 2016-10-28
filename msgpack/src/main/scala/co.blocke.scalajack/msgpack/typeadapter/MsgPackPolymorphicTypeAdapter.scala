@@ -1,5 +1,6 @@
 package co.blocke.scalajack
 package msgpack
+package typeadapter
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, Type, appliedType, typeOf }

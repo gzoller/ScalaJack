@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package msgpack
+package typeadapter
 
-import typeadapter.SimpleTypeAdapter
+import co.blocke.scalajack.typeadapter.SimpleTypeAdapter
 
 // NOTE: This class is needed because msgpack does not support BigDecimal types so we have to consiously treat them
 // as a string of number-characters or otherwise face losing fidelity.

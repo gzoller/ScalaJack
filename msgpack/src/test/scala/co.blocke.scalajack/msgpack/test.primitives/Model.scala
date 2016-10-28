@@ -36,7 +36,7 @@ case class SampleJFloat(f1: JFloat, f2: JFloat, f3: JFloat, f4: JFloat, f5: JFlo
 case class SampleJInt(i1: JInt, i2: JInt, i3: JInt, i4: JInt, i5: JInt)
 case class SampleJLong(l1: JLong, l2: JLong, l3: JLong, l4: JLong, l5: JLong)
 case class SampleJNumber(n1: JNumber, n2: JNumber, n3: JNumber, n4: JNumber, n5: JNumber, n6: JNumber, n7: JNumber, n8: JNumber,
-                         n9: JNumber, n10: JNumber, n11: JNumber, n12: JNumber, n13: JNumber, n14: JNumber, n15: JNumber, n16: JNumber, n17: JNumber)
+                         n9: JNumber, n10: JNumber, n11: JNumber, n12: JNumber, n13: JNumber, n14: JNumber, n15: JNumber, n16: JNumber)
 case class SampleJShort(s1: JShort, s2: JShort, s3: JShort, s4: JShort, s5: JShort)
 case class SampleUUID(u1: UUID, u2: UUID)
 
