@@ -113,6 +113,20 @@ class BaseBenchmarksState {
 @State(Scope.Thread)
 class BaseBenchmarks {
 
+/*
+  @Benchmark
+  def tokenizeMP(state: BaseBenchmarksState): Unit = {
+    val tmp = co.blocke.scalajack.msgpack.MsgPackTokenizer()
+    tmp.tokenize(state.inputBytes)
+  }
+
+  @Benchmark
+  def tokenizeJS(state: BaseBenchmarksState): Unit = {
+    val tjs = new co.blocke.scalajack.json.Tokenizer()
+    tjs.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
+  }
+  */
+
   //  @Benchmark
   def writePlayJson(state: BaseBenchmarksState): Unit = {
     println(Try { play.libs.Json.stringify(play.libs.Json.toJson(state.listOfPersons)) })

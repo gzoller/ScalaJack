@@ -8,6 +8,7 @@ import org.scalatest.Matchers._
 import scala.util.Try
 import java.util.UUID
 import org.msgpack.MessagePack
+import co.blocke.scalajack.msgpack.test.primitives._
 
 trait Bar { val size: Int }
 case class Foo(size: Int) extends Bar
@@ -35,6 +36,18 @@ class Primitives extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   describe("---------------------------\n:  Primitive Value Tests  :\n---------------------------") {
     describe("Standard Serialization:") {
+
+      it("Long must work (not nullable)") {
+        val inst = SampleLong(Long.MaxValue, Long.MinValue, 0L, 123L)
+        val bytes = sj.render(inst)
+        // println(bytes.map("%02X" format _).mkString(" "))
+        // assertResult("""{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0,"l4":123}""") { bytes }
+        assertResult(inst) {
+          sj.read[SampleLong](bytes)
+        }
+      }
+
+      /*
       it("Basic class with primitive fields") {
         val inst: Person = Person("Greg", List(Foo(1), Foo(2)), false)
         val bytes = sj.render(inst)
@@ -75,6 +88,7 @@ class Primitives extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         println("Size: " + bytes.length)
         println(sjmp.read[List[BMark_Person]](bytes))
       }
+    */
     }
   }
 }

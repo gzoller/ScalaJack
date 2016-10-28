@@ -25,7 +25,7 @@ case class MsgPackFlavor(
 
   override val context: Context = {
     val ctx = bakeContext()
-    ctx.copy(factories = customAdapters ::: DerivedValueClassAdapter :: MsgPackCaseClassTypeAdapter :: MsgPackCanBuildFromTypeAdapter :: MsgPackPolymorphicTypeAdapterFactory(defaultHint) :: ctx.factories)
+    ctx.copy(factories = customAdapters ::: DerivedValueClassAdapter :: MsgPackBigDecimalTypeAdapter :: MsgPackBigIntTypeAdapter :: MsgPackCaseClassTypeAdapter :: MsgPackCanBuildFromTypeAdapter :: MsgPackPolymorphicTypeAdapterFactory(defaultHint) :: ctx.factories)
   }
 
   def read[T](bytes: Array[Byte])(implicit valueTypeTag: TypeTag[T]): T = {

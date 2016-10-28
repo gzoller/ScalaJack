@@ -67,7 +67,7 @@ case class MsgPackTokenizer(val capacity: Int = 1024) {
           appendToken(TokenType.Number, pos, 5)
           pos += 5
           stackDecrement(pos)
-        case b if (b == 0xcf.toByte || b == 0xde.toByte || b == 0xcb.toByte) =>
+        case b if (b == 0xcf.toByte || b == 0xd3.toByte || b == 0xcb.toByte) =>
           appendToken(TokenType.Number, pos, 9)
           pos += 9
           stackDecrement(pos)

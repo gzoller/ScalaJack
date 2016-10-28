@@ -63,7 +63,8 @@ class MsgPackReader(
   }
 
   override def readNumber(forJava: Boolean = false): java.lang.Number = {
-    2
+    read(expected = TokenType.Number)
+    readRawNumber().asInstanceOf[java.lang.Number]
     // read(expected = TokenType.Number)
     // tokenTypes(position) match {
     //   case b if ((b >> 7) == 0) => 2 // 7-bit unsigned
@@ -96,32 +97,32 @@ class MsgPackReader(
       case b if ((b >> 7) == 0) => // unsigned 5-bit
         (b & 127).toInt
       case b if (b == 0xcc.toByte) => // unsigned 8-bit
-        toUnsignedByte(source(tokenOffsets(position + 1))).toInt
+        toUnsignedByte(source(tokenOffsets(position) + 1)).toInt
       case b if (b == 0xcd.toByte) => // unsigned 16-bit
-        val num: Short = ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position + 1)), source(tokenOffsets(position + 2)))).getInt.toShort
+        val num: Short = ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt.toShort
         toUnsignedShort(num) // Int
       case b if (b == 0xce.toByte) => // unsigned 32-bit
-        val num: Int = ByteBuffer.wrap(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 5))).getInt
+        val num: Int = ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 5)).getInt
         toUnsignedInt(num) // Long
       case b if (b == 0xcf.toByte) => // unsigned 64-bit
-        val num: Long = BigInt(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 9))).toLong
+        val num: Long = BigInt(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 9)).toLong
         toUnsignedLong(num) // BigInt
 
       // --- Signed Integers
       case b if (b == 0xd0.toByte) => // signed 8-bit
-        source(tokenOffsets(position + 1)).toInt
+        source(tokenOffsets(position) + 1)
       case b if (b == 0xd1.toByte) => // signed 16-bit
-        ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position + 1)), source(tokenOffsets(position + 2)))).getInt
+        ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt
       case b if (b == 0xd2.toByte) => // signed 32-bit
-        ByteBuffer.wrap(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 5))).getInt
+        ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 5)).getInt
       case b if (b == 0xd3.toByte) => // signed 64-bit
-        BigInt(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 9))).toLong
+        BigInt(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 9)).toLong
 
       // --- Float & Double
       case b if (b == 0xca.toByte) => // signed 32-bit
-        ByteBuffer.wrap(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 5))).getFloat
+        ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 5)).getFloat
       case b if (b == 0xcb.toByte) => // signed 64-bit
-        ByteBuffer.wrap(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 9))).getDouble
+        ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 9)).getDouble
       // val bytes = ByteBuffer.wrap(source.slice(tokenOffsets(position + 1), tokenOffsets(position + 9)))
       // val scale = bytes.getInt()
       // val bibytes: Array[Byte] = new Array[Byte](bytes.remaining())
@@ -132,7 +133,9 @@ class MsgPackReader(
 
   override def readByte(): Byte = {
     read(expected = TokenType.Number)
+    val raw = readRawNumber()
     readRawNumber() match {
+      case n: Double => n.toByte
       case n: Int    => n.toByte
       case n: Long   => n.toByte
       case n: BigInt => n.toByte
@@ -142,6 +145,7 @@ class MsgPackReader(
   override def readShort(): Short = {
     read(expected = TokenType.Number)
     readRawNumber() match {
+      case n: Double => n.toShort
       case n: Int    => n.toShort
       case n: Long   => n.toShort
       case n: BigInt => n.toShort
@@ -151,6 +155,7 @@ class MsgPackReader(
   override def readInt(): Int = {
     read(expected = TokenType.Number)
     readRawNumber() match {
+      case n: Double => n.toInt
       case n: Int    => n.toInt
       case n: Long   => n.toInt
       case n: BigInt => n.toInt
@@ -160,6 +165,7 @@ class MsgPackReader(
   override def readLong(): Long = {
     read(expected = TokenType.Number)
     readRawNumber() match {
+      case n: Double => n.toLong
       case n: Int    => n.toLong
       case n: Long   => n.toLong
       case n: BigInt => n.toLong
@@ -189,16 +195,16 @@ class MsgPackReader(
     case TokenType.String => source(tokenOffsets(position)) match {
       case b if (((b & 224) >> 5) == 5) => // 101XXXXX 
         val strlen = (b & 31) // mask = 31 = 11111
-        new String(source, tokenOffsets(position) + 1, strlen)
+        new String(source, tokenOffsets(position) + 1, strlen, java.nio.charset.StandardCharsets.UTF_8)
       case b if (b == 0xd9.toByte) =>
         val strlen = (source(tokenOffsets(position) + 1).toInt)
-        new String(source, tokenOffsets(position) + 2, strlen)
+        new String(source, tokenOffsets(position) + 2, strlen, java.nio.charset.StandardCharsets.UTF_8)
       case b if (b == 0xda.toByte) =>
         val strlen = ByteBuffer.wrap(Array(0.toByte, 0.toByte, source(tokenOffsets(position) + 1), source(tokenOffsets(position) + 2))).getInt
-        new String(source, tokenOffsets(position) + 3, strlen)
+        new String(source, tokenOffsets(position) + 3, strlen, java.nio.charset.StandardCharsets.UTF_8)
       case b if (b == 0xdb) =>
         val strlen = ByteBuffer.wrap(source.slice(tokenOffsets(position) + 1, tokenOffsets(position) + 5)).getInt
-        new String(source, tokenOffsets(position) + 5, strlen)
+        new String(source, tokenOffsets(position) + 5, strlen, java.nio.charset.StandardCharsets.UTF_8)
     }
     case t => throw new IllegalStateException(s"Expected token of type String, not $t\n" + showError())
   }
