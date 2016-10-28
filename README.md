@@ -2,6 +2,13 @@
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT) [![Bintray](https://img.shields.io/bintray/v/blocke/releases/scalajack.svg?maxAge=360)](https://bintray.com/blocke/releases/scalajack) [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) [![Coveralls branch](https://img.shields.io/coveralls/jekyll/jekyll/master.svg?maxAge=360)]()
 
+# NOTE: This branch is frozen!  
+We elected not to build out all the tests for MessagePack due to the time required, and also not wanting to maintain this code base.  If there is market demand for it perhaps at a later time this code will be merged into the core project as a supported ScalaJack flavor.
+
+It is believed to be working, and should enjoy all the normal ScalaJack feature set.  Scala/Java primitives tests pass.
+
+**Use at your own risk.**
+
 Very fast JSON parser/generator for Scala case classes using Jackson that requires virtually no annotations
 or "helper" code.
 

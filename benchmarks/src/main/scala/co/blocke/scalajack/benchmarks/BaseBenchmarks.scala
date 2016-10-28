@@ -113,7 +113,7 @@ class BaseBenchmarksState {
 @State(Scope.Thread)
 class BaseBenchmarks {
 
-/*
+  /*
   @Benchmark
   def tokenizeMP(state: BaseBenchmarksState): Unit = {
     val tmp = co.blocke.scalajack.msgpack.MsgPackTokenizer()
