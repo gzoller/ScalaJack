@@ -3,10 +3,10 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT) [![Bintray](https://img.shields.io/bintray/v/blocke/releases/scalajack.svg?maxAge=360)](https://bintray.com/blocke/releases/scalajack) [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) [![Coveralls branch](https://img.shields.io/coveralls/jekyll/jekyll/master.svg?maxAge=360)]()
 
 # NOTE: This branch is frozen!  
-We elected not to build out all the tests for MessagePack due to several reasons:
+We elected not natively support MessagePack at this time due to several reasons:
 
 * Time required to build a full suite of tests
-* Not wanting to maintain this code base at this time
+* Not wanting to maintain this code base without evidence of user demand
 * Disappointment about performance, which we'd hoped would be "super fast", but in fact is only a small margin faster than ScalaJack JSON
 
 If there is market demand for MessagePack support, perhaps at a later time this code will be merged into the core project as a supported ScalaJack flavor.
