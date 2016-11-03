@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package mongo
 package test
 
 import java.time.{ OffsetDateTime, YearMonth }

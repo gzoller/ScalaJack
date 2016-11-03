@@ -117,8 +117,12 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
           // Exctract DBKey annotation if present
           val optionalDbKeyIndex = member.annotations.find(_.tree.tpe =:= typeOf[DBKey])
-            .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
-              .value().value).asInstanceOf[Option[Int]]
+            .map { index =>
+              if (index.tree.children.size > 1)
+                index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+              else
+                0
+            }.asInstanceOf[Option[Int]]
 
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
           Member[T, Any](index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, member.annotations)

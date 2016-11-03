@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package mongo
 package test
 
 import mongo._
@@ -35,7 +36,7 @@ class AnySpec extends FunSpec {
     val e = Something("Fred", Map("a" -> 1, "b" -> List("foo", null, "bar")))
   }
 
-  describe("===================\n| -- Any Tests -- |\n===================") {
+  describe("-------------------------\n:  Any Tests (MongoDB)  :\n-------------------------") {
     describe("Render Tests") {
       sjM.render(ScalaMaster.a) should be(MongoMaster.a)
       sjM.render(ScalaMaster.b) should be(MongoMaster.b)
@@ -43,13 +44,10 @@ class AnySpec extends FunSpec {
       sjM.render(ScalaMaster.e) should be(MongoMaster.e)
     }
     describe("Read Tests") {
-      sjM.read[Something](MongoMaster.a)
-      //      sjM.read[Something](MongoMaster.a).stuff should contain allOf (("a" -> 1), ("b" -> true))
-      //      sjM.read[Something](MongoMaster.b).stuff should contain allOf (("a" -> 1), ("b" -> List(4, 5, 6)))
-      //      val c = sjM.read[Something](MongoMaster.c).stuff.asInstanceOf[Map[String, List[Map[_, _]]]]
-      //      c("b")(0) should contain allOf (("x" -> "Fido"), ("y" -> false))
-      //      c("b")(1) should contain allOf (("x" -> "Cat"), ("y" -> true))
-      //      sjM.read[Something](MongoMaster.e).stuff should contain allOf (("a" -> 1), ("b" -> List("foo", null, "bar")))
+      sjM.read[Something](MongoMaster.a) should equal(ScalaMaster.a)
+      sjM.read[Something](MongoMaster.b) should equal(ScalaMaster.b)
+      sjM.read[Something](MongoMaster.c) should equal(ScalaMaster.c)
+      sjM.read[Something](MongoMaster.e) should equal(ScalaMaster.e)
     }
   }
 }

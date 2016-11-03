@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package mongo
 
 import org.bson.{ BsonArray, BsonBinary, BsonBoolean, BsonDateTime, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonMaxKey, BsonMinKey, BsonObjectId, BsonString, BsonTimestamp, BsonUndefined, BsonValue }
 import org.mongodb.scala.bson.BsonNull

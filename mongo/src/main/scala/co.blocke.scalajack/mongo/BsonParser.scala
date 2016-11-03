@@ -1,41 +1,10 @@
 package co.blocke.scalajack
+package mongo
 
 import co.blocke.scalajack.TokenType.TokenType
 import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
 import scala.collection.JavaConversions._
-
-case class MongoAddress(city: String, country: String)
-
-case class MongoPerson(name: String, age: Int, address: MongoAddress)
-
-object BsonParser extends App {
-
-  val typeAdapter = Context.StandardContext.typeAdapterOf[MongoPerson]
-
-  val document = new BsonDocument
-
-  document.append("name", new BsonString("Adam"))
-  document.append("age", new BsonInt32(32))
-  document.append("address", new BsonDocument().append("city", new BsonString("Dallas")).append("country", new BsonString("USA")))
-
-  val parser = new BsonParser
-  val reader = parser.parse(document)
-  println(reader)
-
-  val person1 = typeAdapter.read(reader)
-  println(s"Person #1: $person1")
-
-  val writer = new BsonWriter
-
-  typeAdapter.write(person1, writer)
-
-  println(writer.RootStructure.value)
-
-  val reader2 = parser.parse(writer.RootStructure.value)
-  val person2 = typeAdapter.read(reader2)
-  println(s"Person #2: $person2")
-}
 
 class BsonParser {
 
