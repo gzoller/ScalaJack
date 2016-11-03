@@ -5,7 +5,7 @@ scala:
 notifications:
   email:
     recipients:
-      - gzoller@gmail.com
+      - info@blocke.com
 jdk:
   - oraclejdk8
 script:

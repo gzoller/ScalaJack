@@ -160,7 +160,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
         assertResult("""25""") { js }
         assertResult((inst, true)) {
           val r = sj.read[VCNumber](js)
-          (r, r.vc.isInstanceOf[Byte])
+          (r, r.vc.isInstanceOf[Integer])
         }
       }
     }

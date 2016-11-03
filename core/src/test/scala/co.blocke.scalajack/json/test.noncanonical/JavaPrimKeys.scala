@@ -101,7 +101,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           assertResult("""{"m":{0:9923372036854755810,-2147483648:2147483647,-9223372036854775808:9223372036854755807,-128:127,3.4E-38:3.4E38,-32768:32767,1.8E+308:0.0,1.7E-308:1.7E308}}""") { js }
           val read = sj.read[SampleJNumber](js)
           assertResult(inst) { read }
-          assertResult("List((1.8E+308,java.math.BigDecimal), (-32768,java.lang.Short), (-9223372036854775808,java.lang.Long), (-2147483648,java.lang.Integer), (3.4E-38,java.lang.Float), (1.7E-308,java.lang.Double), (0,java.lang.Byte), (-128,java.lang.Byte))") {
+          assertResult("List((1.8E+308,java.math.BigDecimal), (-9223372036854775808,java.lang.Long), (-32768,java.lang.Integer), (-128,java.lang.Integer), (0,java.lang.Integer), (-2147483648,java.lang.Integer), (3.4E-38,java.lang.Float), (1.7E-308,java.lang.Double))") {
             // Hokem to ensure consistent ordering of keys from Map for success comparison
             read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
           }

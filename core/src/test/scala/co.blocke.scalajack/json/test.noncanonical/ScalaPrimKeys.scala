@@ -14,7 +14,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = sj.render(inst)
         assertResult("""{"m":{false:"16","Small":"ok",123.456:true,"Fred":"Wilma",293845:"Greg",16:null}}""") { js }
         val read = sj.read[AnyShell](js)
-        assertResult("""List((Small,java.lang.String), (Fred,java.lang.String), (293845,java.lang.Integer), (123.456,java.lang.Float), (16,java.lang.Byte), (false,java.lang.Boolean))""") {
+        assertResult("""List((Small,java.lang.String), (Fred,java.lang.String), (293845,java.lang.Integer), (16,java.lang.Integer), (123.456,java.lang.Float), (false,java.lang.Boolean))""") {
           read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
         }
       }

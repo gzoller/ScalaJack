@@ -31,6 +31,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         self
 
       case Failure(cause) ⇒
+        reader.position = originalPosition
         Failure(new UnreadableException(reader.captureValue(), cause))
     }
   }
