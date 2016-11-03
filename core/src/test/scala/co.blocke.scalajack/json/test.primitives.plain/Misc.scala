@@ -11,7 +11,7 @@ class Misc() extends FunSpec with Matchers {
   describe("------------------------\n:  Misc Tests (Plain)  :\n------------------------") {
     it("Not all constructor fields marked with val") {
       val inst = new NotAllVals(1, 2, 3)
-      val msg = "Cannot find a type adapter for co.blocke.scalajack.json.test.primitives.plain.NotAllVals"
+      val msg = "Unable to find a type adapter for co.blocke.scalajack.json.test.primitives.plain.NotAllVals"
       the[java.lang.IllegalArgumentException] thrownBy sj.render(inst) should have message msg
     }
     it("Missing field (non-optional) from a getter/setter class") {

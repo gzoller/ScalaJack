@@ -9,6 +9,8 @@ trait TypeAdapter[T] {
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
 
+  def defaultValue: Option[T] = None
+
   def resolved: TypeAdapter[T] = this
 }
 

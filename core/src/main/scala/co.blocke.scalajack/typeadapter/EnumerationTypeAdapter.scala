@@ -1,22 +1,24 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ ClassSymbol, Type, typeOf }
-import scala.util.{ Try, Success, Failure }
+import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag }
+import scala.util.{ Failure, Success, Try }
 
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
-    if (tpe.typeSymbol.fullName == "scala.Enumeration.Value") { // Can't use tpe <:< because Enumeration has no companion object
-      val erasedEnumClassName = tpe.toString match {
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe.typeSymbol.fullName == "scala.Enumeration.Value") {
+      // Can't use tpe <:< because Enumeration has no companion object
+      val erasedEnumClassName = tt.tpe.toString match {
         case raw if (raw.endsWith(".Value")) ⇒ raw.replace(".Value", "$")
         case raw                             ⇒ raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
       }
       val enum = Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-      Some(EnumerationTypeAdapter(enum))
+      EnumerationTypeAdapter(enum).asInstanceOf[TypeAdapter[T]]
     } else {
-      None
+      next.typeAdapterOf[T]
     }
+
 }
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] with StringKind {

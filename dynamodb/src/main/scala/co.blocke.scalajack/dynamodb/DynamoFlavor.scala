@@ -5,6 +5,7 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
 import scala.collection.JavaConverters._
+import scala.language.existentials
 
 import typeadapter.{ CaseClassTypeAdapter, ClassMember, PlainClassTypeAdapter }
 
@@ -64,7 +65,7 @@ case class DynamoFlavor(
     new CreateTableRequest(attrDetail.map(_._1).asJava, tableName, attrDetail.map(_._2).asJava, provisionedThroughput)
   }
 
-  private def getAttrType(key: ClassMember[_]) =
+  private def getAttrType(key: ClassMember[_, _]) =
     if (key.valueTypeAdapter.isInstanceOf[StringKind])
       ScalarAttributeType.S
     else

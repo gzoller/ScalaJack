@@ -1,26 +1,42 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf }
 
-object TypeTypeAdapter extends SimpleTypeAdapter[Type] {
+object TypeTypeAdapter extends TypeAdapterFactory {
 
-  override def read(reader: Reader): Type = {
-    val fullName = reader.readString()
-    try {
-      val t1 = currentMirror.staticClass(fullName).info
-      val t2 = currentMirror.staticClass(fullName).toType
-      t2
-    } catch {
-      case e: ScalaReflectionException ⇒
-        throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe =:= typeOf[Type]) {
+      TypeTypeAdapter(tt.mirror).asInstanceOf[TypeAdapter[T]]
+    } else {
+      next.typeAdapterOf[T]
     }
-  }
 
-  override def write(value: Type, writer: Writer): Unit = {
-    val fullName = value.typeSymbol.fullName
-    writer.writeString(fullName)
-  }
+}
+
+case class TypeTypeAdapter(mirror: Mirror) extends TypeAdapter[Type] {
+
+  override def read(reader: Reader): Type =
+    reader.peek match {
+      case TokenType.String =>
+        val fullName = reader.readString()
+        try {
+          mirror.staticClass(fullName).toType
+        } catch {
+          case e: ScalaReflectionException ⇒
+            throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
+        }
+
+      case TokenType.Null =>
+        reader.readNull()
+    }
+
+  override def write(value: Type, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      val fullName = value.typeSymbol.fullName
+      writer.writeString(fullName)
+    }
 
 }

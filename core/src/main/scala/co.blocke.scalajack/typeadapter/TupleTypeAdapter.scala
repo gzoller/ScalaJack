@@ -3,11 +3,11 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import TupleTypeAdapter.Field
+import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, TypeTag }
 
 object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -34,19 +34,19 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   val tupleFullName = """scala.Tuple(\d+)""".r
 
-  override def typeAdapter(tpe: Type, classSymbol: ClassSymbol, context: Context): Option[TypeAdapter[_]] =
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     classSymbol.fullName match {
       case tupleFullName(numberOfFieldsAsString) ⇒
         val numberOfFields = numberOfFieldsAsString.toInt
-        val fieldTypes = tpe.dealias.typeArgs
+        val fieldTypes = tt.tpe.dealias.typeArgs
 
         val fields = for (i ← 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
           val fieldTypeAdapter = context.typeAdapter(fieldType) match {
-            case vta: OptionTypeAdapter[_] ⇒ vta.nullVersion
+            case vta: OptionTypeAdapter[_] ⇒ vta.noneAsNull
             case vta                       ⇒ vta
           }
-          val valueAccessorMethodSymbol = tpe.member(TermName(s"_${i + 1}")).asMethod
+          val valueAccessorMethodSymbol = tt.tpe.member(TermName(s"_${i + 1}")).asMethod
           val valueAccessorMethod = Reflection.methodToJava(valueAccessorMethodSymbol)
           Field(i, fieldTypeAdapter, valueAccessorMethodSymbol, valueAccessorMethod)
         }
@@ -54,10 +54,10 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         val classMirror = currentMirror.reflectClass(classSymbol)
         val constructorMirror = classMirror.reflectConstructor(classSymbol.primaryConstructor.asMethod)
 
-        Some(TupleTypeAdapter(fields.toList, constructorMirror))
+        TupleTypeAdapter(fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]
 
       case _ ⇒
-        None
+        next.typeAdapterOf[T]
     }
 
 }
