@@ -9,7 +9,9 @@ trait TypeAdapter[T] {
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
 
+  // $COVERAGE-OFF$Tested in concrete classes, not here
   def defaultValue: Option[T] = None
+  // $COVERAGE-ON$
 
   def resolved: TypeAdapter[T] = this
 }
