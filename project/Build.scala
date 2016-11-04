@@ -19,8 +19,8 @@ object Build extends Build {
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
-		coverageMinimum             := 86,
-		coverageFailOnMinimum       := true,
+		// coverageMinimum             := 86,
+		// coverageFailOnMinimum       := true,
 		ScalariformKeys.preferences := ScalariformKeys.preferences.value
 			.setPreference(AlignArguments, true)
 			.setPreference(AlignParameters, true)

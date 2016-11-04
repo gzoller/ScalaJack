@@ -13,11 +13,13 @@ class BsonReader(
 
   override var position: Int = -1
 
+  // $COVERAGE-OFF$Never used for BSON but needed for Reader trait
   override def source: Array[Char] = ???
 
   override def tokenOffsetAt(position: Int): Int = ???
 
   override def tokenLengthAt(position: Int): Int = ???
+  // $COVERAGE-ON$
 
   override def peek: TokenType = tokenTypes(position + 1)
 
@@ -29,7 +31,9 @@ class BsonReader(
   override def read(expected: TokenType): Unit = {
     position += 1
     if (expected != tokenTypes(position)) {
+      // $COVERAGE-OFF$Safety check--should never be possible
       throw new Exception("Wrong token type")
+      // $COVERAGE-ON$
     }
   }
 

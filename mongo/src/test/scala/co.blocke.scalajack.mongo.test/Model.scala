@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package mongo
 package test
 
-import java.time.{ OffsetDateTime, YearMonth }
+import java.time._
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -225,3 +225,12 @@ class CustomVC(val underlying: YearMonth) extends AnyVal {
   override def toString = s"CustomVC($underlying)"
 }
 case class SomethingSpecial(what: String, when: CustomVC)
+
+case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
+
+trait Address { val postalCode: String }
+case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
+case class CanadaAddress(street: String, city: String, province: String, postalCode: String) extends Address
+case class DefaultAddress(postalCode: String) extends Address
+trait Demographic { val address: Address }
+case class USDemographic(@DBKey age: String, address: Address) extends Demographic

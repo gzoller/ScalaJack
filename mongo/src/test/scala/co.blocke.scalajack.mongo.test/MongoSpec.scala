@@ -4,7 +4,7 @@ package test
 
 import typeadapter._
 
-import java.time.{ LocalDate, LocalTime, OffsetDateTime, OffsetTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime }
+import java.time._
 import java.util.UUID
 
 import co.blocke.scalajack.json.JsonFlavor
@@ -103,6 +103,13 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         dbo.asDocument.toJson should equal("""{ "name" : "Greg", "age" : 49, "hasStuff" : true, "pet" : { "_hint" : "co.blocke.scalajack.mongo.test.NicePet", "kind" : { "_hint" : "co.blocke.scalajack.mongo.test.Dog", "name" : "Fido" }, "food" : "bones" } }""")
         val b = mongoScalaJack.read[WithDefaults](dbo)
         b should equal(wd)
+      }
+      it("ZonedDateTime must work") {
+        val inst = SampleZonedDateTime(ZonedDateTime.parse("2007-12-03T10:15:30+01:00[UTC]"), null)
+        val dbo = mongoScalaJack.render(inst)
+        dbo.asDocument.toJson should equal("""{ "o1" : { "$numberLong" : "1196676930000" }, "o2" : null }""")
+        val b = mongoScalaJack.read[SampleZonedDateTime](dbo)
+        b should equal(inst)
       }
     }
     describe("Parameterized Class Support") {

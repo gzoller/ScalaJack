@@ -22,7 +22,7 @@ case class MongoFlavor(
   def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
   def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
+  def isCanonical(canonical: Boolean) = throw new UnsupportedOperationException("Not available for Mongo formatting")
 
   override protected def bakeContext(): Context = {
     val ctx = super.bakeContext()
