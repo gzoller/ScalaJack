@@ -64,6 +64,17 @@ class CustomTypeHints() extends FunSpec with Matchers {
           |--------------------------------------------------^""".stripMargin
         the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
       }
+      it("Ignore type-specific type hint (e.g. use default) when a specific hint is specified -- newline test") {
+        val sj = ScalaJack().withDefaultHint("which")
+        val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New
+        |York","state":"NY","postalCode":"39822"}}""".stripMargin
+        val msg = """Could not find type field named "which"
+          |city":"New
+          |York","state":"NY","postalCode":"39822"}}
+          |----------
+          |---------------------------------------^""".stripMargin
+        the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
+      }
       it("Hint value after modification doesn't resolve to known class name") {
         val prependHintMod = ClassNameHintModifier((hint: String) => "co.blocke.scalajack.test.bogus." + hint, (cname: String) => cname.split('.').last)
         val sj = ScalaJack().withHintModifiers((typeOf[Address], prependHintMod))
