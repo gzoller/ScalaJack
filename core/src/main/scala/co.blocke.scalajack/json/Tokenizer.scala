@@ -65,7 +65,9 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
       validate(validPos) = 0
     }
     @inline def popValid() {
+      // $COVERAGE-OFF$Can Never Happen (so can't be specifically tested) but a nice safety check.
       if (validate(validPos) != 0) throw new IllegalArgumentException("Unfinished business: " + validate(validPos))
+      // $COVERAGE-ON$
       validPos -= 1
     }
 
