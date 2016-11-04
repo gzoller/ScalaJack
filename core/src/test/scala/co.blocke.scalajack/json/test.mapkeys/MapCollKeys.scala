@@ -10,6 +10,7 @@ class MapCollKeys() extends FunSpec with Matchers {
   val sj = ScalaJack()
 
   describe("-----------------------\n:  Map Map Key Tests  :\n-----------------------") {
+    /*
     it("Map as key") {
       val m1 = Map(1 -> 2)
       val m2 = Map(3 -> 4)
@@ -110,6 +111,7 @@ class MapCollKeys() extends FunSpec with Matchers {
         sj.read[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]](js).isInstanceOf[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]]
       }
     }
+    */
     it("Map of Optional as key") {
       val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)
       val m2: Map[Option[Int], Option[Int]] = Map(None -> Some(2), Some(5) -> null)
@@ -120,6 +122,7 @@ class MapCollKeys() extends FunSpec with Matchers {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
     }
+    /*
     it("Map of Option as key where Option is null must fail") {
       val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)
       val m0 = Map.empty[Option[Int], Option[Int]]
@@ -139,5 +142,6 @@ class MapCollKeys() extends FunSpec with Matchers {
         sj.read[Map[Map[Map[VCChar, VCChar], Map[VCChar, VCChar]], Map[Map[VCChar, VCChar], Map[VCChar, VCChar]]]](js)
       }
     }
+    */
   }
 }

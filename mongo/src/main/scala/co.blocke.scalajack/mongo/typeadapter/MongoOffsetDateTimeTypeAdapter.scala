@@ -1,4 +1,6 @@
 package co.blocke.scalajack
+package mongo
+package typeadapter
 
 import java.time.{ Instant, OffsetDateTime, ZoneOffset }
 
@@ -6,19 +8,19 @@ import org.bson.BsonDateTime
 
 import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
-object OffsetDateTimeTypeAdapter extends TypeAdapterFactory {
+object MongoOffsetDateTimeTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe =:= typeOf[OffsetDateTime]) {
       val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
-      OffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter).asInstanceOf[TypeAdapter[T]]
+      MongoOffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
 
 }
 
-case class OffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter: TypeAdapter[BsonDateTime]) extends TypeAdapter[OffsetDateTime] {
+case class MongoOffsetDateTimeTypeAdapter(bsonDateTimeTypeAdapter: TypeAdapter[BsonDateTime]) extends TypeAdapter[OffsetDateTime] {
 
   override def read(reader: Reader): OffsetDateTime = {
     val bsonDateTime = bsonDateTimeTypeAdapter.read(reader)

@@ -1,4 +1,6 @@
 package co.blocke.scalajack
+package mongo
+package typeadapter
 
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 

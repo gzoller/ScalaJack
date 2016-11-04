@@ -19,7 +19,7 @@ object Build extends Build {
 		startYear 					:= Some(2015),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
-		coverageMinimum             := 96,
+		coverageMinimum             := 86,
 		coverageFailOnMinimum       := true,
 		ScalariformKeys.preferences := ScalariformKeys.preferences.value
 			.setPreference(AlignArguments, true)
@@ -40,7 +40,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack, scalajack_dynamodb)//, scalajack_mongo)
+		.aggregate(scalajack, scalajack_dynamodb, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 

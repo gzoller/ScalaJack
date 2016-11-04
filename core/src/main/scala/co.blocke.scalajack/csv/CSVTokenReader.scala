@@ -74,7 +74,9 @@ class CSVTokenReader(
     tokenTypes(position)
   }
 
+  // $COVERAGE-OFF$Never used for CSV
   override def captureValue(): Any = null
+  // $COVERAGE-ON$
 
   override def tokenOffsetAt(position: Int): Int = tokenOffsets(position)
 

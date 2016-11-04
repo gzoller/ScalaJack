@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package mongo
 
 import co.blocke.scalajack.TokenType.TokenType
 import org.bson.BsonValue
