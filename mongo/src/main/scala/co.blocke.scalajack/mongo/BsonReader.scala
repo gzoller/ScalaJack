@@ -23,10 +23,12 @@ class BsonReader(
 
   override def peek: TokenType = tokenTypes(position + 1)
 
+  // $COVERAGE-OFF$Not used for BSON
   override def read(): TokenType = {
     position += 1
     tokenTypes(position)
   }
+  // $COVERAGE-ON$
 
   override def read(expected: TokenType): Unit = {
     position += 1
@@ -67,16 +69,18 @@ class BsonReader(
     }
   }
 
-  override def tokenText: String = "TOKEN TEXT"
-
   override def showError(): String = "SOMETHING WENT WRONG"
 
+  // $COVERAGE-OFF$Not (currently) used for BSON
+  override def tokenText: String = "TOKEN TEXT"
+
   override def captureValue(): Any = {
-    //    val startTok = position + 1
-    //    skipValue()
-    //    val endTok = Math.max(startTok, position)
-    //    new String(source.slice(tokenOffsets(startTok), tokenOffsets(endTok) + tokenLengths(endTok)))
-    ???
+    // val startTok = position + 1
+    // skipValue()
+    // val endTok = Math.max(startTok, position)
+    // new String(source.slice(tokenOffsets(startTok), tokenOffsets(endTok) + tokenLengths(endTok)))
+    "nothing"
   }
+  // $COVERAGE-ON$
 
 }

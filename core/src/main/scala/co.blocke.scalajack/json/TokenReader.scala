@@ -131,8 +131,6 @@ class TokenReader(
 
   override def readString(): String = {
     read(expected = TokenType.String)
-    // println(s"TEXT: |${tokenText}|")
-    // new String(source, tokenOffsets(position) + 1, tokenLengths(position) - 2)
     unescapedTokenText
   }
 
