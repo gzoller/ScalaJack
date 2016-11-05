@@ -50,7 +50,9 @@ case class ComplexMapKeyTypeAdapter[T](
 
   override def write(value: T, writer: Writer): Unit = {
     if (value == null)
+      // $COVERAGE-OFF$Null map key value caught before we ever get here
       throw new java.lang.IllegalStateException("Attempting to write a null map key (map keys may not be null).")
+      // $COVERAGE-ON$
     valueTypeAdapter.resolved match {
       case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
