@@ -68,6 +68,12 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         dbo.asDocument.toJson should equal(s"""{ "_id" : { "$$oid" : "${oid.bsonObjectId.getValue.toString}" }, "two" : { "foo" : "blah", "bar" : true } }""")
         mongoScalaJack.read[Seven](dbo) should equal(seven)
       }
+      it("ObjectId support (null) -- Mongo") {
+        val oid: ObjectId = null.asInstanceOf[ObjectId]
+        val seven = Seven(oid, Two("blah", true))
+        val dbo = mongoScalaJack.render(seven)
+        mongoScalaJack.read[Seven](dbo) should equal(seven)
+      }
       it("Naked Map support") {
         val li = Map("a" -> 1, "b" -> 2, "c" -> 3)
         val dbo = mongoScalaJack.render(li)
