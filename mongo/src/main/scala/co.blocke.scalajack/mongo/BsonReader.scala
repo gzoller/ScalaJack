@@ -44,6 +44,16 @@ class BsonReader(
     strings(position)
   }
 
+  override def readByte(): Byte = {
+    read(expected = TokenType.Number)
+    values(position).asInt32.intValue.toByte
+  }
+
+  override def readShort(): Short = {
+    read(expected = TokenType.Number)
+    values(position).asInt32.intValue.toShort
+  }
+
   override def readInt(): Int = {
     read(expected = TokenType.Number)
     values(position).asInt32.intValue
@@ -52,6 +62,11 @@ class BsonReader(
   override def readLong(): Long = {
     read(expected = TokenType.Number)
     values(position).asInt64.longValue
+  }
+
+  override def readFloat(): Float = {
+    read(expected = TokenType.Number)
+    values(position).asDouble.doubleValue.toFloat
   }
 
   // This guy has to do type inference, as a Number could be: Byte, Double, Float, Integer, Long, or Short.
