@@ -65,7 +65,9 @@ class BsonReader(
     } else if (value.isInt64) {
       value.asInt64.longValue
     } else {
+      // $COVERAGE-OFF$Theoretically not possible
       throw new IllegalStateException(s"Cannot convert $value to a number")
+      // $COVERAGE-ON$
     }
   }
 

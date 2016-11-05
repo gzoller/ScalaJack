@@ -87,17 +87,6 @@ class BsonWriter extends Writer {
       val value =
         if (keys contains "$date") {
           new BsonDateTime(document.getNumber("$date").longValue)
-        } else if (keys contains "$undefined") {
-          new BsonUndefined
-        } else if (keys contains "$binary") {
-          ???
-        } else if (keys contains "$timestamp") {
-          //new BsonTimestamp()
-          ???
-        } else if (keys contains "$regex") {
-          ???
-          //        } else if (keys contains "$ref") {
-          //          ???
         } else if (keys contains "$minKey") {
           new BsonMinKey
         } else if (keys contains "$maxKey") {

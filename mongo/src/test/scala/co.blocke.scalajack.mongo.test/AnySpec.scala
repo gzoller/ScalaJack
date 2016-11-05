@@ -27,6 +27,8 @@ class AnySpec extends FunSpec {
       BsonDocument("x" -> "Cat", "y" -> true)
     )))
     val e = BsonDocument("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> BsonArray("foo", BsonNull(), "bar")))
+    val f = BsonDocument("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> 1.23))
+    val g = BsonDocument("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> 25L))
   }
 
   object ScalaMaster {
@@ -34,6 +36,8 @@ class AnySpec extends FunSpec {
     val b = Something("Fred", Map("a" -> 1, "b" -> List(4, 5, 6)))
     val c = Something("Fred", Map("a" -> 1, "b" -> List(Map("x" -> "Fido", "y" -> false), Map("x" -> "Cat", "y" -> true))))
     val e = Something("Fred", Map("a" -> 1, "b" -> List("foo", null, "bar")))
+    val f = Something("Fred", Map("a" -> 1, "b" -> 1.23))
+    val g = Something("Fred", Map("a" -> 1, "b" -> 25L))
   }
 
   describe("-------------------------\n:  Any Tests (MongoDB)  :\n-------------------------") {
@@ -42,12 +46,16 @@ class AnySpec extends FunSpec {
       sjM.render(ScalaMaster.b) should be(MongoMaster.b)
       sjM.render(ScalaMaster.c) should be(MongoMaster.c)
       sjM.render(ScalaMaster.e) should be(MongoMaster.e)
+      sjM.render(ScalaMaster.f) should be(MongoMaster.f)
+      sjM.render(ScalaMaster.g) should be(MongoMaster.g)
     }
     describe("Read Tests") {
       sjM.read[Something](MongoMaster.a) should equal(ScalaMaster.a)
       sjM.read[Something](MongoMaster.b) should equal(ScalaMaster.b)
       sjM.read[Something](MongoMaster.c) should equal(ScalaMaster.c)
       sjM.read[Something](MongoMaster.e) should equal(ScalaMaster.e)
+      sjM.read[Something](MongoMaster.f) should equal(ScalaMaster.f)
+      sjM.read[Something](MongoMaster.g) should equal(ScalaMaster.g)
     }
   }
 }
