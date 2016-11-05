@@ -87,6 +87,12 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val b = mongoScalaJack.read[UuidThing](dbo)
         b should equal(thing)
       }
+      it("Misc number primitives support") {
+        val inst = Loose('A', 1.23F, 15.toShort, 3.toByte)
+        val dbo = mongoScalaJack.render(inst)
+        dbo.asDocument.toJson should equal("""{ "a" : "A", "b" : 1.2300000190734863, "c" : 15, "d" : 3 }""")
+        mongoScalaJack.read[Loose](dbo) should equal(inst)
+      }
       it("DateTime support") {
         val t = LocalDate.parse("1986-07-01").atTime(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))
         val millis = t.toInstant.toEpochMilli

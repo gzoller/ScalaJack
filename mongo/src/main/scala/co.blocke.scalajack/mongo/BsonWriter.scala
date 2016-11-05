@@ -146,7 +146,9 @@ class BsonWriter extends Writer {
     structure.endChildValue(value)
   }
 
+  // $COVERAGE-OFF$Unsupported for BSON
   override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = ???
+  // $COVERAGE-ON$
 
   override def writeNothing(): Unit = {
     structure.onChildValue(null)

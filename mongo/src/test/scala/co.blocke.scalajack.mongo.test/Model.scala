@@ -262,3 +262,5 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
     }
 }
 case class Person(@DBKey name: String, phone: Phone)
+
+case class Loose(a: Char, b: Float, c: Short, d: Byte)
