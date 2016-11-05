@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package mongo
 
 import org.bson.{ BsonArray, BsonBinary, BsonBoolean, BsonDateTime, BsonDocument, BsonDouble, BsonInt32, BsonInt64, BsonMaxKey, BsonMinKey, BsonObjectId, BsonString, BsonTimestamp, BsonUndefined, BsonValue }
 import org.mongodb.scala.bson.BsonNull
@@ -86,17 +87,6 @@ class BsonWriter extends Writer {
       val value =
         if (keys contains "$date") {
           new BsonDateTime(document.getNumber("$date").longValue)
-        } else if (keys contains "$undefined") {
-          new BsonUndefined
-        } else if (keys contains "$binary") {
-          ???
-        } else if (keys contains "$timestamp") {
-          //new BsonTimestamp()
-          ???
-        } else if (keys contains "$regex") {
-          ???
-          //        } else if (keys contains "$ref") {
-          //          ???
         } else if (keys contains "$minKey") {
           new BsonMinKey
         } else if (keys contains "$maxKey") {
@@ -156,7 +146,9 @@ class BsonWriter extends Writer {
     structure.endChildValue(value)
   }
 
+  // $COVERAGE-OFF$Unsupported for BSON
   override def writeRawValue(source: Array[Char], offset: Int, length: Int): Unit = ???
+  // $COVERAGE-ON$
 
   override def writeNothing(): Unit = {
     structure.onChildValue(null)

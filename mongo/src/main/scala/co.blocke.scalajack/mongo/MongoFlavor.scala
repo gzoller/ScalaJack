@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package mongo
 
 import org.bson.BsonValue
+import typeadapter._
 
 import scala.reflect.runtime.universe.{ TypeTag, Type }
 
@@ -21,11 +22,11 @@ case class MongoFlavor(
   def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
   def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
+  def isCanonical(canonical: Boolean) = throw new UnsupportedOperationException("Not available for Mongo formatting")
 
   override protected def bakeContext(): Context = {
-    val c = super.bakeContext().withFactory(OffsetDateTimeTypeAdapter).withFactory(ZonedDateTimeTypeAdapter).withFactory(BsonDateTimeTypeAdapter)
-    c.copy(factories = MongoCaseClassTypeAdapter :: c.factories)
+    val ctx = super.bakeContext()
+    ctx.copy(factories = MongoCaseClassTypeAdapter :: MongoOffsetDateTimeTypeAdapter :: MongoZonedDateTimeTypeAdapter :: BsonObjectIdTypeAdapter :: BsonDateTimeTypeAdapter :: ctx.factories)
   }
 
   override def read[T](src: BsonValue)(implicit valueTypeTag: TypeTag[T]): T = {

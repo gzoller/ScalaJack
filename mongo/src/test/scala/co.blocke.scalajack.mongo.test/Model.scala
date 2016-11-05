@@ -1,7 +1,9 @@
 package co.blocke.scalajack
+package mongo
 package test
 
-import java.time.{ OffsetDateTime, YearMonth }
+import java.time._
+import co.blocke.scalajack.typeadapter.BasicTypeAdapter
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -224,3 +226,41 @@ class CustomVC(val underlying: YearMonth) extends AnyVal {
   override def toString = s"CustomVC($underlying)"
 }
 case class SomethingSpecial(what: String, when: CustomVC)
+
+case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
+
+trait Address { val postalCode: String }
+case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
+case class CanadaAddress(street: String, city: String, province: String, postalCode: String) extends Address
+case class DefaultAddress(postalCode: String) extends Address
+trait Demographic { val address: Address }
+case class USDemographic(@DBKey age: String, address: Address) extends Demographic
+
+object MyTypes {
+  type Phone = String
+}
+import MyTypes._
+
+object PhoneAdapter extends BasicTypeAdapter[Phone] {
+  override def read(reader: Reader): Phone = {
+    reader.peek match {
+      case TokenType.String ⇒
+        val raw = reader.readString()
+        raw.replaceAll("-", "").asInstanceOf[Phone]
+      // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
+      case TokenType.Null ⇒
+        reader.readNull()
+    }
+  }
+
+  override def write(value: Phone, writer: Writer): Unit =
+    if (value == null) {
+      writer.writeNull()
+    } else {
+      writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
+      // writer.writeString(value.replaceAll("-", ""))
+    }
+}
+case class Person(@DBKey name: String, phone: Phone)
+
+case class Loose(a: Char, b: Float, c: Short, d: Byte)

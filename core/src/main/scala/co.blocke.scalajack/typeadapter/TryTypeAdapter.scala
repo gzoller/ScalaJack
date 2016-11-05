@@ -45,7 +45,9 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
         e.write(writer)
 
       case Failure(e) ⇒
+        // $COVERAGE-OFF$USafety catch--shouldn't be possible
         throw e
+      // $COVERAGE-ON$
     }
 
 }

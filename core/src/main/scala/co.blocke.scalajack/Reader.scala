@@ -149,7 +149,7 @@ trait Reader {
 
   def tokenText: String
 
-  def hasNext: Boolean = peek != TokenType.End // differentiate end-of-parsing from end of object/array
+  def hasNext: Boolean = (peek != TokenType.End && peek != null) // differentiate end-of-parsing from end of object/array
 
   def hasMoreElements: Boolean = peek != TokenType.EndArray
 

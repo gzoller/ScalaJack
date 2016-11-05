@@ -12,7 +12,9 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     if (typeAdapter == null) {
       typeAdapter = context.typeAdapter(tpe).asInstanceOf[TypeAdapter[T]]
       if (typeAdapter.isInstanceOf[LazyTypeAdapter[_]]) {
+        // $COVERAGE-OFF$Can't really test as this is triggered by race condition, if it can happen at all.
         throw new IllegalStateException(s"Type adapter for $tpe is still being built")
+        // $COVERAGE-ON$
       }
 
       resolvedTypeAdapter = typeAdapter

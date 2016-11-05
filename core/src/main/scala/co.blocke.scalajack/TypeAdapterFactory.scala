@@ -20,6 +20,7 @@ object TypeAdapterFactory {
         }
     }
 
+  /* No longer needed--perhaps remove later
   def apply[V](typeAdapter: TypeAdapter[V])(implicit expectedTypeTag: TypeTag[V]): TypeAdapterFactory =
     new TypeAdapterFactory {
       override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, actualTypeTag: TypeTag[T]): TypeAdapter[T] =
@@ -29,6 +30,7 @@ object TypeAdapterFactory {
           next.typeAdapterOf[T]
         }
     }
+    */
 
   trait FromClassSymbol extends TypeAdapterFactory {
 

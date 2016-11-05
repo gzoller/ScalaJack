@@ -1,41 +1,10 @@
 package co.blocke.scalajack
+package mongo
 
 import co.blocke.scalajack.TokenType.TokenType
 import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
 import scala.collection.JavaConversions._
-
-case class MongoAddress(city: String, country: String)
-
-case class MongoPerson(name: String, age: Int, address: MongoAddress)
-
-object BsonParser extends App {
-
-  val typeAdapter = Context.StandardContext.typeAdapterOf[MongoPerson]
-
-  val document = new BsonDocument
-
-  document.append("name", new BsonString("Adam"))
-  document.append("age", new BsonInt32(32))
-  document.append("address", new BsonDocument().append("city", new BsonString("Dallas")).append("country", new BsonString("USA")))
-
-  val parser = new BsonParser
-  val reader = parser.parse(document)
-  println(reader)
-
-  val person1 = typeAdapter.read(reader)
-  println(s"Person #1: $person1")
-
-  val writer = new BsonWriter
-
-  typeAdapter.write(person1, writer)
-
-  println(writer.RootStructure.value)
-
-  val reader2 = parser.parse(writer.RootStructure.value)
-  val person2 = typeAdapter.read(reader2)
-  println(s"Person #2: $person2")
-}
 
 class BsonParser {
 
@@ -75,8 +44,6 @@ class BsonParser {
         }
 
         appendToken(TokenType.EndArray, valueAsArray)
-      } else if (value.isBinary) {
-        ???
       } else if (value.isBoolean) {
         val valueAsBoolean = value.asBoolean
         if (valueAsBoolean.getValue) {
@@ -89,8 +56,6 @@ class BsonParser {
         appendString(TokenType.String, "$date")
         appendToken(TokenType.Number, new BsonInt64(value.asDateTime.getValue))
         appendToken(TokenType.EndObject, null)
-      } else if (value.isDBPointer) {
-        ???
       } else if (value.isDocument) {
         val valueAsDocument = value.asDocument
         appendToken(TokenType.BeginObject, valueAsDocument)
@@ -107,10 +72,6 @@ class BsonParser {
         appendToken(TokenType.Number, value.asInt32)
       } else if (value.isInt64) {
         appendToken(TokenType.Number, value.asInt64)
-      } else if (value.isJavaScript) {
-        ???
-      } else if (value.isJavaScriptWithScope) {
-        ???
       } else if (value.isNull) {
         appendToken(TokenType.Null, value)
       } else if (value.isNumber) {
@@ -120,16 +81,10 @@ class BsonParser {
         appendString(TokenType.String, "$oid")
         appendString(TokenType.String, value.asObjectId.getValue.toHexString)
         appendToken(TokenType.EndObject, null)
-      } else if (value.isRegularExpression) {
-        ???
       } else if (value.isString) {
         appendString(TokenType.String, value.asString.getValue)
-      } else if (value.isSymbol) {
-        ???
-      } else if (value.isTimestamp) {
-        ???
       } else {
-        ???
+        throw new IllegalArgumentException(s"Type for value $value is either deprecated by Mongo, or unsupported by ScalaJack as unsafe (e.g. Javascript)")
       }
     }
 

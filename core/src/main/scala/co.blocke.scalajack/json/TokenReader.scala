@@ -30,7 +30,12 @@ class TokenReader(
     val endPos = if (charPos + 50 > source.length) source.length else charPos + 50
     val buf = new StringBuffer()
     buf.append(source.subSequence(startPos, endPos).toString + "\n")
-    buf.append("-" * startPosOffset + "^")
+    val line = source.subSequence(startPos, startPos + startPosOffset).toString.map(_ match {
+      case '\n' => '\n'
+      case _    => '-'
+    }).mkString + "^"
+    buf.append(line)
+    // buf.append("-" * startPosOffset + "^")
     buf.toString
   }
 
@@ -126,8 +131,6 @@ class TokenReader(
 
   override def readString(): String = {
     read(expected = TokenType.String)
-    // println(s"TEXT: |${tokenText}|")
-    // new String(source, tokenOffsets(position) + 1, tokenLengths(position) - 2)
     unescapedTokenText
   }
 

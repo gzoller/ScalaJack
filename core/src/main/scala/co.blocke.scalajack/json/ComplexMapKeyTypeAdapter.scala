@@ -41,8 +41,8 @@ case class ComplexMapKeyTypeAdapter[T](
             val msg = t.getMessage.split("\n")(0)
             throw new java.lang.ClassNotFoundException(msg + "\n" + reader.showError())
         }
-        // if (nestedReader.hasNext)
-        //   throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
+        if (nestedReader.hasNext)
+          throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
         valueParsed
     }
     readValue
@@ -50,7 +50,9 @@ case class ComplexMapKeyTypeAdapter[T](
 
   override def write(value: T, writer: Writer): Unit = {
     if (value == null)
+      // $COVERAGE-OFF$Null map key value caught before we ever get here
       throw new java.lang.IllegalStateException("Attempting to write a null map key (map keys may not be null).")
+    // $COVERAGE-ON$
     valueTypeAdapter.resolved match {
       case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)

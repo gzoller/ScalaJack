@@ -46,7 +46,7 @@ class StringJsonWriter(isCanonical: Boolean) extends Writer {
 
     override val structureType: StructureType = null
 
-    override def parent: Structure = ???
+    override def parent: Structure = null // not used -- root has no parent!
 
     override def beginChildValue(nestedValueType: ValueType): Unit = {}
 
