@@ -12,7 +12,7 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.7"
+	val scalaVer = "2.11.8"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
