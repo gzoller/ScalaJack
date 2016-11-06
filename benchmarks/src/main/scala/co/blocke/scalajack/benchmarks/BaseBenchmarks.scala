@@ -66,12 +66,12 @@ class BaseBenchmarksState {
 
   val humanHintMod = new HintModifier {
     def apply(rawHint: String) = rawHint match {
-      case "Male"   ⇒ typeOf[Male]
-      case "Female" ⇒ typeOf[Female]
+      case "Male"   => typeOf[Male]
+      case "Female" => typeOf[Female]
     }
     def unapply(hintFieldType: Type) = hintFieldType match {
-      case t if (t == typeOf[Male])   ⇒ "Male"
-      case t if (t == typeOf[Female]) ⇒ "Female"
+      case t if (t == typeOf[Male])   => "Male"
+      case t if (t == typeOf[Female]) => "Female"
     }
   }
 
@@ -88,14 +88,14 @@ class BaseBenchmarksState {
   }
 
   val series4vc = co.blocke.series4.VisitorContext(
-    hintMap         = Map("co.blocke.scalajack.benchmarks.Human" → "gender"),
-    hintValueRead   = Map("co.blocke.scalajack.benchmarks.Human" → {
-      case "Male"   ⇒ new String("co.blocke.scalajack.benchmarks.Male")
-      case "Female" ⇒ new String("co.blocke.scalajack.benchmarks.Female")
+    hintMap         = Map("co.blocke.scalajack.benchmarks.Human" -> "gender"),
+    hintValueRead   = Map("co.blocke.scalajack.benchmarks.Human" -> {
+      case "Male"   => new String("co.blocke.scalajack.benchmarks.Male")
+      case "Female" => new String("co.blocke.scalajack.benchmarks.Female")
     }),
-    hintValueRender = Map("co.blocke.scalajack.benchmarks.Human" → {
-      case "co.blocke.scalajack.benchmarks.Male"   ⇒ new String("Male")
-      case "co.blocke.scalajack.benchmarks.Female" ⇒ new String("Female")
+    hintValueRender = Map("co.blocke.scalajack.benchmarks.Human" -> {
+      case "co.blocke.scalajack.benchmarks.Male"   => new String("Male")
+      case "co.blocke.scalajack.benchmarks.Female" => new String("Female")
     })
   )
   val series4ScalaJack = co.blocke.series4.ScalaJack[String]()

@@ -63,44 +63,44 @@ class TokenReader(
 
     while (position < maxPosition) {
       source(position) match {
-        case '\\' ⇒
+        case '\\' =>
           if (builder == null) builder = new StringBuilder(tokenLength)
           builder.appendAll(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
 
           source(position + 1) match {
-            case '"' ⇒
+            case '"' =>
               builder.append('"')
               position += 2
 
-            case '\\' ⇒
+            case '\\' =>
               builder.append('\\')
               position += 2
 
-            case '/' ⇒
+            case '/' =>
               builder.append('/')
               position += 2
 
-            case 'b' ⇒
+            case 'b' =>
               builder.append('\b')
               position += 2
 
-            case 'f' ⇒
+            case 'f' =>
               builder.append('\f')
               position += 2
 
-            case 'n' ⇒
+            case 'n' =>
               builder.append('\n')
               position += 2
 
-            case 'r' ⇒
+            case 'r' =>
               builder.append('\r')
               position += 2
 
-            case 't' ⇒
+            case 't' =>
               builder.append('\t')
               position += 2
 
-            case 'u' ⇒
+            case 'u' =>
               val hexEncoded = new String(source, position + 2, 4)
               val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
               builder.append(unicodeChar)
@@ -109,7 +109,7 @@ class TokenReader(
 
           startOfUnescapedCharacters = position
 
-        case ch ⇒
+        case ch =>
           position += 1
       }
     }

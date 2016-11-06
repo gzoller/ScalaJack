@@ -50,8 +50,8 @@ case class DynamoFlavor(
     val tpe = tt.tpe
 
     val (optionalTableName, keys) = context.typeAdapter(tpe) match {
-      case ta: CaseClassTypeAdapter[_]  ⇒ (ta.collectionName, ta.dbKeys)
-      case ta: PlainClassTypeAdapter[_] ⇒ (ta.collectionName, ta.dbKeys)
+      case ta: CaseClassTypeAdapter[_]  => (ta.collectionName, ta.dbKeys)
+      case ta: PlainClassTypeAdapter[_] => (ta.collectionName, ta.dbKeys)
     }
     val tableName = optionalTableName.getOrElse(
       throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name.")
@@ -59,8 +59,8 @@ case class DynamoFlavor(
 
     if (keys.isEmpty) throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must define at least a primary key with @DBKey.")
     val attrDetail = keys.zipWithIndex.collect {
-      case (key, idx) if (idx == 0) ⇒ (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.HASH))
-      case (key, idx) if (idx == 1) ⇒ (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.RANGE))
+      case (key, idx) if (idx == 0) => (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.HASH))
+      case (key, idx) if (idx == 1) => (new AttributeDefinition(key.name, getAttrType(key)), new KeySchemaElement(key.name, KeyType.RANGE))
     }.toList
     new CreateTableRequest(attrDetail.map(_._1).asJava, tableName, attrDetail.map(_._2).asJava, provisionedThroughput)
   }

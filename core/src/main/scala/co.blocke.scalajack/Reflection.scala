@@ -55,8 +55,8 @@ object Reflection {
     } else {
       val needlesAfterSubstitution =
         for {
-          (typeArgBeforeSubstitution, typeArgAfterSubstitution) ← haystackBeforeSubstitution.typeArgs zip haystackAfterSubstitution.typeArgs
-          needleAfterSubstitution ← solveForNeedleAfterSubstitution(typeArgBeforeSubstitution, typeArgAfterSubstitution, needleBeforeSubstitution)
+          (typeArgBeforeSubstitution, typeArgAfterSubstitution) <- haystackBeforeSubstitution.typeArgs zip haystackAfterSubstitution.typeArgs
+          needleAfterSubstitution <- solveForNeedleAfterSubstitution(typeArgBeforeSubstitution, typeArgAfterSubstitution, needleBeforeSubstitution)
         } yield needleAfterSubstitution
 
       needlesAfterSubstitution.toSet.headOption
@@ -87,7 +87,7 @@ object Reflection {
       // all the raw material to build this association.
 
       val childAsParentTypeArgsAfterSubstitution =
-        for ((parentTypeArg, childAsParentTypeArgBeforeSubstitution) ← parentTypeArgs zip childAsParentTypeArgsBeforeSubstitution) yield {
+        for ((parentTypeArg, childAsParentTypeArgBeforeSubstitution) <- parentTypeArgs zip childAsParentTypeArgsBeforeSubstitution) yield {
           populateChildTypeArgs(parentTypeArg, childAsParentTypeArgBeforeSubstitution)
         }
 
@@ -95,7 +95,7 @@ object Reflection {
       // co.blocke.scalajack.test.OuterTrait[co.blocke.scalajack.test.InnerTrait[Char],co.blocke.scalajack.test.InnerTrait[Boolean],Int]
 
       val childTypeArgs =
-        for (childTypeParam ← childTypeParams.map(_.asType.toType)) yield {
+        for (childTypeParam <- childTypeParams.map(_.asType.toType)) yield {
           val optionalChildTypeArgAfterSubstitution = solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = childAsParentTypeBeforeSubstitution,
             haystackAfterSubstitution  = childAsParentTypeAfterSubstitution,

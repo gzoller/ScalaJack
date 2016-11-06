@@ -28,11 +28,11 @@ class Tokenizer(val capacity: Int = 1024) {
       appendToken(TokenType.BeginObject, 0, 0)
       while (position < maxPosition) {
         source(position) match {
-          case ',' ⇒
+          case ',' =>
             if (position == offset || source(position - 1) == ',') // account for empty field
               appendToken(TokenType.Null, position, 0)
             position += 1 // skip comma
-          case '"' ⇒
+          case '"' =>
             val savePos = position + 1
             do {
               position += 1
@@ -40,7 +40,7 @@ class Tokenizer(val capacity: Int = 1024) {
             } while (position < maxPosition && source(position) != '"')
             appendToken(TokenType.String, savePos, position - savePos)
             if (position < maxPosition) position += 1
-          case c ⇒
+          case c =>
             val savePos = position
             do {
               position += 1

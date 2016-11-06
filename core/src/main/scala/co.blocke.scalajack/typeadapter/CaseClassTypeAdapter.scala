@@ -154,7 +154,7 @@ case class CaseClassTypeAdapter[T](
     collectionName:        Option[String]          = None
 ) extends ClassLikeTypeAdapter[T] {
 
-  val membersByName = members.map(member => member.name → member.asInstanceOf[ClassMember[T, Any]]).toMap
+  val membersByName = members.map(member => member.name -> member.asInstanceOf[ClassMember[T, Any]]).toMap
 
   override def read(reader: Reader): T =
     reader.peek match {

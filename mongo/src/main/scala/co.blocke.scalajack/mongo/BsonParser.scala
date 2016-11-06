@@ -39,7 +39,7 @@ class BsonParser {
 
         appendToken(TokenType.BeginArray, valueAsArray)
 
-        for (value ← valueAsArray) {
+        for (value <- valueAsArray) {
           consumeValue(value)
         }
 
@@ -60,7 +60,7 @@ class BsonParser {
         val valueAsDocument = value.asDocument
         appendToken(TokenType.BeginObject, valueAsDocument)
 
-        for (entry ← valueAsDocument.entrySet) {
+        for (entry <- valueAsDocument.entrySet) {
           appendString(TokenType.String, entry.getKey)
           consumeValue(entry.getValue)
         }

@@ -36,15 +36,15 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     classSymbol.fullName match {
-      case tupleFullName(numberOfFieldsAsString) ⇒
+      case tupleFullName(numberOfFieldsAsString) =>
         val numberOfFields = numberOfFieldsAsString.toInt
         val fieldTypes = tt.tpe.dealias.typeArgs
 
-        val fields = for (i ← 0 until numberOfFields) yield {
+        val fields = for (i <- 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
           val fieldTypeAdapter = context.typeAdapter(fieldType) match {
-            case vta: OptionTypeAdapter[_] ⇒ vta.noneAsNull
-            case vta                       ⇒ vta
+            case vta: OptionTypeAdapter[_] => vta.noneAsNull
+            case vta                       => vta
           }
           val valueAccessorMethodSymbol = tt.tpe.member(TermName(s"_${i + 1}")).asMethod
           val valueAccessorMethod = Reflection.methodToJava(valueAccessorMethodSymbol)
@@ -56,7 +56,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
         TupleTypeAdapter(fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]
 
-      case _ ⇒
+      case _ =>
         next.typeAdapterOf[T]
     }
 
@@ -69,12 +69,12 @@ case class TupleTypeAdapter[T >: Null](
 
   override def read(reader: Reader): T =
     reader.peek match {
-      case TokenType.BeginArray ⇒
+      case TokenType.BeginArray =>
         val fieldValues = new Array[Any](fields.length)
 
         reader.beginArray()
 
-        for (field ← fields) {
+        for (field <- fields) {
           val fieldValue = field.read(reader)
           fieldValues(field.index) = fieldValue
         }
@@ -83,7 +83,7 @@ case class TupleTypeAdapter[T >: Null](
 
         constructorMirror.apply(fieldValues: _*).asInstanceOf[T]
 
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
     }
 
@@ -93,7 +93,7 @@ case class TupleTypeAdapter[T >: Null](
     } else {
       writer.beginArray()
 
-      for (field ← fields) {
+      for (field <- fields) {
         val fieldValue = field.valueIn(tuple)
         field.write(fieldValue, writer)
       }

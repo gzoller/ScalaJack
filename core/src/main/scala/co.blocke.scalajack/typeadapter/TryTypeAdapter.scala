@@ -27,10 +27,10 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
     val attempt = Try { valueTypeAdapter.read(reader) }
 
     attempt match {
-      case self @ Success(_) ⇒
+      case self @ Success(_) =>
         self
 
-      case Failure(cause) ⇒
+      case Failure(cause) =>
         reader.position = originalPosition
         Failure(new UnreadableException(reader.captureValue(), cause))
     }
@@ -38,13 +38,13 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
   override def write(value: Try[T], writer: Writer): Unit =
     value match {
-      case Success(v) ⇒
+      case Success(v) =>
         valueTypeAdapter.write(v, writer)
 
-      case Failure(e: UnreadableException) ⇒
+      case Failure(e: UnreadableException) =>
         e.write(writer)
 
-      case Failure(e) ⇒
+      case Failure(e) =>
         // $COVERAGE-OFF$USafety catch--shouldn't be possible
         throw e
       // $COVERAGE-ON$

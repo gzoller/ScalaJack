@@ -55,12 +55,12 @@ class BsonWriter extends Writer {
 
     override def beginChildValue(): Unit = {
       nextMemberPartToBeWritten match {
-        case MemberName ⇒
+        case MemberName =>
           memberName = null
           memberPartCurrentlyBeingWritten = MemberName
           nextMemberPartToBeWritten = MemberValue
 
-        case MemberValue ⇒
+        case MemberValue =>
           memberPartCurrentlyBeingWritten = MemberValue
           nextMemberPartToBeWritten = MemberName
       }
@@ -68,10 +68,10 @@ class BsonWriter extends Writer {
 
     override def endChildValue(childValue: BsonValue): Unit = {
       memberPartCurrentlyBeingWritten match {
-        case MemberName ⇒
+        case MemberName =>
           memberName = childValue
 
-        case MemberValue ⇒
+        case MemberValue =>
           if (childValue != null) {
             val memberNameAsString = memberName.asString.getValue
             document.append(memberNameAsString, childValue)

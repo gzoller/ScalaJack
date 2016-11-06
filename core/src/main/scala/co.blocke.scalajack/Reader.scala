@@ -36,10 +36,10 @@ trait Reader {
 
   def readBoolean(): Boolean = {
     val bool = peek match {
-      case TokenType.False ⇒
+      case TokenType.False =>
         false
 
-      case TokenType.True ⇒
+      case TokenType.True =>
         true
     }
     position += 1
@@ -73,58 +73,58 @@ trait Reader {
   def readByte(): Byte = {
     read(expected = TokenType.Number)
     Try(tokenText.toByte) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readShort(): Short = {
     read(expected = TokenType.Number)
     Try(tokenText.toShort) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readInt(): Int = {
     read(expected = TokenType.Number)
     Try(tokenText.toInt) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readLong(): Long = {
     read(expected = TokenType.Number)
     Try(tokenText.toLong) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readFloat(): Float = {
     read(expected = TokenType.Number)
     Try(tokenText.toFloat) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def readDouble(): Double = {
     read(expected = TokenType.Number)
     Try(tokenText.toDouble) match {
-      case Success(u) ⇒ u
-      case Failure(u) ⇒ throw new NumberFormatException(u.getMessage + "\n" + showError())
+      case Success(u) => u
+      case Failure(u) => throw new NumberFormatException(u.getMessage + "\n" + showError())
     }
   }
 
   def skipValue(): Unit = {
     peek match {
-      case TokenType.BeginObject ⇒ skipOver(TokenType.BeginObject, TokenType.EndObject)
+      case TokenType.BeginObject => skipOver(TokenType.BeginObject, TokenType.EndObject)
 
-      case TokenType.BeginArray  ⇒ skipOver(TokenType.BeginArray, TokenType.EndArray)
+      case TokenType.BeginArray  => skipOver(TokenType.BeginArray, TokenType.EndArray)
 
-      case _ ⇒
+      case _ =>
         position += 1
     }
   }
@@ -136,12 +136,12 @@ trait Reader {
     while (depth > 0 || peek != endToken) {
       position += 1
       peek match {
-        case `beginToken` ⇒
+        case `beginToken` =>
           depth += 1
-        case `endToken` if (depth > 0) ⇒
+        case `endToken` if (depth > 0) =>
           depth -= 1
           position += 1
-        case _ ⇒
+        case _ =>
       }
     }
     position += 1

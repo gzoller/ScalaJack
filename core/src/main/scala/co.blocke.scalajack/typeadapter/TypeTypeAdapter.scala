@@ -23,7 +23,7 @@ case class TypeTypeAdapter(mirror: Mirror) extends TypeAdapter[Type] {
         try {
           mirror.staticClass(fullName).toType
         } catch {
-          case e: ScalaReflectionException ⇒
+          case e: ScalaReflectionException =>
             throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
         }
 

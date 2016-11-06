@@ -14,10 +14,10 @@ case class FallbackTypeAdapter[T](
     val attempt = Try { primaryTypeAdapter.read(reader) }
 
     attempt match {
-      case Success(value) ⇒
+      case Success(value) =>
         value
 
-      case Failure(_) ⇒
+      case Failure(_) =>
         // Let's try that again...
         reader.position = originalPosition
         secondaryTypeAdapter.read(reader)
