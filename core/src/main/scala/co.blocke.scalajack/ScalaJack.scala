@@ -83,7 +83,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
 
     val polymorphicTypes: Set[Type] = hintModifiers.keySet ++ hintMap.keySet
 
-    val polymorphicTypeAdapterFactories = polymorphicTypes.map { polymorphicType: Type ⇒
+    val polymorphicTypeAdapterFactories = polymorphicTypes.map { polymorphicType: Type =>
       val hintFieldName = hintMap.getOrElse(polymorphicType, defaultHint)
       val hintToType = hintModifiers.getOrElse(polymorphicType, fullNameToType)
 
@@ -106,7 +106,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
 
     // ParseOrElse functionality
     val fallbackFactories = parseOrElseMap.map {
-      case (attemptedType, fallbackType) ⇒
+      case (attemptedType, fallbackType) =>
         val attemptedTypeAdapter = intermediateContext.typeAdapter(attemptedType)
         val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
 

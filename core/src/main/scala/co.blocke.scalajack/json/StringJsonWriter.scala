@@ -65,7 +65,7 @@ class StringJsonWriter(isCanonical: Boolean) extends Writer {
 
     override def beginChildValue(childValueType: ValueType): Unit = {
       nextMemberPartToBeWritten match {
-        case MemberPart.MemberName ⇒
+        case MemberPart.MemberName =>
           if (isCanonical && childValueType != ValueType.String) {
             throw new RenderException(s"Member names must be of type ${TokenType.String}, not $childValueType")
           }
@@ -78,7 +78,7 @@ class StringJsonWriter(isCanonical: Boolean) extends Writer {
           memberPartCurrentlyBeingWritten = MemberPart.MemberName
           nextMemberPartToBeWritten = MemberPart.MemberValue
 
-        case MemberPart.MemberValue ⇒
+        case MemberPart.MemberValue =>
           writeNameSeparator()
           if (childValueType == ValueType.Nothing) {
             builder.length = builderLengthBeforeMemberNameWritten
@@ -183,52 +183,52 @@ class StringJsonWriter(isCanonical: Boolean) extends Writer {
 
     while (i < length) {
       string.charAt(i) match {
-        case '"' ⇒
+        case '"' =>
           appendAnyUnescapedCharacters()
           builder append """\""""
           startOfUnescapedCharacters = i + 1
 
-        case '\\' ⇒
+        case '\\' =>
           appendAnyUnescapedCharacters()
           builder append """\\"""
           startOfUnescapedCharacters = i + 1
 
-        case '/' ⇒
+        case '/' =>
           appendAnyUnescapedCharacters()
           builder append """\/"""
           startOfUnescapedCharacters = i + 1
 
-        case '\b' ⇒
+        case '\b' =>
           appendAnyUnescapedCharacters()
           builder append """\b"""
           startOfUnescapedCharacters = i + 1
 
-        case '\f' ⇒
+        case '\f' =>
           appendAnyUnescapedCharacters()
           builder append """\f"""
           startOfUnescapedCharacters = i + 1
 
-        case '\n' ⇒
+        case '\n' =>
           appendAnyUnescapedCharacters()
           builder append """\n"""
           startOfUnescapedCharacters = i + 1
 
-        case '\r' ⇒
+        case '\r' =>
           appendAnyUnescapedCharacters()
           builder append """\r"""
           startOfUnescapedCharacters = i + 1
 
-        case '\t' ⇒
+        case '\t' =>
           appendAnyUnescapedCharacters()
           builder append """\t"""
           startOfUnescapedCharacters = i + 1
 
-        case ch if ch >= 128 ⇒
+        case ch if ch >= 128 =>
           appendAnyUnescapedCharacters()
           builder append """\""" append "u" append "%04x".format(ch.toInt)
           startOfUnescapedCharacters = i + 1
 
-        case _ ⇒
+        case _ =>
       }
 
       i += 1

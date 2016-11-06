@@ -24,12 +24,12 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
 
       // Examples in comments reference Scala's List[A] type.
 
-      val methods = for (member ← companionType.members if member.isMethod) yield member.asMethod
+      val methods = for (member <- companionType.members if member.isMethod) yield member.asMethod
 
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
-      val implicitConversions = for (method ← methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
+      val implicitConversions = for (method <- methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
 
-      val matchingTypeAdapters = implicitConversions flatMap { method ⇒
+      val matchingTypeAdapters = implicitConversions flatMap { method =>
         // returnTypeAsCanBuildFrom == CanBuildFrom[Coll, A, List[A]]
         val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[CanBuildFrom[_, _, _]].typeSymbol)
 
@@ -39,7 +39,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
         // toType == List[A]
         val toType = returnTypeAsCanBuildFrom.typeArgs(2)
 
-        val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam ⇒
+        val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam =>
           // typeParam == A
           // optionalTypeArg == Some(String)
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
@@ -47,7 +47,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
             haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
             needleBeforeSubstitution   = typeParam.asType.toType
           )
-          optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
+          optionalTypeArg.map(typeArg => typeParam -> typeArg)
         }
 
         // elementTypeBeforeSubstitution == A
@@ -72,8 +72,8 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
               stringTypeAdapter
             } else {
               val refinedKeyTypeAdapter = context.typeAdapter(keyType) match {
-                case kta: OptionTypeAdapter[_] ⇒ kta.noneAsEmptyString // output "" for None for map keys
-                case kta                       ⇒ kta
+                case kta: OptionTypeAdapter[_] => kta.noneAsEmptyString // output "" for None for map keys
+                case kta                       => kta
               }
               ComplexMapKeyTypeAdapter(new Tokenizer(), stringTypeAdapter, refinedKeyTypeAdapter)
             }

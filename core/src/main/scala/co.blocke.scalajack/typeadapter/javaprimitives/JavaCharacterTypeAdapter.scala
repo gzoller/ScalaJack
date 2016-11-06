@@ -6,13 +6,13 @@ object JavaCharacterTypeAdapter extends SimpleTypeAdapter[java.lang.Character] w
 
   override def read(reader: Reader): java.lang.Character =
     reader.peek match {
-      case TokenType.String ⇒
+      case TokenType.String =>
         java.lang.Character.valueOf(reader.readString().head)
 
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
 
-      case actual ⇒ {
+      case actual => {
         reader.read()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Character value.  (Is your value wrapped in quotes?)\n" + reader.showError())
       }

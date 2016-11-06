@@ -92,7 +92,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
 
     while (position < maxPosition) {
       source(position) match {
-        case '{' ⇒
+        case '{' =>
           if (!isValidSet(ExpectValue) && (isCanonical || !isValidSet(ExpectKey))) throw new IllegalArgumentException("Character out of place. '{' not expected here.\n" + showError())
           val objAsKey = isValidSet(ExpectKey)
           pushValid()
@@ -105,7 +105,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
           appendToken(TokenType.BeginObject, position, 1)
           position += 1
 
-        case '}' ⇒
+        case '}' =>
           // Fix ExpectKey logic here for noncanonical!
           if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma) && !isValidSet(ExpectKey)) || isValidSet(ArrayContext)) throw new IllegalArgumentException("Character out of place. '}' not expected here.\n" + showError())
           unsetValidBit(ObjectContext)
@@ -130,7 +130,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
           appendToken(TokenType.EndObject, position, 1)
           position += 1
 
-        case '[' ⇒
+        case '[' =>
           if (!isValidSet(ExpectValue) && (isCanonical || !isValidSet(ExpectKey))) throw new IllegalArgumentException("Character out of place. '[' not expected here.\n" + showError())
           val objAsKey = isValidSet(ExpectKey)
           pushValid()
@@ -143,7 +143,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
           appendToken(TokenType.BeginArray, position, 1)
           position += 1
 
-        case ']' ⇒
+        case ']' =>
           if ((!isValidSet(ExpectEndOfStructure) && !isValidSet(ExpectComma)) || isValidSet(ObjectContext) || isValidSet(ObjectKeyContext)) throw new IllegalArgumentException("Character out of place. ']' not expected here.\n" + showError())
           unsetValidBit(ArrayContext)
           unsetValidBit(ExpectComma)
@@ -166,13 +166,13 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
           appendToken(TokenType.EndArray, position, 1)
           position += 1
 
-        case ':' ⇒
+        case ':' =>
           if (!isValidSet(ExpectColon)) throw new IllegalArgumentException("Character out of place. ':' not expected here.\n" + showError())
           unsetValidBit(ExpectColon)
           setValidBit(ExpectValue)
           position += 1
 
-        case ',' ⇒
+        case ',' =>
           if (!isValidSet(ExpectComma)) throw new IllegalArgumentException("Character out of place. ',' not expected here.\n" + showError())
           unsetValidBit(ExpectComma)
           if (isValidSet(ObjectContext) || isValidSet(ObjectKeyContext))
@@ -181,19 +181,19 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
             setValidBit(ExpectValue)
           position += 1
 
-        case ' ' ⇒ // skip whitespace
+        case ' ' => // skip whitespace
           position += 1
 
-        case '\r' ⇒ // skip whitespace
+        case '\r' => // skip whitespace
           position += 1
 
-        case '\n' ⇒ // skip whitespace
+        case '\n' => // skip whitespace
           position += 1
 
-        case '\t' ⇒ // skip whitespace
+        case '\t' => // skip whitespace
           position += 1
 
-        case '"' ⇒
+        case '"' =>
           if (!isValidSet(ExpectKey) && !isValidSet(ExpectValue)) throw new IllegalArgumentException("Character out of place. String not expected here.\n" + showError())
 
           val start = position
@@ -220,7 +220,7 @@ class Tokenizer(val isCanonical: Boolean = true, val capacity: Int = 1024) {
           } else if (!isValidClear)
             setValidBit(ExpectComma)
 
-        case ch ⇒ // Tokenize some literal
+        case ch => // Tokenize some literal
           if (!isValidSet(ExpectValue) && (isCanonical || !isValidSet(ExpectKey))) throw new IllegalArgumentException("Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)\n" + showError())
           // Integer
           if (isIntegerChar(ch)) {

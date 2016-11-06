@@ -26,10 +26,10 @@ class StringCSVWriter() extends Writer {
 
   def writeString(string: String): Unit = {
     string match {
-      case s if (s.contains('"')) ⇒ builder += '"' + s.replaceAllLiterally("\"", "\"\"") + '"'
-      case s if (s.contains(',')) ⇒ builder += '"' + s + '"'
-      case s if (s.isEmpty)       ⇒ builder += "\"\""
-      case s                      ⇒ builder += s
+      case s if (s.contains('"')) => builder += '"' + s.replaceAllLiterally("\"", "\"\"") + '"'
+      case s if (s.contains(',')) => builder += '"' + s + '"'
+      case s if (s.isEmpty)       => builder += "\"\""
+      case s                      => builder += s
     }
   }
 

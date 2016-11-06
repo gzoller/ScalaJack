@@ -8,16 +8,16 @@ object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
 
   override def read(reader: Reader): UUID =
     reader.peek match {
-      case TokenType.String ⇒
+      case TokenType.String =>
         Try(UUID.fromString(reader.readString())) match {
-          case Success(u) ⇒ u
-          case Failure(u) ⇒ throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
+          case Success(u) => u
+          case Failure(u) => throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
         }
 
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
 
-      case actual ⇒ {
+      case actual => {
         reader.read()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading UUID value.\n" + reader.showError())
       }

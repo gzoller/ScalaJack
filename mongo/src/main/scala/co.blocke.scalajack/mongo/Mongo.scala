@@ -21,12 +21,12 @@ Unsure what this is, or why it's commented out... Doesn't appear to be needed.
 
 object ObjectId extends ValueClassCustom {
 	def read:PartialFunction[(KindMarker,_), Any] = {
-	  case (jk:JsonKind,js:String) ⇒ BsonObjectId(js)
-	  case (mk:MongoKind,boid:BsonObjectId) ⇒ boid
+	  case (jk:JsonKind,js:String) => BsonObjectId(js)
+	  case (mk:MongoKind,boid:BsonObjectId) => boid
 	}
 	def render:PartialFunction[(KindMarker,_), Any] = {
-	  case (jk:JsonKind,boid:BsonObjectId) ⇒ '"'+boid.getValue.toString+'"'
-	  case (mk:MongoKind,boid:BsonObjectId) ⇒ boid
+	  case (jk:JsonKind,boid:BsonObjectId) => '"'+boid.getValue.toString+'"'
+	  case (mk:MongoKind,boid:BsonObjectId) => boid
 	}
 }
 */ 

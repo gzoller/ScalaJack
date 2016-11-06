@@ -31,10 +31,10 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         value.asInstanceOf[T]
       } else {
         derivedValueClassConstructorMirror match {
-          case Some(methodMirror) ⇒
+          case Some(methodMirror) =>
             methodMirror.apply(value).asInstanceOf[T]
 
-          case None ⇒
+          case None =>
             value.asInstanceOf[T]
         }
       }
@@ -57,7 +57,7 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val companionMirror = currentMirror.reflect(companionObject)
 
       val members = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
-        case (member, index) ⇒
+        case (member, index) =>
           val memberName = member.name.encodedName.toString
           val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
           val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
@@ -100,10 +100,10 @@ case class CSVCaseClassTypeAdapter[T >: Null](
 
   override def read(reader: Reader): T = {
     reader.peek match {
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
 
-      case TokenType.BeginObject ⇒
+      case TokenType.BeginObject =>
         reader.beginObject()
         val arguments = members.map(_.valueTypeAdapter.read(reader))
         reader.endObject()
@@ -117,7 +117,7 @@ case class CSVCaseClassTypeAdapter[T >: Null](
     } else {
       writer.beginObject()
 
-      for (member ← members) {
+      for (member <- members) {
         // We don't write member names for CSV
         member.writeValue(member.valueIn(value), writer)
       }

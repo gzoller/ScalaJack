@@ -18,12 +18,12 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 
       // Examples in comments reference Scala's List[A] type.
 
-      val methods = for (member ← companionType.members if member.isMethod) yield member.asMethod
+      val methods = for (member <- companionType.members if member.isMethod) yield member.asMethod
 
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
-      val implicitConversions = for (method ← methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
+      val implicitConversions = for (method <- methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
 
-      val matchingTypeAdapters = implicitConversions flatMap { method ⇒
+      val matchingTypeAdapters = implicitConversions flatMap { method =>
         // returnTypeAsCanBuildFrom == CanBuildFrom[Coll, A, List[A]]
         val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[CanBuildFrom[_, _, _]].typeSymbol)
 
@@ -33,7 +33,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         // toType == List[A]
         val toType = returnTypeAsCanBuildFrom.typeArgs(2)
 
-        val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam ⇒
+        val typeParamSubstitutions: List[(Symbol, Type)] = typeParams flatMap { typeParam =>
           // typeParam == A
           // optionalTypeArg == Some(String)
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
@@ -41,7 +41,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
             haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
             needleBeforeSubstitution   = typeParam.asType.toType
           )
-          optionalTypeArg.map(typeArg ⇒ typeParam → typeArg)
+          optionalTypeArg.map(typeArg => typeParam -> typeArg)
         }
 
         // elementTypeBeforeSubstitution == A
@@ -59,8 +59,8 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
         if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
           val keyTypeAdapter = context.typeAdapter(keyType) match {
-            case kta: OptionTypeAdapter[_] ⇒ kta.noneAsEmptyString // output "" for None for map keys
-            case kta                       ⇒ kta
+            case kta: OptionTypeAdapter[_] => kta.noneAsEmptyString // output "" for None for map keys
+            case kta                       => kta
           }
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
@@ -85,7 +85,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
 
   override def read(reader: Reader): To =
     reader.peek match {
-      case TokenType.BeginObject ⇒
+      case TokenType.BeginObject =>
         val builder = canBuildFrom()
 
         reader.beginObject()
@@ -93,14 +93,14 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
         while (reader.hasMoreMembers) {
           val key = keyTypeAdapter.read(reader)
           val value = valueTypeAdapter.read(reader)
-          builder += key → value
+          builder += key -> value
         }
 
         reader.endObject()
 
         builder.result()
 
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
     }
 
@@ -111,7 +111,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
       writer.beginObject()
 
       map foreach {
-        case (key, value) ⇒
+        case (key, value) =>
           keyTypeAdapter.write(key, writer)
           valueTypeAdapter.write(value, writer)
       }
@@ -128,7 +128,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
 
   override def read(reader: Reader): To =
     reader.peek match {
-      case TokenType.BeginArray ⇒
+      case TokenType.BeginArray =>
         val builder = canBuildFrom()
 
         reader.beginArray()
@@ -142,7 +142,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
 
         builder.result()
 
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
     }
 
@@ -152,7 +152,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
     } else {
       writer.beginArray()
 
-      for (element ← value) {
+      for (element <- value) {
         elementTypeAdapter.write(element, writer)
       }
 

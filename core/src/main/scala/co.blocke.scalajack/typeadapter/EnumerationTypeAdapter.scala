@@ -10,8 +10,8 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     if (tt.tpe.typeSymbol.fullName == "scala.Enumeration.Value") {
       // Can't use tpe <:< because Enumeration has no companion object
       val erasedEnumClassName = tt.tpe.toString match {
-        case raw if (raw.endsWith(".Value")) ⇒ raw.replace(".Value", "$")
-        case raw                             ⇒ raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
+        case raw if (raw.endsWith(".Value")) => raw.replace(".Value", "$")
+        case raw                             => raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
       }
       val enum = Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
       EnumerationTypeAdapter(enum).asInstanceOf[TypeAdapter[T]]
@@ -25,13 +25,13 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
 
   override def read(reader: Reader): E#Value =
     reader.peek match {
-      case TokenType.String ⇒
+      case TokenType.String =>
         Try(enum.withName(reader.readString())) match {
-          case Success(u) ⇒ u
-          case Failure(u) ⇒ throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
+          case Success(u) => u
+          case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
         }
-      case TokenType.Null ⇒ reader.readNull()
-      case actual ⇒
+      case TokenType.Null => reader.readNull()
+      case actual =>
         reader.read()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Enumeration value.\n" + reader.showError())
     }

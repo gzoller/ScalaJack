@@ -11,15 +11,15 @@ case class ComplexMapKeyTypeAdapter[T](
 
   override def read(reader: Reader): T = {
     val readValue = valueTypeAdapter match {
-      case vta: StringKind ⇒ valueTypeAdapter.read(reader)
+      case vta: StringKind => valueTypeAdapter.read(reader)
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind]) => valueTypeAdapter.read(reader)
-      case _ ⇒
+      case _ =>
         val json = stringTypeAdapter.read(reader)
         val jsonCharArray = json.toCharArray
         val nestedReader = try {
           tokenizer.tokenize(jsonCharArray, 0, jsonCharArray.length)
         } catch {
-          case t: java.lang.IllegalArgumentException ⇒
+          case t: java.lang.IllegalArgumentException =>
             throw new java.lang.IllegalArgumentException(t.getMessage + "\nExtracted from JSON here:\n" + reader.showError())
         }
         if (nestedReader.peek == TokenType.UnknownLiteralName) // String values in Any type
@@ -31,13 +31,13 @@ case class ComplexMapKeyTypeAdapter[T](
         val valueParsed = try {
           valueTypeAdapter.read(nestedReader)
         } catch {
-          case t: java.lang.IllegalStateException ⇒ // Re-work the error message to point to the src text, not nested text for better clarity
+          case t: java.lang.IllegalStateException => // Re-work the error message to point to the src text, not nested text for better clarity
             val msg = t.getMessage.split("\n")(0)
             throw new java.lang.IllegalStateException(msg + "\n" + reader.showError())
-          case t: java.lang.NumberFormatException ⇒ // Re-work the error message to point to the src text, not nested text for better clarity
+          case t: java.lang.NumberFormatException => // Re-work the error message to point to the src text, not nested text for better clarity
             val msg = t.getMessage.split("\n")(0)
             throw new java.lang.NumberFormatException(msg + "\n" + reader.showError())
-          case t: java.lang.ClassNotFoundException ⇒
+          case t: java.lang.ClassNotFoundException =>
             val msg = t.getMessage.split("\n")(0)
             throw new java.lang.ClassNotFoundException(msg + "\n" + reader.showError())
         }
@@ -54,10 +54,10 @@ case class ComplexMapKeyTypeAdapter[T](
       throw new java.lang.IllegalStateException("Attempting to write a null map key (map keys may not be null).")
     // $COVERAGE-ON$
     valueTypeAdapter.resolved match {
-      case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) ⇒ valueTypeAdapter.write(value, writer)
-      case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) ⇒ valueTypeAdapter.write(value, writer)
-      case vta: StringKind ⇒ valueTypeAdapter.write(value, writer)
-      case _ ⇒
+      case vta: AnyTypeAdapter if (vta.inspectStringKind(value)) => valueTypeAdapter.write(value, writer)
+      case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) => valueTypeAdapter.write(value, writer)
+      case vta: StringKind => valueTypeAdapter.write(value, writer)
+      case _ =>
         val nestedWriter = new StringJsonWriter(true)
         valueTypeAdapter.write(value, nestedWriter)
         val json = nestedWriter.jsonString

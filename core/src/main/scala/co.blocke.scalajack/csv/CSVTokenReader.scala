@@ -49,11 +49,11 @@ class CSVTokenReader(
 
     while (position < maxPosition) {
       source(position) match {
-        case '"' ⇒
+        case '"' =>
           builder.append('"')
           position += 2
 
-        case ch ⇒
+        case ch =>
           builder.append(ch)
           position += 1
       }

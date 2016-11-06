@@ -12,11 +12,11 @@ import MyTypes._
 object PhoneAdapter extends BasicTypeAdapter[Phone] {
   override def read(reader: Reader): Phone = {
     reader.peek match {
-      case TokenType.String ⇒
+      case TokenType.String =>
         val raw = reader.readString()
         raw.replaceAll("-", "").asInstanceOf[Phone]
       // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
     }
   }
@@ -34,10 +34,10 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
 object OopsPhoneAdapter extends SimpleTypeAdapter[Phone] {
   override def read(reader: Reader): Phone = {
     reader.peek match {
-      case TokenType.String ⇒
+      case TokenType.String =>
         val raw = reader.readString()
         raw.replaceAll("-", "").asInstanceOf[Phone]
-      case TokenType.Null ⇒
+      case TokenType.Null =>
         reader.readNull()
     }
   }
