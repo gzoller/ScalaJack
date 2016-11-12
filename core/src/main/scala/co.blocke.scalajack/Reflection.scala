@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
+import scala.reflect.runtime.universe.{ Type, appliedType, TypeTag }
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Type, appliedType }
 
 /**
  * This is a pretty sophisticated object that resolves parameterized types, and can handle some
@@ -29,6 +29,25 @@ object Reflection {
 
   def methodToJava(methodSymbol: scala.reflect.runtime.universe.MethodSymbol): java.lang.reflect.Method =
     mirror.methodToJava(methodSymbol.asInstanceOf[scala.reflect.internal.Symbols#MethodSymbol])
+
+  def inferTypeOf[T](value: T)(implicit compileTimeTypeTag: TypeTag[T]): Type = {
+    value match {
+      case null =>
+        compileTimeTypeTag.tpe
+
+      case nonNull =>
+        val valueType = currentMirror.classSymbol(nonNull.getClass).asType.toType
+
+        valueType.typeConstructor.typeParams match {
+          case Nil        =>
+
+          case typeParams =>
+          // TODO infer type arguments
+        }
+
+        valueType
+    }
+  }
 
   // Here's the deep magic... This associates the child's "unpopulated" symbols (Z, X, P) with the populated (known types)
   // in the parent.  It is looking for a specific association, e.g. Z, and attempts to find it.

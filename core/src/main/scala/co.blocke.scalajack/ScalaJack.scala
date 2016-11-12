@@ -4,7 +4,7 @@ import json.JsonFlavor
 import typeadapter.{ FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, CaseClassTypeAdapter }
 import BijectiveFunction.Implicits._
 import BijectiveFunctions._
-import CaseClassTypeAdapter.Member
+import CaseClassTypeAdapter.FieldMember
 
 import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
@@ -43,8 +43,8 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
       case _                           => throw new ViewException(s"Output of view() must be a case class.  ${tt.tpe.typeSymbol.fullName} is not a case class.")
     }
     val masterData = master.getClass.getDeclaredFields
-    val args = viewTarget.members.map { f =>
-      masterData.find(md => md.getName == f.name && md.getType == f.asInstanceOf[Member[_, _]].valueAccessorMethod.getReturnType).map(dataField => {
+    val args = viewTarget.fieldMembers.map { f =>
+      masterData.find(md => md.getName == f.name && md.getType == f.asInstanceOf[FieldMember[_, _]].valueAccessorMethod.getReturnType).map(dataField => {
         dataField.setAccessible(true)
         dataField.get(master)
       })
@@ -65,8 +65,8 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
     }
     val viewData = view.getClass.getDeclaredFields
     val masterData = master.getClass.getDeclaredFields
-    val args = masterTarget.members.map { f =>
-      viewData.find(vd => vd.getName == f.name && vd.getType == f.asInstanceOf[Member[_, _]].valueAccessorMethod.getReturnType).map(dataField => {
+    val args = masterTarget.fieldMembers.map { f =>
+      viewData.find(vd => vd.getName == f.name && vd.getType == f.asInstanceOf[FieldMember[_, _]].valueAccessorMethod.getReturnType).map(dataField => {
         // Found matching master field in view object
         dataField.setAccessible(true)
         dataField.get(view)
