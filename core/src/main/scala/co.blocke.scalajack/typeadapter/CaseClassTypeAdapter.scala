@@ -7,7 +7,6 @@ import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, Symbol, TermName, Type, TypeTag, appliedType, typeOf }
-import scala.reflect.runtime.universe
 
 trait ClassFieldMember[Owner, T] extends ClassLikeTypeAdapter.FieldMember[Owner] {
   def dbKeyIndex: Option[Int]
@@ -199,8 +198,6 @@ case class CaseClassTypeAdapter[T](
             val memberName = memberNameTypeAdapter.read(reader)
             typeMembersByName.get(memberName) match {
               case Some(typeMember) =>
-                println(typeMember)
-
                 val actualType = typeTypeAdapter.read(reader)
 
                 // Solve for each type parameter
@@ -216,8 +213,6 @@ case class CaseClassTypeAdapter[T](
                   }
                 }
 
-                println(setsOfTypeArgsByTypeParam)
-
               case None =>
                 reader.skipValue()
             }
@@ -230,16 +225,13 @@ case class CaseClassTypeAdapter[T](
           }
 
           val actualType = appliedType(tpe.typeConstructor, typeArgs)
-          println(actualType)
 
           if (actualType =:= tpe) {
             // YAY! BUSINESS AS USUAL
             reader.position = savedPos
             reader.beginObject()
           } else {
-            println("DIFFERENT")
             val actualTypeAdapter = context.typeAdapter(actualType)
-            println(s"ACTUAL TYPE ADAPTER: $actualTypeAdapter")
             reader.position = savedPos
             return actualTypeAdapter.read(reader).asInstanceOf[T]
           }
@@ -270,6 +262,7 @@ case class CaseClassTypeAdapter[T](
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
         if (isSJCapture) {
           reader.position = savedPos
+          reader.beginObject()
           val captured = scala.collection.mutable.Map.empty[String, Any]
           while (reader.hasMoreMembers) {
             val memberName = memberNameTypeAdapter.read(reader)
@@ -294,27 +287,24 @@ case class CaseClassTypeAdapter[T](
       writer.beginObject()
 
       if (typeMembers.nonEmpty) {
-
         import scala.collection.mutable
 
         val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
 
-        for (typeParam <- tpe.typeConstructor.typeParams) {
-          for (fieldMember <- fieldMembers) {
-            for (typeMember <- typeMembers) {
-              val fieldValue = fieldMember.valueIn(value)
-              val inferredType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
-              println(s"Inferred type $inferredType from $fieldValue")
+        for (fieldMember <- fieldMembers) {
+          val fieldValue = fieldMember.valueIn(value)
+          val declaredFieldValueType = fieldMember.valueTypeTag.tpe
+          val actualFieldValueType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
 
-              val needle = Reflection.solveForNeedleAfterSubstitution(
-                haystackBeforeSubstitution = fieldMember.valueTypeTag.tpe,
-                haystackAfterSubstitution  = inferredType,
+          for (typeParam <- tpe.typeConstructor.typeParams) {
+            for (typeMember <- typeMembers) {
+              val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
+                haystackBeforeSubstitution = declaredFieldValueType,
+                haystackAfterSubstitution  = actualFieldValueType,
                 needleBeforeSubstitution   = typeParam.asType.toType
               )
 
-              println(s"$typeParam => $needle")
-
-              for (typeArg <- needle) {
+              for (typeArg <- optionalTypeArg) {
                 setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
               }
             }
@@ -326,8 +316,6 @@ case class CaseClassTypeAdapter[T](
         }).toList
 
         val substitutionMap = substitutions.toMap
-
-        println(substitutions)
 
         val typeParams = tpe.typeConstructor.typeParams
         val typeArgs = typeParams.map(typeParam => substitutionMap(typeParam))

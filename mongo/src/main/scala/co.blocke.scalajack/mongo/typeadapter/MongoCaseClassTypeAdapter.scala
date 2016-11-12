@@ -6,7 +6,7 @@ import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
