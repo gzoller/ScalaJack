@@ -33,9 +33,13 @@ case class EitherTypeAdapter[L, R](anyTypeAdapter: TypeAdapter[Any], leftType: T
   override def read(reader: Reader): Either[L, R] = {
     val value = anyTypeAdapter.read(reader)
 
-    if (leftClass.isInstance(value)) {
+    if (value == null)
+      null
+    else if (leftClass.isInstance(value)) {
       if (rightClass.isInstance(value)) {
-        throw new RuntimeException(s"$value (of ${value.getClass}) is an instance of both $leftClass and $rightClass!!!")
+        // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
+        throw new RuntimeException(s"$value (of ${value.getClass}) is an instance of both $leftClass and $rightClass.\n" + reader.showError())
+        // $COVERAGE-ON$
       } else {
         Left(value.asInstanceOf[L])
       }
@@ -43,7 +47,9 @@ case class EitherTypeAdapter[L, R](anyTypeAdapter: TypeAdapter[Any], leftType: T
       if (rightClass.isInstance(value)) {
         Right(value.asInstanceOf[R])
       } else {
-        throw new RuntimeException(s"$value (of ${value.getClass}) is neither an instance of $leftClass nor of $rightClass!!!")
+        // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
+        throw new RuntimeException(s"$value (of ${value.getClass}) is neither an instance of $leftClass nor of $rightClass.\n" + reader.showError)
+        // $COVERAGE-ON$
       }
     }
   }
