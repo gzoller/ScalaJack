@@ -4,6 +4,8 @@ import co.blocke.scalajack.{ Context, Reader, TypeAdapter, TypeAdapterFactory, W
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
+import scala.language.existentials
+import scala.util.{ Try, Success, Failure }
 
 object EitherTypeAdapter extends TypeAdapterFactory {
 
@@ -19,38 +21,43 @@ object EitherTypeAdapter extends TypeAdapterFactory {
           throw new IllegalArgumentException(s"Types $leftType and $rightType are not mutually exclusive")
         }
 
-        val anyTypeAdapter = context.typeAdapterOf[Any]
-        EitherTypeAdapter(anyTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
+        val leftTypeAdapter = context.typeAdapter(leftType)
+        val rightTypeAdapter = context.typeAdapter(rightType)
+        EitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
     }
 
 }
 
-case class EitherTypeAdapter[L, R](anyTypeAdapter: TypeAdapter[Any], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
+case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
 
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
   override def read(reader: Reader): Either[L, R] = {
-    val value = anyTypeAdapter.read(reader)
-
-    if (value == null)
-      null
-    else if (leftClass.isInstance(value)) {
-      if (rightClass.isInstance(value)) {
-        // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
-        throw new RuntimeException(s"$value (of ${value.getClass}) is an instance of both $leftClass and $rightClass.\n" + reader.showError())
-        // $COVERAGE-ON$
-      } else {
-        Left(value.asInstanceOf[L])
-      }
-    } else {
-      if (rightClass.isInstance(value)) {
-        Right(value.asInstanceOf[R])
-      } else {
-        // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
-        throw new RuntimeException(s"$value (of ${value.getClass}) is neither an instance of $leftClass nor of $rightClass.\n" + reader.showError)
-        // $COVERAGE-ON$
-      }
+    val savePos = reader.position // in case we need to re-parse as Left
+    Try(rightTypeAdapter.read(reader)) match {
+      case Success(rightValue) =>
+        if (leftClass.isInstance(rightValue)) {
+          // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
+          throw new RuntimeException(s"$rightValue (of ${rightValue.getClass}) is an instance of both $leftClass and $rightClass.\n" + reader.showError())
+          // $COVERAGE-ON$
+        } else {
+          Right(rightValue.asInstanceOf[R])
+        }
+      case Failure(_) => // Right parse failed... try left
+        reader.position = savePos
+        Try(leftTypeAdapter.read(reader)) match {
+          case Success(leftValue) =>
+            if (rightClass.isInstance(leftValue)) {
+              // $COVERAGE-OFF$Nice safety check but logically not possible to get here due to check in factory
+              throw new RuntimeException(s"$leftValue (of ${leftValue.getClass}) is an instance of both $leftClass and $rightClass.\n" + reader.showError())
+              // $COVERAGE-ON$
+            } else {
+              Left(leftValue.asInstanceOf[L])
+            }
+          case Failure(_) =>
+            throw new RuntimeException(s"Parsed value fits neither class ${leftClass} nor ${rightClass}\n" + reader.showError())
+        }
     }
   }
 
@@ -60,10 +67,10 @@ case class EitherTypeAdapter[L, R](anyTypeAdapter: TypeAdapter[Any], leftType: T
         writer.writeNull()
 
       case Left(value) =>
-        anyTypeAdapter.write(value, writer)
+        leftTypeAdapter.write(value, writer)
 
       case Right(value) =>
-        anyTypeAdapter.write(value, writer)
+        rightTypeAdapter.write(value, writer)
     }
 
 }
