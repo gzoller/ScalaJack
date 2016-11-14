@@ -8,13 +8,21 @@ import scala.reflect.runtime.universe.TypeTag
 
 object ClassLikeTypeAdapter {
 
-  trait Member[Owner] {
+  sealed trait Member[Owner] {
+
+    def name: MemberName
+
+  }
+
+  trait TypeMember[Owner] extends Member[Owner]
+
+  trait FieldMember[Owner] extends Member[Owner] {
 
     type Value
 
-    def index: Int
+    def valueTypeTag: TypeTag[Value]
 
-    def name: MemberName
+    def index: Int
 
     def defaultValue: Option[Value]
 
@@ -26,32 +34,39 @@ object ClassLikeTypeAdapter {
 
     def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation]
 
+    def isStringValue: Boolean
+
   }
 
 }
 
 trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
 
-  type Member = ClassLikeTypeAdapter.Member[C]
+  type TypeMember = ClassLikeTypeAdapter.TypeMember[C]
+  type FieldMember = ClassLikeTypeAdapter.FieldMember[C]
 
-  def members: List[Member]
+  def typeMembers: List[TypeMember]
 
-  def member(memberName: MemberName): Option[Member]
+  def typeMember(memberName: MemberName): Option[TypeMember]
+
+  def fieldMembers: List[FieldMember]
+
+  def fieldMember(memberName: MemberName): Option[FieldMember]
 
   def readMemberName(reader: Reader): MemberName
 
   def writeMemberName(memberName: MemberName, writer: Writer): Unit
 
-  def instantiate(memberValues: Array[Any]): C
+  def instantiate(fieldMemberValues: Array[Any]): C
 
   override def read(reader: Reader): C =
     reader.peek match {
       case TokenType.BeginObject =>
         reader.beginObject()
 
-        val membersByName = members.map(member => member.name -> member).toMap
+        val membersByName = fieldMembers.map(member => member.name -> member).toMap
 
-        val numberOfMembers = members.size
+        val numberOfMembers = fieldMembers.size
         val memberValues = new Array[Any](numberOfMembers)
         val found = new mutable.BitSet(numberOfMembers)
 
@@ -70,7 +85,7 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
 
         reader.endObject()
 
-        for (member <- members if !found(member.index)) {
+        for (member <- fieldMembers if !found(member.index)) {
           memberValues(member.index) = member.defaultValue.getOrElse(throw new RuntimeException(s"No default value for ${member.name}"))
         }
 
@@ -86,7 +101,7 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
     } else {
       writer.beginObject()
 
-      for (member <- members) {
+      for (member <- fieldMembers) {
         writeMemberName(member.name, writer)
 
         val value = member.valueIn(instanceOfClass)

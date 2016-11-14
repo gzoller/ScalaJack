@@ -1,13 +1,11 @@
 package co.blocke.scalajack
 package dynamodb
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 import scala.collection.JavaConverters._
 import scala.language.existentials
 
-import typeadapter.{ CaseClassTypeAdapter, ClassMember, PlainClassTypeAdapter }
+import typeadapter.{ CaseClassTypeAdapter, ClassFieldMember, PlainClassTypeAdapter }
 
 import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.model.{ AttributeDefinition, CreateTableRequest, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType }
@@ -65,8 +63,8 @@ case class DynamoFlavor(
     new CreateTableRequest(attrDetail.map(_._1).asJava, tableName, attrDetail.map(_._2).asJava, provisionedThroughput)
   }
 
-  private def getAttrType(key: ClassMember[_, _]) =
-    if (key.valueTypeAdapter.isInstanceOf[StringKind])
+  private def getAttrType(key: ClassFieldMember[_, _]) =
+    if (key.isStringValue)
       ScalarAttributeType.S
     else
       ScalarAttributeType.N
