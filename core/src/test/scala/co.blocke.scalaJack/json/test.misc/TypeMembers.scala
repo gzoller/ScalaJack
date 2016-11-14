@@ -5,7 +5,7 @@ import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 trait Body
 case class FancyBody(message: String) extends Body
@@ -20,17 +20,13 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 
-  describe("-------------------------\n:  Default Value Tests  :\n-------------------------") {
+  describe("-----------------------------\n:  Externalized Type Tests  :\n-----------------------------") {
     val t = currentMirror.staticClass("co.blocke.scalajack.json.test.misc.Envelope").asType.toType
 
     val tt = new TypeTag[Any] {
-
       override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[Any] = ???
-
       override val mirror: universe.Mirror = currentMirror
-
       override def tpe: universe.Type = t
-
     }
 
     it("Read") {
@@ -38,7 +34,7 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
       val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
       assertResult(expected) {
-        sj.read(json)(tt)
+        sj.read(json)(TypeTags.of(typeOf[Envelope[Body]]))
       }
     }
 
@@ -46,8 +42,12 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val value: Any = Envelope("DEF", FancyBody("BOO"))
 
       val expected = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
+      println("HERE: " + (TypeTags.of(typeOf[Envelope[Body]]) == tt))
+      println(TypeTags.of(typeOf[Envelope[Body]]))
+      println("------")
+      println(tt)
       assertResult(expected) {
-        sj.render(value)(tt)
+        sj.render(value)(TypeTags.of(typeOf[Envelope[Body]]))
       }
     }
 
