@@ -26,6 +26,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       name:              String,
       valueType:         Type,
       valueTypeAdapter:  TypeAdapter[T],
+      declaredValueType: Type,
       valueGetterMethod: Method,
       // Java & Scala need different setters.  Scala needs to properly set ValueClass values,
       // which can't be done using a Java method call.  Of course Java can *only* use a Java
@@ -136,7 +137,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                   .value().value).asInstanceOf[Option[Int]]
 
               val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-              FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, None, memberClass, dbkeyAnnotation, member.annotations)
+              FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, memberType /* FIXME */ , accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, None, memberClass, dbkeyAnnotation, member.annotations)
           })
         } match {
           case Success(m) => m
@@ -157,6 +158,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           // Scala case
           case p if (dontIgnore(p) && tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol && p.owner != typeOf[SJCapture].typeSymbol) =>
             val memberType = p.asMethod.returnType
+            val declaredMemberType = tpe.typeSymbol.asType.toType.member(p.name).asMethod.returnType
             val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 
             val (derivedValueClassConstructorMirror, memberClass) =
@@ -187,6 +189,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               p.name.encodedName.toString,
               memberType,
               memberTypeAdapter,
+              declaredMemberType,
               Reflection.methodToJava(p.asMethod),
               Some(tpe.member(TermName(p.name.toString + "_$eq")).asMethod),
               None,
@@ -199,14 +202,16 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       def reflectJavaGetterSetterFields: List[ClassFieldMember[T, Any]] = {
         val clazz = currentMirror.runtimeClass(tpe.typeSymbol.asClass)
-        Introspector.getBeanInfo(clazz).getPropertyDescriptors().toList.filterNot(_.getName == "class").map { propertyDescriptor =>
+        Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList.filterNot(_.getName == "class").map { propertyDescriptor =>
           val memberType = tpe.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
+          val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
           PlainFieldMember[Any, Any](
             0,
             propertyDescriptor.getName,
             memberType,
             memberTypeAdapter,
+            declaredMemberType,
             propertyDescriptor.getReadMethod,
             None,
             Some(propertyDescriptor.getWriteMethod),

@@ -10,6 +10,7 @@ import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol,
 
 trait ClassFieldMember[Owner, T] extends ClassLikeTypeAdapter.FieldMember[Owner] {
   def dbKeyIndex: Option[Int]
+  def declaredValueType: Type
 }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
@@ -21,6 +22,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       name:                               MemberName,
       valueType:                          Type,
       valueTypeAdapter:                   TypeAdapter[T],
+      declaredValueType:                  Type,
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
@@ -97,55 +99,59 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         TypeMember[T](m.name.decodedName.toString, m.typeSignature)
       }
 
-      val fieldMembers = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
-        case (member, index) =>
-          val memberName = member.name.encodedName.toString
-          val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
-          val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
+      val params1 = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten
+      val params2 = constructorSymbol.typeSignatureIn(tt.tpe.typeSymbol.asType.toType).paramLists.flatten
 
-          val (derivedValueClassConstructorMirror, memberClass) =
-            if (member.typeSignature.typeSymbol.isClass) {
-              val memberClassSymbol = member.typeSignature.typeSymbol.asClass
+      val fieldMembers = for (((member, param2), index) <- (params1 zip params2).zipWithIndex) yield {
+        val memberName = member.name.encodedName.toString
+        val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
+        val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-              if (memberClassSymbol.isDerivedValueClass) {
-                val memberClass = currentMirror.runtimeClass(memberClassSymbol)
-                // The accessor will actually return the "inner" value, not the value class.
-                val constructorMethodSymbol = memberClassSymbol.primaryConstructor.asMethod
-                //              val innerClass = currentMirror.runtimeClass(constructorMethodSymbol.paramLists.flatten.head.info.typeSymbol.asClass)
-                (Some(currentMirror.reflectClass(memberClassSymbol).reflectConstructor(constructorMethodSymbol)), Some(memberClass))
-              } else {
-                (None, None)
-              }
+        val (derivedValueClassConstructorMirror, memberClass) =
+          if (member.typeSignature.typeSymbol.isClass) {
+            val memberClassSymbol = member.typeSignature.typeSymbol.asClass
+
+            if (memberClassSymbol.isDerivedValueClass) {
+              val memberClass = currentMirror.runtimeClass(memberClassSymbol)
+              // The accessor will actually return the "inner" value, not the value class.
+              val constructorMethodSymbol = memberClassSymbol.primaryConstructor.asMethod
+              //              val innerClass = currentMirror.runtimeClass(constructorMethodSymbol.paramLists.flatten.head.info.typeSymbol.asClass)
+              (Some(currentMirror.reflectClass(memberClassSymbol).reflectConstructor(constructorMethodSymbol)), Some(memberClass))
             } else {
               (None, None)
             }
+          } else {
+            (None, None)
+          }
 
-          val defaultValueAccessorMirror =
-            if (member.typeSignature.typeSymbol.isClass) {
-              val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
-              if (defaultValueAccessor.isMethod) {
-                Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
-              } else {
-                None
-              }
+        val defaultValueAccessorMirror =
+          if (member.typeSignature.typeSymbol.isClass) {
+            val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
+            if (defaultValueAccessor.isMethod) {
+              Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
             } else {
               None
             }
+          } else {
+            None
+          }
 
-          val memberType = member.asTerm.typeSignature
+        val memberType = member.asTerm.typeSignature
 
-          // Exctract DBKey annotation if present
-          val optionalDbKeyIndex = member.annotations.find(_.tree.tpe =:= typeOf[DBKey])
-            .map { index =>
-              if (index.tree.children.size > 1)
-                index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
-              else
-                0
-            }.asInstanceOf[Option[Int]]
+        val declaredMemberType = param2.asTerm.typeSignature
 
-          val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-          FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, member.annotations)
-      })
+        // Exctract DBKey annotation if present
+        val optionalDbKeyIndex = member.annotations.find(_.tree.tpe =:= typeOf[DBKey])
+          .map { index =>
+            if (index.tree.children.size > 1)
+              index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+            else
+              0
+          }.asInstanceOf[Option[Int]]
+
+        val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
+        FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, member.annotations)
+      }
 
       // Exctract Collection name annotation if present
       val collectionAnnotation = classSymbol.annotations.find(_.tree.tpe =:= typeOf[Collection])
@@ -293,7 +299,7 @@ case class CaseClassTypeAdapter[T](
 
         for (fieldMember <- fieldMembers) {
           val fieldValue = fieldMember.valueIn(value)
-          val declaredFieldValueType = fieldMember.valueTypeTag.tpe
+          val declaredFieldValueType = fieldMember.declaredValueType
           val actualFieldValueType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
 
           for (typeParam <- tpe.typeConstructor.typeParams) {
