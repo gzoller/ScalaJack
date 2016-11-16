@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf }
+import scala.language.existentials
 
 object TypeTypeAdapter extends TypeAdapterFactory {
 
@@ -14,7 +15,7 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class TypeTypeAdapter(mirror: Mirror) extends TypeAdapter[Type] {
+case class TypeTypeAdapter(mirror: Mirror, crashOnNotFound: Boolean = true) extends TypeAdapter[Type] {
 
   override def read(reader: Reader): Type =
     reader.peek match {
@@ -24,7 +25,10 @@ case class TypeTypeAdapter(mirror: Mirror) extends TypeAdapter[Type] {
           mirror.staticClass(fullName).toType
         } catch {
           case e: ScalaReflectionException =>
-            throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
+            if (crashOnNotFound) // Normally... die if class not found
+              throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
+            else // Except for "externalized types" (type members), where we may have ParseOrElse behavior later
+              typeOf[UnknownType]
         }
 
       case TokenType.Null =>

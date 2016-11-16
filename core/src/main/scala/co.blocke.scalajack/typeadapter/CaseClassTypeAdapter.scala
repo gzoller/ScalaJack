@@ -158,7 +158,17 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
           .value().value).asInstanceOf[Option[String]]
 
-      CaseClassTypeAdapter[T](context, tt.tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], typeMembers, fieldMembers, isSJCapture, collectionAnnotation)
+      CaseClassTypeAdapter[T](
+        context,
+        tt.tpe,
+        constructorMirror,
+        memberNameTypeAdapter,
+        context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter].copy(crashOnNotFound = false),
+        typeMembers,
+        fieldMembers,
+        isSJCapture,
+        collectionAnnotation
+      )
     } else {
       next.typeAdapterOf[T]
     }
