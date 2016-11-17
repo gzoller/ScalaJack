@@ -1,13 +1,14 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf }
+import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf, TypeBounds }
 import scala.language.existentials
 
 object TypeTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe =:= typeOf[Type]) {
+      println("::: "+tt.tpe.typeSymbol.typeSignature.asInstanceOf[TypeBounds].hi)
       TypeTypeAdapter(tt.mirror).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]

@@ -5,7 +5,7 @@ import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
+import scala.reflect.runtime.universe.{ TypeTag, typeOf, Type }
 
 trait Body
 case class FancyBody(message: String) extends Body
@@ -27,7 +27,14 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val json = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
       val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
       assertResult(expected) {
-        sj.read(json)(TypeTags.of("co.blocke.scalajack.json.test.misc.Envelope"))
+        val x = sj.read[Envelope[Body]](json)(TypeTags.of(typeOf[Envelope[Body]]))
+        if (x.body.isInstanceOf[FancyBody]) println("Fancy!")
+        // Test match functionality
+        x.body match {
+          case y: FancyBody => println("Again!")
+          case _            => println("nope")
+        }
+        x
       }
     }
     it("Write") {
@@ -37,10 +44,11 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sj.render(value)(TypeTags.of(typeOf[Envelope[Body]]))
       }
     }
-    */
+*/
     it("Works with ParseOrElse") {
       val js = """{"Giraffe":"co.blocke.scalajack.json.test.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
-      println(sj.read(js)(TypeTags.of(typeOf[Envelope[Body]])))
+      val x = sj.read[Envelope[Body]](js)(TypeTags.of(typeOf[Envelope[Body]]))
+      println(x)
     }
   }
 }
