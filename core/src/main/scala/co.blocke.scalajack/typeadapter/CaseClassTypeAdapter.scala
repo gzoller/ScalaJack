@@ -163,7 +163,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         tt.tpe,
         constructorMirror,
         memberNameTypeAdapter,
-        context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter].copy(crashOnNotFound = false),
+        context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter],
         typeMembers,
         fieldMembers,
         isSJCapture,

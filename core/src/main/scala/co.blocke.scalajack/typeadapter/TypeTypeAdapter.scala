@@ -16,20 +16,19 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class TypeTypeAdapter(mirror: Mirror, crashOnNotFound: Boolean = true) extends TypeAdapter[Type] {
+case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
 
   override def read(reader: Reader): Type =
     reader.peek match {
       case TokenType.String =>
-        val fullName = reader.readString()
-        try {
-          mirror.staticClass(fullName).toType
-        } catch {
-          case e: ScalaReflectionException =>
-            if (crashOnNotFound) // Normally... die if class not found
+        typeModifier.map(mod => mod.apply(reader.readString())).getOrElse {
+          val fullName = reader.readString()
+          try {
+            mirror.staticClass(fullName).toType
+          } catch {
+            case e: ScalaReflectionException =>
               throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
-            else // Except for "externalized types" (type members), where we may have ParseOrElse behavior later
-              typeOf[UnknownType]
+          }
         }
 
       case TokenType.Null =>
@@ -40,8 +39,7 @@ case class TypeTypeAdapter(mirror: Mirror, crashOnNotFound: Boolean = true) exte
     if (value == null) {
       writer.writeNull()
     } else {
-      val fullName = value.typeSymbol.fullName
-      writer.writeString(fullName)
+      writer.writeString(typeModifier.map(mod => mod.unapply(value)).getOrElse(value.typeSymbol.fullName))
     }
 
 }

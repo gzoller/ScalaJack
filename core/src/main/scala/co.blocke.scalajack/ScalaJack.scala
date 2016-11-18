@@ -1,13 +1,13 @@
 package co.blocke.scalajack
 
 import json.JsonFlavor
-import typeadapter.{ FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, CaseClassTypeAdapter }
+import typeadapter.{ FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, CaseClassTypeAdapter, TypeTypeAdapter }
 import BijectiveFunction.Implicits._
 import BijectiveFunctions._
 import CaseClassTypeAdapter.FieldMember
 
 import scala.language.existentials
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object ScalaJack {
   def apply[S](kind: ScalaJackLike[S] = JsonFlavor()): ScalaJackLike[S] = kind
@@ -20,6 +20,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
   val parseOrElseMap: Map[Type, Type]
   val defaultHint: String
   val isCanonical: Boolean
+  val typeModifier: Option[HintModifier]
 
   val context: Context = bakeContext()
 
@@ -27,6 +28,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
   def withHints(h: (Type, String)*): ScalaJackLike[S]
   def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[S]
   def withDefaultHint(hint: String): ScalaJackLike[S]
+  def withTypeModifier(tm: HintModifier): ScalaJackLike[S]
   def parseOrElse(poe: (Type, Type)*): ScalaJackLike[S]
   def isCanonical(canonical: Boolean): ScalaJackLike[S]
 
@@ -99,9 +101,19 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
       }
     }.toList
 
+    val typeModFactories = typeModifier.map(mod => List(new TypeAdapterFactory {
+      override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+        if (tt.tpe =:= typeOf[Type]) {
+          TypeTypeAdapter(tt.mirror, Some(mod)).asInstanceOf[TypeAdapter[T]]
+        } else {
+          next.typeAdapterOf[T]
+        }
+      }
+    })).getOrElse(List.empty[TypeAdapterFactory])
+
     val intermediateContext = Context(
       defaultHint,
-      factories = customAdapters ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter)
+      factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter)
     )
 
     // ParseOrElse functionality

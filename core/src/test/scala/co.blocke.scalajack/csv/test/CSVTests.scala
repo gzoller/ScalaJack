@@ -168,6 +168,10 @@ class CSVTests() extends FunSpec with Matchers {
       }
     }
     describe("ScalaJack creation 'with' modifiers (failure):") {
+      it("No withTypeModifier") {
+        the[java.lang.UnsupportedOperationException] thrownBy
+          ScalaJack(CSVFlavor()).withTypeModifier(null.asInstanceOf[HintModifier]) should have message "Not available for CSV formatting"
+      }
       it("No withAdapters") {
         the[java.lang.UnsupportedOperationException] thrownBy
           ScalaJack(CSVFlavor()).withAdapters(null.asInstanceOf[TypeAdapterFactory]) should have message "Not available for CSV formatting"
