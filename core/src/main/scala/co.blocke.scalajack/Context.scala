@@ -127,5 +127,4 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
 
   def typeAdapterOf[T](implicit valueTypeTag: TypeTag[T]): TypeAdapter[T] =
     typeAdapter(valueTypeTag.tpe).asInstanceOf[TypeAdapter[T]]
-
 }

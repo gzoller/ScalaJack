@@ -17,37 +17,44 @@ case class Envelope[T <: Body](id: String, body: T) {
 
 }
 
+case class Bigger(foo: Int, env: Envelope[FancyBody])
+
 class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack().parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))
 
   describe("-----------------------------\n:  Externalized Type Tests  :\n-----------------------------") {
-    /*
-    it("Read") {
+    it("Read and match") {
       val json = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
       val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
-      assertResult(expected) {
-        val x = sj.read[Envelope[Body]](json)(TypeTags.of(typeOf[Envelope[Body]]))
-        if (x.body.isInstanceOf[FancyBody]) println("Fancy!")
+      assertResult((expected, 1)) {
+        val x = sj.read[Envelope[Body]](json)
         // Test match functionality
-        x.body match {
-          case y: FancyBody => println("Again!")
-          case _            => println("nope")
+        val num = x.body match {
+          case y: FancyBody => 1
+          case _            => 2
         }
-        x
+        (x, num)
       }
     }
     it("Write") {
-      val value: Any = Envelope("DEF", FancyBody("BOO"))
+      val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
       val expected = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
       assertResult(expected) {
-        sj.render(value)(TypeTags.of(typeOf[Envelope[Body]]))
+        sj.render[Envelope[Body]](value)
       }
     }
-*/
+    it("Wrapped") {
+      val inst = Bigger(25, Envelope("abc", FancyBody("msg here")))
+      val js = sj.render(inst)
+      assertResult("""{"foo":25,"env":{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"abc","body":{"message":"msg here"}}}""") { js }
+      assertResult(inst) {
+        sj.read[Bigger](js)
+      }
+    }
     it("Works with ParseOrElse") {
       val js = """{"Giraffe":"co.blocke.scalajack.json.test.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
-      val x = sj.read[Envelope[Body]](js)(TypeTags.of(typeOf[Envelope[Body]]))
+      val x = sj.read[Envelope[Body]](js)
       println(x)
     }
   }
