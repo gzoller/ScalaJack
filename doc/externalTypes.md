@@ -42,3 +42,21 @@ inbound.payload match {
   case _ => // catch-all
 }
 ```
+
+#### Custom Type Modifiers
+Just like for type hints, we may receive 3rd party JSON where having the type value be a fully-qualified Scala class name may not be possible.  We have a limited ability to use the same modifiers we use for type hints.
+```scala
+val sjm = ScalaJack().withTypeModifier(ClassNameHintModifier((hint: String) => "com.me." + hint, (cname: String) => cname.split('.').last))
+val inst: Message[Command] = Message("abc123", FieldCommand("pong"))
+val js = sjm.render[Message[Command]](inst)
+// {"payloadKind":"FieldCommand", "id":"abc123", "payload":{"ping":"pong"}}
+```
+Note the class path has been modified and we now only see the trailing class name.  The other out-of-the-box modifier, StringMatchHintModifier, works here too, in case you need to completely divorce the value in the JSON from any notion of the class name.
+
+**WARNING:** There is currently two pretty big limitations on type modifiers.  
+ -  You can only specify one type modifier.
+ -  The type modifier will apply to *all* your type member values!
+
+So if you use type members in your case classes only for the purpose of externalizing your type hints, *and* you don't care if all these type hints are processed the same way, then this is a simple and effective way of modifying the value to something other than a fully-qualified class name.
+
+Perhaps a future version of ScalaJack will support multiple modifiers and make them class/member specific.

@@ -59,6 +59,7 @@ Couldn't be simpler!
 * [ParseOrElse](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
 * [Non-Canonical JSON](doc/noncanonical.md)
+* [Externalized Type Hints](doc/externalTypes.md)
 
 Non-JSON Formats:
 * [MongoDB](doc/mongo.md)
