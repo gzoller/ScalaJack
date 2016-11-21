@@ -44,7 +44,7 @@ case class ComplexMapKeyTypeAdapter[T](
         if (nestedReader.hasNext)
           // $COVERAGE-OFF$Should never be possible, but just in case...
           throw new java.lang.IllegalStateException("Cannot parse value into intended type\n" + reader.showError())
-          // $COVERAGE-ON$
+        // $COVERAGE-ON$
         valueParsed
     }
     readValue
