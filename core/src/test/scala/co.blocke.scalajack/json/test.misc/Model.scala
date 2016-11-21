@@ -98,6 +98,12 @@ case class HasDefaults(name: String, age: Option[Int], pet: Pet = Dog("Fido", tr
 
 @Collection(name = "myDefaults")
 case class DefaultOpt(
-  @DBKey name: String,
-  age:         Option[Int] = Some(19)
+  @DBKey(index = 1) name:String,
+  age:                  Option[Int] = Some(19)
 )
+
+@Collection(name = "plains")
+class Plain() {
+  @DBKey(index = 1) var name: String = "" // public var member
+  var age: Option[Int] = Some(19)
+}

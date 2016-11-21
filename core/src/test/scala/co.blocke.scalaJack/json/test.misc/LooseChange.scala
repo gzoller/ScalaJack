@@ -6,7 +6,7 @@ import org.scalatest.Matchers._
 import scala.util.Try
 import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
-import typeadapter.CaseClassTypeAdapter
+import typeadapter.{ CaseClassTypeAdapter, PlainClassTypeAdapter }
 
 class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
@@ -26,10 +26,15 @@ class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val y = x.inverse
       y("foo") should be(3)
     }
-    it("Can fid collection annotation on case class") {
+    it("Can find collection and key annotations on case class") {
       val adapter = sj.context.typeAdapter(typeOf[DefaultOpt]).asInstanceOf[CaseClassTypeAdapter[_]]
       adapter.collectionName should be(Some("myDefaults"))
-      adapter.fieldMembers.head.dbKeyIndex should be(Some(0))
+      adapter.dbKeys.head.dbKeyIndex should be(Some(1))
+    }
+    it("Can find collection and key annotations on plaub class") {
+      val adapter = sj.context.typeAdapter(typeOf[Plain]).asInstanceOf[PlainClassTypeAdapter[_]]
+      adapter.collectionName should be(Some("plains"))
+      adapter.dbKeys.head.dbKeyIndex should be(Some(1))
     }
   }
 }

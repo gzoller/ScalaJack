@@ -21,7 +21,9 @@ object TypeTags {
 
   def of[T](t: Type): TypeTag[T] = {
     new TypeTag[T] {
+      // $COVERAGE-OFF$Unused in our context
       override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[T] = ???
+      // $COVERAGE-ON$
       override val mirror: universe.Mirror = currentMirror
       override def tpe: universe.Type = t
     }

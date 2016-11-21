@@ -59,6 +59,7 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
 
   def instantiate(fieldMemberValues: Array[Any]): C
 
+  // $COVERAGE-OFF$Not used for JSON (Mongo)
   override def read(reader: Reader): C =
     reader.peek match {
       case TokenType.BeginObject =>
@@ -110,5 +111,6 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
 
       writer.endObject()
     }
+  // $COVERAGE-ON$
 
 }
