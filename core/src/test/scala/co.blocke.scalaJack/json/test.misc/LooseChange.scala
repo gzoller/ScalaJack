@@ -5,8 +5,10 @@ import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
 import scala.util.Try
 import java.util.UUID
+import scala.reflect.runtime.universe.typeOf
+import typeadapter.CaseClassTypeAdapter
 
-class LoseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 
@@ -23,6 +25,11 @@ class LoseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       x(3) should be("xxx")
       val y = x.inverse
       y("foo") should be(3)
+    }
+    it("Can fid collection annotation on case class") {
+      val adapter = sj.context.typeAdapter(typeOf[DefaultOpt]).asInstanceOf[CaseClassTypeAdapter[_]]
+      adapter.collectionName should be(Some("myDefaults"))
+      adapter.fieldMembers.head.dbKeyIndex should be(Some(0))
     }
   }
 }

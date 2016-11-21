@@ -75,6 +75,13 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sjm.read[BigEnvelope[Body, Hobby]](js)
       }
     }
+    it("In case we need TypeTags") {
+      val json = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
+      val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
+      assertResult(expected) {
+        sj.read[Envelope[Body]](json)(TypeTags.of(typeOf[Envelope[Body]]))
+      }
+    }
     /*
     it("Works with ParseOrElse") {
       val js = """{"Giraffe":"co.blocke.scalajack.json.test.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""

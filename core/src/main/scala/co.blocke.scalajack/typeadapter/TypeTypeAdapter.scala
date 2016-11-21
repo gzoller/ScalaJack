@@ -32,12 +32,16 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
         }
 
       case TokenType.Null =>
+        // $COVERAGE-OFF$Safety check--not used
         reader.readNull()
+      // $COVERAGE-ON$
     }
 
   override def write(value: Type, writer: Writer): Unit =
     if (value == null) {
+      // $COVERAGE-OFF$Safety check--not used
       writer.writeNull()
+      // $COVERAGE-ON$
     } else {
       writer.writeString(typeModifier.map(mod => mod.unapply(value)).getOrElse(value.typeSymbol.fullName))
     }

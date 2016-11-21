@@ -36,7 +36,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     override val valueTypeTag = new TypeTag[T] {
 
+      // $COVERAGE-OFF$Unused in our context
       override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[T] = ???
+      // $COVERAGE-ON$
 
       override val mirror: universe.Mirror = currentMirror
 
