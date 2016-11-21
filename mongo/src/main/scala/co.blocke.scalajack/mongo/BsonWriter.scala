@@ -40,7 +40,9 @@ class BsonWriter extends Writer {
       value = childValue
     }
 
+    // $COVERAGE-OFF$Unused in our context
     override def end(): BsonValue = value
+    // $COVERAGE-ON$
 
   }
 
@@ -87,10 +89,6 @@ class BsonWriter extends Writer {
       val value =
         if (keys contains "$date") {
           new BsonDateTime(document.getNumber("$date").longValue)
-        } else if (keys contains "$minKey") {
-          new BsonMinKey
-        } else if (keys contains "$maxKey") {
-          new BsonMaxKey
         } else if (keys contains "$oid") {
           new BsonObjectId(new org.bson.types.ObjectId(document.getString("$oid").getValue))
         } else {

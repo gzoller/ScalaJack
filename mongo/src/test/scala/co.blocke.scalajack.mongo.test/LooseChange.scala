@@ -10,13 +10,9 @@ import scala.util.Try
 import org.mongodb.scala._
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson._
+import java.time.ZonedDateTime
 
-case class Something(
-  name:  String,
-  stuff: Map[String, Any]
-)
-
-class AnySpec extends FunSpec {
+class LooseChange extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {
@@ -40,46 +36,29 @@ class AnySpec extends FunSpec {
     val g = Something("Fred", Map("a" -> 1, "b" -> 25L))
   }
 
-  describe("-------------------------\n:  Any Tests (MongoDB)  :\n-------------------------") {
-    describe("Render Tests") {
-      it("Any 1") {
-        sjM.render(ScalaMaster.a) should be(MongoMaster.a)
-      }
-      it("Any 2") {
-        sjM.render(ScalaMaster.b) should be(MongoMaster.b)
-      }
-      it("Any 3") {
-        sjM.render(ScalaMaster.c) should be(MongoMaster.c)
-      }
-      it("Any 4") {
-        sjM.render(ScalaMaster.e) should be(MongoMaster.e)
-      }
-      it("Any 5") {
-        sjM.render(ScalaMaster.f) should be(MongoMaster.f)
-      }
-      it("Any 6") {
-        sjM.render(ScalaMaster.g) should be(MongoMaster.g)
-      }
+  describe("----------------------------\n:  Loose Change (MongoDB)  :\n----------------------------") {
+    it("Handles null value") {
+      val dbo = BsonDocument("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> 15))
+      sjM.read[Something](dbo) should be(Something("Fred", Map("a" -> 1, "b" -> 15)))
     }
-    describe("Read Tests") {
-      it("Any 1") {
-        sjM.read[Something](MongoMaster.a) should equal(ScalaMaster.a)
-      }
-      it("Any 2") {
-        sjM.read[Something](MongoMaster.b) should equal(ScalaMaster.b)
-      }
-      it("Any 3") {
-        sjM.read[Something](MongoMaster.c) should equal(ScalaMaster.c)
-      }
-      it("Any 4") {
-        sjM.read[Something](MongoMaster.e) should equal(ScalaMaster.e)
-      }
-      it("Any 5") {
-        sjM.read[Something](MongoMaster.f) should equal(ScalaMaster.f)
-      }
-      it("Any 6") {
-        sjM.read[Something](MongoMaster.g) should equal(ScalaMaster.g)
-      }
+    it("Should blow up for unsupported BSON type") {
+      val dbo = BsonDocument("name" -> "Fred", "stuff" -> BsonDocument("a" -> BsonJavaScript("code here")))
+      the[java.lang.IllegalArgumentException] thrownBy sjM.read[Something](dbo) should have message """Type for value BsonJavaScript{code='code here'} is either deprecated by Mongo, or unsupported by ScalaJack as unsafe (e.g. Javascript)"""
+    }
+    it("No withTypeModifier") {
+      the[java.lang.UnsupportedOperationException] thrownBy
+        ScalaJack(MongoFlavor()).withTypeModifier(null.asInstanceOf[HintModifier]) should have message "Not available for Mongo formatting"
+    }
+    it("ZonedDateTime must work") {
+      val inst = SampleZonedDateTime(ZonedDateTime.parse("2007-12-03T04:15:30-06:00[America/Chicago]"), null)
+      val dbo = BsonDocument("o1" -> BsonDateTime(1196676930000L), "o2" -> BsonNull())
+      sjM.read[SampleZonedDateTime](dbo) should equal(inst)
+    }
+    it("Handles Null") {
+      val dbo = BsonDocument("o1" -> BsonNull(), "o2" -> BsonNull())
+      val inst = sjM.read[SampleZonedDateTime](dbo)
+      inst should be(SampleZonedDateTime(null, null))
+      sjM.render(inst) should be(dbo)
     }
   }
 }

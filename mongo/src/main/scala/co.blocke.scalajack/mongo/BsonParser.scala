@@ -33,7 +33,9 @@ class BsonParser {
 
     def consumeValue(value: BsonValue): Unit = {
       if (value == null) {
+        // $COVERAGE-OFF$Safety check... It shouldn't be possible for BsonValue to be null
         appendToken(TokenType.Null, value)
+        // $COVERAGE-ON$
       } else if (value.isArray) {
         val valueAsArray = value.asArray
 
