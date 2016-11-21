@@ -12,6 +12,7 @@ case class CSVFlavor() extends {
   val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintModifiers: Map[Type, HintModifier] = Map.empty[Type, HintModifier]
+  val typeModifier: Option[HintModifier] = None
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
   val defaultHint: String = "_hint"
   val isCanonical: Boolean = true
@@ -21,6 +22,7 @@ case class CSVFlavor() extends {
   def withHints(h: (Type, String)*) = throw new UOE("Not available for CSV formatting")
   def withHintModifiers(hm: (Type, HintModifier)*) = throw new UOE("Not available for CSV formatting")
   def withDefaultHint(hint: String) = throw new UOE("Not available for CSV formatting")
+  def withTypeModifier(tm: HintModifier) = throw new UOE("Not available for CSV formatting")
   def parseOrElse(poe: (Type, Type)*) = throw new UOE("Not available for CSV formatting")
   def isCanonical(canonical: Boolean) = throw new UOE("Not available for CSV formatting")
 

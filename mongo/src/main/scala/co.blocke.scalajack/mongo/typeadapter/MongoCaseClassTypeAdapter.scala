@@ -5,7 +5,8 @@ package typeadapter
 import co.blocke.scalajack.typeadapter.ClassLikeTypeAdapter
 
 import scala.reflect.runtime.universe
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
@@ -18,7 +19,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
         type RealClass = T
 
-        val membersOfRealClass = realClassTypeAdapter.members
+        val membersOfRealClass = realClassTypeAdapter.fieldMembers
         val numberOfRealMembers = membersOfRealClass.length
 
         val (keyMembersOfRealClass, nonKeyMembersOfRealClass) = membersOfRealClass.partition(_.annotationOf[DBKey].isDefined)
@@ -29,7 +30,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
           case keyMemberOfRealClass :: Nil =>
             type SyntheticClass = Array[Any]
-            type MemberOfSyntheticClass = ClassLikeTypeAdapter.Member[SyntheticClass]
+            type MemberOfSyntheticClass = ClassLikeTypeAdapter.FieldMember[SyntheticClass]
 
             val idMemberOfSyntheticClass = new MemberOfSyntheticClass {
 
@@ -53,6 +54,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
                 keyMemberOfRealClass.annotationOf[A]
+
+              override def isStringValue: Boolean =
+                keyMemberOfRealClass.isStringValue
+
+              override def valueTypeTag: TypeTag[Value] =
+                keyMemberOfRealClass.valueTypeTag
 
             }
 
@@ -80,6 +87,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
                 memberOfRealClass.annotationOf[A]
 
+              override def isStringValue: Boolean =
+                memberOfRealClass.isStringValue
+
+              override def valueTypeTag: TypeTag[Value] =
+                memberOfRealClass.valueTypeTag
+
             }
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
@@ -87,10 +100,14 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
-              override def members: List[Member] =
+              override def typeMembers: List[TypeMember] = Nil
+
+              override def typeMember(memberName: MemberName): Option[TypeMember] = None
+
+              override def fieldMembers: List[FieldMember] =
                 membersOfSyntheticClass
 
-              override def member(memberName: MemberName): Option[Member] =
+              override def fieldMember(memberName: MemberName): Option[FieldMember] =
                 membersOfSyntheticClassByName.get(memberName)
 
               override def readMemberName(reader: Reader): MemberName =
@@ -152,8 +169,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
             type SyntheticId = Array[Any]
             type SyntheticClass = Array[Any]
 
-            type MemberOfSyntheticId = ClassLikeTypeAdapter.Member[SyntheticId]
-            type MemberOfSyntheticClass = ClassLikeTypeAdapter.Member[SyntheticClass]
+            type MemberOfSyntheticId = ClassLikeTypeAdapter.FieldMember[SyntheticId]
+            type MemberOfSyntheticClass = ClassLikeTypeAdapter.FieldMember[SyntheticClass]
 
             val idTypeAdapter = {
               val membersOfSyntheticId: List[MemberOfSyntheticId] = for ((memberOfRealClass, i) <- allKeyMembers.zipWithIndex) yield new MemberOfSyntheticId {
@@ -178,16 +195,26 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                 override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
                   memberOfRealClass.annotationOf[A]
 
+                override def isStringValue: Boolean =
+                  memberOfRealClass.isStringValue
+
+                override def valueTypeTag: TypeTag[Value] =
+                  memberOfRealClass.valueTypeTag
+
               }
 
               val membersOfSyntheticIdByName = membersOfSyntheticId.map(member => member.name -> member).toMap
 
               new ClassLikeTypeAdapter[SyntheticId] {
 
-                override def members: List[Member] =
+                override def typeMembers: List[TypeMember] = Nil
+
+                override def typeMember(memberName: MemberName): Option[TypeMember] = None
+
+                override def fieldMembers: List[FieldMember] =
                   membersOfSyntheticId
 
-                override def member(memberName: MemberName): Option[Member] =
+                override def fieldMember(memberName: MemberName): Option[FieldMember] =
                   membersOfSyntheticIdByName.get(memberName)
 
                 override def readMemberName(reader: Reader): MemberName =
@@ -223,6 +250,11 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
 
+              override def isStringValue: Boolean = false
+
+              override def valueTypeTag: TypeTag[SyntheticId] =
+                TypeTags.of(currentMirror, typeOf[Nothing])
+
             }
 
             val nonIdMembersOfSyntheticClass = for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) yield new MemberOfSyntheticClass {
@@ -249,6 +281,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
                 memberOfRealClass.annotationOf[A]
 
+              override def isStringValue: Boolean =
+                memberOfRealClass.isStringValue
+
+              override def valueTypeTag: TypeTag[Value] =
+                memberOfRealClass.valueTypeTag
+
             }
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
@@ -256,10 +294,14 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
-              override def members: List[Member] =
+              override def typeMembers: List[TypeMember] = Nil
+
+              override def typeMember(memberName: MemberName): Option[TypeMember] = None
+
+              override def fieldMembers: List[FieldMember] =
                 membersOfSyntheticClass
 
-              override def member(memberName: MemberName): Option[Member] =
+              override def fieldMember(memberName: MemberName): Option[FieldMember] =
                 membersOfSyntheticClassByName.get(memberName)
 
               override def readMemberName(reader: Reader): MemberName =
