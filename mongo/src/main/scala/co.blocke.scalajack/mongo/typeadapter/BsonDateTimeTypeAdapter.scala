@@ -33,7 +33,9 @@ case class BsonDateTimeTypeAdapter(containerTypeAdapter: TypeAdapter[DateContain
 
   override def write(value: BsonDateTime, writer: Writer): Unit =
     if (value == null) {
+      // $COVERAGE-OFF$A BsonDateTime value should never be null -- safety valve
       writer.writeNull()
+      // $COVERAGE-ON$
     } else {
       containerTypeAdapter.write(DateContainer(value.getValue), writer)
     }
