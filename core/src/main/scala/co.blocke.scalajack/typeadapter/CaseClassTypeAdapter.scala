@@ -375,6 +375,7 @@ case class CaseClassTypeAdapter[T](
       writer.endObject()
     }
 
+  // $COVERAGE-OFF$Not used for JSON (Mongo)
   override def typeMember(memberName: MemberName): Option[TypeMember] =
     typeMembersByName.get(memberName)
 
@@ -389,5 +390,5 @@ case class CaseClassTypeAdapter[T](
 
   override def instantiate(memberValues: Array[Any]): T =
     constructorMirror.apply(memberValues: _*).asInstanceOf[T]
-
+  // $COVERAGE-ON$
 }
