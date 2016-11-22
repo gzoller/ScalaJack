@@ -13,6 +13,7 @@ object Build extends Build {
 	import Dependencies._
 
 	val scalaVer = "2.11.8"
+	val scalaVer12  = "2.12.0"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
@@ -40,7 +41,7 @@ object Build extends Build {
 		.settings(basicSettings: _*)
 		.settings(publishArtifact := false)
 		.settings(publish := { })
-		.aggregate(scalajack)//, scalajack_dynamodb, scalajack_mongo)
+		.aggregate(scalajack, scalajack_dynamodb, scalajack_mongo)
 		// For gpg might need this too:
 		//publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -55,6 +56,7 @@ object Build extends Build {
 
   	lazy val scalajack = project.in(file("core"))
 		.settings(basicSettings: _*)
+		.settings(Seq(crossScalaVersions := Seq(scalaVer, scalaVer12)))
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
 			compile(scala_reflect) ++

@@ -42,20 +42,44 @@ class AnySpec extends FunSpec {
 
   describe("-------------------------\n:  Any Tests (MongoDB)  :\n-------------------------") {
     describe("Render Tests") {
-      sjM.render(ScalaMaster.a) should be(MongoMaster.a)
-      sjM.render(ScalaMaster.b) should be(MongoMaster.b)
-      sjM.render(ScalaMaster.c) should be(MongoMaster.c)
-      sjM.render(ScalaMaster.e) should be(MongoMaster.e)
-      sjM.render(ScalaMaster.f) should be(MongoMaster.f)
-      sjM.render(ScalaMaster.g) should be(MongoMaster.g)
+      it("Any 1") {
+        sjM.render(ScalaMaster.a) should be(MongoMaster.a)
+      }
+      it("Any 2") {
+        sjM.render(ScalaMaster.b) should be(MongoMaster.b)
+      }
+      it("Any 3") {
+        sjM.render(ScalaMaster.c) should be(MongoMaster.c)
+      }
+      it("Any 4") {
+        sjM.render(ScalaMaster.e) should be(MongoMaster.e)
+      }
+      it("Any 5") {
+        sjM.render(ScalaMaster.f) should be(MongoMaster.f)
+      }
+      it("Any 6") {
+        sjM.render(ScalaMaster.g) should be(MongoMaster.g)
+      }
     }
     describe("Read Tests") {
-      sjM.read[Something](MongoMaster.a) should equal(ScalaMaster.a)
-      sjM.read[Something](MongoMaster.b) should equal(ScalaMaster.b)
-      sjM.read[Something](MongoMaster.c) should equal(ScalaMaster.c)
-      sjM.read[Something](MongoMaster.e) should equal(ScalaMaster.e)
-      sjM.read[Something](MongoMaster.f) should equal(ScalaMaster.f)
-      sjM.read[Something](MongoMaster.g) should equal(ScalaMaster.g)
+      it("Any 1") {
+        sjM.read[Something](MongoMaster.a) should equal(ScalaMaster.a)
+      }
+      it("Any 2") {
+        sjM.read[Something](MongoMaster.b) should equal(ScalaMaster.b)
+      }
+      it("Any 3") {
+        sjM.read[Something](MongoMaster.c) should equal(ScalaMaster.c)
+      }
+      it("Any 4") {
+        sjM.read[Something](MongoMaster.e) should equal(ScalaMaster.e)
+      }
+      it("Any 5") {
+        sjM.read[Something](MongoMaster.f) should equal(ScalaMaster.f)
+      }
+      it("Any 6") {
+        sjM.read[Something](MongoMaster.g) should equal(ScalaMaster.g)
+      }
     }
   }
 }
