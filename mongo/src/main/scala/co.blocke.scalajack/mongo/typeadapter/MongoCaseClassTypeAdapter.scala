@@ -10,6 +10,7 @@ import scala.reflect.runtime.universe.{ TypeTag, typeOf }
 
 object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
+  // $COVERAGE-OFF$Too difficult to test this file at present.  Fallout lines very simple, but many of them
   val IdMemberName: MemberName = "_id"
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -368,5 +369,5 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
       case other =>
         other
     }
-
+  // $COVERAGE-ON$
 }

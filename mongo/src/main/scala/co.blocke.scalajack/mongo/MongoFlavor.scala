@@ -22,7 +22,7 @@ case class MongoFlavor(
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
   def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
   def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
-  def withTypeModifier(tm: HintModifier) = this.copy(typeModifier = Some(tm))
+  def withTypeModifier(tm: HintModifier) = throw new UnsupportedOperationException("Not available for Mongo formatting")
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = throw new UnsupportedOperationException("Not available for Mongo formatting")
 
