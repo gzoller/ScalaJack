@@ -9,7 +9,7 @@ case class PersonRecord(id: Long, first_name: String, last_name: String, email: 
 
 class LargeJsonSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
-  val sj = ScalaJack() //.parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))
+  val sj = ScalaJack()
 
   describe("-----------------------------\n:  Externalized Type Tests  :\n-----------------------------") {
     it("Read and match") {
