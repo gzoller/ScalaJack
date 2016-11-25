@@ -27,6 +27,7 @@ object Context {
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
     .withFactory(EitherTypeAdapter)
+    .withFactory(SealedTraitTypeAdapter)
     .withFactory(BooleanTypeAdapter)
     .withFactory(CharTypeAdapter)
     .withFactory(ByteTypeAdapter)
