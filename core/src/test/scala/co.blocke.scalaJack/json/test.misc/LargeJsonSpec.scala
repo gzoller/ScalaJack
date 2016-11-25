@@ -19,4 +19,3 @@ class LargeJsonSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   }
 
 }
-gi
