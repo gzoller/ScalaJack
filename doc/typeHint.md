@@ -16,7 +16,7 @@ trait Foo{ val bar:Int }
 case class Blather(bar:Int) extends Foo
 
 val sj = ScalaJack().withDefaultHint("kind")
-println(sj.render(Blather(2)))
+println(sj.render[Foo](Blather(2)))
 // {"kind":"com.me.Blather","bar":2}
 ```
 You'll see the normal _hint is replaced by "kind".
