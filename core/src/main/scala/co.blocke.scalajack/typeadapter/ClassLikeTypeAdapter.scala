@@ -45,6 +45,8 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
   type TypeMember = ClassLikeTypeAdapter.TypeMember[C]
   type FieldMember = ClassLikeTypeAdapter.FieldMember[C]
 
+  def members = typeMembers ++ fieldMembers
+
   def typeMembers: List[TypeMember]
 
   def typeMember(memberName: MemberName): Option[TypeMember]
