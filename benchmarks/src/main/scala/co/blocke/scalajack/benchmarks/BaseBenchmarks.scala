@@ -116,7 +116,7 @@ class BaseBenchmarks {
 
     val charArray: Array[Char] = state.jsonCharArray
 
-    val reader = new Tokenizer(capacity = 1024).tokenize(charArray, 0, charArray.length)
+    val reader = new Tokenizer().tokenize(charArray, 0, charArray.length)
 
     val listBuilder = List.canBuildFrom[Person]()
 
