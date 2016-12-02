@@ -2,7 +2,6 @@ package co.blocke.scalajack
 
 import TokenType.TokenType
 import scala.util.{ Try, Success, Failure }
-import java.lang.NumberFormatException
 
 trait Reader {
 
@@ -119,33 +118,67 @@ trait Reader {
   }
 
   def skipValue(): Unit = {
-    peek match {
-      case TokenType.BeginObject => skipOver(TokenType.BeginObject, TokenType.EndObject)
 
-      case TokenType.BeginArray  => skipOver(TokenType.BeginArray, TokenType.EndArray)
+    def skipToEndOfObject(): Unit = {
+      var skipping = true
+      while (skipping) {
+        read() match {
+          case TokenType.BeginObject =>
+            skipToEndOfObject()
+
+          case TokenType.EndObject =>
+            skipping = false
+
+          case TokenType.BeginArray =>
+            skipToEndOfArray()
+
+          case TokenType.EndArray =>
+            throw new IllegalStateException(s"Encountered end-of-array token while inside an object\n${showError()}")
+
+          case _ =>
+        }
+      }
+    }
+
+    def skipToEndOfArray(): Unit = {
+      var skipping = true
+      while (skipping) {
+        read() match {
+          case TokenType.BeginObject =>
+            skipToEndOfObject()
+
+          case TokenType.EndObject =>
+            throw new IllegalStateException(s"Encountered end-of-object token while inside an array\n${showError()}")
+
+          case TokenType.BeginArray =>
+            skipToEndOfArray()
+
+          case TokenType.EndArray =>
+            skipping = false
+
+          case _ =>
+        }
+      }
+    }
+
+    read() match {
+      case TokenType.BeginObject =>
+        skipToEndOfObject()
+
+      case TokenType.EndObject =>
+        throw new IllegalStateException(s"Encountered end-of-object token while not inside an object or array\n${showError()}")
+
+      case TokenType.BeginArray =>
+        skipToEndOfArray()
+
+      case TokenType.EndArray =>
+        throw new IllegalStateException(s"Encountered end-of-array token while not inside an object or array\n${showError()}")
 
       case _ =>
-        position += 1
     }
   }
 
   def captureValue(): Any
-
-  private def skipOver(beginToken: TokenType.Value, endToken: TokenType.Value): Unit = {
-    var depth = 0
-    while (depth > 0 || peek != endToken) {
-      position += 1
-      peek match {
-        case `beginToken` =>
-          depth += 1
-        case `endToken` if (depth > 0) =>
-          depth -= 1
-          position += 1
-        case _ =>
-      }
-    }
-    position += 1
-  }
 
   def tokenText: String
 
