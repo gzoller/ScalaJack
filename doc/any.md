@@ -1,6 +1,6 @@
 ## Any Support
 
-Scala has the wonderful concept of Any.  ScalaJack supports Any but you should be aware of its special needs.
+Scala has the wonderful concept of Any.  ScalaJack supports Any but you should be aware of its special needs and limitations.
 
 A value of type Any means ScalaJack has no specific idea what the type should be, and must therefore infer the type.  This is necessarily an imperfect process but we can describe the process it uses here.
 
