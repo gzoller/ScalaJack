@@ -2,7 +2,7 @@
 
 There are times when you just don't care.  Try and Capture support is designed to let you control how much you care about the JSON you parse.
 
-#### Case 1: I don't care about some fields and not at all about the rest!
+#### Case 1: I care about some fields and not at all about the rest!
 In this case, simply don't represent JSON fields you never care about in your class.  Parsing will harmlessly ignore them.  This also has the benefit of being very flexible if the source JSON changes--as long as they don't change the fields you care about nothing in your system breaks.
 ```scala
 val js = """{"one":"Thing","two":"Another thing","three":"Last thing"}"""
@@ -27,13 +27,15 @@ In this instance we support a Try:
 ```scala
 val js = """{"one":"Thing","two":"another thing","three":"Last thing"}"""
 case class ThingsICareAbout(one:String, two:Try[String], three:String)
-// materializes: ThingsICareAbout("Thing",Success("another thing","LastThing")
+// materializes: ThingsICareAbout("Thing",Success("another thing"),"LastThing")
 
 val js2 = """{"one":"Thing","two":true,"three":"Last thing"}"""
 val myObj = sj.read[ThingsICareAbout](js)
-// materializes: ThingsICareAbout("Thing",Failure("ThingsICareAbout(Thing,Failure(co.blocke.scalajack.UnreadableException: java.lang.IllegalStateException: Expected value token of type String, not True when reading String value.
+/*
+materializes: ThingsICareAbout("Thing",Failure("ThingsICareAbout(Thing,Failure(co.blocke.scalajack.UnreadableException: java.lang.IllegalStateException: Expected value token of type String, not True when reading String value.
 {"one":"Thing","two":true,"three":"Last thing"}
 ---------------------^),Last thing)","LastThing")
+*/
 //
 // but...
 val rerendered = sj.render(myObj)
