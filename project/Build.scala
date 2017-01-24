@@ -12,8 +12,7 @@ object Build extends Build {
 
 	import Dependencies._
 
-	val scalaVer = "2.11.8"
-	val scalaVer12  = "2.12.0"
+	val scalaVer = "2.12.1" //"2.11.8"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
@@ -56,7 +55,7 @@ object Build extends Build {
 
   	lazy val scalajack = project.in(file("core"))
 		.settings(basicSettings: _*)
-		.settings(Seq(crossScalaVersions := Seq(scalaVer, scalaVer12)))
+		// .settings(Seq(crossScalaVersions := Seq(scalaVer, scalaVer12)))
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
 			compile(scala_reflect) ++
@@ -110,7 +109,7 @@ object Dependencies {
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
 	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		  % Build.scalaVer
-	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.1.0"
+	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.2.1"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			  % "3.0.0"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		  % "1.7.7"
 	val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.43"

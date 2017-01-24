@@ -4,7 +4,7 @@ package mongo
 import co.blocke.scalajack.TokenType.TokenType
 import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters
 
 class BsonParser {
 
@@ -41,8 +41,8 @@ class BsonParser {
 
         appendToken(TokenType.BeginArray, valueAsArray)
 
-        for (value <- valueAsArray) {
-          consumeValue(value)
+        for (v <- valueAsArray.toArray) {
+          consumeValue(v.asInstanceOf[BsonValue])
         }
 
         appendToken(TokenType.EndArray, valueAsArray)
@@ -62,7 +62,7 @@ class BsonParser {
         val valueAsDocument = value.asDocument
         appendToken(TokenType.BeginObject, valueAsDocument)
 
-        for (entry <- valueAsDocument.entrySet) {
+        for (entry <- JavaConverters.asScalaSet(valueAsDocument.entrySet)) {
           appendString(TokenType.String, entry.getKey)
           consumeValue(entry.getValue)
         }
