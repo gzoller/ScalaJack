@@ -11,9 +11,9 @@ class BsonParser {
   def parse(value: BsonValue): BsonReader = {
 
     var numberOfTokens = 0
-    val tokenTypes = new Array[TokenType](1024)
-    val strings = new Array[String](1024)
-    val values = new Array[BsonValue](1024)
+    val tokenTypes = new Array[TokenType](10240000)
+    val strings = new Array[String](10240000)
+    val values = new Array[BsonValue](10240000)
 
     @inline def appendString(tokenType: TokenType, string: String): Unit = {
       val i = numberOfTokens
