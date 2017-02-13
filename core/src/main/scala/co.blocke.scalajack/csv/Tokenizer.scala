@@ -3,7 +3,7 @@ package csv
 
 import TokenType.TokenType
 
-class Tokenizer(val capacity: Int = 1024) {
+class Tokenizer(val capacity: Int = 102400) {
 
   def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): CSVTokenReader = {
     val maxPosition = offset + length
