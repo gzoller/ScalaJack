@@ -59,11 +59,13 @@ class ScalaPrim() extends FunSpec with Matchers {
         }
       }
       it("Enumeration must work (not nullable)") {
-        val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null)
+        val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null, Size.Medium)
         val js = sj.render(inst)
-        assertResult("""{"e1":"Small","e2":"Medium","e3":"Large","e4":null}""") { js }
+        assertResult("""{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":"Medium"}""") { js }
+        // mutate e5 into an ordinal...
+        val js2 = js.replaceAll(""""e5":"Medium"""", """"e5":1""")
         assertResult(inst) {
-          sj.read[SampleEnum](js)
+          sj.read[SampleEnum](js2)
         }
       }
       it("Float must work") {
@@ -167,16 +169,16 @@ class ScalaPrim() extends FunSpec with Matchers {
         the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
-        val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null)
-        val js = """{"e1":"Small","e2":9,"e3":"Large","e4":null}"""
-        val msg = """Expected value token of type String, not Number when reading Enumeration value.
-          |{"e1":"Small","e2":9,"e3":"Large","e4":null}
+        val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null, Size.Medium)
+        val js = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}"""
+        val msg = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for "Bogus"
+          |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}
           |-------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleEnum](js) should have message msg
-        val js2 = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}"""
-        val msg2 = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for "Bogus"
-          |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null}
-          |-------------------^""".stripMargin
+        the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js) should have message msg
+        val js2 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}"""
+        val msg2 = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for 9
+          |"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}
+          |--------------------------------------------------^""".stripMargin
         the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js2) should have message msg2
       }
       it("Float must break") {
