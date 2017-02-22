@@ -5,17 +5,40 @@ import TokenType.TokenType
 
 class Tokenizer(val capacity: Int = 1024) {
 
-  def tokenize(source: Array[Char], offset: Int, length: Int, capacity: Int = 1024): CSVTokenReader = {
+  def tokenize(source: Array[Char], offset: Int, length: Int, initialCapacity: Int = 256): CSVTokenReader = {
     val maxPosition = offset + length
     var position = offset
 
-    val tokenTypes = new Array[TokenType](capacity)
-    val tokenOffsets = new Array[Int](capacity)
-    val tokenLengths = new Array[Int](capacity)
+    var capacity = initialCapacity
+    var tokenTypes = new Array[TokenType](capacity)
+    var tokenOffsets = new Array[Int](capacity)
+    var tokenLengths = new Array[Int](capacity)
 
     var numberOfTokens = 0
 
     @inline def appendToken(tokenType: TokenType, tokenOffset: Int, tokenLength: Int): Unit = {
+      if (numberOfTokens == capacity) {
+        val oldCapacity = capacity
+        val newCapacity = oldCapacity * 2
+
+        val oldTokenTypes = tokenTypes
+        val newTokenTypes = new Array[TokenType](newCapacity)
+        Array.copy(oldTokenTypes, 0, newTokenTypes, 0, oldCapacity)
+        tokenTypes = newTokenTypes
+
+        val oldTokenOffsets = tokenOffsets
+        val newTokenOffsets = new Array[Int](newCapacity)
+        Array.copy(oldTokenOffsets, 0, newTokenOffsets, 0, oldCapacity)
+        tokenOffsets = newTokenOffsets
+
+        val oldTokenLengths = tokenLengths
+        val newTokenLengths = new Array[Int](newCapacity)
+        Array.copy(oldTokenLengths, 0, newTokenLengths, 0, oldCapacity)
+        tokenLengths = newTokenLengths
+
+        capacity = newCapacity
+      }
+
       tokenTypes(numberOfTokens) = tokenType
       tokenOffsets(numberOfTokens) = tokenOffset
       tokenLengths(numberOfTokens) = tokenLength
