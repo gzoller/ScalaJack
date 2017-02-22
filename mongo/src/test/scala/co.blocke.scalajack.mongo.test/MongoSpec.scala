@@ -56,20 +56,22 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         mongoScalaJack.read[Six](dbo) should equal(six)
       }
       it("ObjectId support -- JSON") {
-        val oid = new ObjectId(BsonObjectId())
+        // val oid = (new BsonObjectId()).getValue()
+        val oid = new co.blocke.scalajack.ObjectId(BsonObjectId())
         val seven = Seven(oid, Two("blah", true))
         val js = jsonScalaJack.render(seven)
         jsonScalaJack.read[Seven](js) should equal(seven)
       }
       it("ObjectId support -- Mongo") {
-        val oid = new ObjectId(BsonObjectId())
+        // val oid = (new BsonObjectId()).getValue()
+        val oid = new co.blocke.scalajack.ObjectId(BsonObjectId())
         val seven = Seven(oid, Two("blah", true))
         val dbo = mongoScalaJack.render(seven)
         dbo.asDocument.toJson should equal(s"""{ "_id" : { "$$oid" : "${oid.bsonObjectId.getValue.toString}" }, "two" : { "foo" : "blah", "bar" : true } }""")
         mongoScalaJack.read[Seven](dbo) should equal(seven)
       }
       it("ObjectId support (null) -- Mongo") {
-        val oid: ObjectId = null.asInstanceOf[ObjectId]
+        val oid: co.blocke.scalajack.ObjectId = null.asInstanceOf[co.blocke.scalajack.ObjectId]
         val seven = Seven(oid, Two("blah", true))
         val dbo = mongoScalaJack.render(seven)
         mongoScalaJack.read[Seven](dbo) should equal(seven)
