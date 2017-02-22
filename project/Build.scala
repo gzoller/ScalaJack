@@ -12,12 +12,13 @@ object Build extends Build {
 
 	import Dependencies._
 
+	val scalaVer12 = "2.12.1"
 	val scalaVer = "2.11.8"
-	val scalaVer12  = "2.12.0"
 
 	lazy val basicSettings = Seq(
 		organization 				:= "co.blocke",
 		startYear 					:= Some(2015),
+		crossScalaVersions          := Seq(scalaVer, scalaVer12),
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
 		coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
@@ -56,10 +57,10 @@ object Build extends Build {
 
   	lazy val scalajack = project.in(file("core"))
 		.settings(basicSettings: _*)
-		.settings(Seq(crossScalaVersions := Seq(scalaVer, scalaVer12)))
 		.settings(pubSettings: _*)
 		.settings(libraryDependencies ++=
-			compile(scala_reflect) ++
+			Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+			// compile(scala_reflect) ++
 			test(scalatest)
 		)
 
@@ -109,8 +110,7 @@ object Dependencies {
 	def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 	def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test") 
 
-	val scala_reflect 	= "org.scala-lang"			% "scala-reflect"		  % Build.scalaVer
-	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.1.0"
+	val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "1.2.1"
 	val scalatest 		= "org.scalatest" 			%% "scalatest"			  % "3.0.0"
 	val slf4j_simple 	= "org.slf4j" 				% "slf4j-simple" 		  % "1.7.7"
 	val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.43"
