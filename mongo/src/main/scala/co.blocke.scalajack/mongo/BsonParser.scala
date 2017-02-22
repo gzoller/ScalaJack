@@ -4,18 +4,44 @@ package mongo
 import co.blocke.scalajack.TokenType.TokenType
 import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters
+import scala.collection.JavaConverters._
 
 class BsonParser {
 
-  def parse(value: BsonValue): BsonReader = {
+  def parse(value: BsonValue, initialCapacity: Int = 256): BsonReader = {
 
     var numberOfTokens = 0
-    val tokenTypes = new Array[TokenType](1024)
-    val strings = new Array[String](1024)
-    val values = new Array[BsonValue](1024)
+    var capacity = initialCapacity
+    var tokenTypes = new Array[TokenType](capacity)
+    var strings = new Array[String](capacity)
+    var values = new Array[BsonValue](capacity)
+
+    def bumpCapacityCheck(): Unit =
+      if (numberOfTokens == capacity) {
+        val oldCapacity = capacity
+        val newCapacity = oldCapacity * 2
+
+        val oldTokenTypes = tokenTypes
+        val newTokenTypes = new Array[TokenType](newCapacity)
+        Array.copy(oldTokenTypes, 0, newTokenTypes, 0, oldCapacity)
+        tokenTypes = newTokenTypes
+
+        val oldStrings = strings
+        val newStrings = new Array[String](newCapacity)
+        Array.copy(oldStrings, 0, newStrings, 0, oldCapacity)
+        strings = newStrings
+
+        val oldValues = values
+        val newValues = new Array[BsonValue](newCapacity)
+        Array.copy(oldValues, 0, newValues, 0, oldCapacity)
+        values = newValues
+
+        capacity = newCapacity
+      }
 
     @inline def appendString(tokenType: TokenType, string: String): Unit = {
+      bumpCapacityCheck()
       val i = numberOfTokens
       numberOfTokens += 1
 
@@ -24,6 +50,7 @@ class BsonParser {
     }
 
     @inline def appendToken(tokenType: TokenType, value: BsonValue): Unit = {
+      bumpCapacityCheck()
       val i = numberOfTokens
       numberOfTokens += 1
 
@@ -41,8 +68,8 @@ class BsonParser {
 
         appendToken(TokenType.BeginArray, valueAsArray)
 
-        for (value <- valueAsArray) {
-          consumeValue(value)
+        for (v <- valueAsArray.toArray) {
+          consumeValue(v.asInstanceOf[BsonValue])
         }
 
         appendToken(TokenType.EndArray, valueAsArray)
@@ -62,7 +89,8 @@ class BsonParser {
         val valueAsDocument = value.asDocument
         appendToken(TokenType.BeginObject, valueAsDocument)
 
-        for (entry <- valueAsDocument.entrySet) {
+        for (entry <- valueAsDocument.entrySet.asScala) {
+          // for (entry <- JavaConverters.asScalaSet(valueAsDocument.entrySet)) {
           appendString(TokenType.String, entry.getKey)
           consumeValue(entry.getValue)
         }
