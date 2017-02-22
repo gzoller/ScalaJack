@@ -5,6 +5,7 @@ import co.blocke.scalajack.TokenType.TokenType
 import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
 
 import scala.collection.JavaConverters
+import scala.collection.JavaConverters._
 
 class BsonParser {
 
@@ -62,7 +63,8 @@ class BsonParser {
         val valueAsDocument = value.asDocument
         appendToken(TokenType.BeginObject, valueAsDocument)
 
-        for (entry <- JavaConverters.asScalaSet(valueAsDocument.entrySet)) {
+        for (entry <- valueAsDocument.entrySet.asScala) {
+          // for (entry <- JavaConverters.asScalaSet(valueAsDocument.entrySet)) {
           appendString(TokenType.String, entry.getKey)
           consumeValue(entry.getValue)
         }
