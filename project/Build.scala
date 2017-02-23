@@ -19,6 +19,7 @@ object Build extends Build {
 		organization 				:= "co.blocke",
 		startYear 					:= Some(2015),
 		crossScalaVersions          := Seq(scalaVer, scalaVer12),
+		publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
 		scalaVersion 				:= scalaVer,
 		resolvers					++= Dependencies.resolutionRepos,
 		coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
