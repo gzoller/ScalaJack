@@ -273,6 +273,8 @@ case class PlainClassTypeAdapter[T](
     collectionName:        Option[String]               = None
 ) extends TypeAdapter[T] {
 
+  val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
+  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
   val membersByName = members.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T, Any]]).toMap
 
   override def read(reader: Reader): T =
@@ -289,13 +291,20 @@ case class PlainClassTypeAdapter[T](
 
         var savedPos = reader.position
         while (reader.hasMoreMembers) {
-          membersByName.get(memberNameTypeAdapter.read(reader)) match {
+          val readName = memberNameTypeAdapter.read(reader)
+          membersByName.get(readName) match {
             case Some(member) =>
               member.asInstanceOf[PlainFieldMember[T, _]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
               found(member.index) = true
 
             case None =>
-              reader.skipValue()
+              mappedFieldsByMappedName.get(readName) match {
+                case Some(member) =>
+                  member.asInstanceOf[PlainFieldMember[T, _]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
+                  found(member.index) = true
+                case None =>
+                  reader.skipValue()
+              }
           }
         }
 
@@ -336,8 +345,9 @@ case class PlainClassTypeAdapter[T](
 
       for (member <- members) {
         val memberValue = member.valueIn(value)
+        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
 
-        memberNameTypeAdapter.write(member.name, writer)
+        memberNameTypeAdapter.write(memberName, writer)
         member.writeValue(memberValue, writer)
       }
       value match {
