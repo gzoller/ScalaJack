@@ -35,7 +35,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueSetterMethod:                  Option[Method], // for Java
       derivedValueClassConstructorMirror: Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
-      dbKeyIndex:                         Option[Int]
+      dbKeyIndex:                         Option[Int],
+      fieldMapName:                       Option[String]
   ) extends ClassFieldMember[Owner, T] {
 
     override type Value = T
@@ -136,8 +137,13 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                 .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
                   .value().value).asInstanceOf[Option[Int]]
 
+              // Exctract MapName annotation if present
+              val mapNameAnnotation = member.annotations.find(_.tree.tpe =:= typeOf[MapName])
+                .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+                  .value().value).asInstanceOf[Option[String]]
+
               val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-              FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, memberType /* FIXME */ , accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, None, memberClass, dbkeyAnnotation, member.annotations)
+              FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, memberType /* FIXME */ , accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, None, memberClass, dbkeyAnnotation, mapNameAnnotation, member.annotations)
           })
         } match {
           case Success(m) => m
@@ -178,11 +184,14 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                 (None, None)
               }
 
-            // Exctract DBKey annotation if present (Note: Here the annotation is not on the getter/setter but the private backing variable!)
+            // Exctract DBKey and MapName annotations if present (Note: Here the annotation is not on the getter/setter but the private backing variable!)
             var foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
             val dbkeyAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[DBKey])
               .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
                 .value().value).asInstanceOf[Option[Int]])
+            val mapNameAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[MapName])
+              .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
+                .value().value).asInstanceOf[Option[String]])
 
             PlainFieldMember[T, Any](
               0,
@@ -195,7 +204,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               None,
               derivedValueClassConstructorMirror,
               memberClass,
-              dbkeyAnno
+              dbkeyAnno,
+              mapNameAnno
             )
         }.toList.zipWithIndex.map { case (pm, index) => pm.copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
       }
@@ -215,6 +225,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             propertyDescriptor.getReadMethod,
             None,
             Some(propertyDescriptor.getWriteMethod),
+            None,
             None,
             None,
             None
