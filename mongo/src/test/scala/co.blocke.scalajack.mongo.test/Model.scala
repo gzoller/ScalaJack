@@ -264,3 +264,24 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
 case class Person(@DBKey name: String, phone: Phone)
 
 case class Loose(a: Char, b: Float, c: Short, d: Byte)
+
+case class MapFactor(
+  @MapName(name = "foo_bar") fooBar:String,
+  @MapName(name = "a_b") thingy:   Long,
+  count:                           Int,
+  @MapName(name = "big_mac") bigMac:String
+)
+case class MapFactorId(
+  @DBKey @MapName(name = "foo_bar") fooBar:String,
+  @MapName(name = "a_b") thingy:         Long,
+  count:                                 Int,
+  @MapName(name = "big_mac") bigMac:     String
+)
+case class MapFactorId2(
+  @DBKey @MapName(name = "foo_bar") fooBar:String,
+  @DBKey @MapName(name = "a_b") thingy:  Long,
+  @DBKey hey:                            Int,
+  count:                                 Int,
+  @MapName(name = "big_mac") bigMac:     String
+)
+

@@ -61,5 +61,24 @@ class LooseChange extends FunSpec {
       inst should be(SampleZonedDateTime(null, null))
       sjM.render(inst) should be(dbo)
     }
+    it("Field name remapping must work") {
+      val mfp = MapFactor("wonder", 25L, 3, "hungry")
+      val dbo = sjM.render(mfp)
+      dbo.asDocument.toJson should be("""{ "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
+      sjM.read[MapFactor](dbo) should be(mfp)
+    }
+    it("Field name remapping on dbkey must work") {
+      // val mfp = MapFactorId2("wonder", 25L, 1, 3)
+      val mfp = MapFactorId("wonder", 25L, 3, "hungry")
+      val dbo = sjM.render(mfp)
+      dbo.asDocument.toJson should be("""{ "_id" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
+      sjM.read[MapFactorId](dbo) should be(mfp)
+    }
+    it("Field name remapping on dbkey with multi-part keys must work") {
+      val mfp = MapFactorId2("wonder", 25L, 1, 3, "hungry")
+      val dbo = sjM.render(mfp)
+      dbo.asDocument.toJson should be("""{ "_id" : { "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "hey" : 1 }, "count" : 3, "big_mac" : "hungry" }""")
+      sjM.read[MapFactorId2](dbo) should be(mfp)
+    }
   }
 }
