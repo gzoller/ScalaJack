@@ -1,4 +1,5 @@
-package co.blocke.scalajack.typeadapter
+package co.blocke.scalajack
+package typeadapter
 
 import co.blocke.scalajack.{ MemberName, Reader, TokenType, TypeAdapter, Writer }
 
@@ -52,6 +53,15 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
   def typeMember(memberName: MemberName): Option[TypeMember]
 
   def fieldMembers: List[FieldMember]
+
+  // lazy val mappedByFieldName = fieldMembers.filter(_.annotationOf[MapName].isDefined).map(f => f.name -> f).toMap
+  // lazy val mappedByMappedName = {
+  //   val z = fieldMembers.filter(_.annotationOf[MapName].isDefined).map(f => f.annotationOf[MapName].map { index =>
+  //     index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+  //   }.get -> f).toMap
+  //   println("HERE: " + z)
+  //   z
+  // }
 
   def fieldMember(memberName: MemberName): Option[FieldMember]
 

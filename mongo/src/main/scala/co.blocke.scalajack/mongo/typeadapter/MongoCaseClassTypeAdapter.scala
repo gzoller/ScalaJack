@@ -98,6 +98,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
             val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap
+            val membersOfSyntheticClassByMappedName = membersOfSyntheticClass.filter(_.annotationOf[MapName].isDefined).map(member => member.annotationOf[MapName].get.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value -> member).toMap
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
@@ -111,11 +112,29 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def fieldMember(memberName: MemberName): Option[FieldMember] =
                 membersOfSyntheticClassByName.get(memberName)
 
-              override def readMemberName(reader: Reader): MemberName =
-                memberNameTypeAdapter.read(reader)
+              override def readMemberName(reader: Reader): MemberName = {
+                val rawName = memberNameTypeAdapter.read(reader)
+                membersOfSyntheticClassByMappedName.get(rawName) match {
+                  case Some(mappedMember) =>
+                    mappedMember.name
+                  case None =>
+                    rawName
+                }
+              }
 
-              override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
-                memberNameTypeAdapter.write(memberName, writer)
+              override def writeMemberName(memberName: MemberName, writer: Writer): Unit = {
+                val aMember = membersOfSyntheticClassByName(memberName)
+                aMember.annotationOf[MapName].map { index =>
+                  index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+                }.asInstanceOf[Option[MemberName]] match {
+                  case Some(mappedName) if (aMember.annotationOf[DBKey].isDefined) =>
+                    memberNameTypeAdapter.write(memberName, writer)
+                  case Some(mappedName) =>
+                    memberNameTypeAdapter.write(mappedName, writer)
+                  case None =>
+                    memberNameTypeAdapter.write(memberName, writer)
+                }
+              }
 
               override def instantiate(memberValuesOfSyntheticClass: Array[Any]): SyntheticClass =
                 memberValuesOfSyntheticClass
@@ -205,6 +224,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               }
 
               val membersOfSyntheticIdByName = membersOfSyntheticId.map(member => member.name -> member).toMap
+              val membersOfSyntheticClassByMappedName = membersOfSyntheticId.filter(_.annotationOf[MapName].isDefined).map(member => member.annotationOf[MapName].get.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value -> member).toMap
 
               new ClassLikeTypeAdapter[SyntheticId] {
 
@@ -218,11 +238,27 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                 override def fieldMember(memberName: MemberName): Option[FieldMember] =
                   membersOfSyntheticIdByName.get(memberName)
 
-                override def readMemberName(reader: Reader): MemberName =
-                  memberNameTypeAdapter.read(reader)
+                override def readMemberName(reader: Reader): MemberName = {
+                  val rawName = memberNameTypeAdapter.read(reader)
+                  membersOfSyntheticClassByMappedName.get(rawName) match {
+                    case Some(mappedMember) =>
+                      mappedMember.name
+                    case None =>
+                      rawName
+                  }
+                }
 
-                override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
-                  memberNameTypeAdapter.write(memberName, writer)
+                override def writeMemberName(memberName: MemberName, writer: Writer): Unit = {
+                  val aMember = membersOfSyntheticIdByName(memberName)
+                  aMember.annotationOf[MapName].map { index =>
+                    index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+                  }.asInstanceOf[Option[MemberName]] match {
+                    case Some(mappedName) =>
+                      memberNameTypeAdapter.write(mappedName, writer)
+                    case None =>
+                      memberNameTypeAdapter.write(memberName, writer)
+                  }
+                }
 
                 override def instantiate(memberValues: Array[Any]): SyntheticId =
                   memberValues
@@ -292,6 +328,7 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
             val membersOfSyntheticClass = idMemberOfSyntheticClass :: nonIdMembersOfSyntheticClass
             val membersOfSyntheticClassByName = membersOfSyntheticClass.map(member => member.name -> member).toMap
+            val membersOfSyntheticClassByMappedName = membersOfSyntheticClass.filter(_.annotationOf[MapName].isDefined).map(member => member.annotationOf[MapName].get.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value -> member).toMap
 
             val syntheticClassTypeAdapter = new ClassLikeTypeAdapter[SyntheticClass] {
 
@@ -305,11 +342,29 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def fieldMember(memberName: MemberName): Option[FieldMember] =
                 membersOfSyntheticClassByName.get(memberName)
 
-              override def readMemberName(reader: Reader): MemberName =
-                memberNameTypeAdapter.read(reader)
+              override def readMemberName(reader: Reader): MemberName = {
+                val rawName = memberNameTypeAdapter.read(reader)
+                membersOfSyntheticClassByMappedName.get(rawName) match {
+                  case Some(mappedMember) =>
+                    mappedMember.name
+                  case None =>
+                    rawName
+                }
+              }
 
-              override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
-                memberNameTypeAdapter.write(memberName, writer)
+              override def writeMemberName(memberName: MemberName, writer: Writer): Unit = {
+                val aMember = membersOfSyntheticClassByName(memberName)
+                aMember.annotationOf[MapName].map { index =>
+                  index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
+                }.asInstanceOf[Option[MemberName]] match {
+                  case Some(mappedName) if (aMember.annotationOf[DBKey].isDefined) =>
+                    memberNameTypeAdapter.write(memberName, writer)
+                  case Some(mappedName) =>
+                    memberNameTypeAdapter.write(mappedName, writer)
+                  case None =>
+                    memberNameTypeAdapter.write(memberName, writer)
+                }
+              }
 
               override def instantiate(memberValuesOfSyntheticClass: Array[Any]): SyntheticClass =
                 memberValuesOfSyntheticClass

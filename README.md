@@ -60,6 +60,7 @@ Couldn't be simpler!
 * [Null and None treatment](doc/nullAndNone.md)
 * [Non-Canonical JSON](doc/noncanonical.md)
 * [Externalized Type Hints](doc/externalTypes.md)
+* [Re-name Case Class Fields in JSON or Mongo](doc/mapname.md)
 
 Non-JSON Formats:
 * [MongoDB](doc/mongo.md)
