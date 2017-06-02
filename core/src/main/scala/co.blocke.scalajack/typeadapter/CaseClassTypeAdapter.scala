@@ -3,6 +3,7 @@ package typeadapter
 
 import java.lang.reflect.Method
 
+import scala.util.Try
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
@@ -227,7 +228,7 @@ case class CaseClassTypeAdapter[T](
             val memberName = memberNameTypeAdapter.read(reader)
             typeMembersByName.get(memberName) match {
               case Some(typeMember) =>
-                val actualType = typeTypeAdapter.read(reader)
+                val actualType = Try { typeTypeAdapter.read(reader) }.toOption.getOrElse(typeMember.baseType)
 
                 // Solve for each type parameter
                 for (typeParam <- tpe.typeConstructor.typeParams) {
