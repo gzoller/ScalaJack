@@ -1,6 +1,6 @@
 # ScalaJack
 
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT) [ ![Download](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg) ](https://bintray.com/blocke/releases/scalajack/_latestVersion) [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) [![Coveralls branch](https://img.shields.io/coveralls/gzoller/ScalaJack/master.svg?maxAge=360)](https://coveralls.io/github/gzoller/ScalaJack)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT) [ ![bintray](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg) ](https://bintray.com/blocke/releases/scalajack/_latestVersion) [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) [![Coveralls branch](https://img.shields.io/coveralls/gzoller/ScalaJack/master.svg?maxAge=360)](https://coveralls.io/github/gzoller/ScalaJack)
 
 ScalaJack is a very fast, seamless JSON serialization engine designed to require the minimum amount of help possible when serializing a class.
 
@@ -18,15 +18,15 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "5.0.6")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "5.0.7")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "5.0.6")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "5.0.7")
 
 DynamoDB helpers are available here:
 
-	libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "5.0.6")
+	libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "5.0.7")
 
 ScalaJack is hosted on Bintray/JCenter now so if you're using sbt v0.13.9+ you should find it with no issues.
 
