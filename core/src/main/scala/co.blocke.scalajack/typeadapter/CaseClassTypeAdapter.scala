@@ -3,6 +3,7 @@ package typeadapter
 
 import java.lang.reflect.Method
 
+import scala.util.Try
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
@@ -16,7 +17,7 @@ trait ClassFieldMember[Owner, T] extends ClassLikeTypeAdapter.FieldMember[Owner]
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class TypeMember[Owner](name: MemberName, typeSignature: Type) extends ClassLikeTypeAdapter.TypeMember[Owner]
+  case class TypeMember[Owner](name: MemberName, typeSignature: Type, baseType: Type) extends ClassLikeTypeAdapter.TypeMember[Owner]
 
   case class FieldMember[Owner, T](
       index:                              Int,
@@ -99,8 +100,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val isSJCapture = !(tt.tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
       val tm = tt.tpe.members.filter(_.isType).toList
+      val classTypeParamMap = tt.tpe.typeSymbol.asClass.typeParams.zip(tt.tpe.typeArgs).toMap
       val typeMembers = tm map { m =>
-        TypeMember[T](m.name.decodedName.toString, m.typeSignature)
+        TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
       }
 
       val params1 = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten
@@ -226,7 +228,7 @@ case class CaseClassTypeAdapter[T](
             val memberName = memberNameTypeAdapter.read(reader)
             typeMembersByName.get(memberName) match {
               case Some(typeMember) =>
-                val actualType = typeTypeAdapter.read(reader)
+                val actualType = Try { typeTypeAdapter.read(reader) }.toOption.getOrElse(typeMember.baseType)
 
                 // Solve for each type parameter
                 for (typeParam <- tpe.typeConstructor.typeParams) {
