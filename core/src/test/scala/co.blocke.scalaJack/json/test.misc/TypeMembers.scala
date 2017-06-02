@@ -26,7 +26,8 @@ case class Bigger(foo: Int, env: Envelope[FancyBody])
 
 class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
-  val sj = ScalaJack() //.parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))
+  val sj = ScalaJack()
+  val sj2 = ScalaJack().parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))
 
   describe("-----------------------------\n:  Externalized Type Tests  :\n-----------------------------") {
     it("Read and match") {
@@ -82,12 +83,12 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sj.read[Envelope[Body]](json)(TypeTags.of(typeOf[Envelope[Body]]))
       }
     }
-    /*
     it("Works with ParseOrElse") {
       val js = """{"Giraffe":"co.blocke.scalajack.json.test.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
-      val x = sj.read[Envelope[Body]](js)
-      println(x)
+      val expected: Envelope[Body] = Envelope("DEF", DefaultBody("BOO"))
+      assertResult(expected) {
+        sj2.read[Envelope[Body]](js)
+      }
     }
-    */
   }
 }
