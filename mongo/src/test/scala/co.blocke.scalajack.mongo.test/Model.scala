@@ -14,9 +14,9 @@ case class Zoo[U](name: String, z: U) //stuff:Bar[U,String])
 case class Hey(age: Int)
 
 case class Wrap[T, U](
-  name:  String,
-  data:  T,
-  stuff: U
+    name:  String,
+    data:  T,
+    stuff: U
 )
 case class Carry[V](s: String, w: Wrap[V, String])
 case class CarryList[V](li: List[String], w: Wrap[V, String])
@@ -27,17 +27,17 @@ case class BagOpt[Y](i: Int, maybe: Option[Y])
 case class Truck[Z](s: Z, t: Two)
 
 case class AllOpt(
-  one:   Option[String],
-  two:   Option[String],
-  three: Option[String]
+    one:   Option[String],
+    two:   Option[String],
+    three: Option[String]
 )
 
 case class PrimitiveLists(
-  ints:    List[Int],
-  longs:   List[Long],
-  bools:   List[Boolean],
-  chars:   List[Char],
-  doubles: List[Double]
+    ints:    List[Int],
+    longs:   List[Long],
+    bools:   List[Boolean],
+    chars:   List[Char],
+    doubles: List[Double]
 )
 
 case class One(
@@ -56,66 +56,66 @@ case class One(
 }
 
 case class OneSub1(
-  name:  String,
-  big:   Long,
-  maybe: Option[String]
+    name:  String,
+    big:   Long,
+    maybe: Option[String]
 )
 
 case class OneSub2(
-  name:     String,
-  flipflop: Boolean,
-  mymap:    Map[String, Int]
+    name:     String,
+    flipflop: Boolean,
+    mymap:    Map[String, Int]
 )
 
 case class Two(
-  foo: String,
-  bar: Boolean
+    foo: String,
+    bar: Boolean
 )
 
 case class Three(
-  name: String,
-  two:  Num.Value,
-  pp:   Pop
+    name: String,
+    two:  Num.Value,
+    pp:   Pop
 )
 
 case class Four(
-  stuff:  List[String],
-  things: Map[String, Int]
+    stuff:  List[String],
+    things: Map[String, Int]
 )
 
 case class Five(
-  @DBKey name: String,
-  two:         Two
+    @DBKey name: String,
+    two:         Two
 )
 
 case class Six(
-  @DBKey name: String,
-  @DBKey num:  Int,
-  two:         Two
+    @DBKey name: String,
+    @DBKey num:  Int,
+    two:         Two
 )
 
 case class Seven(
-  @DBKey _id: co.blocke.scalajack.ObjectId,
-  two:        Two
+    @DBKey _id: co.blocke.scalajack.ObjectId,
+    two:        Two
 )
 
 case class Numy(
-  age: Int,
-  num: Num.Value
+    age: Int,
+    num: Num.Value
 )
 
 case class UuidThing(
-  name:  String,
-  uuid:  java.util.UUID,
-  many:  List[java.util.UUID],
-  maybe: Option[java.util.UUID]
+    name:  String,
+    uuid:  java.util.UUID,
+    many:  List[java.util.UUID],
+    maybe: Option[java.util.UUID]
 )
 
 case class JodaThing(
-  name:  String,
-  dt:    OffsetDateTime,
-  many:  List[OffsetDateTime],
-  maybe: Option[OffsetDateTime]
+    name:  String,
+    dt:    OffsetDateTime,
+    many:  List[OffsetDateTime],
+    maybe: Option[OffsetDateTime]
 )
 
 trait Pop {
@@ -183,8 +183,8 @@ case class MapOpt(val name: String, val mapOpt: Map[String, Option[Animal]])
 case class MapMap(val name: String, val mapmap: Map[String, Map[String, Animal]])
 
 case class Foo(
-  name:  String,
-  stuff: List[String]
+    name:  String,
+    stuff: List[String]
 )
 
 trait PetAnimal {
@@ -199,11 +199,11 @@ trait Pet {
 case class NicePet(kind: PetAnimal, food: String) extends Pet
 case class GrumpyPet(kind: PetAnimal, food: String) extends Pet
 case class WithDefaults(
-  name:     String,
-  age:      Int             = 50,
-  num:      Option[Int],
-  hasStuff: Option[Boolean] = Some(true),
-  pet:      Pet             = NicePet(Dog("Fido"), "bones")
+    name:     String,
+    age:      Int             = 50,
+    num:      Option[Int],
+    hasStuff: Option[Boolean] = Some(true),
+    pet:      Pet             = NicePet(Dog("Fido"), "bones")
 )
 
 object CustomVC {
@@ -266,22 +266,22 @@ case class Person(@DBKey name: String, phone: Phone)
 case class Loose(a: Char, b: Float, c: Short, d: Byte)
 
 case class MapFactor(
-  @MapName(name = "foo_bar") fooBar:String,
-  @MapName(name = "a_b") thingy:   Long,
-  count:                           Int,
-  @MapName(name = "big_mac") bigMac:String
+    @MapName(name = "foo_bar") fooBar:String,
+    @MapName(name = "a_b") thingy:   Long,
+    count:                           Int,
+    @MapName(name = "big_mac") bigMac:String
 )
 case class MapFactorId(
-  @DBKey @MapName(name = "foo_bar") fooBar:String,
-  @MapName(name = "a_b") thingy:         Long,
-  count:                                 Int,
-  @MapName(name = "big_mac") bigMac:     String
+    @DBKey @MapName(name = "foo_bar") fooBar:String,
+    @MapName(name = "a_b") thingy:         Long,
+    count:                                 Int,
+    @MapName(name = "big_mac") bigMac:     String
 )
 case class MapFactorId2(
-  @DBKey @MapName(name = "foo_bar") fooBar:String,
-  @DBKey @MapName(name = "a_b") thingy:  Long,
-  @DBKey hey:                            Int,
-  count:                                 Int,
-  @MapName(name = "big_mac") bigMac:     String
+    @DBKey @MapName(name = "foo_bar") fooBar:String,
+    @DBKey @MapName(name = "a_b") thingy:  Long,
+    @DBKey hey:                            Int,
+    count:                                 Int,
+    @MapName(name = "big_mac") bigMac:     String
 )
 

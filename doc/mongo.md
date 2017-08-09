@@ -15,7 +15,7 @@ The trait type hint label and value modifiers (.withAdapters, .withDefaultHint, 
 
 **Note:** At present, Try and SJCapture are not supported for Mongo.
 
-####Keys
+### Keys
 
 You must specify your Mongo collection's keys using annotations in your Scala classes.  Both single and compound keys are supported.
 
@@ -38,3 +38,9 @@ You must specify your Mongo collection's keys using annotations in your Scala cl
 ```
 
 ScalaJack will generate the appropriate key field(s) for Mongo using the DBKey annotation.  Note also you can use ObjectID for a Mongo-compatible key.  (ObjectID is a value class wrapping Mongo's BsonObjectId).
+
+### Documents
+
+ScalaJack's MongoDB module produces Document objects upon render -- specifically org.mongodb.scala.bson.collection.immutable.Document, which is the Scala driver's Document object, not the Java driver's.  This Document is also expected for read operations.
+
+Please note that MongoDB's internal representation is in BSON, so while your "outer" object will read/render to a Document, any internal objects will become BsonDocuments!  Use of Document on the outer layer is a conveninece to make use a little more friendly.

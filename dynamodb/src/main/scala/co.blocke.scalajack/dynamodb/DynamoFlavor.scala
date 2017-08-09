@@ -28,7 +28,7 @@ case class DynamoFlavor(
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = throw new UnsupportedOperationException("Not available for Dynamo formatting")
 
-  // Embedded JSON-flavored ScalaJack, as Item can read/write JSON, so this is actually the most straightforward 
+  // Embedded JSON-flavored ScalaJack, as Item can read/write JSON, so this is actually the most straightforward
   // path to serialization.
   lazy val sj = ScalaJack()
     .withAdapters(customAdapters: _*)

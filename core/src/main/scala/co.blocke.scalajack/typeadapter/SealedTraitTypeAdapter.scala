@@ -10,10 +10,10 @@ import scala.util.Try
 object SealedTraitTypeAdapter extends TypeAdapterFactory {
 
   case class Subclass[T](
-    subclassType:  Type,
-    subclassClass: Class[_ <: T],
-    typeAdapter:   TypeAdapter[Any],
-    memberNames:   Set[MemberName]
+      subclassType:  Type,
+      subclassClass: Class[_ <: T],
+      typeAdapter:   TypeAdapter[Any],
+      memberNames:   Set[MemberName]
   )
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
