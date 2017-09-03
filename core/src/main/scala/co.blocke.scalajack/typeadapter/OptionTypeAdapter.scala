@@ -83,7 +83,7 @@ case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends Ty
 case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
   // Special logic for TokenType.String.  A map key of value None for any value type (Int, ...) will be "".
-  // So we must test for String and infer None if value is "".  Note that means there's no real way to 
+  // So we must test for String and infer None if value is "".  Note that means there's no real way to
   // infer Some("") as this will always devolve into None.  Have to make a compromose somewhere.
   private def read(reader: Reader, testStringForNull: Boolean): Option[T] = {
     reader.peek match {

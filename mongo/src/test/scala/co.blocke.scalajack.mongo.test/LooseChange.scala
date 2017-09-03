@@ -50,13 +50,13 @@ class LooseChange extends FunSpec {
         ScalaJack(MongoFlavor()).withTypeModifier(null.asInstanceOf[HintModifier]) should have message "Not available for Mongo formatting"
     }
     it("ZonedDateTime must work") {
-      val dbo = BsonDocument("o1" -> BsonDateTime(1196676930000L), "o2" -> BsonNull())
+      val dbo = Document("o1" -> BsonDateTime(1196676930000L), "o2" -> BsonNull())
       sjM.read[SampleZonedDateTime](dbo)
       // Can't test value here as it is local-specific, i.e. value here will be different than in Jenkins build, etc.
       // So if it didn't crash--it worked, I guess...
     }
     it("Handles Null") {
-      val dbo = BsonDocument("o1" -> BsonNull(), "o2" -> BsonNull())
+      val dbo = Document("o1" -> BsonNull(), "o2" -> BsonNull())
       val inst = sjM.read[SampleZonedDateTime](dbo)
       inst should be(SampleZonedDateTime(null, null))
       sjM.render(inst) should be(dbo)
@@ -64,20 +64,20 @@ class LooseChange extends FunSpec {
     it("Field name remapping must work") {
       val mfp = MapFactor("wonder", 25L, 3, "hungry")
       val dbo = sjM.render(mfp)
-      dbo.asDocument.toJson should be("""{ "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
+      dbo.toJson should be("""{ "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
       sjM.read[MapFactor](dbo) should be(mfp)
     }
     it("Field name remapping on dbkey must work") {
       // val mfp = MapFactorId2("wonder", 25L, 1, 3)
       val mfp = MapFactorId("wonder", 25L, 3, "hungry")
       val dbo = sjM.render(mfp)
-      dbo.asDocument.toJson should be("""{ "_id" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
+      dbo.toJson should be("""{ "_id" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
       sjM.read[MapFactorId](dbo) should be(mfp)
     }
     it("Field name remapping on dbkey with multi-part keys must work") {
       val mfp = MapFactorId2("wonder", 25L, 1, 3, "hungry")
       val dbo = sjM.render(mfp)
-      dbo.asDocument.toJson should be("""{ "_id" : { "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "hey" : 1 }, "count" : 3, "big_mac" : "hungry" }""")
+      dbo.toJson should be("""{ "_id" : { "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "hey" : 1 }, "count" : 3, "big_mac" : "hungry" }""")
       sjM.read[MapFactorId2](dbo) should be(mfp)
     }
   }

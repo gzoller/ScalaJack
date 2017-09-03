@@ -17,7 +17,7 @@ trait TypeAdapter[T] {
 }
 
 // Marker trait for those TypeAdapters which render as String
-// (Determines if a value will be wrapped in quotes or not for noncanonical 
+// (Determines if a value will be wrapped in quotes or not for noncanonical
 // processing in NoncanonicalMapKeyParsingTypeAdapter)
 trait StringKind
 
