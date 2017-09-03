@@ -33,7 +33,7 @@ class Custom extends FunSpec {
       sj.read[Demographic](dbo) should equal(USDemographic("34", USAddress("123 Main", "New York", "NY", "39822")))
     }
 
-    // withHintModifiers tested in another case 
+    // withHintModifiers tested in another case
 
     it("Supports withDefaultHint") {
       val sj = ScalaJack(MongoFlavor()).withDefaultHint("kind")

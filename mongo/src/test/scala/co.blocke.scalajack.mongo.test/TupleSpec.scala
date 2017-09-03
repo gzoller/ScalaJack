@@ -17,7 +17,7 @@ class TupleSpec extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {
-    val a = BsonDocument("name" -> "Larry", "rec" -> BsonDocument("foo" -> BsonArray(BsonArray("a", 1, true)), "hey" -> BsonArray(BsonArray("x", 8, false), BsonArray("r", 3, true))))
+    val a = Document("name" -> "Larry", "rec" -> BsonDocument("foo" -> BsonArray(BsonArray("a", 1, true)), "hey" -> BsonArray(BsonArray("x", 8, false), BsonArray("r", 3, true))))
   }
 
   object ScalaMaster {

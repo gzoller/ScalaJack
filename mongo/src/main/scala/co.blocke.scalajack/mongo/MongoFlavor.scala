@@ -1,7 +1,9 @@
 package co.blocke.scalajack
 package mongo
 
-import org.bson.BsonValue
+import org.bson.{ BsonDocument, BsonValue }
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.MongoClient
 import typeadapter._
 
 import scala.reflect.runtime.universe.{ TypeTag, Type }
@@ -14,7 +16,7 @@ case class MongoFlavor(
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
     isCanonical:    Boolean                  = true
-) extends ScalaJackLike[BsonValue] with JackFlavor[BsonValue] {
+) extends ScalaJackLike[Document] with JackFlavor[Document] {
 
   val bsonParser = new BsonParser
 
@@ -31,17 +33,17 @@ case class MongoFlavor(
     ctx.copy(factories = MongoCaseClassTypeAdapter :: MongoOffsetDateTimeTypeAdapter :: MongoZonedDateTimeTypeAdapter :: BsonObjectIdTypeAdapter :: BsonDateTimeTypeAdapter :: ctx.factories)
   }
 
-  override def read[T](src: BsonValue)(implicit valueTypeTag: TypeTag[T]): T = {
-    val bsonReader = bsonParser.parse(src)
+  override def read[T](src: Document)(implicit valueTypeTag: TypeTag[T]): T = {
+    val bsonReader = bsonParser.parse(src.toBsonDocument(classOf[BsonDocument], MongoClient.DEFAULT_CODEC_REGISTRY))
     val typeAdapter = context.typeAdapter(valueTypeTag.tpe).asInstanceOf[TypeAdapter[Any]]
     typeAdapter.read(bsonReader).asInstanceOf[T]
   }
 
-  override def render[T](instance: T)(implicit tt: TypeTag[T]): BsonValue = {
+  override def render[T](instance: T)(implicit tt: TypeTag[T]): Document = {
     val bsonWriter = new BsonWriter
     val typeAdapter = context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[Any]]
     typeAdapter.write(instance, bsonWriter)
-    bsonWriter.RootStructure.value
+    Document(bsonWriter.RootStructure.value.asDocument)
   }
 
 }

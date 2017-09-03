@@ -9,8 +9,8 @@ import scala.util._
 
 case class Embed(stuff: List[String], num: Int)
 case class Boom(
-  name:  String,
-  other: Try[Embed]
+    name:  String,
+    other: Try[Embed]
 )
 case class Cap(name: String) extends SJCapture
 

@@ -69,6 +69,11 @@ class BsonReader(
     values(position).asDouble.doubleValue.toFloat
   }
 
+  override def readDouble(): Double = {
+    read(expected = TokenType.Number)
+    values(position).asDouble.doubleValue
+  }
+
   // This guy has to do type inference, as a Number could be: Byte, Double, Float, Integer, Long, or Short.
   override def readNumber(forJava: Boolean): Number = {
     read(expected = TokenType.Number)

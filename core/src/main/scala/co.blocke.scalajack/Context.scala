@@ -20,7 +20,7 @@ object Context {
     .withFactory(CanBuildFromTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
-    .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all 
+    .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all
     //              ValueClasses will be interpreted as case classes!
 
     .withFactory(CaseClassTypeAdapter)
