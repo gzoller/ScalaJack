@@ -20,8 +20,7 @@ class PolymorphicWriter(
     typeFieldName:         String,
     tpe:                   Type,
     typeTypeAdapter:       TypeAdapter[Type],
-    memberNameTypeAdapter: TypeAdapter[MemberName]
-) extends ForwardingWriter {
+    memberNameTypeAdapter: TypeAdapter[MemberName]) extends ForwardingWriter {
 
   var depth = 0
 
@@ -47,8 +46,7 @@ case class PolymorphicTypeAdapter[T](
     typeTypeAdapter:       TypeAdapter[Type],
     memberNameTypeAdapter: TypeAdapter[MemberName],
     context:               Context,
-    polymorphicType:       Type
-) extends TypeAdapter[T] {
+    polymorphicType:       Type) extends TypeAdapter[T] {
 
   import scala.collection.mutable
 

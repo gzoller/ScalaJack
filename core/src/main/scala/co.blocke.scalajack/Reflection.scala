@@ -66,8 +66,7 @@ object Reflection {
   def solveForNeedleAfterSubstitution(
     haystackBeforeSubstitution: Type,
     haystackAfterSubstitution:  Type,
-    needleBeforeSubstitution:   Type
-  ): Option[Type] = {
+    needleBeforeSubstitution:   Type): Option[Type] = {
     // println("Solve: " + haystackBeforeSubstitution + " --> " + haystackAfterSubstitution + " :: " + needleBeforeSubstitution)
     if (needleBeforeSubstitution == haystackBeforeSubstitution) {
       Some(haystackAfterSubstitution)
@@ -118,8 +117,7 @@ object Reflection {
           val optionalChildTypeArgAfterSubstitution = solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = childAsParentTypeBeforeSubstitution,
             haystackAfterSubstitution  = childAsParentTypeAfterSubstitution,
-            needleBeforeSubstitution   = childTypeParam
-          )
+            needleBeforeSubstitution   = childTypeParam)
 
           optionalChildTypeArgAfterSubstitution.getOrElse(childTypeParam)
         }

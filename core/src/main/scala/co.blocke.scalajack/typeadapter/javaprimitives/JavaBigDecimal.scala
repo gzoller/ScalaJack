@@ -4,7 +4,7 @@ package javaprimitives
 
 import java.math.BigDecimal
 
-object JavaBigDecimalTypeAdapter extends SimpleTypeAdapter[BigDecimal] {
+object JavaBigDecimalTypeAdapter extends TypeAdapter.=:=[BigDecimal] {
 
   override def read(reader: Reader): BigDecimal =
     reader.peek match {

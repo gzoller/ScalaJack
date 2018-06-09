@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object LongTypeAdapter extends SimpleTypeAdapter[Long] {
+object LongTypeAdapter extends TypeAdapter.=:=[Long] {
 
   override def read(reader: Reader): Long =
     reader.readLong()

@@ -95,8 +95,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
             new JByte("0") -> new JBigInteger("9923372036854755810"),
             new JFloat("3.4e-038") -> new JFloat("3.4e+038"),
             new JDouble("1.7e-308") -> new JDouble("1.7e+308"),
-            new JBigDecimal("1.8e+308") -> new JFloat("0.0")
-          ))
+            new JBigDecimal("1.8e+308") -> new JFloat("0.0")))
           val js = sj.render(inst)
           assertResult("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}""") { js }
           val read = sj.read[SampleJNumber](js)

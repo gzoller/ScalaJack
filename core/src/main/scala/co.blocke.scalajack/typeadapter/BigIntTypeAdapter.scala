@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object BigIntTypeAdapter extends SimpleTypeAdapter[BigInt] {
+object BigIntTypeAdapter extends TypeAdapter.=:=[BigInt] {
 
   override def read(reader: Reader): BigInt =
     reader.peek match {

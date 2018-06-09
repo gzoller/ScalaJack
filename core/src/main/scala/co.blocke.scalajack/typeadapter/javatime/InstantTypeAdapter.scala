@@ -6,7 +6,7 @@ import java.time.Instant
 import java.time.format.DateTimeParseException
 import scala.util.{ Try, Success, Failure }
 
-object InstantTypeAdapter extends SimpleTypeAdapter[Instant] with StringKind {
+object InstantTypeAdapter extends TypeAdapter.=:=[Instant] with StringKind {
 
   override def read(reader: Reader): Instant =
     reader.peek match {

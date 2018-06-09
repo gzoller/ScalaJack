@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaByteTypeAdapter extends SimpleTypeAdapter[java.lang.Byte] {
+object JavaByteTypeAdapter extends TypeAdapter.=:=[java.lang.Byte] {
 
   override def read(reader: Reader): java.lang.Byte =
     reader.peek match {

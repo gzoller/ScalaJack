@@ -15,8 +15,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       index:                     Int,
       valueTypeAdapter:          TypeAdapter[T],
       valueAccessorMethodSymbol: MethodSymbol,
-      valueAccessorMethod:       Method
-  ) {
+      valueAccessorMethod:       Method) {
 
     def valueIn(tuple: Any): T = {
       valueAccessorMethod.invoke(tuple).asInstanceOf[T]
@@ -64,8 +63,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 case class TupleTypeAdapter[T >: Null](
     fields:            List[Field[_]],
-    constructorMirror: MethodMirror
-) extends TypeAdapter[T] {
+    constructorMirror: MethodMirror) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T =
     reader.peek match {

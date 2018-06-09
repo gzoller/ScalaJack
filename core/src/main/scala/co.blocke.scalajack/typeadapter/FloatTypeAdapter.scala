@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object FloatTypeAdapter extends SimpleTypeAdapter[Float] {
+object FloatTypeAdapter extends TypeAdapter.=:=[Float] {
 
   override def read(reader: Reader): Float =
     reader.readFloat()

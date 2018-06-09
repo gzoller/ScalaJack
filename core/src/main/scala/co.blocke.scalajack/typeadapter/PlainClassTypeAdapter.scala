@@ -36,8 +36,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       derivedValueClassConstructorMirror: Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
-      fieldMapName:                       Option[String]
-  ) extends ClassFieldMember[Owner, T] {
+      fieldMapName:                       Option[String]) extends ClassFieldMember[Owner, T] {
 
     override type Value = T
 
@@ -205,8 +204,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               derivedValueClassConstructorMirror,
               memberClass,
               dbkeyAnno,
-              mapNameAnno
-            )
+              mapNameAnno)
         }.toList.zipWithIndex.map { case (pm, index) => pm.copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
       }
 
@@ -228,8 +226,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             None,
             None,
             None,
-            None
-          )
+            None)
         }.zipWithIndex.map { case (pm, index) => pm.asInstanceOf[PlainFieldMember[T, Any]].copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
       }
 
@@ -270,8 +267,7 @@ case class PlainClassTypeAdapter[T](
     members:               List[ClassFieldMember[T, _]],
     isSJCapture:           Boolean,
     dbKeys:                List[ClassFieldMember[T, _]],
-    collectionName:        Option[String]               = None
-) extends TypeAdapter[T] {
+    collectionName:        Option[String]               = None) extends TypeAdapter[T] {
 
   val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
   val mappedFieldsByMappedName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
@@ -313,8 +309,7 @@ case class PlainClassTypeAdapter[T](
         if (foundCount != numberOfMembers)
           for (member <- members if !found(member.index)) {
             member.defaultValue.getOrElse(
-              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-            )
+              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError()))
           }
 
         if (isSJCapture) {

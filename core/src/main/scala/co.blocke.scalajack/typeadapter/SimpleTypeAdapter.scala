@@ -23,15 +23,5 @@ object SimpleTypeAdapter {
 
 }
 
-abstract class SimpleTypeAdapter[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
-
-  val valueType = valueTypeTag.tpe
-
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe =:= valueType) {
-      this.asInstanceOf[TypeAdapter[T]]
-    } else {
-      next.typeAdapterOf[T]
-    }
-
-}
+@deprecated(message = "Usage `TypeAdapter.=:=[V]` instead", since = "7.0.0")
+abstract class SimpleTypeAdapter[V: TypeTag] extends TypeAdapter.=:=[V]

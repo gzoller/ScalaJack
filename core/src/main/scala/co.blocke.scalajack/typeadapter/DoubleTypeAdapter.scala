@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object DoubleTypeAdapter extends SimpleTypeAdapter[Double] {
+object DoubleTypeAdapter extends TypeAdapter.=:=[Double] {
 
   override def read(reader: Reader): Double =
     reader.readDouble()

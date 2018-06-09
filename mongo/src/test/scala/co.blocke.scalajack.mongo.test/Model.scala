@@ -16,8 +16,7 @@ case class Hey(age: Int)
 case class Wrap[T, U](
     name:  String,
     data:  T,
-    stuff: U
-)
+    stuff: U)
 case class Carry[V](s: String, w: Wrap[V, String])
 case class CarryList[V](li: List[String], w: Wrap[V, String])
 case class CarryOpt[V](li: List[String], w: Wrap[V, String])
@@ -29,16 +28,14 @@ case class Truck[Z](s: Z, t: Two)
 case class AllOpt(
     one:   Option[String],
     two:   Option[String],
-    three: Option[String]
-)
+    three: Option[String])
 
 case class PrimitiveLists(
     ints:    List[Int],
     longs:   List[Long],
     bools:   List[Boolean],
     chars:   List[Char],
-    doubles: List[Double]
-)
+    doubles: List[Double])
 
 case class One(
     name:     String,
@@ -50,73 +47,61 @@ case class One(
     flipflop: Boolean,
     big:      Long,
     num:      Num.Value,
-    age:      Int
-) {
+    age:      Int) {
   val foo: String = "yikes!"
 }
 
 case class OneSub1(
     name:  String,
     big:   Long,
-    maybe: Option[String]
-)
+    maybe: Option[String])
 
 case class OneSub2(
     name:     String,
     flipflop: Boolean,
-    mymap:    Map[String, Int]
-)
+    mymap:    Map[String, Int])
 
 case class Two(
     foo: String,
-    bar: Boolean
-)
+    bar: Boolean)
 
 case class Three(
     name: String,
     two:  Num.Value,
-    pp:   Pop
-)
+    pp:   Pop)
 
 case class Four(
     stuff:  List[String],
-    things: Map[String, Int]
-)
+    things: Map[String, Int])
 
 case class Five(
     @DBKey name: String,
-    two:         Two
-)
+    two:         Two)
 
 case class Six(
     @DBKey name: String,
     @DBKey num:  Int,
-    two:         Two
-)
+    two:         Two)
 
 case class Seven(
     @DBKey _id: co.blocke.scalajack.ObjectId,
-    two:        Two
-)
+    two:        Two)
 
 case class Numy(
     age: Int,
-    num: Num.Value
-)
+    num: Num.Value)
 
 case class UuidThing(
     name:  String,
     uuid:  java.util.UUID,
     many:  List[java.util.UUID],
-    maybe: Option[java.util.UUID]
-)
+    maybe: Option[java.util.UUID])
 
 case class JodaThing(
     name:  String,
     dt:    OffsetDateTime,
     many:  List[OffsetDateTime],
-    maybe: Option[OffsetDateTime]
-)
+    maybe: Option[OffsetDateTime])
 
 trait Pop {
   def go(): Unit
@@ -184,8 +169,7 @@ case class MapMap(val name: String, val mapmap: Map[String, Map[String, Animal]]
 
 case class Foo(
     name:  String,
-    stuff: List[String]
-)
+    stuff: List[String])
 
 trait PetAnimal {
   val name: String
@@ -203,8 +187,7 @@ case class WithDefaults(
     age:      Int             = 50,
     num:      Option[Int],
     hasStuff: Option[Boolean] = Some(true),
-    pet:      Pet             = NicePet(Dog("Fido"), "bones")
-)
+    pet:      Pet             = NicePet(Dog("Fido"), "bones"))
 
 object CustomVC {
 
@@ -269,19 +252,16 @@ case class MapFactor(
     @MapName(name = "foo_bar") fooBar:String,
     @MapName(name = "a_b") thingy:   Long,
     count:                           Int,
-    @MapName(name = "big_mac") bigMac:String
-)
+    @MapName(name = "big_mac") bigMac:String)
 case class MapFactorId(
     @DBKey @MapName(name = "foo_bar") fooBar:String,
     @MapName(name = "a_b") thingy:         Long,
     count:                                 Int,
-    @MapName(name = "big_mac") bigMac:     String
-)
+    @MapName(name = "big_mac") bigMac:     String)
 case class MapFactorId2(
     @DBKey @MapName(name = "foo_bar") fooBar:String,
     @DBKey @MapName(name = "a_b") thingy:  Long,
     @DBKey hey:                            Int,
     count:                                 Int,
-    @MapName(name = "big_mac") bigMac:     String
-)
+    @MapName(name = "big_mac") bigMac:     String)
 

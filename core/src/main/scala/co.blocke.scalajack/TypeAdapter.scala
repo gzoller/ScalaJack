@@ -1,10 +1,32 @@
 package co.blocke.scalajack
 
+import scala.reflect.runtime.universe.TypeTag
+
+object TypeAdapter {
+
+  abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
+
+    override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X] = this
+
+  }
+
+  abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with TypeAdapter[X] {
+
+    override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X] = this
+
+  }
+
+}
+
 trait TypeAdapter[T] {
 
   def read(reader: Reader): T
 
   def write(value: T, writer: Writer): Unit
+
+  def deserializer: Deserializer[T] = ???
+
+  def serializer: Serializer[T] = ???
 
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
@@ -23,8 +45,7 @@ trait StringKind
 
 case class TransformedTypeAdapter[A, B](
     typeAdapter: TypeAdapter[A],
-    f:           BijectiveFunction[A, B]
-) extends TypeAdapter[B] {
+    f:           BijectiveFunction[A, B]) extends TypeAdapter[B] {
 
   override def read(reader: Reader): B =
     f.apply(typeAdapter.read(reader))

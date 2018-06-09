@@ -13,8 +13,7 @@ import org.mongodb.scala.bson._
 
 case class Something(
     name:  String,
-    stuff: Map[String, Any]
-)
+    stuff: Map[String, Any])
 
 class AnySpec extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
@@ -24,8 +23,7 @@ class AnySpec extends FunSpec {
     val b = Document("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> BsonArray(4, 5, 6)))
     val c = Document("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> BsonArray(
       BsonDocument("x" -> "Fido", "y" -> false),
-      BsonDocument("x" -> "Cat", "y" -> true)
-    )))
+      BsonDocument("x" -> "Cat", "y" -> true))))
     val e = Document("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> BsonArray("foo", BsonNull(), "bar")))
     val f = Document("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> 1.23))
     val g = Document("name" -> "Fred", "stuff" -> BsonDocument("a" -> 1, "b" -> 25L))

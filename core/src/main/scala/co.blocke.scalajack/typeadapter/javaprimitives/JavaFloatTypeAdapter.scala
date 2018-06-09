@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaFloatTypeAdapter extends SimpleTypeAdapter[java.lang.Float] {
+object JavaFloatTypeAdapter extends TypeAdapter.=:=[java.lang.Float] {
 
   override def read(reader: Reader): java.lang.Float =
     reader.peek match {

@@ -10,8 +10,7 @@ import scala.util._
 case class Embed(stuff: List[String], num: Int)
 case class Boom(
     name:  String,
-    other: Try[Embed]
-)
+    other: Try[Embed])
 case class Cap(name: String) extends SJCapture
 
 class TryAndCapture() extends FunSpec with Matchers {

@@ -6,7 +6,7 @@ import java.time.format.DateTimeParseException
 import java.time.Period
 import scala.util.{ Try, Success, Failure }
 
-object PeriodTypeAdapter extends SimpleTypeAdapter[Period] with StringKind {
+object PeriodTypeAdapter extends TypeAdapter.=:=[Period] with StringKind {
 
   override def read(reader: Reader): Period =
     reader.peek match {

@@ -17,8 +17,7 @@ class Skipping extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       "null" -> """null""",
       "boolean" -> """true""",
       "list of strings" -> """["a", "b", "c"]""",
-      "list of objects" -> """[{"a":1},{"b":2},{"c":3}]"""
-    )
+      "list of objects" -> """[{"a":1},{"b":2},{"c":3}]""")
 
     for ((description, json) <- examples) {
       it(s"Should skip a $description field value") {

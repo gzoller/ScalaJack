@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object BooleanTypeAdapter extends SimpleTypeAdapter[Boolean] {
+object BooleanTypeAdapter extends TypeAdapter.=:=[Boolean] {
 
   override def read(reader: Reader): Boolean = {
     reader.peek match {

@@ -30,7 +30,7 @@ object Build extends Build {
             .setPreference(AlignSingleLineCaseStatements, true)
             .setPreference(DoubleIndentConstructorArguments, true),
             // .setPreference(PreserveDanglingCloseParenthesis, true),
-        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
+        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings", "-language:higherKinds"),
         testOptions in Test += Tests.Argument("-oDF")
     )
 

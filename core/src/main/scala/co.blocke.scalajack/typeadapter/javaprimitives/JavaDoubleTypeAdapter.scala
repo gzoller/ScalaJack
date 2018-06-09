@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaDoubleTypeAdapter extends SimpleTypeAdapter[java.lang.Double] {
+object JavaDoubleTypeAdapter extends TypeAdapter.=:=[java.lang.Double] {
 
   override def read(reader: Reader): java.lang.Double =
     reader.peek match {

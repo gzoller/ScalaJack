@@ -440,9 +440,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           val scalaJack = mongoScalaJack.withHintModifiers(
             typeOf[Pop] -> ClassNameHintModifier(
               hint => s"co.blocke.scalajack.mongo.test.$hint",
-              fullName => fullName.split('.').last
-            )
-          )
+              fullName => fullName.split('.').last))
           val db = scalaJack.render(w)
           db.toJson should equal("""{ "s" : "Surprise", "w" : { "name" : "Yellow", "data" : { "_hint" : "Wow2", "x" : "three", "y" : 4 }, "stuff" : "Done" } }""")
           scalaJack.read[Carry[Pop]](db) should equal(w)
@@ -638,8 +636,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           Future(doit()),
           Future(doit()),
           Future(doit()),
-          Future(doit())
-        )
+          Future(doit()))
         val res = Await.result(Future.sequence(z), 3 seconds).reduce((a, b) => a && b)
         res should be(true)
       }

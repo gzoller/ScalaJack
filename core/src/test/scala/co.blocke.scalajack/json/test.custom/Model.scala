@@ -31,7 +31,7 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
 }
 
 // Override Phone...and its parents (String)!
-object OopsPhoneAdapter extends SimpleTypeAdapter[Phone] {
+object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] {
   override def read(reader: Reader): Phone = {
     reader.peek match {
       case TokenType.String =>

@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaCharacterTypeAdapter extends SimpleTypeAdapter[java.lang.Character] with StringKind {
+object JavaCharacterTypeAdapter extends TypeAdapter.=:=[java.lang.Character] with StringKind {
 
   override def read(reader: Reader): java.lang.Character =
     reader.peek match {

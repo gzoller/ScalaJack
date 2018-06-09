@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException
 import java.time.OffsetDateTime
 import scala.util.{ Try, Success, Failure }
 
-object OffsetDateTimeTypeAdapter extends SimpleTypeAdapter[OffsetDateTime] with StringKind {
+object OffsetDateTimeTypeAdapter extends TypeAdapter.=:=[OffsetDateTime] with StringKind {
 
   override def read(reader: Reader): OffsetDateTime =
     reader.peek match {

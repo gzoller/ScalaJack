@@ -6,7 +6,7 @@ import java.time.Duration
 import java.time.format.DateTimeParseException
 import scala.util.{ Try, Success, Failure }
 
-object DurationTypeAdapter extends SimpleTypeAdapter[Duration] with StringKind {
+object DurationTypeAdapter extends TypeAdapter.=:=[Duration] with StringKind {
 
   override def read(reader: Reader): Duration =
     reader.peek match {

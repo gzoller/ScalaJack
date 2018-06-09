@@ -4,7 +4,7 @@ package typeadapter
 import java.util.UUID
 import scala.util.{ Try, Success, Failure }
 
-object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
+object UUIDTypeAdapter extends TypeAdapter.=:=[UUID] {
 
   override def read(reader: Reader): UUID =
     reader.peek match {

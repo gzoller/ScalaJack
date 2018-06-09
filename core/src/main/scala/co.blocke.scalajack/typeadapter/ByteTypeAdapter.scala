@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object ByteTypeAdapter extends SimpleTypeAdapter[Byte] {
+object ByteTypeAdapter extends TypeAdapter.=:=[Byte] {
 
   override def read(reader: Reader): Byte =
     reader.readByte()

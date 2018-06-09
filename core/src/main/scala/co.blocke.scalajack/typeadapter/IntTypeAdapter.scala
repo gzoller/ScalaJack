@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object IntTypeAdapter extends SimpleTypeAdapter[Int] {
+object IntTypeAdapter extends TypeAdapter.=:=[Int] {
 
   override def read(reader: Reader): Int =
     reader.readInt()

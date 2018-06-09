@@ -4,7 +4,7 @@ package javaprimitives
 
 import java.math.BigInteger
 
-object JavaBigIntegerTypeAdapter extends SimpleTypeAdapter[BigInteger] {
+object JavaBigIntegerTypeAdapter extends TypeAdapter.=:=[BigInteger] {
 
   override def read(reader: Reader): BigInteger =
     reader.peek match {

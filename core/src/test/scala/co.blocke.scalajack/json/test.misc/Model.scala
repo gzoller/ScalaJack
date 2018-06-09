@@ -15,29 +15,24 @@ case class Master(
     flipflop: Boolean,
     big:      Long,
     num:      Num.Value,
-    age:      Int
-) {
+    age:      Int) {
   val foo: String = "yikes!"
 }
 case class Encapsulated(
     foo: String,
-    bar: Boolean
-)
+    bar: Boolean)
 case class View1(
     name:  String,
     big:   Long,
-    maybe: Option[String]
-)
+    maybe: Option[String])
 case class View2(
     name:     String,
     flipflop: Boolean,
-    mymap:    Map[String, Int]
-)
+    mymap:    Map[String, Int])
 
 case class Partial(
     name:  String,
-    bogus: Int
-)
+    bogus: Int)
 case class Empty(
     name:  String,
     stuff: List[String] // should be empty in test
@@ -45,43 +40,36 @@ case class Empty(
 
 case class NoMatch(
     bogus: Boolean,
-    nah:   Int
-)
+    nah:   Int)
 
 // --- For Self-Reference tests
 
 case class HooLoo(
     name: String,
-    more: HooLoo
-)
+    more: HooLoo)
 
 case class HooLoo2[T](
     name: String,
     x:    T,
-    more: HooLoo2[Int]
-)
+    more: HooLoo2[Int])
 
 case class HooLoo3[T](
     name: String,
     x:    T,
-    more: HooLoo3[T]
-)
+    more: HooLoo3[T])
 
 case class HooLoo4(
     name: String,
-    more: Option[HooLoo4]
-)
+    more: Option[HooLoo4])
 
 case class HooLoo5(
     name: String,
-    more: List[HooLoo5]
-)
+    more: List[HooLoo5])
 
 case class HooLoo6[T](
     name: String,
     x:    T,
-    more: List[HooLoo6[T]]
-)
+    more: List[HooLoo6[T]])
 
 // --- Complex Relationships
 
@@ -99,8 +87,7 @@ case class HasDefaults(name: String, age: Option[Int], pet: Pet = Dog("Fido", tr
 @Collection(name = "myDefaults")
 case class DefaultOpt(
     @DBKey(index = 1) name:String,
-    age:                  Option[Int] = Some(19)
-)
+    age:                  Option[Int] = Some(19))
 
 @Collection(name = "plains")
 class Plain() {
@@ -111,8 +98,7 @@ class Plain() {
 case class MapFactor(
     @MapName(name = "foo_bar") fooBar:String,
     @MapName(name = "a_b") thingy:   Long,
-    count:                           Int
-)
+    count:                           Int)
 class MapFactorPlain() {
   @MapName(name = "foo_bar") var fooBar: String = ""
   @MapName(name = "a_b") var thingy: Long = 0L

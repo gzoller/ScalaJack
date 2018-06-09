@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException
 import java.time.ZonedDateTime
 import scala.util.{ Try, Success, Failure }
 
-object ZonedDateTimeTypeAdapter extends SimpleTypeAdapter[ZonedDateTime] with StringKind {
+object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] with StringKind {
 
   override def read(reader: Reader): ZonedDateTime =
     reader.peek match {

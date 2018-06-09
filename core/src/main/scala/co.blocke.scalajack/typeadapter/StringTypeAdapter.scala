@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-object StringTypeAdapter extends SimpleTypeAdapter[String] with StringKind {
+object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
 
   override def read(reader: Reader): String = {
     reader.peek match {

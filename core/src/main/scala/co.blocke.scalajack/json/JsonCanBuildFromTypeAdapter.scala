@@ -45,8 +45,7 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory {
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = toType,
             haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
-            needleBeforeSubstitution   = typeParam.asType.toType
-          )
+            needleBeforeSubstitution   = typeParam.asType.toType)
           optionalTypeArg.map(typeArg => typeParam -> typeArg)
         }
 

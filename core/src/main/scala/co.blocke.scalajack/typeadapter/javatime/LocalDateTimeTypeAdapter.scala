@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException
 import java.time.LocalDateTime
 import scala.util.{ Try, Success, Failure }
 
-object LocalDateTimeTypeAdapter extends SimpleTypeAdapter[LocalDateTime] with StringKind {
+object LocalDateTimeTypeAdapter extends TypeAdapter.=:=[LocalDateTime] with StringKind {
 
   override def read(reader: Reader): LocalDateTime =
     reader.peek match {
