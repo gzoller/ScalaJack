@@ -5,7 +5,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
+import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf, lub }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
 
@@ -118,7 +118,53 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
 
 case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](
     canBuildFrom:       CanBuildFrom[_, Elem, To],
-    elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
+    elementTypeAdapter: TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
+
+  private val collectionType: Type = tt.tpe
+
+  override object deserializer extends Deserializer[To] {
+
+    private class TaggedCollection(override val get: To, taggedElements: List[TypeTagged[Elem]]) extends TypeTagged[To] {
+
+      override lazy val tpe: Type = lub(taggedElements.map(_.tpe))
+
+    }
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[To] =
+      json match {
+        case JsonArray(x) =>
+          val elements = x.asInstanceOf[ops.ArrayElements]
+
+          val deserializationResultsBuilder = List.newBuilder[DeserializationResult[Elem]]
+          val collectionBuilder = canBuildFrom()
+          val taggedElementsBuilder = List.newBuilder[TypeTagged[Elem]]
+
+          ops.foreachArrayElement(elements, { (index, element) =>
+            val deserializationResult = elementTypeAdapter.deserializer.deserialize(path \ index, element)
+
+            deserializationResult match {
+              case DeserializationSuccess(taggedElement) =>
+                taggedElementsBuilder += taggedElement
+
+              case DeserializationFailure(_) =>
+            }
+
+            deserializationResultsBuilder += deserializationResult
+          })
+
+          val deserializationResults: List[DeserializationResult[Elem]] = deserializationResultsBuilder.result()
+
+          if (deserializationResults.exists(_.isFailure)) {
+            DeserializationFailure(deserializationResults.flatMap(_.errors))
+          } else {
+            DeserializationSuccess(new TaggedCollection(collectionBuilder.result(), taggedElementsBuilder.result()))
+          }
+
+        case JsonNull() =>
+          DeserializationSuccess(TypeTagged(null, collectionType))
+      }
+
+  }
 
   override def read(reader: Reader): To =
     reader.peek match {
