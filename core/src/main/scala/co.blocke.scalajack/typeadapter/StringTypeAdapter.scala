@@ -12,6 +12,7 @@ object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
     override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[String] =
       json match {
         case JsonString(value) => DeserializationSuccess(TypeTagged[String](value, StringType))
+        case JsonNull()        => DeserializationSuccess(TypeTagged[String](null, StringType))
         case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
       }
 
@@ -29,6 +30,16 @@ object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
         reader.skipValue()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading String value.\n" + reader.showError())
     }
+  }
+
+  override object serializer extends Serializer[String] {
+
+    override def serialize[J](tagged: TypeTagged[String])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      tagged match {
+        case TypeTagged(null)  => SerializationSuccess(JsonNull())
+        case TypeTagged(value) => SerializationSuccess(JsonString(value))
+      }
+
   }
 
   override def write(value: String, writer: Writer): Unit =
