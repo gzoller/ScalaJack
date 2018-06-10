@@ -20,14 +20,15 @@ object Json4sOps extends JsonOps[JValue] {
     }
   }
 
-  override def applyArray(build: (JValue => Unit) => Unit): JValue = {
+  override def findObjectField(fields: List[(String, JValue)], name: String): Option[JValue] =
+    fields.find(_._1 == name).map(_._2)
+
+  override def applyArray(appendAllElements: (JValue => Unit) => Unit): JValue = {
     val elementsBuilder = List.newBuilder[JValue]
 
-    def appendElement(element: JValue): Unit = {
+    appendAllElements { element =>
       elementsBuilder += element
     }
-
-    build(appendElement)
 
     JArray(elementsBuilder.result())
   }
@@ -92,14 +93,12 @@ object Json4sOps extends JsonOps[JValue] {
       case _     => false
     }
 
-  override def applyObject(build: ((String, JValue) => Unit) => Unit): JValue = {
+  override def applyObject(appendAllFields: ((String, JValue) => Unit) => Unit): JValue = {
     val fieldsBuilder = List.newBuilder[(String, JValue)]
 
-    def appendField(name: String, value: JValue): Unit = {
-      fieldsBuilder += name -> value
+    appendAllFields { (fieldName, fieldValue) =>
+      fieldsBuilder += fieldName -> fieldValue
     }
-
-    build(appendField)
 
     JObject(fieldsBuilder.result())
   }

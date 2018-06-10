@@ -35,12 +35,12 @@ case class JsonFlavor(
     val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
-    try {
-      JValueParser.parse(json)
-    } catch {
-      case NonFatal(e) =>
-        e.printStackTrace()
-    }
+    //    try {
+    //      JValueParser.parse(json)
+    //    } catch {
+    //      case NonFatal(e) =>
+    //        e.printStackTrace()
+    //    }
     context.typeAdapterOf[T].read(reader)
   }
 

@@ -1,6 +1,6 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{ Context, MemberName, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.{ Context, DeserializationError, DeserializationFailure, DeserializationResult, Deserializer, JsonObject, JsonOps, MemberName, Path, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
@@ -55,6 +55,34 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
             next.typeAdapterOf[T]
           } else {
             new TypeAdapter[T] {
+
+              override object deserializer extends Deserializer[T] {
+
+                override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+                  json match {
+                    case JsonObject(x) =>
+                      val memberNames = new scala.collection.mutable.HashSet[MemberName]
+
+                      ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
+                        memberNames += fieldName
+                      })
+
+                      subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
+                        case Nil =>
+                          throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
+
+                        case matchingSubclass :: Nil =>
+                          matchingSubclass.typeAdapter.deserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+
+                        case matchingSubclasses =>
+                          throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
+                      }
+
+                    case _ =>
+                      DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+                  }
+
+              }
 
               override def read(reader: Reader): T =
                 reader.peek match {
