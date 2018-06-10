@@ -1,21 +1,13 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
+import scala.reflect.runtime.universe.TypeTag
 import scala.util.{ Failure, Success, Try }
 
-object TryTypeAdapter extends TypeAdapterFactory {
+object TryTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Try] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Try[_]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
-
-      case asTry =>
-        val valueType :: Nil = asTry.typeArgs
-        val valueTypeAdapter = context.typeAdapter(valueType)
-        TryTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    }
+  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Try[E]], ttElement: TypeTag[E]): TypeAdapter[Try[E]] =
+    TryTypeAdapter(context.typeAdapterOf[E])
 
 }
 

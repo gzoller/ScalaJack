@@ -1,20 +1,12 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
+import scala.reflect.runtime.universe.TypeTag
 
-object OptionTypeAdapter extends TypeAdapterFactory {
+object OptionTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Option[_]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
-
-      case asOption =>
-        val valueType :: Nil = asOption.typeArgs
-        val valueTypeAdapter = context.typeAdapter(valueType)
-        OptionTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    }
+  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] =
+    OptionTypeAdapter(context.typeAdapterOf[E])
 
 }
 

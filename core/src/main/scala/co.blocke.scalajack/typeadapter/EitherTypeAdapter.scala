@@ -2,29 +2,25 @@ package co.blocke.scalajack.typeadapter
 
 import co.blocke.scalajack.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
 import scala.language.existentials
-import scala.util.{ Try, Success, Failure }
+import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe.{ Type, TypeTag }
+import scala.util.{ Failure, Success, Try }
 
-object EitherTypeAdapter extends TypeAdapterFactory {
+object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Either[_, _]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
+  override def create[L, R](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Either[L, R]], ttLeft: TypeTag[L], ttRight: TypeTag[R]): TypeAdapter[Either[L, R]] = {
+    val leftType = ttLeft.tpe
+    val rightType = ttRight.tpe
 
-      case asEither =>
-        val leftType :: rightType :: Nil = asEither.typeArgs
-
-        if (leftType <:< rightType || rightType <:< leftType) {
-          throw new IllegalArgumentException(s"Types $leftType and $rightType are not mutually exclusive")
-        }
-
-        val leftTypeAdapter = context.typeAdapter(leftType)
-        val rightTypeAdapter = context.typeAdapter(rightType)
-        EitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
+    if (leftType <:< rightType || rightType <:< leftType) {
+      throw new IllegalArgumentException(s"Types $leftType and $rightType are not mutually exclusive")
     }
+
+    val leftTypeAdapter = context.typeAdapterOf[L]
+    val rightTypeAdapter = context.typeAdapterOf[R]
+    EitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType)
+  }
 
 }
 
