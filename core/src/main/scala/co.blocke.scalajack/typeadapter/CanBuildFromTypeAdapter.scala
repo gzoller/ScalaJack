@@ -5,7 +5,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf, lub }
+import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, lub, symbolOf, typeOf }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
 
@@ -185,6 +185,30 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
       case TokenType.Null =>
         reader.readNull()
     }
+
+  override object serializer extends Serializer[To] {
+
+    override def serialize[J](tagged: TypeTagged[To])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      tagged match {
+        case TypeTagged(null) => SerializationSuccess(JsonNull())
+        case tagged @ TypeTagged(collection) => SerializationSuccess(JsonArray { appendElement =>
+          lazy val elementType: Type = tagged.tpe.baseType(symbolOf[GenTraversableOnce[_]]).typeArgs.head
+
+          class TaggedElement(override val get: Elem) extends TypeTagged[Elem] {
+
+            override def tpe: Type = elementType
+
+          }
+
+          for (element <- collection) {
+            val elementSerializationResult = elementTypeAdapter.serializer.serialize[J](new TaggedElement(element))
+            val SerializationSuccess(elementJson) = elementSerializationResult
+            appendElement(elementJson)
+          }
+        })
+      }
+
+  }
 
   override def write(value: To, writer: Writer): Unit =
     if (value == null) {
