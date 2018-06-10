@@ -10,7 +10,7 @@ trait JsonOps[J] {
 
   def foreachObjectField(fields: ObjectFields, f: (String, J) => Unit): Unit
 
-  def applyArray(build: J => Unit): J
+  def applyArray(build: (J => Unit) => Unit): J
 
   def unapplyArray(json: J): Option[ArrayElements]
 
@@ -36,9 +36,9 @@ trait JsonOps[J] {
 
   def applyNull(): J
 
-  def unapplyNull(): Boolean
+  def unapplyNull(json: J): Boolean
 
-  def applyObject(build: (String, J) => Unit): J
+  def applyObject(build: ((String, J) => Unit) => Unit): J
 
   def unapplyObject(json: J): Option[ObjectFields]
 
