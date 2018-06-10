@@ -1,7 +1,21 @@
 package co.blocke.scalajack
 package typeadapter
 
+import scala.reflect.runtime.universe.{ Type, typeOf }
+
 object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
+
+  override object deserializer extends Deserializer[String] {
+
+    private val StringType: Type = typeOf[String]
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[String] =
+      json match {
+        case JsonString(value) => DeserializationSuccess(TypeTagged[String](value, StringType))
+        case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+      }
+
+  }
 
   override def read(reader: Reader): String = {
     reader.peek match {
