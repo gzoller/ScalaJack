@@ -4,6 +4,7 @@ package json
 import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
+import scala.util.control.NonFatal
 
 case class JsonFlavor(
     customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
@@ -34,6 +35,12 @@ case class JsonFlavor(
     val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
+    try {
+      JValueParser.parse(json)
+    } catch {
+      case NonFatal(e) =>
+        e.printStackTrace()
+    }
     context.typeAdapterOf[T].read(reader)
   }
 

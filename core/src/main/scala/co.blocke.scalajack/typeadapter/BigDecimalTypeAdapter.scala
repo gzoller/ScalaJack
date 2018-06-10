@@ -1,7 +1,21 @@
 package co.blocke.scalajack
 package typeadapter
 
+import scala.reflect.runtime.universe.{ Type, typeOf }
+
 object BigDecimalTypeAdapter extends TypeAdapter.=:=[BigDecimal] {
+
+  override object deserializer extends Deserializer[BigDecimal] {
+
+    private val BigDecimalType: Type = typeOf[BigDecimal]
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[BigDecimal] =
+      json match {
+        case JsonInt(x)  => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
+        case JsonLong(x) => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
+      }
+
+  }
 
   override def read(reader: Reader): BigDecimal =
     reader.peek match {

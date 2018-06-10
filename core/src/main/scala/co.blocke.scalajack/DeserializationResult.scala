@@ -5,12 +5,12 @@ import scala.util.control.NonFatal
 
 object DeserializationResult {
 
-  def apply[T](path: Path)(body: => TypeTagged[T]): DeserializationResult[T] =
+  def apply[T](path: Path)(body: => TypeTagged[T], deserializationError: PartialFunction[Throwable, DeserializationError] = PartialFunction.empty): DeserializationResult[T] =
     try {
       DeserializationSuccess(body)
     } catch {
       case NonFatal(e) =>
-        DeserializationFailure(immutable.Seq((path, DeserializationError.ExceptionThrown(e))))
+        DeserializationFailure(immutable.Seq((path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))))
     }
 
 }

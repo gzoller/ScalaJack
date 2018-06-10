@@ -2,9 +2,23 @@ package co.blocke.scalajack
 package typeadapter
 
 import java.util.UUID
-import scala.util.{ Try, Success, Failure }
+
+import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.util.{ Failure, Success, Try }
 
 object UUIDTypeAdapter extends TypeAdapter.=:=[UUID] {
+
+  override object deserializer extends Deserializer[UUID] {
+
+    private val UUIDType: Type = typeOf[UUID]
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[UUID] =
+      json match {
+        case JsonString(x) => DeserializationResult(path)(TypeTagged(UUID.fromString(x), UUIDType))
+        case _             => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+      }
+
+  }
 
   override def read(reader: Reader): UUID =
     reader.peek match {
