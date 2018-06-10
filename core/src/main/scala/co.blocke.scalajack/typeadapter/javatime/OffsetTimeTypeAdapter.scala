@@ -2,17 +2,41 @@ package co.blocke.scalajack
 package typeadapter
 package javatime
 
-import java.time.format.DateTimeFormatter.ISO_OFFSET_TIME
-import java.time.format.DateTimeParseException
 import java.time.OffsetTime
-import scala.util.{ Try, Success, Failure }
+import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-object OffsetTimeTypeAdapter extends TypeAdapter.=:=[OffsetTime] with StringKind {
+import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.util.{ Failure, Success, Try }
+
+object OffsetTimeTypeAdapter extends OffsetTimeTypeAdapter(DateTimeFormatter.ISO_OFFSET_TIME)
+
+class OffsetTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[OffsetTime] with StringKind {
+
+  override object deserializer extends Deserializer[OffsetTime] {
+
+    private val OffsetTimeType: Type = typeOf[OffsetTime]
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetTime] =
+      json match {
+        case JsonString(x) =>
+          DeserializationResult(path)(TypeTagged(OffsetTime.parse(x, formatter), OffsetTimeType), {
+            case e: DateTimeParseException =>
+              DeserializationError.Malformed(e)
+          })
+
+        case JsonNull() =>
+          DeserializationSuccess(TypeTagged(null, OffsetTimeType))
+
+        case _ =>
+          DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+      }
+
+  }
 
   override def read(reader: Reader): OffsetTime =
     reader.peek match {
       case TokenType.String =>
-        Try(OffsetTime.parse(reader.readString())) match {
+        Try(OffsetTime.parse(reader.readString(), formatter)) match {
           case Success(u) => u
           case Failure(u) => throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
@@ -27,11 +51,21 @@ object OffsetTimeTypeAdapter extends TypeAdapter.=:=[OffsetTime] with StringKind
 
     }
 
+  override object serializer extends Serializer[OffsetTime] {
+
+    override def serialize[J](tagged: TypeTagged[OffsetTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      tagged match {
+        case TypeTagged(null) => SerializationSuccess(JsonNull())
+        case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
+      }
+
+  }
+
   override def write(value: OffsetTime, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()
     } else {
-      writer.writeString(value.format(ISO_OFFSET_TIME))
+      writer.writeString(value.format(formatter))
     }
 
 }

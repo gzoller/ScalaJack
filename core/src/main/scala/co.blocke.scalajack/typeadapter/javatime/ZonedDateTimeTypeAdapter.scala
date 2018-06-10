@@ -2,17 +2,35 @@ package co.blocke.scalajack
 package typeadapter
 package javatime
 
-import java.time.format.DateTimeFormatter.ISO_ZONED_DATE_TIME
-import java.time.format.DateTimeParseException
 import java.time.ZonedDateTime
-import scala.util.{ Try, Success, Failure }
+import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] with StringKind {
+import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.util.{ Failure, Success, Try }
+
+object ZonedDateTimeTypeAdapter extends ZonedDateTimeTypeAdapter(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+
+class ZonedDateTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[ZonedDateTime] with StringKind {
+
+  override object deserializer extends Deserializer[ZonedDateTime] {
+
+    private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
+
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[ZonedDateTime] =
+      json match {
+        case JsonString(x) =>
+          DeserializationResult(path)(TypeTagged(ZonedDateTime.parse(x, formatter), ZonedDateTimeType), {
+            case e: DateTimeParseException =>
+              DeserializationError.Malformed(e)
+          })
+      }
+
+  }
 
   override def read(reader: Reader): ZonedDateTime =
     reader.peek match {
       case TokenType.String =>
-        Try(ZonedDateTime.parse(reader.readString(), ISO_ZONED_DATE_TIME)) match {
+        Try(ZonedDateTime.parse(reader.readString(), formatter)) match {
           case Success(u) => u
           case Failure(u) => throw new DateTimeParseException(u.getMessage + "\n" + reader.showError(), u.asInstanceOf[DateTimeParseException].getParsedString, u.asInstanceOf[DateTimeParseException].getErrorIndex)
         }
@@ -26,11 +44,21 @@ object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] with Stri
       }
     }
 
+  override object serializer extends Serializer[ZonedDateTime] {
+
+    override def serialize[J](tagged: TypeTagged[ZonedDateTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      tagged match {
+        case TypeTagged(null) => SerializationSuccess(JsonNull())
+        case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
+      }
+
+  }
+
   override def write(value: ZonedDateTime, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()
     } else {
-      writer.writeString(value.format(ISO_ZONED_DATE_TIME))
+      writer.writeString(value.format(formatter))
     }
 
 }

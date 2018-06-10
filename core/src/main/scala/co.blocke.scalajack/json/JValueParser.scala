@@ -1,8 +1,10 @@
 package co.blocke.scalajack.json
 
-import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JLong, JNull, JNumber, JObject, JString, JValue }
+import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JInt, JLong, JNull, JNumber, JObject, JString, JValue }
 
 object JValueParser {
+
+  private val NumberOfDigitsInMaxLongValue: Int = Long.MaxValue.toString.length
 
   def parse(source: String): JValue =
     parse(source.toCharArray)
@@ -38,8 +40,11 @@ object JValueParser {
     @inline def isLiteralChar(char: Char): Boolean =
       ('a' <= char && char < 'z') || ('A' <= char && char <= 'Z') || char == '_'
 
+    @inline def isDigitChar(char: Char): Boolean =
+      '0' <= char && char <= '9'
+
     @inline def isNumberChar(char: Char): Boolean =
-      ('0' <= char && char <= '9') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
+      isDigitChar(char) || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
     def readLiteral(): String = {
       val beginIndex = position
@@ -112,25 +117,46 @@ object JValueParser {
       val beginIndex = position
 
       var containsDecimal = false
+      var onlyContainsDigits = true
 
       var readingNumber = true
-      while (readingNumber) {
+      while (position < maxPosition && readingNumber) {
         val char = source(position)
         if (char == '.') {
           containsDecimal = true
+          onlyContainsDigits = false
+        } else if (isDigitChar(char)) {
+          position += 1
         } else if (isNumberChar(char)) {
           position += 1
+          onlyContainsDigits = false
         } else {
           readingNumber = false
         }
       }
 
       val endIndex = position
+      val length = endIndex - beginIndex
 
       if (containsDecimal) {
         JDecimal(BigDecimal(new String(source, beginIndex, endIndex - beginIndex)))
+      } else if (onlyContainsDigits) {
+        if (length < NumberOfDigitsInMaxLongValue) {
+          JLong(new String(source, beginIndex, length).toLong)
+        } else if (length == NumberOfDigitsInMaxLongValue) {
+          // On the border between JLong/JInt
+          val string = new String(source, beginIndex, length)
+          try {
+            JLong(string.toLong)
+          } catch {
+            case _: NumberFormatException =>
+              JInt(BigInt(string))
+          }
+        } else {
+          JInt(BigInt(new String(source, beginIndex, length)))
+        }
       } else {
-        JLong(new String(source, beginIndex, endIndex - beginIndex).toLong)
+        JLong(new String(source, beginIndex, length).toLong)
       }
     }
 

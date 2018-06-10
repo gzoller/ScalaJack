@@ -10,4 +10,13 @@ object DeserializationError {
 
   case class Unsupported(message: String) extends DeserializationError
 
+  object Malformed {
+
+    def apply(cause: Throwable): DeserializationError =
+      new Malformed(message = cause.getMessage)
+
+  }
+
+  case class Malformed(message: String) extends DeserializationError
+
 }
