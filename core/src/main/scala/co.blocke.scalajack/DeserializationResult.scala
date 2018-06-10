@@ -21,6 +21,10 @@ sealed trait DeserializationResult[+T] {
 
   def errors: immutable.Seq[(Path, DeserializationError)]
 
+  def map[U](f: TypeTagged[T] => TypeTagged[U]): DeserializationResult[U]
+
+  def flatMap[U](f: TypeTagged[T] => DeserializationResult[U]): DeserializationResult[U]
+
   def isSuccess: Boolean
 
   def isFailure: Boolean
@@ -30,6 +34,12 @@ sealed trait DeserializationResult[+T] {
 case class DeserializationSuccess[+T](get: TypeTagged[T]) extends DeserializationResult[T] {
 
   override def errors: immutable.Seq[(Path, DeserializationError)] = immutable.Seq.empty
+
+  override def map[U](f: TypeTagged[T] => TypeTagged[U]): DeserializationResult[U] =
+    DeserializationSuccess(f(get))
+
+  override def flatMap[U](f: TypeTagged[T] => DeserializationResult[U]): DeserializationResult[U] =
+    f(get)
 
   override def isSuccess: Boolean = true
 
@@ -47,6 +57,12 @@ object DeserializationFailure {
 case class DeserializationFailure(errors: immutable.Seq[(Path, DeserializationError)]) extends DeserializationResult[Nothing] {
 
   override def get: TypeTagged[Nothing] = throw new UnsupportedOperationException("DeserializationFailure.get")
+
+  override def map[U](f: TypeTagged[Nothing] => TypeTagged[U]): DeserializationResult[U] =
+    this.asInstanceOf[DeserializationResult[U]]
+
+  override def flatMap[U](f: TypeTagged[Nothing] => DeserializationResult[U]): DeserializationResult[U] =
+    this.asInstanceOf[DeserializationResult[U]]
 
   override def isSuccess: Boolean = false
 
