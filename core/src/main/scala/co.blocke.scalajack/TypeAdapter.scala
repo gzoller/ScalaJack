@@ -24,9 +24,9 @@ trait TypeAdapter[T] {
 
   def write(value: T, writer: Writer): Unit
 
-  def deserializer: Deserializer[T] = ???
+  val deserializer: Deserializer[T] = ???
 
-  def serializer: Serializer[T] = ???
+  val serializer: Serializer[T] = ???
 
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
