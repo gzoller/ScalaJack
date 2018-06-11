@@ -50,11 +50,11 @@ object TypeAdapterFactory {
 
   abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory {
 
-    def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X]
+    def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X]): TypeAdapter[X]
 
     override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
       if (tt.tpe == ttFactory.tpe) { // FIXME ensure this is the correct comparison
-        create(next).asInstanceOf[TypeAdapter[T]]
+        create(next)(context, tt.asInstanceOf[TypeTag[X]]).asInstanceOf[TypeAdapter[T]]
       } else {
         next.typeAdapterOf[T]
       }
@@ -100,11 +100,11 @@ object TypeAdapterFactory {
 
   abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory {
 
-    def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X]
+    def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X]): TypeAdapter[X]
 
     override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
       if (tt.tpe =:= ttFactory.tpe) {
-        create(next)(context).asInstanceOf[TypeAdapter[T]]
+        create(next)(context, tt.asInstanceOf[TypeTag[X]]).asInstanceOf[TypeAdapter[T]]
       } else {
         next.typeAdapterOf[T]
       }

@@ -5,7 +5,7 @@ package javaprimitives
 import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigDecimalDeserializer.JavaBigDecimalType
 import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigDecimalSerializer.ScalaBigDecimalType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, typeOf, TypeTag }
 
 object JavaBigDecimalDeserializer {
 
@@ -41,7 +41,7 @@ class JavaBigDecimalSerializer(scalaBigDecimalSerializer: Serializer[scala.math.
 
 object JavaBigDecimalTypeAdapter extends TypeAdapterFactory.=:=[java.math.BigDecimal] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.math.BigDecimal] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.math.BigDecimal]): TypeAdapter[java.math.BigDecimal] = {
     val scalaBigDecimalTypeAdapter = context.typeAdapterOf[scala.math.BigDecimal]
     new JavaBigDecimalTypeAdapter(
       deserializer = new JavaBigDecimalDeserializer(scalaBigDecimalTypeAdapter.deserializer),

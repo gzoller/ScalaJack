@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedCharDeserializer.BoxedCharType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaCharacterTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Character] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Character] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Character]): TypeAdapter[java.lang.Character] = {
     val charTypeAdapter = context.typeAdapterOf[Char]
     new JavaCharacterTypeAdapter(
       deserializer = new BoxedCharDeserializer(charTypeAdapter.deserializer),

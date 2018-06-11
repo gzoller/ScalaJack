@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedIntDeserializer.BoxedIntType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Integer] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Integer] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Integer]): TypeAdapter[java.lang.Integer] = {
     val intTypeAdapter = context.typeAdapterOf[Int]
     new JavaIntegerTypeAdapter(
       deserializer = new BoxedIntDeserializer(intTypeAdapter.deserializer),

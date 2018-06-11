@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedByteDeserializer.BoxedByteType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaByteTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Byte] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Byte] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Byte]): TypeAdapter[java.lang.Byte] = {
     val byteTypeAdapter = context.typeAdapterOf[Byte]
     new JavaByteTypeAdapter(
       deserializer = new BoxedByteDeserializer(byteTypeAdapter.deserializer),

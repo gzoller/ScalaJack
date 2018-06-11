@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedBooleanDeserializer.BoxedBooleanType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaBooleanTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Boolean] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Boolean] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Boolean]): TypeAdapter[java.lang.Boolean] = {
     val booleanTypeAdapter = context.typeAdapterOf[Boolean]
     new JavaBooleanTypeAdapter(
       deserializer = new BoxedBooleanDeserializer(booleanTypeAdapter.deserializer),

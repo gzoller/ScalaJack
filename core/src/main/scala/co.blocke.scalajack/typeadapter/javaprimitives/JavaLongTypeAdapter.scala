@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedLongDeserializer.BoxedLongType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaLongTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Long] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Long] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Long]): TypeAdapter[java.lang.Long] = {
     val longTypeAdapter = context.typeAdapterOf[Long]
     new JavaLongTypeAdapter(
       deserializer = new BoxedLongDeserializer(longTypeAdapter.deserializer),

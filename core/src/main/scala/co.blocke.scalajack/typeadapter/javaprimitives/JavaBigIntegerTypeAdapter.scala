@@ -5,7 +5,7 @@ package javaprimitives
 import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigIntegerDeserializer.JavaBigIntegerType
 import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigIntegerSerializer.ScalaBigIntType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaBigIntegerDeserializer {
 
@@ -41,7 +41,7 @@ class JavaBigIntegerSerializer(scalaBigIntSerializer: Serializer[scala.math.BigI
 
 object JavaBigIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.math.BigInteger] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.math.BigInteger] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.math.BigInteger]): TypeAdapter[java.math.BigInteger] = {
     val scalaBigIntTypeAdapter = context.typeAdapterOf[scala.math.BigInt]
     new JavaBigIntegerTypeAdapter(
       deserializer = new JavaBigIntegerDeserializer(scalaBigIntTypeAdapter.deserializer),

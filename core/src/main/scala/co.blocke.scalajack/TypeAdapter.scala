@@ -6,13 +6,13 @@ object TypeAdapter {
 
   abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
 
-    override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X] = this
+    override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X]): TypeAdapter[X] = this
 
   }
 
   abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with TypeAdapter[X] {
 
-    override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[X] = this
+    override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X]): TypeAdapter[X] = this
 
   }
 

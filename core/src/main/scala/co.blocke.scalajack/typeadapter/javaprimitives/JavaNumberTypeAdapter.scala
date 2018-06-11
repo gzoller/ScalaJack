@@ -4,7 +4,7 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedNumberDeserializer.{ BoxedDoubleType, BoxedLongType, BoxedNumberType, JavaBigDecimalType, JavaBigIntegerType }
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object BoxedNumberDeserializer {
 
@@ -49,7 +49,7 @@ class BoxedNumberSerializer() extends Serializer[java.lang.Number] {
 
 object JavaNumberTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Number] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[Number] =
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Number]): TypeAdapter[Number] =
     new JavaNumberTypeAdapter(deserializer = new BoxedNumberDeserializer, serializer = new BoxedNumberSerializer)
 
 }

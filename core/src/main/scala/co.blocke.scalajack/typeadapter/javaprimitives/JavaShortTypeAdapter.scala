@@ -4,11 +4,11 @@ package javaprimitives
 
 import co.blocke.scalajack.typeadapter.javaprimitives.BoxedShortDeserializer.BoxedShortType
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object JavaShortTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Short] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Short] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Short]): TypeAdapter[java.lang.Short] = {
     val shortTypeAdapter = context.typeAdapterOf[Short]
     new JavaShortTypeAdapter(
       deserializer = new BoxedShortDeserializer(shortTypeAdapter.deserializer),
