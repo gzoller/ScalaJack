@@ -2,6 +2,8 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
+import co.blocke.scalajack.typeadapter.javaprimitives.BoxedByteDeserializer.BoxedByteType
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object JavaByteTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Byte] {
@@ -11,9 +13,40 @@ object JavaByteTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Byte] {
 
 }
 
+object BoxedByteDeserializer {
+
+  private val BoxedByteType: Type = typeOf[java.lang.Byte]
+
+}
+
+class BoxedByteDeserializer(byteDeserializer: Deserializer[Byte]) extends Deserializer[java.lang.Byte] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Byte] =
+    json match {
+      case JsonNull() =>
+        DeserializationSuccess(TypeTagged(null, BoxedByteType))
+
+      case _ =>
+        byteDeserializer.deserialize(path, json) map {
+          case TypeTaggedByte(byteValue) => TypeTagged(java.lang.Byte.valueOf(byteValue), BoxedByteType)
+          case TypeTagged(byteValue)     => TypeTagged(java.lang.Byte.valueOf(byteValue), BoxedByteType)
+        }
+    }
+
+}
+
+class BoxedByteSerializer(byteSerializer: Serializer[Byte]) extends Serializer[java.lang.Byte] {
+
+  override def serialize[J](tagged: TypeTagged[java.lang.Byte])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(boxed) => byteSerializer.serialize(TypeTagged(boxed.byteValue))
+    }
+
+}
+
 class JavaByteTypeAdapter(primitiveTypeAdapter: TypeAdapter[Byte]) extends TypeAdapter.=:=[java.lang.Byte] {
 
-  private val PrimitiveType: Type = typeOf[Byte]
   private val WrapperType: Type = typeOf[java.lang.Byte]
 
   override object deserializer extends Deserializer[java.lang.Byte] {
@@ -54,7 +87,7 @@ class JavaByteTypeAdapter(primitiveTypeAdapter: TypeAdapter[Byte]) extends TypeA
         case TypeTagged(null) => SerializationSuccess(JsonNull())
         case TypeTagged(wrapper) =>
           val primitive = wrapper.byteValue
-          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive, PrimitiveType))
+          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive))
       }
 
   }

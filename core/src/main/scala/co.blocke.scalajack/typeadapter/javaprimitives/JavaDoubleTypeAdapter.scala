@@ -2,6 +2,8 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
+import co.blocke.scalajack.typeadapter.javaprimitives.BoxedDoubleDeserializer.BoxedDoubleType
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object JavaDoubleTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Double] {
@@ -11,9 +13,40 @@ object JavaDoubleTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Double] {
 
 }
 
+object BoxedDoubleDeserializer {
+
+  private val BoxedDoubleType: Type = typeOf[java.lang.Double]
+
+}
+
+class BoxedDoubleDeserializer(doubleDeserializer: Deserializer[Double]) extends Deserializer[java.lang.Double] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Double] =
+    json match {
+      case JsonNull() =>
+        DeserializationSuccess(TypeTagged(null, BoxedDoubleType))
+
+      case _ =>
+        doubleDeserializer.deserialize(path, json) map {
+          case TypeTaggedDouble(doubleValue) => TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType)
+          case TypeTagged(doubleValue)       => TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType)
+        }
+    }
+
+}
+
+class BoxedDoubleSerializer(doubleSerializer: Serializer[Double]) extends Serializer[java.lang.Double] {
+
+  override def serialize[J](tagged: TypeTagged[java.lang.Double])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(boxed) => doubleSerializer.serialize(TypeTagged(boxed.doubleValue))
+    }
+
+}
+
 class JavaDoubleTypeAdapter(primitiveTypeAdapter: TypeAdapter[Double]) extends TypeAdapter.=:=[java.lang.Double] {
 
-  private val PrimitiveType: Type = typeOf[Double]
   private val WrapperType: Type = typeOf[java.lang.Double]
 
   override object deserializer extends Deserializer[java.lang.Double] {
@@ -56,7 +89,7 @@ class JavaDoubleTypeAdapter(primitiveTypeAdapter: TypeAdapter[Double]) extends T
 
         case TypeTagged(wrapper) =>
           val primitive = wrapper.doubleValue
-          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive, PrimitiveType))
+          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive))
       }
 
   }

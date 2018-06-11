@@ -2,6 +2,8 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
+import co.blocke.scalajack.typeadapter.javaprimitives.BoxedShortDeserializer.BoxedShortType
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object JavaShortTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Short] {
@@ -11,23 +13,53 @@ object JavaShortTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Short] {
 
 }
 
+object BoxedShortDeserializer {
+
+  private val BoxedShortType: Type = typeOf[java.lang.Short]
+
+}
+
+class BoxedShortDeserializer(shortDeserializer: Deserializer[Short]) extends Deserializer[java.lang.Short] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Short] =
+    json match {
+      case JsonNull() =>
+        DeserializationSuccess(TypeTagged(null, BoxedShortType))
+
+      case _ =>
+        shortDeserializer.deserialize(path, json) map {
+          case TypeTaggedShort(shortValue) => TypeTagged(java.lang.Short.valueOf(shortValue), BoxedShortType)
+          case TypeTagged(shortValue)      => TypeTagged(java.lang.Short.valueOf(shortValue), BoxedShortType)
+        }
+    }
+
+}
+
+class BoxedShortSerializer(shortSerializer: Serializer[Short]) extends Serializer[java.lang.Short] {
+
+  override def serialize[J](tagged: TypeTagged[java.lang.Short])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(boxed) => shortSerializer.serialize(TypeTagged(boxed.shortValue))
+    }
+
+}
+
 class JavaShortTypeAdapter(primitiveTypeAdapter: TypeAdapter[Short]) extends TypeAdapter[java.lang.Short] {
 
-  private val PrimitiveType: Type = typeOf[Short]
-  private val WrapperType: Type = typeOf[java.lang.Short]
-
   override object deserializer extends Deserializer[java.lang.Short] {
+
+    private val BoxedShortType: Type = typeOf[java.lang.Short]
 
     override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Short] =
       json match {
         case JsonNull() =>
-          DeserializationSuccess(TypeTagged(null, WrapperType))
+          DeserializationSuccess(TypeTagged(null, BoxedShortType))
 
         case _ =>
           primitiveTypeAdapter.deserializer.deserialize(path, json) map {
-            case TypeTagged(primitive) =>
-              val wrapper = java.lang.Short.valueOf(primitive)
-              TypeTagged(wrapper, WrapperType)
+            case TypeTaggedShort(shortValue) => TypeTagged(java.lang.Short.valueOf(shortValue), BoxedShortType)
+            case TypeTagged(shortValue)      => TypeTagged(java.lang.Short.valueOf(shortValue), BoxedShortType)
           }
       }
 
@@ -56,7 +88,7 @@ class JavaShortTypeAdapter(primitiveTypeAdapter: TypeAdapter[Short]) extends Typ
 
         case TypeTagged(wrapper) =>
           val primitive = wrapper.shortValue
-          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive, PrimitiveType))
+          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive))
       }
 
   }
