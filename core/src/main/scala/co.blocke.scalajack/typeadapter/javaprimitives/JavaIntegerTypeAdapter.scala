@@ -8,8 +8,12 @@ import scala.reflect.runtime.universe.{ Type, typeOf }
 
 object JavaIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Integer] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Integer] =
-    new JavaIntegerTypeAdapter(context.typeAdapterOf[Int])
+  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.lang.Integer] = {
+    val intTypeAdapter = context.typeAdapterOf[Int]
+    new JavaIntegerTypeAdapter(
+      deserializer = new BoxedIntDeserializer(intTypeAdapter.deserializer),
+      serializer   = new BoxedIntSerializer(intTypeAdapter.serializer))
+  }
 
 }
 
@@ -45,26 +49,7 @@ class BoxedIntSerializer(intSerializer: Serializer[Int]) extends Serializer[java
 
 }
 
-class JavaIntegerTypeAdapter(primitiveTypeAdapter: TypeAdapter[Int]) extends TypeAdapter[java.lang.Integer] {
-
-  private val WrapperType: Type = typeOf[java.lang.Integer]
-
-  override object deserializer extends Deserializer[java.lang.Integer] {
-
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Integer] =
-      json match {
-        case JsonNull() =>
-          DeserializationSuccess(TypeTagged(null, WrapperType))
-
-        case _ =>
-          primitiveTypeAdapter.deserializer.deserialize(path, json) map {
-            case TypeTagged(primitive) =>
-              val wrapper = java.lang.Integer.valueOf(primitive)
-              TypeTagged(wrapper, WrapperType)
-          }
-      }
-
-  }
+class JavaIntegerTypeAdapter(override val deserializer: Deserializer[java.lang.Integer], override val serializer: Serializer[java.lang.Integer]) extends TypeAdapter[java.lang.Integer] {
 
   override def read(reader: Reader): java.lang.Integer =
     reader.peek match {
@@ -79,20 +64,6 @@ class JavaIntegerTypeAdapter(primitiveTypeAdapter: TypeAdapter[Int]) extends Typ
         throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Integer value.  (Is your value wrapped in quotes?)\n" + reader.showError())
       }
     }
-
-  override object serializer extends Serializer[java.lang.Integer] {
-
-    override def serialize[J](tagged: TypeTagged[java.lang.Integer])(implicit ops: JsonOps[J]): SerializationResult[J] =
-      tagged match {
-        case TypeTagged(null) =>
-          SerializationSuccess(JsonNull())
-
-        case TypeTagged(wrapper) =>
-          val primitive = wrapper.intValue
-          primitiveTypeAdapter.serializer.serialize(TypeTagged(primitive))
-      }
-
-  }
 
   override def write(value: java.lang.Integer, writer: Writer): Unit =
     if (value == null) {

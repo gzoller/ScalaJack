@@ -2,15 +2,61 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import java.math.BigDecimal
+import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigDecimalDeserializer.JavaBigDecimalType
+import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigDecimalSerializer.ScalaBigDecimalType
 
-object JavaBigDecimalTypeAdapter extends TypeAdapter.=:=[BigDecimal] {
+import scala.reflect.runtime.universe.{ Type, typeOf }
 
-  override def read(reader: Reader): BigDecimal =
+object JavaBigDecimalDeserializer {
+
+  val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
+
+}
+
+class JavaBigDecimalDeserializer(scalaBigDecimalDeserializer: Deserializer[scala.math.BigDecimal]) extends Deserializer[java.math.BigDecimal] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.math.BigDecimal] =
+    scalaBigDecimalDeserializer.deserialize(path, json) map {
+      case TypeTagged(null)            => TypeTagged(null, JavaBigDecimalType)
+      case TypeTagged(scalaBigDecimal) => TypeTagged(scalaBigDecimal.bigDecimal, JavaBigDecimalType)
+    }
+
+}
+
+object JavaBigDecimalSerializer {
+
+  val ScalaBigDecimalType: Type = typeOf[scala.math.BigDecimal]
+
+}
+
+class JavaBigDecimalSerializer(scalaBigDecimalSerializer: Serializer[scala.math.BigDecimal]) extends Serializer[java.math.BigDecimal] {
+
+  override def serialize[J](tagged: TypeTagged[java.math.BigDecimal])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null)           => scalaBigDecimalSerializer.serialize(TypeTagged(null, ScalaBigDecimalType))
+      case TypeTagged(javaBigDecimal) => scalaBigDecimalSerializer.serialize(TypeTagged(scala.math.BigDecimal(javaBigDecimal), ScalaBigDecimalType))
+    }
+
+}
+
+object JavaBigDecimalTypeAdapter extends TypeAdapterFactory.=:=[java.math.BigDecimal] {
+
+  override def create(next: TypeAdapterFactory)(implicit context: Context): TypeAdapter[java.math.BigDecimal] = {
+    val scalaBigDecimalTypeAdapter = context.typeAdapterOf[scala.math.BigDecimal]
+    new JavaBigDecimalTypeAdapter(
+      deserializer = new JavaBigDecimalDeserializer(scalaBigDecimalTypeAdapter.deserializer),
+      serializer   = new JavaBigDecimalSerializer(scalaBigDecimalTypeAdapter.serializer))
+  }
+
+}
+
+class JavaBigDecimalTypeAdapter(override val deserializer: Deserializer[java.math.BigDecimal], override val serializer: Serializer[java.math.BigDecimal]) extends TypeAdapter.=:=[java.math.BigDecimal] {
+
+  override def read(reader: Reader): java.math.BigDecimal =
     reader.peek match {
       case TokenType.Number =>
         reader.read(expected = TokenType.Number)
-        new BigDecimal(reader.tokenText)
+        new java.math.BigDecimal(reader.tokenText)
 
       case TokenType.Null =>
         reader.readNull()
@@ -21,7 +67,7 @@ object JavaBigDecimalTypeAdapter extends TypeAdapter.=:=[BigDecimal] {
       }
     }
 
-  override def write(value: BigDecimal, writer: Writer): Unit =
+  override def write(value: java.math.BigDecimal, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()
     } else {
