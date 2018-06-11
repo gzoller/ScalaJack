@@ -5,33 +5,51 @@ package javatime
 import java.time.LocalTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
+import co.blocke.scalajack.typeadapter.javatime.LocalTimeTypeAdapter.LocalTimeType
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object LocalTimeTypeAdapter extends LocalTimeTypeAdapter(DateTimeFormatter.ISO_LOCAL_TIME)
+object LocalTimeTypeAdapter extends LocalTimeTypeAdapter(DateTimeFormatter.ISO_LOCAL_TIME) {
+
+  val LocalTimeType: Type = typeOf[LocalTime]
+
+}
+
+class LocalTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalTime] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalTime] =
+    json match {
+      case JsonString(x) =>
+        DeserializationResult(path)(TypeTagged(LocalTime.parse(x, formatter), LocalTimeType), {
+          case e: DateTimeParseException =>
+            DeserializationError.Malformed(e)
+        })
+
+      case JsonNull() =>
+        DeserializationSuccess(TypeTagged(null, LocalTimeType))
+
+      case _ =>
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+    }
+
+}
+
+class LocalTimeSerializer(formatter: DateTimeFormatter) extends Serializer[LocalTime] {
+
+  override def serialize[J](tagged: TypeTagged[LocalTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null) => SerializationSuccess(JsonNull())
+      case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
+    }
+
+}
 
 class LocalTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[LocalTime] with StringKind {
 
-  override object deserializer extends Deserializer[LocalTime] {
+  override val deserializer: Deserializer[LocalTime] = new LocalTimeDeserializer(formatter)
 
-    private val LocalTimeType: Type = typeOf[LocalTime]
-
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalTime] =
-      json match {
-        case JsonString(x) =>
-          DeserializationResult(path)(TypeTagged(LocalTime.parse(x, formatter), LocalTimeType), {
-            case e: DateTimeParseException =>
-              DeserializationError.Malformed(e)
-          })
-
-        case JsonNull() =>
-          DeserializationSuccess(TypeTagged(null, LocalTimeType))
-
-        case _ =>
-          DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
-      }
-
-  }
+  override val serializer: Serializer[LocalTime] = new LocalTimeSerializer(formatter)
 
   override def read(reader: Reader): LocalTime =
     reader.peek match {
@@ -50,16 +68,6 @@ class LocalTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=
       }
 
     }
-
-  override object serializer extends Serializer[LocalTime] {
-
-    override def serialize[J](tagged: TypeTagged[LocalTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
-      tagged match {
-        case TypeTagged(null) => SerializationSuccess(JsonNull())
-        case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
-      }
-
-  }
 
   override def write(value: LocalTime, writer: Writer): Unit =
     if (value == null) {
