@@ -1,8 +1,8 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf, TypeBounds }
 import scala.language.existentials
+import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf }
 
 object TypeTypeAdapter extends TypeAdapterFactory {
 

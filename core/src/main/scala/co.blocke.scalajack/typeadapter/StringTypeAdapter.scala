@@ -1,22 +1,42 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.typeadapter.StringDeserializer.StringType
+
 import scala.reflect.runtime.universe.{ Type, typeOf }
+
+object StringDeserializer {
+
+  val StringType: Type = typeOf[String]
+
+}
+
+class StringDeserializer extends Deserializer[String] {
+
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[String] =
+    json match {
+      case JsonNull()        => DeserializationSuccess(TypeTagged(null, StringType))
+      case JsonString(value) => DeserializationSuccess(TypeTagged(value, StringType))
+      case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+    }
+
+}
+
+class StringSerializer extends Serializer[String] {
+
+  override def serialize[J](tagged: TypeTagged[String])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    tagged match {
+      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(value) => SerializationSuccess(JsonString(value))
+    }
+
+}
 
 object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
 
-  override object deserializer extends Deserializer[String] {
+  override val deserializer: Deserializer[String] = new StringDeserializer
 
-    private val StringType: Type = typeOf[String]
-
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[String] =
-      json match {
-        case JsonString(value) => DeserializationSuccess(TypeTagged[String](value, StringType))
-        case JsonNull()        => DeserializationSuccess(TypeTagged[String](null, StringType))
-        case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
-      }
-
-  }
+  override val serializer: Serializer[String] = new StringSerializer
 
   override def read(reader: Reader): String = {
     reader.peek match {
@@ -30,16 +50,6 @@ object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
         reader.skipValue()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading String value.\n" + reader.showError())
     }
-  }
-
-  override object serializer extends Serializer[String] {
-
-    override def serialize[J](tagged: TypeTagged[String])(implicit ops: JsonOps[J]): SerializationResult[J] =
-      tagged match {
-        case TypeTagged(null)  => SerializationSuccess(JsonNull())
-        case TypeTagged(value) => SerializationSuccess(JsonString(value))
-      }
-
   }
 
   override def write(value: String, writer: Writer): Unit =
