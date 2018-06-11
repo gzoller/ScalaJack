@@ -41,8 +41,8 @@ class BoxedNumberSerializer() extends Serializer[java.lang.Number] {
       case TypeTagged(boxedInt: java.lang.Integer)          => SerializationSuccess(JsonLong(boxedInt.longValue))
       case TypeTagged(boxedLong: java.lang.Long)            => SerializationSuccess(JsonLong(boxedLong.longValue))
       case TypeTagged(boxedShort: java.lang.Short)          => SerializationSuccess(JsonLong(boxedShort.longValue))
-      case TypeTagged(javaBigInteger: java.math.BigInteger) => SerializationSuccess(JsonInt(BigInt(javaBigInteger)))
-      case TypeTagged(javaBigDecimal: java.math.BigDecimal) => SerializationSuccess(JsonDecimal(BigDecimal(javaBigDecimal)))
+      case TypeTagged(javaBigInteger: java.math.BigInteger) => SerializationSuccess(JsonInt(scala.math.BigInt(javaBigInteger)))
+      case TypeTagged(javaBigDecimal: java.math.BigDecimal) => SerializationSuccess(JsonDecimal(scala.math.BigDecimal(javaBigDecimal)))
     }
 
 }
@@ -64,10 +64,9 @@ class JavaNumberTypeAdapter(override val deserializer: Deserializer[java.lang.Nu
       case TokenType.Null =>
         reader.readNull()
 
-      case actual => {
+      case actual =>
         reader.read()
         throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Number value.  (Is your value wrapped in quotes?)\n" + reader.showError())
-      }
     }
 
   override def write(nullableValue: java.lang.Number, writer: Writer): Unit =
