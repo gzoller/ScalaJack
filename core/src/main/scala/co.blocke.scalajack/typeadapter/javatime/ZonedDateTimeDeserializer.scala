@@ -5,15 +5,9 @@ package javatime
 import java.time.ZonedDateTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-object ZonedDateTimeDeserializer {
-
-  private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
-
-}
-
 class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[ZonedDateTime] {
 
-  import ZonedDateTimeDeserializer.ZonedDateTimeType
+  private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[ZonedDateTime] =
     json match {

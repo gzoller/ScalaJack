@@ -5,15 +5,9 @@ package javatime
 import java.time.OffsetDateTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-object OffsetDateTimeDeserializer {
-
-  private val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
-
-}
-
 class OffsetDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[OffsetDateTime] {
 
-  import OffsetDateTimeDeserializer.OffsetDateTimeType
+  private val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetDateTime] =
     json match {

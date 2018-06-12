@@ -5,15 +5,9 @@ package javatime
 import java.time.LocalDate
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-object LocalDateDeserializer {
-
-  private val LocalDateType: Type = typeOf[LocalDate]
-
-}
-
 class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalDate] {
 
-  import LocalDateDeserializer.LocalDateType
+  private val LocalDateType: Type = typeOf[LocalDate]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalDate] =
     json match {

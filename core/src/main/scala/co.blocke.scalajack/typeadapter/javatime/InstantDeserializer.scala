@@ -5,15 +5,9 @@ package javatime
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-object InstantDeserializer {
-
-  private val InstantType: Type = typeOf[Instant]
-
-}
-
 class InstantDeserializer extends Deserializer[Instant] {
 
-  import InstantDeserializer.InstantType
+  private val InstantType: Type = typeOf[Instant]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Instant] =
     json match {

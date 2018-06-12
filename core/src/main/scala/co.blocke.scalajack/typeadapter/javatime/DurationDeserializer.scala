@@ -5,15 +5,9 @@ package javatime
 import java.time.Duration
 import java.time.format.DateTimeParseException
 
-object DurationDeserializer {
-
-  private val DurationType: Type = typeOf[Duration]
-
-}
-
 class DurationDeserializer extends Deserializer[Duration] {
 
-  import DurationDeserializer.DurationType
+  private val DurationType: Type = typeOf[Duration]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Duration] =
     json match {
