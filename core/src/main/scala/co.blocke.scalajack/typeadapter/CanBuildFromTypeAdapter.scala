@@ -126,52 +126,6 @@ case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
     canBuildFrom:              CanBuildFrom[_, Elem, To],
     elementTypeAdapter:        TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
 
-  private val collectionType: Type = tt.tpe
-  /*
-  override object deserializer extends Deserializer[To] {
-
-    private class TaggedCollection(override val get: To, taggedElements: List[TypeTagged[Elem]]) extends TypeTagged[To] {
-
-      override lazy val tpe: Type = lub(taggedElements.map(_.tpe))
-
-    }
-
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[To] =
-      json match {
-        case JsonArray(x) =>
-          val elements = x.asInstanceOf[ops.ArrayElements]
-
-          val deserializationResultsBuilder = List.newBuilder[DeserializationResult[Elem]]
-          val collectionBuilder = canBuildFrom()
-          val taggedElementsBuilder = List.newBuilder[TypeTagged[Elem]]
-
-          ops.foreachArrayElement(elements, { (index, element) =>
-            val deserializationResult = elementTypeAdapter.deserializer.deserialize(path \ index, element)
-
-            deserializationResult match {
-              case DeserializationSuccess(taggedElement) =>
-                taggedElementsBuilder += taggedElement
-
-              case DeserializationFailure(_) =>
-            }
-
-            deserializationResultsBuilder += deserializationResult
-          })
-
-          val deserializationResults: List[DeserializationResult[Elem]] = deserializationResultsBuilder.result()
-
-          if (deserializationResults.exists(_.isFailure)) {
-            DeserializationFailure(deserializationResults.flatMap(_.errors))
-          } else {
-            DeserializationSuccess(new TaggedCollection(collectionBuilder.result(), taggedElementsBuilder.result()))
-          }
-
-        case JsonNull() =>
-          DeserializationSuccess(TypeTagged(null, collectionType))
-      }
-
-  }
-*/
   override def read(reader: Reader): To =
     reader.peek match {
       case TokenType.BeginArray =>
@@ -191,31 +145,7 @@ case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
       case TokenType.Null =>
         reader.readNull().asInstanceOf[To]
     }
-  /*
-  override object serializer extends Serializer[To] {
 
-    override def serialize[J](tagged: TypeTagged[To])(implicit ops: JsonOps[J]): SerializationResult[J] =
-      tagged match {
-        case TypeTagged(null) => SerializationSuccess(JsonNull())
-        case tagged @ TypeTagged(collection) => SerializationSuccess(JsonArray { appendElement =>
-          lazy val elementType: Type = tagged.tpe.baseType(symbolOf[GenTraversableOnce[_]]).typeArgs.head
-
-          class TaggedElement(override val get: Elem) extends TypeTagged[Elem] {
-
-            override def tpe: Type = elementType
-
-          }
-
-          for (element <- collection) {
-            val elementSerializationResult = elementTypeAdapter.serializer.serialize[J](new TaggedElement(element))
-            val SerializationSuccess(elementJson) = elementSerializationResult
-            appendElement(elementJson)
-          }
-        })
-      }
-
-  }
-*/
   override def write(value: To, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()

@@ -6,11 +6,15 @@ import scala.util.control.NonFatal
 object DeserializationResult {
 
   def apply[T](path: Path)(body: => TypeTagged[T], deserializationError: PartialFunction[Throwable, DeserializationError] = PartialFunction.empty): DeserializationResult[T] =
-    try {
-      DeserializationSuccess(body)
-    } catch {
+    try DeserializationSuccess(body) catch {
       case NonFatal(e) =>
-        DeserializationFailure(immutable.Seq((path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))))
+        DeserializationFailure(path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))
+    }
+
+  def trapExceptions[T](path: Path)(body: => DeserializationResult[T], deserializationError: PartialFunction[Throwable, DeserializationError] = PartialFunction.empty): DeserializationResult[T] =
+    try body catch {
+      case NonFatal(e) =>
+        DeserializationFailure(path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))
     }
 
 }

@@ -35,6 +35,10 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     val derivedValueClassConstructorMirror: Option[MethodMirror]
     val outerClass: Option[java.lang.Class[_]]
 
+    def deserializer: Deserializer[Value] = valueTypeAdapter.deserializer
+
+    def serializer: Serializer[Value] = valueTypeAdapter.serializer
+
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
     override lazy val valueTypeTag = new TypeTag[Value] {

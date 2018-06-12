@@ -6,6 +6,9 @@ class JavaCollectionSerializer[E, C <: java.util.Collection[E]](elementSerialize
 
   override def serialize[J](taggedCollection: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =
     taggedCollection match {
+      case TypeTagged(null) =>
+        SerializationSuccess(JsonNull())
+
       case TypeTagged(collection) =>
         lazy val elementType: Type = {
           val e :: Nil = taggedCollection.tpe.baseType(symbolOf[java.util.Collection[_]]).typeArgs
