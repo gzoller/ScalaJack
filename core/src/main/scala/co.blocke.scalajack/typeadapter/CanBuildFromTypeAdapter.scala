@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.collection.generic.CanBuildFrom
-import scala.collection.{ GenMapLike, GenTraversableOnce }
+import scala.collection.{ GenMapLike, GenTraversableOnce, mutable }
 import scala.language.existentials
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
@@ -62,7 +62,13 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
 
         Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
       } else {
-        Some(CanBuildFromTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        def newBuilder(): mutable.Builder[E, T] = canBuildFrom.asInstanceOf[CanBuildFrom[Any, E, T]]()
+
+        Some(CanBuildFromTypeAdapter[E, T](
+          new CollectionDeserializer[E, T](elementTypeAdapter.deserializer.asInstanceOf[Deserializer[E]], newBuilder),
+          new CollectionSerializer[E, T](elementTypeAdapter.serializer.asInstanceOf[Serializer[E]]),
+          canBuildFrom.asInstanceOf[CanBuildFrom[_, E, T]],
+          elementTypeAdapter.asInstanceOf[TypeAdapter[E]]))
       }
     }
 
@@ -114,9 +120,11 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
 
 }
 
-case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](
-    canBuildFrom:       CanBuildFrom[_, Elem, To],
-    elementTypeAdapter: TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
+case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
+    override val deserializer: Deserializer[To],
+    override val serializer:   Serializer[To],
+    canBuildFrom:              CanBuildFrom[_, Elem, To],
+    elementTypeAdapter:        TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
 
   private val collectionType: Type = tt.tpe
   /*
@@ -181,7 +189,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
         builder.result()
 
       case TokenType.Null =>
-        reader.readNull()
+        reader.readNull().asInstanceOf[To]
     }
   /*
   override object serializer extends Serializer[To] {
