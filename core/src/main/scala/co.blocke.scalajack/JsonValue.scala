@@ -1,5 +1,57 @@
 package co.blocke.scalajack
 
+object JsonValue {
+
+  def transform[A, B](source: A)(implicit sourceOps: JsonOps[A], targetOps: JsonOps[B]): B =
+    if (sourceOps == targetOps) {
+      source.asInstanceOf[B]
+    } else {
+      source match {
+        case JsonArray(x) =>
+          val sourceElements = x.asInstanceOf[sourceOps.ArrayElements]
+
+          JsonArray[B] { appendTargetElement =>
+            sourceOps.foreachArrayElement(sourceElements, { (_, sourceElement) =>
+              val targetElement = transform[A, B](sourceElement)
+              appendTargetElement(targetElement)
+            })
+          }
+
+        case JsonBoolean(booleanValue) =>
+          JsonBoolean[B](booleanValue)
+
+        case JsonDecimal(bigDecimal) =>
+          JsonDecimal[B](bigDecimal)
+
+        case JsonDouble(doubleValue) =>
+          JsonDouble[B](doubleValue)
+
+        case JsonInt(bigInt) =>
+          JsonInt[B](bigInt)
+
+        case JsonLong(longValue) =>
+          JsonLong[B](longValue)
+
+        case JsonNull() =>
+          JsonNull[B]()
+
+        case JsonObject(x) =>
+          val sourceFields = x.asInstanceOf[sourceOps.ObjectFields]
+
+          JsonObject[B] { appendTargetField =>
+            sourceOps.foreachObjectField(sourceFields, { (fieldName, sourceFieldValue) =>
+              val targetFieldValue = transform[A, B](sourceFieldValue)
+              appendTargetField(fieldName, targetFieldValue)
+            })
+          }
+
+        case JsonString(string) =>
+          JsonString[B](string)
+      }
+    }
+
+}
+
 object JsonArray {
 
   @inline final def apply[J](build: (J => Unit) => Unit)(implicit ops: JsonOps[J]): J =

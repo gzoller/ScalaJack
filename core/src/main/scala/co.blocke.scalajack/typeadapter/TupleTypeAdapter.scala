@@ -59,8 +59,8 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.read(reader)
     }
 
-    def write(fieldValue: Any, writer: Writer): Unit = {
-      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(fieldValue, writer)
+    def write(fieldValue: TypeTagged[Value], writer: Writer): Unit = {
+      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(fieldValue.get, writer)
     }
 
   }

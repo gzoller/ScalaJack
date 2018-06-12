@@ -121,7 +121,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
     elementTypeAdapter: TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
 
   private val collectionType: Type = tt.tpe
-
+  /*
   override object deserializer extends Deserializer[To] {
 
     private class TaggedCollection(override val get: To, taggedElements: List[TypeTagged[Elem]]) extends TypeTagged[To] {
@@ -165,7 +165,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
       }
 
   }
-
+*/
   override def read(reader: Reader): To =
     reader.peek match {
       case TokenType.BeginArray =>
@@ -185,7 +185,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
       case TokenType.Null =>
         reader.readNull()
     }
-
+  /*
   override object serializer extends Serializer[To] {
 
     override def serialize[J](tagged: TypeTagged[To])(implicit ops: JsonOps[J]): SerializationResult[J] =
@@ -209,7 +209,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
       }
 
   }
-
+*/
   override def write(value: To, writer: Writer): Unit =
     if (value == null) {
       writer.writeNull()

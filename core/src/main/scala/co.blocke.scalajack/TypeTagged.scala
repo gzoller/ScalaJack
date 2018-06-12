@@ -3,6 +3,7 @@ package co.blocke.scalajack
 import co.blocke.scalajack.TypeTagged.{ BooleanType, ByteType, CharType, DoubleType, FloatType, IntType, LongType, ShortType }
 
 import scala.reflect.runtime.universe.{ Type, typeOf }
+import scala.reflect.runtime.currentMirror
 
 object TypeTagged {
 
@@ -20,7 +21,14 @@ object TypeTagged {
    */
   @inline final def unapply[T](tagged: TypeTagged[T]): tagged.type = tagged
 
-  def inferFromRuntimeClass[T](value: T): TypeTagged[T] = ???
+  def inferFromRuntimeClass[T](value: T): TypeTagged[T] =
+    new TypeTagged[T] {
+
+      override def get: T = value
+
+      override lazy val tpe: Type = currentMirror.classSymbol(value.getClass).asType.toType
+
+    }
 
   def apply[T](value: T, valueType: Type): TypeTagged[T] = Fixed(value, valueType)
 

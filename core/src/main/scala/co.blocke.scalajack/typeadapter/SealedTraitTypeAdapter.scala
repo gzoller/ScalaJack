@@ -55,7 +55,8 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
             next.typeAdapterOf[T]
           } else {
             new TypeAdapter[T] {
-
+              /*
+FIXME
               override object deserializer extends Deserializer[T] {
 
                 override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
@@ -83,7 +84,7 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                   }
 
               }
-
+*/
               override def read(reader: Reader): T =
                 reader.peek match {
                   case TokenType.BeginObject =>
