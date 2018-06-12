@@ -5,8 +5,7 @@ package javacollections
 object JavaCollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[java.util.Collection] {
 
   override def create[E, C <: java.util.Collection[E]](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[C], ttCollection: TypeTag[java.util.Collection[E]], ttElement: TypeTag[E]): TypeAdapter[C] = {
-    val collectionClass: java.lang.Class[C] = runtimeClass(tt.tpe).asInstanceOf[java.lang.Class[C]]
-    val collectionConstructor: java.lang.reflect.Constructor[C] = collectionClass.getConstructor()
+    val collectionConstructor: java.lang.reflect.Constructor[C] = runtimeClassOf[C].getConstructor()
 
     val elementTypeAdapter = context.typeAdapterOf[E]
 

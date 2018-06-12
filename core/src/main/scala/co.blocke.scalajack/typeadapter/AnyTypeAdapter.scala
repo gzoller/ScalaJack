@@ -3,9 +3,6 @@ package typeadapter
 
 import co.blocke.scalajack.BijectiveFunctions.fullNameToType
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
-
 object AnyTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -92,7 +89,7 @@ case class AnyTypeAdapter(
         mapTypeAdapter.write(map.asInstanceOf[Map[Any, Any]], writer)
 
       case _ =>
-        val valueType = currentMirror.staticClass(value.getClass.getName).toType
+        val valueType = staticClass(value.getClass.getName).toType
         //    val valueType = currentMirror.reflectClass(currentMirror.classSymbol(value.getClass)).symbol.info
         //    val valueType = currentMirror.reflect(value)(ClassTag(value.getClass)).symbol.info
 

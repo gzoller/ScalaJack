@@ -4,7 +4,6 @@ package typeadapter
 import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
 import scala.collection.immutable
-import scala.reflect.runtime.universe.{ MethodMirror, Type, appliedType }
 
 class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleTypeConstructor: Type, tupleConstructorMirror: MethodMirror) extends Deserializer[Tuple] {
 

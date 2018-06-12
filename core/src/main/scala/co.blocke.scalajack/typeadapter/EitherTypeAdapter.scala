@@ -1,10 +1,7 @@
-package co.blocke.scalajack.typeadapter
-
-import co.blocke.scalajack.{ Context, Deserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer }
+package co.blocke.scalajack
+package typeadapter
 
 import scala.language.existentials
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.TypeTag
 import scala.util.{ Failure, Success, Try }
 
 object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either] {
@@ -31,8 +28,8 @@ object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either
 
 case class EitherTypeAdapter[L, R](override val deserializer: Deserializer[Either[L, R]], override val serializer: Serializer[Either[L, R]], leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R])(implicit ttLeft: TypeTag[L], ttRight: TypeTag[R]) extends TypeAdapter[Either[L, R]] {
 
-  private val leftClass = currentMirror.runtimeClass(ttLeft.tpe)
-  private val rightClass = currentMirror.runtimeClass(ttRight.tpe)
+  private val leftClass = runtimeClassOf[L]
+  private val rightClass = runtimeClassOf[R]
 
   override def read(reader: Reader): Either[L, R] = {
     val savePos = reader.position // in case we need to re-parse as Left

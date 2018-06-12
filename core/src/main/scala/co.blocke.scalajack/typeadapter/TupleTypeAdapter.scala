@@ -6,8 +6,7 @@ import java.lang.reflect.Method
 import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
 import scala.language.existentials
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag, typeOf }
+import scala.reflect.runtime.universe.TermName
 
 object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -91,7 +90,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           }
         }
 
-        val classMirror = currentMirror.reflectClass(classSymbol)
+        val classMirror = reflectClass(classSymbol)
         val constructorMirror = classMirror.reflectConstructor(classSymbol.primaryConstructor.asMethod)
 
         TupleTypeAdapter[T](fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]

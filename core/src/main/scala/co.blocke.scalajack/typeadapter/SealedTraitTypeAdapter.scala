@@ -1,10 +1,7 @@
-package co.blocke.scalajack.typeadapter
-
-import co.blocke.scalajack.{ Context, DeserializationError, DeserializationFailure, DeserializationResult, Deserializer, JsonObject, JsonOps, MemberName, Path, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
+package co.blocke.scalajack
+package typeadapter
 
 import scala.language.existentials
-import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 import scala.util.Try
 
 object SealedTraitTypeAdapter extends TypeAdapterFactory {
@@ -27,7 +24,7 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
           for (subclassType <- subclassTypes) yield Try {
             val subclassTypeAdapter = context.typeAdapter(subclassType).asInstanceOf[ClassLikeTypeAdapter[Any]]
             val memberNames = subclassTypeAdapter.members.map(_.name)
-            Subclass[T](subclassType, currentMirror.runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
+            Subclass[T](subclassType, runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
           }
 
         if (subclassAttempts.exists(_.isFailure)) {

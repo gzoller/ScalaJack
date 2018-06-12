@@ -1,17 +1,9 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.typeadapter.EitherSerializer.EitherSymbol
-
-import scala.reflect.runtime.universe.{ Symbol, Type, symbolOf }
-
-object EitherSerializer {
-
-  val EitherSymbol: Symbol = symbolOf[Either[_, _]]
-
-}
-
 class EitherSerializer[L, R](leftSerializer: Serializer[L], rightSerializer: Serializer[R]) extends Serializer[Either[L, R]] {
+
+  private val EitherSymbol: Symbol = symbolOf[Either[_, _]]
 
   private class TaggedLeftValue(override val get: L, taggedEither: TypeTagged[Either[L, R]]) extends TypeTagged[L] {
     override lazy val tpe: Type = {

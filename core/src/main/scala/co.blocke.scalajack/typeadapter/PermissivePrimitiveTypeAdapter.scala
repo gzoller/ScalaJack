@@ -1,8 +1,5 @@
-package co.blocke.scalajack.typeadapter
-
-import co.blocke.scalajack.{ Context, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
-
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
+package co.blocke.scalajack
+package typeadapter
 
 object PermissivePrimitiveTypeAdapter extends TypeAdapterFactory {
 

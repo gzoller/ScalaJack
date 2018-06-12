@@ -7,8 +7,11 @@ package object scalajack {
   /*
   Scala Reflection API
    */
+  type ClassMirror = scala.reflect.runtime.universe.ClassMirror
   type ClassSymbol = scala.reflect.runtime.universe.ClassSymbol
+  type MethodMirror = scala.reflect.runtime.universe.MethodMirror
   type MethodSymbol = scala.reflect.runtime.universe.MethodSymbol
+  type Mirror = scala.reflect.runtime.universe.Mirror
   type RuntimeClass = scala.reflect.runtime.universe.RuntimeClass
   type Symbol = scala.reflect.runtime.universe.Symbol
   type Type = scala.reflect.runtime.universe.Type
@@ -21,7 +24,10 @@ package object scalajack {
 
   @inline final def classSymbol(rtcls: RuntimeClass): ClassSymbol = scala.reflect.runtime.currentMirror.classSymbol(rtcls)
 
-  @inline final def runtimeClass(tpe: Type): RuntimeClass = scala.reflect.runtime.currentMirror.runtimeClass(tpe)
+  @inline final def reflectClass(cls: ClassSymbol): ClassMirror = scala.reflect.runtime.currentMirror.reflectClass(cls)
+
+  @inline final def runtimeClass(tpe: Type): java.lang.Class[_] = scala.reflect.runtime.currentMirror.runtimeClass(tpe)
+  @inline final def runtimeClassOf[T: TypeTag]: java.lang.Class[T] = scala.reflect.runtime.currentMirror.runtimeClass(implicitly[TypeTag[T]].tpe).asInstanceOf[java.lang.Class[T]]
 
   @inline final def staticClass(fullName: String): ClassSymbol = scala.reflect.runtime.currentMirror.staticClass(fullName)
 
@@ -30,5 +36,7 @@ package object scalajack {
   @inline final def typeOf[T: TypeTag]: Type = scala.reflect.runtime.universe.typeOf[T]
 
   @inline final val NoType = scala.reflect.runtime.universe.NoType
+
+  implicit val typeTagType: TypeTag[Type] = TypeTags.of[Type](TypeTagHacks.TypeType)
 
 }

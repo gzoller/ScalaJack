@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object LongTypeAdapter extends TypeAdapter.=:=[Long] {
 
   override object deserializer extends Deserializer[Long] {

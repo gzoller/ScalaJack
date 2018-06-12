@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.TypeTag
-
 object TypeParameterTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =

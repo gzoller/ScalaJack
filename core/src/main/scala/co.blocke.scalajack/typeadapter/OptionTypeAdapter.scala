@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.TypeTag
-
 object OptionTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
 
   override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] =

@@ -1,9 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, Type, TypeTag }
-
 case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -91,7 +88,7 @@ case class PolymorphicTypeAdapter[T](
     if (value == null) {
       writer.writeNull()
     } else {
-      val concreteType = currentMirror.classSymbol(value.getClass).toType
+      val concreteType = classSymbol(value.getClass).toType
       val populatedConcreteType = populateConcreteType(concreteType)
       val valueTypeAdapter = context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]]
 

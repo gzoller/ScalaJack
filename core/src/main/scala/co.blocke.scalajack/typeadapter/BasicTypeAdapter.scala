@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.TypeTag
-
 /**
  * This class is virtually identical to SimpleTypeAdapter, except... it uses == rather than =:= type compare
  * types in the factory to see if this is the TypeAdapter being sought by Context.
@@ -22,7 +20,7 @@ import scala.reflect.runtime.universe.TypeTag
  */
 abstract class BasicTypeAdapter[V](implicit valueTypeTag: TypeTag[V]) extends TypeAdapterFactory with TypeAdapter[V] {
 
-  val valueType = valueTypeTag.tpe
+  private val valueType = valueTypeTag.tpe
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe == valueType) {
