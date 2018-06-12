@@ -5,45 +5,9 @@ package javatime
 import java.time.OffsetTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import co.blocke.scalajack.typeadapter.javatime.OffsetTimeTypeAdapter.OffsetTimeType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object OffsetTimeTypeAdapter extends OffsetTimeTypeAdapter(DateTimeFormatter.ISO_OFFSET_TIME) {
-
-  val OffsetTimeType: Type = typeOf[OffsetTime]
-
-}
-
-class OffsetTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[OffsetTime] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetTime] =
-    json match {
-      case JsonString(x) =>
-        DeserializationResult(path)(TypeTagged(OffsetTime.parse(x, formatter), OffsetTimeType), {
-          case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
-        })
-
-      case JsonNull() =>
-        DeserializationSuccess(TypeTagged(null, OffsetTimeType))
-
-      case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
-    }
-
-}
-
-class OffsetTimeSerializer(formatter: DateTimeFormatter) extends Serializer[OffsetTime] {
-
-  override def serialize[J](tagged: TypeTagged[OffsetTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
-    }
-
-}
+object OffsetTimeTypeAdapter extends OffsetTimeTypeAdapter(DateTimeFormatter.ISO_OFFSET_TIME)
 
 class OffsetTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[OffsetTime] with StringKind {
 

@@ -5,10 +5,9 @@ import java.lang.reflect.Method
 
 import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
-import scala.collection.immutable
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag, appliedType, typeOf }
+import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag, typeOf }
 
 object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
@@ -99,57 +98,6 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       case _ =>
         next.typeAdapterOf[T]
-    }
-
-}
-
-class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleTypeConstructor: Type, tupleConstructorMirror: MethodMirror) extends Deserializer[Tuple] {
-
-  private class TaggedTuple(override val get: Tuple, taggedElements: Array[TypeTagged[Any]]) extends TypeTagged[Tuple] {
-    override lazy val tpe: Type = appliedType(tupleTypeConstructor, taggedElements.map(_.tpe).toList)
-  }
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Tuple] =
-    json match {
-      case JsonArray(x) =>
-        val elements = x.asInstanceOf[ops.ArrayElements]
-
-        val deserializationResults: Array[DeserializationResult[Any]] = new Array[DeserializationResult[Any]](fields.length)
-
-        ops.foreachArrayElement(elements, { (index, element) =>
-          deserializationResults(index) = fields(index).valueDeserializer.deserialize(path \ index, element)
-        })
-
-        if (deserializationResults.exists(_.isFailure)) {
-          DeserializationFailure(deserializationResults.flatMap(_.errors).to[immutable.Seq])
-        } else {
-          DeserializationResult(path)({
-            val tuple = tupleConstructorMirror(deserializationResults.map(_.get.get): _*).asInstanceOf[Tuple]
-            val taggedElements = deserializationResults.map(_.get)
-            new TaggedTuple(tuple, taggedElements)
-          })
-        }
-
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON array"))
-    }
-
-}
-
-class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple] {
-
-  override def serialize[J](taggedTuple: TypeTagged[Tuple])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    taggedTuple match {
-      case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
-
-      case TypeTagged(_) =>
-        SerializationSuccess(JsonArray { appendElement =>
-          for (field <- fields) {
-            val taggedFieldValue = field.valueIn(taggedTuple)
-            val SerializationSuccess(fieldValueJson) = field.valueSerializer.serialize[J](taggedFieldValue)
-            appendElement(fieldValueJson)
-          }
-        })
     }
 
 }

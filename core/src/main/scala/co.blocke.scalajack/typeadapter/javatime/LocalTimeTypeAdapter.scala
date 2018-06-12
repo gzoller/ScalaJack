@@ -5,43 +5,12 @@ package javatime
 import java.time.LocalTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import co.blocke.scalajack.typeadapter.javatime.LocalTimeTypeAdapter.LocalTimeType
-
 import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
 object LocalTimeTypeAdapter extends LocalTimeTypeAdapter(DateTimeFormatter.ISO_LOCAL_TIME) {
 
   val LocalTimeType: Type = typeOf[LocalTime]
-
-}
-
-class LocalTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalTime] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalTime] =
-    json match {
-      case JsonString(x) =>
-        DeserializationResult(path)(TypeTagged(LocalTime.parse(x, formatter), LocalTimeType), {
-          case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
-        })
-
-      case JsonNull() =>
-        DeserializationSuccess(TypeTagged(null, LocalTimeType))
-
-      case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
-    }
-
-}
-
-class LocalTimeSerializer(formatter: DateTimeFormatter) extends Serializer[LocalTime] {
-
-  override def serialize[J](tagged: TypeTagged[LocalTime])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
-    }
 
 }
 
@@ -62,10 +31,9 @@ class LocalTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=
       case TokenType.Null =>
         reader.readNull()
 
-      case actual => {
+      case actual =>
         reader.read()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading LocalTime value.  (Is your value wrapped in quotes?)\n" + reader.showError())
-      }
 
     }
 

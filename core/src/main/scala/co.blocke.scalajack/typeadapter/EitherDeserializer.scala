@@ -1,6 +1,7 @@
 package co.blocke.scalajack
+package typeadapter
 
-import co.blocke.scalajack.EitherDeserializer.{ LeftTypeConstructor, RightTypeConstructor }
+import co.blocke.scalajack.typeadapter.EitherDeserializer.{ LeftTypeConstructor, RightTypeConstructor }
 
 import scala.reflect.runtime.universe.{ Type, TypeTag, appliedType, typeOf }
 

@@ -1,6 +1,6 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{ Context, Deserializer, EitherDeserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.{ Context, Deserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror

@@ -5,45 +5,9 @@ package javatime
 import java.time.LocalDate
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import co.blocke.scalajack.typeadapter.javatime.LocalDateTypeAdapter.LocalDateType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object LocalDateTypeAdapter extends LocalDateTypeAdapter(DateTimeFormatter.ISO_LOCAL_DATE) {
-
-  val LocalDateType: Type = typeOf[LocalDate]
-
-}
-
-class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalDate] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalDate] =
-    json match {
-      case JsonString(x) =>
-        DeserializationResult(path)(TypeTagged(LocalDate.parse(x, formatter), LocalDateType), {
-          case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
-        })
-
-      case JsonNull() =>
-        DeserializationSuccess(TypeTagged(null, LocalDateType))
-
-      case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
-    }
-
-}
-
-class LocalDateSerializer(formatter: DateTimeFormatter) extends Serializer[LocalDate] {
-
-  override def serialize[J](tagged: TypeTagged[LocalDate])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.format(formatter)))
-    }
-
-}
+object LocalDateTypeAdapter extends LocalDateTypeAdapter(DateTimeFormatter.ISO_LOCAL_DATE)
 
 class LocalDateTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[LocalDate] with StringKind {
 

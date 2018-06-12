@@ -5,45 +5,7 @@ package javatime
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-import co.blocke.scalajack.typeadapter.javatime.InstantDeserializer.InstantType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
-
-object InstantDeserializer {
-
-  val InstantType: Type = typeOf[Instant]
-
-}
-
-class InstantDeserializer extends Deserializer[Instant] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Instant] =
-    json match {
-      case JsonString(x) =>
-        DeserializationResult(path)(TypeTagged(Instant.parse(x), InstantType), {
-          case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
-        })
-
-      case JsonNull() =>
-        DeserializationSuccess(TypeTagged(null, InstantType))
-
-      case _ =>
-        DeserializationFailure(path, DeserializationError.Malformed("Expected a JSON string"))
-    }
-
-}
-
-class InstantSerializer extends Serializer[Instant] {
-
-  override def serialize[J](tagged: TypeTagged[Instant])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.toString))
-    }
-
-}
 
 object InstantTypeAdapter extends TypeAdapter.=:=[Instant] with StringKind {
 
@@ -62,10 +24,9 @@ object InstantTypeAdapter extends TypeAdapter.=:=[Instant] with StringKind {
       case TokenType.Null =>
         reader.readNull()
 
-      case actual => {
+      case actual =>
         reader.read()
         throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Instant value.  (Is your value wrapped in quotes?)\n" + reader.showError())
-      }
     }
 
   override def write(value: Instant, writer: Writer): Unit =
