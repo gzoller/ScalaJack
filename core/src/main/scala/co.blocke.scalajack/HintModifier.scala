@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.universe.Type
-import BijectiveFunctions._
-import java.lang.IllegalStateException
+import co.blocke.scalajack.BijectiveFunctions._
 
 trait HintModifier extends BijectiveFunction[String, Type]
 

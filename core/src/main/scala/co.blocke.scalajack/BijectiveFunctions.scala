@@ -1,8 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, Symbol, Type }
-
 object BijectiveFunctions {
 
   import BijectiveFunction.Implicits._
@@ -24,7 +21,7 @@ object BijectiveFunctions {
   val classSymbolToType: BijectiveFunction[ClassSymbol, Type] = typeToClassSymbol.inverse
 
   val fullNameToClassSymbol: BijectiveFunction[String, ClassSymbol] = {
-    val apply = (fullName: String) => currentMirror.staticClass(fullName)
+    val apply = (fullName: String) => staticClass(fullName)
     val unapply = (symbol: ClassSymbol) => symbol.fullName
     apply ⇄ unapply
   }

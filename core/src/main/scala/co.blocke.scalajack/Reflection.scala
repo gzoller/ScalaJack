@@ -1,6 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.universe.{ Type, appliedType, TypeTag }
 import scala.reflect.runtime.currentMirror
 
 /**

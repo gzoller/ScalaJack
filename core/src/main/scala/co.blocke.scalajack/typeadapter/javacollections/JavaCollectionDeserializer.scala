@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javacollections
 
-import scala.reflect.runtime.universe.{ Type, TypeTag }
-
 class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeserializer: Deserializer[E], newEmptyCollection: () => C)(implicit tt: TypeTag[C]) extends Deserializer[C] {
 
   private val collectionType: Type = tt.tpe

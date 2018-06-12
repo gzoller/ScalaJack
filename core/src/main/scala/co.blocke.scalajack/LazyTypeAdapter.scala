@@ -1,7 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.universe.Type
-
 case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T] {
 
   var resolvedTypeAdapter: TypeAdapter[T] = _

@@ -2,9 +2,6 @@ package co.blocke.scalajack
 
 import co.blocke.scalajack.TypeTagged.{ BooleanType, ByteType, CharType, DoubleType, FloatType, IntType, LongType, ShortType }
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
-import scala.reflect.runtime.currentMirror
-
 object TypeTagged {
 
   val BooleanType: Type = typeOf[Boolean]
@@ -26,7 +23,7 @@ object TypeTagged {
 
       override def get: T = value
 
-      override lazy val tpe: Type = currentMirror.classSymbol(value.getClass).asType.toType
+      override lazy val tpe: Type = classSymbol(value.getClass).asType.toType
 
     }
 

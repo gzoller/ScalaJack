@@ -1,7 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.universe.TypeTag
-
 object TypeAdapter {
 
   abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {

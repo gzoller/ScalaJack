@@ -1,8 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.universe
-import scala.reflect.runtime.universe.{ ClassSymbol, NoType, Type, TypeTag, appliedType }
-
 object TypeAdapterFactory {
 
   def apply(factories: List[TypeAdapterFactory]): TypeAdapterFactory =

@@ -1,13 +1,12 @@
 package co.blocke.scalajack
 
-import json.JsonFlavor
-import typeadapter.{ FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, CaseClassTypeAdapter, TypeTypeAdapter }
-import BijectiveFunction.Implicits._
-import BijectiveFunctions._
-import CaseClassTypeAdapter.FieldMember
+import co.blocke.TypeTagHacks
+import co.blocke.scalajack.BijectiveFunctions._
+import co.blocke.scalajack.json.JsonFlavor
+import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
+import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeTypeAdapter }
 
 import scala.language.existentials
-import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object ScalaJack {
   def apply[S](kind: ScalaJackLike[S] = JsonFlavor()): ScalaJackLike[S] = kind
@@ -103,7 +102,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
 
     val typeModFactories = typeModifier.map(mod => List(new TypeAdapterFactory {
       override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
-        if (tt.tpe =:= typeOf[Type]) {
+        if (tt.tpe =:= TypeTagHacks.TypeType) {
           TypeTypeAdapter(tt.mirror, Some(mod)).asInstanceOf[TypeAdapter[T]]
         } else {
           next.typeAdapterOf[T]
