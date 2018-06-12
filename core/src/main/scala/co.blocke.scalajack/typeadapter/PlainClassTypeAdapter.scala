@@ -9,6 +9,7 @@ import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
 import scala.collection.mutable
 import scala.language.{ existentials, reflectiveCalls }
+import scala.reflect.ClassTag
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe._
@@ -22,11 +23,9 @@ import scala.util.{ Failure, Success, Try }
 object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   trait PlainFieldMember[Owner] extends ClassFieldMember[Owner] {
-    val index: Int
-    val name: String
+    implicit def ownerClassTag: ClassTag[Owner]
     val valueType: Type
     val valueTypeAdapter: TypeAdapter[Value]
-    val declaredValueType: Type
     val valueGetterMethod: Method
     // Java & Scala need different setters.  Scala needs to properly set ValueClass values,
     // which can't be done using a Java method call.  Of course Java can *only* use a Java
@@ -35,8 +34,6 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     val valueSetterMethod: Option[Method] // for Java
     val derivedValueClassConstructorMirror: Option[MethodMirror]
     val outerClass: Option[java.lang.Class[_]]
-    val dbKeyIndex: Option[Int]
-    val fieldMapName: Option[String]
 
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -66,7 +63,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       }
     }
 
-    def valueSet(instance: Any, value: Object): Unit =
+    def valueSet(instance: Owner, value: Value): Unit =
       valueSetterMethodSymbol match {
         case Some(vsms) => currentMirror.reflect(instance).reflectMethod(vsms)(value)
         case None       => valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
@@ -158,7 +155,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         ignoreAnno.isEmpty
       }
 
-      def reflectScalaGetterSetterFields: List[ClassFieldMember[T]] = {
+      def reflectScalaGetterSetterFields: List[PlainFieldMember[T]] = {
         var i = 0
 
         tpe.members.filter(p => p.isPublic && p.isMethod).collect {
@@ -196,6 +193,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
             new PlainFieldMember[T] {
               override type Value = Any
+              override implicit val ownerClassTag: ClassTag[T] = ClassTag(runtimeClassOf[T])
               override val index: Int = {
                 val idx = i
                 i += 1
@@ -216,7 +214,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         }.toList
       }
 
-      def reflectJavaGetterSetterFields: List[ClassFieldMember[T]] = {
+      def reflectJavaGetterSetterFields: List[PlainFieldMember[T]] = {
         var i = 0
 
         val clazz = currentMirror.runtimeClass(tpe.typeSymbol.asClass)
@@ -225,6 +223,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
           val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
           new PlainFieldMember[T] {
+            override implicit val ownerClassTag: ClassTag[T] = ClassTag(runtimeClassOf[T])
             override type Value = Any
             override val index: Int = {
               val idx = i
@@ -251,7 +250,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
           .value().value).asInstanceOf[Option[String]]
 
-      def dbKeys[Owner](members: List[ClassFieldMember[Owner]]): List[ClassFieldMember[Owner]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+      def dbKeys[Owner](members: List[PlainFieldMember[Owner]]): List[PlainFieldMember[Owner]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
       val hasEmptyConstructor = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.isEmpty
       inferConstructorValFields match {
@@ -280,14 +279,14 @@ case class PlainClassTypeAdapter[T](
     constructorMirror:     MethodMirror,
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[ClassFieldMember[T]],
+    members:               List[PlainFieldMember[T]],
     isSJCapture:           Boolean,
-    dbKeys:                List[ClassFieldMember[T]],
+    dbKeys:                List[PlainFieldMember[T]],
     collectionName:        Option[String]            = None) extends TypeAdapter[T] {
 
-  val mappedFieldsByName: Map[String, ClassFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
-  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
-  val membersByName = members.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T]]).toMap
+  private val mappedFieldsByName: Map[String, PlainFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
+  private val mappedFieldsByMappedName: Map[String, PlainFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
+  private val membersByName: Map[String, PlainFieldMember[T]] = members.map(member => member.name -> member).toMap
 
   override def read(reader: Reader): T =
     reader.peek match {
@@ -306,13 +305,13 @@ case class PlainClassTypeAdapter[T](
           val readName = memberNameTypeAdapter.read(reader)
           membersByName.get(readName) match {
             case Some(member) =>
-              member.asInstanceOf[PlainFieldMember[T]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
+              member.valueSet(asBuilt, member.readValue(reader))
               found(member.index) = true
 
             case None =>
               mappedFieldsByMappedName.get(readName) match {
                 case Some(member) =>
-                  member.asInstanceOf[PlainFieldMember[T]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
+                  member.valueSet(asBuilt, member.readValue(reader))
                   found(member.index) = true
                 case None =>
                   reader.skipValue()
