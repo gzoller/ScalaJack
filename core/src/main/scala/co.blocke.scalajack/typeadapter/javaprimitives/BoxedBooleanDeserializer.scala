@@ -2,15 +2,9 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object BoxedBooleanDeserializer {
-
-  private val BoxedBooleanType: Type = typeOf[java.lang.Boolean]
-
-}
-
 class BoxedBooleanDeserializer(booleanDeserializer: Deserializer[Boolean]) extends Deserializer[java.lang.Boolean] {
 
-  import BoxedBooleanDeserializer.BoxedBooleanType
+  private val BoxedBooleanType: Type = typeOf[java.lang.Boolean]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Boolean] =
     json match {

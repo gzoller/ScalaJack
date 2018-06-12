@@ -2,15 +2,9 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaBigDecimalSerializer {
-
-  private val ScalaBigDecimalType: Type = typeOf[scala.math.BigDecimal]
-
-}
-
 class JavaBigDecimalSerializer(scalaBigDecimalSerializer: Serializer[scala.math.BigDecimal]) extends Serializer[java.math.BigDecimal] {
 
-  import JavaBigDecimalSerializer.ScalaBigDecimalType
+  private val ScalaBigDecimalType: Type = typeOf[scala.math.BigDecimal]
 
   override def serialize[J](tagged: TypeTagged[java.math.BigDecimal])(implicit ops: JsonOps[J]): SerializationResult[J] =
     tagged match {

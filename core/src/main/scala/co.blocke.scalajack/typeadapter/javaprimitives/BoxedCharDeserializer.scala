@@ -2,15 +2,9 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object BoxedCharDeserializer {
-
-  private val BoxedCharType: Type = typeOf[java.lang.Character]
-
-}
-
 class BoxedCharDeserializer(charDeserializer: Deserializer[Char]) extends Deserializer[java.lang.Character] {
 
-  import BoxedCharDeserializer.BoxedCharType
+  private val BoxedCharType: Type = typeOf[java.lang.Character]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Character] =
     json match {

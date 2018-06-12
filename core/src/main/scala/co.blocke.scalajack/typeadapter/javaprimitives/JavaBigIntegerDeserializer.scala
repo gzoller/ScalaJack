@@ -2,15 +2,9 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-object JavaBigIntegerDeserializer {
-
-  private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
-
-}
-
 class JavaBigIntegerDeserializer(scalaBigIntDeserializer: Deserializer[scala.math.BigInt]) extends Deserializer[java.math.BigInteger] {
 
-  import JavaBigIntegerDeserializer.JavaBigIntegerType
+  private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.math.BigInteger] =
     scalaBigIntDeserializer.deserialize(path, json) map {
