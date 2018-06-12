@@ -3,8 +3,13 @@ package typeadapter
 
 object OptionTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
 
-  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] =
-    OptionTypeAdapter(context.typeAdapterOf[E])
+  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] = {
+    val valueTypeAdapter = context.typeAdapterOf[E]
+    OptionTypeAdapter(
+      new OptionDeserializer(valueTypeAdapter.deserializer),
+      new OptionSerializer(valueTypeAdapter.serializer),
+      valueTypeAdapter)
+  }
 
 }
 
@@ -14,7 +19,7 @@ object OptionTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Option]
 //   3: "Null" one converts None into null.  This is used mainly for Tuple members
 //
 
-case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
+case class OptionTypeAdapter[T](override val deserializer: Deserializer[Option[T]], override val serializer: Serializer[Option[T]], valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
 
   override def defaultValue: Option[Option[T]] = Some(None)
 
