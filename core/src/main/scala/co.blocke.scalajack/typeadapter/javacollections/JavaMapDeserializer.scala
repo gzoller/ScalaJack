@@ -21,6 +21,18 @@ class JavaMapDeserializer[K, V, M <: java.util.Map[K, V]](keyDeserializer: Deser
         })
 
         ???
+
+      case JsonArray(x) =>
+        val arrayElements = x.asInstanceOf[ops.ArrayElements]
+
+        ops.foreachArrayElement(arrayElements, { (index, element) =>
+          ???
+        })
+
+        ???
+
+      case _ =>
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
     }
 
 }

@@ -16,6 +16,9 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e)
         })
+
+      case _ =>
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
     }
 
 }

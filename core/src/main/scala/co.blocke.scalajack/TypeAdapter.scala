@@ -14,6 +14,14 @@ object TypeAdapter {
 
   }
 
+  def apply[T](deserializer: Deserializer[T], serializer: Serializer[T]): TypeAdapter[T] = Fixed(deserializer, serializer)
+
+  private case class Fixed[T](override val deserializer: Deserializer[T], override val serializer: Serializer[T]) extends TypeAdapter[T] {
+    override def read(reader: Reader): T = ???
+
+    override def write(value: T, writer: Writer): Unit = ???
+  }
+
 }
 
 trait TypeAdapter[T] {

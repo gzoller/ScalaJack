@@ -13,14 +13,17 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case raw                             => raw.dropRight(raw.length - raw.lastIndexOf('.')) + "$"
       }
       val enum = Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-      EnumerationTypeAdapter(enum).asInstanceOf[TypeAdapter[T]]
+      EnumerationTypeAdapter(
+        new EnumerationValueDeserializer(enum),
+        new EnumerationValueSerializer,
+        enum).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
 
 }
 
-case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] with StringKind {
+case class EnumerationTypeAdapter[E <: Enumeration](override val deserializer: Deserializer[E#Value], override val serializer: Serializer[E#Value], enum: E) extends TypeAdapter[E#Value] with StringKind {
 
   override def read(reader: Reader): E#Value =
     reader.peek match {

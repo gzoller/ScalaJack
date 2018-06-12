@@ -7,10 +7,12 @@ object JavaCollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam
   override def create[E, C <: java.util.Collection[E]](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[C], ttCollection: TypeTag[java.util.Collection[E]], ttElement: TypeTag[E]): TypeAdapter[C] = {
     val collectionConstructor: java.lang.reflect.Constructor[C] = runtimeClassOf[C].getConstructor()
 
+    def newEmptyCollection(): C = collectionConstructor.newInstance()
+
     val elementTypeAdapter = context.typeAdapterOf[E]
 
     new JavaCollectionTypeAdapter[E, C](
-      deserializer = new JavaCollectionDeserializer[E, C](elementTypeAdapter.deserializer, () => collectionConstructor.newInstance()),
+      deserializer = new JavaCollectionDeserializer[E, C](elementTypeAdapter.deserializer, newEmptyCollection),
       serializer   = new JavaCollectionSerializer[E, C](elementTypeAdapter.serializer))
   }
 
