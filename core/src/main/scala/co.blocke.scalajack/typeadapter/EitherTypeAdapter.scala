@@ -1,11 +1,11 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{ Context, Reader, TypeAdapter, TypeAdapterFactory, Writer }
+import co.blocke.scalajack.{Context, Deserializer, EitherDeserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer}
 
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.util.{ Failure, Success, Try }
+import scala.reflect.runtime.universe.TypeTag
+import scala.util.{Failure, Success, Try}
 
 object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either] {
 
@@ -19,15 +19,21 @@ object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either
 
     val leftTypeAdapter = context.typeAdapterOf[L]
     val rightTypeAdapter = context.typeAdapterOf[R]
-    EitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType)
+
+    EitherTypeAdapter(
+      new EitherDeserializer(leftTypeAdapter.deserializer, rightTypeAdapter.deserializer),
+      new EitherSerializer(leftTypeAdapter.serializer, rightTypeAdapter.serializer),
+      leftTypeAdapter,
+      rightTypeAdapter
+    )
   }
 
 }
 
-case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
+case class EitherTypeAdapter[L, R](override val deserializer: Deserializer[Either[L, R]], override val serializer: Serializer[Either[L, R]], leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R])(implicit ttLeft: TypeTag[L], ttRight: TypeTag[R]) extends TypeAdapter[Either[L, R]] {
 
-  val leftClass = currentMirror.runtimeClass(leftType)
-  val rightClass = currentMirror.runtimeClass(rightType)
+  private val leftClass = currentMirror.runtimeClass(ttLeft.tpe)
+  private val rightClass = currentMirror.runtimeClass(ttRight.tpe)
 
   override def read(reader: Reader): Either[L, R] = {
     val savePos = reader.position // in case we need to re-parse as Left
