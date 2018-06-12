@@ -1,11 +1,8 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.{ MemberName, Reader, TokenType, TypeAdapter, Writer }
-
 import scala.collection.mutable
-import scala.reflect.runtime.universe
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.universe.Annotation
 
 object ClassLikeTypeAdapter {
 
@@ -33,7 +30,7 @@ object ClassLikeTypeAdapter {
 
     def writeValue(value: Value, writer: Writer): Unit
 
-    def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation]
+    def annotationOf[A](implicit tt: TypeTag[A]): Option[Annotation]
 
     def isStringValue: Boolean
 

@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag }
 import scala.util.{ Failure, Success, Try }
 
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {

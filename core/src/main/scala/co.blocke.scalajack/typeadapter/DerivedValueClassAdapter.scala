@@ -3,9 +3,6 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, TypeTag }
-
 object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -13,7 +10,7 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
       val tpe = tt.tpe
 
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
-      val constructorMirror = currentMirror.reflectClass(classSymbol).reflectConstructor(constructorSymbol)
+      val constructorMirror = reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
       val (parameter :: Nil) :: Nil = constructorSymbol.paramLists
       val parameterName = parameter.name.encodedName.toString

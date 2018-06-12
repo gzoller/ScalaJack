@@ -5,12 +5,17 @@ import scala.util.{ Failure, Success, Try }
 
 object TryTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Try] {
 
-  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Try[E]], ttElement: TypeTag[E]): TypeAdapter[Try[E]] =
-    TryTypeAdapter(context.typeAdapterOf[E])
+  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Try[E]], ttElement: TypeTag[E]): TypeAdapter[Try[E]] = {
+    val valueTypeAdapter = context.typeAdapterOf[E]
+    TryTypeAdapter(
+      new TryDeserializer[E](valueTypeAdapter.deserializer),
+      new TrySerializer[E](valueTypeAdapter.serializer),
+      valueTypeAdapter)
+  }
 
 }
 
-case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
+case class TryTypeAdapter[T](override val deserializer: Deserializer[Try[T]], override val serializer: Serializer[Try[T]], valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
   override def read(reader: Reader): Try[T] = {
     val originalPosition = reader.position

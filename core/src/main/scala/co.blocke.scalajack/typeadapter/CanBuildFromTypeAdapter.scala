@@ -4,8 +4,6 @@ package typeadapter
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{ GenMapLike, GenTraversableOnce }
 import scala.language.existentials
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, lub, symbolOf, typeOf }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
 
@@ -51,8 +49,8 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
       // elementTypeAdapter == TypeAdapter[String]
       val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution)
 
-      val companionInstance = currentMirror.reflectModule(companionSymbol).instance
-      val canBuildFrom = currentMirror.reflect(companionInstance).reflectMethod(method).apply()
+      val companionInstance = reflectModule(companionSymbol).instance
+      val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply()
 
       if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
         val keyType = elementTypeAfterSubstitution.typeArgs(0)
