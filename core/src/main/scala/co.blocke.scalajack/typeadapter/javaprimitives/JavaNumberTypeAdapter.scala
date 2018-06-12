@@ -2,50 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedNumberDeserializer.{ BoxedDoubleType, BoxedLongType, BoxedNumberType, JavaBigDecimalType, JavaBigIntegerType }
-
-import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
-
-object BoxedNumberDeserializer {
-
-  val BoxedNumberType: Type = typeOf[java.lang.Number]
-  val BoxedDoubleType: Type = typeOf[java.lang.Double]
-  val BoxedLongType: Type = typeOf[java.lang.Long]
-  val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
-  val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
-
-}
-
-class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Number] =
-    json match {
-      case JsonNull()                   => DeserializationSuccess(TypeTagged(null, BoxedNumberType))
-      case JsonDecimal(scalaBigDecimal) => DeserializationSuccess(TypeTagged(scalaBigDecimal.bigDecimal, JavaBigDecimalType))
-      case JsonDouble(doubleValue)      => DeserializationSuccess(TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType))
-      case JsonInt(scalaBigInt)         => DeserializationSuccess(TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType))
-      case JsonLong(longValue)          => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
-      case _                            => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number"))
-    }
-
-}
-
-class BoxedNumberSerializer() extends Serializer[java.lang.Number] {
-
-  override def serialize[J](tagged: TypeTagged[java.lang.Number])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null)                                 => SerializationSuccess(JsonNull())
-      case TypeTagged(boxedByte: java.lang.Byte)            => SerializationSuccess(JsonLong(boxedByte.longValue))
-      case TypeTagged(boxedDouble: java.lang.Double)        => SerializationSuccess(JsonDouble(boxedDouble.doubleValue))
-      case TypeTagged(boxedFloat: java.lang.Float)          => SerializationSuccess(JsonDouble(boxedFloat.doubleValue))
-      case TypeTagged(boxedInt: java.lang.Integer)          => SerializationSuccess(JsonLong(boxedInt.longValue))
-      case TypeTagged(boxedLong: java.lang.Long)            => SerializationSuccess(JsonLong(boxedLong.longValue))
-      case TypeTagged(boxedShort: java.lang.Short)          => SerializationSuccess(JsonLong(boxedShort.longValue))
-      case TypeTagged(javaBigInteger: java.math.BigInteger) => SerializationSuccess(JsonInt(scala.math.BigInt(javaBigInteger)))
-      case TypeTagged(javaBigDecimal: java.math.BigDecimal) => SerializationSuccess(JsonDecimal(scala.math.BigDecimal(javaBigDecimal)))
-    }
-
-}
+import scala.reflect.runtime.universe.TypeTag
 
 object JavaNumberTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Number] {
 

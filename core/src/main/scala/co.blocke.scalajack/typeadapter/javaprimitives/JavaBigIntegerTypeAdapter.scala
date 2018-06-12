@@ -2,42 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigIntegerDeserializer.JavaBigIntegerType
-import co.blocke.scalajack.typeadapter.javaprimitives.JavaBigIntegerSerializer.ScalaBigIntType
-
-import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
-
-object JavaBigIntegerDeserializer {
-
-  val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
-
-}
-
-class JavaBigIntegerDeserializer(scalaBigIntDeserializer: Deserializer[scala.math.BigInt]) extends Deserializer[java.math.BigInteger] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.math.BigInteger] =
-    scalaBigIntDeserializer.deserialize(path, json) map {
-      case TypeTagged(null)        => TypeTagged(null, JavaBigIntegerType)
-      case TypeTagged(scalaBigInt) => TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType)
-    }
-
-}
-
-object JavaBigIntegerSerializer {
-
-  val ScalaBigIntType: Type = typeOf[scala.math.BigInt]
-
-}
-
-class JavaBigIntegerSerializer(scalaBigIntSerializer: Serializer[scala.math.BigInt]) extends Serializer[java.math.BigInteger] {
-
-  override def serialize[J](tagged: TypeTagged[java.math.BigInteger])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null)           => scalaBigIntSerializer.serialize(TypeTagged(null, ScalaBigIntType))
-      case TypeTagged(javaBigInteger) => scalaBigIntSerializer.serialize(TypeTagged(scala.math.BigInt(javaBigInteger), ScalaBigIntType))
-    }
-
-}
+import scala.reflect.runtime.universe.TypeTag
 
 object JavaBigIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.math.BigInteger] {
 

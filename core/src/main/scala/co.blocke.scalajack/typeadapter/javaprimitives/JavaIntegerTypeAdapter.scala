@@ -2,9 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedIntDeserializer.BoxedIntType
-
-import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
+import scala.reflect.runtime.universe.TypeTag
 
 object JavaIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Integer] {
 
@@ -14,38 +12,6 @@ object JavaIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Integer] 
       deserializer = new BoxedIntDeserializer(intTypeAdapter.deserializer),
       serializer   = new BoxedIntSerializer(intTypeAdapter.serializer))
   }
-
-}
-
-object BoxedIntDeserializer {
-
-  private val BoxedIntType: Type = typeOf[java.lang.Integer]
-
-}
-
-class BoxedIntDeserializer(intDeserializer: Deserializer[Int]) extends Deserializer[java.lang.Integer] {
-
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Integer] =
-    json match {
-      case JsonNull() =>
-        DeserializationSuccess(TypeTagged(null, BoxedIntType))
-
-      case _ =>
-        intDeserializer.deserialize(path, json) map {
-          case TypeTaggedInt(intValue) => TypeTagged(java.lang.Integer.valueOf(intValue), BoxedIntType)
-          case TypeTagged(intValue)    => TypeTagged(java.lang.Integer.valueOf(intValue), BoxedIntType)
-        }
-    }
-
-}
-
-class BoxedIntSerializer(intSerializer: Serializer[Int]) extends Serializer[java.lang.Integer] {
-
-  override def serialize[J](tagged: TypeTagged[java.lang.Integer])(implicit ops: JsonOps[J]): SerializationResult[J] =
-    tagged match {
-      case TypeTagged(null)  => SerializationSuccess(JsonNull())
-      case TypeTagged(boxed) => intSerializer.serialize(TypeTagged(boxed.intValue))
-    }
 
 }
 
