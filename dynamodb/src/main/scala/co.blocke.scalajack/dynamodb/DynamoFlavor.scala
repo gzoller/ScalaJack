@@ -63,7 +63,7 @@ case class DynamoFlavor(
     new CreateTableRequest(attrDetail.map(_._1).asJava, tableName, attrDetail.map(_._2).asJava, provisionedThroughput)
   }
 
-  private def getAttrType(key: ClassFieldMember[_, _]) =
+  private def getAttrType(key: ClassFieldMember[_]) =
     if (key.isStringValue)
       ScalarAttributeType.S
     else

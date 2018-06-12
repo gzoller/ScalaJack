@@ -8,7 +8,7 @@ import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 
-trait ClassFieldMember[Owner, T] extends ClassLikeTypeAdapter.FieldMember[Owner] {
+trait ClassFieldMember[Owner] extends ClassLikeTypeAdapter.FieldMember[Owner] {
   def dbKeyIndex: Option[Int]
   def fieldMapName: Option[String]
   def declaredValueType: Type
@@ -31,7 +31,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
       fieldMapName:                       Option[String],
-      annotations:                        List[universe.Annotation]) extends ClassFieldMember[Owner, T] {
+      annotations:                        List[universe.Annotation]) extends ClassFieldMember[Owner] {
 
     override type Value = T
 
@@ -191,18 +191,18 @@ case class CaseClassTypeAdapter[T](
     memberNameTypeAdapter: TypeAdapter[MemberName],
     typeTypeAdapter:       TypeAdapter[Type],
     typeMembers:           List[CaseClassTypeAdapter.TypeMember[T]],
-    fieldMembers:          List[ClassFieldMember[T, _]],
+    fieldMembers:          List[ClassFieldMember[T]],
     isSJCapture:           Boolean,
     collectionName:        Option[String]                           = None) extends ClassLikeTypeAdapter[T] {
 
   val dbKeys = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-  val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
-  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T, _]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
+  val mappedFieldsByName: Map[String, ClassFieldMember[T]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
+  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
 
   val typeMembersByName = typeMembers.map(member => member.name -> member).toMap
 
   val numberOfFieldMembers = fieldMembers.size
-  val fieldMembersByName = fieldMembers.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T, Any]]).toMap
+  val fieldMembersByName = fieldMembers.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T]]).toMap
 
   override def read(reader: Reader): T =
     reader.peek match {

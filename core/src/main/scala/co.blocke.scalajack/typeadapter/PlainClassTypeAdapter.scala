@@ -21,11 +21,11 @@ import scala.util.{ Failure, Success, Try }
 
 object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class PlainFieldMember[Owner, T](
+  case class PlainFieldMember[Owner](
       index:             Int,
       name:              String,
       valueType:         Type,
-      valueTypeAdapter:  TypeAdapter[T],
+      valueTypeAdapter:  TypeAdapter[Any],
       declaredValueType: Type,
       valueGetterMethod: Method,
       // Java & Scala need different setters.  Scala needs to properly set ValueClass values,
@@ -36,15 +36,15 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       derivedValueClassConstructorMirror: Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
-      fieldMapName:                       Option[String]) extends ClassFieldMember[Owner, T] {
+      fieldMapName:                       Option[String]) extends ClassFieldMember[Owner] {
 
-    override type Value = T
+    override type Value = Any
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
-    override val valueTypeTag = new TypeTag[T] {
+    override val valueTypeTag = new TypeTag[Any] {
 
-      override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[T] = ???
+      override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[Any] = ???
 
       override val mirror: universe.Mirror = currentMirror
 
@@ -52,18 +52,18 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     }
 
-    def valueIn(instance: Owner): T = {
+    def valueIn(instance: Owner): Any = {
       val value = valueGetterMethod.invoke(instance)
 
       if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[T]
+        value.asInstanceOf[Any]
       } else {
         derivedValueClassConstructorMirror match {
           case Some(methodMirror) =>
-            methodMirror.apply(value).asInstanceOf[T]
+            methodMirror.apply(value).asInstanceOf[Any]
 
           case None =>
-            value.asInstanceOf[T]
+            value.asInstanceOf[Any]
         }
       }
     }
@@ -78,13 +78,13 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.read(reader)
     }
 
-    override def writeValue(value: T, writer: Writer): Unit = {
+    override def writeValue(value: Any, writer: Writer): Unit = {
       valueTypeAdapter.write(value, writer)
     }
 
     // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
     // otherwise fail the default lookup.
-    override def defaultValue: Option[T] = if (isOptional) { Some(None).asInstanceOf[Option[T]] } else None
+    override def defaultValue: Option[Any] = if (isOptional) { Some(None).asInstanceOf[Option[Any]] } else None
 
     override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
 
@@ -103,7 +103,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
       val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
-      def inferConstructorValFields: List[ClassFieldMember[T, Any]] =
+      def inferConstructorValFields: List[ClassFieldMember[T]] =
         Try {
           // Might fail if *all* the constructor's parameters aren't val notated
           constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.zipWithIndex.map({
@@ -147,7 +147,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         } match {
           case Success(m) => m
           case Failure(x) =>
-            List.empty[ClassFieldMember[T, Any]]
+            List.empty[ClassFieldMember[T]]
         }
 
       def dontIgnore(p: Symbol) = {
@@ -158,7 +158,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         ignoreAnno.isEmpty
       }
 
-      def reflectScalaGetterSetterFields: List[ClassFieldMember[T, Any]] = {
+      def reflectScalaGetterSetterFields: List[ClassFieldMember[T]] = {
         tpe.members.filter(p => p.isPublic && p.isMethod).collect {
           // Scala case
           case p if (dontIgnore(p) && tpe.member(TermName(p.name.toString + "_$eq")) != NoSymbol && p.owner != typeOf[SJCapture].typeSymbol) =>
@@ -192,7 +192,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
                 .value().value).asInstanceOf[Option[String]])
 
-            PlainFieldMember[T, Any](
+            PlainFieldMember[T](
               0,
               p.name.encodedName.toString,
               memberType,
@@ -205,16 +205,16 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               memberClass,
               dbkeyAnno,
               mapNameAnno)
-        }.toList.zipWithIndex.map { case (pm, index) => pm.copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
+        }.toList.zipWithIndex.map { case (pm, index) => pm.copy(index = index).asInstanceOf[PlainFieldMember[T]] }
       }
 
-      def reflectJavaGetterSetterFields: List[ClassFieldMember[T, Any]] = {
+      def reflectJavaGetterSetterFields: List[ClassFieldMember[T]] = {
         val clazz = currentMirror.runtimeClass(tpe.typeSymbol.asClass)
         Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList.filterNot(_.getName == "class").map { propertyDescriptor =>
           val memberType = tpe.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
           val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
-          PlainFieldMember[Any, Any](
+          PlainFieldMember[Any](
             0,
             propertyDescriptor.getName,
             memberType,
@@ -227,7 +227,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             None,
             None,
             None)
-        }.zipWithIndex.map { case (pm, index) => pm.asInstanceOf[PlainFieldMember[T, Any]].copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
+        }.zipWithIndex.map { case (pm, index) => pm.asInstanceOf[PlainFieldMember[T]].copy(index = index).asInstanceOf[PlainFieldMember[T]] }
       }
 
       // Exctract Collection name annotation if present
@@ -235,7 +235,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
           .value().value).asInstanceOf[Option[String]]
 
-      def dbKeys[Owner](members: List[ClassFieldMember[Owner, Any]]): List[ClassFieldMember[Owner, Any]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+      def dbKeys[Owner](members: List[ClassFieldMember[Owner]]): List[ClassFieldMember[Owner]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
       val hasEmptyConstructor = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.isEmpty
       inferConstructorValFields match {
@@ -264,14 +264,14 @@ case class PlainClassTypeAdapter[T](
     constructorMirror:     MethodMirror,
     tpe:                   Type,
     memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[ClassFieldMember[T, _]],
+    members:               List[ClassFieldMember[T]],
     isSJCapture:           Boolean,
-    dbKeys:                List[ClassFieldMember[T, _]],
-    collectionName:        Option[String]               = None) extends TypeAdapter[T] {
+    dbKeys:                List[ClassFieldMember[T]],
+    collectionName:        Option[String]            = None) extends TypeAdapter[T] {
 
-  val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
-  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
-  val membersByName = members.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T, Any]]).toMap
+  val mappedFieldsByName: Map[String, ClassFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
+  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
+  val membersByName = members.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T]]).toMap
 
   override def read(reader: Reader): T =
     reader.peek match {
@@ -290,13 +290,13 @@ case class PlainClassTypeAdapter[T](
           val readName = memberNameTypeAdapter.read(reader)
           membersByName.get(readName) match {
             case Some(member) =>
-              member.asInstanceOf[PlainFieldMember[T, _]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
+              member.asInstanceOf[PlainFieldMember[T]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
               found(member.index) = true
 
             case None =>
               mappedFieldsByMappedName.get(readName) match {
                 case Some(member) =>
-                  member.asInstanceOf[PlainFieldMember[T, _]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
+                  member.asInstanceOf[PlainFieldMember[T]].valueSet(asBuilt, member.readValue(reader).asInstanceOf[Object])
                   found(member.index) = true
                 case None =>
                   reader.skipValue()
