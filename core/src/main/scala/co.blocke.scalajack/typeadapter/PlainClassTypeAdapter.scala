@@ -25,7 +25,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     val index: Int
     val name: String
     val valueType: Type
-    val valueTypeAdapter: TypeAdapter[Any]
+    val valueTypeAdapter: TypeAdapter[Value]
     val declaredValueType: Type
     val valueGetterMethod: Method
     // Java & Scala need different setters.  Scala needs to properly set ValueClass values,
@@ -38,13 +38,11 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     val dbKeyIndex: Option[Int]
     val fieldMapName: Option[String]
 
-    override type Value = Any
-
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
-    override lazy val valueTypeTag = new TypeTag[Any] {
+    override lazy val valueTypeTag = new TypeTag[Value] {
 
-      override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[Any] = ???
+      override def in[U <: Universe with Singleton](otherMirror: Mirror[U]): U#TypeTag[Value] = ???
 
       override val mirror: universe.Mirror = currentMirror
 
@@ -52,18 +50,18 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     }
 
-    def valueIn(instance: Owner): Any = {
+    def valueIn(instance: Owner): Value = {
       val value = valueGetterMethod.invoke(instance)
 
       if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[Any]
+        value.asInstanceOf[Value]
       } else {
         derivedValueClassConstructorMirror match {
           case Some(methodMirror) =>
-            methodMirror.apply(value).asInstanceOf[Any]
+            methodMirror.apply(value).asInstanceOf[Value]
 
           case None =>
-            value.asInstanceOf[Any]
+            value.asInstanceOf[Value]
         }
       }
     }
@@ -78,14 +76,14 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueTypeAdapter.read(reader)
     }
 
-    override def writeValue(value: Any, writer: Writer): Unit = {
+    override def writeValue(value: Value, writer: Writer): Unit = {
       valueTypeAdapter.write(value, writer)
     }
 
     // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
     // otherwise fail the default lookup.
-    override def defaultValue: Option[Any] = if (isOptional) {
-      Some(None).asInstanceOf[Option[Any]]
+    override def defaultValue: Option[Value] = if (isOptional) {
+      Some(None).asInstanceOf[Option[Value]]
     } else None
 
     override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
@@ -197,6 +195,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
                 .value().value).asInstanceOf[Option[String]])
 
             new PlainFieldMember[T] {
+              override type Value = Any
               override val index: Int = {
                 val idx = i
                 i += 1
@@ -204,7 +203,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               }
               override val name: String = p.name.encodedName.toString
               override val valueType: Type = memberType
-              override val valueTypeAdapter: TypeAdapter[Any] = memberTypeAdapter
+              override val valueTypeAdapter: TypeAdapter[Value] = memberTypeAdapter
               override val declaredValueType: Type = declaredMemberType
               override val valueGetterMethod: Method = Reflection.methodToJava(p.asMethod)
               override val valueSetterMethodSymbol: Option[MethodSymbol] = Some(tpe.member(TermName(p.name.toString + "_$eq")).asMethod)
@@ -226,6 +225,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
           val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
           new PlainFieldMember[T] {
+            override type Value = Any
             override val index: Int = {
               val idx = i
               i += 1
@@ -233,7 +233,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             }
             override val name: String = propertyDescriptor.getName
             override val valueType: Type = memberType
-            override val valueTypeAdapter: TypeAdapter[Any] = memberTypeAdapter
+            override val valueTypeAdapter: TypeAdapter[Value] = memberTypeAdapter
             override val declaredValueType: Type = declaredMemberType
             override val valueGetterMethod: Method = propertyDescriptor.getReadMethod
             override val valueSetterMethodSymbol: Option[MethodSymbol] = None
