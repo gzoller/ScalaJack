@@ -3,7 +3,7 @@ package typeadapter
 
 import co.blocke.scalajack.typeadapter.EitherSerializer.EitherSymbol
 
-import scala.reflect.runtime.universe.{Symbol, Type, symbolOf}
+import scala.reflect.runtime.universe.{ Symbol, Type, symbolOf }
 
 object EitherSerializer {
 

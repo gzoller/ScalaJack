@@ -1,11 +1,11 @@
 package co.blocke.scalajack.typeadapter
 
-import co.blocke.scalajack.{Context, Deserializer, EitherDeserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer}
+import co.blocke.scalajack.{ Context, Deserializer, EitherDeserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer }
 
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.TypeTag
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either] {
 
@@ -24,8 +24,7 @@ object EitherTypeAdapter extends TypeAdapterFactory.=:=.withTwoTypeParams[Either
       new EitherDeserializer(leftTypeAdapter.deserializer, rightTypeAdapter.deserializer),
       new EitherSerializer(leftTypeAdapter.serializer, rightTypeAdapter.serializer),
       leftTypeAdapter,
-      rightTypeAdapter
-    )
+      rightTypeAdapter)
   }
 
 }

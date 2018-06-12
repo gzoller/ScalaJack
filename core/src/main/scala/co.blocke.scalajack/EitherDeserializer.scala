@@ -1,8 +1,8 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.EitherDeserializer.{LeftTypeConstructor, RightTypeConstructor}
+import co.blocke.scalajack.EitherDeserializer.{ LeftTypeConstructor, RightTypeConstructor }
 
-import scala.reflect.runtime.universe.{Type, TypeTag, appliedType, typeOf}
+import scala.reflect.runtime.universe.{ Type, TypeTag, appliedType, typeOf }
 
 object EitherDeserializer {
 
@@ -26,12 +26,12 @@ class EitherDeserializer[L, R](leftDeserializer: Deserializer[L], rightDeseriali
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Either[L, R]] =
     rightDeserializer.deserialize(path, json) match {
-      case DeserializationSuccess(taggedRightValue@TypeTagged(rightValue)) =>
+      case DeserializationSuccess(taggedRightValue @ TypeTagged(rightValue)) =>
         DeserializationSuccess(new TaggedRight(Right(rightValue), taggedRightValue))
 
       case DeserializationFailure(rightErrors) =>
         leftDeserializer.deserialize(path, json) match {
-          case DeserializationSuccess(taggedLeftValue@TypeTagged(leftValue)) =>
+          case DeserializationSuccess(taggedLeftValue @ TypeTagged(leftValue)) =>
             DeserializationSuccess(new TaggedLeft(Left(leftValue), taggedLeftValue))
 
           case DeserializationFailure(leftErrors) =>
