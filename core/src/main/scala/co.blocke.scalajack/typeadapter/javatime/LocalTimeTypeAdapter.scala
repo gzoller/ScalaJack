@@ -5,14 +5,9 @@ package javatime
 import java.time.LocalTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object LocalTimeTypeAdapter extends LocalTimeTypeAdapter(DateTimeFormatter.ISO_LOCAL_TIME) {
-
-  val LocalTimeType: Type = typeOf[LocalTime]
-
-}
+object LocalTimeTypeAdapter extends LocalTimeTypeAdapter(DateTimeFormatter.ISO_LOCAL_TIME)
 
 class LocalTimeTypeAdapter(formatter: DateTimeFormatter) extends TypeAdapter.=:=[LocalTime] with StringKind {
 

@@ -2,10 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedFloatDeserializer.BoxedFloatType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object BoxedFloatDeserializer {
 
   private val BoxedFloatType: Type = typeOf[java.lang.Float]
@@ -13,6 +9,8 @@ object BoxedFloatDeserializer {
 }
 
 class BoxedFloatDeserializer(floatDeserializer: Deserializer[Float]) extends Deserializer[java.lang.Float] {
+
+  import BoxedFloatDeserializer.BoxedFloatType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Float] =
     json match {

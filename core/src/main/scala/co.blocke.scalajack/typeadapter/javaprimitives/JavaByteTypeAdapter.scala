@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import scala.reflect.runtime.universe.TypeTag
-
 object JavaByteTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Byte] {
 
   override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Byte]): TypeAdapter[java.lang.Byte] = {

@@ -5,17 +5,15 @@ package javatime
 import java.time.Duration
 import java.time.format.DateTimeParseException
 
-import co.blocke.scalajack.typeadapter.javatime.DurationDeserializer.DurationType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object DurationDeserializer {
 
-  val DurationType: Type = typeOf[Duration]
+  private val DurationType: Type = typeOf[Duration]
 
 }
 
 class DurationDeserializer extends Deserializer[Duration] {
+
+  import DurationDeserializer.DurationType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Duration] =
     json match {

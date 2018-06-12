@@ -2,10 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedLongDeserializer.BoxedLongType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object BoxedLongDeserializer {
 
   private val BoxedLongType: Type = typeOf[java.lang.Long]
@@ -13,6 +9,8 @@ object BoxedLongDeserializer {
 }
 
 class BoxedLongDeserializer(longDeserializer: Deserializer[Long]) extends Deserializer[java.lang.Long] {
+
+  import BoxedLongDeserializer.BoxedLongType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Long] =
     json match {

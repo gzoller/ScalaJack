@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javacollections
 
-import scala.reflect.runtime.universe.{ Type, symbolOf }
-
 class JavaCollectionSerializer[E, C <: java.util.Collection[E]](elementSerializer: Serializer[E]) extends Serializer[C] {
 
   override def serialize[J](taggedCollection: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =

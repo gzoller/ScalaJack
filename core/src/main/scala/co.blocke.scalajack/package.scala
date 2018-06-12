@@ -21,6 +21,8 @@ package object scalajack {
 
   @inline final def classSymbol(rtcls: RuntimeClass): ClassSymbol = scala.reflect.runtime.currentMirror.classSymbol(rtcls)
 
+  @inline final def runtimeClass(tpe: Type): RuntimeClass = scala.reflect.runtime.currentMirror.runtimeClass(tpe)
+
   @inline final def staticClass(fullName: String): ClassSymbol = scala.reflect.runtime.currentMirror.staticClass(fullName)
 
   @inline final def symbolOf[T: WeakTypeTag]: TypeSymbol = scala.reflect.runtime.universe.symbolOf

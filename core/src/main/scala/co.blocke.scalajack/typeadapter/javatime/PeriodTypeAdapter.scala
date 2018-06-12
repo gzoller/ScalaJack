@@ -5,12 +5,9 @@ package javatime
 import java.time.Period
 import java.time.format.DateTimeParseException
 
-import scala.reflect.runtime.universe.{ Type, typeOf }
 import scala.util.{ Failure, Success, Try }
 
 object PeriodTypeAdapter extends TypeAdapter.=:=[Period] with StringKind {
-
-  val PeriodType: Type = typeOf[Period]
 
   override val deserializer: Deserializer[Period] = new PeriodDeserializer
 

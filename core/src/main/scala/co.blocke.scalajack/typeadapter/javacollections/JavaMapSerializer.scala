@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javacollections
 
-import scala.reflect.runtime.universe.{ Symbol, Type, symbolOf }
-
 class JavaMapSerializer[K, V, M <: java.util.Map[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V]) extends Serializer[M] {
 
   private val mapSymbol: Symbol = symbolOf[java.util.Map[_, _]]

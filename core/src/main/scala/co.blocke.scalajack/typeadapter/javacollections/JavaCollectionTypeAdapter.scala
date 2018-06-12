@@ -1,15 +1,11 @@
-package co.blocke.scalajack.typeadapter
+package co.blocke.scalajack
+package typeadapter
 package javacollections
-
-import co.blocke.scalajack.{ Context, Deserializer, Reader, Serializer, TypeAdapter, TypeAdapterFactory, Writer }
-
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.TypeTag
 
 object JavaCollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[java.util.Collection] {
 
   override def create[E, C <: java.util.Collection[E]](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[C], ttCollection: TypeTag[java.util.Collection[E]], ttElement: TypeTag[E]): TypeAdapter[C] = {
-    val collectionClass: java.lang.Class[C] = currentMirror.runtimeClass(tt.tpe).asInstanceOf[java.lang.Class[C]]
+    val collectionClass: java.lang.Class[C] = runtimeClass(tt.tpe).asInstanceOf[java.lang.Class[C]]
     val collectionConstructor: java.lang.reflect.Constructor[C] = collectionClass.getConstructor()
 
     val elementTypeAdapter = context.typeAdapterOf[E]

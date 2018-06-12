@@ -5,17 +5,15 @@ package javatime
 import java.time.OffsetDateTime
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import co.blocke.scalajack.typeadapter.javatime.OffsetDateTimeDeserializer.OffsetDateTimeType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object OffsetDateTimeDeserializer {
 
-  val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
+  private val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
 
 }
 
 class OffsetDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[OffsetDateTime] {
+
+  import OffsetDateTimeDeserializer.OffsetDateTimeType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetDateTime] =
     json match {

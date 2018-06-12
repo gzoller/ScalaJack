@@ -5,10 +5,6 @@ package javatime
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-import co.blocke.scalajack.typeadapter.javatime.InstantDeserializer.InstantType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object InstantDeserializer {
 
   private val InstantType: Type = typeOf[Instant]
@@ -16,6 +12,8 @@ object InstantDeserializer {
 }
 
 class InstantDeserializer extends Deserializer[Instant] {
+
+  import InstantDeserializer.InstantType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Instant] =
     json match {

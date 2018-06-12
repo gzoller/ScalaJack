@@ -5,17 +5,15 @@ package javatime
 import java.time.LocalDate
 import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
-import co.blocke.scalajack.typeadapter.javatime.LocalDateDeserializer.LocalDateType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object LocalDateDeserializer {
 
-  val LocalDateType: Type = typeOf[LocalDate]
+  private val LocalDateType: Type = typeOf[LocalDate]
 
 }
 
 class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalDate] {
+
+  import LocalDateDeserializer.LocalDateType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalDate] =
     json match {

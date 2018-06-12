@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import scala.reflect.runtime.universe.TypeTag
-
 object JavaBigIntegerTypeAdapter extends TypeAdapterFactory.=:=[java.math.BigInteger] {
 
   override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.math.BigInteger]): TypeAdapter[java.math.BigInteger] = {

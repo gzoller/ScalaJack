@@ -2,10 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedIntDeserializer.BoxedIntType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object BoxedIntDeserializer {
 
   private val BoxedIntType: Type = typeOf[java.lang.Integer]
@@ -13,6 +9,8 @@ object BoxedIntDeserializer {
 }
 
 class BoxedIntDeserializer(intDeserializer: Deserializer[Int]) extends Deserializer[java.lang.Integer] {
+
+  import BoxedIntDeserializer.BoxedIntType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Integer] =
     json match {

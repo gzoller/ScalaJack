@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import scala.reflect.runtime.universe.TypeTag
-
 object JavaLongTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Long] {
 
   override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[java.lang.Long]): TypeAdapter[java.lang.Long] = {

@@ -2,10 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedByteDeserializer.BoxedByteType
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object BoxedByteDeserializer {
 
   private val BoxedByteType: Type = typeOf[java.lang.Byte]
@@ -13,6 +9,8 @@ object BoxedByteDeserializer {
 }
 
 class BoxedByteDeserializer(byteDeserializer: Deserializer[Byte]) extends Deserializer[java.lang.Byte] {
+
+  import BoxedByteDeserializer.BoxedByteType
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Byte] =
     json match {

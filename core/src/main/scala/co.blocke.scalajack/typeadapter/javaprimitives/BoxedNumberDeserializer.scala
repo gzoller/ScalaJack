@@ -2,21 +2,19 @@ package co.blocke.scalajack
 package typeadapter
 package javaprimitives
 
-import co.blocke.scalajack.typeadapter.javaprimitives.BoxedNumberDeserializer.{ BoxedDoubleType, BoxedLongType, BoxedNumberType, JavaBigDecimalType, JavaBigIntegerType }
-
-import scala.reflect.runtime.universe.{ Type, typeOf }
-
 object BoxedNumberDeserializer {
 
-  val BoxedNumberType: Type = typeOf[java.lang.Number]
-  val BoxedDoubleType: Type = typeOf[java.lang.Double]
-  val BoxedLongType: Type = typeOf[java.lang.Long]
-  val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
-  val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
+  private val BoxedNumberType: Type = typeOf[java.lang.Number]
+  private val BoxedDoubleType: Type = typeOf[java.lang.Double]
+  private val BoxedLongType: Type = typeOf[java.lang.Long]
+  private val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
+  private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
 
 }
 
 class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
+
+  import BoxedNumberDeserializer.{ BoxedDoubleType, BoxedLongType, BoxedNumberType, JavaBigDecimalType, JavaBigIntegerType }
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Number] =
     json match {
