@@ -46,7 +46,7 @@ object JsonParser {
 
     def readLiteral(): String = {
       val beginIndex = position
-      while (isLiteralChar(source(position))) {
+      while (position < maxPosition && isLiteralChar(source(position))) {
         position += 1
       }
       val endIndex = position
@@ -56,23 +56,104 @@ object JsonParser {
     def readString(): String = {
       skipChar(expected = '"')
       val beginIndex = position
-      while (source(position) != '"') {
-        position += 1
+
+      var segmentStart = position
+      var stringBuilder: StringBuilder = null
+
+      var reading = true
+      while (reading) {
+        val char = source(position)
+        char match {
+          case '"' =>
+            reading = false
+
+          case '\\' =>
+            if (stringBuilder eq null) stringBuilder = new StringBuilder
+            stringBuilder.appendAll(source, segmentStart, position - segmentStart)
+            skipChar(expected = '\\')
+
+            source(position) match {
+              case '"' =>
+                skipChar(expected = '"')
+                stringBuilder.append('"')
+
+              case '\\' =>
+                skipChar(expected = '\\')
+                stringBuilder.append('\\')
+
+              case '/' =>
+                skipChar(expected = '/')
+                stringBuilder.append('/')
+
+              case 'b' =>
+                skipChar(expected = 'b')
+                stringBuilder.append('\b')
+
+              case 'f' =>
+                skipChar(expected = 'f')
+                stringBuilder.append('\f')
+
+              case 'n' =>
+                skipChar(expected = 'n')
+                stringBuilder.append('\n')
+
+              case 'r' =>
+                skipChar(expected = 'r')
+                stringBuilder.append('\r')
+
+              case 't' =>
+                skipChar(expected = 't')
+                stringBuilder.append('\t')
+
+              case 'u' =>
+                skipChar(expected = 'u')
+
+                val hex = new String(source, position, 4)
+                stringBuilder.append(Integer.parseInt(hex, 16).toChar)
+                position += 4
+            }
+
+            segmentStart = position
+
+          case _ =>
+            position += 1
+        }
       }
+
       val endIndex = position
       skipChar(expected = '"')
-      new String(source, beginIndex, endIndex - beginIndex)
+
+      val string =
+        if (stringBuilder eq null) {
+          new String(source, beginIndex, endIndex - beginIndex)
+        } else {
+          stringBuilder.appendAll(source, segmentStart, endIndex - segmentStart)
+          stringBuilder.result()
+        }
+
+      string
     }
 
     def readField(): (String, J) = {
-      val key = readString()
+      val startPosition = position
+      val key = readJsonValue()
+      val endPosition = position
+
+      val keyString =
+        key match {
+          case JsonString(string) => string
+          case _ =>
+            // Non-standard JSON key
+            new String(source, startPosition, endPosition - startPosition)
+        }
+
       skipWhitespace()
 
       skipChar(expected = ':')
       skipWhitespace()
 
       val value = readJsonValue()
-      (key, value)
+      (keyString, value)
     }
 
     def readJsonArray(): J =
@@ -91,6 +172,7 @@ object JsonParser {
 
             var readingElements = true
             while (readingElements) {
+              skipWhitespace()
               source(position) match {
                 case ',' =>
                   skipChar(expected = ',')
@@ -119,7 +201,10 @@ object JsonParser {
         val char = source(position)
         if (char == '.') {
           containsDecimal = true
-          onlyContainsDigits = false
+          if (char != '-') {
+            onlyContainsDigits = false
+          }
+          position += 1
         } else if (isDigitChar(char)) {
           position += 1
         } else if (isNumberChar(char)) {
@@ -133,13 +218,25 @@ object JsonParser {
       val endIndex = position
       val length = endIndex - beginIndex
 
-      if (containsDecimal) {
-        ops.applyDecimal(BigDecimal(new String(source, beginIndex, endIndex - beginIndex)))
-      } else if (onlyContainsDigits) {
-        if (length < NumberOfDigitsInMaxLongValue) {
-          ops.applyLong(new String(source, beginIndex, length).toLong)
-        } else if (length == NumberOfDigitsInMaxLongValue) {
-          // On the border between JLong/JInt
+      val jsonNumber =
+        if (containsDecimal) {
+          ops.applyDecimal(BigDecimal(new String(source, beginIndex, endIndex - beginIndex)))
+        } else if (onlyContainsDigits) {
+          if (length < NumberOfDigitsInMaxLongValue) {
+            ops.applyLong(new String(source, beginIndex, length).toLong)
+          } else if (length == NumberOfDigitsInMaxLongValue) {
+            // On the border between JLong/JInt
+            val string = new String(source, beginIndex, length)
+            try {
+              ops.applyLong(string.toLong)
+            } catch {
+              case _: NumberFormatException =>
+                ops.applyInt(BigInt(string))
+            }
+          } else {
+            ops.applyInt(BigInt(new String(source, beginIndex, length)))
+          }
+        } else {
           val string = new String(source, beginIndex, length)
           try {
             ops.applyLong(string.toLong)
@@ -147,12 +244,9 @@ object JsonParser {
             case _: NumberFormatException =>
               ops.applyInt(BigInt(string))
           }
-        } else {
-          ops.applyInt(BigInt(new String(source, beginIndex, length)))
         }
-      } else {
-        ops.applyLong(new String(source, beginIndex, length).toLong)
-      }
+
+      jsonNumber
     }
 
     def readJsonObject(): J =
@@ -171,6 +265,7 @@ object JsonParser {
 
             var readingFields = true
             while (readingFields) {
+              skipWhitespace()
               source(position) match {
                 case ',' =>
                   skipChar(expected = ',')
