@@ -61,6 +61,7 @@ object Build extends Build {
         .settings(pubSettings: _*)
         .settings(libraryDependencies ++=
             Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+            Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
             Seq("org.json4s" %% "json4s-core" % "3.5.4") ++
             // compile(scala_reflect) ++
             test(scalatest)

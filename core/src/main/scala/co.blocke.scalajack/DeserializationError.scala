@@ -10,6 +10,8 @@ object DeserializationError {
 
   case class Unsupported(message: String) extends DeserializationError
 
+  case class Unexpected(message: String) extends DeserializationError
+
   object Malformed {
 
     def apply(cause: Throwable): DeserializationError =
