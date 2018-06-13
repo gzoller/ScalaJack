@@ -4,7 +4,7 @@ import co.blocke.TypeTagHacks
 import co.blocke.scalajack.BijectiveFunctions._
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
-import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeTypeAdapter }
+import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
 
 import scala.language.existentials
 
@@ -103,7 +103,11 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
     val typeModFactories = typeModifier.map(mod => List(new TypeAdapterFactory {
       override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
         if (tt.tpe =:= typeOf[Type]) {
-          TypeTypeAdapter(tt.mirror, Some(mod)).asInstanceOf[TypeAdapter[T]]
+          TypeTypeAdapter(
+            new TypeDeserializer(mod.apply),
+            new TypeSerializer(mod.unapply),
+            tt.mirror,
+            Some(mod)).asInstanceOf[TypeAdapter[T]]
         } else {
           next.typeAdapterOf[T]
         }

@@ -26,6 +26,10 @@ object ClassLikeTypeAdapter {
 
     def valueIn(owner: Owner): Value
 
+    def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value]
+
+    def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value]
+
     def readValue(reader: Reader): Value
 
     def writeValue(value: Value, writer: Writer): Unit

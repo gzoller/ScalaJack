@@ -220,7 +220,8 @@ object JsonParser {
 
       val jsonNumber =
         if (containsDecimal) {
-          ops.applyDecimal(BigDecimal(new String(source, beginIndex, endIndex - beginIndex)))
+          val string = new String(source, beginIndex, endIndex - beginIndex)
+          ops.applyDecimal(BigDecimal(string))
         } else if (onlyContainsDigits) {
           if (length < NumberOfDigitsInMaxLongValue) {
             ops.applyLong(new String(source, beginIndex, length).toLong)

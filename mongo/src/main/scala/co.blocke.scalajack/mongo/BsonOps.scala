@@ -28,7 +28,7 @@ object BsonOps extends JsonOps[BsonValue] {
     }
   }
 
-  override def findObjectField(bson: BsonDocument, name: String): Option[BsonValue] =
+  override def getObjectField(bson: BsonDocument, name: String): Option[BsonValue] =
     Option(bson.get(name))
 
   override def applyArray(appendAllElements: (BsonValue => Unit) => Unit): BsonValue = {

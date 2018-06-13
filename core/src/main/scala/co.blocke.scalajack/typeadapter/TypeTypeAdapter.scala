@@ -7,7 +7,10 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
     if (tt.tpe =:= typeOf[Type]) {
-      TypeTypeAdapter(tt.mirror).asInstanceOf[TypeAdapter[T]]
+      TypeTypeAdapter(
+        new TypeDeserializer,
+        new TypeSerializer,
+        tt.mirror).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
@@ -15,7 +18,7 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
+case class TypeTypeAdapter(override val deserializer: Deserializer[Type], override val serializer: Serializer[Type], mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
 
   override def read(reader: Reader): Type =
     reader.peek match {

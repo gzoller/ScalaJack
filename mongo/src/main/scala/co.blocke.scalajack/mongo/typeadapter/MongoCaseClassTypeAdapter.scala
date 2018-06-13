@@ -47,6 +47,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
                 instanceOfSyntheticClass(index).asInstanceOf[Value]
 
+              override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                keyMemberOfRealClass.deserializeValueFromNothing(path)
+
+              override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                keyMemberOfRealClass.deserializeValue(path, json)
+
               override def readValue(reader: Reader): Value =
                 keyMemberOfRealClass.readValue(reader)
 
@@ -78,6 +84,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
                 instanceOfSyntheticClass(index).asInstanceOf[Value]
+
+              override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                memberOfRealClass.deserializeValueFromNothing(path)
+
+              override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                memberOfRealClass.deserializeValue(path, json)
 
               override def readValue(reader: Reader): Value =
                 memberOfRealClass.readValue(reader)
@@ -206,6 +218,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                 override def valueIn(syntheticId: SyntheticId): Value =
                   syntheticId(index).asInstanceOf[Value]
 
+                override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                  memberOfRealClass.deserializeValueFromNothing(path)
+
+                override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                  memberOfRealClass.deserializeValue(path, json)
+
                 override def readValue(reader: Reader): Value =
                   memberOfRealClass.readValue(reader)
 
@@ -279,6 +297,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
                 instanceOfSyntheticClass(index).asInstanceOf[Value]
 
+              override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                idTypeAdapter.deserializer.deserializeFromNothing(path)
+
+              override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                idTypeAdapter.deserializer.deserialize(path, json)
+
               override def readValue(reader: Reader): Value =
                 idTypeAdapter.read(reader)
 
@@ -308,6 +332,12 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
                 instanceOfSyntheticClass(index).asInstanceOf[Value]
+
+              override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                memberOfRealClass.deserializeValueFromNothing(path)
+
+              override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+                memberOfRealClass.deserializeValue(path, json)
 
               override def readValue(reader: Reader): Value =
                 memberOfRealClass.readValue(reader)

@@ -73,6 +73,12 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case None       => valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
       }
 
+    override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+      valueTypeAdapter.deserializer.deserializeFromNothing(path)
+
+    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+      valueTypeAdapter.deserializer.deserialize(path, json)
+
     override def readValue(reader: Reader): Value = {
       valueTypeAdapter.read(reader)
     }
@@ -260,7 +266,9 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       inferConstructorValFields match {
         case members if (!members.isEmpty) =>
           // Because all the val fields were found in the constructor we can use a normal CaseClassTypeAdapter
-          CaseClassTypeAdapter[T](context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation)
+          CaseClassTypeAdapter[T](
+            new CaseClassDeserializer(context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation),
+            context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation)
         case _ if (!classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectScalaGetterSetterFields
           PlainClassTypeAdapter[T](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]

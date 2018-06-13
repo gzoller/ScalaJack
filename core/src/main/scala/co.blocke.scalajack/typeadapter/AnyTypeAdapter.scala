@@ -12,9 +12,26 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       val mapTypeAdapter = context.typeAdapterOf[Map[Any, Any]]
       val listTypeAdapter = context.typeAdapterOf[List[Any]]
       val stringTypeAdapter = context.typeAdapterOf[String]
+      val numberTypeAdapter = context.typeAdapterOf[java.lang.Number]
       val booleanTypeAdapter = context.typeAdapterOf[Boolean]
 
-      AnyTypeAdapter(typeTypeAdapter, memberNameTypeAdapter, mapTypeAdapter, listTypeAdapter, stringTypeAdapter, booleanTypeAdapter, context).asInstanceOf[TypeAdapter[T]]
+      AnyTypeAdapter(
+        new AnyDeserializer(
+          typeTypeAdapter.deserializer,
+          memberNameTypeAdapter.deserializer,
+          mapTypeAdapter.deserializer,
+          listTypeAdapter.deserializer,
+          stringTypeAdapter.deserializer,
+          numberTypeAdapter.deserializer,
+          booleanTypeAdapter.deserializer,
+          context),
+        typeTypeAdapter,
+        memberNameTypeAdapter,
+        mapTypeAdapter,
+        listTypeAdapter,
+        stringTypeAdapter,
+        booleanTypeAdapter,
+        context).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
@@ -22,13 +39,14 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 }
 
 case class AnyTypeAdapter(
-    typeTypeAdapter:       TypeAdapter[Type],
-    memberNameTypeAdapter: TypeAdapter[MemberName],
-    mapTypeAdapter:        TypeAdapter[Map[Any, Any]],
-    listTypeAdapter:       TypeAdapter[List[Any]],
-    stringTypeAdapter:     TypeAdapter[String],
-    booleanTypeAdapter:    TypeAdapter[Boolean],
-    context:               Context) extends TypeAdapter.=:=[Any] {
+    override val deserializer: Deserializer[Any],
+    typeTypeAdapter:           TypeAdapter[Type],
+    memberNameTypeAdapter:     TypeAdapter[MemberName],
+    mapTypeAdapter:            TypeAdapter[Map[Any, Any]],
+    listTypeAdapter:           TypeAdapter[List[Any]],
+    stringTypeAdapter:         TypeAdapter[String],
+    booleanTypeAdapter:        TypeAdapter[Boolean],
+    context:                   Context) extends TypeAdapter.=:=[Any] {
 
   // For writes
   def inspectStringKind(value: Any): Boolean = value match {

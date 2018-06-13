@@ -3,6 +3,8 @@ package typeadapter
 
 object IntTypeAdapter extends TypeAdapter.=:=[Int] {
 
+  override val deserializer: Deserializer[Int] = new IntDeserializer
+
   override def read(reader: Reader): Int =
     reader.readInt()
 

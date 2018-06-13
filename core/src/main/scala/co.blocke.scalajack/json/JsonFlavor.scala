@@ -35,13 +35,40 @@ case class JsonFlavor(
     val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
+    val js = JsonParser.parse(json)(Json4sOps)
     //    try {
-    //      JsonParser.parse(json)
+    //      val j = JsonParser.parse(json)(Json4sOps)
     //    } catch {
     //      case NonFatal(e) =>
     //        e.printStackTrace()
     //    }
-    context.typeAdapterOf[T].read(reader)
+    try {
+      val deserializationResult = context.typeAdapterOf[T].deserializer.deserialize(Path.Root, js)(Json4sOps)
+      deserializationResult match {
+        case DeserializationSuccess(TypeTagged(result)) =>
+          result
+
+        case DeserializationFailure(errors) =>
+          for (error <- errors) {
+            println(error)
+            error match {
+              case (path, DeserializationError.ExceptionThrown(e)) =>
+                println(path)
+                e.printStackTrace()
+
+              case _ =>
+            }
+          }
+
+          ???
+      }
+      //      val DeserializationSuccess(TypeTagged(result)) = deserializationResult
+      //      result
+      //      null
+    } catch {
+      case _: NotImplementedError =>
+        context.typeAdapterOf[T].read(reader)
+    }
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {

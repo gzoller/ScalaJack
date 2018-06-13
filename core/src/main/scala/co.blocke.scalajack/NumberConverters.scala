@@ -28,6 +28,16 @@ object NumberConverters {
       }
     }
 
+    def toIntExact: Int = {
+      val longAsInt: Int = long.toInt
+      val longAsIntAsLong: Long = longAsInt.toLong
+      if (long == longAsIntAsLong) {
+        longAsInt
+      } else {
+        throw new ArithmeticException(s"$long (Long) cannot be exactly converted to Int ($longAsInt)")
+      }
+    }
+
   }
 
 }

@@ -19,11 +19,15 @@ trait JsonOps[J] {
    */
   type ObjectFields
 
+  def parse(string: String): J = JsonParser.parse[J](string)(this)
+
+  def renderCompact(json: J): String = JsonRenderer.renderCompact[J](json)(this)
+
   def foreachArrayElement(elements: ArrayElements, f: (Int, J) => Unit): Unit
 
   def foreachObjectField(fields: ObjectFields, f: (String, J) => Unit): Unit
 
-  def findObjectField(fields: ObjectFields, name: String): Option[J]
+  def getObjectField(fields: ObjectFields, name: String): Option[J]
 
   /**
    *

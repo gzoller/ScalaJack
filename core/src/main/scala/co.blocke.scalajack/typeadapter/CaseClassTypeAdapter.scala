@@ -68,6 +68,12 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def defaultValue: Option[Value] =
       defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
 
+    override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+      valueTypeAdapter.deserializer.deserializeFromNothing(path)
+
+    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+      valueTypeAdapter.deserializer.deserialize(path, json)
+
     override def readValue(reader: Reader): Value =
       valueTypeAdapter.read(reader)
 
@@ -169,6 +175,16 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           .value().value).asInstanceOf[Option[String]]
 
       CaseClassTypeAdapter[T](
+        new CaseClassDeserializer[T](
+          context,
+          tt.tpe,
+          constructorMirror,
+          memberNameTypeAdapter,
+          context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter],
+          typeMembers,
+          fieldMembers,
+          isSJCapture,
+          collectionAnnotation),
         context,
         tt.tpe,
         constructorMirror,
@@ -185,15 +201,16 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class CaseClassTypeAdapter[T](
-    context:               Context,
-    tpe:                   Type,
-    constructorMirror:     MethodMirror,
-    memberNameTypeAdapter: TypeAdapter[MemberName],
-    typeTypeAdapter:       TypeAdapter[Type],
-    typeMembers:           List[CaseClassTypeAdapter.TypeMember[T]],
-    fieldMembers:          List[ClassFieldMember[T]],
-    isSJCapture:           Boolean,
-    collectionName:        Option[String]                           = None) extends ClassLikeTypeAdapter[T] {
+    override val deserializer: Deserializer[T],
+    context:                   Context,
+    tpe:                       Type,
+    constructorMirror:         MethodMirror,
+    memberNameTypeAdapter:     TypeAdapter[MemberName],
+    typeTypeAdapter:           TypeAdapter[Type],
+    typeMembers:               List[CaseClassTypeAdapter.TypeMember[T]],
+    fieldMembers:              List[ClassFieldMember[T]],
+    isSJCapture:               Boolean,
+    collectionName:            Option[String]                           = None) extends ClassLikeTypeAdapter[T] {
 
   val dbKeys = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
   val mappedFieldsByName: Map[String, ClassFieldMember[T]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap

@@ -26,16 +26,20 @@ object TypeAdapter {
 
 trait TypeAdapter[T] {
 
+  self =>
+
   def read(reader: Reader): T
 
   def write(value: T, writer: Writer): Unit
 
   val deserializer: Deserializer[T] = new Deserializer[T] {
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] = ???
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+      throw new NotImplementedError(s"$self.deserializer.deserialize")
   }
 
   val serializer: Serializer[T] = new Serializer[T] {
-    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] = ???
+    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      throw new NotImplementedError(s"$self.serializer.serialize")
   }
 
   def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =

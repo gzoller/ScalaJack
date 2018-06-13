@@ -20,7 +20,7 @@ object Json4sOps extends JsonOps[JValue] {
     }
   }
 
-  override def findObjectField(fields: List[(String, JValue)], name: String): Option[JValue] =
+  override def getObjectField(fields: List[(String, JValue)], name: String): Option[JValue] =
     fields.find(_._1 == name).map(_._2)
 
   override def applyArray(appendAllElements: (JValue => Unit) => Unit): JValue = {
