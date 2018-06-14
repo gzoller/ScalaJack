@@ -6,41 +6,54 @@ import java.lang.reflect.Method
 import co.blocke.scalajack.csv.CSVCaseClassTypeAdapter.Member
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
+import scala.collection.immutable
 import scala.language.{ existentials, reflectiveCalls }
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag }
 
 object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
-  case class Member[T](
-      index:                              Int,
-      name:                               String,
-      valueTypeAdapter:                   TypeAdapter[T],
-      valueAccessorMethodSymbol:          MethodSymbol,
-      valueAccessorMethod:                Method,
-      derivedValueClassConstructorMirror: Option[MethodMirror],
-      outerClass:                         Option[java.lang.Class[_]]) {
+  trait Member[Owner] {
 
-    val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
+    type Value
 
-    def valueIn(instance: Any): T = {
-      val value = valueAccessorMethod.invoke(instance)
+    val index: Int
+    val name: String
+    val valueTypeAdapter: TypeAdapter[Value]
+    val valueAccessorMethodSymbol: MethodSymbol
+    val valueAccessorMethod: Method
+    val derivedValueClassConstructorMirror: Option[MethodMirror]
+    val outerClass: Option[java.lang.Class[_]]
 
-      if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[T]
-      } else {
-        derivedValueClassConstructorMirror match {
-          case Some(methodMirror) =>
-            methodMirror.apply(value).asInstanceOf[T]
+    def isOptional: Boolean = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
-          case None =>
-            value.asInstanceOf[T]
-        }
+    def valueIn(taggedInstance: TypeTagged[Owner]): TypeTagged[Value] =
+      taggedInstance match {
+        case TypeTagged(instance) =>
+          val value = valueAccessorMethod.invoke(instance)
+
+          if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
+            TypeTagged.inferFromRuntimeClass[Value](value.asInstanceOf[Value])
+          } else {
+            derivedValueClassConstructorMirror match {
+              case Some(methodMirror) =>
+                TypeTagged.inferFromRuntimeClass[Value](methodMirror.apply(value).asInstanceOf[Value])
+
+              case None =>
+                TypeTagged.inferFromRuntimeClass[Value](value.asInstanceOf[Value])
+            }
+          }
       }
-    }
 
-    def writeValue(parameterValue: Any, writer: Writer): Unit =
-      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(parameterValue, writer)
+    def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+      valueTypeAdapter.deserializer.deserializeFromNothing(path)
+
+    def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+      valueTypeAdapter.deserializer.deserialize(path, json)
+
+    def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      valueTypeAdapter.serializer.serialize(tagged)
+
+    def writeValue(parameterValue: Value, writer: Writer): Unit =
+      valueTypeAdapter.write(parameterValue, writer)
 
   }
 
@@ -48,29 +61,29 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     if (classSymbol.isCaseClass) {
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
-      val classMirror = currentMirror.reflectClass(classSymbol)
+      val classMirror = reflectClass(classSymbol)
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
 
       val companionType: Type = classSymbol.companion.typeSignature
-      val companionObject = currentMirror.reflectModule(classSymbol.companion.asModule).instance
-      val companionMirror = currentMirror.reflect(companionObject)
+      val companionObject = reflectModule(classSymbol.companion.asModule).instance
+      val companionMirror = reflect(companionObject)
 
-      val members = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
-        case (member, index) =>
+      val members: IndexedSeq[Member[T]] = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
+        case (member, index_) =>
           val memberName = member.name.encodedName.toString
           val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
           val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-          val (derivedValueClassConstructorMirror, memberClass) =
+          val (derivedValueClassConstructorMirror_, memberClass) =
             if (member.typeSignature.typeSymbol.isClass) {
               val memberClassSymbol = member.typeSignature.typeSymbol.asClass
 
               if (memberClassSymbol.isDerivedValueClass) {
-                val memberClass = currentMirror.runtimeClass(memberClassSymbol)
+                val memberClass = runtimeClass(memberClassSymbol)
                 // The accessor will actually return the "inner" value, not the value class.
                 val constructorMethodSymbol = memberClassSymbol.primaryConstructor.asMethod
                 //              val innerClass = currentMirror.runtimeClass(constructorMethodSymbol.paramLists.flatten.head.info.typeSymbol.asClass)
-                (Some(currentMirror.reflectClass(memberClassSymbol).reflectConstructor(constructorMethodSymbol)), Some(memberClass))
+                (Some(reflectClass(memberClassSymbol).reflectConstructor(constructorMethodSymbol)), Some(memberClass))
               } else {
                 (None, None)
               }
@@ -80,26 +93,40 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
           val memberType = member.asTerm.typeSignature
           val memberTypeAdapter = context.typeAdapter(memberType)
-          Member(index, memberName, memberTypeAdapter, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, memberClass)
-      })
+          new Member[T] {
+            override type Value = Any
+            override val index: Int = index_
+            override val name: String = memberName
+            override val valueTypeAdapter: TypeAdapter[Value] = memberTypeAdapter.asInstanceOf[TypeAdapter[Value]]
+            override val valueAccessorMethodSymbol: MethodSymbol = accessorMethodSymbol
+            override val valueAccessorMethod: Method = accessorMethod
+            override val derivedValueClassConstructorMirror: Option[MethodMirror] = derivedValueClassConstructorMirror_
+            override val outerClass: Option[java.lang.Class[_]] = memberClass
+          }
+      }).to[immutable.IndexedSeq]
 
-      CSVCaseClassTypeAdapter(tt.tpe, constructorMirror, tt.tpe, members).asInstanceOf[TypeAdapter[T]]
+      CSVCaseClassTypeAdapter[T](
+        new CSVCaseClassDeserializer[T](members, constructorMirror),
+        new CSVCaseClassSerializer[T](members),
+        tt.tpe, constructorMirror, tt.tpe, members).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
 
 }
 
-case class CSVCaseClassTypeAdapter[T >: Null](
-    caseClassType:     Type,
-    constructorMirror: MethodMirror,
-    tpe:               Type,
-    members:           List[Member[_]]) extends TypeAdapter[T] {
+case class CSVCaseClassTypeAdapter[T](
+    override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T],
+    caseClassType:             Type,
+    constructorMirror:         MethodMirror,
+    tpe:                       Type,
+    members:                   Seq[Member[T]]) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     reader.peek match {
       case TokenType.Null =>
-        reader.readNull()
+        reader.readNull().asInstanceOf[T]
 
       case TokenType.BeginObject =>
         reader.beginObject()
@@ -117,7 +144,7 @@ case class CSVCaseClassTypeAdapter[T >: Null](
 
       for (member <- members) {
         // We don't write member names for CSV
-        member.writeValue(member.valueIn(value), writer)
+        member.writeValue(member.valueIn(TypeTagged.inferFromRuntimeClass[T](value)).get, writer)
       }
       writer.endObject()
     }

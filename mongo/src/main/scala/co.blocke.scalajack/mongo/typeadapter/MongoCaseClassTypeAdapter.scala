@@ -44,8 +44,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def defaultValue =
                 keyMemberOfRealClass.defaultValue
 
-              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: TypeTagged[SyntheticClass]): TypeTagged[Value] =
+                TypeTagged.inferFromRuntimeClass(instanceOfSyntheticClass.get.apply(index).asInstanceOf[Value])
 
               override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
                 keyMemberOfRealClass.deserializeValueFromNothing(path)
@@ -55,6 +55,9 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def readValue(reader: Reader): Value =
                 keyMemberOfRealClass.readValue(reader)
+
+              override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                keyMemberOfRealClass.serializeValue(tagged)
 
               override def writeValue(value: Value, writer: Writer): Unit =
                 keyMemberOfRealClass.writeValue(value, writer)
@@ -82,8 +85,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def defaultValue =
                 memberOfRealClass.defaultValue
 
-              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: TypeTagged[SyntheticClass]): TypeTagged[Value] =
+                TypeTagged.inferFromRuntimeClass(instanceOfSyntheticClass.get.apply(index).asInstanceOf[Value])
 
               override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
                 memberOfRealClass.deserializeValueFromNothing(path)
@@ -93,6 +96,9 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def readValue(reader: Reader): Value =
                 memberOfRealClass.readValue(reader)
+
+              override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                memberOfRealClass.serializeValue(tagged)
 
               override def writeValue(value: Value, writer: Writer): Unit =
                 memberOfRealClass.writeValue(value, writer)
@@ -179,10 +185,10 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   writer.writeNull()
                 } else {
                   val memberValuesOfSyntheticClass = new Array[Any](1 + nonKeyMembersOfRealClass.length)
-                  memberValuesOfSyntheticClass(0) = keyMemberOfRealClass.valueIn(instanceOfRealClass)
+                  memberValuesOfSyntheticClass(0) = keyMemberOfRealClass.valueIn(TypeTagged.inferFromRuntimeClass[RealClass](instanceOfRealClass)).get
 
                   for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
-                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(TypeTagged.inferFromRuntimeClass[RealClass](instanceOfRealClass)).get
                   }
 
                   val instanceOfSyntheticClass: SyntheticClass = memberValuesOfSyntheticClass
@@ -215,8 +221,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
                 override def defaultValue = memberOfRealClass.defaultValue
 
-                override def valueIn(syntheticId: SyntheticId): Value =
-                  syntheticId(index).asInstanceOf[Value]
+                override def valueIn(syntheticId: TypeTagged[SyntheticId]): TypeTagged[Value] =
+                  TypeTagged.inferFromRuntimeClass(syntheticId.get.apply(index).asInstanceOf[Value])
 
                 override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
                   memberOfRealClass.deserializeValueFromNothing(path)
@@ -226,6 +232,9 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
                 override def readValue(reader: Reader): Value =
                   memberOfRealClass.readValue(reader)
+
+                override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                  memberOfRealClass.serializeValue(tagged)
 
                 override def writeValue(value: Value, writer: Writer): Unit =
                   memberOfRealClass.writeValue(value, writer)
@@ -294,8 +303,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def defaultValue = None
 
-              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: TypeTagged[SyntheticClass]): TypeTagged[Value] =
+                TypeTagged.inferFromRuntimeClass[Value](instanceOfSyntheticClass.get.apply(index).asInstanceOf[Value])
 
               override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
                 idTypeAdapter.deserializer.deserializeFromNothing(path)
@@ -305,6 +314,9 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def readValue(reader: Reader): Value =
                 idTypeAdapter.read(reader)
+
+              override def serializeValue[J](tagged: TypeTagged[SyntheticId])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                idTypeAdapter.serializer.serialize(tagged)
 
               override def writeValue(value: Value, writer: Writer): Unit =
                 idTypeAdapter.write(value, writer)
@@ -330,8 +342,8 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
               override def defaultValue =
                 memberOfRealClass.defaultValue
 
-              override def valueIn(instanceOfSyntheticClass: SyntheticClass): Value =
-                instanceOfSyntheticClass(index).asInstanceOf[Value]
+              override def valueIn(instanceOfSyntheticClass: TypeTagged[SyntheticClass]): TypeTagged[Value] =
+                TypeTagged.inferFromRuntimeClass(instanceOfSyntheticClass.get.apply(index).asInstanceOf[Value])
 
               override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
                 memberOfRealClass.deserializeValueFromNothing(path)
@@ -341,6 +353,9 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
 
               override def readValue(reader: Reader): Value =
                 memberOfRealClass.readValue(reader)
+
+              override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                memberOfRealClass.serializeValue(tagged)
 
               override def writeValue(value: Value, writer: Writer): Unit =
                 memberOfRealClass.writeValue(value, writer)
@@ -433,14 +448,14 @@ object MongoCaseClassTypeAdapter extends TypeAdapterFactory {
                   val syntheticId = new Array[Any](keyMembersOfRealClass.length)
 
                   for ((memberOfRealClass, i) <- keyMembersOfRealClass.zipWithIndex) {
-                    syntheticId(i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                    syntheticId(i) = memberOfRealClass.valueIn(TypeTagged.inferFromRuntimeClass[RealClass](instanceOfRealClass)).get
                   }
 
                   val memberValuesOfSyntheticClass = new Array[Any](1 + nonKeyMembersOfRealClass.length)
                   memberValuesOfSyntheticClass(0) = syntheticId
 
                   for ((memberOfRealClass, i) <- nonKeyMembersOfRealClass.zipWithIndex) {
-                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(instanceOfRealClass)
+                    memberValuesOfSyntheticClass(1 + i) = memberOfRealClass.valueIn(TypeTagged.inferFromRuntimeClass[RealClass](instanceOfRealClass)).get
                   }
 
                   val instanceOfSyntheticClass: SyntheticClass = memberValuesOfSyntheticClass

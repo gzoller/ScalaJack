@@ -25,6 +25,15 @@ object AnyTypeAdapter extends TypeAdapterFactory {
           numberTypeAdapter.deserializer,
           booleanTypeAdapter.deserializer,
           context),
+        new AnySerializer(
+          typeTypeAdapter.serializer,
+          memberNameTypeAdapter.serializer,
+          mapTypeAdapter.serializer,
+          listTypeAdapter.serializer,
+          stringTypeAdapter.serializer,
+          numberTypeAdapter.serializer,
+          booleanTypeAdapter.serializer,
+          context),
         typeTypeAdapter,
         memberNameTypeAdapter,
         mapTypeAdapter,
@@ -40,6 +49,7 @@ object AnyTypeAdapter extends TypeAdapterFactory {
 
 case class AnyTypeAdapter(
     override val deserializer: Deserializer[Any],
+    override val serializer:   Serializer[Any],
     typeTypeAdapter:           TypeAdapter[Type],
     memberNameTypeAdapter:     TypeAdapter[MemberName],
     mapTypeAdapter:            TypeAdapter[Map[Any, Any]],

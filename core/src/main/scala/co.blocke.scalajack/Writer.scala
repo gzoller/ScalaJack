@@ -10,6 +10,46 @@ trait Writer {
 
   def endArray(): Unit
 
+  def writeJsonValue[J](json: J)(implicit ops: JsonOps[J]): Unit = {
+    json match {
+      case JsonArray(x) =>
+        beginArray()
+        ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, element) =>
+          writeJsonValue(element)
+        })
+        endArray()
+
+      case JsonBoolean(x) =>
+        writeBoolean(x)
+
+      case JsonDecimal(x) =>
+        writeRawValue(x.toString)
+
+      case JsonDouble(x) =>
+        writeDouble(x)
+
+      case JsonInt(x) =>
+        writeRawValue(x.toString)
+
+      case JsonLong(x) =>
+        writeLong(x)
+
+      case JsonNull() =>
+        writeNull()
+
+      case JsonObject(x) =>
+        beginObject()
+        ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (name, value) =>
+          writeString(name)
+          writeJsonValue(value)
+        })
+        endObject()
+
+      case JsonString(x) =>
+        writeString(x)
+    }
+  }
+
   def writeRawValue(raw: String): Unit = {
     val charArray = raw.toCharArray
     writeRawValue(charArray, 0, charArray.length)

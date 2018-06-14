@@ -26,7 +26,7 @@ case class JsonFlavor(
   override val context: Context = {
     val ctx = bakeContext()
     if (isCanonical)
-      ctx.copy(factories = JsonCanBuildFromTypeAdapter :: ctx.factories)
+      ctx.copy(factories = /*JsonCanBuildFromTypeAdapter :: */ ctx.factories)
     else
       ctx
   }
@@ -43,7 +43,8 @@ case class JsonFlavor(
     //        e.printStackTrace()
     //    }
     try {
-      val deserializationResult = context.typeAdapterOf[T].deserializer.deserialize(Path.Root, js)(Json4sOps)
+      val deserializer = context.typeAdapterOf[T].deserializer
+      val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
       deserializationResult match {
         case DeserializationSuccess(TypeTagged(result)) =>
           result

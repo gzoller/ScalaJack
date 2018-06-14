@@ -47,18 +47,19 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     }
 
-    override def valueIn(owner: Owner): Value = {
+    override def valueIn(tagged: TypeTagged[Owner]): TypeTagged[Value] = {
+      val TypeTagged(owner) = tagged
       val value = valueAccessorMethod.invoke(owner)
 
       if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[Value]
+        TypeTagged(value.asInstanceOf[Value], valueType)
       } else {
         derivedValueClassConstructorMirror match {
           case Some(methodMirror) =>
-            methodMirror.apply(value).asInstanceOf[Value]
+            TypeTagged(methodMirror.apply(value).asInstanceOf[Value], valueType)
 
           case None =>
-            value.asInstanceOf[Value]
+            TypeTagged(value.asInstanceOf[Value], valueType)
         }
       }
     }
@@ -76,6 +77,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     override def readValue(reader: Reader): Value =
       valueTypeAdapter.read(reader)
+
+    override def serializeValue[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      valueTypeAdapter.serializer.serialize(tagged)
 
     override def writeValue(value: Value, writer: Writer): Unit =
       valueTypeAdapter.write(value, writer)
@@ -175,16 +179,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           .value().value).asInstanceOf[Option[String]]
 
       CaseClassTypeAdapter[T](
-        new CaseClassDeserializer[T](
+        new ClassDeserializerUsingReflectedConstructor[T](
           context,
-          tt.tpe,
           constructorMirror,
-          memberNameTypeAdapter,
-          context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter],
+          context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter].deserializer,
           typeMembers,
           fieldMembers,
-          isSJCapture,
-          collectionAnnotation),
+          isSJCapture),
         context,
         tt.tpe,
         constructorMirror,
@@ -340,7 +341,7 @@ case class CaseClassTypeAdapter[T](
         val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
 
         for (fieldMember <- fieldMembers) {
-          val fieldValue = fieldMember.valueIn(value)
+          val TypeTagged(fieldValue) = fieldMember.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
           val declaredFieldValueType = fieldMember.declaredValueType
           val actualFieldValueType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
 
@@ -377,14 +378,14 @@ case class CaseClassTypeAdapter[T](
         val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[T]]
 
         for (member <- newTypeAdapter.fieldMembers) {
-          val memberValue = member.valueIn(value)
+          val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
 
           memberNameTypeAdapter.write(member.name, writer)
           member.writeValue(memberValue, writer)
         }
       } else {
         for (member <- fieldMembers) {
-          val memberValue = member.valueIn(value)
+          val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
           val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
 
           memberNameTypeAdapter.write(memberName, writer)

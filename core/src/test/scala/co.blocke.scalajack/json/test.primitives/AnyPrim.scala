@@ -48,9 +48,12 @@ class AnyPrim() extends FunSpec with Matchers {
         val payload: Byte = 16
         val js = sj.render(AnyShell(payload))
         assertResult("""{"a":16}""") { js }
+        val parsed = sj.read[AnyShell](js).a
+        assertResult(payload) {
+          parsed
+        }
         assertResult(true) {
-          val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Integer] // byte becomes Integer
+          parsed.isInstanceOf[Integer] // byte becomes Integer
         }
       }
       it("Char works") {
@@ -66,9 +69,12 @@ class AnyPrim() extends FunSpec with Matchers {
         val payload: Double = 1234.5678
         val js = sj.render(AnyShell(payload))
         assertResult("""{"a":1234.5678}""") { js }
+        val parsed = sj.read[AnyShell](js).a
+        assertResult(payload) {
+          parsed
+        }
         assertResult(true) {
-          val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Double] // double becomes Double
+          parsed.isInstanceOf[Double] // double becomes Double
         }
       }
       it("Enumeration works") {

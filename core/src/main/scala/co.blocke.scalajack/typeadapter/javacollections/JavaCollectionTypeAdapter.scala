@@ -20,8 +20,4 @@ object JavaCollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam
 
 class JavaCollectionTypeAdapter[E, C <: java.util.Collection[E]](override val deserializer: Deserializer[C], override val serializer: Serializer[C]) extends TypeAdapter[C] {
 
-  override def read(reader: Reader): C = ???
-
-  override def write(value: C, writer: Writer): Unit = ???
-
 }

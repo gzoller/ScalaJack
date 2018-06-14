@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.collection.generic.CanBuildFrom
-import scala.collection.{ GenMapLike, GenTraversableOnce, mutable }
+import scala.collection.{ GenMap, GenMapLike, GenTraversableOnce, mutable }
 import scala.language.existentials
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
@@ -53,14 +53,35 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
       val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply()
 
       if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+        type K = Any
+        type V = Any
+        type M = GenMap[K, V] with GenMapLike[K, V, Any]
+
+        val cbf = canBuildFrom.asInstanceOf[CanBuildFrom[_, (K, V), GenMapLike[K, V, M]]]
+
         val keyType = elementTypeAfterSubstitution.typeArgs(0)
-        val keyTypeAdapter = context.typeAdapter(keyType) match {
+        val keyTypeAdapter = (context.typeAdapter(keyType) match {
           case kta: OptionTypeAdapter[_] => kta.noneAsEmptyString // output "" for None for map keys
           case kta                       => kta
-        }
-        val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
-
-        Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        }).asInstanceOf[TypeAdapter[K]]
+        val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1)).asInstanceOf[TypeAdapter[V]]
+        /*
+        Some(CanBuildMapTypeAdapter(
+          new MapDeserializer[K, V, M](
+            keyTypeAdapter.deserializer,
+            valueTypeAdapter.deserializer,
+            null,
+            () => ???
+          )(tt),
+          new MapSerializer[K, V, M](
+            keyTypeAdapter.serializer,
+            valueTypeAdapter.serializer
+          ),
+          canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any]]],
+          keyTypeAdapter.asInstanceOf[TypeAdapter[Any]],
+          valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+          */
+        ???
       } else {
         def newBuilder(): mutable.Builder[E, T] = canBuildFrom.asInstanceOf[CanBuildFrom[Any, E, T]]()
 
@@ -77,10 +98,12 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
 
 }
 
-case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Value, To]](
-    canBuildFrom:     CanBuildFrom[_, (Key, Value), To],
-    keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
+case class CanBuildMapTypeAdapter[Key, Value, To <: GenMapLike[Key, Value, To]](
+    override val deserializer: Deserializer[To],
+    override val serializer:   Serializer[To],
+    canBuildFrom:              CanBuildFrom[_, (Key, Value), To],
+    keyTypeAdapter:            TypeAdapter[Key],
+    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[To] {
 
   override def read(reader: Reader): To =
     reader.peek match {
@@ -100,7 +123,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
         builder.result()
 
       case TokenType.Null =>
-        reader.readNull()
+        reader.readNull().asInstanceOf[To]
     }
 
   override def write(map: To, writer: Writer): Unit =

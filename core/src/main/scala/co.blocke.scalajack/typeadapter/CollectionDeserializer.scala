@@ -21,7 +21,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         DeserializationSuccess(nullTypeTagged)
 
       case JsonArray(x) =>
-        DeserializationResult(path)({
+        DeserializationResult(path) {
           val arrayElements = x.asInstanceOf[ops.ArrayElements]
 
           val builder = newBuilder()
@@ -38,7 +38,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
           val taggedElements = taggedElementsBuilder.result()
 
           new TaggedCollection(builder.result(), taggedElements)
-        })
+        }
 
       case _ =>
         DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON array"))

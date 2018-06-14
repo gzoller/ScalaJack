@@ -28,9 +28,16 @@ trait TypeAdapter[T] {
 
   self =>
 
-  def read(reader: Reader): T
+  def read(reader: Reader): T = {
+    val json = reader.readJsonValue()(Json4sOps)
+    val DeserializationSuccess(TypeTagged(value)) = deserializer.deserialize(Path.Unknown, json)(Json4sOps)
+    value
+  }
 
-  def write(value: T, writer: Writer): Unit
+  def write(value: T, writer: Writer): Unit = {
+    val SerializationSuccess(json) = serializer.serialize(TypeTagged.inferFromRuntimeClass[T](value))(Json4sOps)
+    writer.writeJsonValue(json)(Json4sOps)
+  }
 
   val deserializer: Deserializer[T] = new Deserializer[T] {
     override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =

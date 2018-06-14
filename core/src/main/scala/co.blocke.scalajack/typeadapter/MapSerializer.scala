@@ -1,17 +1,16 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.GenMapLike
+import scala.collection.GenMap
 
-class MapSerializer[K, V, M <: GenMapLike[K, V, M]](keySerializer: Serializer[K], valueSerializer: Serializer[V]) extends Serializer[M] {
+class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V]) extends Serializer[M] {
 
   override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J]): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) => SerializationSuccess(JsonNull())
       case TypeTagged(map) =>
         SerializationSuccess(JsonObject { appendField =>
-
-          lazy val mapType: Type = tagged.tpe.baseType(symbolOf[GenMapLike[_, _, _]])
+          lazy val mapType: Type = tagged.tpe.baseType(symbolOf[GenMap[_, _]])
 
           lazy val keyType: Type = {
             val k :: _ :: Nil = mapType.typeArgs

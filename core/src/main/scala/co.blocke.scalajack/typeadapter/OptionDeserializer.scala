@@ -16,7 +16,12 @@ class OptionDeserializer[T](next: Deserializer[T]) extends Deserializer[Option[T
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Option[T]] =
     next.deserialize(path, json) map {
       case tagged @ TypeTagged(value) =>
-        new TaggedSome(Some(value), tagged)
+        Option(value) match {
+          case None =>
+            TaggedNone
+          case some @ Some(_) =>
+            new TaggedSome(some, tagged)
+        }
     }
 
 }

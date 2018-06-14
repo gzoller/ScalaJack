@@ -4,7 +4,7 @@ import co.blocke.TypeTagHacks
 import co.blocke.scalajack.BijectiveFunctions._
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
-import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
+import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicDeserializer, PolymorphicSerializer, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
 
 import scala.language.existentials
 
@@ -92,7 +92,11 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
         override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] = {
           if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
             val stringTypeAdapter = context.typeAdapterOf[String]
-            PolymorphicTypeAdapter(hintFieldName, stringTypeAdapter andThen hintToType.memoized, context.typeAdapterOf[MemberName], context, typeTag.tpe)
+            val typeTypeAdapter = stringTypeAdapter andThen hintToType.memoized
+            PolymorphicTypeAdapter[T](
+              new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer, context),
+              new PolymorphicSerializer[T](hintFieldName, typeTypeAdapter.serializer, context),
+              hintFieldName, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
           } else {
             next.typeAdapterOf[T]
           }

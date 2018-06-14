@@ -24,13 +24,15 @@ object ClassLikeTypeAdapter {
 
     def defaultValue: Option[Value]
 
-    def valueIn(owner: Owner): Value
+    def valueIn(owner: TypeTagged[Owner]): TypeTagged[Value]
 
     def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value]
 
     def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value]
 
     def readValue(reader: Reader): Value
+
+    def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J]
 
     def writeValue(value: Value, writer: Writer): Unit
 
@@ -118,7 +120,7 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
       for (member <- fieldMembers) {
         writeMemberName(member.name, writer)
 
-        val value = member.valueIn(instanceOfClass)
+        val TypeTagged(value) = member.valueIn(TypeTagged.inferFromRuntimeClass[C](instanceOfClass))
         member.writeValue(value, writer)
       }
 

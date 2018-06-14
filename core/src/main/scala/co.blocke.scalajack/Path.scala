@@ -8,6 +8,10 @@ object Path {
     override def toString: String = "$"
   }
 
+  case object Unknown extends Path {
+    override def toString: String = "???"
+  }
+
   case class Field(parent: Path, name: String) extends Path {
     override def toString: String = s"$parent.$name"
   }

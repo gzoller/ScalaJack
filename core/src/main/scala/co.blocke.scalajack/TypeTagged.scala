@@ -60,6 +60,8 @@ trait TypeTagged[+T] {
 
   def tpe: Type
 
+  override def toString: String = s"$get as $tpe"
+
   /**
    * Used to fulfill the requirements of [[TypeTagged#unapply]].
    */

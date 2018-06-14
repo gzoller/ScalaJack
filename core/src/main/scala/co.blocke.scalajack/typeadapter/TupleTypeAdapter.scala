@@ -93,7 +93,7 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         val classMirror = reflectClass(classSymbol)
         val constructorMirror = classMirror.reflectConstructor(classSymbol.primaryConstructor.asMethod)
 
-        TupleTypeAdapter[T](fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]
+        TupleTypeAdapter[T](new TupleDeserializer[T](fields, constructorMirror), new TupleSerializer[T](fields), fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]
 
       case _ =>
         next.typeAdapterOf[T]
@@ -102,8 +102,10 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class TupleTypeAdapter[T](
-    fields:            List[Field[T]],
-    constructorMirror: MethodMirror) extends TypeAdapter[T] {
+    override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T],
+    fields:                    List[Field[T]],
+    constructorMirror:         MethodMirror) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T =
     reader.peek match {

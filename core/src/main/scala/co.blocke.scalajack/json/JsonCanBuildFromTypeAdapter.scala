@@ -77,7 +77,9 @@ object JsonCanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypePar
           }
 
         val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
-        Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+        //Some(CanBuildMapTypeAdapter(canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]], keyTypeAdapter.asInstanceOf[TypeAdapter[Any]], valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+
+        ???
       } else {
         Some(CanBuildFromTypeAdapter(
           new CollectionDeserializer[E, C](elementTypeAdapter.deserializer, { () => canBuildFrom() }),

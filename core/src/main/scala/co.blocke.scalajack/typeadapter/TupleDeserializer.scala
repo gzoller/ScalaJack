@@ -5,7 +5,9 @@ import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
 import scala.collection.immutable
 
-class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleTypeConstructor: Type, tupleConstructorMirror: MethodMirror) extends Deserializer[Tuple] {
+class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructorMirror: MethodMirror)(implicit tt: TypeTag[Tuple]) extends Deserializer[Tuple] {
+
+  private val tupleTypeConstructor: Type = tt.tpe.typeConstructor
 
   private class TaggedTuple(override val get: Tuple, taggedElements: Array[TypeTagged[Any]]) extends TypeTagged[Tuple] {
     override lazy val tpe: Type = appliedType(tupleTypeConstructor, taggedElements.map(_.tpe).toList)

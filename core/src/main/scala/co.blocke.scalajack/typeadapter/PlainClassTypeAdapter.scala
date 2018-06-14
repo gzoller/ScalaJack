@@ -51,21 +51,23 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
     }
 
-    def valueIn(instance: Owner): Value = {
-      val value = valueGetterMethod.invoke(instance)
+    def valueIn(tagged: TypeTagged[Owner]): TypeTagged[Value] =
+      tagged match {
+        case TypeTagged(instance) =>
+          val value = valueGetterMethod.invoke(instance)
 
-      if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
-        value.asInstanceOf[Value]
-      } else {
-        derivedValueClassConstructorMirror match {
-          case Some(methodMirror) =>
-            methodMirror.apply(value).asInstanceOf[Value]
+          if (outerClass.isEmpty || outerClass.get.isInstance(value)) {
+            TypeTagged.inferFromRuntimeClass[Value](value.asInstanceOf[Value])
+          } else {
+            derivedValueClassConstructorMirror match {
+              case Some(methodMirror) =>
+                TypeTagged.inferFromRuntimeClass[Value](methodMirror.apply(value).asInstanceOf[Value])
 
-          case None =>
-            value.asInstanceOf[Value]
-        }
+              case None =>
+                TypeTagged.inferFromRuntimeClass[Value](value.asInstanceOf[Value])
+            }
+          }
       }
-    }
 
     def valueSet(instance: Owner, value: Value): Unit =
       valueSetterMethodSymbol match {
@@ -82,6 +84,9 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def readValue(reader: Reader): Value = {
       valueTypeAdapter.read(reader)
     }
+
+    override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
+      valueTypeAdapter.serializer.serialize(tagged)
 
     override def writeValue(value: Value, writer: Writer): Unit = {
       valueTypeAdapter.write(value, writer)
@@ -267,14 +272,20 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case members if (!members.isEmpty) =>
           // Because all the val fields were found in the constructor we can use a normal CaseClassTypeAdapter
           CaseClassTypeAdapter[T](
-            new CaseClassDeserializer(context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation),
+            new ClassDeserializerUsingReflectedConstructor[T](context, constructorMirror, context.typeAdapterOf[Type].deserializer, Nil, members, isSJCapture),
             context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation)
         case _ if (!classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectScalaGetterSetterFields
-          PlainClassTypeAdapter[T](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
+          PlainClassTypeAdapter[T](
+            new PlainClassDeserializer[T](members, null), // FIXME
+            new PlainClassSerializer[T](members),
+            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
         case _ if (classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectJavaGetterSetterFields
-          PlainClassTypeAdapter[T](tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
+          PlainClassTypeAdapter[T](
+            new PlainClassDeserializer[T](members, null), // FIXME
+            new PlainClassSerializer[T](members),
+            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
         case x =>
           next.typeAdapterOf[T]
       }
@@ -287,14 +298,16 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class PlainClassTypeAdapter[T](
-    caseClassType:         Type,
-    constructorMirror:     MethodMirror,
-    tpe:                   Type,
-    memberNameTypeAdapter: TypeAdapter[MemberName],
-    members:               List[PlainFieldMember[T]],
-    isSJCapture:           Boolean,
-    dbKeys:                List[PlainFieldMember[T]],
-    collectionName:        Option[String]            = None) extends TypeAdapter[T] {
+    override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T],
+    caseClassType:             Type,
+    constructorMirror:         MethodMirror,
+    tpe:                       Type,
+    memberNameTypeAdapter:     TypeAdapter[MemberName],
+    members:                   List[PlainFieldMember[T]],
+    isSJCapture:               Boolean,
+    dbKeys:                    List[PlainFieldMember[T]],
+    collectionName:            Option[String]            = None) extends TypeAdapter[T] {
 
   private val mappedFieldsByName: Map[String, PlainFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
   private val mappedFieldsByMappedName: Map[String, PlainFieldMember[T]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
@@ -366,7 +379,7 @@ case class PlainClassTypeAdapter[T](
       writer.beginObject()
 
       for (member <- members) {
-        val memberValue = member.valueIn(value)
+        val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
         val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
 
         memberNameTypeAdapter.write(memberName, writer)

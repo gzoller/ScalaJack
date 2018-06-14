@@ -1,13 +1,13 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.{ GenMap, GenMapLike, mutable }
+import scala.collection.{ GenMap, mutable }
 
-class MapDeserializer[K, V, M <: GenMap[K, V] with GenMapLike[K, V, M]](
+class MapDeserializer[K, V, M <: GenMap[K, V]](
     keyDeserializer:           Deserializer[K],
     valueDeserializer:         Deserializer[V],
     keyValuePairsDeserializer: Deserializer[List[(K, V)]],
-    newBuilder:                () => mutable.MapBuilder[K, V, M])(implicit tt: TypeTag[M]) extends Deserializer[M] {
+    newBuilder:                () => mutable.Builder[(K, V), M])(implicit tt: TypeTag[M]) extends Deserializer[M] {
 
   private val nullTypeTagged: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 

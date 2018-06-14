@@ -6,9 +6,16 @@ sealed trait SerializationResult[+J] {
 
   def get: J
 
+  def map[JJ](f: J => JJ): SerializationResult[JJ]
+
 }
 
-case class SerializationSuccess[+J](get: J) extends SerializationResult[J]
+case class SerializationSuccess[+J](get: J) extends SerializationResult[J] {
+
+  override def map[JJ](f: J => JJ): SerializationResult[JJ] =
+    SerializationSuccess(f(get))
+
+}
 
 object SerializationFailure {
 
@@ -20,6 +27,8 @@ object SerializationFailure {
 case class SerializationFailure[+J](errors: immutable.Seq[SerializationError]) extends SerializationResult[J] {
 
   override def get: J = throw new UnsupportedOperationException("SerializationFailure.get not supported")
+
+  override def map[JJ](f: J => JJ): SerializationResult[JJ] = this.asInstanceOf[SerializationResult[JJ]]
 
 }
 

@@ -5,7 +5,11 @@ case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdap
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isTrait) {
-      PolymorphicTypeAdapter(hintFieldName, context.typeAdapterOf[Type], context.typeAdapterOf[MemberName], context, tt.tpe)
+      val typeTypeAdapter = context.typeAdapterOf[Type]
+      PolymorphicTypeAdapter(
+        new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer, context),
+        new PolymorphicSerializer[T](hintFieldName, typeTypeAdapter.serializer, context),
+        hintFieldName, typeTypeAdapter, context.typeAdapterOf[MemberName], context, tt.tpe)
     } else {
       next.typeAdapterOf[T]
     }
@@ -39,11 +43,13 @@ class PolymorphicWriter(
 }
 
 case class PolymorphicTypeAdapter[T](
-    typeMemberName:        MemberName,
-    typeTypeAdapter:       TypeAdapter[Type],
-    memberNameTypeAdapter: TypeAdapter[MemberName],
-    context:               Context,
-    polymorphicType:       Type) extends TypeAdapter[T] {
+    override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T],
+    typeMemberName:            MemberName,
+    typeTypeAdapter:           TypeAdapter[Type],
+    memberNameTypeAdapter:     TypeAdapter[MemberName],
+    context:                   Context,
+    polymorphicType:           Type) extends TypeAdapter[T] {
 
   import scala.collection.mutable
 

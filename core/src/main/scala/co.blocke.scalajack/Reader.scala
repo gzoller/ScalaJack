@@ -69,6 +69,75 @@ trait Reader {
     }
   }
 
+  def readJsonValue[J]()(implicit ops: JsonOps[J]): J = {
+
+    def readJsonArray(): J =
+      JsonArray { appendElement =>
+        read(expected = TokenType.BeginArray)
+
+        while (hasMoreElements) {
+          val elementJson = readJsonValue[J]()
+          appendElement(elementJson)
+        }
+
+        read(expected = TokenType.EndArray)
+      }
+
+    def readJsonBoolean(): J =
+      JsonBoolean(readBoolean())
+
+    def readJsonNull(): J = {
+      readNull()
+      JsonNull()
+    }
+
+    def readJsonNumber(): J =
+      readNumber() match {
+        case x: java.lang.Integer     => JsonLong(x.longValue)
+        case x: java.lang.Long        => JsonLong(x.longValue)
+        case x: java.lang.Float       => JsonDouble(x.doubleValue)
+        case x: java.lang.Double      => JsonDouble(x.doubleValue)
+        case x: scala.math.BigInt     => JsonInt(x)
+        case x: scala.math.BigDecimal => JsonDecimal(x)
+      }
+
+    def readJsonObject(): J =
+      JsonObject { appendField =>
+        read(expected = TokenType.BeginObject)
+
+        while (hasMoreMembers) {
+          val memberName = readString()
+          val memberValue = readJsonValue[J]()
+          appendField(memberName, memberValue)
+        }
+
+        read(expected = TokenType.EndObject)
+      }
+
+    def readJsonString(): J =
+      JsonString(readString())
+
+    peek match {
+      case TokenType.BeginArray =>
+        readJsonArray()
+
+      case TokenType.BeginObject =>
+        readJsonObject()
+
+      case TokenType.False | TokenType.True =>
+        readJsonBoolean()
+
+      case TokenType.Number =>
+        readJsonNumber()
+
+      case TokenType.Null =>
+        readJsonNull()
+
+      case TokenType.String =>
+        readJsonString()
+    }
+  }
+
   def readByte(): Byte = {
     read(expected = TokenType.Number)
     Try(tokenText.toByte) match {

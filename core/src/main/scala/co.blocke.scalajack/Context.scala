@@ -16,6 +16,8 @@ object Context {
     .withFactory(TypeParameterTypeAdapter)
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
+    .withFactory(MapTypeAdapter)
+    .withFactory(CollectionTypeAdapter)
     .withFactory(CanBuildFromTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
@@ -124,6 +126,19 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
   def typeAdapter(tpe: Type): TypeAdapter[_] =
     typeEntries.computeIfAbsent(tpe, TypeEntryFactory).typeAdapter
 
-  def typeAdapterOf[T](implicit valueTypeTag: TypeTag[T]): TypeAdapter[T] =
-    typeAdapter(valueTypeTag.tpe).asInstanceOf[TypeAdapter[T]]
+  def typeAdapterOf[T: TypeTag]: TypeAdapter[T] =
+    typeAdapter(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeAdapter[T]]
+
+  def deserializer(tpe: Type): Deserializer[_] =
+    typeAdapter(tpe).deserializer
+
+  def deserializerOf[T: TypeTag]: Deserializer[T] =
+    typeAdapterOf[T].deserializer
+
+  def serializer(tpe: Type): Serializer[_] =
+    typeAdapter(tpe).serializer
+
+  def serializerOf[T: TypeTag]: Serializer[T] =
+    typeAdapterOf[T].serializer
+
 }
