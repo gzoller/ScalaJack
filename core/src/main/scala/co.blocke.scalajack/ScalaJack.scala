@@ -94,7 +94,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
             val stringTypeAdapter = context.typeAdapterOf[String]
             val typeTypeAdapter = stringTypeAdapter andThen hintToType.memoized
             PolymorphicTypeAdapter[T](
-              new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer, context),
+              new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer),
               new PolymorphicSerializer[T](hintFieldName, typeTypeAdapter.serializer, context),
               hintFieldName, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
           } else {

@@ -10,20 +10,25 @@ package object scalajack {
   Scala Reflection API
    */
   // format: OFF
-  type ClassMirror    = scala.reflect.runtime.universe.ClassMirror
-  type ClassSymbol    = scala.reflect.runtime.universe.ClassSymbol
-  type InstanceMirror = scala.reflect.runtime.universe.InstanceMirror
-  type MethodMirror   = scala.reflect.runtime.universe.MethodMirror
-  type MethodSymbol   = scala.reflect.runtime.universe.MethodSymbol
-  type ModuleMirror   = scala.reflect.runtime.universe.ModuleMirror
-  type ModuleSymbol   = scala.reflect.runtime.universe.ModuleSymbol
-  type Mirror         = scala.reflect.runtime.universe.Mirror
-  type RuntimeClass   = scala.reflect.runtime.universe.RuntimeClass
-  type Symbol         = scala.reflect.runtime.universe.Symbol
-  type Type           = scala.reflect.runtime.universe.Type
-  type TypeSymbol     = scala.reflect.runtime.universe.TypeSymbol
-  type TypeTag[T]     = scala.reflect.runtime.universe.TypeTag[T]
-  type WeakTypeTag[T] = scala.reflect.runtime.universe.WeakTypeTag[T]
+  type ClassMirror     = scala.reflect.runtime.universe.ClassMirror
+  type ClassSymbol     = scala.reflect.runtime.universe.ClassSymbol
+  type ConstantApi     = scala.reflect.runtime.universe.ConstantApi
+  type ConstantTypeApi = scala.reflect.runtime.universe.ConstantTypeApi
+  type InstanceMirror  = scala.reflect.runtime.universe.InstanceMirror
+  type MethodMirror    = scala.reflect.runtime.universe.MethodMirror
+  type MethodSymbol    = scala.reflect.runtime.universe.MethodSymbol
+  type ModuleMirror    = scala.reflect.runtime.universe.ModuleMirror
+  type ModuleSymbol    = scala.reflect.runtime.universe.ModuleSymbol
+  type Mirror          = scala.reflect.runtime.universe.Mirror
+  type RuntimeClass    = scala.reflect.runtime.universe.RuntimeClass
+  type SingleTypeApi   = scala.reflect.runtime.universe.SingleTypeApi
+  type Symbol          = scala.reflect.runtime.universe.Symbol
+  type ThisTypeApi     = scala.reflect.runtime.universe.ThisTypeApi
+  type Type            = scala.reflect.runtime.universe.Type
+  type TypeRefApi      = scala.reflect.runtime.universe.TypeRefApi
+  type TypeSymbol      = scala.reflect.runtime.universe.TypeSymbol
+  type TypeTag[T]      = scala.reflect.runtime.universe.TypeTag[T]
+  type WeakTypeTag[T]  = scala.reflect.runtime.universe.WeakTypeTag[T]
   // format: ON
 
   @inline final val TermName = scala.reflect.runtime.universe.TermName
@@ -45,5 +50,54 @@ package object scalajack {
   // format: ON
 
   implicit val typeTagType: TypeTag[Type] = TypeTags.of[Type](TypeTagHacks.TypeType)
+
+  // Type Extractors
+  object SingleType {
+
+    @deprecated(message = "Used only for documentation purposes", since = "v7")
+    def apply(tpe: Type, sym: Symbol): SingleTypeApi = ???
+
+    def unapply(tpe: Type): Option[(Type, Symbol)] =
+      tpe match {
+        case singleType: SingleTypeApi =>
+          Some((singleType.pre, singleType.sym))
+
+        case _ =>
+          None
+      }
+
+  }
+
+  object ThisType {
+
+    @deprecated(message = "Used only for documentation purposes", since = "v7")
+    def apply(sym: Symbol): ThisTypeApi = ???
+
+    def unapply(tpe: Type): Option[Symbol] =
+      tpe match {
+        case thisType: ThisTypeApi =>
+          Some(thisType.sym)
+
+        case _ =>
+          None
+      }
+
+  }
+
+  object TypeRef {
+
+    @deprecated(message = "Used only for documentation purposes", since = "v7")
+    def apply(pre: Type, sym: Symbol, args: List[Type]): TypeRefApi = ???
+
+    def unapply(tpe: Type): Option[(Type, Symbol, List[Type])] =
+      tpe match {
+        case typeRef: TypeRefApi =>
+          Some((typeRef.pre, typeRef.sym, typeRef.args))
+
+        case _ =>
+          None
+      }
+
+  }
 
 }

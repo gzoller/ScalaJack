@@ -60,7 +60,7 @@ object DeserializationFailure {
 
 case class DeserializationFailure(errors: immutable.Seq[(Path, DeserializationError)]) extends DeserializationResult[Nothing] {
 
-  override def get: TypeTagged[Nothing] = throw new UnsupportedOperationException("DeserializationFailure.get")
+  override def get: TypeTagged[Nothing] = throw new DeserializationException(this)
 
   override def map[U](f: TypeTagged[Nothing] => TypeTagged[U]): DeserializationResult[U] =
     this.asInstanceOf[DeserializationResult[U]]

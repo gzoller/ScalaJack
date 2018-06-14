@@ -1,12 +1,20 @@
 package co.blocke.scalajack
 
-sealed trait DeserializationError
+sealed trait DeserializationError {
+
+  def message: String
+
+}
 
 object DeserializationError {
 
-  case object Missing extends DeserializationError
+  case object Missing extends DeserializationError {
+    override def message: String = "Field was missing"
+  }
 
-  case class ExceptionThrown(exception: Throwable) extends DeserializationError
+  case class ExceptionThrown(exception: Throwable) extends DeserializationError {
+    override def message: String = s"Exception was thrown: $exception"
+  }
 
   case class Unsupported(message: String) extends DeserializationError
 

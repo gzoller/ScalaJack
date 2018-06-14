@@ -7,7 +7,7 @@ case class PolymorphicTypeAdapterFactory(hintFieldName: String) extends TypeAdap
     if (classSymbol.isTrait) {
       val typeTypeAdapter = context.typeAdapterOf[Type]
       PolymorphicTypeAdapter(
-        new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer, context),
+        new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer),
         new PolymorphicSerializer[T](hintFieldName, typeTypeAdapter.serializer, context),
         hintFieldName, typeTypeAdapter, context.typeAdapterOf[MemberName], context, tt.tpe)
     } else {

@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import scala.reflect.runtime.currentMirror
-import scala.tools.reflect.{FrontEnd, ToolBox}
+import scala.tools.reflect.{ FrontEnd, ToolBox }
 
 object ScalaCompiler {
 
@@ -15,7 +15,7 @@ object ScalaCompiler {
 
   }
 
-//  private lazy val toolBox = scala.tools.reflect.ToolBox(currentMirror).mkToolBox()
+  //  private lazy val toolBox = scala.tools.reflect.ToolBox(currentMirror).mkToolBox()
   private lazy val toolBox = scala.reflect.runtime.universe.runtimeMirror(getClass.getClassLoader).mkToolBox(frontEnd)
 
   def compileClass(sourceCode: String): Class[_] = {

@@ -5,8 +5,7 @@ import scala.collection.mutable
 
 class PolymorphicDeserializer[T](
     typeFieldName:    MemberName,
-    typeDeserializer: Deserializer[Type],
-    context:          Context)(implicit tt: TypeTag[T]) extends Deserializer[T] {
+    typeDeserializer: Deserializer[Type])(implicit tt: TypeTag[T], context: Context) extends Deserializer[T] {
 
   private val polymorphicType: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[T] = TypeTagged[T](null.asInstanceOf[T], polymorphicType)
@@ -44,11 +43,11 @@ class PolymorphicDeserializer[T](
             deserializer.deserialize(path, json)
         }
 
-//        val concreteType = maybeConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ ))
-//        val populatedConcreteType = populateConcreteType(concreteType)
-//        val concreteDeserializer = context.deserializer(populatedConcreteType)
-//
-//        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+      //        val concreteType = maybeConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ ))
+      //        val populatedConcreteType = populateConcreteType(concreteType)
+      //        val concreteDeserializer = context.deserializer(populatedConcreteType)
+      //
+      //        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
       case _ =>
         DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
