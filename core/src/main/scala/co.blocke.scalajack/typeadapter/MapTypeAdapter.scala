@@ -36,10 +36,4 @@ object MapTypeAdapter extends TypeAdapterFactory.<:<.withTwoTypeParams[GenMap] {
 
 }
 
-case class MapTypeAdapter[K, V, M <: GenMap[K, V]](override val deserializer: Deserializer[M], override val serializer: Serializer[M]) extends TypeAdapter[M] {
-
-  override def read(reader: Reader): M = ???
-
-  override def write(value: M, writer: Writer): Unit = ???
-
-}
+case class MapTypeAdapter[K, V, M <: GenMap[K, V]](override val deserializer: Deserializer[M], override val serializer: Serializer[M]) extends TypeAdapter[M]

@@ -186,6 +186,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           typeMembers,
           fieldMembers,
           isSJCapture),
+        new ClassSerializer[T](
+          context,
+          constructorMirror,
+          context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter].serializer,
+          typeMembers,
+          fieldMembers,
+          isSJCapture),
         context,
         tt.tpe,
         constructorMirror,
@@ -203,6 +210,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 case class CaseClassTypeAdapter[T](
     override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T],
     context:                   Context,
     tpe:                       Type,
     constructorMirror:         MethodMirror,

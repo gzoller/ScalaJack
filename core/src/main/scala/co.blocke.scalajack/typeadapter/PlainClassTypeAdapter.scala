@@ -273,6 +273,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           // Because all the val fields were found in the constructor we can use a normal CaseClassTypeAdapter
           CaseClassTypeAdapter[T](
             new ClassDeserializerUsingReflectedConstructor[T](context, constructorMirror, context.typeAdapterOf[Type].deserializer, Nil, members, isSJCapture),
+            new ClassSerializer[T](context, constructorMirror, context.typeAdapterOf[Type].serializer, Nil, members, isSJCapture),
             context, tpe, constructorMirror, memberNameTypeAdapter, context.typeAdapterOf[Type], Nil, members, isSJCapture, collectionAnnotation)
         case _ if (!classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectScalaGetterSetterFields
