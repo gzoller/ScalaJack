@@ -23,11 +23,32 @@ object TraitDeserializer {
   }
 
   def generateDeserializer[T]()(implicit tt: TypeTag[T]): TraitDeserializer[T] = {
+
+    val reflectMembers = tt.tpe.typeSymbol.asClass.typeSignature.members.filter(_.isAbstract).toList
+
+    class FieldMember(val name: String, val valueType: Type)
+
+    val members: List[FieldMember] = reflectMembers map { reflectMember =>
+      new FieldMember(name = reflectMember.name.decodedName.toString, valueType = reflectMember.asMethod.returnType)
+    }
+
     val deserializerClass =
       ScalaCompiler.compileClass(
-        s"""import co.blocke.{ scalajack => sj }
+        s"""
+           |class Deferred[J](path: co.blocke.scalajack.Path, json: J)(implicit ops: co.blocke.scalajack.JsonOps[J]) extends ${tt.tpe} {
            |
-           |class ThisTraitDeserializer extends sj.Deserializer[${tt.tpe}] {
+           |${members.map(member => s"""  override lazy val ${member.name}: ${member.valueType} = ???""").mkString("\n\n")}
+           |
+           |}
+           |
+           |class ThisTraitDeserializer(implicit tt: co.blocke.scalajack.TypeTag[${tt.tpe}]) extends co.blocke.scalajack.TraitDeserializer[${tt.tpe}] {
+           |
+           |  import co.blocke.{ scalajack => sj }
+           |
+           |  override def deserialize[J](path: sj.Path, json: J)(implicit ops: sj.JsonOps[J]): sj.DeserializationResult[${tt.tpe}] = {
+           |    sj.DeserializationSuccess(sj.TypeTagged(new Deferred[J](path, json), tt.tpe))
+           |  }
+           |
            |}
            |
         |scala.reflect.classTag[ThisTraitDeserializer].runtimeClass
@@ -39,7 +60,7 @@ object TraitDeserializer {
 
 }
 
-class TraitDeserializer[T] extends Deserializer[T] {
+trait TraitDeserializer[T] extends Deserializer[T] {
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] = ???
 

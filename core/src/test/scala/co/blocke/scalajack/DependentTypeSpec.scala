@@ -21,7 +21,7 @@ trait Envelope {
 
   val envelopeType: EnvelopeType
 
-  val payload: envelopeType.Payload
+  def payload: envelopeType.Payload
 
 }
 
