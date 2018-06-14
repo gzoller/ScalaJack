@@ -33,11 +33,22 @@ class PolymorphicDeserializer[T](
           }
         })
 
-        val concreteType = maybeConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ ))
-        val populatedConcreteType = populateConcreteType(concreteType)
-        val concreteDeserializer = context.deserializer(populatedConcreteType)
+        maybeConcreteType match {
+          case Some(concreteType) =>
+            val populatedConcreteType = populateConcreteType(concreteType)
+            val concreteDeserializer = context.deserializer(populatedConcreteType)
+            concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
-        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+          case None =>
+            val deserializer = TraitDeserializer[T]()
+            deserializer.deserialize(path, json)
+        }
+
+//        val concreteType = maybeConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ ))
+//        val populatedConcreteType = populateConcreteType(concreteType)
+//        val concreteDeserializer = context.deserializer(populatedConcreteType)
+//
+//        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
       case _ =>
         DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
