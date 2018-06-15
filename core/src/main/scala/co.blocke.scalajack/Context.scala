@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 object Context {
 
   val StandardContext = Context()
-    .withFactory(TermTypeAdapter)
+    .withFactory(TermTypeAdapterFactory)
     .withFactory(TypeParameterTypeAdapter)
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
