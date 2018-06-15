@@ -103,13 +103,17 @@ trait DeserializedTrait[J] {
     thisJson match {
       case JsonObject(x) =>
         val fields = x.asInstanceOf[thisJsonOps.ObjectFields]
-        thisJsonOps.getObjectField(fields, name) match {
-          case Some(valueJson) =>
-            valueDeserializer.deserialize(thisPath \ name, valueJson)
 
-          case None =>
-            valueDeserializer.deserializeFromNothing(thisPath \ name)
-        }
+        val deserializationResult: DeserializationResult[V] =
+          thisJsonOps.getObjectField(fields, name) match {
+            case Some(valueJson) =>
+              valueDeserializer.deserialize(thisPath \ name, valueJson)
+
+            case None =>
+              valueDeserializer.deserializeFromNothing(thisPath \ name)
+          }
+
+        deserializationResult
     }
 
 }

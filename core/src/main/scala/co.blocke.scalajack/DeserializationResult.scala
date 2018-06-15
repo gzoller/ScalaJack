@@ -7,12 +7,16 @@ object DeserializationResult {
 
   def apply[T](path: Path)(body: => TypeTagged[T], deserializationError: PartialFunction[Throwable, DeserializationError] = PartialFunction.empty): DeserializationResult[T] =
     try DeserializationSuccess(body) catch {
+      case e: DeserializationException =>
+        e.deserializationFailure
       case NonFatal(e) =>
         DeserializationFailure(path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))
     }
 
   def trapExceptions[T](path: Path)(body: => DeserializationResult[T], deserializationError: PartialFunction[Throwable, DeserializationError] = PartialFunction.empty): DeserializationResult[T] =
     try body catch {
+      case e: DeserializationException =>
+        e.deserializationFailure
       case NonFatal(e) =>
         DeserializationFailure(path, deserializationError.applyOrElse(e, DeserializationError.ExceptionThrown))
     }
@@ -71,5 +75,9 @@ case class DeserializationFailure(errors: immutable.Seq[(Path, DeserializationEr
   override def isSuccess: Boolean = false
 
   override def isFailure: Boolean = true
+
+  def errors(path: Path): immutable.Seq[(Path, DeserializationError)] = errors.filter(_._1 == path)
+
+  def isUnsupported(path: Path): Boolean = errors(path).exists(_._2.isInstanceOf[DeserializationError.Unsupported])
 
 }

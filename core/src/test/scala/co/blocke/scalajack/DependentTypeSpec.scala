@@ -36,11 +36,16 @@ class DependentTypeSpec extends FunSpec {
 
   describe("Dependent types") {
     it("should work") {
+      val t = typeOf[PourCoffeeType.type]
+      println(t)
+
       implicit val ops: JsonOps[JValue] = Json4sOps
-      val DeserializationSuccess(TypeTagged(envelope)) = sj.context.deserializerOf[Envelope].deserialize(Path.Root, ops.parse("""{"envelopeType": "PourCoffee", "payload": {"numberOfCups": 56}}"""))
+      val DeserializationSuccess(TypeTagged(envelope)) = sj.context.deserializerOf[Envelope].deserialize(Path.Root, ops.parse("""{"envelopeType": "PourCoffeeType", "payload": {"numberOfCups": 56}}"""))
 
       envelope.timestamp
       println(envelope.envelopeType)
+
+      envelope.payload
 
       println(envelope)
     }

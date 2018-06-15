@@ -54,8 +54,9 @@ package object scalajack {
   // Type Extractors
   object SingleType {
 
-    @deprecated(message = "Used only for documentation purposes", since = "v7")
-    def apply(tpe: Type, sym: Symbol): SingleTypeApi = ???
+    //    @deprecated(message = "Used only for documentation purposes", since = "v7")
+    def apply(tpe: Type, sym: Symbol): Type =
+      scala.reflect.runtime.universe.internal.singleType(tpe, sym).typeSymbol.asType.toType
 
     def unapply(tpe: Type): Option[(Type, Symbol)] =
       tpe match {
