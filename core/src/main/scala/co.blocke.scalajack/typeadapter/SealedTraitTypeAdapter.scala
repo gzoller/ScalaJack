@@ -12,123 +12,126 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
       typeAdapter:   TypeAdapter[Any],
       memberNames:   Set[MemberName])
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
-    tt.tpe.typeSymbol.asClass.knownDirectSubclasses.toList match {
-      case Nil =>
-        next.typeAdapterOf[T]
-
-      case subclassSymbols =>
-        val subclassTypes = subclassSymbols.map(_.asType.toType)
-
-        val subclassAttempts =
-          for (subclassType <- subclassTypes) yield Try {
-            val subclassTypeAdapter = context.typeAdapter(subclassType).asInstanceOf[ClassLikeTypeAdapter[Any]]
-            val memberNames = subclassTypeAdapter.members.map(_.name)
-            Subclass[T](subclassType, runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
-          }
-
-        if (subclassAttempts.exists(_.isFailure)) {
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe.typeSymbol.isClass) {
+      tt.tpe.typeSymbol.asClass.knownDirectSubclasses.toList match {
+        case Nil =>
           next.typeAdapterOf[T]
-        } else {
-          val subclasses = subclassAttempts.map(_.get)
 
-          def allPairsOf[E](superset: Set[E]): Set[(E, E)] =
-            superset.subsets(2)
-              .map(_.toList)
-              .map(list => {
-                val a :: b :: Nil = list
-                (a, b)
-              })
-              .toSet
+        case subclassSymbols =>
+          val subclassTypes = subclassSymbols.map(_.asType.toType)
 
-          val allPairsOfSubclasses: Set[(Subclass[T], Subclass[T])] = allPairsOf(subclasses.toSet)
+          val subclassAttempts =
+            for (subclassType <- subclassTypes) yield Try {
+              val subclassTypeAdapter = context.typeAdapter(subclassType).asInstanceOf[ClassLikeTypeAdapter[Any]]
+              val memberNames = subclassTypeAdapter.members.map(_.name)
+              Subclass[T](subclassType, runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
+            }
 
-          val someSubclassesAreAmbiguous = allPairsOfSubclasses.exists({
-            case (a, b) =>
-              a.memberNames.subsetOf(b.memberNames) || b.memberNames.subsetOf(a.memberNames)
-          })
-
-          if (someSubclassesAreAmbiguous) {
+          if (subclassAttempts.exists(_.isFailure)) {
             next.typeAdapterOf[T]
           } else {
-            new TypeAdapter[T] {
-              /*
-FIXME
-              override object deserializer extends Deserializer[T] {
+            val subclasses = subclassAttempts.map(_.get)
 
-                override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-                  json match {
-                    case JsonObject(x) =>
+            def allPairsOf[E](superset: Set[E]): Set[(E, E)] =
+              superset.subsets(2)
+                .map(_.toList)
+                .map(list => {
+                  val a :: b :: Nil = list
+                  (a, b)
+                })
+                .toSet
+
+            val allPairsOfSubclasses: Set[(Subclass[T], Subclass[T])] = allPairsOf(subclasses.toSet)
+
+            val someSubclassesAreAmbiguous = allPairsOfSubclasses.exists({
+              case (a, b) =>
+                a.memberNames.subsetOf(b.memberNames) || b.memberNames.subsetOf(a.memberNames)
+            })
+
+            if (someSubclassesAreAmbiguous) {
+              next.typeAdapterOf[T]
+            } else {
+              new TypeAdapter[T] {
+                /*
+  FIXME
+                override object deserializer extends Deserializer[T] {
+
+                  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+                    json match {
+                      case JsonObject(x) =>
+                        val memberNames = new scala.collection.mutable.HashSet[MemberName]
+
+                        ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
+                          memberNames += fieldName
+                        })
+
+                        subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
+                          case Nil =>
+                            throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
+
+                          case matchingSubclass :: Nil =>
+                            matchingSubclass.typeAdapter.deserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+
+                          case matchingSubclasses =>
+                            throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
+                        }
+
+                      case _ =>
+                        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+                    }
+
+                }
+  */
+                override def read(reader: Reader): T =
+                  reader.peek match {
+                    case TokenType.BeginObject =>
+                      val originalPosition = reader.position
+
+                      reader.beginObject()
+
                       val memberNames = new scala.collection.mutable.HashSet[MemberName]
 
-                      ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
-                        memberNames += fieldName
-                      })
+                      while (reader.hasMoreMembers) {
+                        val memberName = reader.readString()
+                        memberNames += memberName
+                        reader.skipValue()
+                      }
+
+                      reader.position = originalPosition
 
                       subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
                         case Nil =>
                           throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
 
                         case matchingSubclass :: Nil =>
-                          matchingSubclass.typeAdapter.deserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+                          matchingSubclass.typeAdapter.read(reader).asInstanceOf[T]
 
                         case matchingSubclasses =>
                           throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
                       }
 
-                    case _ =>
-                      DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+                    case TokenType.Null =>
+                      reader.readNull().asInstanceOf[T]
+                  }
+
+                override def write(value: T, writer: Writer): Unit =
+                  if (value == null) {
+                    writer.writeNull()
+                  } else {
+                    for (subclass <- subclasses) {
+                      if (subclass.subclassClass.isInstance(value)) {
+                        subclass.typeAdapter.write(value, writer)
+                      }
+                    }
                   }
 
               }
-*/
-              override def read(reader: Reader): T =
-                reader.peek match {
-                  case TokenType.BeginObject =>
-                    val originalPosition = reader.position
-
-                    reader.beginObject()
-
-                    val memberNames = new scala.collection.mutable.HashSet[MemberName]
-
-                    while (reader.hasMoreMembers) {
-                      val memberName = reader.readString()
-                      memberNames += memberName
-                      reader.skipValue()
-                    }
-
-                    reader.position = originalPosition
-
-                    subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
-                      case Nil =>
-                        throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-
-                      case matchingSubclass :: Nil =>
-                        matchingSubclass.typeAdapter.read(reader).asInstanceOf[T]
-
-                      case matchingSubclasses =>
-                        throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-                    }
-
-                  case TokenType.Null =>
-                    reader.readNull().asInstanceOf[T]
-                }
-
-              override def write(value: T, writer: Writer): Unit =
-                if (value == null) {
-                  writer.writeNull()
-                } else {
-                  for (subclass <- subclasses) {
-                    if (subclass.subclassClass.isInstance(value)) {
-                      subclass.typeAdapter.write(value, writer)
-                    }
-                  }
-                }
-
             }
           }
-        }
+      }
+    } else {
+      next.typeAdapterOf[T]
     }
-  }
 
 }

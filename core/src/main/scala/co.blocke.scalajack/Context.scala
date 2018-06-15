@@ -142,4 +142,6 @@ case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory]
   def serializerOf[T: TypeTag]: Serializer[T] =
     typeAdapterOf[T].serializer
 
+  def addTypeAdapterFactories(typeAdapterFactories: TypeAdapterFactory*): Context = copy(factories = typeAdapterFactories.toList ++ factories)
+
 }

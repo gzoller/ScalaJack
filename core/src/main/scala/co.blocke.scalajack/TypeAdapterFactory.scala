@@ -110,6 +110,23 @@ object TypeAdapterFactory {
 
   object =:= {
 
+    def apply[T: TypeTag](typeAdapter: TypeAdapter[T]): TypeAdapterFactory =
+      new TypeAdapterFactory.=:=[T] {
+        override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = typeAdapter
+      }
+
+    def apply[T: TypeTag](deserializer: Deserializer[T]): TypeAdapterFactory = {
+      val deser = deserializer
+
+      new TypeAdapterFactory.=:=[T] {
+        private val typeAdapter = new TypeAdapter[T] {
+          override val deserializer: Deserializer[T] = deser
+        }
+
+        override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = typeAdapter
+      }
+    }
+
     abstract class withOneTypeParam[X[_]](implicit ttFactory: TypeTag[X[Any]]) extends TypeAdapterFactory {
 
       def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X[E]], ttElement: TypeTag[E]): TypeAdapter[X[E]]

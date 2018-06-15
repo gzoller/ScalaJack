@@ -28,7 +28,9 @@ trait Envelope {
 
   def payload: envelopeType.Payload
 
-  def timestamp: Option[OffsetDateTime]
+  val timestamp: Option[OffsetDateTime]
+
+  //  def ts: timestamp.type
 
   def randomThing: Option[Either[List[Int], Map[String, Try[Long]]]]
 
@@ -46,10 +48,15 @@ class DependentTypeSpec extends FunSpec {
       implicit val ops: JsonOps[JValue] = Json4sOps
       val DeserializationSuccess(TypeTagged(envelope)) = sj.context.deserializerOf[Envelope].deserialize(Path.Root, ops.parse("""{"envelopeType": "PourCoffeeType", "payload": {"numberOfCups": 56}}"""))
 
-      envelope.timestamp
+      val ts = envelope.timestamp
+      println(ts)
       println(envelope.envelopeType)
 
-      envelope.payload
+      val pay = envelope.payload
+      println(pay)
+
+      val rt = envelope.randomThing
+      println(rt)
 
       println(envelope)
     }

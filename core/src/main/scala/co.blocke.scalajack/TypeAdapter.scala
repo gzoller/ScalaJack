@@ -14,6 +14,18 @@ object TypeAdapter {
 
   }
 
+  object =:= {
+
+    class constant[X](tagged: TypeTagged[X])(implicit ttFactory: TypeTag[X]) extends TypeAdapter.=:=[X] {
+      override val deserializer: Deserializer[X] = Deserializer.constant(tagged)
+      override val serializer: Serializer[X] = new Serializer[X] {
+        override def serialize[J](tagged: TypeTagged[X])(implicit ops: JsonOps[J]): SerializationResult[J] =
+          throw new UnsupportedOperationException(s"TypeAdapter.=:=.constant[${ttFactory.tpe}](...).serializer.serialize")
+      }
+    }
+
+  }
+
   def apply[T](deserializer: Deserializer[T], serializer: Serializer[T]): TypeAdapter[T] = Fixed(deserializer, serializer)
 
   private case class Fixed[T](override val deserializer: Deserializer[T], override val serializer: Serializer[T]) extends TypeAdapter[T] {
