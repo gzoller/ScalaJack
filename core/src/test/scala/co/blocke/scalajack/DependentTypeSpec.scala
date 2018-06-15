@@ -6,6 +6,8 @@ import co.blocke.scalajack.json.JsonFlavor
 import org.json4s.JsonAST.JValue
 import org.scalatest.FunSpec
 
+import scala.util.Try
+
 trait EnvelopeType {
 
   type Payload
@@ -27,6 +29,8 @@ trait Envelope {
   def payload: envelopeType.Payload
 
   def timestamp: Option[OffsetDateTime]
+
+  def randomThing: Option[Either[List[Int], Map[String, Try[Long]]]]
 
 }
 

@@ -13,8 +13,10 @@ trait Writer {
   def writeJsonValue[J](json: J)(implicit ops: JsonOps[J]): Unit = {
     json match {
       case JsonArray(x) =>
+        val elements = x.asInstanceOf[ops.ArrayElements]
+
         beginArray()
-        ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, element) =>
+        ops.foreachArrayElement(elements, { (_, element) =>
           writeJsonValue(element)
         })
         endArray()
@@ -38,8 +40,10 @@ trait Writer {
         writeNull()
 
       case JsonObject(x) =>
+        val fields = x.asInstanceOf[ops.ObjectFields]
+
         beginObject()
-        ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (name, value) =>
+        ops.foreachObjectField(fields, { (name, value) =>
           writeString(name)
           writeJsonValue(value)
         })

@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 
-import java.util.concurrent.{ ConcurrentHashMap, TimeUnit }
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
 
 object TraitDeserializer {
 
@@ -22,9 +23,27 @@ object TraitDeserializer {
     deserializer
   }
 
+  private def repeatUntilConverged[T](initial: T)(f: T => T): T = {
+    var current = initial
+
+    var converged = false
+    while (!converged) {
+      val previous = current
+      val next = f(previous)
+
+      if (previous == next) {
+        converged = true
+      }
+
+      current = next
+    }
+
+    current
+  }
+
   def generateDeserializer[T]()(implicit tt: TypeTag[T], context: Context): TraitDeserializer[T] = {
     val classSymbol: ClassSymbol = tt.tpe.typeSymbol.asClass
-    val reflectMembers = classSymbol.typeSignature.members.filter(_.isAbstract).toList
+    val memberSymbols = classSymbol.typeSignature.members.filter(_.isAbstract).toList
 
     class FieldMember(val name: String, val valueType: Type) {
 
@@ -47,9 +66,48 @@ object TraitDeserializer {
 
     }
 
-    val members: List[FieldMember] = reflectMembers map { reflectMember =>
-      new FieldMember(name      = reflectMember.name.decodedName.toString, valueType = reflectMember.asMethod.returnType)
+    var memberSymbolDependencies = Set.empty[(Symbol, Symbol)]
+
+    val members: List[FieldMember] = memberSymbols map { memberSymbol =>
+      val fieldName = memberSymbol.name.decodedName.toString
+      val fieldValueType = memberSymbol.asMethod.returnType
+      var referencedFieldSymbols = Set.empty[Symbol]
+//      fieldValueType.foreach(allTypes += _)
+      fieldValueType foreach {
+        case t @ TypeRef(SingleType(ThisType(`classSymbol`), referencedMemberSymbol), _, _) =>
+          referencedFieldSymbols += referencedMemberSymbol
+          if (memberSymbols.contains(referencedMemberSymbol)) {
+            memberSymbolDependencies += (memberSymbol -> referencedMemberSymbol)
+          }
+        case t =>
+          println(t)
+      }
+      println(referencedFieldSymbols)
+      new FieldMember(name      = fieldName, valueType = fieldValueType)
     }
+
+    println(memberSymbolDependencies)
+
+    val symbolSequences = repeatUntilConverged[Seq[Seq[Symbol]]](Seq.empty) { symbolSequencesSoFar: Seq[Seq[Symbol]] =>
+      val memberSymbolsBefore = symbolSequencesSoFar.flatten.toSet
+
+      var newMemberSymbols: Seq[Symbol] = Seq.empty
+
+      for (memberSymbol <- memberSymbols.filterNot(memberSymbolsBefore.contains)) {
+        val dependentSymbols: Set[Symbol] = memberSymbolDependencies.filter(_._1 == memberSymbol).map(_._2)
+        if (dependentSymbols.isEmpty || dependentSymbols.subsetOf(memberSymbolsBefore)) {
+          newMemberSymbols :+= memberSymbol
+        }
+      }
+
+      if (newMemberSymbols.nonEmpty) {
+        symbolSequencesSoFar :+ newMemberSymbols
+      } else {
+        symbolSequencesSoFar
+      }
+    }
+
+    println(symbolSequences)
 
     val deserializerClass =
       ScalaCompiler.compileClass(
