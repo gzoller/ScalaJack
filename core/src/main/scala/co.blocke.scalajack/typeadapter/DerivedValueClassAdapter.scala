@@ -17,10 +17,26 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
       val accessorMethodSymbol = tpe.member(TermName(parameterName)).asMethod
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-      val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
-      val valueTypeAdapter = context.typeAdapter(valueType)
+      type Source = Any
+      type Derived = T
 
-      DerivedValueClassAdapter(constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
+      type Wrapped = T
+      val wrappedTypeTag: TypeTag[Wrapped] = tt.asInstanceOf[TypeTag[Wrapped]]
+
+      type Unwrapped = Any
+      val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
+      val unwrappedTypeTag: TypeTag[Unwrapped] = TypeTags.of[Unwrapped](valueType)
+
+      val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[Unwrapped]]
+
+      def wrap(unwrapped: Unwrapped): Wrapped = constructorMirror.apply(unwrapped).asInstanceOf[Wrapped]
+
+      def unwrap(wrapped: Wrapped): Unwrapped = accessorMethod.invoke(wrapped)
+
+      DerivedValueClassAdapter[Wrapped, Unwrapped](
+        new DerivedValueClassDeserializer[Wrapped, Unwrapped](valueTypeAdapter.deserializer, wrap)(wrappedTypeTag),
+        new DerivedValueClassSerializer[Wrapped, Unwrapped](unwrap, valueTypeAdapter.serializer)(unwrappedTypeTag),
+        constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
     } else {
       next.typeAdapterOf[T]
     }
@@ -28,6 +44,8 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class DerivedValueClassAdapter[DerivedValueClass, Value](
+                                                             override val deserializer: Deserializer[DerivedValueClass],
+                                                             override val serializer: Serializer[DerivedValueClass],
     constructorMirror:    MethodMirror,
     accessorMethodSymbol: MethodSymbol,
     accessorMethod:       Method,

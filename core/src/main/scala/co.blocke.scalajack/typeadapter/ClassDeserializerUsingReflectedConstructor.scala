@@ -19,7 +19,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
   private val caseClassType: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[CC] = TypeTagged[CC](null.asInstanceOf[CC], caseClassType)
   private val typeMembersByName: Map[String, TypeMember] = typeMembers.map(typeMember => typeMember.name -> typeMember).toMap
-  private val fieldMembersByJsonFieldName: Map[String, FieldMember] = fieldMembers.map(fieldMember => fieldMember.fieldMapName.getOrElse(fieldMember.name) -> fieldMember).toMap
+  private val fieldMembersByName: Map[String, FieldMember] = fieldMembers.map(fieldMember => fieldMember.name -> fieldMember).toMap
 
   private def inferConcreteDeserializer[J](path: Path, json: J)(implicit ops: JsonOps[J]): Option[Deserializer[_ <: CC]] =
     if (typeMembers.isEmpty) {
@@ -88,13 +88,16 @@ class ClassDeserializerUsingReflectedConstructor[CC](
 
             case None =>
               ops.foreachObjectField(fields, { (fieldName, fieldValueJson) =>
-                for (fieldMember <- fieldMembersByJsonFieldName.get(fieldName)) {
+                for (fieldMember <- fieldMembersByName.get(fieldName)) {
                   deserializationResultsByField(fieldMember) = fieldMember.deserializeValue[J](path \ fieldName, fieldValueJson)
                 }
               })
 
+              println(fieldMembers)
+              println(fieldMembersByName)
+
               for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
-                deserializationResultsByField(fieldMember) = fieldMember.deserializeValueFromNothing[J](path \ fieldMember.fieldMapName.getOrElse(fieldMember.name))
+                deserializationResultsByField(fieldMember) = fieldMember.deserializeValueFromNothing[J](path \ fieldMember.name)
               }
 
               if (deserializationResultsByField.exists(_._2.isFailure)) {
@@ -114,7 +117,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                   val captured = mutable.Map.empty[String, Any]
 
                   ops.foreachObjectField(fields, { (name, valueJson) =>
-                    fieldMembersByJsonFieldName.get(name) match {
+                    fieldMembersByName.get(name) match {
                       case Some(_) =>
                       // do nothing... already built class
                       case None =>

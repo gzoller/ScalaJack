@@ -10,7 +10,6 @@ import scala.reflect.runtime.{ currentMirror, universe }
 
 trait ClassFieldMember[Owner] extends ClassLikeTypeAdapter.FieldMember[Owner] {
   def dbKeyIndex: Option[Int]
-  def fieldMapName: Option[String]
   def declaredValueType: Type
 }
 
@@ -164,13 +163,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           }.asInstanceOf[Option[Int]]
 
         // Extract MapName annotation if present
-        val optionalMapName = member.annotations.find(_.tree.tpe =:= typeOf[MapName])
+        val optionalMapName: Option[String] = member.annotations.find(_.tree.tpe =:= typeOf[MapName])
           .map { index =>
             index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
           }.asInstanceOf[Option[String]]
 
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-        FieldMember[T, Any](index, memberName, memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations)
+        FieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations)
       }
 
       // Exctract Collection name annotation if present
@@ -221,14 +220,12 @@ case class CaseClassTypeAdapter[T](
     isSJCapture:               Boolean,
     collectionName:            Option[String]                           = None) extends ClassLikeTypeAdapter[T] {
 
-  val dbKeys = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-  val mappedFieldsByName: Map[String, ClassFieldMember[T]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
-  val mappedFieldsByMappedName: Map[String, ClassFieldMember[T]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
+  val dbKeys: List[ClassFieldMember[T]] = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
-  val typeMembersByName = typeMembers.map(member => member.name -> member).toMap
+  private val typeMembersByName = typeMembers.map(member => member.name -> member).toMap
 
-  val numberOfFieldMembers = fieldMembers.size
-  val fieldMembersByName = fieldMembers.map(member => member.name -> member.asInstanceOf[ClassFieldMember[T]]).toMap
+  private val numberOfFieldMembers = fieldMembers.size
+  private val fieldMembersByName = fieldMembers.map(member => member.name -> member).toMap
 
   override def read(reader: Reader): T =
     reader.peek match {
@@ -297,14 +294,7 @@ case class CaseClassTypeAdapter[T](
               foundCount += 1
 
             case None =>
-              mappedFieldsByMappedName.get(memberName) match {
-                case Some(member) =>
-                  arguments(member.index) = member.readValue(reader)
-                  found(member.index) = true
-                  foundCount += 1
-                case None =>
-                  reader.skipValue()
-              }
+              reader.skipValue()
           }
         }
 
@@ -394,9 +384,7 @@ case class CaseClassTypeAdapter[T](
       } else {
         for (member <- fieldMembers) {
           val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
-          val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
-
-          memberNameTypeAdapter.write(memberName, writer)
+          memberNameTypeAdapter.write(member.name, writer)
           member.writeValue(memberValue, writer)
         }
       }

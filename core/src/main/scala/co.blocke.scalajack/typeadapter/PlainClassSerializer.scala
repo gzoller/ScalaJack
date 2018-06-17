@@ -15,7 +15,7 @@ class PlainClassSerializer[C](members: List[PlainFieldMember[C]]) extends Serial
       case TypeTagged(_) =>
         SerializationSuccess(JsonObject { appendField =>
           for (member <- members) {
-            val memberName = member.fieldMapName.getOrElse(member.name)
+            val memberName = member.name
             val memberValue = member.valueIn(tagged)
 
             val SerializationSuccess(memberValueJson) = member.serializeValue(memberValue)
