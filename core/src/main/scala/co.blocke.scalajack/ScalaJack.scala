@@ -4,7 +4,7 @@ import co.blocke.TypeTagHacks
 import co.blocke.scalajack.BijectiveFunctions._
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
-import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicDeserializer, PolymorphicSerializer, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
+import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackDeserializer, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicDeserializer, PolymorphicSerializer, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
 
 import scala.language.existentials
 
@@ -131,7 +131,12 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
         new TypeAdapterFactory {
           override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] =
             if (typeTag.tpe =:= attemptedType) {
-              FallbackTypeAdapter[T](attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]], fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]])
+              val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
+              val secondary = fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]]
+              FallbackTypeAdapter[T](
+                new FallbackDeserializer[T](primary.deserializer, secondary.deserializer),
+                primary.serializer,
+                primary, secondary)
             } else {
               next.typeAdapterOf[T]
             }

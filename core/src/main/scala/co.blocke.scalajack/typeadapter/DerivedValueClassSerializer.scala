@@ -1,18 +1,17 @@
 package co.blocke.scalajack
 package typeadapter
 
-class DerivedValueClassSerializer[Wrapped, Unwrapped](
-                                                       unwrap: Wrapped => Unwrapped,
-                                                       unwrappedSerializer: Serializer[Unwrapped]
-                                                           )(implicit unwrappedTypeTag: TypeTag[Unwrapped]) extends Serializer[Wrapped] {
+class DerivedValueClassSerializer[Derived, Source](
+    unwrap:           Derived => Source,
+    sourceSerializer: Serializer[Source])(implicit sourceTypeTag: TypeTag[Source]) extends Serializer[Derived] {
 
-  private val unwrappedType: Type = unwrappedTypeTag.tpe
+  private val sourceType: Type = sourceTypeTag.tpe
 
-  override def serialize[J](tagged: TypeTagged[Wrapped])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[Derived])(implicit ops: JsonOps[J]): SerializationResult[J] =
     tagged match {
-      case TypeTagged(wrapped) =>
-        val unwrapped = unwrap(wrapped)
-        unwrappedSerializer.serialize(TypeTagged(unwrapped, unwrappedType))
+      case TypeTagged(derived) =>
+        val source = unwrap(derived)
+        sourceSerializer.serialize(TypeTagged(source, sourceType))
     }
 
 }

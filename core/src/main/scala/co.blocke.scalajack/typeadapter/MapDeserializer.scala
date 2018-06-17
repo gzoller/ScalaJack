@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.{ GenMap, mutable }
+import scala.collection.{ GenMap, immutable, mutable }
+import scala.util.control.NonFatal
 
 class MapDeserializer[K, V, M <: GenMap[K, V]](
     keyDeserializer:           Deserializer[K],
@@ -17,32 +18,51 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
         DeserializationSuccess(nullTypeTagged)
 
       case JsonObject(x) =>
-        DeserializationResult(path) {
+        try {
           val objectFields = x.asInstanceOf[ops.ObjectFields]
 
           val builder = newBuilder()
           val taggedKeysBuilder = List.newBuilder[TypeTagged[K]]
           val taggedValuesBuilder = List.newBuilder[TypeTagged[V]]
 
+          val errorsBuilder = immutable.Seq.newBuilder[(Path, DeserializationError)]
+
           ops.foreachObjectField(objectFields, { (fieldName, fieldValueJson) =>
-            val DeserializationSuccess(taggedKey) = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))
-            val TypeTagged(key) = taggedKey
-            taggedKeysBuilder += taggedKey
+            val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))
+            val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
 
-            val DeserializationSuccess(taggedValue) = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
-            val TypeTagged(value) = taggedValue
-            taggedValuesBuilder += taggedValue
+            (keyDeserializationResult, valueDeserializationResult) match {
+              case (DeserializationSuccess(taggedKey), DeserializationSuccess(taggedValue)) =>
+                val TypeTagged(key) = taggedKey
+                taggedKeysBuilder += taggedKey
 
-            builder += key -> value
+                val TypeTagged(value) = taggedValue
+                taggedValuesBuilder += taggedValue
+
+                builder += key -> value
+
+              case _ =>
+                errorsBuilder ++= keyDeserializationResult.errors
+                errorsBuilder ++= valueDeserializationResult.errors
+            }
           })
 
-          val map = builder.result()
+          val errors = errorsBuilder.result()
 
-          class TaggedMapFromJsonObject(override val get: M, taggedKeys: List[TypeTagged[K]], taggedValues: List[TypeTagged[V]]) extends TypeTagged[M] {
-            override lazy val tpe: Type = ???
+          if (errors.nonEmpty) {
+            DeserializationFailure(errors)
+          } else {
+            val map = builder.result()
+
+            class TaggedMapFromJsonObject(override val get: M, taggedKeys: List[TypeTagged[K]], taggedValues: List[TypeTagged[V]]) extends TypeTagged[M] {
+              override lazy val tpe: Type = ???
+            }
+
+            DeserializationSuccess(new TaggedMapFromJsonObject(map, taggedKeysBuilder.result(), taggedValuesBuilder.result()))
           }
-
-          new TaggedMapFromJsonObject(map, taggedKeysBuilder.result(), taggedValuesBuilder.result())
+        } catch {
+          case NonFatal(e) =>
+            DeserializationFailure(path, DeserializationError.ExceptionThrown(e))
         }
 
       case JsonArray(_) =>

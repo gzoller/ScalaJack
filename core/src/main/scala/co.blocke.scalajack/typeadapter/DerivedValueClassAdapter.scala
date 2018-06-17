@@ -44,12 +44,12 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class DerivedValueClassAdapter[DerivedValueClass, Value](
-                                                             override val deserializer: Deserializer[DerivedValueClass],
-                                                             override val serializer: Serializer[DerivedValueClass],
-    constructorMirror:    MethodMirror,
-    accessorMethodSymbol: MethodSymbol,
-    accessorMethod:       Method,
-    valueTypeAdapter:     TypeAdapter[Value]) extends TypeAdapter[DerivedValueClass] {
+    override val deserializer: Deserializer[DerivedValueClass],
+    override val serializer:   Serializer[DerivedValueClass],
+    constructorMirror:         MethodMirror,
+    accessorMethodSymbol:      MethodSymbol,
+    accessorMethod:            Method,
+    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[DerivedValueClass] {
 
   override def read(reader: Reader): DerivedValueClass = {
     val value = valueTypeAdapter.read(reader)
