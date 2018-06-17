@@ -39,8 +39,9 @@ class PolymorphicDeserializer[T](
             concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
           case None =>
-            val deserializer = TraitDeserializer[T]()
-            deserializer.deserialize(path, json)
+            throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ )
+//            val deserializer = TraitDeserializer[T]()
+//            deserializer.deserialize(path, json)
         }
 
       //        val concreteType = maybeConcreteType.getOrElse(throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ ))
