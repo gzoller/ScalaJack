@@ -1,5 +1,7 @@
 package co.blocke.scalajack
 
+import scala.reflect.ClassTag
+
 object TypeAdapter {
 
   abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
@@ -36,9 +38,25 @@ trait TypeAdapter[T] {
 
   self =>
 
+  def is[U <: TypeAdapter[_]: ClassTag]: Boolean =
+    maybeAs[U].isDefined
+
+  def as[U <: TypeAdapter[_]: ClassTag]: U =
+    maybeAs[U].getOrElse(throw new RuntimeException(s"$self is not an instance of ${implicitly[ClassTag[U]].runtimeClass}"))
+
+  def maybeAs[U <: TypeAdapter[_]: ClassTag]: Option[U] = {
+    val runtimeClass = implicitly[ClassTag[U]].runtimeClass
+    try {
+      Some(runtimeClass.cast(self).asInstanceOf[U])
+    } catch {
+      case e: ClassCastException =>
+        None
+    }
+  }
+
   def read(reader: Reader): T = {
     val json = reader.readJsonValue()(Json4sOps)
-    val DeserializationSuccess(TypeTagged(value)) = deserializer.deserialize(Path.Unknown, json)(Json4sOps)
+    val TypeTagged(value) = deserializer.deserialize(Path.Unknown, json)(Json4sOps).get
     value
   }
 

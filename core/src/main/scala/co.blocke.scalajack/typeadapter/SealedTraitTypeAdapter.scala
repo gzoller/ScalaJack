@@ -6,11 +6,15 @@ import scala.util.Try
 
 object SealedTraitTypeAdapter extends TypeAdapterFactory {
 
-  case class Subclass[T](
-      subclassType:  Type,
-      subclassClass: Class[_ <: T],
-      typeAdapter:   TypeAdapter[Any],
-      memberNames:   Set[MemberName])
+  trait Subclass[T] {
+    type U <: T
+    val subclassType: Type
+    val subclassClass: Class[U]
+    val typeAdapter: TypeAdapter[U]
+    val deserializer: Deserializer[U]
+    val serializer: Serializer[U]
+    val memberNames: Set[MemberName]
+  }
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe.typeSymbol.isClass) {
@@ -22,10 +26,22 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
           val subclassTypes = subclassSymbols.map(_.asType.toType)
 
           val subclassAttempts =
-            for (subclassType <- subclassTypes) yield Try {
-              val subclassTypeAdapter = context.typeAdapter(subclassType).asInstanceOf[ClassLikeTypeAdapter[Any]]
-              val memberNames = subclassTypeAdapter.members.map(_.name)
-              Subclass[T](subclassType, runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
+            for (subclassType2 <- subclassTypes) yield Try {
+              type U = T
+
+              val subclassTypeAdapter = context.typeAdapter(subclassType2).asInstanceOf[TypeAdapter[U]]
+              //.asInstanceOf[ClassLikeTypeAdapter[Any]]
+              val memberNames2 = subclassTypeAdapter.as[ClassLikeTypeAdapter[Any]].members.map(_.name)
+              //              Subclass[T](subclassType, runtimeClass(subclassType).asInstanceOf[Class[_ <: T]], subclassTypeAdapter, memberNames.toSet)
+              new Subclass[T] {
+                override type U = T
+                override val subclassType: Type = subclassType2
+                override val subclassClass: Class[U] = runtimeClass(subclassType).asInstanceOf[Class[U]]
+                override val typeAdapter: TypeAdapter[U] = subclassTypeAdapter
+                override val deserializer: Deserializer[U] = subclassTypeAdapter.deserializer
+                override val serializer: Serializer[U] = subclassTypeAdapter.serializer
+                override val memberNames: Set[MemberName] = memberNames2.toSet
+              }
             }
 
           if (subclassAttempts.exists(_.isFailure)) {
@@ -127,6 +143,15 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                   }
 
               }
+
+              val deserializer = new SealedTraitDeserializer[T](subclasses.map({ subclass =>
+                new SealedTraitDeserializer.Implementation[T] {
+                  override val fieldNames: Set[String] = subclass.memberNames
+                  override val deserializer: Deserializer[T] = subclass.deserializer
+                }
+              }).toSet)
+
+              TypeAdapter(deserializer, null)
             }
           }
       }
