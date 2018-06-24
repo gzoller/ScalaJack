@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.reflect.runtime.universe.lub
+import scala.collection.immutable
 
 class ClassSerializer[C](
     context:           Context,
@@ -20,7 +21,9 @@ class ClassSerializer[C](
         SerializationSuccess(JsonNull())
 
       case TypeTagged(value) =>
-        SerializationSuccess(JsonObject { appendField =>
+        val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
+
+        val json = JsonObject[J] { appendField =>
           if (typeMembers.nonEmpty) {
             import scala.collection.mutable
 
@@ -56,16 +59,26 @@ class ClassSerializer[C](
 
             for (typeMember <- typeMembers) {
               val ttt = typeMember.typeSignature.substituteTypes(substitutions.map(_._1), substitutions.map(_._2))
-              val SerializationSuccess(typeJson) = typeSerializer.serialize(TypeTagged(ttt, TypeType))
-              appendField(typeMember.name, typeJson)
+              val typeSerializationResult = typeSerializer.serialize(TypeTagged(ttt, TypeType))
+              typeSerializationResult match {
+                case SerializationSuccess(typeJson) =>
+                  appendField(typeMember.name, typeJson)
+                case SerializationFailure(typeErrors) =>
+                  errorsBuilder ++= typeErrors
+              }
             }
 
             val newType = appliedType(tpe.typeConstructor, typeArgs)
             val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[C]]
 
             for (member <- newTypeAdapter.fieldMembers) {
-              val SerializationSuccess(memberValueJson) = member.serializeValue(member.valueIn(tagged))
-              appendField(member.name, memberValueJson)
+              val valueSerializationResult = member.serializeValue(member.valueIn(tagged))
+              valueSerializationResult match {
+                case SerializationSuccess(valueJson) =>
+                  appendField(member.name, valueJson)
+                case SerializationFailure(valueErrors) =>
+                  errorsBuilder ++= valueErrors
+              }
             }
           } else {
             for (member <- fieldMembers) {
@@ -73,8 +86,13 @@ class ClassSerializer[C](
               // FIXME              val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
               val memberName = member.name
 
-              val SerializationSuccess(memberValueJson) = member.serializeValue(taggedMemberValue)
-              appendField(memberName, memberValueJson)
+              val valueSerializationResult = member.serializeValue(taggedMemberValue)
+              valueSerializationResult match {
+                case SerializationSuccess(memberValueJson) =>
+                  appendField(memberName, memberValueJson)
+                case SerializationFailure(valueErrors) =>
+                  errorsBuilder ++= valueErrors
+              }
             }
           }
 
@@ -87,7 +105,15 @@ class ClassSerializer[C](
               }
             case _ =>
           }
-        })
+        }
+
+        val errors = errorsBuilder.result()
+
+        if (errors.nonEmpty) {
+          SerializationFailure(errors)
+        } else {
+          SerializationSuccess(json)
+        }
     }
 
 }

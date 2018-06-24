@@ -3,6 +3,8 @@ package typeadapter
 
 import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
+import scala.collection.immutable
+
 class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple] {
 
   override def serialize[J](taggedTuple: TypeTagged[Tuple])(implicit ops: JsonOps[J]): SerializationResult[J] =
@@ -11,13 +13,30 @@ class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple
         SerializationSuccess(JsonNull())
 
       case TypeTagged(_) =>
-        SerializationSuccess(JsonArray { appendElement =>
+        val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
+
+        val json = JsonArray[J] { appendElement =>
           for (field <- fields) {
             val taggedFieldValue = field.valueIn(taggedTuple)
-            val SerializationSuccess(fieldValueJson) = field.valueSerializer.serialize[J](taggedFieldValue)
-            appendElement(fieldValueJson)
+            val fieldSerializationResult = field.valueSerializer.serialize[J](taggedFieldValue)
+            fieldSerializationResult match {
+              case SerializationSuccess(fieldValueJson) =>
+                appendElement(fieldValueJson)
+
+              case SerializationFailure(fieldErrors) =>
+                errorsBuilder ++= fieldErrors
+
+            }
           }
-        })
+        }
+
+        val errors = errorsBuilder.result()
+
+        if (errors.nonEmpty) {
+          SerializationFailure(errors)
+        } else {
+          SerializationSuccess(json)
+        }
     }
 
 }

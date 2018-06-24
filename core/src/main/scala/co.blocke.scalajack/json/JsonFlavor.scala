@@ -42,33 +42,40 @@ case class JsonFlavor(
     //      case NonFatal(e) =>
     //        e.printStackTrace()
     //    }
-    try {
-      val deserializer = context.typeAdapterOf[T].deserializer
-      val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
-      deserializationResult match {
-        case DeserializationSuccess(TypeTagged(result)) =>
-          result
 
-        case DeserializationFailure(errors) =>
-          for (error <- errors) {
-            println(error)
-            error match {
-              case (path, DeserializationError.ExceptionThrown(e)) =>
-                println(path)
-                e.printStackTrace()
+    val tryUsingDeserializer = false
 
-              case _ =>
+    if (tryUsingDeserializer) {
+      try {
+        val deserializer = context.typeAdapterOf[T].deserializer
+        val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
+        deserializationResult match {
+          case DeserializationSuccess(TypeTagged(result)) =>
+            result
+
+          case DeserializationFailure(errors) =>
+            for (error <- errors) {
+              println(error)
+              error match {
+                case (path, DeserializationError.ExceptionThrown(e)) =>
+                  println(path)
+                  e.printStackTrace()
+
+                case _ =>
+              }
             }
-          }
 
-          ???
+            ???
+        }
+        //      val DeserializationSuccess(TypeTagged(result)) = deserializationResult
+        //      result
+        //      null
+      } catch {
+        case _: NotImplementedError =>
+          context.typeAdapterOf[T].read(reader)
       }
-      //      val DeserializationSuccess(TypeTagged(result)) = deserializationResult
-      //      result
-      //      null
-    } catch {
-      case _: NotImplementedError =>
-        context.typeAdapterOf[T].read(reader)
+    } else {
+      context.typeAdapterOf[T].read(reader)
     }
   }
 

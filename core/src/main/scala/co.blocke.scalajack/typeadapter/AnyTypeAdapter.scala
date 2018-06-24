@@ -18,7 +18,6 @@ object AnyTypeAdapter extends TypeAdapterFactory {
       AnyTypeAdapter(
         new AnyDeserializer(
           typeTypeAdapter.deserializer,
-          memberNameTypeAdapter.deserializer,
           mapTypeAdapter.deserializer,
           listTypeAdapter.deserializer,
           stringTypeAdapter.deserializer,

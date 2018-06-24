@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JDouble, JInt, JLong, JNull, JObject, JString, JValue }
+import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JDouble, JInt, JLong, JNothing, JNull, JObject, JString, JValue }
 
 object Json4sOps extends JsonOps[JValue] {
 
@@ -9,19 +9,19 @@ object Json4sOps extends JsonOps[JValue] {
   override type ObjectFields = List[(String, JValue)]
 
   override def foreachArrayElement(elements: List[JValue], f: (Int, JValue) => Unit): Unit = {
-    for ((element, index) <- elements.zipWithIndex) {
+    for ((element, index) <- elements.zipWithIndex if element != JNothing) {
       f(index, element)
     }
   }
 
   override def foreachObjectField(fields: List[(String, JValue)], f: (String, JValue) => Unit): Unit = {
-    for ((name, value) <- fields) {
+    for ((name, value) <- fields if value != JNothing) {
       f(name, value)
     }
   }
 
   override def getObjectField(fields: List[(String, JValue)], name: String): Option[JValue] =
-    fields.find(_._1 == name).map(_._2)
+    fields.find(_._1 == name).map(_._2).filter(_ != JNothing)
 
   override def applyArray(appendAllElements: (JValue => Unit) => Unit): JValue = {
     val elementsBuilder = List.newBuilder[JValue]

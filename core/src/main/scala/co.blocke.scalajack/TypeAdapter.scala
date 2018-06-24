@@ -61,8 +61,19 @@ trait TypeAdapter[T] {
   }
 
   def write(value: T, writer: Writer): Unit = {
-    val SerializationSuccess(json) = serializer.serialize(TypeTagged.inferFromRuntimeClass[T](value))(Json4sOps)
-    writer.writeJsonValue(json)(Json4sOps)
+    val tagged = TypeTagged.inferFromRuntimeClass[T](value)
+    serializer.serialize(tagged)(Json4sOps) match {
+      case SerializationSuccess(json) =>
+        writer.writeJsonValue(json)(Json4sOps)
+
+      case failure @ SerializationFailure(errors) if failure.isNothing =>
+        writer.writeNothing()
+
+      case failure =>
+        ???
+    }
+    //    val SerializationSuccess(json) = serializer.serialize(tagged)(Json4sOps)
+    //    writer.writeJsonValue(json)(Json4sOps)
   }
 
   val deserializer: Deserializer[T] = new Deserializer[T] {

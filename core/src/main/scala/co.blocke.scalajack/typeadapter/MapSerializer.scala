@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.collection.GenMap
+import scala.collection.immutable
 
 class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V]) extends Serializer[M] {
 
@@ -9,41 +10,58 @@ class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], value
     tagged match {
       case TypeTagged(null) => SerializationSuccess(JsonNull())
       case TypeTagged(map) =>
-        SerializationSuccess(JsonObject { appendField =>
-          lazy val mapType: Type = tagged.tpe.baseType(symbolOf[GenMap[_, _]])
+        lazy val mapType: Type = tagged.tpe.baseType(symbolOf[GenMap[_, _]])
 
-          lazy val keyType: Type = {
-            val k :: _ :: Nil = mapType.typeArgs
-            k
-          }
+        lazy val keyType: Type = {
+          val k :: _ :: Nil = mapType.typeArgs
+          k
+        }
 
-          lazy val valueType: Type = {
-            val _ :: v :: Nil = mapType.typeArgs
-            v
-          }
+        lazy val valueType: Type = {
+          val _ :: v :: Nil = mapType.typeArgs
+          v
+        }
 
-          class TaggedKey(override val get: K) extends TypeTagged[K] {
-            override def tpe: Type = keyType
-          }
+        class TaggedKey(override val get: K) extends TypeTagged[K] {
+          override def tpe: Type = keyType
+        }
 
-          class TaggedValue(override val get: V) extends TypeTagged[V] {
-            override def tpe: Type = valueType
-          }
+        class TaggedValue(override val get: V) extends TypeTagged[V] {
+          override def tpe: Type = valueType
+        }
 
+        val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
+
+        val json = JsonObject[J] { appendField =>
           map foreach {
             case (key, value) =>
-              val SerializationSuccess(keyJson) = keySerializer.serialize(new TaggedKey(key))
-              val SerializationSuccess(valueJson) = valueSerializer.serialize(new TaggedValue(value))
+              val keySerializationResult = keySerializer.serialize(new TaggedKey(key))
+              val valueSerializationResult = valueSerializer.serialize(new TaggedValue(value))
 
-              val keyString =
-                keyJson match {
-                  case JsonString(s) => s
-                  case _             => ops.renderCompact(keyJson)
-                }
+              (keySerializationResult, valueSerializationResult) match {
+                case (SerializationSuccess(keyJson), SerializationSuccess(valueJson)) =>
+                  val keyString =
+                    keyJson match {
+                      case JsonString(s) => s
+                      case _             => ops.renderCompact(keyJson)
+                    }
 
-              appendField(keyString, valueJson)
+                  appendField(keyString, valueJson)
+
+                case _ =>
+                  errorsBuilder ++= keySerializationResult.errors
+                  errorsBuilder ++= valueSerializationResult.errors
+              }
           }
-        })
+        }
+
+        val errors = errorsBuilder.result()
+
+        if (errors.nonEmpty) {
+          SerializationFailure(errors)
+        } else {
+          SerializationSuccess(json)
+        }
 
     }
 

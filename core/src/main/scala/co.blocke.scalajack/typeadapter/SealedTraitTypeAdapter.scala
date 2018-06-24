@@ -151,7 +151,21 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                 }
               }).toSet)
 
-              TypeAdapter(deserializer, null)
+              val serializer = new SealedTraitSerializer[T](subclasses.map({ subclass =>
+                new SealedTraitSerializer.Implementation[T] {
+                  private val runtimeClass: RuntimeClass = subclass.subclassClass
+                  private val serializer: Serializer[T] = subclass.typeAdapter.serializer
+                  override def isInstance(tagged: TypeTagged[T]): Boolean =
+                    tagged match {
+                      case TypeTagged(null) => false
+                      case TypeTagged(x) => runtimeClass.isInstance(x)
+                    }
+                  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                    serializer.serialize(tagged)
+                }
+              }).toSet)
+
+              TypeAdapter(deserializer, serializer)
             }
           }
       }

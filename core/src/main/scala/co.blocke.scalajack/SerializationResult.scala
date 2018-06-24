@@ -8,12 +8,16 @@ sealed trait SerializationResult[+J] {
 
   def map[JJ](f: J => JJ): SerializationResult[JJ]
 
+  def errors: immutable.Seq[SerializationError]
+
 }
 
 case class SerializationSuccess[+J](get: J) extends SerializationResult[J] {
 
   override def map[JJ](f: J => JJ): SerializationResult[JJ] =
     SerializationSuccess(f(get))
+
+  override def errors: immutable.Seq[SerializationError] = immutable.Seq.empty
 
 }
 
@@ -30,6 +34,12 @@ case class SerializationFailure[+J](errors: immutable.Seq[SerializationError]) e
 
   override def map[JJ](f: J => JJ): SerializationResult[JJ] = this.asInstanceOf[SerializationResult[JJ]]
 
+  def isNothing: Boolean =
+    errors.contains(SerializationError.Nothing)
+
+  override def toString: String =
+    productPrefix + errors.mkString("(", ", ", ")")
+
 }
 
 sealed trait SerializationError
@@ -37,5 +47,7 @@ sealed trait SerializationError
 object SerializationError {
 
   case object Nothing extends SerializationError
+
+  case class ExceptionThrown(exception: Throwable) extends SerializationError
 
 }

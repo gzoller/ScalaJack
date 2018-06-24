@@ -2,14 +2,13 @@ package co.blocke.scalajack
 package typeadapter
 
 class AnyDeserializer(
-    typeDeserializer:       Deserializer[Type],
-    memberNameDeserializer: Deserializer[MemberName],
-    mapDeserializer:        Deserializer[Map[Any, Any]],
-    listDeserializer:       Deserializer[List[Any]],
-    stringDeserializer:     Deserializer[String],
-    numberDeserializer:     Deserializer[java.lang.Number],
-    booleanDeserializer:    Deserializer[Boolean],
-    context:                Context) extends Deserializer[Any] {
+    typeDeserializer:    Deserializer[Type],
+    mapDeserializer:     Deserializer[Map[Any, Any]],
+    listDeserializer:    Deserializer[List[Any]],
+    stringDeserializer:  Deserializer[String],
+    numberDeserializer:  Deserializer[java.lang.Number],
+    booleanDeserializer: Deserializer[Boolean],
+    context:             Context) extends Deserializer[Any] {
 
   private val nullTypeTagged = TypeTagged(null, typeOf[Any])
 
