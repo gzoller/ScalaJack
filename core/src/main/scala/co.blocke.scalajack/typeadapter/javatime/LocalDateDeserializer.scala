@@ -7,6 +7,8 @@ import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
 class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[LocalDate] {
 
+  self =>
+
   private val LocalDateType: Type = typeOf[LocalDate]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[LocalDate] =
@@ -21,7 +23,7 @@ class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[L
         DeserializationSuccess(TypeTagged(null, LocalDateType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }

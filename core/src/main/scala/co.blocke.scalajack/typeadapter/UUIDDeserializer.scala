@@ -5,6 +5,8 @@ import java.util.UUID
 
 class UUIDDeserializer extends Deserializer[UUID] {
 
+  self =>
+
   private val UUIDType: Type = typeOf[UUID]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[UUID] =
@@ -14,7 +16,7 @@ class UUIDDeserializer extends Deserializer[UUID] {
         case e: IllegalArgumentException =>
           DeserializationError.Malformed(e)
       })
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }

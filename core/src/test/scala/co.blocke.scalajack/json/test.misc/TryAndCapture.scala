@@ -6,6 +6,7 @@ import java.util.UUID
 import scala.reflect.runtime.universe.typeOf
 
 import scala.util._
+import co.blocke.scalaJack.json.JsonMatchers._
 
 case class Embed(stuff: List[String], num: Int)
 case class Boom(
@@ -44,12 +45,13 @@ class TryAndCapture() extends FunSpec with Matchers {
         val h = sj.read[Cap](js)
         h should equal(Cap("Greg"))
         val js2 = sj.render(h)
+        parseJValue(js2) should matchJson(parseJValue(js))
         // Goofy here becuase ordering in JSON can be different--remember: JSON has no native ordering!
-        js2.contains(""""foo":[1,2,"t"  ]""") should be(true)
-        js2.contains(""""zing":{"dot":{"age":25,"food":"Pizza"}}""") should be(true)
-        js2.contains(""""maybe":false""") should be(true)
-        js2.contains(""""foo":[1,2,"t"  ]""") should be(true)
-        js2.contains(""""blather":"wow"""") should be(true)
+        //        js2.contains(""""foo":[1,2,"t"  ]""") should be(true)
+        //        js2.contains(""""zing":{"dot":{"age":25,"food":"Pizza"}}""") should be(true)
+        //        js2.contains(""""maybe":false""") should be(true)
+        //        js2.contains(""""foo":[1,2,"t"  ]""") should be(true)
+        //        js2.contains(""""blather":"wow"""") should be(true)
       }
     }
   }

@@ -11,6 +11,7 @@ import scala.util.{ Failure, Success, Try }
  */
 class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends Deserializer[T] {
 
+  private val isNullSupported: Boolean = typeOf[Null] <:< tt.tpe
   private val taggedNull = TypeTagged(null.asInstanceOf[T], tt.tpe)
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
@@ -36,7 +37,7 @@ class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: Typ
                   case deserializationSuccess @ DeserializationSuccess(_) =>
                     deserializationSuccess
 
-                  case fallbackDeserializationError @ DeserializationFailure(_) if fallbackDeserializationError.isUnsupported(path) =>
+                  case fallbackDeserializationError @ DeserializationFailure(_) if isNullSupported && fallbackDeserializationError.isUnsupported(path) =>
                     DeserializationSuccess(taggedNull)
 
                   case DeserializationFailure(fallbackErrors) =>

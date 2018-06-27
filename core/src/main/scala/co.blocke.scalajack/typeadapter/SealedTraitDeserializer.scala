@@ -19,6 +19,8 @@ object SealedTraitDeserializer {
 
 class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T]])(implicit tt: TypeTag[T]) extends Deserializer[T] {
 
+  self =>
+
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
     json match {
       case JsonObject(x) =>
@@ -45,7 +47,7 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
     }
 
 }

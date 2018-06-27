@@ -7,6 +7,8 @@ import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
 class OffsetDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[OffsetDateTime] {
 
+  self =>
+
   private val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetDateTime] =
@@ -21,7 +23,7 @@ class OffsetDateTimeDeserializer(formatter: DateTimeFormatter) extends Deseriali
         DeserializationSuccess(TypeTagged(null, OffsetDateTimeType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }

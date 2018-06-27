@@ -7,6 +7,8 @@ import scala.collection.immutable
 
 class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructorMirror: MethodMirror)(implicit tt: TypeTag[Tuple]) extends Deserializer[Tuple] {
 
+  self =>
+
   private val tupleTypeConstructor: Type = tt.tpe.typeConstructor
 
   private class TaggedTuple(override val get: Tuple, taggedElements: Array[TypeTagged[Any]]) extends TypeTagged[Tuple] {
@@ -34,7 +36,7 @@ class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructo
           })
         }
 
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json"))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
     }
 
 }

@@ -9,6 +9,8 @@ class CSVCaseClassDeserializer[CC](
     members:           IndexedSeq[Member[_]],
     constructorMirror: MethodMirror)(implicit tt: TypeTag[CC]) extends Deserializer[CC] {
 
+  self =>
+
   private val caseClassType: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[CC] = TypeTagged[CC](null.asInstanceOf[CC], caseClassType)
 
@@ -34,7 +36,7 @@ class CSVCaseClassDeserializer[CC](
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json"))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
     }
 
 }

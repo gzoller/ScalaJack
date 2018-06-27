@@ -7,6 +7,8 @@ class PolymorphicDeserializer[T](
     typeFieldName:    MemberName,
     typeDeserializer: Deserializer[Type])(implicit tt: TypeTag[T], context: Context) extends Deserializer[T] {
 
+  self =>
+
   private val polymorphicType: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[T] = TypeTagged[T](null.asInstanceOf[T], polymorphicType)
 
@@ -51,7 +53,7 @@ class PolymorphicDeserializer[T](
       //        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
     }
 
 }

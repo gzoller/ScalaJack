@@ -3,6 +3,8 @@ package typeadapter
 
 import java.lang.reflect.Method
 
+import org.json4s.JsonAST.JValue
+
 import scala.util.Try
 import scala.language.{ existentials, reflectiveCalls }
 import scala.reflect.api.{ Mirror, Universe }
@@ -309,17 +311,19 @@ case class CaseClassTypeAdapter[T](
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
         if (isSJCapture) {
           reader.position = savedPos
-          reader.beginObject()
-          val captured = scala.collection.mutable.Map.empty[String, Any]
-          while (reader.hasMoreMembers) {
-            val memberName = memberNameTypeAdapter.read(reader)
-            fieldMembersByName.get(memberName) match {
-              case Some(member) => reader.skipValue() // do nothing... already built class
-              case None =>
-                captured.put(memberName, reader.captureValue())
-            }
-          }
-          asBuilt.asInstanceOf[SJCapture].captured = captured
+          //          reader.beginObject()
+          implicit val jOps: JsonOps[JValue] = Json4sOps
+          val jValue = reader.readJsonValue[JValue]()
+          //          val captured = scala.collection.mutable.Map.empty[String, Any]
+          //          while (reader.hasMoreMembers) {
+          //            val memberName = memberNameTypeAdapter.read(reader)
+          //            fieldMembersByName.get(memberName) match {
+          //              case Some(member) => reader.skipValue() // do nothing... already built class
+          //              case None =>
+          //                captured.put(memberName, reader.captureValue())
+          //            }
+          //          }
+          asBuilt.asInstanceOf[SJCapture].captured = JsonAndOps(jValue)
         }
         asBuilt
 
@@ -391,11 +395,24 @@ case class CaseClassTypeAdapter[T](
 
       value match {
         case sjc: SJCapture =>
-          sjc.captured.foreach {
-            case (memberName, valueString) =>
-              memberNameTypeAdapter.write(memberName, writer)
-              writer.writeRawValue(valueString.asInstanceOf[String])
+          val captured = sjc.captured
+          import captured.{ jsonValue, jsonOps }
+
+          jsonValue match {
+            case JsonObject(x) =>
+              val members = x.asInstanceOf[jsonOps.ObjectFields]
+              jsonOps.foreachObjectField(members, { (memberName, memberValue) =>
+                memberNameTypeAdapter.write(memberName, writer)
+                writer.writeJsonValue[captured.JsonValue](memberValue)
+                //                writer.writeRawValue(valueString.asInstanceOf[String])
+              })
           }
+
+        // FIXME         sjc.captured.foreach {
+        //            case (memberName, valueString) =>
+        //              memberNameTypeAdapter.write(memberName, writer)
+        //              writer.writeRawValue(valueString.asInstanceOf[String])
+        //          }
         case _ =>
       }
 

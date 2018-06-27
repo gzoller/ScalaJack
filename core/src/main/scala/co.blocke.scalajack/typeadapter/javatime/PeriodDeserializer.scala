@@ -7,6 +7,8 @@ import java.time.format.DateTimeParseException
 
 class PeriodDeserializer extends Deserializer[Period] {
 
+  self =>
+
   private val PeriodType: Type = typeOf[Period]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Period] =
@@ -21,7 +23,7 @@ class PeriodDeserializer extends Deserializer[Period] {
         DeserializationSuccess(TypeTagged(null, PeriodType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }

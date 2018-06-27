@@ -16,7 +16,11 @@ object DeserializationError {
     override def message: String = s"Exception was thrown: $exception"
   }
 
-  case class Unsupported(message: String) extends DeserializationError
+  case class Unsupported(message: String, reportedBy: Option[Deserializer[_]] /* = None*/ ) extends DeserializationError {
+
+    override def toString: String = s"$message${reportedBy.map(rb => s" (reported by: $rb)").getOrElse("")}"
+
+  }
 
   case class Unexpected(message: String) extends DeserializationError
 

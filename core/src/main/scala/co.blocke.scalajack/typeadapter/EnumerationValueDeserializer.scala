@@ -3,6 +3,8 @@ package typeadapter
 
 class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt: TypeTag[E#Value]) extends Deserializer[E#Value] {
 
+  self =>
+
   private val enumerationName: String = enumeration.getClass.getName
   private val enumerationValueType: Type = tt.tpe
 
@@ -24,7 +26,7 @@ class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt
         DeserializationSuccess(TypeTagged(null, enumerationValueType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string or int"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string or int", reportedBy = Some(self)))
     }
 
   }

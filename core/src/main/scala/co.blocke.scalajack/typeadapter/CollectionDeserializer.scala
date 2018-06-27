@@ -6,6 +6,8 @@ import scala.reflect.runtime.universe.lub
 
 class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer: Deserializer[E], newBuilder: () => mutable.Builder[E, C])(implicit tt: TypeTag[C]) extends Deserializer[C] {
 
+  self =>
+
   private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], tt.tpe)
 
   private class TaggedCollection(override val get: C, taggedElements: List[TypeTagged[E]]) extends TypeTagged[C] {
@@ -41,7 +43,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json"))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
     }
 
 }

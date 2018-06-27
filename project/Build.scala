@@ -30,7 +30,7 @@ object Build extends Build {
             .setPreference(AlignSingleLineCaseStatements, true)
             .setPreference(DoubleIndentConstructorArguments, true),
             // .setPreference(PreserveDanglingCloseParenthesis, true),
-        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings", "-language:higherKinds"),
+        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings", "-language:higherKinds", "-language:implicitConversions"),
         testOptions in Test += Tests.Argument("-oDF")
     )
 
@@ -63,6 +63,7 @@ object Build extends Build {
             Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
             Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
             Seq("org.json4s" %% "json4s-core" % "3.5.4") ++
+            Seq("org.json4s" %% "json4s-native" % "3.5.4" % Test) ++
             // compile(scala_reflect) ++
             test(scalatest)
         )

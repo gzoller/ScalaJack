@@ -93,8 +93,8 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                 }
               })
 
-              println(fieldMembers)
-              println(fieldMembersByName)
+              //              println(fieldMembers)
+              //              println(fieldMembersByName)
 
               for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
                 deserializationResultsByField(fieldMember) = fieldMember.deserializeValueFromNothing[J](path \ fieldMember.name)
@@ -125,7 +125,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                     }
                   })
 
-                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = captured
+                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = JsonAndOps[J](json)
                 }
 
                 DeserializationSuccess(TypeTagged[CC](instanceOfCaseClass, caseClassType))

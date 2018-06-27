@@ -98,11 +98,20 @@ class ClassSerializer[C](
 
           value match {
             case sjc: SJCapture =>
-              sjc.captured.foreach {
-                case (memberName, valueString) =>
-                // FIXME                  memberNameTypeAdapter.write(memberName, writer)
-                // FIXME                  writer.writeRawValue(valueString.asInstanceOf[String])
+              val captured = sjc.captured
+              import captured.{ jsonValue, jsonOps }
+              jsonValue match {
+                case JsonObject(x) =>
+                  val fields = x.asInstanceOf[jsonOps.ObjectFields]
+                  jsonOps.foreachObjectField(fields, { (memberName, memberValue) =>
+                    appendField(memberName, JsonValue.transform[captured.JsonValue, J](memberValue))
+                  })
               }
+            //              jsonValue.foreach {
+            //                case (memberName, valueString) =>
+            // FIXME                  memberNameTypeAdapter.write(memberName, writer)
+            // FIXME                  writer.writeRawValue(valueString.asInstanceOf[String])
+            //              }
             case _ =>
           }
         }

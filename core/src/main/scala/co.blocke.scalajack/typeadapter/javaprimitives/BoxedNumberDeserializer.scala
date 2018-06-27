@@ -4,6 +4,8 @@ package javaprimitives
 
 class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
 
+  self =>
+
   private val BoxedNumberType: Type = typeOf[java.lang.Number]
   private val BoxedDoubleType: Type = typeOf[java.lang.Double]
   private val BoxedLongType: Type = typeOf[java.lang.Long]
@@ -17,7 +19,7 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
       case JsonDouble(doubleValue)      => DeserializationSuccess(TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType))
       case JsonInt(scalaBigInt)         => DeserializationSuccess(TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType))
       case JsonLong(longValue)          => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
-      case _                            => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number"))
+      case _                            => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = Some(self)))
     }
 
 }

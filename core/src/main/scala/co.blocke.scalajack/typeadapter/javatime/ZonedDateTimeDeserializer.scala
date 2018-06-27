@@ -7,6 +7,8 @@ import java.time.format.{ DateTimeFormatter, DateTimeParseException }
 
 class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[ZonedDateTime] {
 
+  self =>
+
   private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[ZonedDateTime] =
@@ -18,7 +20,7 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
         })
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }

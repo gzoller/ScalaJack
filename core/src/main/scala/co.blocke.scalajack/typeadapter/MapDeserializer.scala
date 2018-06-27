@@ -10,6 +10,8 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
     keyValuePairsDeserializer: Deserializer[List[(K, V)]],
     newBuilder:                () => mutable.Builder[(K, V), M])(implicit tt: TypeTag[M]) extends Deserializer[M] {
 
+  self =>
+
   private val nullTypeTagged: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[M] =
@@ -94,7 +96,7 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
     }
 
 }

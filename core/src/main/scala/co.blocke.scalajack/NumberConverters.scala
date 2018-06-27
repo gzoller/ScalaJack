@@ -2,6 +2,40 @@ package co.blocke.scalajack
 
 object NumberConverters {
 
+  implicit class BigDecimalOps(val bigDecimal: BigDecimal) extends AnyVal {
+
+    def toDoubleExact: Double = {
+      val bigDecimalAsDouble: Double = bigDecimal.toDouble
+      val bigDecimalAsDoubleAsBigDecimal: BigDecimal = BigDecimal.decimal(bigDecimalAsDouble)
+      if (bigDecimal == bigDecimalAsDoubleAsBigDecimal) {
+        bigDecimalAsDouble
+      } else {
+        throw new ArithmeticException(s"$bigDecimal (BigDecimal) cannot be exactly converted to Double ($bigDecimalAsDouble)")
+      }
+    }
+
+    def toFloatExact: Float = {
+      val bigDecimalAsFloat: Float = bigDecimal.toFloat
+      val bigDecimalAsFloatAsBigDecimal: BigDecimal = BigDecimal.decimal(bigDecimalAsFloat)
+      if (bigDecimal == bigDecimalAsFloatAsBigDecimal) {
+        bigDecimalAsFloat
+      } else {
+        throw new ArithmeticException(s"$bigDecimal (BigDecimal) cannot be exactly converted to Float ($bigDecimalAsFloat)")
+      }
+    }
+
+    def toShortExact: Short = {
+      val bigDecimalAsShort: Short = bigDecimal.toShort
+      val bigDecimalAsShortAsBigDecimal: BigDecimal = BigDecimal(bigDecimalAsShort)
+      if (bigDecimal == bigDecimalAsShortAsBigDecimal) {
+        bigDecimalAsShort
+      } else {
+        throw new ArithmeticException(s"$bigDecimal (BigDecimal) cannot be exactly converted to Short ($bigDecimalAsShort)")
+      }
+    }
+
+  }
+
   implicit class BigIntOps(val bigInt: BigInt) extends AnyVal {
 
     def toShortExact: Short = {

@@ -3,6 +3,8 @@ package typeadapter
 
 class BigIntDeserializer extends Deserializer[BigInt] {
 
+  self =>
+
   private val BigIntType: Type = typeOf[BigInt]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[BigInt] =
@@ -23,7 +25,7 @@ class BigIntDeserializer extends Deserializer[BigInt] {
             DeserializationError.Malformed(e)
         })
 
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number"))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = Some(self)))
     }
 
 }

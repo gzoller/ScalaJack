@@ -3,6 +3,8 @@ package typeadapter
 
 class BigDecimalDeserializer extends Deserializer[BigDecimal] {
 
+  self =>
+
   private val BigDecimalType: Type = typeOf[BigDecimal]
   private val taggedNull: TypeTagged[BigDecimal] = TypeTagged[BigDecimal](null, BigDecimalType)
 
@@ -13,7 +15,7 @@ class BigDecimalDeserializer extends Deserializer[BigDecimal] {
       case JsonDouble(x)  => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
       case JsonInt(x)     => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
       case JsonLong(x)    => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
-      case _              => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json"))
+      case _              => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = Some(self)))
     }
 
 }

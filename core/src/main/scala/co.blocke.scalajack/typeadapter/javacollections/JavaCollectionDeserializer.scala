@@ -4,6 +4,8 @@ package javacollections
 
 class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeserializer: Deserializer[E], newEmptyCollection: () => C)(implicit tt: TypeTag[C]) extends Deserializer[C] {
 
+  self =>
+
   private val collectionType: Type = tt.tpe
   private val collectionTypeConstructor: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], collectionType)
@@ -38,7 +40,7 @@ class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeseria
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json"))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
     }
 
 }

@@ -7,6 +7,8 @@ import scala.collection.{ immutable, mutable }
 
 class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance: () => C)(implicit tt: TypeTag[C]) extends Deserializer[C] {
 
+  self =>
+
   private type Member = PlainFieldMember[C]
   private val instanceType: Type = tt.tpe
   private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], instanceType)
@@ -51,7 +53,7 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
     }
 
 }

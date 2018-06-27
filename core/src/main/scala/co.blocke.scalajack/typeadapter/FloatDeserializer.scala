@@ -3,12 +3,17 @@ package typeadapter
 
 class FloatDeserializer extends Deserializer[Float] {
 
+  self =>
+
   import NumberConverters._
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Float] =
     json match {
       case JsonDecimal(bigDecimal) =>
-        ??? // TODO
+        DeserializationResult(path)(TypeTagged(bigDecimal.toFloatExact), {
+          case e: ArithmeticException =>
+            DeserializationError.Malformed(e)
+        })
 
       case JsonDouble(doubleValue) =>
         DeserializationResult(path)(TypeTagged(doubleValue.toFloatExact), {
@@ -23,7 +28,7 @@ class FloatDeserializer extends Deserializer[Float] {
         })
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = Some(self)))
     }
 
 }

@@ -7,6 +7,8 @@ import java.time.format.DateTimeParseException
 
 class DurationDeserializer extends Deserializer[Duration] {
 
+  self =>
+
   private val DurationType: Type = typeOf[Duration]
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Duration] =
@@ -21,7 +23,7 @@ class DurationDeserializer extends Deserializer[Duration] {
         DeserializationSuccess(TypeTagged(null, DurationType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string"))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
     }
 
 }
