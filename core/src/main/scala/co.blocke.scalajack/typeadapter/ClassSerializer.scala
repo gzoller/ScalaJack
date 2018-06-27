@@ -90,6 +90,8 @@ class ClassSerializer[C](
               valueSerializationResult match {
                 case SerializationSuccess(memberValueJson) =>
                   appendField(memberName, memberValueJson)
+                case failure @ SerializationFailure(_) if failure.isNothing =>
+                // Nothing to do here
                 case SerializationFailure(valueErrors) =>
                   errorsBuilder ++= valueErrors
               }

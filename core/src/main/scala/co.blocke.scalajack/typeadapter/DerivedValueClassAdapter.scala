@@ -17,25 +17,25 @@ object DerivedValueClassAdapter extends TypeAdapterFactory.FromClassSymbol {
       val accessorMethodSymbol = tpe.member(TermName(parameterName)).asMethod
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
-      type Source = Any
+      //      type Source = Any
+      //      type Derived = T
+
       type Derived = T
+      val derivedTypeTag: TypeTag[Derived] = tt.asInstanceOf[TypeTag[Derived]]
 
-      type Wrapped = T
-      val wrappedTypeTag: TypeTag[Wrapped] = tt.asInstanceOf[TypeTag[Wrapped]]
-
-      type Unwrapped = Any
+      type Source = Any
       val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
-      val unwrappedTypeTag: TypeTag[Unwrapped] = TypeTags.of[Unwrapped](valueType)
+      val sourceTypeTag: TypeTag[Source] = TypeTags.of[Source](valueType)
 
-      val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[Unwrapped]]
+      val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[Source]]
 
-      def wrap(unwrapped: Unwrapped): Wrapped = constructorMirror.apply(unwrapped).asInstanceOf[Wrapped]
+      def wrap(source: Source): Derived = constructorMirror.apply(source).asInstanceOf[Derived]
 
-      def unwrap(wrapped: Wrapped): Unwrapped = accessorMethod.invoke(wrapped)
+      def unwrap(wrapped: Derived): Source = accessorMethod.invoke(wrapped)
 
-      DerivedValueClassAdapter[Wrapped, Unwrapped](
-        new DerivedValueClassDeserializer[Wrapped, Unwrapped](valueTypeAdapter.deserializer, wrap)(wrappedTypeTag),
-        new DerivedValueClassSerializer[Wrapped, Unwrapped](unwrap, valueTypeAdapter.serializer)(unwrappedTypeTag),
+      DerivedValueClassAdapter[Derived, Source](
+        new DerivedValueClassDeserializer[Derived, Source](valueTypeAdapter.deserializer, wrap)(derivedTypeTag, sourceTypeTag),
+        new DerivedValueClassSerializer[Derived, Source](unwrap, valueTypeAdapter.serializer)(sourceTypeTag),
         constructorMirror, accessorMethodSymbol, accessorMethod, valueTypeAdapter)
     } else {
       next.typeAdapterOf[T]

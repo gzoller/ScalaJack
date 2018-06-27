@@ -82,7 +82,8 @@ case class JsonFlavor(
     val useSerializer = true
     if (useSerializer) {
       implicit val ops: JsonOps[JValue] = Json4sOps
-      val SerializationSuccess(json) = typeAdapter.serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
+      val serializer = typeAdapter.serializer
+      val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
       Json4sOps.renderCompact(json)
     } else {
       val writer = new StringJsonWriter(isCanonical)

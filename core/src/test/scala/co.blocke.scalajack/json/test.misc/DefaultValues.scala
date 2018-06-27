@@ -14,19 +14,19 @@ class DefaultValues extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     it("Default values are found - not confused by optional values") {
       val inst = HasDefaults("Me", None)
       val js = sj.render(inst)
-      assertResult("""{"name":"Me","pet":{"_hint":"co.blocke.scalajack.json.test.misc.Dog","name":"Fido","kind":true}}""") { js }
+      assertResult("""{"name": "Me", "pet": {"_hint": "co.blocke.scalajack.json.test.misc.Dog", "name": "Fido", "kind": true}}""") { js }
       assertResult(inst) {
         sj.read[HasDefaults](js)
       }
     }
     it("Marshals default optional value (before asuming None)") {
-      val js = """{"name":"Harry"}"""
+      val js = """{"name": "Harry"}"""
       assertResult(DefaultOpt("Harry")) {
         sj.read[DefaultOpt](js)
       }
     }
     it("Force an optional default value to resolve None using null") {
-      val js = """{"name":"Harry","age":null}"""
+      val js = """{"name": "Harry", "age":null}"""
       assertResult(DefaultOpt("Harry", None)) {
         sj.read[DefaultOpt](js)
       }
