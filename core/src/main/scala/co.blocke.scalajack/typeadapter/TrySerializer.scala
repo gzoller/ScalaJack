@@ -16,8 +16,11 @@ class TrySerializer[T](next: Serializer[T]) extends Serializer[Try[T]] {
       case TypeTagged(Success(value)) =>
         next.serialize(new TaggedSuccessValue(value, tagged))
 
+      case TypeTagged(Failure(e: BackedByJsonValue)) =>
+        SerializationSuccess(e.backingJsonValueAs[J])
+
       case TypeTagged(Failure(e)) =>
-        ???
+        throw e
     }
 
 }

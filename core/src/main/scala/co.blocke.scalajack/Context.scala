@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 object Context {
 
   val StandardContext = Context()
+    .withFactory(JsonParsingFallbackTypeAdapter)
     .withFactory(TermTypeAdapterFactory)
     .withFactory(TypeParameterTypeAdapter)
     .withFactory(AnyTypeAdapter)

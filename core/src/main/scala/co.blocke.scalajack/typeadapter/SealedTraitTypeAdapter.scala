@@ -158,7 +158,7 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                   override def isInstance(tagged: TypeTagged[T]): Boolean =
                     tagged match {
                       case TypeTagged(null) => false
-                      case TypeTagged(x) => runtimeClass.isInstance(x)
+                      case TypeTagged(x)    => runtimeClass.isInstance(x)
                     }
                   override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
                     serializer.serialize(tagged)

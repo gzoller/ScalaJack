@@ -28,13 +28,13 @@ class TryAndCapture() extends FunSpec with Matchers {
       it("Try failure") {
         val js = """{"name":"Greg","other":[1,2,3]}"""
         val obj = sj.read[Boom](js)
-        assertResult("scala.MatchError: BeginArray (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
+        assertResult("DeserializationException(1 error):\n  [$.other] Unexpected(Expected a JSON object, not JArray(List(JLong(1), JLong(2), JLong(3))))") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult(js) { sj.render(obj) }
       }
       it("Try failure 2") {
         val js = """{"name":"Greg","other":  -12.45  ,"num":2}"""
         val obj = sj.read[Boom](js)
-        assertResult("scala.MatchError: Number (of class scala.Enumeration$Val)") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
+        assertResult("DeserializationException(1 error):\n  [$.other] Unexpected(Expected a JSON object, not JDecimal(-12.45))") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult("""{"name":"Greg","other":-12.45}""") { sj.render(obj) }
       }
     }

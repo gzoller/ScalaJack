@@ -18,7 +18,7 @@ object Deserializer {
 trait Deserializer[+T] {
 
   def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-    DeserializationFailure(path, DeserializationError.Missing)
+    DeserializationFailure(path, DeserializationError.Unsupported("Cannot deserialize from nothing"))
 
   def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T]
 

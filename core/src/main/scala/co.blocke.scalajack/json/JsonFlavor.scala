@@ -35,7 +35,7 @@ case class JsonFlavor(
     val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
-    val js = JsonParser.parse(json)(Json4sOps)
+    val Some(js) = JsonParser.parse(json)(Json4sOps)
     //    try {
     //      val j = JsonParser.parse(json)(Json4sOps)
     //    } catch {
@@ -43,37 +43,32 @@ case class JsonFlavor(
     //        e.printStackTrace()
     //    }
 
-    val tryUsingDeserializer = false
+    val useDeserializer = true
 
-    if (tryUsingDeserializer) {
-      try {
-        val deserializer = context.typeAdapterOf[T].deserializer
-        val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
-        deserializationResult match {
-          case DeserializationSuccess(TypeTagged(result)) =>
-            result
+    if (useDeserializer) {
+      val deserializer = context.typeAdapterOf[T].deserializer
+      val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
+      deserializationResult match {
+        case DeserializationSuccess(TypeTagged(result)) =>
+          result
 
-          case DeserializationFailure(errors) =>
-            for (error <- errors) {
-              println(error)
-              error match {
-                case (path, DeserializationError.ExceptionThrown(e)) =>
-                  println(path)
-                  e.printStackTrace()
+        case deserializationFailure @ DeserializationFailure(errors) =>
+          for (error <- errors) {
+            println(error)
+            error match {
+              case (path, DeserializationError.ExceptionThrown(e)) =>
+                println(path)
+                e.printStackTrace()
 
-                case _ =>
-              }
+              case _ =>
             }
+          }
 
-            ???
-        }
-        //      val DeserializationSuccess(TypeTagged(result)) = deserializationResult
-        //      result
-        //      null
-      } catch {
-        case _: NotImplementedError =>
-          context.typeAdapterOf[T].read(reader)
+          throw new DeserializationException(deserializationFailure)
       }
+      //      val DeserializationSuccess(TypeTagged(result)) = deserializationResult
+      //      result
+      //      null
     } else {
       context.typeAdapterOf[T].read(reader)
     }

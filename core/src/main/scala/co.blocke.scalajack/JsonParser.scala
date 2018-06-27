@@ -4,13 +4,13 @@ object JsonParser {
 
   private val NumberOfDigitsInMaxLongValue: Int = Long.MaxValue.toString.length
 
-  def parse[J](source: String)(implicit ops: JsonOps[J]): J =
+  def parse[J](source: String)(implicit ops: JsonOps[J]): Option[J] =
     parse[J](source.toCharArray)
 
-  def parse[J](source: Array[Char])(implicit ops: JsonOps[J]): J =
+  def parse[J](source: Array[Char])(implicit ops: JsonOps[J]): Option[J] =
     parse[J](source, 0, source.length)
 
-  def parse[J](source: Array[Char], offset: Int, length: Int)(implicit ops: JsonOps[J]): J = {
+  def parse[J](source: Array[Char], offset: Int, length: Int)(implicit ops: JsonOps[J]): Option[J] = {
     var position = offset
     val maxPosition = offset + length
 
@@ -311,7 +311,11 @@ object JsonParser {
     }
 
     skipWhitespace()
-    readJsonValue()
+    if (position == maxPosition) {
+      None
+    } else {
+      Some(readJsonValue())
+    }
   }
 
 }

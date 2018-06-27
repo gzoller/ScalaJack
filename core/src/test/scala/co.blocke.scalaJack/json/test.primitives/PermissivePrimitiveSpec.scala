@@ -10,7 +10,7 @@ case class Holder[T](value: T)
 
 class PermissivePrimitiveSpec() extends FunSpec with Matchers {
 
-  val sj = ScalaJack().withAdapters(PermissivePrimitiveTypeAdapter)
+  val sj = ScalaJack() //.withAdapters(PermissivePrimitiveTypeAdapter)
 
   describe("----------------------------\n:  Permissive Primitives Tests  :\n----------------------------") {
     describe("+++ Positive Tests +++") {

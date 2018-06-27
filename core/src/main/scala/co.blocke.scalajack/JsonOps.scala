@@ -19,7 +19,7 @@ trait JsonOps[J] {
    */
   type ObjectFields
 
-  def parse(string: String): J = JsonParser.parse[J](string)(this)
+  def parse(string: String): J = JsonParser.parse[J](string)(this).getOrElse(throw new IllegalArgumentException("JSON string is empty"))
 
   def renderCompact(json: J): String = JsonRenderer.renderCompact[J](json)(this)
 
