@@ -24,10 +24,10 @@ class TryAndCapture() extends FunSpec with Matchers {
         val js = """{"name":"Greg","other":{"stuff":["a","b","c"],"num":2}}"""
         val obj = sj.read[Boom](js)
         assertResult(Boom("Greg", Success(Embed(List("a", "b", "c"), 2)))) { obj }
-        assertResult("""{"name":"Greg","other":{"stuff":["a","b","c"],"num":2}}""") { sj.render(obj) }
+        assertResult("""{"name": "Greg", "other": {"stuff": ["a", "b", "c"], "num": 2}}""") { sj.render(obj) }
       }
       it("Try failure") {
-        val js = """{"name":"Greg","other":[1,2,3]}"""
+        val js = """{"name": "Greg", "other": [1, 2, 3]}"""
         val obj = sj.read[Boom](js)
         assertResult("DeserializationException(1 error):\n  [$.other] Unexpected(Expected a JSON object, not JArray(List(JLong(1), JLong(2), JLong(3))))") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult(js) { sj.render(obj) }
@@ -36,7 +36,7 @@ class TryAndCapture() extends FunSpec with Matchers {
         val js = """{"name":"Greg","other":  -12.45  ,"num":2}"""
         val obj = sj.read[Boom](js)
         assertResult("DeserializationException(1 error):\n  [$.other] Unexpected(Expected a JSON object, not JDecimal(-12.45))") { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
-        assertResult("""{"name":"Greg","other":-12.45}""") { sj.render(obj) }
+        assertResult("""{"name": "Greg", "other": -12.45}""") { sj.render(obj) }
       }
     }
     describe("Capture:") {

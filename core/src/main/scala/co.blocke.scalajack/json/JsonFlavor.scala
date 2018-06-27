@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package json
 
+import org.json4s.JsonAST.JValue
+
 import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
@@ -75,8 +77,17 @@ case class JsonFlavor(
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
-    val writer = new StringJsonWriter(isCanonical)
-    context.typeAdapterOf[T].write(value, writer)
-    writer.jsonString
+    val typeAdapter = context.typeAdapterOf[T]
+
+    val useSerializer = true
+    if (useSerializer) {
+      implicit val ops: JsonOps[JValue] = Json4sOps
+      val SerializationSuccess(json) = typeAdapter.serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
+      Json4sOps.renderCompact(json)
+    } else {
+      val writer = new StringJsonWriter(isCanonical)
+      typeAdapter.write(value, writer)
+      writer.jsonString
+    }
   }
 }

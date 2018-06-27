@@ -6,7 +6,29 @@ object JsonRenderer {
     val builder = new StringBuilder
 
     def appendString(string: String): Unit = {
-      builder.append('"').append(string).append('"') // FIXME escape characters
+      var i = 0
+      val length = string.length
+
+      var beginIndex = 0
+
+      builder.append('"')
+
+      while (i < length) {
+        string.charAt(i) match {
+          case '"' =>
+            builder.appendAll(string.substring(beginIndex, i))
+            builder.append("""\"""")
+            i += 1
+            beginIndex = i
+
+          case _ =>
+            i += 1
+        }
+      }
+
+      builder.appendAll(string.substring(beginIndex))
+
+      builder.append('"')
     }
 
     def helper(json: J): Unit =
@@ -41,7 +63,13 @@ object JsonRenderer {
 
         case JsonObject(x) =>
           builder.append('{')
+          var isFirst = true
           ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (name, value) =>
+            if (isFirst) {
+              isFirst = false
+            } else {
+              builder.append(", ")
+            }
             appendString(name)
             builder.append(": ")
             helper(value)
