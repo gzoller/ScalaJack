@@ -36,7 +36,7 @@ class CSVCaseClassDeserializer[CC](
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
     }
 
 }

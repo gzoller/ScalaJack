@@ -36,7 +36,7 @@ class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructo
           })
         }
 
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
     }
 
 }

@@ -13,20 +13,20 @@ class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt
       case JsonString(name) =>
         DeserializationResult(path)(TypeTagged(enumeration.withName(name), enumerationValueType), {
           case _: NoSuchElementException =>
-            DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value named $name")
+            DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value named $name", reportedBy = self)
         })
 
       case JsonLong(index) =>
         DeserializationResult(path)(TypeTagged(enumeration(index.intValue), enumerationValueType), {
           case _: NoSuchElementException =>
-            DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value at index $index")
+            DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value at index $index", reportedBy = self)
         })
 
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, enumerationValueType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string or int", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string or int", reportedBy = self))
     }
 
   }

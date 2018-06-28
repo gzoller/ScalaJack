@@ -6,17 +6,14 @@ import java.time.{ Instant, ZoneId, ZoneOffset, ZonedDateTime }
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
+import scala.reflect.runtime.universe.TypeTag
 
-object MongoZonedDateTimeTypeAdapter extends TypeAdapterFactory {
+object MongoZonedDateTimeTypeAdapter extends TypeAdapterFactory.=:=[ZonedDateTime] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe =:= typeOf[ZonedDateTime]) {
-      val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
-      MongoZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    } else {
-      next.typeAdapterOf[T]
-    }
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[ZonedDateTime]): TypeAdapter[ZonedDateTime] = {
+    val bsonDateTimeTypeAdapter = context.typeAdapterOf[BsonDateTime]
+    MongoZonedDateTimeTypeAdapter(bsonDateTimeTypeAdapter)
+  }
 
 }
 

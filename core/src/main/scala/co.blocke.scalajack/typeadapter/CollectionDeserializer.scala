@@ -8,7 +8,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
 
   self =>
 
-  private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], tt.tpe)
+  private val taggedNull: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], tt.tpe)
 
   private class TaggedCollection(override val get: C, taggedElements: List[TypeTagged[E]]) extends TypeTagged[C] {
     override lazy val tpe: Type = {
@@ -20,7 +20,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[C] =
     json match {
       case JsonNull() =>
-        DeserializationSuccess(nullTypeTagged)
+        DeserializationSuccess(taggedNull)
 
       case JsonArray(x) =>
         DeserializationResult(path) {
@@ -43,7 +43,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
     }
 
 }

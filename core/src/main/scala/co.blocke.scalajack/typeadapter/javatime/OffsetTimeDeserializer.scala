@@ -16,14 +16,14 @@ class OffsetTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(OffsetTime.parse(x, formatter), OffsetTimeType), {
           case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, OffsetTimeType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }

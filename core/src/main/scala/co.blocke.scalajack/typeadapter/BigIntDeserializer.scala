@@ -16,16 +16,16 @@ class BigIntDeserializer extends Deserializer[BigInt] {
       case JsonDecimal(scalaBigDecimal) =>
         DeserializationResult(path)(TypeTagged(BigInt(scalaBigDecimal.bigDecimal.toBigIntegerExact), BigIntType), {
           case e: ArithmeticException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonDouble(doubleValue) =>
         DeserializationResult(path)(TypeTagged(BigInt(new java.math.BigDecimal(doubleValue).toBigIntegerExact), BigIntType), {
           case e: ArithmeticException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = Some(self)))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
 
 }

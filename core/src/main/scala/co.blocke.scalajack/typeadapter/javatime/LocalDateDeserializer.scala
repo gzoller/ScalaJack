@@ -16,14 +16,14 @@ class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[L
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(LocalDate.parse(x, formatter), LocalDateType), {
           case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, LocalDateType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }

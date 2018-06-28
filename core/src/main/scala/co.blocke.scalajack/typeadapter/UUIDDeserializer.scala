@@ -14,9 +14,9 @@ class UUIDDeserializer extends Deserializer[UUID] {
       case JsonNull() => DeserializationSuccess(TypeTagged(null, UUIDType))
       case JsonString(x) => DeserializationResult(path)(TypeTagged(UUID.fromString(x), UUIDType), {
         case e: IllegalArgumentException =>
-          DeserializationError.Malformed(e)
+          DeserializationError.Malformed(e, reportedBy = self)
       })
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }

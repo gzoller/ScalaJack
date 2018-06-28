@@ -53,7 +53,7 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
     }
 
 }

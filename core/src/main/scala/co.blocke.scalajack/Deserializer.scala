@@ -11,7 +11,7 @@ object Deserializer {
         DeserializationSuccess(tagged)
 
       override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected no JSON at path $path because value is constant", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected no JSON at path $path because value is constant", reportedBy = self))
 
     }
 
@@ -22,7 +22,7 @@ trait Deserializer[+T] {
   self =>
 
   def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-    DeserializationFailure(path, DeserializationError.Unsupported("Cannot deserialize from nothing", reportedBy = Some(self)))
+    DeserializationFailure(path, DeserializationError.Unsupported("Cannot deserialize from nothing", reportedBy = self))
 
   def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T]
 

@@ -16,11 +16,11 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(ZonedDateTime.parse(x, formatter), ZonedDateTimeType), {
           case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }

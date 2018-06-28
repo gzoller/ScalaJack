@@ -16,14 +16,14 @@ class DurationDeserializer extends Deserializer[Duration] {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(Duration.parse(x), DurationType), {
           case e: DateTimeParseException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, DurationType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }

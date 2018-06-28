@@ -4,19 +4,14 @@ package typeadapter
 
 import org.bson.BsonObjectId
 
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
-
 case class BsonObjectIdContainer($oid: String)
 
-object BsonObjectIdTypeAdapter extends TypeAdapterFactory {
+object BsonObjectIdTypeAdapter extends TypeAdapterFactory.=:=[BsonObjectId] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe =:= typeOf[BsonObjectId]) {
-      val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
-      BsonObjectIdTypeAdapter(typeAdapter).asInstanceOf[TypeAdapter[T]]
-    } else {
-      next.typeAdapterOf[T]
-    }
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[BsonObjectId]): TypeAdapter[BsonObjectId] = {
+    val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
+    BsonObjectIdTypeAdapter(typeAdapter)
+  }
 
 }
 

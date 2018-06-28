@@ -34,7 +34,7 @@ class JavaMapDeserializer[K, V, M <: java.util.Map[K, V]](keyDeserializer: Deser
         ???
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
     }
 
 }

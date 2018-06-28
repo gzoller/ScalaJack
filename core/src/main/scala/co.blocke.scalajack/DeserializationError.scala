@@ -16,9 +16,9 @@ object DeserializationError {
     override def message: String = s"Exception was thrown: $exception"
   }
 
-  case class Unsupported(message: String, reportedBy: Option[Deserializer[_]] /* = None*/ ) extends DeserializationError {
+  case class Unsupported(message: String, reportedBy: Deserializer[_]) extends DeserializationError {
 
-    override def toString: String = s"$message${reportedBy.map(rb => s" (reported by: $rb)").getOrElse("")}"
+    override def toString: String = s"$message (reported by: $reportedBy)"
 
   }
 
@@ -26,11 +26,11 @@ object DeserializationError {
 
   object Malformed {
 
-    def apply(cause: Throwable): DeserializationError =
-      new Malformed(message = cause.getMessage)
+    def apply(cause: Throwable, reportedBy: Deserializer[_]): DeserializationError =
+      new Malformed(message    = cause.getMessage, reportedBy = reportedBy)
 
   }
 
-  case class Malformed(message: String) extends DeserializationError
+  case class Malformed(message: String, reportedBy: Deserializer[_]) extends DeserializationError
 
 }

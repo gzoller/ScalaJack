@@ -4,19 +4,14 @@ package typeadapter
 
 import org.bson.BsonDateTime
 
-import scala.reflect.runtime.universe.{ TypeTag, typeOf }
-
 case class DateContainer($date: Long)
 
-object BsonDateTimeTypeAdapter extends TypeAdapterFactory {
+object BsonDateTimeTypeAdapter extends TypeAdapterFactory.=:=[BsonDateTime] {
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe =:= typeOf[BsonDateTime]) {
-      val containerTypeAdapter = context.typeAdapterOf[DateContainer]
-      BsonDateTimeTypeAdapter(containerTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    } else {
-      next.typeAdapterOf[T]
-    }
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[BsonDateTime]): TypeAdapter[BsonDateTime] = {
+    val containerTypeAdapter = context.typeAdapterOf[DateContainer]
+    BsonDateTimeTypeAdapter(containerTypeAdapter)
+  }
 
 }
 

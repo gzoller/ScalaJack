@@ -40,7 +40,7 @@ class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeseria
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
     }
 
 }

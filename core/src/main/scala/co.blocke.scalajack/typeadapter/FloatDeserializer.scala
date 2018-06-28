@@ -12,23 +12,23 @@ class FloatDeserializer extends Deserializer[Float] {
       case JsonDecimal(bigDecimal) =>
         DeserializationResult(path)(TypeTagged(bigDecimal.toFloatExact), {
           case e: ArithmeticException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonDouble(doubleValue) =>
         DeserializationResult(path)(TypeTagged(doubleValue.toFloatExact), {
           case e: ArithmeticException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonLong(longValue) =>
         DeserializationResult(path)(TypeTagged(longValue.toFloatExact), {
           case e: ArithmeticException =>
-            DeserializationError.Malformed(e)
+            DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = Some(self)))
+        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
 
 }

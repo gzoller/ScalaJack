@@ -15,7 +15,7 @@ class BigDecimalDeserializer extends Deserializer[BigDecimal] {
       case JsonDouble(x)  => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
       case JsonInt(x)     => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
       case JsonLong(x)    => DeserializationResult(path)(TypeTagged(BigDecimal(x), BigDecimalType))
-      case _              => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = Some(self)))
+      case _              => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = self))
     }
 
 }

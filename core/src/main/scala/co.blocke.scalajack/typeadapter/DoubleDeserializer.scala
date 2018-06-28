@@ -12,7 +12,7 @@ class DoubleDeserializer extends Deserializer[Double] {
       case JsonDecimal(x)          => DeserializationResult(path)(TypeTagged(x.toDoubleExact))
       case JsonDouble(doubleValue) => DeserializationSuccess(TypeTagged(doubleValue))
       // TODO handle other JSON types
-      case _                       => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = Some(self)))
+      case _                       => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = self))
     }
 
 }

@@ -19,6 +19,9 @@ class Misc() extends FunSpec with Matchers {
       val msg = """Required field age in class co.blocke.scalajack.json.test.primitives.plain.PlayerMix is missing from input and has no specified default value
        |{"name":"Mike"}
        |--------------^""".stripMargin
+
+      sj.read[PlayerMix](js)
+
       the[java.lang.IllegalStateException] thrownBy sj.read[PlayerMix](js) should have message msg
     }
     it("Read/write null into object") {

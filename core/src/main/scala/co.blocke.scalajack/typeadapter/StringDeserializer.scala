@@ -11,7 +11,7 @@ class StringDeserializer extends Deserializer[String] {
     json match {
       case JsonNull()        => DeserializationSuccess(TypeTagged(null, StringType))
       case JsonString(value) => DeserializationSuccess(TypeTagged(value, StringType))
-      case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = Some(self)))
+      case _                 => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
     }
 
 }
