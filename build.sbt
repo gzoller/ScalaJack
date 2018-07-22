@@ -98,9 +98,9 @@ lazy val scalajack_benchmarks = project.in(file("benchmarks"))
     compile( mongo_scala ) ++
       test( scalatest, slf4j_simple ) ++
       List(
-        "com.typesafe.play" %% "play-json" % "2.5.8",
-        "org.json4s" %% "json4s-native" % "3.4.0",
-        "net.liftweb" %% "lift-json" % "3.0-RC4",
+        "com.typesafe.play" %% "play-json" % "2.6.7",
+        "org.json4s" %% "json4s-native" % "3.5.4",
+        "net.liftweb" %% "lift-json" % "3.3.0",
         "io.spray" %% "spray-json" % "1.3.2"
       )
   ).dependsOn( scalajack )
