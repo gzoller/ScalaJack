@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import scala.reflect.api.{ Mirror, Universe }
-import scala.reflect.runtime.universe.{ Type, TypeTag, TypeBounds }
+import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.{ currentMirror, universe }
 
 object TypeTags {

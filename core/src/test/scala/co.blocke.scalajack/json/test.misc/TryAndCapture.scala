@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package json.test.misc
 
 import org.scalatest.{ FunSpec, Matchers }
-import java.util.UUID
-import scala.reflect.runtime.universe.typeOf
 
 import scala.util._
 

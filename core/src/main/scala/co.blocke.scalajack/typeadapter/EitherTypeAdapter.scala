@@ -4,7 +4,6 @@ import co.blocke.scalajack.{ Context, Reader, TypeAdapter, TypeAdapterFactory, W
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
-import scala.language.existentials
 import scala.util.{ Try, Success, Failure }
 
 object EitherTypeAdapter extends TypeAdapterFactory {

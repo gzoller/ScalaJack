@@ -5,8 +5,8 @@ import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 import scoverage.ScoverageKeys._
 
-val scalaVer12 = "2.12.1"
-val scalaVer = "2.11.8"
+// val scalaVer12 = "2.12.1"
+// val scalaVer = "2.11.8"
 
 val resolutionRepos = Seq(
   "Typesafe Repo"         at "http://repo.typesafe.com/typesafe/releases/",
@@ -25,10 +25,27 @@ val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
 val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.43"
 
+def scalacOptionsVersion(scalaVersion: String) = {
+  val xver =  CrossVersion.partialVersion(scalaVersion) match {
+         case Some((2, scalaMajor)) if scalaMajor == 11 => Seq("-language:existentials")
+         case _ => Seq("-language:_")
+      }
+
+  Seq(
+    "-feature", 
+    "-deprecation", 
+    "-Xlint", 
+    "-encoding", 
+    "UTF8", 
+    "-unchecked", 
+    "-Xfatal-warnings"
+  ) ++ xver
+}
+
 lazy val basicSettings = Seq(
   organization                := "co.blocke",
   startYear                   := Some(2015),
-  crossScalaVersions          := Seq("2.11.12"),
+  crossScalaVersions          := Seq("2.11.12", "2.12.6"),
   publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
   scalaVersion                := "2.12.6",
 //  resolvers                   ++= resolutionRepos,
@@ -40,7 +57,8 @@ lazy val basicSettings = Seq(
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(DoubleIndentConstructorArguments, true),
   // .setPreference(PreserveDanglingCloseParenthesis, true),
-  scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
+  //scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
+  scalacOptions := scalacOptionsVersion(scalaVersion.value),
   testOptions in Test += Tests.Argument("-oDF")
 )
 

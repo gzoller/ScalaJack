@@ -3,7 +3,6 @@ package typeadapter
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{ GenMapLike, GenTraversableOnce }
-import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
 

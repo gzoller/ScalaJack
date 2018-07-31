@@ -2,8 +2,6 @@ package co.blocke.scalajack
 
 import org.mongodb.scala.bson.BsonObjectId
 
-import scala.language.implicitConversions
-
 /*
 NOTE: None of this doesn't seem to be used anywhere and was throwing off my test numbers... Removed for now.
 

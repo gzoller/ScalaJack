@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package csv
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 import java.lang.{ UnsupportedOperationException => UOE }
 
 import typeadapter.DerivedValueClassAdapter

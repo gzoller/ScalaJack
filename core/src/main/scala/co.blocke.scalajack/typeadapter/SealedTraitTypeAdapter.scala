@@ -2,7 +2,6 @@ package co.blocke.scalajack.typeadapter
 
 import co.blocke.scalajack.{ Context, MemberName, Reader, TokenType, TypeAdapter, TypeAdapterFactory, Writer }
 
-import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
 import scala.util.Try

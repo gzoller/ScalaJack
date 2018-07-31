@@ -1,12 +1,8 @@
 package co.blocke.scalajack
 package json.test.tokenizer
 
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.FunSpec
 import org.scalatest.Matchers._
-import scala.language.postfixOps
-import scala.util.Try
-import java.io._
-import java.lang.IllegalArgumentException
 
 import json._
 import TokenType._

@@ -2,11 +2,9 @@ package co.blocke.scalajack
 
 import json.JsonFlavor
 import typeadapter.{ FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, CaseClassTypeAdapter, TypeTypeAdapter }
-import BijectiveFunction.Implicits._
 import BijectiveFunctions._
 import CaseClassTypeAdapter.FieldMember
 
-import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag, typeOf }
 
 object ScalaJack {

@@ -169,7 +169,6 @@ class ScalaPrim() extends FunSpec with Matchers {
         the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
-        val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null, Size.Medium)
         val js = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}"""
         val msg = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for "Bogus"
           |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}

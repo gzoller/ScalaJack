@@ -5,8 +5,6 @@ package test
 import scala.reflect.runtime.universe.typeOf
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
-import scala.util.Try
-import java.util.UUID
 
 import com.amazonaws.services.dynamodbv2.document.Item
 

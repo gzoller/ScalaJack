@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.collections
 
 import org.scalatest.{ FunSpec, Matchers }
-import scala.reflect.runtime.universe.typeOf
 
 class AnyColl() extends FunSpec with Matchers {
 

@@ -6,7 +6,7 @@ import java.lang.reflect.Method
 import co.blocke.scalajack.csv.CSVCaseClassTypeAdapter.Member
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, Type, TypeTag }
 
@@ -51,10 +51,6 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
       val classMirror = currentMirror.reflectClass(classSymbol)
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
-
-      val companionType: Type = classSymbol.companion.typeSignature
-      val companionObject = currentMirror.reflectModule(classSymbol.companion.asModule).instance
-      val companionMirror = currentMirror.reflect(companionObject)
 
       val members = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten.zipWithIndex.map({
         case (member, index) =>

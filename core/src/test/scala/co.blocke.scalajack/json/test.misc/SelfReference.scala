@@ -3,8 +3,6 @@ package json.test.misc
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
-import scala.util.Try
-import java.util.UUID
 
 class SelfReference extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
   describe("--------------------------\n:  Self Reference Tests  :\n--------------------------") {

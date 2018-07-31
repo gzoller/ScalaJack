@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package json
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 
 case class JsonFlavor(
     customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],

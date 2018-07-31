@@ -4,7 +4,7 @@ package typeadapter
 import java.lang.reflect.Method
 
 import scala.util.Try
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.existentials
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, Symbol, TermName, Type, TypeTag, appliedType, typeOf }
