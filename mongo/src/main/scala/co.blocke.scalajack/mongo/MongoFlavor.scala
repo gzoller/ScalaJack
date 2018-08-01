@@ -15,8 +15,7 @@ case class MongoFlavor(
     typeModifier:   Option[HintModifier]     = None,
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true
-) extends ScalaJackLike[Document] with JackFlavor[Document] {
+    isCanonical:    Boolean                  = true) extends ScalaJackLike[Document] with JackFlavor[Document] {
 
   val bsonParser = new BsonParser
 

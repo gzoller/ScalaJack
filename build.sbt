@@ -5,9 +5,6 @@ import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 import scoverage.ScoverageKeys._
 
-// val scalaVer12 = "2.12.1"
-// val scalaVer = "2.11.8"
-
 val resolutionRepos = Seq(
   "Typesafe Repo"         at "http://repo.typesafe.com/typesafe/releases/",
   "Typesafe Snapshots"    at "http://repo.typesafe.com/typesafe/snapshots/",

@@ -12,8 +12,7 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
       subclassType:  Type,
       subclassClass: Class[_ <: T],
       typeAdapter:   TypeAdapter[Any],
-      memberNames:   Set[MemberName]
-  )
+      memberNames:   Set[MemberName])
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
     tt.tpe.typeSymbol.asClass.knownDirectSubclasses.toList match {

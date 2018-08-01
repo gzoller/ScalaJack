@@ -17,8 +17,7 @@ case class DynamoFlavor(
     typeModifier:   Option[HintModifier]     = None,
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true
-) extends ScalaJackLike[Item] {
+    isCanonical:    Boolean                  = true) extends ScalaJackLike[Item] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -54,8 +53,7 @@ case class DynamoFlavor(
       case ta: PlainClassTypeAdapter[_] => (ta.collectionName, ta.dbKeys)
     }
     val tableName = optionalTableName.getOrElse(
-      throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name.")
-    )
+      throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name."))
 
     if (keys.isEmpty) throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must define at least a primary key with @DBKey.")
     val attrDetail = keys.zipWithIndex.collect {

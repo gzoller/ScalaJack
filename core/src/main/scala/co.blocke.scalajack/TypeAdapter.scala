@@ -23,8 +23,7 @@ trait StringKind
 
 case class TransformedTypeAdapter[A, B](
     typeAdapter: TypeAdapter[A],
-    f:           BijectiveFunction[A, B]
-) extends TypeAdapter[B] {
+    f:           BijectiveFunction[A, B]) extends TypeAdapter[B] {
 
   override def read(reader: Reader): B =
     f.apply(typeAdapter.read(reader))

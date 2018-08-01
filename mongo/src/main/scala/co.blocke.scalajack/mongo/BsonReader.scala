@@ -8,8 +8,7 @@ class BsonReader(
     numberOfTokens: Int,
     tokenTypes:     Array[TokenType],
     strings:        Array[String],
-    values:         Array[BsonValue]
-) extends Reader {
+    values:         Array[BsonValue]) extends Reader {
 
   override var position: Int = -1
 

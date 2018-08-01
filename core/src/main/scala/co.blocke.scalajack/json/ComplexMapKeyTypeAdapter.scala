@@ -6,8 +6,7 @@ import typeadapter.{ AnyTypeAdapter, OptionTypeAdapterEmpty }
 case class ComplexMapKeyTypeAdapter[T](
     tokenizer:         Tokenizer,
     stringTypeAdapter: TypeAdapter[String],
-    valueTypeAdapter:  TypeAdapter[T]
-) extends TypeAdapter[T] {
+    valueTypeAdapter:  TypeAdapter[T]) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     val readValue = valueTypeAdapter match {

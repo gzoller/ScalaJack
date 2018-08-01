@@ -19,8 +19,7 @@ object CSVCaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       valueAccessorMethodSymbol:          MethodSymbol,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
-      outerClass:                         Option[java.lang.Class[_]]
-  ) {
+      outerClass:                         Option[java.lang.Class[_]]) {
 
     val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -91,8 +90,7 @@ case class CSVCaseClassTypeAdapter[T >: Null](
     caseClassType:     Type,
     constructorMirror: MethodMirror,
     tpe:               Type,
-    members:           List[Member[_]]
-) extends TypeAdapter[T] {
+    members:           List[Member[_]]) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     reader.peek match {

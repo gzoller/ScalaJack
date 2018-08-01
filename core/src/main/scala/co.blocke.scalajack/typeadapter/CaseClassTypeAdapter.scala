@@ -32,8 +32,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
       fieldMapName:                       Option[String],
-      annotations:                        List[universe.Annotation]
-  ) extends ClassFieldMember[Owner, T] {
+      annotations:                        List[universe.Annotation]) extends ClassFieldMember[Owner, T] {
 
     override type Value = T
 
@@ -179,8 +178,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         typeMembers,
         fieldMembers,
         isSJCapture,
-        collectionAnnotation
-      )
+        collectionAnnotation)
     } else {
       next.typeAdapterOf[T]
     }
@@ -196,8 +194,7 @@ case class CaseClassTypeAdapter[T](
     typeMembers:           List[CaseClassTypeAdapter.TypeMember[T]],
     fieldMembers:          List[ClassFieldMember[T, _]],
     isSJCapture:           Boolean,
-    collectionName:        Option[String]                           = None
-) extends ClassLikeTypeAdapter[T] {
+    collectionName:        Option[String]                           = None) extends ClassLikeTypeAdapter[T] {
 
   val dbKeys = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
   val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = fieldMembers.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
@@ -235,8 +232,7 @@ case class CaseClassTypeAdapter[T](
                   val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
                     haystackBeforeSubstitution = typeMember.typeSignature,
                     haystackAfterSubstitution  = actualType,
-                    needleBeforeSubstitution   = typeParam.asType.toType
-                  )
+                    needleBeforeSubstitution   = typeParam.asType.toType)
 
                   for (typeArg <- optionalTypeArg) {
                     setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
@@ -292,8 +288,7 @@ case class CaseClassTypeAdapter[T](
         if (foundCount != numberOfFieldMembers)
           for (member <- fieldMembers if !found(member.index)) {
             arguments(member.index) = member.defaultValue.getOrElse(
-              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-            )
+              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError()))
           }
 
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
@@ -338,8 +333,7 @@ case class CaseClassTypeAdapter[T](
               val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
                 haystackBeforeSubstitution = declaredFieldValueType,
                 haystackAfterSubstitution  = actualFieldValueType,
-                needleBeforeSubstitution   = typeParam.asType.toType
-              )
+                needleBeforeSubstitution   = typeParam.asType.toType)
 
               for (typeArg <- optionalTypeArg) {
                 setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
