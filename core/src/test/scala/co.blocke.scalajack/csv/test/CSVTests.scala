@@ -3,14 +3,15 @@ package csv
 package test
 
 import org.scalatest.{ FunSpec, Matchers }
-import scala.reflect.runtime.universe.Type
-import java.util.UUID
+// import scala.reflect.runtime.universe.Type
+// import java.util.UUID
 
 class CSVTests() extends FunSpec with Matchers {
 
   val sj = ScalaJack(CSVFlavor())
 
   describe("---------------\n:  CSV Tests  :\n---------------") {
+    /*
     describe("Primitives (non-null):") {
       it("Writes out basic Scala primitive types") {
         val inst = BasicScala(BigDecimal(123.45), BigInt(123), true, 64.asInstanceOf[Byte],
@@ -195,6 +196,14 @@ class CSVTests() extends FunSpec with Matchers {
       it("No isCanonical") {
         the[java.lang.UnsupportedOperationException] thrownBy
           ScalaJack(CSVFlavor()).isCanonical(false) should have message "Not available for CSV formatting"
+      }
+
+    */
+    describe("Parsing") {
+      it("Tokenizer can grow capacity") {
+        val t = new Tokenizer()
+        val csv = t.tokenize("foo,bar,blather,stuff,more,and,more".toCharArray, 0, 0, 4)
+        println(csv.x)
       }
     }
   }

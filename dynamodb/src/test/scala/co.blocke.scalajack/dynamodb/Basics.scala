@@ -69,6 +69,15 @@ class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           sj.read[Address](item)
         }
       }
+      it("Externalized type modifier") {
+        val sj = ScalaJack(DynamoFlavor()).withTypeModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.dynamodb.test." + hint, (cname: String) => cname.split('.').last))
+        val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+        val item = sj.render[Envelope[Body]](value)
+        assertResult("{ Item: {Giraffe=FancyBody, id=DEF, body={message=BOO}} }") { item.toString }
+        assertResult(value) {
+          sj.read[Envelope[Body]](item)
+        }
+      }
       it("Default Hint") {
         val sj = ScalaJack(DynamoFlavor()).withDefaultHint("kind")
         val inst: Human = Person("Greg", 50, List("Woodworking", "Diet Coke"), Misc(1.23, "boom"), Some(false))

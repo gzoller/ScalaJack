@@ -12,6 +12,8 @@ class CSVTokenReader(
 
   override var position = -1
 
+  val x = numberOfTokens
+
   override def peek: TokenType = tokenTypes(position + 1)
 
   override def showError(): String = {

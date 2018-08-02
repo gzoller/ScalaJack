@@ -102,6 +102,7 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
     val typeModFactories = typeModifier.map(mod => List(new TypeAdapterFactory {
       override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
         if (tt.tpe =:= typeOf[Type]) {
+          println("CHECKING!")
           TypeTypeAdapter(tt.mirror, Some(mod)).asInstanceOf[TypeAdapter[T]]
         } else {
           next.typeAdapterOf[T]
