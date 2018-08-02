@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package json
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 
 case class JsonFlavor(
     customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
@@ -12,8 +10,7 @@ case class JsonFlavor(
     typeModifier:   Option[HintModifier]     = None,
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true
-) extends ScalaJackLike[String] {
+    isCanonical:    Boolean                  = true) extends ScalaJackLike[String] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)

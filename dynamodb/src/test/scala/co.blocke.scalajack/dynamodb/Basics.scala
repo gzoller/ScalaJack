@@ -5,8 +5,6 @@ package test
 import scala.reflect.runtime.universe.typeOf
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.Matchers._
-import scala.util.Try
-import java.util.UUID
 
 import com.amazonaws.services.dynamodbv2.document.Item
 
@@ -69,6 +67,15 @@ class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         assertResult("""{ Item: {_hint=USAddress, street=123 Main, city=New York, state=NY, postalCode=39822} }""") { item.toString }
         assertResult(inst) {
           sj.read[Address](item)
+        }
+      }
+      it("Externalized type modifier") {
+        val sj = ScalaJack(DynamoFlavor()).withTypeModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.dynamodb.test." + hint, (cname: String) => cname.split('.').last))
+        val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+        val item = sj.render[Envelope[Body]](value)
+        assertResult("{ Item: {Giraffe=FancyBody, id=DEF, body={message=BOO}} }") { item.toString }
+        assertResult(value) {
+          sj.read[Envelope[Body]](item)
         }
       }
       it("Default Hint") {

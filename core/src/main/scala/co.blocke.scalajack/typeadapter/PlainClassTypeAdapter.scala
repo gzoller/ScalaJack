@@ -8,7 +8,7 @@ import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
 import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
 import scala.collection.mutable
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.existentials
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 import scala.reflect.runtime.universe._
@@ -36,8 +36,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       derivedValueClassConstructorMirror: Option[MethodMirror],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
-      fieldMapName:                       Option[String]
-  ) extends ClassFieldMember[Owner, T] {
+      fieldMapName:                       Option[String]) extends ClassFieldMember[Owner, T] {
 
     override type Value = T
 
@@ -154,7 +153,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       def dontIgnore(p: Symbol) = {
         // Annoying... @Ignore may be on backing field in a superclass...so we must go find it.
         val includeSuper = tpe.members ++ tpe.typeSymbol.asClass.baseClasses.map(c => c.typeSignature.members).flatten
-        var foundPrivateVar = includeSuper.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
+        val foundPrivateVar = includeSuper.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
         val ignoreAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[Ignore]))
         ignoreAnno.isEmpty
       }
@@ -185,7 +184,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               }
 
             // Exctract DBKey and MapName annotations if present (Note: Here the annotation is not on the getter/setter but the private backing variable!)
-            var foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
+            val foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
             val dbkeyAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[DBKey])
               .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
                 .value().value).asInstanceOf[Option[Int]])
@@ -205,8 +204,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
               derivedValueClassConstructorMirror,
               memberClass,
               dbkeyAnno,
-              mapNameAnno
-            )
+              mapNameAnno)
         }.toList.zipWithIndex.map { case (pm, index) => pm.copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
       }
 
@@ -228,8 +226,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             None,
             None,
             None,
-            None
-          )
+            None)
         }.zipWithIndex.map { case (pm, index) => pm.asInstanceOf[PlainFieldMember[T, Any]].copy(index = index).asInstanceOf[PlainFieldMember[T, Any]] }
       }
 
@@ -270,8 +267,7 @@ case class PlainClassTypeAdapter[T](
     members:               List[ClassFieldMember[T, _]],
     isSJCapture:           Boolean,
     dbKeys:                List[ClassFieldMember[T, _]],
-    collectionName:        Option[String]               = None
-) extends TypeAdapter[T] {
+    collectionName:        Option[String]               = None) extends TypeAdapter[T] {
 
   val mappedFieldsByName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.name -> f).toMap
   val mappedFieldsByMappedName: Map[String, ClassFieldMember[T, _]] = members.filter(_.fieldMapName.isDefined).map(f => f.fieldMapName.get -> f).toMap
@@ -283,13 +279,13 @@ case class PlainClassTypeAdapter[T](
         val numberOfMembers = members.length
 
         val found = new mutable.BitSet(numberOfMembers)
-        var foundCount = 0
+        val foundCount = 0
 
         reader.beginObject()
 
         val asBuilt = constructorMirror.apply().asInstanceOf[T] // call 0-parameter constructor
 
-        var savedPos = reader.position
+        val savedPos = reader.position
         while (reader.hasMoreMembers) {
           val readName = memberNameTypeAdapter.read(reader)
           membersByName.get(readName) match {
@@ -313,8 +309,7 @@ case class PlainClassTypeAdapter[T](
         if (foundCount != numberOfMembers)
           for (member <- members if !found(member.index)) {
             member.defaultValue.getOrElse(
-              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError())
-            )
+              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError()))
           }
 
         if (isSJCapture) {

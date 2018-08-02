@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.custom
 
 import org.scalatest.{ FunSpec, Matchers }
-import scala.reflect.runtime.universe.typeOf
 
 class CustomAdapter() extends FunSpec with Matchers {
 

@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package csv
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
 import java.lang.{ UnsupportedOperationException => UOE }
 
 import typeadapter.DerivedValueClassAdapter
@@ -35,7 +33,7 @@ case class CSVFlavor() extends {
     val tokenizer = new Tokenizer
 
     val source = csv.toCharArray
-    val reader = tokenizer.tokenize(source, 0, source.length)
+    val reader = tokenizer.tokenize(source, 0, source.length, source.length / 6) // The /6 is arbitrary guess characters:token ratio.
 
     context.typeAdapterOf[T].read(reader)
   }

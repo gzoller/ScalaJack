@@ -31,8 +31,7 @@ case class AnyTypeAdapter(
     listTypeAdapter:       TypeAdapter[List[Any]],
     stringTypeAdapter:     TypeAdapter[String],
     booleanTypeAdapter:    TypeAdapter[Boolean],
-    context:               Context
-) extends SimpleTypeAdapter[Any] {
+    context:               Context) extends SimpleTypeAdapter[Any] {
 
   // For writes
   def inspectStringKind(value: Any): Boolean = value match {

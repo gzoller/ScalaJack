@@ -3,7 +3,6 @@ package typeadapter
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{ GenMapLike, GenTraversableOnce }
-import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ Symbol, Type, TypeTag, typeOf }
 
@@ -39,8 +38,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
           val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
             haystackBeforeSubstitution = toType,
             haystackAfterSubstitution  = tt.tpe.baseType(toType.typeSymbol),
-            needleBeforeSubstitution   = typeParam.asType.toType
-          )
+            needleBeforeSubstitution   = typeParam.asType.toType)
           optionalTypeArg.map(typeArg => typeParam -> typeArg)
         }
 
@@ -80,8 +78,7 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory {
 case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Value, To]](
     canBuildFrom:     CanBuildFrom[_, (Key, Value), To],
     keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value]
-) extends TypeAdapter[To] {
+    valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
 
   override def read(reader: Reader): To =
     reader.peek match {
@@ -123,8 +120,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
 
 case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](
     canBuildFrom:       CanBuildFrom[_, Elem, To],
-    elementTypeAdapter: TypeAdapter[Elem]
-) extends TypeAdapter[To] {
+    elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
 
   override def read(reader: Reader): To =
     reader.peek match {

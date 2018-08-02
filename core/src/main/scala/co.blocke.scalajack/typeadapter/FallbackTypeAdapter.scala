@@ -5,8 +5,7 @@ import scala.util.{ Failure, Success, Try }
 
 case class FallbackTypeAdapter[T](
     primaryTypeAdapter:   TypeAdapter[T],
-    secondaryTypeAdapter: TypeAdapter[T]
-) extends TypeAdapter[T] {
+    secondaryTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] {
 
   override def read(reader: Reader): T = {
     val originalPosition = reader.position
