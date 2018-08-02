@@ -10,7 +10,6 @@ class Tokenizer() { //(val capacity: Int = 1024) {
     var position = offset
 
     var capacity = if (initialCapacity > 0) initialCapacity else 1
-    println("Cap: " + capacity)
     var tokenTypes = new Array[TokenType](capacity)
     var tokenOffsets = new Array[Int](capacity)
     var tokenLengths = new Array[Int](capacity)
@@ -18,11 +17,8 @@ class Tokenizer() { //(val capacity: Int = 1024) {
     var numberOfTokens = 0
 
     @inline def appendToken(tokenType: TokenType, tokenOffset: Int, tokenLength: Int): Unit = {
-      println("Append Token " + tokenType + " @ " + tokenOffset)
       if (numberOfTokens == capacity) {
-        // val oldCapacity = capacity
         val newCapacity = capacity * 2
-        println("Bump!  " + newCapacity)
 
         val oldTokenTypes = tokenTypes
         val newTokenTypes = new Array[TokenType](newCapacity)

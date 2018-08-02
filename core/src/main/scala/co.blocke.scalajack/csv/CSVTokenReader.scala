@@ -3,7 +3,7 @@ package csv
 
 import TokenType.TokenType
 
-class CSVTokenReader(
+case class CSVTokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
     tokenTypes:          Array[TokenType],
@@ -11,8 +11,6 @@ class CSVTokenReader(
     tokenLengths:        Array[Int]) extends Reader {
 
   override var position = -1
-
-  val x = numberOfTokens
 
   override def peek: TokenType = tokenTypes(position + 1)
 
