@@ -91,3 +91,10 @@ class PersonPlain2() {
   var stuff: Misc = null
   var foo: Option[Boolean] = None
 }
+
+trait Body
+case class FancyBody(message: String) extends Body
+
+case class Envelope[T <: Body](id: String, body: T) {
+  type Giraffe = T
+}

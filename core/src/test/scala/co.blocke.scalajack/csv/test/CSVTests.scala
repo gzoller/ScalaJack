@@ -197,5 +197,13 @@ class CSVTests() extends FunSpec with Matchers {
           ScalaJack(CSVFlavor()).isCanonical(false) should have message "Not available for CSV formatting"
       }
     }
+    describe("Parsing") {
+      it("Tokenizer can grow capacity") {
+        val t = new Tokenizer()
+        val input = "foo,bar,blather,stuff,more,and,more"
+        val csv = t.tokenize(input.toCharArray, 0, input.length, 4)
+        csv.numberOfTokens should equal(10)
+      }
+    }
   }
 }

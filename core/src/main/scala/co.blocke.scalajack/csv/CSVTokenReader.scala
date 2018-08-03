@@ -3,13 +3,12 @@ package csv
 
 import TokenType.TokenType
 
-class CSVTokenReader(
+case class CSVTokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
     tokenTypes:          Array[TokenType],
     tokenOffsets:        Array[Int],
-    tokenLengths:        Array[Int]
-) extends Reader {
+    tokenLengths:        Array[Int]) extends Reader {
 
   override var position = -1
 

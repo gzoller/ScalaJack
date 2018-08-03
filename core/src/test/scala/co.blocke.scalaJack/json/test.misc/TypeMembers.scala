@@ -3,9 +3,7 @@ package json.test.misc
 
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
-import scala.reflect.api.{ Mirror, Universe }
-import scala.reflect.runtime.{ currentMirror, universe }
-import scala.reflect.runtime.universe.{ TypeTag, typeOf, Type }
+import scala.reflect.runtime.universe.typeOf
 
 trait Body
 case class FancyBody(message: String) extends Body

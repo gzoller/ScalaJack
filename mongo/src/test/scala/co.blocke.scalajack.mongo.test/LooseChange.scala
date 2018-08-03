@@ -3,14 +3,11 @@ package mongo
 package test
 
 import mongo._
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.FunSpec
 import org.scalatest.Matchers._
-import scala.language.postfixOps
-import scala.util.Try
 import org.mongodb.scala._
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson._
-import java.time.ZonedDateTime
 
 class LooseChange extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())

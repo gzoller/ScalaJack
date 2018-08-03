@@ -4,7 +4,6 @@ import typeadapter._
 import typeadapter.javatime._
 import typeadapter.javaprimitives._
 
-import scala.language.existentials
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }

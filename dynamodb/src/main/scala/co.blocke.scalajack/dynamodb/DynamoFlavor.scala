@@ -17,8 +17,7 @@ case class DynamoFlavor(
     typeModifier:   Option[HintModifier]     = None,
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true
-) extends ScalaJackLike[Item] {
+    isCanonical:    Boolean                  = true) extends ScalaJackLike[Item] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -30,12 +29,15 @@ case class DynamoFlavor(
 
   // Embedded JSON-flavored ScalaJack, as Item can read/write JSON, so this is actually the most straightforward
   // path to serialization.
-  lazy val sj = ScalaJack()
-    .withAdapters(customAdapters: _*)
-    .withHints(hintMap.toList: _*)
-    .withHintModifiers(hintModifiers.toList: _*)
-    .withDefaultHint(defaultHint)
-    .parseOrElse(parseOrElseMap.toList: _*)
+  lazy val sj = {
+    val baseSj = ScalaJack()
+      .withAdapters(customAdapters: _*)
+      .withHints(hintMap.toList: _*)
+      .withHintModifiers(hintModifiers.toList: _*)
+      .withDefaultHint(defaultHint)
+      .parseOrElse(parseOrElseMap.toList: _*)
+    typeModifier.map(tm => baseSj.withTypeModifier(tm)).getOrElse(baseSj)
+  }
 
   def read[T](item: Item)(implicit valueTypeTag: TypeTag[T]): T = {
     sj.read[T](item.toJSON())
@@ -54,8 +56,7 @@ case class DynamoFlavor(
       case ta: PlainClassTypeAdapter[_] => (ta.collectionName, ta.dbKeys)
     }
     val tableName = optionalTableName.getOrElse(
-      throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name.")
-    )
+      throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must be annotated with @Collection to specify a table name."))
 
     if (keys.isEmpty) throw new java.lang.IllegalStateException(s"Class ${tpe.typeSymbol.fullName} must define at least a primary key with @DBKey.")
     val attrDetail = keys.zipWithIndex.collect {

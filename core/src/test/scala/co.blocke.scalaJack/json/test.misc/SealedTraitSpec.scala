@@ -3,10 +3,6 @@ package json.test.misc
 
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 
-import scala.reflect.api.{ Mirror, Universe }
-import scala.reflect.runtime.{ currentMirror, universe }
-import scala.reflect.runtime.universe.{ TypeTag, typeOf, Type }
-
 // Unambiguous member names
 sealed trait ContactPoint
 case class EmailAddress(emailAddress: String) extends ContactPoint
