@@ -37,7 +37,7 @@ object JsonRenderer {
           builder.append('[')
           ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, element) =>
             if (index > 0) {
-              builder.append(", ")
+              builder.append(",")
             }
             helper(element)
           })
@@ -68,10 +68,10 @@ object JsonRenderer {
             if (isFirst) {
               isFirst = false
             } else {
-              builder.append(", ")
+              builder.append(",")
             }
             appendString(name)
-            builder.append(": ")
+            builder.append(":")
             helper(value)
           })
           builder.append('}')

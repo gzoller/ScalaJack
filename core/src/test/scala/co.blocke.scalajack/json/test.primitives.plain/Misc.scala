@@ -16,13 +16,10 @@ class Misc() extends FunSpec with Matchers {
     }
     it("Missing field (non-optional) from a getter/setter class") {
       val js = """{"name":"Mike"}"""
-      val msg = """Required field age in class co.blocke.scalajack.json.test.primitives.plain.PlayerMix is missing from input and has no specified default value
-       |{"name":"Mike"}
-       |--------------^""".stripMargin
+      val msg = """DeserializationException(1 error):
+  [$.age] Required field missing (reported by: DerivedValueClassDeserializer[co.blocke.scalajack.json.test.primitives.plain.VCDouble, scala.Double])""".stripMargin
 
-      sj.read[PlayerMix](js)
-
-      the[java.lang.IllegalStateException] thrownBy sj.read[PlayerMix](js) should have message msg
+      the[co.blocke.scalajack.DeserializationException] thrownBy sj.read[PlayerMix](js) should have message msg
     }
     it("Read/write null into object") {
       assertResult(null) { sj.read[PlayerMix]("null") }

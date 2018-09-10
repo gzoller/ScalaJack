@@ -23,23 +23,29 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         DeserializationSuccess(taggedNull)
 
       case JsonArray(x) =>
-        DeserializationResult(path) {
-          val arrayElements = x.asInstanceOf[ops.ArrayElements]
+        val arrayElements = x.asInstanceOf[ops.ArrayElements]
 
-          val builder = newBuilder()
-          val taggedElementsBuilder = List.newBuilder[TypeTagged[E]]
+        val elementsBuilder = newBuilder()
+        val taggedElementsBuilder = List.newBuilder[TypeTagged[E]]
+        val errorSequencesBuilder = Seq.newBuilder[Seq[(Path, DeserializationError)]]
 
-          ops.foreachArrayElement(arrayElements, { (index, elementJson) =>
-            val DeserializationSuccess(taggedElement) = elementDeserializer.deserialize(path \ index, elementJson)
-            val TypeTagged(element) = taggedElement
+        ops.foreachArrayElement(arrayElements, { (index, elementJson) =>
+          elementDeserializer.deserialize(path \ index, elementJson) match {
+            case DeserializationSuccess(taggedElement @ TypeTagged(element)) =>
+              elementsBuilder += element
+              taggedElementsBuilder += taggedElement
 
-            builder += element
-            taggedElementsBuilder += taggedElement
-          })
+            case DeserializationFailure(errorSequence) =>
+              errorSequencesBuilder += errorSequence
+          }
+        })
 
+        val errorSequences: Seq[Seq[(Path, DeserializationError)]] = errorSequencesBuilder.result()
+        if (errorSequences.isEmpty) {
           val taggedElements = taggedElementsBuilder.result()
-
-          new TaggedCollection(builder.result(), taggedElements)
+          DeserializationSuccess(new TaggedCollection(elementsBuilder.result(), taggedElements))
+        } else {
+          DeserializationFailure(errorSequences.flatten.to[collection.immutable.Seq])
         }
 
       case _ =>

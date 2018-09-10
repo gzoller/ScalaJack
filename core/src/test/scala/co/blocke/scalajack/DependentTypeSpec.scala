@@ -36,7 +36,7 @@ trait Envelope {
 
 }
 
-class DependentTypeSpec extends FunSpec {
+class DependentTypeSpec() extends FunSpec {
 
   val sj = ScalaJack(JsonFlavor())
 

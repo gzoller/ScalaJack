@@ -137,7 +137,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $json"))
+        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $json", this))
     }
 
 }

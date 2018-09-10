@@ -116,6 +116,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
       val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
+      println("Plain class: " + classSymbol + "  isSJCapture: " + isSJCapture)
 
       def newInstance(): T = constructorMirror.apply().asInstanceOf[T]
 
@@ -314,7 +315,7 @@ case class PlainClassTypeAdapter[T](
 
   private val fieldMembersByName: Map[String, PlainFieldMember[T]] = members.map(member => member.name -> member).toMap
 
-  override def read(reader: Reader): T =
+  override def read(reader: Reader): T = 
     reader.peek match {
       case TokenType.BeginObject =>
         val numberOfMembers = members.length

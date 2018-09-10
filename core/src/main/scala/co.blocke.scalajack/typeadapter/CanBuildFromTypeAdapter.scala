@@ -105,7 +105,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: GenMapLike[Key, Value, To]](
     keyTypeAdapter:            TypeAdapter[Key],
     valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[To] {
 
-  override def read(reader: Reader): To =
+  override def read(reader: Reader): To = {
     reader.peek match {
       case TokenType.BeginObject =>
         val builder = canBuildFrom()
@@ -125,6 +125,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: GenMapLike[Key, Value, To]](
       case TokenType.Null =>
         reader.readNull().asInstanceOf[To]
     }
+  }
 
   override def write(map: To, writer: Writer): Unit =
     if (map == null) {

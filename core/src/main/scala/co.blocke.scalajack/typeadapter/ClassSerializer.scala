@@ -69,6 +69,7 @@ class ClassSerializer[C](
             }
 
             val newType = appliedType(tpe.typeConstructor, typeArgs)
+            import collection.JavaConverters._
             val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[C]]
 
             for (member <- newTypeAdapter.fieldMembers) {

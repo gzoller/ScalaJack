@@ -310,6 +310,7 @@ case class CaseClassTypeAdapter[T](
 
         val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
         if (isSJCapture) {
+          println("Hey!  A SJCapture")
           reader.position = savedPos
           //          reader.beginObject()
           implicit val jOps: JsonOps[JValue] = Json4sOps
@@ -408,11 +409,13 @@ case class CaseClassTypeAdapter[T](
               })
           }
 
-        // FIXME         sjc.captured.foreach {
-        //            case (memberName, valueString) =>
-        //              memberNameTypeAdapter.write(memberName, writer)
-        //              writer.writeRawValue(valueString.asInstanceOf[String])
-        //          }
+          // FIXME
+          println(">>> " + sjc.captured)
+        // sjc.captured.foreach {
+        //   case (memberName, valueString) =>
+        //     memberNameTypeAdapter.write(memberName, writer)
+        //     writer.writeRawValue(valueString.asInstanceOf[String])
+        // }
         case _ =>
       }
 

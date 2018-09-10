@@ -15,5 +15,4 @@ class DerivedValueClassDeserializer[Derived, Source](
         val derived = derive(source)
         TypeTagged(derived, derivedType)
     }
-
 }

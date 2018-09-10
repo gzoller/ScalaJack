@@ -13,7 +13,7 @@ object Build extends Build {
     import Dependencies._
 
     val scalaVer12 = "2.12.1"
-    val scalaVer = "2.11.8"
+    val scalaVer = "2.12.3"  //"2.11.8"
 
     lazy val basicSettings = Seq(
         organization                := "co.blocke",
@@ -30,7 +30,8 @@ object Build extends Build {
             .setPreference(AlignSingleLineCaseStatements, true)
             .setPreference(DoubleIndentConstructorArguments, true),
             // .setPreference(PreserveDanglingCloseParenthesis, true),
-        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings", "-language:higherKinds", "-language:implicitConversions"),
+        scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-language:higherKinds", "-language:implicitConversions"),
+        // scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings", "-language:higherKinds", "-language:implicitConversions"),
         testOptions in Test += Tests.Argument("-oDF")
     )
 
