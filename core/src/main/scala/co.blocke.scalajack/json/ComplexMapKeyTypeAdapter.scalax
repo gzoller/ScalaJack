@@ -59,10 +59,16 @@ case class ComplexMapKeyTypeAdapter[T](
       case vta: OptionTypeAdapterEmpty[_] if (vta.valueTypeAdapter.isInstanceOf[StringKind] || value == None) => valueTypeAdapter.write(value, writer)
       case vta: StringKind => valueTypeAdapter.write(value, writer)
       case _ =>
-        val nestedWriter = new StringJsonWriter(true)
-        valueTypeAdapter.write(value, nestedWriter)
-        val json = nestedWriter.jsonString
-        stringTypeAdapter.write(json, writer)
+        println("Hello!")
+      // implicit val ops: JsonOps[JValue] = Json4sOps
+      // val serializer = typeAdapter.serializer
+      // val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
+      // val nestedJson = Json4sOps.renderCompact(json)
+
+      // val nestedWriter = new StringJsonWriter(true)
+      // valueTypeAdapter.write(value, nestedWriter)
+      // val json = nestedWriter.jsonString
+      // stringTypeAdapter.write(json, writer)
     }
   }
 }

@@ -25,13 +25,14 @@ case class JsonFlavor(
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
 
-  override val context: Context = {
-    val ctx = bakeContext()
-    if (isCanonical)
-      ctx.copy(factories = /*JsonCanBuildFromTypeAdapter :: */ ctx.factories)
-    else
-      ctx
-  }
+  override val context: Context = bakeContext()
+  // {
+  //   val ctx = bakeContext()
+  //   if (isCanonical)
+  //     ctx.copy(factories = /*JsonCanBuildFromTypeAdapter :: */ ctx.factories)
+  //   else
+  //     ctx
+  // }
 
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
     val tokenizer = new Tokenizer(isCanonical)
@@ -78,17 +79,9 @@ case class JsonFlavor(
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
     val typeAdapter = context.typeAdapterOf[T]
-
-    val useSerializer = true
-    if (useSerializer) {
-      implicit val ops: JsonOps[JValue] = Json4sOps
-      val serializer = typeAdapter.serializer
-      val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
-      Json4sOps.renderCompact(json)
-    } else {
-      val writer = new StringJsonWriter(isCanonical)
-      typeAdapter.write(value, writer)
-      writer.jsonString
-    }
+    implicit val ops: JsonOps[JValue] = Json4sOps
+    val serializer = typeAdapter.serializer
+    val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
+    Json4sOps.renderCompact(json)
   }
 }

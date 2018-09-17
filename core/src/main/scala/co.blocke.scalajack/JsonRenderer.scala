@@ -11,24 +11,39 @@ object JsonRenderer {
 
       var beginIndex = 0
 
-      builder.append('"')
+      val isCanonical = true //  HOW CAN I GET THIS LITTLE NUGGET DOWN INTO THIS FUNCTION?!?!?!
+      if (isCanonical) {
+        builder.append('"')
+        while (i < length) {
+          string.charAt(i) match {
+            case '"' =>
+              builder.appendAll(string.substring(beginIndex, i))
+              builder.append("""\"""")
+              i += 1
+              beginIndex = i
 
-      while (i < length) {
+            case _ =>
+              i += 1
+          }
+        }
+        builder.appendAll(string.substring(beginIndex))
+        builder.append('"')
+      } else {
         string.charAt(i) match {
-          case '"' =>
-            builder.appendAll(string.substring(beginIndex, i))
-            builder.append("""\"""")
-            i += 1
+          case '{' | '[' =>
+            builder.appendAll(string)
+            // builder.appendAll(string.substring(beginIndex, i))
             beginIndex = i
+            i += 1
 
           case _ =>
+            builder.append('"')
             i += 1
+            builder.appendAll(string.substring(beginIndex))
+            builder.append('"')
         }
+        // builder.appendAll(string.substring(beginIndex))
       }
-
-      builder.appendAll(string.substring(beginIndex))
-
-      builder.append('"')
     }
 
     def helper(json: J): Unit =

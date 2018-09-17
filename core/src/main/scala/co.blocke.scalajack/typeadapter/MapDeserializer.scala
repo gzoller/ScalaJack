@@ -30,7 +30,9 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
           val errorsBuilder = immutable.Seq.newBuilder[(Path, DeserializationError)]
 
           ops.foreachObjectField(objectFields, { (fieldName, fieldValueJson) =>
+            println("\nKey deserializer: " + keyDeserializer)
             val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))
+            println("Map key: " + keyDeserializationResult + "\n")
             val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
 
             (keyDeserializationResult, valueDeserializationResult) match {

@@ -88,6 +88,7 @@ class ClassSerializer[C](
               val memberName = member.name
 
               val valueSerializationResult = member.serializeValue(taggedMemberValue)
+
               valueSerializationResult match {
                 case SerializationSuccess(memberValueJson) =>
                   appendField(memberName, memberValueJson)

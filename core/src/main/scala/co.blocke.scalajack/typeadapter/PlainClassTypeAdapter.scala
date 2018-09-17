@@ -315,7 +315,7 @@ case class PlainClassTypeAdapter[T](
 
   private val fieldMembersByName: Map[String, PlainFieldMember[T]] = members.map(member => member.name -> member).toMap
 
-  override def read(reader: Reader): T = 
+  override def read(reader: Reader): T =
     reader.peek match {
       case TokenType.BeginObject =>
         val numberOfMembers = members.length
