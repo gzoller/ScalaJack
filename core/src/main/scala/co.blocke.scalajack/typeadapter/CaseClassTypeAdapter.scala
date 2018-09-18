@@ -6,7 +6,7 @@ import java.lang.reflect.Method
 import org.json4s.JsonAST.JValue
 
 import scala.util.Try
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.existentials
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
 

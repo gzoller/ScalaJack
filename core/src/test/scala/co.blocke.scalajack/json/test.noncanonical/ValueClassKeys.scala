@@ -3,7 +3,6 @@ package json.test.noncanonical
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
-import scala.reflect.runtime.universe.typeOf
 
 class ValueClassKeys() extends FunSpec with Matchers {
 

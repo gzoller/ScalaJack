@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.collections.plain
 
 import org.scalatest.{ FunSpec, Matchers }
-import scala.reflect.runtime.universe.typeOf
 import co.blocke.test.PlayerJava
 
 class Options() extends FunSpec with Matchers {

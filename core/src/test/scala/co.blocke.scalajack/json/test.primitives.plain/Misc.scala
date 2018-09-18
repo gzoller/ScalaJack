@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.primitives.plain
 
 import org.scalatest.{ FunSpec, Matchers }
-import java.util.UUID
 
 class Misc() extends FunSpec with Matchers {
 

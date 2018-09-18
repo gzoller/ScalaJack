@@ -2,9 +2,8 @@ package co.blocke.scalajack
 package mongo
 
 import co.blocke.scalajack.TokenType.TokenType
-import org.bson.{ BsonDocument, BsonInt32, BsonInt64, BsonString, BsonValue }
+import org.bson.{ BsonInt64, BsonValue }
 
-import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 
 class BsonParser {

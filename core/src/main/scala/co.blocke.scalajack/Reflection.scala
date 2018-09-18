@@ -63,9 +63,9 @@ object Reflection {
   // It was looking for Z so it would match Some(Char)
   //
   def solveForNeedleAfterSubstitution(
-    haystackBeforeSubstitution: Type,
-    haystackAfterSubstitution:  Type,
-    needleBeforeSubstitution:   Type): Option[Type] = {
+      haystackBeforeSubstitution: Type,
+      haystackAfterSubstitution:  Type,
+      needleBeforeSubstitution:   Type): Option[Type] = {
     // println("Solve: " + haystackBeforeSubstitution + " --> " + haystackAfterSubstitution + " :: " + needleBeforeSubstitution)
     if (needleBeforeSubstitution == haystackBeforeSubstitution) {
       Some(haystackAfterSubstitution)

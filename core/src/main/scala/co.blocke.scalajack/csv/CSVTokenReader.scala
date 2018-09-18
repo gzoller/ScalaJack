@@ -3,7 +3,7 @@ package csv
 
 import TokenType.TokenType
 
-class CSVTokenReader(
+case class CSVTokenReader(
     override val source: Array[Char],
     numberOfTokens:      Int,
     tokenTypes:          Array[TokenType],

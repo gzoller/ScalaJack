@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package mongo
 
-import org.bson.{ BsonDocument, BsonValue }
+import org.bson.BsonDocument
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.MongoClient
 import typeadapter._

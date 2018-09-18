@@ -35,7 +35,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         mongoScalaJack.read[Five](dbo) should equal(five)
       }
       it("MongoKey Annotation (_id field generation) - single key -- Missing Non-Key Field") {
-        val five = Five("Fred", Two("blah", true))
         val dbo = Document("_id" -> BsonString("Fred"), "two" -> BsonDocument("bar" -> BsonBoolean(true)))
         dbo.toJson should equal("""{ "_id" : "Fred", "two" : { "bar" : true } }""")
         val msg = """Required field foo in class co.blocke.scalajack.mongo.test.Two is missing from input and has no specified default value
@@ -43,7 +42,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         the[java.lang.IllegalStateException] thrownBy mongoScalaJack.read[Five](dbo) should have message msg
       }
       it("MongoKey Annotation (_id field generation) - single key -- Missing Key Field") {
-        val five = Five("Fred", Two("blah", true))
         val dbo = Document("two" -> BsonDocument("foo" -> BsonString("blah"), "bar" -> BsonBoolean(true)))
         dbo.toJson should equal("""{ "two" : { "foo" : "blah", "bar" : true } }""")
         val msg = """No default value for _id"""
@@ -97,7 +95,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
       it("DateTime support") {
         val t = LocalDate.parse("1986-07-01").atTime(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))
-        val millis = t.toInstant.toEpochMilli
         val thing = JodaThing("Foo", t, List(t, t, null.asInstanceOf[OffsetDateTime]), Some(t))
         val dbo = mongoScalaJack.render(thing)
         dbo.toJson should equal("""{ "name" : "Foo", "dt" : { "$date" : 520560000000 }, "many" : [{ "$date" : 520560000000 }, { "$date" : 520560000000 }, null], "maybe" : { "$date" : 520560000000 } }""")

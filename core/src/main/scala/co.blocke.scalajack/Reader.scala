@@ -6,7 +6,6 @@ import scala.util.{ Try, Success, Failure }
 trait Reader {
 
   var position: Int
-  private var savedPosition: Int = 0
 
   def source: Array[Char]
 

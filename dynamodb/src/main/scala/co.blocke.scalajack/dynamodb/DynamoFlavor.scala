@@ -29,12 +29,15 @@ case class DynamoFlavor(
 
   // Embedded JSON-flavored ScalaJack, as Item can read/write JSON, so this is actually the most straightforward
   // path to serialization.
-  lazy val sj = ScalaJack()
-    .withAdapters(customAdapters: _*)
-    .withHints(hintMap.toList: _*)
-    .withHintModifiers(hintModifiers.toList: _*)
-    .withDefaultHint(defaultHint)
-    .parseOrElse(parseOrElseMap.toList: _*)
+  lazy val sj = {
+    val baseSj = ScalaJack()
+      .withAdapters(customAdapters: _*)
+      .withHints(hintMap.toList: _*)
+      .withHintModifiers(hintModifiers.toList: _*)
+      .withDefaultHint(defaultHint)
+      .parseOrElse(parseOrElseMap.toList: _*)
+    typeModifier.map(tm => baseSj.withTypeModifier(tm)).getOrElse(baseSj)
+  }
 
   def read[T](item: Item)(implicit valueTypeTag: TypeTag[T]): T = {
     sj.read[T](item.toJSON())
