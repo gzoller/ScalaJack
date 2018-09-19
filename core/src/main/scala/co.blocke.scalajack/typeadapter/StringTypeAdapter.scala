@@ -7,6 +7,7 @@ object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
 
   override val serializer: Serializer[String] = new StringSerializer
 
+  /*
   override def read(reader: Reader): String = {
     reader.peek match {
       case TokenType.String =>
@@ -27,5 +28,6 @@ object StringTypeAdapter extends TypeAdapter.=:=[String] with StringKind {
     } else {
       writer.writeString(value)
     }
+    */
 
 }

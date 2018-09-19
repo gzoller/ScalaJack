@@ -1,7 +1,6 @@
 package co.blocke.scalajack.benchmarks
 
 import co.blocke.scalajack.{ ScalaJack, HintModifier }
-import co.blocke.scalajack.json.Tokenizer
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
 import scala.reflect.runtime.universe.{ Type, typeOf }
 

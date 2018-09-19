@@ -1,7 +1,7 @@
-package co.blocke.scalajack
-package json
+package co.blocke.scalajack.benchmarks
 
-import TokenType.TokenType
+import co.blocke.scalajack.TokenType
+import co.blocke.scalajack.TokenType.TokenType
 
 class Tokenizer(val isCanonical: Boolean = true) {
   // RawContext == 0

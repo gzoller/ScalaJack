@@ -25,21 +25,8 @@ case class JsonFlavor(
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
 
-  override val context: Context = bakeContext()
-  // {
-  //   val ctx = bakeContext()
-  //   if (isCanonical)
-  //     ctx.copy(factories = /*JsonCanBuildFromTypeAdapter :: */ ctx.factories)
-  //   else
-  //     ctx
-  // }
-
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
-    val tokenizer = new Tokenizer(isCanonical)
-    val source = json.toCharArray
-    val reader = tokenizer.tokenize(source, 0, source.length)
     val Some(js) = JsonParser.parse(json)(Json4sOps)
-
     val deserializer = context.typeAdapterOf[T].deserializer
     val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
     deserializationResult match {
