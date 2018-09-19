@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 object JsonRenderer {
 
-  def renderCompact[J](json: J)(implicit ops: JsonOps[J]): String = {
+  def renderCompact[J](json: J, sj: ScalaJackLike[_])(implicit ops: JsonOps[J]): String = {
     val builder = new StringBuilder
 
     def appendString(string: String): Unit = {
@@ -11,8 +11,7 @@ object JsonRenderer {
 
       var beginIndex = 0
 
-      val isCanonical = true //  HOW CAN I GET THIS LITTLE NUGGET DOWN INTO THIS FUNCTION?!?!?!
-      if (isCanonical) {
+      if (sj.isCanonical) {
         builder.append('"')
         while (i < length) {
           string.charAt(i) match {

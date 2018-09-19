@@ -25,7 +25,7 @@ class BigIntDeserializer extends Deserializer[BigInt] {
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
+      case _ => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON number", reportedBy = self))
     }
 
 }

@@ -4,7 +4,7 @@ package typeadapter
 import scala.collection.GenMap
 import scala.collection.immutable
 
-class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V]) extends Serializer[M] {
+class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V], context: Context) extends Serializer[M] {
 
   override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J]): SerializationResult[J] =
     tagged match {
@@ -43,7 +43,7 @@ class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], value
                   val keyString =
                     keyJson match {
                       case JsonString(s) => s
-                      case _             => ops.renderCompact(keyJson)
+                      case _             => ops.renderCompact(keyJson, context.sjFlavor.get)
                     }
 
                   appendField(keyString, valueJson)

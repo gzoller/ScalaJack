@@ -11,7 +11,7 @@ class ShortDeserializer extends Deserializer[Short] {
     json match {
       case JsonLong(longValue) => DeserializationSuccess(TypeTagged(longValue.toShortExact))
       case JsonInt(bigInt)     => DeserializationSuccess(TypeTagged(bigInt.toShortExact))
-      case _                   => DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON number, not $json", reportedBy = self))
+      case _                   => DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON number, not $json", reportedBy = self))
     }
 
 }

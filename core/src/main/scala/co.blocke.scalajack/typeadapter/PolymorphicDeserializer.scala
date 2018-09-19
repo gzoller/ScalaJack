@@ -53,7 +53,7 @@ class PolymorphicDeserializer[T](
       //        concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))
     }
 
 }

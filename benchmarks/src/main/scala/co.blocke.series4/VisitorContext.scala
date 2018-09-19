@@ -1,8 +1,8 @@
 package co.blocke.series4
 
 case class CustomReadRender(
-  read:   PartialFunction[(KindMarker, Any), Any],
-  render: PartialFunction[(KindMarker, Any), Any]
+    read:   PartialFunction[(KindMarker, Any), Any],
+    render: PartialFunction[(KindMarker, Any), Any]
 )
 
 case class VisitorContext(

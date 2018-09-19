@@ -120,7 +120,9 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
 
     val intermediateContext = Context(
       defaultHint,
-      factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter))
+      factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter),
+      Some(this)
+    )
 
     // ParseOrElse functionality
     val fallbackFactories = parseOrElseMap.map {

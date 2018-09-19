@@ -47,7 +47,7 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))
     }
 
 }

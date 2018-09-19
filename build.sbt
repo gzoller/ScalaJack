@@ -32,8 +32,10 @@ def scalacOptionsVersion(scalaVersion: String) = {
     "-feature", 
     "-deprecation", 
     "-Xlint", 
-    "-encoding", 
-    "UTF8", 
+    "-encoding", "UTF8", 
+    "-language:higherKinds",
+    // "-language:existentials",
+    "-language:implicitConversions",
     "-unchecked"
     //"-Xfatal-warnings"
   ) ++ xver
@@ -44,7 +46,7 @@ lazy val basicSettings = Seq(
   startYear                   := Some(2015),
   crossScalaVersions          := Seq("2.11.12", "2.12.6"),
   publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
-  scalaVersion                := "2.12.6",
+  scalaVersion                := "2.12.3",
 //  resolvers                   ++= resolutionRepos,
   coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum       := true,
@@ -54,7 +56,6 @@ lazy val basicSettings = Seq(
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(DoubleIndentConstructorArguments, true),
   // .setPreference(PreserveDanglingCloseParenthesis, true),
-  //scalacOptions               := Seq("-feature", "-deprecation", "-Xlint", "-encoding", "UTF8", "-unchecked", "-Xfatal-warnings"),
   scalacOptions := scalacOptionsVersion(scalaVersion.value),
   testOptions in Test += Tests.Argument("-oDF")
 )

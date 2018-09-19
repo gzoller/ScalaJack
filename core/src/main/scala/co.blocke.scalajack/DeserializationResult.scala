@@ -79,5 +79,6 @@ case class DeserializationFailure(errors: immutable.Seq[(Path, DeserializationEr
   def errors(path: Path): immutable.Seq[(Path, DeserializationError)] = errors.filter(_._1 == path)
 
   def isUnsupported(path: Path): Boolean = errors(path).exists(_._2.isInstanceOf[DeserializationError.Unsupported])
+  def isUnexpected(path: Path): Boolean = errors(path).exists(_._2.isInstanceOf[DeserializationError.Unexpected])
 
 }

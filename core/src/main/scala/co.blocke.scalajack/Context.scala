@@ -66,7 +66,7 @@ object Context {
     .withFactory(ZonedDateTimeTypeAdapter)
 }
 
-case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory] = Nil) {
+case class Context(defaultHint: String = "", factories: List[TypeAdapterFactory] = Nil, sjFlavor: Option[ScalaJackLike[_]] = None) {
 
   sealed trait Phase
   case object Uninitialized extends Phase

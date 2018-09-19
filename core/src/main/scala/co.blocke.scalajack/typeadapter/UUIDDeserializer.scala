@@ -16,7 +16,7 @@ class UUIDDeserializer extends Deserializer[UUID] {
         case e: IllegalArgumentException =>
           DeserializationError.Malformed(e, reportedBy = self)
       })
-      case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string", reportedBy = self))
+      case _ => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON string", reportedBy = self))
     }
 
 }

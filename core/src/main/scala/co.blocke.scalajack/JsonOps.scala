@@ -21,7 +21,7 @@ trait JsonOps[J] {
 
   def parse(string: String): J = JsonParser.parse[J](string)(this).getOrElse(throw new IllegalArgumentException("JSON string is empty"))
 
-  def renderCompact(json: J): String = JsonRenderer.renderCompact[J](json)(this)
+  def renderCompact(json: J, sj: ScalaJackLike[_]): String = JsonRenderer.renderCompact[J](json, sj)(this)
 
   def foreachArrayElement(elements: ArrayElements, f: (Int, J) => Unit): Unit
 

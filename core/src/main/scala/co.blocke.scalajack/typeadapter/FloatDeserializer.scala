@@ -28,7 +28,7 @@ class FloatDeserializer extends Deserializer[Float] {
         })
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON number", reportedBy = self))
     }
 
 }

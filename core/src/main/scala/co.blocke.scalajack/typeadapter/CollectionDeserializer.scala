@@ -49,7 +49,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON array, not $json", reportedBy = self))
     }
 
 }

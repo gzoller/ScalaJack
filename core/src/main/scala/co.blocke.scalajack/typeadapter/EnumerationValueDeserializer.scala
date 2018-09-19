@@ -26,7 +26,7 @@ class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt
         DeserializationSuccess(TypeTagged(null, enumerationValueType))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON string or int", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON string or int", reportedBy = self))
     }
 
   }
