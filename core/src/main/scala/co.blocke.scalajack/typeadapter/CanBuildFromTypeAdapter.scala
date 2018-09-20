@@ -103,84 +103,10 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: GenMapLike[Key, Value, To]](
     override val serializer:   Serializer[To],
     canBuildFrom:              CanBuildFrom[_, (Key, Value), To],
     keyTypeAdapter:            TypeAdapter[Key],
-    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[To] {
-
-  override def read(reader: Reader): To = {
-    reader.peek match {
-      case TokenType.BeginObject =>
-        val builder = canBuildFrom()
-
-        reader.beginObject()
-
-        while (reader.hasMoreMembers) {
-          val key = keyTypeAdapter.read(reader)
-          val value = valueTypeAdapter.read(reader)
-          builder += key -> value
-        }
-
-        reader.endObject()
-
-        builder.result()
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[To]
-    }
-  }
-
-  override def write(map: To, writer: Writer): Unit =
-    if (map == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      map foreach {
-        case (key, value) =>
-          keyTypeAdapter.write(key, writer)
-          valueTypeAdapter.write(value, writer)
-      }
-
-      writer.endObject()
-    }
-
-}
+    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[To]
 
 case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](
     override val deserializer: Deserializer[To],
     override val serializer:   Serializer[To],
     canBuildFrom:              CanBuildFrom[_, Elem, To],
-    elementTypeAdapter:        TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To] {
-
-  override def read(reader: Reader): To =
-    reader.peek match {
-      case TokenType.BeginArray =>
-        val builder = canBuildFrom()
-
-        reader.beginArray()
-
-        while (reader.hasMoreElements) {
-          val element = elementTypeAdapter.read(reader)
-          builder += element
-        }
-
-        reader.endArray()
-
-        builder.result()
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[To]
-    }
-
-  override def write(value: To, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.beginArray()
-
-      for (element <- value) {
-        elementTypeAdapter.write(element, writer)
-      }
-
-      writer.endArray()
-    }
-
-}
+    elementTypeAdapter:        TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To]

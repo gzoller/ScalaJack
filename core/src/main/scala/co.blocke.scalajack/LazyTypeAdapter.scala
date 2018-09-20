@@ -25,10 +25,4 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
 
   override val serializer: Serializer[T] = new DeferredSerializerReference[T](() => resolved.serializer)
 
-  override def read(reader: Reader): T =
-    resolved.read(reader)
-
-  override def write(value: T, writer: Writer): Unit =
-    resolved.write(value, writer)
-
 }

@@ -1,50 +1,53 @@
 package co.blocke.scalajack
 package typeadapter
 
+import javaprimitives._
+
 object PermissivePrimitiveTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
     if (tt.tpe =:= typeOf[Boolean]) {
-      ScalaBooleanTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      BooleanTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Boolean]) {
-      JavaBooleanTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaBooleanTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Byte]) {
-      ScalaByteTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      ByteTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Byte]) {
-      JavaByteTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaByteTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Double]) {
-      ScalaDoubleTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      DoubleTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Double]) {
-      JavaDoubleTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaDoubleTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Float]) {
-      ScalaFloatTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      FloatTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Float]) {
-      JavaFloatTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaFloatTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Int]) {
-      ScalaIntTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      IntTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Integer]) {
-      JavaIntegerTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaIntegerTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Long]) {
-      ScalaLongTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      LongTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Long]) {
-      JavaLongTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaLongTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[Short]) {
-      ScalaShortTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      ShortTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.lang.Short]) {
-      JavaShortTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaShortTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[BigInt]) {
-      ScalaBigIntTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      BigIntTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.math.BigInteger]) {
-      JavaBigIntegerTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaBigIntegerTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[BigDecimal]) {
-      ScalaBigDecimalTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      BigDecimalTypeAdapter.asInstanceOf[TypeAdapter[T]]
     } else if (tt.tpe =:= typeOf[java.math.BigDecimal]) {
-      JavaBigDecimalTypeAdapter.asInstanceOf[TypeAdapter[T]]
+      JavaBigDecimalTypeAdapter.create(TypeAdapterFactory(Nil)).asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }
   }
 
+  /*
   object ScalaBooleanTypeAdapter extends TypeAdapter[Boolean] {
 
     override def read(reader: Reader): Boolean =
@@ -443,5 +446,5 @@ object PermissivePrimitiveTypeAdapter extends TypeAdapterFactory {
       }
 
   }
-
+*/
 }

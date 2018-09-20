@@ -13,12 +13,4 @@ object TypeParameterTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class TypeParameterTypeAdapter[T](override val deserializer: Deserializer[T], override val serializer: Serializer[T], anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[T] {
-
-  override def read(reader: Reader): T =
-    anyTypeAdapter.read(reader).asInstanceOf[T]
-
-  override def write(value: T, writer: Writer): Unit =
-    anyTypeAdapter.write(value, writer)
-
-}
+case class TypeParameterTypeAdapter[T](override val deserializer: Deserializer[T], override val serializer: Serializer[T], anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[T]

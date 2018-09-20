@@ -12,12 +12,10 @@ object JavaCollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam
     val elementTypeAdapter = context.typeAdapterOf[E]
 
     new JavaCollectionTypeAdapter[E, C](
-      deserializer = new JavaCollectionDeserializer[E, C](elementTypeAdapter.deserializer, newEmptyCollection),
+      deserializer = new JavaCollectionDeserializer[E, C](elementTypeAdapter.deserializer, (() => newEmptyCollection())),
       serializer   = new JavaCollectionSerializer[E, C](elementTypeAdapter.serializer))
   }
 
 }
 
-class JavaCollectionTypeAdapter[E, C <: java.util.Collection[E]](override val deserializer: Deserializer[C], override val serializer: Serializer[C]) extends TypeAdapter[C] {
-
-}
+class JavaCollectionTypeAdapter[E, C <: java.util.Collection[E]](override val deserializer: Deserializer[C], override val serializer: Serializer[C]) extends TypeAdapter[C]

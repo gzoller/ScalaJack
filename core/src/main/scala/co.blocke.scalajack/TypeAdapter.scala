@@ -54,6 +54,7 @@ trait TypeAdapter[T] {
     }
   }
 
+  /*
   def read(reader: Reader): T = {
     val json = reader.readJsonValue()(Json4sOps)
     val TypeTagged(value) = deserializer.deserialize(Path.Unknown, json)(Json4sOps).get
@@ -75,6 +76,7 @@ trait TypeAdapter[T] {
     //    val SerializationSuccess(json) = serializer.serialize(tagged)(Json4sOps)
     //    writer.writeJsonValue(json)(Json4sOps)
   }
+    */
 
   val deserializer: Deserializer[T] = new Deserializer[T] {
     override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
@@ -103,12 +105,4 @@ trait StringKind
 
 case class TransformedTypeAdapter[A, B](
     typeAdapter: TypeAdapter[A],
-    f:           BijectiveFunction[A, B]) extends TypeAdapter[B] {
-
-  override def read(reader: Reader): B =
-    f.apply(typeAdapter.read(reader))
-
-  override def write(value: B, writer: Writer): Unit =
-    typeAdapter.write(f.unapply(value), writer)
-
-}
+    f:           BijectiveFunction[A, B]) extends TypeAdapter[B]

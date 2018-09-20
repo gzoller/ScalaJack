@@ -49,16 +49,4 @@ case class DerivedValueClassAdapter[DerivedValueClass, Value](
     constructorMirror:         MethodMirror,
     accessorMethodSymbol:      MethodSymbol,
     accessorMethod:            Method,
-    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[DerivedValueClass] {
-
-  override def read(reader: Reader): DerivedValueClass = {
-    val value = valueTypeAdapter.read(reader)
-    constructorMirror.apply(value).asInstanceOf[DerivedValueClass]
-  }
-
-  override def write(value: DerivedValueClass, writer: Writer): Unit = {
-    val wrappedValue = accessorMethod.invoke(value).asInstanceOf[Value]
-    valueTypeAdapter.write(wrappedValue, writer)
-  }
-
-}
+    valueTypeAdapter:          TypeAdapter[Value]) extends TypeAdapter[DerivedValueClass]

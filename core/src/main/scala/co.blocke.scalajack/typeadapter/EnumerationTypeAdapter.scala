@@ -23,30 +23,4 @@ object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 }
 
-case class EnumerationTypeAdapter[E <: Enumeration](override val deserializer: Deserializer[E#Value], override val serializer: Serializer[E#Value], enum: E) extends TypeAdapter[E#Value] with StringKind {
-
-  override def read(reader: Reader): E#Value =
-    reader.peek match {
-      case TokenType.String =>
-        Try(enum.withName(reader.readString())) match {
-          case Success(u) => u
-          case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
-        }
-      case TokenType.Number =>
-        Try(enum(reader.readInt())) match {
-          case Success(u) => u
-          case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}" + "\n" + reader.showError())
-        }
-      case TokenType.Null => reader.readNull()
-      case actual =>
-        reader.read()
-        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Enumeration value.\n" + reader.showError())
-    }
-
-  override def write(value: E#Value, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString(value.toString)
-    }
-}
+case class EnumerationTypeAdapter[E <: Enumeration](override val deserializer: Deserializer[E#Value], override val serializer: Serializer[E#Value], enum: E) extends TypeAdapter[E#Value] with StringKind

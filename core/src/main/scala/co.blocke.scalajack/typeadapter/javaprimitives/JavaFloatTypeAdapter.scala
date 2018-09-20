@@ -13,26 +13,4 @@ object JavaFloatTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Float] {
 
 }
 
-class JavaFloatTypeAdapter(override val deserializer: Deserializer[java.lang.Float], override val serializer: Serializer[java.lang.Float]) extends TypeAdapter.=:=[java.lang.Float] {
-
-  override def read(reader: Reader): java.lang.Float =
-    reader.peek match {
-      case TokenType.Number =>
-        java.lang.Float.valueOf(reader.readFloat())
-
-      case TokenType.Null =>
-        reader.readNull()
-
-      case actual =>
-        reader.read()
-        throw new IllegalStateException(s"Expected value token of type Number, not $actual when reading Float value.  (Is your value wrapped in quotes?)\n" + reader.showError())
-    }
-
-  override def write(value: java.lang.Float, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeFloat(value.floatValue)
-    }
-
-}
+class JavaFloatTypeAdapter(override val deserializer: Deserializer[java.lang.Float], override val serializer: Serializer[java.lang.Float]) extends TypeAdapter.=:=[java.lang.Float]

@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.language.existentials
 import scala.util.Try
 
 object SealedTraitTypeAdapter extends TypeAdapterFactory {
@@ -69,103 +68,32 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
               next.typeAdapterOf[T]
             } else {
               new TypeAdapter[T] {
-                /*
-  FIXME
-                override object deserializer extends Deserializer[T] {
 
-                  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-                    json match {
-                      case JsonObject(x) =>
-                        val memberNames = new scala.collection.mutable.HashSet[MemberName]
-
-                        ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
-                          memberNames += fieldName
-                        })
-
-                        subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
-                          case Nil =>
-                            throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-
-                          case matchingSubclass :: Nil =>
-                            matchingSubclass.typeAdapter.deserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
-
-                          case matchingSubclasses =>
-                            throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-                        }
-
-                      case _ =>
-                        DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object"))
-                    }
-
-                }
-  */
-                override def read(reader: Reader): T =
-                  reader.peek match {
-                    case TokenType.BeginObject =>
-                      val originalPosition = reader.position
-
-                      reader.beginObject()
-
-                      val memberNames = new scala.collection.mutable.HashSet[MemberName]
-
-                      while (reader.hasMoreMembers) {
-                        val memberName = reader.readString()
-                        memberNames += memberName
-                        reader.skipValue()
-                      }
-
-                      reader.position = originalPosition
-
-                      subclasses.filter(subclass => subclass.memberNames.subsetOf(memberNames)) match {
-                        case Nil =>
-                          throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-
-                        case matchingSubclass :: Nil =>
-                          matchingSubclass.typeAdapter.read(reader).asInstanceOf[T]
-
-                        case matchingSubclasses =>
-                          throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match member names $memberNames")
-                      }
-
-                    case TokenType.Null =>
-                      reader.readNull().asInstanceOf[T]
+                override val deserializer = new SealedTraitDeserializer[T](subclasses.map({ subclass =>
+                  new SealedTraitDeserializer.Implementation[T] {
+                    override val fieldNames: Set[String] = subclass.memberNames
+                    override val deserializer: Deserializer[T] = subclass.deserializer
                   }
+                }).toSet)
 
-                override def write(value: T, writer: Writer): Unit =
-                  if (value == null) {
-                    writer.writeNull()
-                  } else {
-                    for (subclass <- subclasses) {
-                      if (subclass.subclassClass.isInstance(value)) {
-                        subclass.typeAdapter.write(value, writer)
+                override val serializer = new SealedTraitSerializer[T](subclasses.map({ subclass =>
+                  new SealedTraitSerializer.Implementation[T] {
+                    private val runtimeClass: RuntimeClass = subclass.subclassClass
+                    private val serializer: Serializer[T] = subclass.typeAdapter.serializer
+
+                    override def isInstance(tagged: TypeTagged[T]): Boolean =
+                      tagged match {
+                        case TypeTagged(null) => false
+                        case TypeTagged(x)    => runtimeClass.isInstance(x)
                       }
-                    }
-                  }
 
+                    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                      serializer.serialize(tagged)
+                  }
+                }).toSet)
+
+                TypeAdapter(deserializer, serializer)
               }
-
-              val deserializer = new SealedTraitDeserializer[T](subclasses.map({ subclass =>
-                new SealedTraitDeserializer.Implementation[T] {
-                  override val fieldNames: Set[String] = subclass.memberNames
-                  override val deserializer: Deserializer[T] = subclass.deserializer
-                }
-              }).toSet)
-
-              val serializer = new SealedTraitSerializer[T](subclasses.map({ subclass =>
-                new SealedTraitSerializer.Implementation[T] {
-                  private val runtimeClass: RuntimeClass = subclass.subclassClass
-                  private val serializer: Serializer[T] = subclass.typeAdapter.serializer
-                  override def isInstance(tagged: TypeTagged[T]): Boolean =
-                    tagged match {
-                      case TypeTagged(null) => false
-                      case TypeTagged(x)    => runtimeClass.isInstance(x)
-                    }
-                  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
-                    serializer.serialize(tagged)
-                }
-              }).toSet)
-
-              TypeAdapter(deserializer, serializer)
             }
           }
       }

@@ -3,9 +3,6 @@ package typeadapter
 
 import java.lang.reflect.Method
 
-import org.json4s.JsonAST.JValue
-
-import scala.util.Try
 import scala.language.existentials
 import scala.reflect.api.{ Mirror, Universe }
 import scala.reflect.runtime.{ currentMirror, universe }
@@ -76,14 +73,8 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
       valueTypeAdapter.deserializer.deserialize(path, json)
 
-    override def readValue(reader: Reader): Value =
-      valueTypeAdapter.read(reader)
-
     override def serializeValue[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
       valueTypeAdapter.serializer.serialize(tagged)
-
-    override def writeValue(value: Value, writer: Writer): Unit =
-      valueTypeAdapter.write(value, writer)
 
     override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =
       annotations.find(_.tree.tpe =:= tt.tpe)
@@ -225,202 +216,7 @@ case class CaseClassTypeAdapter[T](
   val dbKeys: List[ClassFieldMember[T]] = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
   private val typeMembersByName = typeMembers.map(member => member.name -> member).toMap
-
-  private val numberOfFieldMembers = fieldMembers.size
   private val fieldMembersByName = fieldMembers.map(member => member.name -> member).toMap
-
-  override def read(reader: Reader): T =
-    reader.peek match {
-      case TokenType.BeginObject =>
-        val arguments = new Array[Any](numberOfFieldMembers)
-        val found = new Array[Boolean](numberOfFieldMembers)
-        var foundCount = 0
-
-        val savedPos = reader.position
-
-        reader.beginObject()
-
-        if (typeMembers.nonEmpty) {
-          import scala.collection.mutable
-
-          val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
-
-          while (reader.hasMoreMembers) {
-            val memberName = memberNameTypeAdapter.read(reader)
-            typeMembersByName.get(memberName) match {
-              case Some(typeMember) =>
-                val actualType = Try { typeTypeAdapter.read(reader) }.toOption.getOrElse(typeMember.baseType)
-
-                // Solve for each type parameter
-                for (typeParam <- tpe.typeConstructor.typeParams) {
-                  val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-                    haystackBeforeSubstitution = typeMember.typeSignature,
-                    haystackAfterSubstitution  = actualType,
-                    needleBeforeSubstitution   = typeParam.asType.toType)
-
-                  for (typeArg <- optionalTypeArg) {
-                    setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
-                  }
-                }
-
-              case None =>
-                reader.skipValue()
-            }
-          }
-
-          val typeArgs = for (typeParam <- tpe.typeConstructor.typeParams) yield {
-            val possibleTypeArgs = setsOfTypeArgsByTypeParam(typeParam).toList
-            val typeArg :: Nil = possibleTypeArgs
-            typeArg
-          }
-
-          val actualType = appliedType(tpe.typeConstructor, typeArgs)
-
-          if (actualType =:= tpe) {
-            // YAY! BUSINESS AS USUAL
-            reader.position = savedPos
-            reader.beginObject()
-          } else {
-            val actualTypeAdapter = context.typeAdapter(actualType)
-            reader.position = savedPos
-            return actualTypeAdapter.read(reader).asInstanceOf[T]
-          }
-        }
-
-        while (reader.hasMoreMembers) {
-          val memberName = memberNameTypeAdapter.read(reader)
-          fieldMembersByName.get(memberName) match {
-            case Some(member) =>
-              arguments(member.index) = member.readValue(reader)
-              found(member.index) = true
-              foundCount += 1
-
-            case None =>
-              reader.skipValue()
-          }
-        }
-
-        reader.endObject()
-
-        if (foundCount != numberOfFieldMembers)
-          for (member <- fieldMembers if !found(member.index)) {
-            arguments(member.index) = member.defaultValue.getOrElse(
-              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError()))
-          }
-
-        val asBuilt = constructorMirror.apply(arguments: _*).asInstanceOf[T]
-        if (isSJCapture) {
-          println("Hey!  A SJCapture")
-          reader.position = savedPos
-          //          reader.beginObject()
-          implicit val jOps: JsonOps[JValue] = Json4sOps
-          val jValue = reader.readJsonValue[JValue]()
-          //          val captured = scala.collection.mutable.Map.empty[String, Any]
-          //          while (reader.hasMoreMembers) {
-          //            val memberName = memberNameTypeAdapter.read(reader)
-          //            fieldMembersByName.get(memberName) match {
-          //              case Some(member) => reader.skipValue() // do nothing... already built class
-          //              case None =>
-          //                captured.put(memberName, reader.captureValue())
-          //            }
-          //          }
-          asBuilt.asInstanceOf[SJCapture].captured = JsonAndOps(jValue)
-        }
-        asBuilt
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[T]
-    }
-
-  override def write(value: T, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      if (typeMembers.nonEmpty) {
-        import scala.collection.mutable
-
-        val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
-
-        for (fieldMember <- fieldMembers) {
-          val TypeTagged(fieldValue) = fieldMember.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
-          val declaredFieldValueType = fieldMember.declaredValueType
-          val actualFieldValueType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
-
-          for (typeParam <- tpe.typeConstructor.typeParams) {
-            for (typeMember <- typeMembers) {
-              val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-                haystackBeforeSubstitution = declaredFieldValueType,
-                haystackAfterSubstitution  = actualFieldValueType,
-                needleBeforeSubstitution   = typeParam.asType.toType)
-
-              for (typeArg <- optionalTypeArg) {
-                setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
-              }
-            }
-          }
-        }
-
-        val substitutions: List[(Symbol, Type)] = (for ((typeParam, setOfTypes) <- setsOfTypeArgsByTypeParam) yield {
-          typeParam -> universe.lub(setOfTypes.toList)
-        }).toList
-
-        val substitutionMap = substitutions.toMap
-
-        val typeParams = tpe.typeConstructor.typeParams
-        val typeArgs = typeParams.map(typeParam => substitutionMap(typeParam))
-
-        for (typeMember <- typeMembers) {
-          val ttt = typeMember.typeSignature.substituteTypes(substitutions.map(_._1), substitutions.map(_._2))
-          memberNameTypeAdapter.write(typeMember.name, writer)
-          typeTypeAdapter.write(ttt, writer)
-        }
-
-        val newType = appliedType(tpe.typeConstructor, typeArgs)
-        val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[T]]
-
-        for (member <- newTypeAdapter.fieldMembers) {
-          val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
-
-          memberNameTypeAdapter.write(member.name, writer)
-          member.writeValue(memberValue, writer)
-        }
-      } else {
-        for (member <- fieldMembers) {
-          val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
-          memberNameTypeAdapter.write(member.name, writer)
-          member.writeValue(memberValue, writer)
-        }
-      }
-
-      value match {
-        case sjc: SJCapture =>
-          val captured = sjc.captured
-          import captured.{ jsonValue, jsonOps }
-
-          jsonValue match {
-            case JsonObject(x) =>
-              val members = x.asInstanceOf[jsonOps.ObjectFields]
-              jsonOps.foreachObjectField(members, { (memberName, memberValue) =>
-                memberNameTypeAdapter.write(memberName, writer)
-                writer.writeJsonValue[captured.JsonValue](memberValue)
-                //                writer.writeRawValue(valueString.asInstanceOf[String])
-              })
-          }
-
-          // FIXME
-          println(">>> " + sjc.captured)
-        // sjc.captured.foreach {
-        //   case (memberName, valueString) =>
-        //     memberNameTypeAdapter.write(memberName, writer)
-        //     writer.writeRawValue(valueString.asInstanceOf[String])
-        // }
-        case _ =>
-      }
-
-      writer.endObject()
-    }
 
   // $COVERAGE-OFF$Not used for JSON (Mongo)
   override def typeMember(memberName: MemberName): Option[TypeMember] =
@@ -428,12 +224,6 @@ case class CaseClassTypeAdapter[T](
 
   override def fieldMember(memberName: MemberName): Option[FieldMember] =
     fieldMembersByName.get(memberName)
-
-  override def readMemberName(reader: Reader): MemberName =
-    memberNameTypeAdapter.read(reader)
-
-  override def writeMemberName(memberName: MemberName, writer: Writer): Unit =
-    memberNameTypeAdapter.write(memberName, writer)
 
   override def instantiate(memberValues: Array[Any]): T =
     constructorMirror.apply(memberValues: _*).asInstanceOf[T]

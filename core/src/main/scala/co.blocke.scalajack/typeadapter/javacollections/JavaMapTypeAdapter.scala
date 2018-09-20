@@ -13,16 +13,10 @@ object JavaMapTypeAdapter extends TypeAdapterFactory.<:<.withTwoTypeParams[java.
     val valueTypeAdapter = context.typeAdapterOf[V]
 
     new JavaMapTypeAdapter[K, V, M](
-      deserializer = new JavaMapDeserializer[K, V, M](keyTypeAdapter.deserializer, valueTypeAdapter.deserializer, newEmptyMap),
+      deserializer = new JavaMapDeserializer[K, V, M](keyTypeAdapter.deserializer, valueTypeAdapter.deserializer, (() => newEmptyMap())),
       serializer   = new JavaMapSerializer[K, V, M](keyTypeAdapter.serializer, valueTypeAdapter.serializer))
   }
 
 }
 
-class JavaMapTypeAdapter[K, V, M <: java.util.Map[K, V]](override val deserializer: Deserializer[M], override val serializer: Serializer[M]) extends TypeAdapter[M] {
-
-  override def read(reader: Reader): M = ???
-
-  override def write(value: M, writer: Writer): Unit = ???
-
-}
+class JavaMapTypeAdapter[K, V, M <: java.util.Map[K, V]](override val deserializer: Deserializer[M], override val serializer: Serializer[M]) extends TypeAdapter[M]

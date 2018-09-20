@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.Annotation
 
 object ClassLikeTypeAdapter {
@@ -30,11 +29,7 @@ object ClassLikeTypeAdapter {
 
     def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value]
 
-    def readValue(reader: Reader): Value
-
     def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J]
-
-    def writeValue(value: Value, writer: Writer): Unit
 
     def annotationOf[A](implicit tt: TypeTag[A]): Option[Annotation]
 
@@ -50,82 +45,9 @@ trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
   type FieldMember = ClassLikeTypeAdapter.FieldMember[C]
 
   def members = typeMembers ++ fieldMembers
-
   def typeMembers: List[TypeMember]
-
   def typeMember(memberName: MemberName): Option[TypeMember]
-
   def fieldMembers: List[FieldMember]
-
-  // lazy val mappedByFieldName = fieldMembers.filter(_.annotationOf[MapName].isDefined).map(f => f.name -> f).toMap
-  // lazy val mappedByMappedName = {
-  //   val z = fieldMembers.filter(_.annotationOf[MapName].isDefined).map(f => f.annotationOf[MapName].map { index =>
-  //     index.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal].value().value
-  //   }.get -> f).toMap
-  //   println("HERE: " + z)
-  //   z
-  // }
-
   def fieldMember(memberName: MemberName): Option[FieldMember]
-
-  def readMemberName(reader: Reader): MemberName
-
-  def writeMemberName(memberName: MemberName, writer: Writer): Unit
-
   def instantiate(fieldMemberValues: Array[Any]): C
-
-  // $COVERAGE-OFF$Not used for JSON (Mongo)
-  override def read(reader: Reader): C =
-    reader.peek match {
-      case TokenType.BeginObject =>
-        reader.beginObject()
-
-        val membersByName = fieldMembers.map(member => member.name -> member).toMap
-
-        val numberOfMembers = fieldMembers.size
-        val memberValues = new Array[Any](numberOfMembers)
-        val found = new mutable.BitSet(numberOfMembers)
-
-        while (reader.hasMoreMembers) {
-          val memberName = readMemberName(reader)
-          membersByName.get(memberName) match {
-            case Some(member) =>
-              val memberValue = member.readValue(reader)
-              memberValues(member.index) = memberValue
-              found(member.index) = true
-
-            case None =>
-              reader.skipValue()
-          }
-        }
-
-        reader.endObject()
-
-        for (member <- fieldMembers if !found(member.index)) {
-          memberValues(member.index) = member.defaultValue.getOrElse(throw new RuntimeException(s"No default value for ${member.name}"))
-        }
-
-        instantiate(memberValues)
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[C]
-    }
-
-  override def write(instanceOfClass: C, writer: Writer): Unit =
-    if (instanceOfClass == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      for (member <- fieldMembers) {
-        writeMemberName(member.name, writer)
-
-        val TypeTagged(value) = member.valueIn(TypeTagged.inferFromRuntimeClass[C](instanceOfClass))
-        member.writeValue(value, writer)
-      }
-
-      writer.endObject()
-    }
-  // $COVERAGE-ON$
-
 }

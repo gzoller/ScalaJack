@@ -5,15 +5,12 @@ import java.beans.Introspector
 import java.lang.reflect.Method
 
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
-import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
-import org.json4s.JsonAST.{ JObject, JValue }
 
-import scala.collection.mutable
 import scala.collection.immutable.List
-import scala.language.{ existentials, reflectiveCalls }
+import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.reflect.api.{ Mirror, Universe }
-import scala.reflect.runtime.{ currentMirror, universe }
+import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.universe
 import scala.util.{ Failure, Success, Try }
@@ -83,16 +80,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
       valueTypeAdapter.deserializer.deserialize(path, json)
 
-    override def readValue(reader: Reader): Value = {
-      valueTypeAdapter.read(reader)
-    }
-
     override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =
       valueTypeAdapter.serializer.serialize(tagged)
-
-    override def writeValue(value: Value, writer: Writer): Unit = {
-      valueTypeAdapter.write(value, writer)
-    }
 
     // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
     // otherwise fail the default lookup.
@@ -116,7 +105,6 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
       val memberNameTypeAdapter = context.typeAdapterOf[MemberName]
       val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
-      println("Plain class: " + classSymbol + "  isSJCapture: " + isSJCapture)
 
       def newInstance(): T = constructorMirror.apply().asInstanceOf[T]
 
@@ -268,8 +256,6 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
           .value().value).asInstanceOf[Option[String]]
 
-      def dbKeys[Owner](members: List[PlainFieldMember[Owner]]): List[PlainFieldMember[Owner]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-
       val hasEmptyConstructor = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.isEmpty
       inferConstructorValFields match {
         case members if (!members.isEmpty) =>
@@ -281,15 +267,15 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case _ if (!classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectScalaGetterSetterFields
           PlainClassTypeAdapter[T](
-            new PlainClassDeserializer[T](members, newInstance), // FIXME
-            new PlainClassSerializer[T](members),
-            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
+            new PlainClassDeserializer[T](members, (() => newInstance())), // FIXME
+            new PlainClassSerializer[T](members)) /*,
+            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]*/
         case _ if (classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectJavaGetterSetterFields
           PlainClassTypeAdapter[T](
-            new PlainClassDeserializer[T](members, newInstance), // FIXME
-            new PlainClassSerializer[T](members),
-            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]
+            new PlainClassDeserializer[T](members, (() => newInstance())), // FIXME
+            new PlainClassSerializer[T](members)) /*,
+            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]*/
         case x =>
           next.typeAdapterOf[T]
       }
@@ -303,6 +289,11 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 case class PlainClassTypeAdapter[T](
     override val deserializer: Deserializer[T],
+    override val serializer:   Serializer[T]) extends TypeAdapter[T]
+
+/*
+case class PlainClassTypeAdapter[T](
+    override val deserializer: Deserializer[T],
     override val serializer:   Serializer[T],
     caseClassType:             Type,
     constructorMirror:         MethodMirror,
@@ -311,100 +302,5 @@ case class PlainClassTypeAdapter[T](
     members:                   List[PlainFieldMember[T]],
     isSJCapture:               Boolean,
     dbKeys:                    List[PlainFieldMember[T]],
-    collectionName:            Option[String]            = None) extends TypeAdapter[T] {
-
-  private val fieldMembersByName: Map[String, PlainFieldMember[T]] = members.map(member => member.name -> member).toMap
-
-  override def read(reader: Reader): T =
-    reader.peek match {
-      case TokenType.BeginObject =>
-        val numberOfMembers = members.length
-
-        val found = new mutable.BitSet(numberOfMembers)
-        val foundCount = 0
-
-        reader.beginObject()
-
-        val asBuilt = constructorMirror.apply().asInstanceOf[T] // call 0-parameter constructor
-
-        val savedPos = reader.position
-        while (reader.hasMoreMembers) {
-          val readName = memberNameTypeAdapter.read(reader)
-          fieldMembersByName.get(readName) match {
-            case Some(member) =>
-              member.valueSet(asBuilt, member.readValue(reader))
-              found(member.index) = true
-
-            case None =>
-              reader.skipValue()
-          }
-        }
-
-        reader.endObject()
-
-        if (foundCount != numberOfMembers)
-          for (member <- members if !found(member.index)) {
-            member.defaultValue.getOrElse(
-              throw new IllegalStateException(s"Required field ${member.name} in class ${tpe.typeSymbol.fullName} is missing from input and has no specified default value\n" + reader.showError()))
-          }
-
-        if (isSJCapture) {
-          reader.position = savedPos
-          //          val captured = scala.collection.mutable.Map.empty[String, Any]
-          implicit val jjj: JsonOps[JValue] = Json4sOps
-          val capturedFieldsBuilder = List.newBuilder[(String, JValue)]
-          while (reader.hasMoreMembers) {
-            val memberName = memberNameTypeAdapter.read(reader)
-            fieldMembersByName.get(memberName) match {
-              case Some(member) => reader.skipValue() // do nothing... already built class
-              case None =>
-                capturedFieldsBuilder += memberName -> reader.readJsonValue[JValue]()
-              //                captured.put(memberName, reader.captureValue())
-            }
-          }
-          asBuilt.asInstanceOf[SJCapture].captured = JsonAndOps(JObject(capturedFieldsBuilder.result()): JValue)
-        }
-
-        asBuilt
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[T]
-    }
-
-  override def write(value: T, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.beginObject()
-
-      for (member <- members) {
-        val TypeTagged(memberValue) = member.valueIn(TypeTagged.inferFromRuntimeClass[T](value))
-        memberNameTypeAdapter.write(member.name, writer)
-        member.writeValue(memberValue, writer)
-      }
-      value match {
-        case sjc: SJCapture =>
-          val captured = sjc.captured
-          import captured.{ jsonValue, jsonOps }
-
-          jsonValue match {
-            case JsonObject(x) =>
-              val fields = x.asInstanceOf[jsonOps.ObjectFields]
-
-              jsonOps.foreachObjectField(fields, { (memberName, memberValue) =>
-                memberNameTypeAdapter.write(memberName, writer)
-                writer.writeJsonValue[captured.JsonValue](memberValue)
-              })
-          }
-
-        //          sjc.captured.foreach {
-        //            case (memberName, valueString) =>
-        //              memberNameTypeAdapter.write(memberName, writer)
-        //              writer.writeRawValue(valueString.asInstanceOf[String])
-        //          }
-        case _ =>
-      }
-
-      writer.endObject()
-    }
-}
+    collectionName:            Option[String]            = None) extends TypeAdapter[T]
+*/ 

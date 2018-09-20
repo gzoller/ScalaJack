@@ -52,15 +52,6 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case TypeTagged(tuple) =>
           TypeTagged[Value](valueAccessorMethod.invoke(tuple).asInstanceOf[Value], valueType)
       }
-
-    def read(reader: Reader): Any = {
-      valueTypeAdapter.read(reader)
-    }
-
-    def write(fieldValue: TypeTagged[Value], writer: Writer): Unit = {
-      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(fieldValue.get, writer)
-    }
-
   }
 
   val tupleFullName = """scala.Tuple(\d+)""".r
@@ -105,40 +96,4 @@ case class TupleTypeAdapter[T](
     override val deserializer: Deserializer[T],
     override val serializer:   Serializer[T],
     fields:                    List[Field[T]],
-    constructorMirror:         MethodMirror) extends TypeAdapter[T] {
-
-  override def read(reader: Reader): T =
-    reader.peek match {
-      case TokenType.BeginArray =>
-        val fieldValues = new Array[Any](fields.length)
-
-        reader.beginArray()
-
-        for (field <- fields) {
-          val fieldValue = field.read(reader)
-          fieldValues(field.index) = fieldValue
-        }
-
-        reader.endArray()
-
-        constructorMirror.apply(fieldValues: _*).asInstanceOf[T]
-
-      case TokenType.Null =>
-        reader.readNull().asInstanceOf[T]
-    }
-
-  override def write(tuple: T, writer: Writer): Unit =
-    if (tuple == null) {
-      writer.writeNull()
-    } else {
-      writer.beginArray()
-
-      for (field <- fields) {
-        val fieldValue = field.valueIn(TypeTagged.inferFromRuntimeClass(tuple))
-        field.write(fieldValue, writer)
-      }
-
-      writer.endArray()
-    }
-
-}
+    constructorMirror:         MethodMirror) extends TypeAdapter[T]

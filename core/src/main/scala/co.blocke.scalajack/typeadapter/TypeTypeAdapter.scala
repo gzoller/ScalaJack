@@ -18,34 +18,4 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
 }
 
-case class TypeTypeAdapter(override val deserializer: Deserializer[Type], override val serializer: Serializer[Type], mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
-
-  override def read(reader: Reader): Type =
-    reader.peek match {
-      case TokenType.String =>
-        typeModifier.map(mod => mod.apply(reader.readString())).getOrElse {
-          val fullName = reader.readString()
-          try {
-            mirror.staticClass(fullName).toType
-          } catch {
-            case e: ScalaReflectionException =>
-              throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
-          }
-        }
-
-      case TokenType.Null =>
-        // $COVERAGE-OFF$Safety check--not used
-        reader.readNull()
-      // $COVERAGE-ON$
-    }
-
-  override def write(value: Type, writer: Writer): Unit =
-    if (value == null) {
-      // $COVERAGE-OFF$Safety check--not used
-      writer.writeNull()
-      // $COVERAGE-ON$
-    } else {
-      writer.writeString(typeModifier.map(mod => mod.unapply(value)).getOrElse(value.typeSymbol.fullName))
-    }
-
-}
+case class TypeTypeAdapter(override val deserializer: Deserializer[Type], override val serializer: Serializer[Type], mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type]
