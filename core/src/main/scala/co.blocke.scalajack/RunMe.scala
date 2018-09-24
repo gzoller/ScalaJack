@@ -29,4 +29,10 @@ object RunMe extends App {
   println("\n\n------------ 5 ------------")
   show(Foo(Map(("hey", "jude") -> 5, ("purple", "rain") -> 3)))
 
+  //  val x = sj.parse("""{"a":1,"b":2}""")
+  //  val x = sj.parse("[1,2,3]")
+  val x = sj.parse(sj.render(Foo(Map(("hey", "jude") -> 5, ("purple", "rain") -> 3))))
+  println("\n" + x)
+  println("\n" + sj.render(x))
+
 }

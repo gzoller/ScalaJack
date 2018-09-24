@@ -1,4 +1,6 @@
 package co.blocke.scalajack
+package json
+package test.json4s
 
 import java.time.OffsetDateTime
 

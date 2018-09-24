@@ -21,5 +21,4 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
       case JsonLong(longValue)          => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
       case _                            => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
-
 }

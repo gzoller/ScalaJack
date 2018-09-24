@@ -2,7 +2,7 @@ package co.blocke.scalajack
 
 object JsonRenderer {
 
-  def renderCompact[J](json: J, sj: ScalaJackLike[_])(implicit ops: JsonOps[J]): String = {
+  def renderCompact[J](json: J, sj: ScalaJackLike[_, _])(implicit ops: JsonOps[J]): String = {
     val builder = new StringBuilder
 
     def appendString(string: String): Unit = {

@@ -9,10 +9,10 @@ import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackDeseriali
 import scala.language.existentials
 
 object ScalaJack {
-  def apply[S](kind: ScalaJackLike[S] = JsonFlavor()): ScalaJackLike[S] = kind
+  def apply[S, AST](kind: ScalaJackLike[S, AST] = JsonFlavor()): ScalaJackLike[S, AST] = kind
 }
 
-abstract class ScalaJackLike[S] extends JackFlavor[S] {
+abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
   val customAdapters: List[TypeAdapterFactory]
   val hintMap: Map[Type, String]
   val hintModifiers: Map[Type, HintModifier]
@@ -23,13 +23,13 @@ abstract class ScalaJackLike[S] extends JackFlavor[S] {
 
   val context: Context = bakeContext()
 
-  def withAdapters(ta: TypeAdapterFactory*): ScalaJackLike[S]
-  def withHints(h: (Type, String)*): ScalaJackLike[S]
-  def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[S]
-  def withDefaultHint(hint: String): ScalaJackLike[S]
-  def withTypeModifier(tm: HintModifier): ScalaJackLike[S]
-  def parseOrElse(poe: (Type, Type)*): ScalaJackLike[S]
-  def isCanonical(canonical: Boolean): ScalaJackLike[S]
+  def withAdapters(ta: TypeAdapterFactory*): ScalaJackLike[S, AST]
+  def withHints(h: (Type, String)*): ScalaJackLike[S, AST]
+  def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[S, AST]
+  def withDefaultHint(hint: String): ScalaJackLike[S, AST]
+  def withTypeModifier(tm: HintModifier): ScalaJackLike[S, AST]
+  def parseOrElse(poe: (Type, Type)*): ScalaJackLike[S, AST]
+  def isCanonical(canonical: Boolean): ScalaJackLike[S, AST]
 
   /**
    * Project fields from given master object to a view object of type T.  Field names/types must match master

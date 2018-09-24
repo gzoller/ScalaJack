@@ -1,12 +1,8 @@
 package co.blocke.scalajack
 package json
 
-import org.json4s.JsonAST.JValue
-
-import scala.collection.mutable
+import org.json4s.JsonAST.{ JNull, JValue }
 import scala.reflect.runtime.universe.{ Type, TypeTag }
-import scala.reflect.runtime.currentMirror
-import scala.util.control.NonFatal
 
 case class JsonFlavor(
     customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
@@ -15,7 +11,7 @@ case class JsonFlavor(
     typeModifier:   Option[HintModifier]     = None,
     parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true) extends ScalaJackLike[String] {
+    isCanonical:    Boolean                  = true) extends ScalaJackLike[String, JValue] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -34,20 +30,25 @@ case class JsonFlavor(
         result
 
       case deserializationFailure @ DeserializationFailure(errors) =>
+        /*  What's this all for?
         for (error <- errors) {
-          println(error)
+          //          println(error)
           error match {
             case (path, DeserializationError.ExceptionThrown(e)) =>
-              println(path)
+              //              println(path)
               e.printStackTrace()
 
             case _ =>
           }
         }
+        */
 
         throw new DeserializationException(deserializationFailure)
     }
   }
+
+  def parse(json: String): JValue =
+    JsonParser.parse(json)(Json4sOps).getOrElse(JNull)
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
     val typeAdapter = context.typeAdapterOf[T]
@@ -56,4 +57,8 @@ case class JsonFlavor(
     val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
     Json4sOps.renderCompact(json, this)
   }
+
+  def render(ast: JValue): String =
+    Json4sOps.renderCompact(ast, this)
+
 }

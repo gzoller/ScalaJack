@@ -1,6 +1,7 @@
 package co.blocke.scalajack
+package json
+package test.json4s
 
-import co.blocke.scalajack.JsonValueType.JsonValueType
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 
@@ -8,6 +9,7 @@ object JsonValueType extends Enumeration {
   type JsonValueType = Value
   val JsonArrayType, JsonBooleanType, JsonDecimalType, JsonDoubleType, JsonIntType, JsonLongType, JsonNullType, JsonObjectType, JsonStringType = Value
 }
+import JsonValueType._
 
 trait JsonOpsSpec[J] extends FunSpec {
 

@@ -32,6 +32,10 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
           ops.foreachObjectField(objectFields, { (fieldName, fieldValueJson) =>
             val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))
             val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
+            println("============")
+
+            println("Key: " + keyDeserializationResult)
+            println("Value: " + valueDeserializationResult)
 
             (keyDeserializationResult, valueDeserializationResult) match {
               case (DeserializationSuccess(taggedKey), DeserializationSuccess(taggedValue)) =>

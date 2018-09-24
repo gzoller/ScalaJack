@@ -12,8 +12,8 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
 
   private class TaggedCollection(override val get: C, taggedElements: List[TypeTagged[E]]) extends TypeTagged[C] {
     override lazy val tpe: Type = {
-      val elementType = lub(taggedElements.map(_.tpe))
-      ???
+//      val elementType = lub(taggedElements.map(_.tpe))
+      typeOf[C]
     }
   }
 

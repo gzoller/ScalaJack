@@ -242,9 +242,7 @@ object TraitDeserializer {
 }
 
 trait TraitDeserializer[T] extends Deserializer[T] {
-
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] = ???
-
 }
 
 trait DeserializedTrait[J] {
