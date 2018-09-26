@@ -17,14 +17,14 @@ class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: Typ
   override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
     next.deserializeFromNothing(path) // TODO any fall-backs here?
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] = {
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] = {
     next.deserialize(path, json) match {
       case deserializationSuccess @ DeserializationSuccess(_) =>
         deserializationSuccess
 
       case deserializationFailure @ DeserializationFailure(errors) if deserializationFailure.isUnexpected(path) =>
         json match {
-          case JsonString(string) =>
+          case JsonString(string) if (guidance.isMapKey || guidance.secondLookParsing) =>
             Try(JsonParser.parse(string)) match {
               case Success(Some(fallbackJson)) =>
                 next.deserialize(path, fallbackJson) match {

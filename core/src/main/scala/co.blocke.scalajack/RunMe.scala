@@ -7,6 +7,7 @@ case class TT(t: (String, String))
 object RunMe extends App {
   val sj = ScalaJack() //.isCanonical(false)
 
+  /*
   def show[A](f: Foo[A])(implicit tt: TypeTag[A]): Unit = {
     println(f)
     val js = sj.render(f)
@@ -28,11 +29,15 @@ object RunMe extends App {
 
   println("\n\n------------ 5 ------------")
   show(Foo(Map(("hey", "jude") -> 5, ("purple", "rain") -> 3)))
+  */
 
-  //  val x = sj.parse("""{"a":1,"b":2}""")
-  //  val x = sj.parse("[1,2,3]")
-  val x = sj.parse(sj.render(Foo(Map(("hey", "jude") -> 5, ("purple", "rain") -> 3))))
-  println("\n" + x)
-  println("\n" + sj.render(x))
+  trait XFoo { val a: Int }
+  trait XBar { val b: Int; val c: XFoo }
+  case class One(a: Int) extends XFoo
+  case class Two(b: Int, c: XFoo) extends XBar
+
+  val sj2 = ScalaJack().withHints((typeOf[XFoo] -> "mark")).withDefaultHint("kind")
+  val inst: XBar = Two(3, One(2))
+  println(sj2.render(inst))
 
 }

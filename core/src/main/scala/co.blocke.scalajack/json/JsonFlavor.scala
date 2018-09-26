@@ -5,13 +5,14 @@ import org.json4s.JsonAST.{ JNull, JValue }
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 
 case class JsonFlavor(
-    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-    hintMap:        Map[Type, String]        = Map.empty[Type, String],
-    hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
-    typeModifier:   Option[HintModifier]     = None,
-    parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-    defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true) extends ScalaJackLike[String, JValue] {
+    customAdapters:    List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    hintMap:           Map[Type, String]        = Map.empty[Type, String],
+    hintModifiers:     Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
+    typeModifier:      Option[HintModifier]     = None,
+    parseOrElseMap:    Map[Type, Type]          = Map.empty[Type, Type],
+    defaultHint:       String                   = "_hint",
+    isCanonical:       Boolean                  = true,
+    secondLookParsing: Boolean                  = true) extends ScalaJackLike[String, JValue] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -20,11 +21,16 @@ case class JsonFlavor(
   def withTypeModifier(tm: HintModifier) = this.copy(typeModifier = Some(tm))
   def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
+  def withSecondLookParsing() = this.copy(secondLookParsing = true)
 
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
-    val Some(js) = JsonParser.parse(json)(Json4sOps)
-    val deserializer = context.typeAdapterOf[T].deserializer
-    val deserializationResult = deserializer.deserialize(Path.Root, js)(Json4sOps)
+    val deserializationResult = try {
+      val Some(js) = JsonParser.parse(json)(Json4sOps)
+      val deserializer = context.typeAdapterOf[T].deserializer
+      deserializer.deserialize(Path.Root, js)(Json4sOps)
+    } catch {
+      case e: Exception => DeserializationFailure(Path.Unknown, DeserializationError.ExceptionThrown(e))
+    }
     deserializationResult match {
       case DeserializationSuccess(TypeTagged(result)) =>
         result

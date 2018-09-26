@@ -6,7 +6,7 @@ class BoxedLongDeserializer(longDeserializer: Deserializer[Long]) extends Deseri
 
   private val BoxedLongType: Type = typeOf[java.lang.Long]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Long] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Long] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedLongType))

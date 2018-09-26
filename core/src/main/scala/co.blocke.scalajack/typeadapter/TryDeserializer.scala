@@ -13,7 +13,7 @@ class TryDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends
     override lazy val tpe: Type = appliedType(successTypeConstructor, taggedValue.tpe)
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Try[T]] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Try[T]] =
     try {
       val deserializationResult = next.deserialize(path, json) map {
         case tagged @ TypeTagged(value) =>

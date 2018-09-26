@@ -14,7 +14,7 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
 
   private val taggedNull: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[M] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[M] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(taggedNull)
@@ -30,12 +30,8 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
           val errorsBuilder = immutable.Seq.newBuilder[(Path, DeserializationError)]
 
           ops.foreachObjectField(objectFields, { (fieldName, fieldValueJson) =>
-            val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))
+            val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))(ops, MapKeyGuidance)
             val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
-            println("============")
-
-            println("Key: " + keyDeserializationResult)
-            println("Value: " + valueDeserializationResult)
 
             (keyDeserializationResult, valueDeserializationResult) match {
               case (DeserializationSuccess(taggedKey), DeserializationSuccess(taggedValue)) =>

@@ -71,7 +71,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       }
     }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[CC] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[CC] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)

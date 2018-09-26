@@ -10,7 +10,6 @@ class ScalaPrim() extends FunSpec with Matchers {
 
   describe("----------------------------\n:  Scala Primitives Tests  :\n----------------------------") {
     describe("+++ Positive Tests +++") {
-      /*
       it("BigDecimal must work") {
         val inst = SampleBigDecimal(BigDecimal(123L), BigDecimal(1.23), BigDecimal(0), BigDecimal("123.456"), BigDecimal("0.1499999999999999944488848768742172978818416595458984375"), null)
         val js = sj.render(inst)
@@ -110,7 +109,6 @@ class ScalaPrim() extends FunSpec with Matchers {
           sj.read[SampleString](js)
         }
       }
-      */
     }
     describe("--- Negative Tests ---") {
       /*
@@ -128,11 +126,18 @@ class ScalaPrim() extends FunSpec with Matchers {
           |-------^""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
+      */
       it("Boolean must break") {
         val js = """{"bool1":true,"bool2":"false"}"""
         val msg = """Expected value token of type True or False, not String when reading Boolean value.  (Is your value wrapped in quotes or a number?)
           |{"bool1":true,"bool2":"false"}
           |----------------------^""".stripMargin
+        try {
+          val z = sj.read[SampleBoolean](js)
+          println("Z: " + z)
+        } catch {
+          case t: Throwable => println("+++++++++\n" + t.getMessage + "\n+++++++++")
+        }
         the[DeserializationException] thrownBy sj.read[SampleBoolean](js) should have message msg
         val js2 = """{"bool1":true,"bool2":123}"""
         val msg2 = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
@@ -147,69 +152,52 @@ class ScalaPrim() extends FunSpec with Matchers {
       }
       it("Byte must break") {
         val js = """{"b1":927,"b2":-128,"b3":0,"b4":64}"""
-        val msg = """Value out of range. Value:"927" Radix:10
-          |{"b1":927,"b2":-128,"b3":0,"b4":64}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleByte](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.b1] Byte value out of range (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleByte](js) should have message msg
         val js2 = """{"b1":true,"b2":-128,"b3":0,"b4":64}"""
-        val msg2 = """Expected token of type Number, not True
-          |{"b1":true,"b2":-128,"b3":0,"b4":64}
-          |------^""".stripMargin
+        val msg2 = """DeserializationException(1 error):
+                     |  [$.b1] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleByte](js2) should have message msg2
       }
       it("Char must break") {
         val js = """{"c1":null,"c2":"Y","c3":"Z"}"""
-        val msg = """Expected token of type String, not Null
-          |{"c1":null,"c2":"Y","c3":"Z"}
-          |------^""".stripMargin
+        val msg = """DeserializationException(1 error):
+                    |  [$.c1] Expected a JSON string of length 1 (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Double must break") {
         val js = """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
-        val msg = """For input string: "1.79769313486E23157E308"
-          |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E3
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [???] Exception was thrown: java.lang.NumberFormatException (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
         val js = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for "Bogus"
-          |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}
-          |-------------------^""".stripMargin
-        the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.e2] Enumeration co.blocke.scalajack.json.test.primitives.Size$ does not contain a value named Bogus (reported by: co.blocke.scalajack.typeadapter.EnumerationValueDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleEnum](js) should have message msg
         val js2 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}"""
-        val msg2 = """No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for 9
-          |"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}
-          |--------------------------------------------------^""".stripMargin
-        the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnum](js2) should have message msg2
+        val msg2 = """DeserializationException(1 error):
+                     |  [$.e5] Enumeration co.blocke.scalajack.json.test.primitives.Size$ does not contain a value at index 9 (reported by: co.blocke.scalajack.typeadapter.EnumerationValueDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleEnum](js2) should have message msg2
       }
       it("Float must break") {
         val js = """{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}"""
-        val msg = """Expected token of type Number, not String
-          |{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}
-          |------------------------^""".stripMargin
+        val msg = """DeserializationException(1 error):
+                    |  [$.f2] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.FloatDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleFloat](js) should have message msg
       }
-      */
       it("Int must break") {
         val js = """{"i1":2147483647,"i2":-2147483648,"i3":"0","i4":123}"""
-        val msg = """Expected token of type Number, not String
-          |{"i1":2147483647,"i2":-2147483648,"i3":"0","i4":123}
-          |---------------------------------------^""".stripMargin
-        try {
-          val z = sj.read[SampleInt](js)
-          println("Z: " + z)
-        } catch {
-          case t: Throwable => println("+++++++++\n" + t.getMessage + "\n+++++++++")
-        }
+        val msg = """DeserializationException(1 error):
+                    |  [$.i3] Expected a JSON int, not JString(0) (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleInt](js) should have message msg
         val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}"""
-        val msg2 = """For input string: "2.3"
-          |{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}
-          |---------------------------------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js2) should have message msg2
+        val msg2 = """DeserializationException(1 error):
+                     |  [$.i3] Expected a JSON int, not JDecimal(2.3) (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleInt](js2) should have message msg2
       }
-      /*
       it("Long must break") {
         val js = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":true,"l4":123}"""
         val msg = """DeserializationException(1 error):
@@ -236,7 +224,6 @@ class ScalaPrim() extends FunSpec with Matchers {
                     |  [$.s2] Expected a JSON string (reported by: co.blocke.scalajack.typeadapter.StringDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleString](js) should have message msg
       }
-      */
     }
   }
 }

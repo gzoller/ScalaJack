@@ -11,7 +11,7 @@ class InstantDeserializer extends Deserializer[Instant] {
 
   private val InstantType: Type = typeOf[Instant]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Instant] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Instant] =
     json match {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(Instant.parse(x), InstantType), {

@@ -21,7 +21,7 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
 
   self =>
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] =
     json match {
       case JsonObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]

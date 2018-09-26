@@ -11,7 +11,7 @@ class PeriodDeserializer extends Deserializer[Period] {
 
   private val PeriodType: Type = typeOf[Period]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Period] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Period] =
     json match {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(Period.parse(x), PeriodType), {

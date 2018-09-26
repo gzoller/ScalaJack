@@ -10,7 +10,7 @@ class JavaMapDeserializer[K, V, M <: java.util.Map[K, V]](keyDeserializer: Deser
     override lazy val tpe: Type = ???
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[M] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[M] =
     json match {
       case JsonObject(x) =>
         val objectFields = x.asInstanceOf[ops.ObjectFields]

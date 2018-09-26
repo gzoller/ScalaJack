@@ -7,7 +7,7 @@ class DoubleDeserializer extends Deserializer[Double] {
 
   import NumberConverters._
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Double] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Double] =
     json match {
       case JsonDecimal(x)          => DeserializationResult(path)(TypeTagged(x.toDoubleExact))
       case JsonDouble(doubleValue) => DeserializationSuccess(TypeTagged(doubleValue))

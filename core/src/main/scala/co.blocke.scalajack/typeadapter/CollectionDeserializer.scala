@@ -12,12 +12,12 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
 
   private class TaggedCollection(override val get: C, taggedElements: List[TypeTagged[E]]) extends TypeTagged[C] {
     override lazy val tpe: Type = {
-//      val elementType = lub(taggedElements.map(_.tpe))
+      //      val elementType = lub(taggedElements.map(_.tpe))
       typeOf[C]
     }
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[C] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[C] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(taggedNull)

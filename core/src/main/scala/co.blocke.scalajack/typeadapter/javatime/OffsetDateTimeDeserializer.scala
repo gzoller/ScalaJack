@@ -11,7 +11,7 @@ class OffsetDateTimeDeserializer(formatter: DateTimeFormatter) extends Deseriali
 
   private val OffsetDateTimeType: Type = typeOf[OffsetDateTime]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[OffsetDateTime] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[OffsetDateTime] =
     json match {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(OffsetDateTime.parse(x, formatter), OffsetDateTimeType), {

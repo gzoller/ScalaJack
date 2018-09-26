@@ -54,32 +54,8 @@ trait TypeAdapter[T] {
     }
   }
 
-  /*
-  def read(reader: Reader): T = {
-    val json = reader.readJsonValue()(Json4sOps)
-    val TypeTagged(value) = deserializer.deserialize(Path.Unknown, json)(Json4sOps).get
-    value
-  }
-
-  def write(value: T, writer: Writer): Unit = {
-    val tagged = TypeTagged.inferFromRuntimeClass[T](value)
-    serializer.serialize(tagged)(Json4sOps) match {
-      case SerializationSuccess(json) =>
-        writer.writeJsonValue(json)(Json4sOps)
-
-      case failure @ SerializationFailure(errors) if failure.isNothing =>
-        writer.writeNothing()
-
-      case failure =>
-        ???
-    }
-    //    val SerializationSuccess(json) = serializer.serialize(tagged)(Json4sOps)
-    //    writer.writeJsonValue(json)(Json4sOps)
-  }
-    */
-
   val deserializer: Deserializer[T] = new Deserializer[T] {
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] =
       throw new NotImplementedError(s"$self.deserializer.deserialize")
   }
 

@@ -6,7 +6,7 @@ class JavaBigIntegerDeserializer(scalaBigIntDeserializer: Deserializer[scala.mat
 
   private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.math.BigInteger] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.math.BigInteger] =
     scalaBigIntDeserializer.deserialize(path, json) map {
       case TypeTagged(null)        => TypeTagged(null, JavaBigIntegerType)
       case TypeTagged(scalaBigInt) => TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType)

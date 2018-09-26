@@ -12,7 +12,7 @@ class AnyDeserializer(
 
   private val nullTypeTagged = TypeTagged(null, typeOf[Any])
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Any] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Any] =
     json match {
       case JsonObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]

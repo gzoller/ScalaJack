@@ -9,7 +9,7 @@ class UUIDDeserializer extends Deserializer[UUID] {
 
   private val UUIDType: Type = typeOf[UUID]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[UUID] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[UUID] =
     json match {
       case JsonNull() => DeserializationSuccess(TypeTagged(null, UUIDType))
       case JsonString(x) => DeserializationResult(path)(TypeTagged(UUID.fromString(x), UUIDType), {

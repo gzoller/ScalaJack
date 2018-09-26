@@ -11,7 +11,7 @@ class DurationDeserializer extends Deserializer[Duration] {
 
   private val DurationType: Type = typeOf[Duration]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Duration] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Duration] =
     json match {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(Duration.parse(x), DurationType), {

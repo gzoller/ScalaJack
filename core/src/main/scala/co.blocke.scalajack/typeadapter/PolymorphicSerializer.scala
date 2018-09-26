@@ -30,6 +30,7 @@ class PolymorphicSerializer[T](
           case JsonObject(x) =>
             val concreteFields = x.asInstanceOf[ops.ObjectFields]
 
+            println("Serializer: " + typeSerializer)
             val SerializationSuccess(typeJson) = typeSerializer.serialize(TypeTagged(concreteType, TypeType))
 
             JsonObject { appendField =>

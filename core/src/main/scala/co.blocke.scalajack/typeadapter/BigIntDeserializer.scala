@@ -7,7 +7,7 @@ class BigIntDeserializer extends Deserializer[BigInt] {
 
   private val BigIntType: Type = typeOf[BigInt]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[BigInt] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[BigInt] =
     json match {
       case JsonNull()           => DeserializationSuccess(TypeTagged(null, BigIntType))
       case JsonLong(longValue)  => DeserializationSuccess(TypeTagged(BigInt(longValue), BigIntType))

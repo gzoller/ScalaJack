@@ -20,6 +20,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
   val defaultHint: String
   val isCanonical: Boolean
   val typeModifier: Option[HintModifier]
+  val secondLookParsing: Boolean
 
   val context: Context = bakeContext()
 
@@ -30,6 +31,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
   def withTypeModifier(tm: HintModifier): ScalaJackLike[S, AST]
   def parseOrElse(poe: (Type, Type)*): ScalaJackLike[S, AST]
   def isCanonical(canonical: Boolean): ScalaJackLike[S, AST]
+  def withSecondLookParsing(): ScalaJackLike[S, AST]
 
   /**
    * Project fields from given master object to a view object of type T.  Field names/types must match master
@@ -76,7 +78,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
         dataField.setAccessible(true)
         dataField.get(master)
       }.get)
-    }.toList
+    }
     masterTarget.constructorMirror.apply(args: _*).asInstanceOf[U]
   }
 
@@ -85,7 +87,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
     val polymorphicTypes: Set[Type] = hintModifiers.keySet ++ hintMap.keySet
 
     val polymorphicTypeAdapterFactories = polymorphicTypes.map { polymorphicType: Type =>
-      val hintFieldName = hintMap.getOrElse(polymorphicType, defaultHint)
+      val hintLabel = hintMap.getOrElse(polymorphicType, defaultHint)
       val hintToType = hintModifiers.getOrElse(polymorphicType, fullNameToType)
 
       new TypeAdapterFactory {
@@ -93,10 +95,12 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
           if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
             val stringTypeAdapter = context.typeAdapterOf[String]
             val typeTypeAdapter = stringTypeAdapter andThen hintToType.memoized
+            println("Foo: " + typeTypeAdapter)
+            println("Foo Serializer: " + typeTypeAdapter.serializer)
             PolymorphicTypeAdapter[T](
-              new PolymorphicDeserializer[T](hintFieldName, typeTypeAdapter.deserializer),
-              new PolymorphicSerializer[T](hintFieldName, typeTypeAdapter.serializer, context),
-              hintFieldName, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
+              new PolymorphicDeserializer[T](hintLabel, typeTypeAdapter.deserializer),
+              new PolymorphicSerializer[T](hintLabel, typeTypeAdapter.serializer, context),
+              hintLabel, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
           } else {
             next.typeAdapterOf[T]
           }

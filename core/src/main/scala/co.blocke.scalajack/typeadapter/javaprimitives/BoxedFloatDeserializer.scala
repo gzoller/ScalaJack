@@ -6,7 +6,7 @@ class BoxedFloatDeserializer(floatDeserializer: Deserializer[Float]) extends Des
 
   private val BoxedFloatType: Type = typeOf[java.lang.Float]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Float] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Float] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedFloatType))

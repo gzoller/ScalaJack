@@ -7,7 +7,7 @@ class FloatDeserializer extends Deserializer[Float] {
 
   import NumberConverters._
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Float] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Float] =
     json match {
       case JsonDecimal(bigDecimal) =>
         DeserializationResult(path)(TypeTagged(bigDecimal.toFloatExact), {

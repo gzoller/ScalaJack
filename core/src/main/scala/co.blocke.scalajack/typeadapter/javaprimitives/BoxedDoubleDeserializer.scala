@@ -6,7 +6,7 @@ class BoxedDoubleDeserializer(doubleDeserializer: Deserializer[Double]) extends 
 
   private val BoxedDoubleType: Type = typeOf[java.lang.Double]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[java.lang.Double] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Double] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedDoubleType))
