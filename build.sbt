@@ -17,10 +17,10 @@ val resolutionRepos = Seq(
 def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
-val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.1.0"
-val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.1"
+val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.4.2"
+val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.5"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
-val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.43"
+val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.417"
 
 def scalacOptionsVersion(scalaVersion: String) = {
   val xver =  CrossVersion.partialVersion(scalaVersion) match {
