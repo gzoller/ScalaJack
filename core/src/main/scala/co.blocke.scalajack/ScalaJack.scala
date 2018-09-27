@@ -1,10 +1,9 @@
 package co.blocke.scalajack
 
-import co.blocke.TypeTagHacks
 import co.blocke.scalajack.BijectiveFunctions._
 import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
-import co.blocke.scalajack.typeadapter.{ CaseClassTypeAdapter, FallbackDeserializer, FallbackTypeAdapter, PlainClassTypeAdapter, PolymorphicDeserializer, PolymorphicSerializer, PolymorphicTypeAdapter, PolymorphicTypeAdapterFactory, TypeDeserializer, TypeSerializer, TypeTypeAdapter }
+import co.blocke.scalajack.typeadapter._
 
 import scala.language.existentials
 
@@ -84,6 +83,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
 
   protected def bakeContext(): Context = {
 
+    // Types where either the label or the type value (or both) are modified
     val polymorphicTypes: Set[Type] = hintModifiers.keySet ++ hintMap.keySet
 
     val polymorphicTypeAdapterFactories = polymorphicTypes.map { polymorphicType: Type =>
@@ -95,15 +95,13 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
           if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
             val stringTypeAdapter = context.typeAdapterOf[String]
             val typeTypeAdapter = stringTypeAdapter andThen hintToType.memoized
-            println("Foo: " + typeTypeAdapter)
-            println("Foo Serializer: " + typeTypeAdapter.serializer)
-            PolymorphicTypeAdapter[T](
-              new PolymorphicDeserializer[T](hintLabel, typeTypeAdapter.deserializer),
-              new PolymorphicSerializer[T](hintLabel, typeTypeAdapter.serializer, context),
+
+            TraitTypeAdapter[T](
+              new TraitDeserializer[T](hintLabel, typeTypeAdapter.deserializer),
+              new TraitSerializer[T](hintLabel, typeTypeAdapter.serializer, context),
               hintLabel, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
-          } else {
+          } else
             next.typeAdapterOf[T]
-          }
         }
       }
     }.toList
@@ -124,12 +122,12 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
 
     val intermediateContext = Context(
       defaultHint,
-      factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(PolymorphicTypeAdapterFactory(defaultHint), PlainClassTypeAdapter),
+      factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(TraitTypeAdapterFactory(defaultHint), PlainClassTypeAdapter),
       Some(this)
     )
 
     // ParseOrElse functionality
-    val fallbackFactories = parseOrElseMap.map {
+    val parseOrElseFactories = parseOrElseMap.map {
       case (attemptedType, fallbackType) =>
         val attemptedTypeAdapter = intermediateContext.typeAdapter(attemptedType)
         val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
@@ -150,7 +148,7 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
     }.toList
 
     intermediateContext.copy(
-      factories = fallbackFactories ::: intermediateContext.factories)
+      factories = parseOrElseFactories ::: intermediateContext.factories)
   }
 }
 

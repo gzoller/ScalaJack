@@ -1,10 +1,12 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.JsonObject
+
 import scala.collection.mutable
 
 class PolymorphicSerializer[T](
-    typeFieldName:  MemberName,
+    typeFieldName:  MemberName, // hint label
     typeSerializer: Serializer[Type],
     context:        Context)(implicit tt: TypeTag[T]) extends Serializer[T] {
 
@@ -21,6 +23,7 @@ class PolymorphicSerializer[T](
         SerializationSuccess(JsonNull())
 
       case TypeTagged(value) =>
+        println("HERE: " + value)
         // TODO figure out a better way to infer the type (perhaps infer the type arguments?)
         val concreteType = classSymbol(value.getClass).toType
         val populatedConcreteType = populateConcreteType(concreteType)
@@ -30,17 +33,21 @@ class PolymorphicSerializer[T](
           case JsonObject(x) =>
             val concreteFields = x.asInstanceOf[ops.ObjectFields]
 
-            println("Serializer: " + typeSerializer)
+            println("Serializer: " + typeSerializer + " --> " + value)
+            println("Append field: " + typeFieldName)
             val SerializationSuccess(typeJson) = typeSerializer.serialize(TypeTagged(concreteType, TypeType))
 
-            JsonObject { appendField =>
+            val jo: J = JsonObject { appendField =>
               appendField(typeFieldName, typeJson)
               ops.foreachObjectField(concreteFields, { (concreteFieldName, concreteFieldValue) =>
                 appendField(concreteFieldName, concreteFieldValue)
               })
             }
+            println(" -1- " + jo)
+            jo
 
           case json =>
+            println(" -2- " + json)
             json
         }
     }

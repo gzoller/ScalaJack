@@ -5,9 +5,10 @@ case class Foo[T](m: T)
 case class TT(t: (String, String))
 
 object RunMe extends App {
+  /*
+
   val sj = ScalaJack() //.isCanonical(false)
 
-  /*
   def show[A](f: Foo[A])(implicit tt: TypeTag[A]): Unit = {
     println(f)
     val js = sj.render(f)
@@ -36,8 +37,29 @@ object RunMe extends App {
   case class One(a: Int) extends XFoo
   case class Two(b: Int, c: XFoo) extends XBar
 
-  val sj2 = ScalaJack().withHints((typeOf[XFoo] -> "mark")).withDefaultHint("kind")
-  val inst: XBar = Two(3, One(2))
-  println(sj2.render(inst))
+  //  sealed trait Answer
+  //  case object Yes extends Answer
+  //  case object No extends Answer
+  //  case class Thingy(a: Answer, i: Int)
 
+  //  case class Yes(a: String = "Wow") extends Answer
+  //  case class No(a: String = "Nope") extends Answer
+
+  val sj = ScalaJack().withDefaultHint("kind").withHints((typeOf[XFoo] -> "mark"), (typeOf[XBar] -> "greg"))
+  val inst: XBar = Two(3, One(2))
+  try {
+    //    val js = sj.render(Thingy(Yes, 5))
+    //    println(js)
+    //    val obj = sj.read[Thingy](js)
+    //    println(obj)
+
+    val j = sj.render(inst)
+    println(j)
+    val k = sj.read[XBar](j)
+    println(k)
+
+  } catch {
+    case t: Throwable => println("Boom: " + t)
+  }
 }
+

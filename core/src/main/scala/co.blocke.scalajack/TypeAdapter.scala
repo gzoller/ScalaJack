@@ -64,7 +64,7 @@ trait TypeAdapter[T] {
       throw new NotImplementedError(s"$self.serializer.serialize")
   }
 
-  def andThen[U](f: BijectiveFunction[T, U]): TransformedTypeAdapter[T, U] =
+  def andThen[U](f: BijectiveFunction[T, U])(implicit context: Context, ttB: TypeTag[U]): TransformedTypeAdapter[T, U] =
     TransformedTypeAdapter(this, f)
 
   // $COVERAGE-OFF$Tested in concrete classes, not here
@@ -78,7 +78,3 @@ trait TypeAdapter[T] {
 // (Determines if a value will be wrapped in quotes or not for noncanonical
 // processing in NoncanonicalMapKeyParsingTypeAdapter)
 trait StringKind
-
-case class TransformedTypeAdapter[A, B](
-    typeAdapter: TypeAdapter[A],
-    f:           BijectiveFunction[A, B]) extends TypeAdapter[B]
