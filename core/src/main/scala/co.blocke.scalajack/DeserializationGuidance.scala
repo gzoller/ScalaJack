@@ -1,18 +1,18 @@
 package co.blocke.scalajack
 
 object NormalGuidance extends DeserializationGuidance {
-  val isMapKey: Boolean = false
-  val secondLookParsing: Boolean = false
-}
-
-object MapKeyGuidance extends DeserializationGuidance {
-  val isMapKey: Boolean = true
-  val secondLookParsing: Boolean = false
+  override val isMapKey: Boolean = false
+  override val secondLookParsing: Boolean = false
 }
 
 object SecondLookGuidance extends DeserializationGuidance {
-  val isMapKey: Boolean = false
-  val secondLookParsing: Boolean = true
+  override val isMapKey: Boolean = false
+  override val secondLookParsing: Boolean = true
+}
+
+object MapKeyGuidance extends DeserializationGuidance {
+  override val isMapKey: Boolean = true
+  override val secondLookParsing: Boolean = false
 }
 
 trait DeserializationGuidance {
@@ -23,4 +23,16 @@ trait DeserializationGuidance {
 
   // This is a looser interpretation of JSON where "true" (string) will be parsed as true, "1" as 1, etc.
   val secondLookParsing: Boolean
+
+  def or(g: DeserializationGuidance): DeserializationGuidance = {
+    val self = this
+
+    new DeserializationGuidance {
+      val isMapKey: Boolean = self.isMapKey || g.isMapKey
+      val secondLookParsing: Boolean = self.secondLookParsing || g.secondLookParsing
+    }
+  }
+
+  override def toString(): String = ":: isMapKey: " + this.isMapKey + "  secondLookParsing: " + this.secondLookParsing
 }
+

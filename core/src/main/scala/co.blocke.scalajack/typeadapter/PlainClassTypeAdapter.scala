@@ -77,7 +77,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
       valueTypeAdapter.deserializer.deserializeFromNothing(path)
 
-    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Value] =
       valueTypeAdapter.deserializer.deserialize(path, json)
 
     override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J]): SerializationResult[J] =

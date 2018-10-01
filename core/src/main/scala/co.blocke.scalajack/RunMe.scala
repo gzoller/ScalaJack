@@ -61,5 +61,10 @@ object RunMe extends App {
   } catch {
     case t: Throwable => println("Boom: " + t)
   }
+
+  import org.apache.commons.text.StringEscapeUtils.escapeJava
+
+  val s = "something\b\n\f\r\t☆"
+  println(escapeJava(s))
 }
 

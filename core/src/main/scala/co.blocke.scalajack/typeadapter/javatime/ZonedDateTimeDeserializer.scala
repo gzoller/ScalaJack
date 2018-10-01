@@ -13,6 +13,7 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[ZonedDateTime] =
     json match {
+      case JsonNull() => DeserializationSuccess(TypeTagged(null, ZonedDateTimeType))
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(ZonedDateTime.parse(x, formatter), ZonedDateTimeType), {
           case e: DateTimeParseException =>

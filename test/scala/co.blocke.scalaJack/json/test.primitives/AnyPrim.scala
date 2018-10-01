@@ -20,6 +20,7 @@ class AnyPrim() extends FunSpec with Matchers {
       it("BigDecimal works") {
         val payload = BigDecimal("12345678901234567890.12345678901234567890")
         val js = sj.render(AnyShell(payload))
+        println("JS: "+js)
         assertResult("""{"a":12345678901234567890.12345678901234567890}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
@@ -35,6 +36,7 @@ class AnyPrim() extends FunSpec with Matchers {
           (parsed == payload) && (parsed.getClass == payload.getClass)
         }
       }
+      /*
       it("Boolean works") {
         val payload = true
         val js = sj.render(AnyShell(payload))
@@ -138,6 +140,7 @@ class AnyPrim() extends FunSpec with Matchers {
           (parsed == payload) && (parsed.getClass == payload.getClass)
         }
       }
+      */
     }
     // describe("--- Negative Tests ---") {
     //   No real negative tests yet... can't think of how to break Any primitives, given well-formed JSON input.

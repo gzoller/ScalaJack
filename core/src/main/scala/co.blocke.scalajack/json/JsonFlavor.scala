@@ -12,7 +12,7 @@ case class JsonFlavor(
     parseOrElseMap:    Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:       String                   = "_hint",
     isCanonical:       Boolean                  = true,
-    secondLookParsing: Boolean                  = true) extends ScalaJackLike[String, JValue] {
+    secondLookParsing: Boolean                  = false) extends ScalaJackLike[String, JValue] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -23,11 +23,18 @@ case class JsonFlavor(
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
   def withSecondLookParsing() = this.copy(secondLookParsing = true)
 
+  implicit val guidance: DeserializationGuidance = {
+    if (secondLookParsing)
+      SecondLookGuidance
+    else
+      NormalGuidance
+  }
+
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
     val deserializationResult = try {
       val Some(js) = JsonParser.parse(json)(Json4sOps)
       val deserializer = context.typeAdapterOf[T].deserializer
-      deserializer.deserialize(Path.Root, js)(Json4sOps)
+      deserializer.deserialize(Path.Root, js)(Json4sOps, guidance)
     } catch {
       case e: Exception => DeserializationFailure(Path.Unknown, DeserializationError.ExceptionThrown(e))
     }

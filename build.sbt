@@ -86,6 +86,7 @@ lazy val scalajack = project.in(file("core"))
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
+    Seq("org.apache.commons" % "commons-text" % "1.4") ++
     Seq("org.json4s" %% "json4s-core" % "3.5.4") ++
     Seq("org.json4s" %% "json4s-native" % "3.5.4" % Test) ++
       test(scalatest)

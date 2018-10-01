@@ -21,7 +21,7 @@ object AnyTypeAdapter extends TypeAdapterFactory {
           mapTypeAdapter.deserializer,
           listTypeAdapter.deserializer,
           stringTypeAdapter.deserializer,
-          numberTypeAdapter.deserializer,
+          NumberDeserializer(),
           booleanTypeAdapter.deserializer,
           context),
         new AnySerializer(

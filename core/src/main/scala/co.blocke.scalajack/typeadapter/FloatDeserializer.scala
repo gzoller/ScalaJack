@@ -10,19 +10,19 @@ class FloatDeserializer extends Deserializer[Float] {
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Float] =
     json match {
       case JsonDecimal(bigDecimal) =>
-        DeserializationResult(path)(TypeTagged(bigDecimal.toFloatExact), {
+        DeserializationResult(path)(TypeTagged(bigDecimal.toFloat), {
           case e: ArithmeticException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonDouble(doubleValue) =>
-        DeserializationResult(path)(TypeTagged(doubleValue.toFloatExact), {
+        DeserializationResult(path)(TypeTagged(doubleValue.toFloat), {
           case e: ArithmeticException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
       case JsonLong(longValue) =>
-        DeserializationResult(path)(TypeTagged(longValue.toFloatExact), {
+        DeserializationResult(path)(TypeTagged(longValue.toFloat), {
           case e: ArithmeticException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })

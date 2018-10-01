@@ -111,43 +111,30 @@ class ScalaPrim() extends FunSpec with Matchers {
       }
     }
     describe("--- Negative Tests ---") {
-      /*
       it("BigDecimal must break") {
         val js = """{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.1499999999999999944488848768742172978818416595458984375","bd6":null}"""
-        val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.14999999999999999444888487687421729788184165954
-          |--------------------------------------------------^""".stripMargin
+        val msg = """DeserializationException(1 error):
+                    |  [$.bd5] Expected a JSON number, not JString(0.1499999999999999944488848768742172978818416595458984375) (reported by: co.blocke.scalajack.typeadapter.BigDecimalDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("BigInt must break") {
         val js = """{"bi1":"-90182736451928374653345","bi2":90182736451928374653345,"bi3":0,"bi4":null}"""
-        val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
-          |{"bi1":"-90182736451928374653345","bi2":90182736451928374
-          |-------^""".stripMargin
+        val msg = """DeserializationException(1 error):
+                    |  [$.bi1] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
-      */
       it("Boolean must break") {
         val js = """{"bool1":true,"bool2":"false"}"""
-        val msg = """Expected value token of type True or False, not String when reading Boolean value.  (Is your value wrapped in quotes or a number?)
-          |{"bool1":true,"bool2":"false"}
-          |----------------------^""".stripMargin
-        try {
-          val z = sj.read[SampleBoolean](js)
-          println("Z: " + z)
-        } catch {
-          case t: Throwable => println("+++++++++\n" + t.getMessage + "\n+++++++++")
-        }
+        val msg = """DeserializationException(1 error):
+                    |  [$.bool2] Expected a JSON boolean (reported by: co.blocke.scalajack.typeadapter.BooleanDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBoolean](js) should have message msg
         val js2 = """{"bool1":true,"bool2":123}"""
-        val msg2 = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
-          |{"bool1":true,"bool2":123}
-          |----------------------^""".stripMargin
+        val msg2 = """DeserializationException(1 error):
+                     |  [$.bool2] Expected a JSON boolean (reported by: co.blocke.scalajack.typeadapter.BooleanDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBoolean](js2) should have message msg2
         val js3 = """{"bool1":true,"bool2":null}"""
-        val msg3 = """Expected token of type Boolean, not Null
-          |{"bool1":true,"bool2":null}
-          |--------------^""".stripMargin
+        val msg3 = """DeserializationException(1 error):
+                     |  [$.bool2] Expected a JSON boolean (reported by: co.blocke.scalajack.typeadapter.BooleanDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBoolean](js3) should have message msg3
       }
       it("Byte must break") {
