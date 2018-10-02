@@ -17,7 +17,7 @@ class TraitDeserializer[T](
   def populateConcreteType(concreteType: Type): Type =
     populatedConcreteTypeCache.getOrElseUpdate(concreteType, Reflection.populateChildTypeArgs(polymorphicType, concreteType))
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)

@@ -70,10 +70,10 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
       valueTypeAdapter.deserializer.deserializeFromNothing(path)
 
-    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] =
+    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
       valueTypeAdapter.deserializer.deserialize(path, json)
 
-    override def serializeValue[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    override def serializeValue[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
       valueTypeAdapter.serializer.serialize(tagged)
 
     override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =

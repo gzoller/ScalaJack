@@ -8,7 +8,7 @@ class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt
   private val enumerationName: String = enumeration.getClass.getName
   private val enumerationValueType: Type = tt.tpe
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[E#Value] = {
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[E#Value] = {
     json match {
       case JsonString(name) =>
         DeserializationResult(path)(TypeTagged(enumeration.withName(name), enumerationValueType), {

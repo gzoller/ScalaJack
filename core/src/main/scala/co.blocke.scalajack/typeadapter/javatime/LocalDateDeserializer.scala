@@ -11,7 +11,7 @@ class LocalDateDeserializer(formatter: DateTimeFormatter) extends Deserializer[L
 
   private val LocalDateType: Type = typeOf[LocalDate]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[LocalDate] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[LocalDate] =
     json match {
       case JsonString(x) =>
         DeserializationResult(path)(TypeTagged(LocalDate.parse(x, formatter), LocalDateType), {

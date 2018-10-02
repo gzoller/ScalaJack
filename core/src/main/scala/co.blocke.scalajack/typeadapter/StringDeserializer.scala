@@ -9,7 +9,7 @@ class StringDeserializer extends Deserializer[String] {
 
   private val StringType: Type = typeOf[String]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[String] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[String] =
     json match {
       case JsonNull()        => DeserializationSuccess(TypeTagged(null, StringType))
       case JsonString(value) => DeserializationSuccess(TypeTagged(value, StringType))

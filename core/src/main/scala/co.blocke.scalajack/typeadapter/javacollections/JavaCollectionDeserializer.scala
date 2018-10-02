@@ -14,7 +14,7 @@ class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeseria
     override lazy val tpe: Type = appliedType(collectionTypeConstructor, taggedElements.map(_.tpe)) // FIXME `C` may not actually have a type parameter.
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[C] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)

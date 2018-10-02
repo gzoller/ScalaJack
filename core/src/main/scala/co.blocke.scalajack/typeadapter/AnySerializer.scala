@@ -14,7 +14,7 @@ class AnySerializer(
   private val StringType: Type = typeOf[String]
   private val TypeType: Type = typeOf[Type]
 
-  override def serialize[J](tagged: TypeTagged[Any])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[Any])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     // TODO come up with a better way to obtain the value's type
     tagged match {
       case TypeTagged(null) =>

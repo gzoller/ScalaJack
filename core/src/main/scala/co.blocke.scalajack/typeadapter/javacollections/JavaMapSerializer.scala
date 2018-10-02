@@ -6,7 +6,7 @@ class JavaMapSerializer[K, V, M <: java.util.Map[K, V]](keySerializer: Serialize
 
   private val mapSymbol: Symbol = symbolOf[java.util.Map[_, _]]
 
-  override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())

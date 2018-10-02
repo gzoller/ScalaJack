@@ -6,7 +6,7 @@ class BoxedByteDeserializer(byteDeserializer: Deserializer[Byte]) extends Deseri
 
   private val BoxedByteType: Type = typeOf[java.lang.Byte]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Byte] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Byte] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedByteType))

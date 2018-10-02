@@ -6,7 +6,7 @@ import scala.collection.immutable
 
 class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], valueSerializer: Serializer[V], context: Context) extends Serializer[M] {
 
-  override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) => SerializationSuccess(JsonNull())
       case TypeTagged(map) =>

@@ -6,7 +6,7 @@ class BoxedShortDeserializer(shortDeserializer: Deserializer[Short]) extends Des
 
   private val BoxedShortType: Type = typeOf[java.lang.Short]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Short] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Short] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedShortType))

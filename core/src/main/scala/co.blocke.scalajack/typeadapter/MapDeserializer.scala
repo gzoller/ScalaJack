@@ -14,7 +14,7 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
 
   private val taggedNull: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[M] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[M] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(taggedNull)

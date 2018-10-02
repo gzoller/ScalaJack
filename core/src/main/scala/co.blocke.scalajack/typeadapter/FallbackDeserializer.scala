@@ -34,7 +34,7 @@ class FallbackDeserializer[T](
     }
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] = {
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] = {
     val primaryDeserializationResult = try primaryDeserializer.deserialize(path, json) catch {
       case NonFatal(e) =>
         DeserializationFailure(path, DeserializationError.ExceptionThrown(e))

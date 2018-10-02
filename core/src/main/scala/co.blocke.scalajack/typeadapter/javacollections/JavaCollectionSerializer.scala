@@ -4,7 +4,7 @@ package javacollections
 
 class JavaCollectionSerializer[E, C <: java.util.Collection[E]](elementSerializer: Serializer[E]) extends Serializer[C] {
 
-  override def serialize[J](taggedCollection: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](taggedCollection: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     taggedCollection match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())

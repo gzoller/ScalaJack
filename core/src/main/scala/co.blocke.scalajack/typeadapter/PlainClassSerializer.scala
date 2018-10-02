@@ -7,7 +7,7 @@ class PlainClassSerializer[C](members: List[PlainFieldMember[C]]) extends Serial
 
   private type Member = PlainFieldMember[C]
 
-  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())

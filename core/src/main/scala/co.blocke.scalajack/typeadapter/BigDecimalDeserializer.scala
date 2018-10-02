@@ -8,7 +8,7 @@ class BigDecimalDeserializer extends Deserializer[BigDecimal] {
   private val BigDecimalType: Type = typeOf[BigDecimal]
   private val taggedNull: TypeTagged[BigDecimal] = TypeTagged[BigDecimal](null, BigDecimalType)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[BigDecimal] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[BigDecimal] =
     json match {
       case JsonNull()     => DeserializationSuccess(taggedNull)
       case JsonDecimal(x) => DeserializationSuccess(TypeTagged(x, BigDecimalType))

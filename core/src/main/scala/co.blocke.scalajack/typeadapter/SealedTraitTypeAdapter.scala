@@ -87,7 +87,7 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                         case TypeTagged(x)    => runtimeClass.isInstance(x)
                       }
 
-                    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+                    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
                       serializer.serialize(tagged)
                   }
                 }).toSet)

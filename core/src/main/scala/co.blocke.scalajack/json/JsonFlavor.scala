@@ -23,7 +23,7 @@ case class JsonFlavor(
   def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
   def withSecondLookParsing() = this.copy(secondLookParsing = true)
 
-  implicit val guidance: DeserializationGuidance = {
+  implicit val guidance: SerializationGuidance = {
     if (secondLookParsing)
       SecondLookGuidance
     else
@@ -67,7 +67,7 @@ case class JsonFlavor(
     val typeAdapter = context.typeAdapterOf[T]
     implicit val ops: JsonOps[JValue] = Json4sOps
     val serializer = typeAdapter.serializer
-    val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))
+    val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance)
     Json4sOps.renderCompact(json, this)
   }
 

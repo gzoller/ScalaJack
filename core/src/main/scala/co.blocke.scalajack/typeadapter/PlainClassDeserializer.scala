@@ -14,7 +14,7 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
   private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], instanceType)
   private val membersByName: Map[String, Member] = members.map(member => member.name -> member).toMap
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[C] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)

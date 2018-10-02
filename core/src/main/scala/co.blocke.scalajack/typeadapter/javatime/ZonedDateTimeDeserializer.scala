@@ -11,7 +11,7 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
 
   private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[ZonedDateTime] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[ZonedDateTime] =
     json match {
       case JsonNull() => DeserializationSuccess(TypeTagged(null, ZonedDateTimeType))
       case JsonString(x) =>

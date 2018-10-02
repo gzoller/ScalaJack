@@ -11,7 +11,7 @@ class TrySerializer[T](next: Serializer[T]) extends Serializer[Try[T]] {
     override lazy val tpe: Type = taggedTry.tpe.baseType(TryTypeSymbol).typeArgs.head
   }
 
-  override def serialize[J](tagged: TypeTagged[Try[T]])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[Try[T]])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(Success(value)) =>
         next.serialize(new TaggedSuccessValue(value, tagged))

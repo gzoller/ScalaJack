@@ -7,7 +7,7 @@ class CollectionSerializer[E, C <: GenTraversableOnce[E]](elementSerializer: Ser
 
   private val GenTraversableOnceTypeSymbol: TypeSymbol = symbolOf[GenTraversableOnce[_]]
 
-  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())
@@ -21,7 +21,7 @@ class CollectionSerializer[E, C <: GenTraversableOnce[E]](elementSerializer: Ser
 
         SerializationSuccess(JsonArray { appendElement =>
           for (element <- collection) {
-            val SerializationSuccess(elementJson) = elementSerializer.serialize(new TaggedElement(element))
+            val SerializationSuccess(elementJson) = elementSerializer.serialize(new TaggedElement(element))(ops, guidance or SeqGuidance)
             appendElement(elementJson)
           }
         })

@@ -7,7 +7,7 @@ import scala.math.BigDecimal
 
 case class Holder[T](value: T)
 
-class PermissivePrimitiveSpec() extends FunSpec with Matchers {
+class SecondLookParsingSpec() extends FunSpec with Matchers {
 
   val sj = ScalaJack().withSecondLookParsing()
 

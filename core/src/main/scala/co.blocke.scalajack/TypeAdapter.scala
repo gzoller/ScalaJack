@@ -21,7 +21,7 @@ object TypeAdapter {
     class constant[X](tagged: TypeTagged[X])(implicit ttFactory: TypeTag[X]) extends TypeAdapter.=:=[X] {
       override val deserializer: Deserializer[X] = Deserializer.constant(tagged)
       override val serializer: Serializer[X] = new Serializer[X] {
-        override def serialize[J](tagged: TypeTagged[X])(implicit ops: JsonOps[J]): SerializationResult[J] =
+        override def serialize[J](tagged: TypeTagged[X])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
           throw new UnsupportedOperationException(s"TypeAdapter.=:=.constant[${ttFactory.tpe}](...).serializer.serialize")
       }
     }
@@ -55,12 +55,12 @@ trait TypeAdapter[T] {
   }
 
   val deserializer: Deserializer[T] = new Deserializer[T] {
-    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[T] =
+    override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
       throw new NotImplementedError(s"$self.deserializer.deserialize")
   }
 
   val serializer: Serializer[T] = new Serializer[T] {
-    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+    override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
       throw new NotImplementedError(s"$self.serializer.serialize")
   }
 

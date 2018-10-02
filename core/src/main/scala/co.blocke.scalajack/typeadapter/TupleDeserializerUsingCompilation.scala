@@ -32,7 +32,7 @@ object TupleDeserializerUsingCompilation {
         |    override lazy val tpe: sj.Type = sj.appliedType(tupleTypeConstructor, List(${(1 to size).map(i => s"taggedElement$i.tpe").mkString(", ")}))
         |  }
         |
-        |  override def deserialize[J](path: sj.Path, json: J)(implicit sj.JsonOps[J], guidance: DeserializationGuidance): sj.DeserializationResult[(${(1 to size).map(i => s"T$i").mkString(", ")})] =
+        |  override def deserialize[J](path: sj.Path, json: J)(implicit sj.JsonOps[J], guidance: SerializationGuidance): sj.DeserializationResult[(${(1 to size).map(i => s"T$i").mkString(", ")})] =
         |    json match {
         |      case sj.JsonNull() => sj.DeserializationSuccess(sj.TypeTagged(null, tupleType))
         |      case sj.JsonArray(x) =>

@@ -15,7 +15,7 @@ class ClassSerializer[C](
   private val tpe: Type = tt.tpe
   private val TypeType: Type = typeOf[Type]
 
-  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())

@@ -4,6 +4,8 @@ case class Bar(size: Int, ok: String)
 case class Foo[T](m: T)
 case class TT(t: (String, String))
 
+case class Person(name: String, age: Int)
+
 object RunMe extends App {
   /*
 
@@ -32,6 +34,7 @@ object RunMe extends App {
   show(Foo(Map(("hey", "jude") -> 5, ("purple", "rain") -> 3)))
   */
 
+  /*
   trait XFoo { val a: Int }
   trait XBar { val b: Int; val c: XFoo }
   case class One(a: Int) extends XFoo
@@ -66,5 +69,11 @@ object RunMe extends App {
 
   val s = "something\b\n\f\r\t☆"
   println(escapeJava(s))
+  */
+
+  case class Person(name: String, thing: Option[List[Int]])
+  val sj = ScalaJack()
+  println(sj.render(Person("Greg", None)))
+
 }
 

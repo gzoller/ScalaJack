@@ -13,7 +13,7 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
   private val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
   private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Number] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Number] =
     json match {
       case JsonNull() => DeserializationSuccess(TypeTagged(null, BoxedNumberType))
       case JsonDecimal(scalaBigDecimal) if (!scalaBigDecimal.isDecimalDouble) => DeserializationSuccess(TypeTagged(scalaBigDecimal.bigDecimal, JavaBigDecimalType))

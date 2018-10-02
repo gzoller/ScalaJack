@@ -6,7 +6,7 @@ class BoxedIntDeserializer(intDeserializer: Deserializer[Int]) extends Deseriali
 
   private val BoxedIntType: Type = typeOf[java.lang.Integer]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Integer] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Integer] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedIntType))

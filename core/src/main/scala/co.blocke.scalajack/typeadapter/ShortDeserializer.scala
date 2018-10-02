@@ -7,7 +7,7 @@ class ShortDeserializer extends Deserializer[Short] {
 
   import NumberConverters._
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Short] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Short] =
     json match {
       case JsonLong(longValue) => DeserializationSuccess(TypeTagged(longValue.toShortExact))
       case JsonInt(bigInt)     => DeserializationSuccess(TypeTagged(bigInt.toShortExact))

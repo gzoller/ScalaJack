@@ -21,7 +21,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
   private val typeMembersByName: Map[String, TypeMember] = typeMembers.map(typeMember => typeMember.name -> typeMember).toMap
   private val fieldMembersByName: Map[String, FieldMember] = fieldMembers.map(fieldMember => fieldMember.name -> fieldMember).toMap
 
-  private def inferConcreteDeserializer[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): Option[Deserializer[_ <: CC]] =
+  private def inferConcreteDeserializer[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): Option[Deserializer[_ <: CC]] =
     if (typeMembers.isEmpty) {
       None
     } else {
@@ -71,7 +71,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       }
     }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[CC] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[CC] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)

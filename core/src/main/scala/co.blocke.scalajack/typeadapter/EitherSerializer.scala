@@ -19,7 +19,7 @@ class EitherSerializer[L, R](leftSerializer: Serializer[L], rightSerializer: Ser
     }
   }
 
-  override def serialize[J](taggedEither: TypeTagged[Either[L, R]])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](taggedEither: TypeTagged[Either[L, R]])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     taggedEither match {
       case TypeTagged(Left(leftValue)) =>
         leftSerializer.serialize(new TaggedLeftValue(leftValue, taggedEither))

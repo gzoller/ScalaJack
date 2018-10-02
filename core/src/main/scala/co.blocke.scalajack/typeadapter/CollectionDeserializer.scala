@@ -17,7 +17,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
     }
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[C] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(taggedNull)

@@ -4,7 +4,7 @@ class DeferredSerializerReference[T](resolve: () => Serializer[T]) extends Seria
 
   private lazy val resolved: Serializer[T] = resolve()
 
-  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     resolved.serialize[J](tagged)
 
 }

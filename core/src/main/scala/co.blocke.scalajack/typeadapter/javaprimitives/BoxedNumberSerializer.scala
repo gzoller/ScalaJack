@@ -11,7 +11,7 @@ class BoxedNumberSerializer() extends Serializer[java.lang.Number] {
     f - diff
   }
 
-  override def serialize[J](tagged: TypeTagged[java.lang.Number])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[java.lang.Number])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null)                                 => SerializationSuccess(JsonNull())
       case TypeTagged(boxedByte: java.lang.Byte)            => SerializationSuccess(JsonLong(boxedByte.longValue))

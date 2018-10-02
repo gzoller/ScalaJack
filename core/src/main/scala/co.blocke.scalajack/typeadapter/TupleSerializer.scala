@@ -7,7 +7,7 @@ import scala.collection.immutable
 
 class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple] {
 
-  override def serialize[J](taggedTuple: TypeTagged[Tuple])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](taggedTuple: TypeTagged[Tuple])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     taggedTuple match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())
@@ -24,8 +24,10 @@ class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple
                 appendElement(fieldValueJson)
 
               case SerializationFailure(fieldErrors) =>
-                errorsBuilder ++= fieldErrors
-
+                if (fieldErrors.head.toString == "Nothing")
+                  appendElement(ops.applyNull)
+                else
+                  errorsBuilder ++= fieldErrors
             }
           }
         }

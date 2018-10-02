@@ -17,7 +17,7 @@ class SerializerReference[T](initialSerializer: Serializer[T]) extends Serialize
 
   referencedSerializer = initialSerializer
 
-  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J]): SerializationResult[J] =
+  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     ref.get().serialize[J](tagged)
 
 }

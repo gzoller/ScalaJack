@@ -6,7 +6,7 @@ class BoxedCharDeserializer(charDeserializer: Deserializer[Char]) extends Deseri
 
   private val BoxedCharType: Type = typeOf[java.lang.Character]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[java.lang.Character] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Character] =
     json match {
       case JsonNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedCharType))

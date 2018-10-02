@@ -12,8 +12,21 @@ class AnyDeserializer(
 
   private val nullTypeTagged = TypeTagged(null, typeOf[Any])
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Any] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Any] =
     json match {
+      // For map keys of type Any, all of these will be string.  We need to test and see if we can deserialize a specific type or not.
+      // If not, stay with the string, otherwise use the more specific type.
+      case JsonString(js) if (guidance.isMapKey) =>
+        try {
+          context.typeAdapterOf[Any].deserializer.deserialize(path, JsonParser.parse(js).get) match {
+            case success: DeserializationSuccess[_] => success
+            case _                                  => stringDeserializer.deserialize(path, json)
+          }
+        } catch {
+          // Nope... no embedded typed thing found... must be a plain 'ol String
+          case _: Throwable => stringDeserializer.deserialize(path, json)
+        }
+
       case JsonObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]
 

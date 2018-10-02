@@ -13,9 +13,11 @@ class OptionDeserializer[T](next: Deserializer[T]) extends Deserializer[Option[T
   override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Option[T]] =
     DeserializationSuccess(TaggedNone)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: DeserializationGuidance): DeserializationResult[Option[T]] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Option[T]] =
     json match {
       case JsonNull() =>
+        DeserializationSuccess(TaggedNone)
+      case JsonString(s) if (s == "") =>
         DeserializationSuccess(TaggedNone)
       case _ =>
         next.deserialize(path, json) map {
