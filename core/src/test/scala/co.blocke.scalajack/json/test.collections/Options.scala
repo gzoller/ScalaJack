@@ -8,7 +8,6 @@ class Options() extends FunSpec with Matchers {
   val sj = ScalaJack()
 
   describe("------------------\n:  Option Tests  :\n------------------") {
-    /*
     it("Option of primitive (naked)") {
       val inst: Option[BigInt] = Some(BigInt(5))
       val js = sj.render(inst)
@@ -97,17 +96,14 @@ class Options() extends FunSpec with Matchers {
         sj.read[List[Option[Int]]](js)
       }
     }
-    */
     it("Option is None (value in Map)") {
       val inst: Map[Int, Option[String]] = Map(1 -> Some("one"), 2 -> None, 3 -> Some("three"))
       val js = sj.render(inst)
-      println("JS: "+js)
-      assertResult("""{"1":"one","3":"three"}""") { js }
-      assertResult(Map(1 -> Some("one"), 3 -> Some("three"))) { // The None gets erased here
+      assertResult("""{"1":"one","2":null,"3":"three"}""") { js }
+      assertResult(Map(1 -> Some("one"), 2 -> None, 3 -> Some("three"))) { // The None gets erased here
         sj.read[Map[Int, Option[String]]](js)
       }
     }
-    /*
     it("Option is None (key in Map)") {
       val inst: Map[Option[String], Int] = Map(Some("one") -> 1, None -> 2, Some("three") -> 3)
       val js = sj.render(inst)
@@ -144,6 +140,5 @@ class Options() extends FunSpec with Matchers {
       val js = """[{"foo":1,"t":[true,"ok",2]},{"foo":5,"t":[false,null,3]}]"""
       assertResult(List(OptionTuple(1, (true, Some("ok"), 2)), OptionTuple(5, (false, None, 3)))) { sj.read[List[OptionTuple]](js) }
     }
-    */
   }
 }
