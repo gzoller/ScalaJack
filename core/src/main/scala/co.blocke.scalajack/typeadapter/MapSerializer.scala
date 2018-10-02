@@ -43,7 +43,7 @@ class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], value
                   val keyString =
                     keyJson match {
                       case JsonString(s) => s
-                      case _             => ops.renderCompact(keyJson, context.sjFlavor.get)
+                      case _ => ops.renderCompact(keyJson, context.sjFlavor.get)
                     }
                   appendField(keyString, valueJson)
 
