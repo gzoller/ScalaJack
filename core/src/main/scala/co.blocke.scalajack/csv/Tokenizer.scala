@@ -78,7 +78,7 @@ class Tokenizer() { //(val capacity: Int = 1024) {
 
     @inline def isNumberChar(ch: Char): Boolean = ('0' <= ch && ch <= '9') || ch == '.' || ch == '-' || ch == '+' || ch == 'e' || ch == 'E'
 
-    def inferKind(arr: Array[Char], start: Int, end: Int) {
+    def inferKind(arr: Array[Char], start: Int, end: Int): Unit = {
       if (end + 1 - start == 4
         && source(start + 0) == 't'
         && source(start + 1) == 'r'
