@@ -2,13 +2,13 @@
 
 Representing nulls and None is problematic in JSON because while the spec provides for null it offers nothing to represent None.  That forces us to sometimes make inconsistent, contextualized assumptions about how best to represent these concepts.
 
-|Usage  |Example|JSON Representation
-|-------|--------------------
-|Class member|```MyClass(None,3)```|{"age":3}  *(ignored None field)*
-|List|```List(Some(1),None,Some(3))```|[1,3] *(ignored None item)*
-|Map value|```Map("a"->Some(1),"b"->None)```|{"a":1} *(ignored None entry)*
-|Map key|```Map(Some(1):true,None:false)```|{"1":true,"":false} *(empty string)*
-|Tuple member|```(5,None,"hey")```|[5,null,"hey"]
+| Usage        | Example                      | JSON Representation                |
+|--------------|------------------------------|------------------------------------|
+| Class member | MyClass(None,3)              | {“age”:3} (ignored None field)     |
+| List         | List(Some(1),None,Some(3))   | [1,3] (ignored None item)          |
+| Map value    | Map("a"->Some(1),"b"->None)  | {“a”:1} (ignored None entry)       |
+| Map key      | Map(Some(1):true,None:false) | {“1”:true,"":false} (empty string) |
+| Tuple member | (5,None,"hey")               | [5,null,“hey”]                     |
 
 In general a None value is dropped/ignored from whatever it's enclosing structure is.  The two notable exceptions are Map keys and tuple members. 
 
