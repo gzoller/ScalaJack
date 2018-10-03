@@ -40,125 +40,127 @@ trait JsonOpsSpec[J] extends FunSpec {
     }
   }
 
-  describe("JsonOps") {
-    it("it should create a JSON array") {
-      val expectedElements: List[J] = (for (i <- 1 to 10) yield ops.applyString("element" + i)).toList
+  describe("--------------------\n:  JSON Ops Tests  :\n--------------------") {
+    describe("JsonOps") {
+      it("it should create a JSON array") {
+        val expectedElements: List[J] = (for (i <- 1 to 10) yield ops.applyString("element" + i)).toList
 
-      val json = ops.applyArray { appendElement =>
-        expectedElements.foreach(appendElement)
-      }
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonArrayType))
+        val json = ops.applyArray { appendElement =>
+          expectedElements.foreach(appendElement)
+        }
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonArrayType))
 
-      val actualElementsBuilder = List.newBuilder[J]
+        val actualElementsBuilder = List.newBuilder[J]
 
-      ops.foreachArrayElement(ops.unapplyArray(json).get.asInstanceOf[ops.ArrayElements], { (index, element) =>
-        actualElementsBuilder += element
-      })
+        ops.foreachArrayElement(ops.unapplyArray(json).get.asInstanceOf[ops.ArrayElements], { (index, element) =>
+          actualElementsBuilder += element
+        })
 
-      val actualElements: List[J] = actualElementsBuilder.result()
-      actualElements should be(expectedElements)
-    }
-
-    it("should create a JSON boolean (false)") {
-      val json = ops.applyBoolean(false)
-      ops.unapplyBoolean(json) should be(Some(false))
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonBooleanType))
-    }
-
-    it("should create a JSON boolean (true)") {
-      val json = ops.applyBoolean(true)
-      ops.unapplyBoolean(json) should be(Some(true))
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonBooleanType))
-    }
-
-    describe("numbers") {
-      it("should create a JSON decimal") {
-        val json = ops.applyDecimal(BigDecimal("12.34"))
-        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonDecimalType))
-        ops.unapplyDecimal(json) should be(Some(BigDecimal("12.34")))
+        val actualElements: List[J] = actualElementsBuilder.result()
+        actualElements should be(expectedElements)
       }
 
-      it("should create a JSON double") {
-        val doubleValue: Double = 12.34
-        val json = ops.applyDouble(doubleValue)
-        sniffJsonValueType(json) match {
-          case JsonValueType.JsonDecimalType =>
-            ops.unapplyDecimal(json) should be(Some(BigDecimal(doubleValue)))
+      it("should create a JSON boolean (false)") {
+        val json = ops.applyBoolean(false)
+        ops.unapplyBoolean(json) should be(Some(false))
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonBooleanType))
+      }
 
-          case JsonValueType.JsonDoubleType =>
-            ops.unapplyDouble(json) should be(Some(doubleValue))
+      it("should create a JSON boolean (true)") {
+        val json = ops.applyBoolean(true)
+        ops.unapplyBoolean(json) should be(Some(true))
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonBooleanType))
+      }
+
+      describe("numbers") {
+        it("should create a JSON decimal") {
+          val json = ops.applyDecimal(BigDecimal("12.34"))
+          sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonDecimalType))
+          ops.unapplyDecimal(json) should be(Some(BigDecimal("12.34")))
+        }
+
+        it("should create a JSON double") {
+          val doubleValue: Double = 12.34
+          val json = ops.applyDouble(doubleValue)
+          sniffJsonValueType(json) match {
+            case JsonValueType.JsonDecimalType =>
+              ops.unapplyDecimal(json) should be(Some(BigDecimal(doubleValue)))
+
+            case JsonValueType.JsonDoubleType =>
+              ops.unapplyDouble(json) should be(Some(doubleValue))
+          }
+        }
+
+        it("should create a JSON int") {
+          val bigIntValue = BigInt(1234)
+          val json = ops.applyInt(bigIntValue)
+          sniffJsonValueType(json) match {
+            case JsonValueType.JsonDecimalType =>
+              ops.unapplyDecimal(json) should be(Some(BigDecimal(bigIntValue)))
+
+            case JsonValueType.JsonDoubleType =>
+              ops.unapplyDouble(json) should be(Some(1234.0))
+
+            case JsonValueType.JsonIntType =>
+              ops.unapplyInt(json) should be(Some(bigIntValue))
+
+            case JsonValueType.JsonLongType =>
+              ops.unapplyLong(json) should be(Some(1234L))
+          }
+        }
+
+        it("should create a JSON long") {
+          val longValue = 1234L
+          val json = ops.applyLong(longValue)
+          sniffJsonValueType(json) match {
+            case JsonValueType.JsonDecimalType =>
+              ops.unapplyDecimal(json) should be(Some(BigDecimal(longValue)))
+
+            case JsonValueType.JsonDoubleType =>
+              ops.unapplyDouble(json) should be(Some(longValue.toDouble))
+
+            case JsonValueType.JsonIntType =>
+              ops.unapplyInt(json) should be(Some(BigInt(longValue)))
+
+            case JsonValueType.JsonLongType =>
+              ops.unapplyLong(json) should be(Some(longValue))
+          }
         }
       }
 
-      it("should create a JSON int") {
-        val bigIntValue = BigInt(1234)
-        val json = ops.applyInt(bigIntValue)
-        sniffJsonValueType(json) match {
-          case JsonValueType.JsonDecimalType =>
-            ops.unapplyDecimal(json) should be(Some(BigDecimal(bigIntValue)))
-
-          case JsonValueType.JsonDoubleType =>
-            ops.unapplyDouble(json) should be(Some(1234.0))
-
-          case JsonValueType.JsonIntType =>
-            ops.unapplyInt(json) should be(Some(bigIntValue))
-
-          case JsonValueType.JsonLongType =>
-            ops.unapplyLong(json) should be(Some(1234L))
-        }
+      it("should create a JSON null") {
+        val json = ops.applyNull()
+        ops.unapplyNull(json) should be(true)
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonNullType))
       }
 
-      it("should create a JSON long") {
-        val longValue = 1234L
-        val json = ops.applyLong(longValue)
-        sniffJsonValueType(json) match {
-          case JsonValueType.JsonDecimalType =>
-            ops.unapplyDecimal(json) should be(Some(BigDecimal(longValue)))
+      it("should create a JSON object") {
+        val expectedFields: List[(String, J)] = (for (i <- 1 to 10) yield ("key" + i, ops.applyString("value" + i))).toList
 
-          case JsonValueType.JsonDoubleType =>
-            ops.unapplyDouble(json) should be(Some(longValue.toDouble))
-
-          case JsonValueType.JsonIntType =>
-            ops.unapplyInt(json) should be(Some(BigInt(longValue)))
-
-          case JsonValueType.JsonLongType =>
-            ops.unapplyLong(json) should be(Some(longValue))
+        val json = ops.applyObject { appendField =>
+          for ((fieldName, fieldValue) <- expectedFields) {
+            appendField(fieldName, fieldValue)
+          }
         }
-      }
-    }
 
-    it("should create a JSON null") {
-      val json = ops.applyNull()
-      ops.unapplyNull(json) should be(true)
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonNullType))
-    }
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonObjectType))
 
-    it("should create a JSON object") {
-      val expectedFields: List[(String, J)] = (for (i <- 1 to 10) yield ("key" + i, ops.applyString("value" + i))).toList
+        val actualFieldsBuilder = List.newBuilder[(String, J)]
 
-      val json = ops.applyObject { appendField =>
-        for ((fieldName, fieldValue) <- expectedFields) {
-          appendField(fieldName, fieldValue)
-        }
+        ops.foreachObjectField(ops.unapplyObject(json).get.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
+          actualFieldsBuilder += fieldName -> fieldValue
+        })
+
+        val actualFields: List[(String, J)] = actualFieldsBuilder.result()
+
+        actualFields should be(expectedFields)
       }
 
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonObjectType))
-
-      val actualFieldsBuilder = List.newBuilder[(String, J)]
-
-      ops.foreachObjectField(ops.unapplyObject(json).get.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
-        actualFieldsBuilder += fieldName -> fieldValue
-      })
-
-      val actualFields: List[(String, J)] = actualFieldsBuilder.result()
-
-      actualFields should be(expectedFields)
-    }
-
-    it("should create a JSON string") {
-      val json = ops.applyString("Banana")
-      ops.unapplyString(json) should be(Some("Banana"))
-      sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonStringType))
+      it("should create a JSON string") {
+        val json = ops.applyString("Banana")
+        ops.unapplyString(json) should be(Some("Banana"))
+        sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonStringType))
+      }
     }
   }
 

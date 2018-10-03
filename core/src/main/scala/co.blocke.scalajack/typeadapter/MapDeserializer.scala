@@ -8,13 +8,13 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
     keyDeserializer:           Deserializer[K],
     valueDeserializer:         Deserializer[V],
     keyValuePairsDeserializer: Deserializer[List[(K, V)]],
-    newBuilder:                () => mutable.Builder[(K, V), M])(implicit tt: TypeTag[M]) extends Deserializer[M] {
+    newBuilder:                () => mutable.Builder[(K, V), M])(implicit tt: TypeTag[M], ttk: TypeTag[K], ttv: TypeTag[V], context: Context) extends Deserializer[M] {
 
   self =>
 
   private val taggedNull: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[M] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[M] = {
     json match {
       case JsonNull() =>
         DeserializationSuccess(taggedNull)
@@ -30,9 +30,12 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
           val errorsBuilder = immutable.Seq.newBuilder[(Path, DeserializationError)]
 
           ops.foreachObjectField(objectFields, { (fieldName, fieldValueJson) =>
-            val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))(ops, MapKeyGuidance or guidance)
-            val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)
+            val keyDeserializationResult = keyDeserializer.deserialize(path \ fieldName, JsonString[J](fieldName))(ops, guidance.withMapKey())
+            val valueDeserializationResult = valueDeserializer.deserialize(path \ fieldName, fieldValueJson)(ops, guidance.withMapValue())
 
+            //            println("K: " + keyDeserializationResult)
+            //            println("V: " + valueDeserializationResult)
+            //            println("--------------")
             (keyDeserializationResult, valueDeserializationResult) match {
               case (DeserializationSuccess(taggedKey), DeserializationSuccess(taggedValue)) =>
                 val TypeTagged(key) = taggedKey
@@ -95,8 +98,13 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
           new TaggedMapFromJsonArray(map)
         }
 
+      case JsonString(s) => // Parse and deserialize non-string Map key (embedded in a string, e.g. Map as a key to another Map)
+        val deserializer = context.typeAdapterOf[M].deserializer
+        deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
+
       case _ =>
         DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
     }
+  }
 
 }

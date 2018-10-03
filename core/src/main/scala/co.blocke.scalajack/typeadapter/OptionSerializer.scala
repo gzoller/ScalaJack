@@ -11,11 +11,11 @@ class OptionSerializer[T](next: Serializer[T]) extends Serializer[Option[T]] {
 
   override def serialize[J](tagged: TypeTagged[Option[T]])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
-      case TypeTagged(null)                        => SerializationSuccess(JsonNull())
+      case TypeTagged(null) => SerializationSuccess(JsonNull())
       case TypeTagged(None) if (guidance.isMapKey) => SerializationSuccess(JsonString(""))
-      case TypeTagged(None) if (guidance.inSeq)    => SerializationSuccess(JsonNull())
-      case TypeTagged(None)                        => SerializationFailure(SerializationError.Nothing)
-      case TypeTagged(Some(value))                 => next.serialize(new TaggedSomeValue(value, tagged))
+      case TypeTagged(None) if (guidance.inSeq || guidance.isMapValue) => SerializationSuccess(JsonNull())
+      case TypeTagged(None) => SerializationFailure(SerializationError.Nothing)
+      case TypeTagged(Some(value)) => next.serialize(new TaggedSomeValue(value, tagged))
     }
 
 }

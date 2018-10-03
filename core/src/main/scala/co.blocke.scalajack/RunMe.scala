@@ -71,9 +71,9 @@ object RunMe extends App {
   println(escapeJava(s))
   */
 
-  case class Person(name: String, thing: Option[List[Int]])
   val sj = ScalaJack()
-  println(sj.render(Person("Greg", None)))
+  val m = Map.empty[String, Int]
+  println(sj.render(m))
 
 }
 

@@ -34,6 +34,8 @@ package object scalajack {
   @inline final val TermName = scala.reflect.runtime.universe.TermName
   @inline final val NoType = scala.reflect.runtime.universe.NoType
 
+  final val Marker = '\u00C5'
+
   // format: OFF
   @inline final def appliedType(tycon: Type, args: Type*): Type        = scala.reflect.runtime.universe.appliedType(tycon, args: _*)
   @inline final def appliedType(tycon: Type, args: List[Type]): Type   = scala.reflect.runtime.universe.appliedType(tycon, args)

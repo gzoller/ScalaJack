@@ -8,7 +8,7 @@ class BooleanDeserializer extends Deserializer[Boolean] {
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Boolean] =
     json match {
       case JsonBoolean(booleanValue) => DeserializationSuccess(TypeTagged(booleanValue))
-      case _                         => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON boolean", reportedBy = self))
+      case x                         => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON boolean", reportedBy = self))
     }
 
 }

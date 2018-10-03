@@ -109,12 +109,14 @@ class MapCollKeys() extends FunSpec with Matchers {
       }
     }
     it("Map of Optional as key") {
+      // None in Map key renedered => ""
+      // None in Map value rendered => null
       val m1: Map[Option[Int], Option[Int]] = Map(Some(3) -> None)
       val m2: Map[Option[Int], Option[Int]] = Map(None -> Some(2), Some(5) -> null)
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{{{}:{"":2,5:null}}:{{"":2,5:null}:{}}}""") { js }
-      assertResult(Map(Map(Map() -> Map(None -> Some(2), Some(5) -> None)) -> Map(Map(None -> Some(2), Some(5) -> None) -> Map()))) {
+      assertResult("""{{{3:null}:{"":2,5:null}}:{{"":2,5:null}:{3:null}}}""") { js }
+      assertResult(Map(Map(Map(Some(3) -> None) -> Map(None -> Some(2), Some(5) -> None)) -> Map(Map(None -> Some(2), Some(5) -> None) -> Map(Some(3) -> None)))) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
     }
@@ -125,9 +127,9 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2 = m0 + (bad -> Some(99))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{{{}:{null:99}}:{{null:99}:{}}}""") { js }
+      assertResult("""{{{3:null}:{null:99}}:{{null:99}:{3:null}}}""") { js }
       // nulls become None and Map entries having None values get erased
-      val result = Map(Map(Map() -> Map(None -> Some(99))) -> Map(Map(None -> Some(99)) -> Map()))
+      val result = Map(Map(Map(Some(3) -> None) -> Map(None -> Some(99))) -> Map(Map(None -> Some(99)) -> Map(Some(3) -> None)))
       assertResult(result) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }

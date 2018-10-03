@@ -32,7 +32,9 @@ class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: Typ
                     deserializationSuccess
 
                   case DeserializationFailure(fallbackErrors) =>
-                    DeserializationFailure(errors ++ fallbackErrors)
+                    DeserializationFailure(errors)
+                  // Note: We don't accumulate errors here because the initial error is considered ok
+                  // for map keys or second look parsing.
                 }
 
               case Success(None) =>

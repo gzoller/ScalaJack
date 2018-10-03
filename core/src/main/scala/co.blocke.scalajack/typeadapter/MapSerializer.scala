@@ -35,15 +35,16 @@ class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], value
         val json = JsonObject[J] { appendField =>
           map foreach {
             case (key, value) =>
-              val keySerializationResult = keySerializer.serialize(new TaggedKey(key))(ops, guidance or MapKeyGuidance)
-              val valueSerializationResult = valueSerializer.serialize(new TaggedValue(value))
+              val keySerializationResult = keySerializer.serialize(new TaggedKey(key))(ops, guidance.withMapKey())
+              val valueSerializationResult = valueSerializer.serialize(new TaggedValue(value))(ops, guidance.withMapValue())
 
               (keySerializationResult, valueSerializationResult) match {
                 case (SerializationSuccess(keyJson), SerializationSuccess(valueJson)) =>
                   val keyString =
                     keyJson match {
-                      case JsonString(s) => s
-                      case _ => ops.renderCompact(keyJson, context.sjFlavor.get)
+                      case JsonString(s)               => s
+                      case _ if (guidance.isCanonical) => ops.renderCompact(keyJson, context.sjFlavor.get)
+                      case s                           => Marker + ops.renderCompact(keyJson, context.sjFlavor.get)
                     }
                   appendField(keyString, valueJson)
 

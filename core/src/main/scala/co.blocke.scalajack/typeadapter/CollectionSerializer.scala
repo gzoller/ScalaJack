@@ -21,7 +21,7 @@ class CollectionSerializer[E, C <: GenTraversableOnce[E]](elementSerializer: Ser
 
         SerializationSuccess(JsonArray { appendElement =>
           for (element <- collection) {
-            val SerializationSuccess(elementJson) = elementSerializer.serialize(new TaggedElement(element))(ops, guidance or SeqGuidance)
+            val SerializationSuccess(elementJson) = elementSerializer.serialize(new TaggedElement(element))(ops, guidance.withSeq())
             appendElement(elementJson)
           }
         })

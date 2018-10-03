@@ -11,7 +11,7 @@ class SecondLookParsingSpec() extends FunSpec with Matchers {
 
   val sj = ScalaJack().withSecondLookParsing()
 
-  describe("----------------------------\n:  Permissive Primitives Tests  :\n----------------------------") {
+  describe("---------------------------------\n:  Permissive Primitives Tests  :\n---------------------------------") {
     describe("+++ Positive Tests +++") {
       it("Boolean must work") {
         assertResult(Holder(true)) { sj.read[Holder[Boolean]]("""{"value": true}""") }

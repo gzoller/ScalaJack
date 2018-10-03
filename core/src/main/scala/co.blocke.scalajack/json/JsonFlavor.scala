@@ -24,10 +24,14 @@ case class JsonFlavor(
   def withSecondLookParsing() = this.copy(secondLookParsing = true)
 
   implicit val guidance: SerializationGuidance = {
-    if (secondLookParsing)
-      SecondLookGuidance
+    val first = if (secondLookParsing)
+      SerializationGuidance(secondLookParsing = true)
     else
-      NormalGuidance
+      SerializationGuidance()
+    if (isCanonical)
+      first.copy(isCanonical = true)
+    else
+      first
   }
 
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {

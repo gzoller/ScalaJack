@@ -11,7 +11,7 @@ class JavaPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("---------------------------\n: Java Primitives Tests  :\n---------------------------") {
+  describe("--------------------------\n: Java Primitives Tests  :\n--------------------------") {
     describe("+++ Positive Tests +++") {
       describe("Simple Primitives:") {
         it("BigDecimal must work") {
@@ -191,7 +191,6 @@ class JavaPrim() extends FunSpec with Matchers {
         it("ZonedDateTime must work") {
           val inst = SampleZonedDateTime(ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"), null)
           val js = sj.render(inst)
-          println(js)
           assertResult("""{"o1":"2007-12-03T10:15:30+01:00[Europe/Paris]","o2":null}""") { js }
           assertResult(inst) {
             sj.read[SampleZonedDateTime](js)

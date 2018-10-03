@@ -1,53 +1,29 @@
 package co.blocke.scalajack
 
-object NormalGuidance extends SerializationGuidance {
-  override val isMapKey: Boolean = false
-  override val secondLookParsing: Boolean = false
-  override val inSeq: Boolean = false
-}
+case class SerializationGuidance(
+    // If we're deserializing a Map key we want to re-parse contents of a string to see if its
+    // a complex key, e.g. a serialized object or non-string primitive value.  We *don't* want that
+    // re-parse behavior on the value side--we want these to be caught as errors.
+    isMapKey: Boolean = false,
 
-object SecondLookGuidance extends SerializationGuidance {
-  override val isMapKey: Boolean = false
-  override val secondLookParsing: Boolean = true
-  override val inSeq: Boolean = false
-}
+    // WARNING: Mutually exclusive with MapKeyGuidance, with a bias to MapKeyGuidance
+    isMapValue: Boolean = false,
 
-object MapKeyGuidance extends SerializationGuidance {
-  override val isMapKey: Boolean = true
-  override val secondLookParsing: Boolean = false
-  override val inSeq: Boolean = false
-}
+    // This is a looser interpretation of JSON where "true" (string) will be parsed as true, "1" as 1, etc.
+    secondLookParsing: Boolean = false,
 
-object SeqGuidance extends SerializationGuidance {
-  override val isMapKey: Boolean = false
-  override val secondLookParsing: Boolean = false
-  override val inSeq: Boolean = true
-}
+    // Some things, like Option, are handled differently if they're part of a sequence.  This flag is set
+    // when dealing with Seq variants.
+    inSeq: Boolean = false,
 
-trait SerializationGuidance {
-  // If we're deserializing a Map key we want to re-parse contents of a string to see if its
-  // a complex key, e.g. a serialized object or non-string primitive value.  We *don't* want that
-  // re-parse behavior on the value side--we want these to be caught as errors.
-  val isMapKey: Boolean
+    // From ScalaJack class
+    isCanonical: Boolean = false) {
 
-  // This is a looser interpretation of JSON where "true" (string) will be parsed as true, "1" as 1, etc.
-  val secondLookParsing: Boolean
+  def withMapKey() = this.copy(isMapKey   = true, isMapValue = false, inSeq = false)
+  def withMapValue() = this.copy(isMapKey   = false, isMapValue = true, inSeq = false)
+  def withSeq() = this.copy(isMapKey   = false, isMapValue = false, inSeq = true)
 
-  // Some things, like Option, are handled differently if they're part of a sequence.  This flag is set
-  // when dealing with Seq variants.
-  val inSeq: Boolean
-
-  def or(g: SerializationGuidance): SerializationGuidance = {
-    val self = this
-
-    new SerializationGuidance {
-      val isMapKey: Boolean = self.isMapKey || g.isMapKey
-      val secondLookParsing: Boolean = self.secondLookParsing || g.secondLookParsing
-      val inSeq: Boolean = self.inSeq || g.inSeq
-    }
-  }
-
-  override def toString(): String = ":: isMapKey: " + this.isMapKey +
+  override def toString(): String = ":: isMapKey: " + this.isMapKey + "  isMapValue: " + this.isMapValue +
     "  secondLookParsing: " + this.secondLookParsing +
     "  inSeq: " + this.inSeq
 }

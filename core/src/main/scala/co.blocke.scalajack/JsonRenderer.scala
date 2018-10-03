@@ -28,20 +28,27 @@ object JsonRenderer {
         builder.appendAll(string.substring(beginIndex))
         builder.append('"')
       } else {
-        string.charAt(i) match {
-          case '{' | '[' =>
-            builder.appendAll(string)
-            // builder.appendAll(string.substring(beginIndex, i))
-            beginIndex = i
-            i += 1
+        string match {
+          case "" => builder.append("\"\"")
+          case s =>
+            string.charAt(i) match {
+              case '{' | '[' =>
+                builder.appendAll(string)
+                beginIndex = i
+                i += 1
 
-          case _ =>
-            builder.append('"')
-            i += 1
-            builder.appendAll(string.substring(beginIndex))
-            builder.append('"')
+              case Marker => // no-quotes rendering
+                builder.appendAll(string.tail)
+                beginIndex = i
+                i += 1
+
+              case _ =>
+                builder.append('"')
+                i += 1
+                builder.appendAll(string.substring(beginIndex))
+                builder.append('"')
+            }
         }
-        // builder.appendAll(string.substring(beginIndex))
       }
     }
 
