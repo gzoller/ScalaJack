@@ -20,6 +20,8 @@ case class ClassNameHintModifier(hintToClassname: (String) => String, classNameT
  */
 case class StringMatchHintModifier(hintToType: Map[String, Type]) extends HintModifier {
   val typeToHint = hintToType.map(_.swap)
-  def apply(rawHint: String) = hintToType.getOrElse(rawHint, throw new IllegalStateException("No Type mapping given for hint " + rawHint))
-  def unapply(hintFieldType: Type) = typeToHint.getOrElse(hintFieldType, throw new IllegalStateException("No hint value mapping given for Type " + hintFieldType.typeSymbol.fullName))
+  def apply(rawHint: String) =
+    hintToType.getOrElse(rawHint, throw new IllegalStateException("No Type mapping given for hint " + rawHint))
+  def unapply(hintFieldType: Type) =
+    typeToHint.getOrElse(hintFieldType, throw new IllegalStateException("No hint value mapping given for Type " + hintFieldType.typeSymbol.fullName))
 }

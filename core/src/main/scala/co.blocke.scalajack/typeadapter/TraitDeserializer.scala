@@ -5,7 +5,9 @@ import scala.collection.mutable
 
 class TraitDeserializer[T](
     typeFieldName:    MemberName,
-    typeDeserializer: Deserializer[Type])(implicit tt: TypeTag[T], context: Context) extends Deserializer[T] {
+    typeDeserializer: Deserializer[Type], // Ignored for modified versions, as it is set by concrete type
+    f:                Option[BijectiveFunction[String, Type]] = None
+)(implicit tt: TypeTag[T], context: Context) extends Deserializer[T] {
 
   self =>
 
@@ -29,8 +31,10 @@ class TraitDeserializer[T](
 
         ops.foreachObjectField(fields, { (fieldName, fieldValueJson) =>
           if (fieldName == typeFieldName) {
-            val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ fieldName, fieldValueJson)
-            maybeConcreteType = Some(concreteType)
+            maybeConcreteType = f.map(_.apply(ops.unapplyString(fieldValueJson).get)).orElse {
+              val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ fieldName, fieldValueJson)
+              Some(concreteType)
+            }
           }
         })
 
@@ -44,7 +48,11 @@ class TraitDeserializer[T](
             throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ )
         }
 
-      case _ =>
+      case JsonString(s) if (guidance.isMapKey) =>
+        val deserializer = context.typeAdapterOf[T].deserializer
+        deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
+
+      case x =>
         DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))
     }
 

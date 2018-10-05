@@ -5,12 +5,16 @@ import scala.collection.mutable
 
 class TraitSerializer[T](
     typeFieldName:  MemberName, // hint label
-    typeSerializer: Serializer[Type],
-    context:        Context)(implicit tt: TypeTag[T]) extends Serializer[T] {
+    typeSerializer: Serializer[Type], // Ignored for modified versions, as it is set by concrete type
+    f:              Option[BijectiveFunction[String, Type]] = None // optional string->type map (hint modifier)
+)(implicit tt: TypeTag[T], context: Context) extends Serializer[T] {
+
+  // f is None for global TraitSerializer.  It is set in ScalaJack for specific type modifiers set using withHindModifiers()
 
   private val polymorphicType: Type = tt.tpe
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
   private val TypeType: Type = typeOf[Type]
+  private val stringSerializer = context.typeAdapterOf[String].serializer
 
   private def populateConcreteType(concreteType: Type): Type =
     populatedConcreteTypeCache.getOrElseUpdate(concreteType, Reflection.populateChildTypeArgs(polymorphicType, concreteType))
@@ -30,7 +34,10 @@ class TraitSerializer[T](
           case JsonObject(x) =>
             val concreteFields = x.asInstanceOf[ops.ObjectFields]
 
-            val SerializationSuccess(typeJson) = typeSerializer.serialize(TypeTagged(concreteType, TypeType))
+            val SerializationSuccess(typeJson) = f.map(bij =>
+              stringSerializer.serialize(TypeTagged(bij.unapply(concreteType), TypeType))).getOrElse(
+              typeSerializer.serialize(TypeTagged(concreteType, TypeType))
+            )
 
             JsonObject { appendField =>
               appendField(typeFieldName, typeJson)

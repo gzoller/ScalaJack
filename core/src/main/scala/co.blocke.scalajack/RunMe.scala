@@ -71,9 +71,28 @@ object RunMe extends App {
   println(escapeJava(s))
   */
 
-  val sj = ScalaJack()
-  val m = Map.empty[String, Int]
-  println(sj.render(m))
+  val petHintMod = StringMatchHintModifier(Map("BreathesAir" -> typeOf[Dog]))
+  val sj = ScalaJack().withHints((typeOf[Pet] -> "kind")).withHintModifiers((typeOf[Pet] -> petHintMod))
+
+  trait Pet {
+    val name: String
+    val age: Int
+  }
+  case class Dog(name: String, age: Int) extends Pet
+
+  val d = Dog("Fido", 3)
+  println(d)
+  val js = sj.render[Pet](Dog("Fido", 3))
+  println(js)
+  println(sj.read[Pet](js))
+
+  //  val p = sj.parse(sj.render[Pet](Dog("Fido", 3)))
+  //  println(p)
+  //
+  //  val fields = p.asInstanceOf[org.json4s.JsonAST.JObject].obj
+  //  val hint = Json4sOps.getObjectField(fields.asInstanceOf[Json4sOps.ObjectFields], "_hint").get
+  //  val fixedFields = fields :+ ("_hint", org.json4s.JsonAST.JString("Bogus"))
+  //  println(fixedFields)
 
 }
 

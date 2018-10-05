@@ -136,6 +136,10 @@ class ClassDeserializerUsingReflectedConstructor[CC](
             DeserializationFailure(path, DeserializationError.ExceptionThrown(e))
         }
 
+      case JsonString(s) if (guidance.isMapKey) =>
+        val deserializer = context.typeAdapterOf[CC].deserializer
+        deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
+
       case _ =>
         DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $json", this))
     }

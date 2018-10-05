@@ -93,13 +93,11 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
       new TypeAdapterFactory {
         override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] = {
           if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
-            val stringTypeAdapter = context.typeAdapterOf[String]
-            val typeTypeAdapter = stringTypeAdapter andThen hintToType.memoized
-
+            val typeTypeAdapter = context.typeAdapterOf[Type]
             TraitTypeAdapter[T](
-              new TraitDeserializer[T](hintLabel, typeTypeAdapter.deserializer),
-              new TraitSerializer[T](hintLabel, typeTypeAdapter.serializer, context),
-              hintLabel, typeTypeAdapter, context.typeAdapterOf[MemberName], context, typeTag.tpe)
+              new TraitDeserializer[T](hintLabel, typeTypeAdapter.deserializer, Some(hintToType.memoized)),
+              new TraitSerializer[T](hintLabel, typeTypeAdapter.serializer, Some(hintToType.memoized)),
+              typeTag.tpe)
           } else
             next.typeAdapterOf[T]
         }
