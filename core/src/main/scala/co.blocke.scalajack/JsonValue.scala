@@ -35,6 +35,9 @@ object JsonValue {
         case JsonNull() =>
           JsonNull[B]()
 
+        case JsonInvalid() =>
+          JsonInvalid[B]()
+
         case JsonObject(x) =>
           val sourceFields = x.asInstanceOf[sourceOps.ObjectFields]
 
@@ -139,5 +142,15 @@ object JsonString {
 
   @inline final def unapply[J](json: J)(implicit ops: JsonOps[J]): Option[String] =
     ops.unapplyString(json)
+
+}
+
+object JsonInvalid {
+
+  @inline final def apply[J]()(implicit ops: JsonOps[J]): J =
+    ops.applyInvalid()
+
+  @inline final def unapply[J](json: J)(implicit ops: JsonOps[J]): Boolean =
+    ops.unapplyInvalid(json)
 
 }

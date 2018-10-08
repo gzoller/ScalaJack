@@ -70,6 +70,10 @@ trait JsonOps[J] {
 
   def unapplyNull(json: J): Boolean
 
+  def applyInvalid(): J
+
+  def unapplyInvalid(json: J): Boolean
+
   /**
    *
    * {{{

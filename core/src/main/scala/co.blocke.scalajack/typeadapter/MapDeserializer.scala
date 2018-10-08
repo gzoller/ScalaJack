@@ -20,6 +20,7 @@ class MapDeserializer[K, V, M <: GenMap[K, V]](
         DeserializationSuccess(taggedNull)
 
       case JsonObject(x) =>
+        println("Map Json: " + json)
         try {
           val objectFields = x.asInstanceOf[ops.ObjectFields]
 

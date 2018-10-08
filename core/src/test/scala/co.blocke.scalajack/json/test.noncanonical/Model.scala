@@ -27,6 +27,7 @@ case class SampleFloat(m: Map[Float, Float])
 case class SampleInt(m: Map[Int, Int])
 case class SampleLong(m: Map[Long, Long])
 case class SampleShort(m: Map[Short, Short])
+case class SampleString(m: Map[String, String])
 
 // === Java Primitive Keys
 case class SampleJBigDecimal(m: Map[JBigDecimal, JBigDecimal])

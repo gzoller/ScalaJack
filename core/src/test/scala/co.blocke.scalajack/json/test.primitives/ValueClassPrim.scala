@@ -172,7 +172,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
       it("Wrong JSON for wrapped type") {
         val js = """100.25"""
         val msg = """DeserializationException(1 error):
-                    |  [$] Expected a JSON number, not JDecimal(100.25) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+                    |  [$] Expected a JSON number (short), not JDecimal(100.25) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
         the[co.blocke.scalajack.DeserializationException] thrownBy sj.read[VCShort](js) should have message msg
       }
     }

@@ -120,7 +120,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("BigInt must break") {
         val js = """{"bi1":"-90182736451928374653345","bi2":90182736451928374653345,"bi3":0,"bi4":null}"""
         val msg = """DeserializationException(1 error):
-                    |  [$.bi1] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
+                    |  [$.bi1] Expected a JSON number (integer value) (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Boolean must break") {
@@ -144,13 +144,13 @@ class ScalaPrim() extends FunSpec with Matchers {
         the[DeserializationException] thrownBy sj.read[SampleByte](js) should have message msg
         val js2 = """{"b1":true,"b2":-128,"b3":0,"b4":64}"""
         val msg2 = """DeserializationException(1 error):
-                     |  [$.b1] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
+                     |  [$.b1] Expected a JSON number (byte) (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleByte](js2) should have message msg2
       }
       it("Char must break") {
         val js = """{"c1":null,"c2":"Y","c3":"Z"}"""
         val msg = """DeserializationException(1 error):
-                    |  [$.c1] Expected a JSON string of length 1 (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
+                    |  [$.c1] Expected a char (JSON string of length 1) (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Double must break") {
@@ -188,21 +188,21 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("Long must break") {
         val js = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":true,"l4":123}"""
         val msg = """DeserializationException(1 error):
-                    |  [$.l3] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
+                    |  [$.l3] Expected a JSON number (long) (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleLong](js) should have message msg
         val js2 = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}"""
         val msg2 = """DeserializationException(1 error):
-                     |  [$.l3] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
+                     |  [$.l3] Expected a JSON number (long) (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleLong](js2) should have message msg2
       }
       it("Short must break") {
         val js = """{"s1":32767,"s2":true,"s3":0,"s4":123}"""
         val msg = """DeserializationException(1 error):
-                    |  [$.s2] Expected a JSON number, not JBool(true) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+                    |  [$.s2] Expected a JSON number (short), not JBool(true) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleShort](js) should have message msg
         val js2 = """{"s1":32767,"s2":3.4,"s3":0,"s4":123}"""
         val msg2 = """DeserializationException(1 error):
-                     |  [$.s2] Expected a JSON number, not JDecimal(3.4) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+                     |  [$.s2] Expected a JSON number (short), not JDecimal(3.4) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleShort](js2) should have message msg2
       }
       it("String must break") {

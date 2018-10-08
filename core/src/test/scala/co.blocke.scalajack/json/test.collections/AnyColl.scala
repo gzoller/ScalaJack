@@ -35,7 +35,6 @@ class AnyColl() extends FunSpec with Matchers {
     it("Map works (Int,Int)") {
       val inst: Any = Map(1 -> 2, 3 -> 4)
       val js = sj.render(inst)
-      println("JS: " + js)
       assertResult("""{"1":2,"3":4}""") { js }
       assertResult(Map(1 -> 2, 3 -> 4)) {
         sj.read[Any](js)

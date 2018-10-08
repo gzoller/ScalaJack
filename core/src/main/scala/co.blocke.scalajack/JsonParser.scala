@@ -135,7 +135,6 @@ object JsonParser {
     }
 
     def readField(): (String, J) = {
-      // def readField(): (String, J) = {
       val startPosition = position
       val key = readJsonValue()
       val endPosition = position
@@ -143,7 +142,7 @@ object JsonParser {
       val keyString =
         key match {
           case JsonString(string) => string
-          case x =>
+          case _ =>
             // Non-standard JSON key
             new String(source, startPosition, endPosition - startPosition)
         }
@@ -304,6 +303,14 @@ object JsonParser {
             case "null"  => ops.applyNull()
             case "false" => ops.applyBoolean(false)
             case "true"  => ops.applyBoolean(true)
+            case s =>
+              println("HERE: " + s)
+              val z = ops.applyInvalid()
+              println("Z: " + z)
+              z
+            //            case s =>
+            //              println("Greg: Naked string " + s)
+            //              ops.applyString(s)
           }
 
         case numberChar if isNumberChar(numberChar) =>

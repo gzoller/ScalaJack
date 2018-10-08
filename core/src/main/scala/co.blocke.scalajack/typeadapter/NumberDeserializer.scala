@@ -20,6 +20,7 @@ case class NumberDeserializer() extends Deserializer[java.lang.Number] {
       case JsonDouble(doubleValue) => DeserializationSuccess(TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType))
       case JsonInt(scalaBigInt) => DeserializationSuccess(TypeTagged(scalaBigInt, ScalaBigIntegerType))
       case JsonLong(longValue) => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
+      case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
       case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
 }

@@ -209,7 +209,7 @@ class JavaPrim() extends FunSpec with Matchers {
         it("BigInteger must break") {
           val js = """{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}"""
           val msg = """DeserializationException(1 error):
-                      |  [$.bi1] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
+                      |  [$.bi1] Expected a JSON number (integer value) (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Boolean must break") {
@@ -221,7 +221,7 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Byte must break") {
           val js = """{"b1":127,"b2":-128,"b3":false,"b4":64,"b5":null}"""
           val msg = """DeserializationException(1 error):
-                      |  [$.b3] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
+                      |  [$.b3] Expected a JSON number (byte) (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJByte](js) should have message msg
           val js2 = """{"b1":127,"b2":-138,"b3":0,"b4":64,"b5":null}"""
           val msg2 = """DeserializationException(1 error):
@@ -231,7 +231,7 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Char must break") {
           val js = """{"c1":"Z","c2":3,"c3":null}"""
           val msg = """DeserializationException(1 error):
-                      |  [$.c2] Expected a JSON string of length 1 (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
+                      |  [$.c2] Expected a char (JSON string of length 1) (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJChar](js) should have message msg
         }
         it("Double must break") {
@@ -259,11 +259,11 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Long must break") {
           val js = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}"""
           val msg = """DeserializationException(1 error):
-                      |  [$.l3] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
+                      |  [$.l3] Expected a JSON number (long) (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJLong](js) should have message msg
           val js2 = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123,"l5":null}"""
           val msg2 = """DeserializationException(1 error):
-                       |  [$.l3] Expected a JSON number (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
+                       |  [$.l3] Expected a JSON number (long) (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJLong](js2) should have message msg2
         }
         it("Number must break") {
@@ -275,15 +275,15 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Short must break") {
           val js = """{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
           val msg = """DeserializationException(1 error):
-                      |  [$.s1] Expected a JSON number, not JBool(false) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+                      |  [$.s1] Expected a JSON number (short), not JBool(false) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJShort](js) should have message msg
           val js2 = """{"s1":39482737,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
           val msg2 = """DeserializationException(1 error):
-                       |  [$] Exception was thrown: java.lang.ArithmeticException: 39482737 (Long) cannot be exactly converted to Short (30065) (reported by: unknown)""".stripMargin
+                       |  [$.s1] Short value out of range (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJShort](js2) should have message msg2
           val js3 = """{"s1":2.3,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
           val msg3 = """DeserializationException(1 error):
-                       |  [$.s1] Expected a JSON number, not JDecimal(2.3) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+                       |  [$.s1] Expected a JSON number (short), not JDecimal(2.3) (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
           the[DeserializationException] thrownBy sj.read[SampleJShort](js3) should have message msg3
         }
         it("UUID must break") {

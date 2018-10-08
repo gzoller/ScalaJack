@@ -25,7 +25,9 @@ class BigIntDeserializer extends Deserializer[BigInt] {
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case _ => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON number", reportedBy = self))
+      case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
+
+      case _                                    => DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON number (integer value)", reportedBy = self))
     }
 
 }

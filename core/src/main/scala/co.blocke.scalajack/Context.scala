@@ -19,7 +19,7 @@ object Context {
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
     .withFactory(MapTypeAdapter)
-    .withFactory(CollectionTypeAdapter)
+    //    .withFactory(CollectionTypeAdapter)  <-- Deprecated???
     .withFactory(CanBuildFromTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
