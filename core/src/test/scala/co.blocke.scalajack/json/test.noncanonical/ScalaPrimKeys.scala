@@ -8,7 +8,6 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
   val sj = ScalaJack().isCanonical(false)
 
   describe("----------------------------------------\n:  Scala Primitive Noncanonical Tests  :\n----------------------------------------") {
-    /*
     describe("+++ Positive Tests +++") {
       it("With Any Key") {
         val inst = AnyShell(Map(Size.Small -> "ok", 123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
@@ -108,9 +107,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         }
       }
     }
-    */
     describe("--- Negative Tests ---") {
-      /*
       it("Bad BigDecimal Key") {
         val js = """{"m":{789.123:1,"fred":2}}"""
         val msg = """DeserializationException(1 error):
@@ -176,13 +173,6 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val msg = """DeserializationException(1 error):
                     |  [$.m.99999] Short value out of range (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SampleShort](js) should have message msg
-      }
-      */
-      it("Bad String Key") {
-        val js = """{"m":{foo:"a",bar:"b"}}"""
-        val msg = """DeserializationException(1 error):
-                    |  [$.m.99999] Short value out of range (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
-        the[DeserializationException] thrownBy sj.read[SampleString](js) should have message msg
       }
     }
   }

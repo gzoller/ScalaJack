@@ -20,10 +20,12 @@ class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructo
     json match {
       case JsonArray(x) =>
         val elements = x.asInstanceOf[ops.ArrayElements]
-
         val deserializationResults: Array[DeserializationResult[Any]] = new Array[DeserializationResult[Any]](fields.length)
 
+        val tupleSize = tt.tpe.typeArgs.size
         ops.foreachArrayElement(elements, { (index, element) =>
+          if (index == tupleSize)
+            return DeserializationFailure(path, DeserializationError.Unexpected(s"Given JSON has too many elements for tuple", reportedBy = self))
           deserializationResults(index) = fields(index).valueDeserializer.deserialize(path \ index, element)
         })
 

@@ -20,7 +20,7 @@ class JsonParserSpec extends FunSpec {
         sj.parse("""-1234""") should be(JLong(-1234))
       }
       it("should parse a double") {
-        sj.parse("123.456D") should be(JDecimal(123.456))
+        sj.parse("123.456") should be(JDecimal(123.456))
       }
       it("should parse a null") {
         sj.parse("") should be(JNull)

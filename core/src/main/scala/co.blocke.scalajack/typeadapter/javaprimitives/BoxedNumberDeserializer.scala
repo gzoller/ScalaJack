@@ -21,6 +21,8 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
       case JsonDouble(doubleValue) => DeserializationSuccess(TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType))
       case JsonInt(scalaBigInt) => DeserializationSuccess(TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType))
       case JsonLong(longValue) => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
+      case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
+      case JsonString(s) => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
       case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
 }

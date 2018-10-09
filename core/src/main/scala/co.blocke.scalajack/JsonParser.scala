@@ -303,14 +303,7 @@ object JsonParser {
             case "null"  => ops.applyNull()
             case "false" => ops.applyBoolean(false)
             case "true"  => ops.applyBoolean(true)
-            case s =>
-              println("HERE: " + s)
-              val z = ops.applyInvalid()
-              println("Z: " + z)
-              z
-            //            case s =>
-            //              println("Greg: Naked string " + s)
-            //              ops.applyString(s)
+            case s       => ops.applyString(s)
           }
 
         case numberChar if isNumberChar(numberChar) =>
@@ -322,7 +315,21 @@ object JsonParser {
     if (position == maxPosition) {
       None
     } else {
-      Some(readJsonValue())
+      val parsedOutcome = Some(readJsonValue())
+      if (position != maxPosition) {
+        parsedOutcome match {
+          case Some(x) if (ops.isObject(x) || ops.isArray(x)) =>
+            // Extra chars at the end of a JSON array or object is a parse error
+            throw new IllegalArgumentException(s"Extra, unparsed JSON: '${new String(source.drop(position))}'")
+          case Some(x) =>
+            // Extra chars at the end of a primitive JSON type -> treat the whole thing as a String, e.g. 0xlr
+            // will be detected as a number(0) with "extra" chars 'xlr'.  Gives false result of a Long(0).  Actual
+            // result should be String(0xlr).
+            Some(ops.applyString(source.mkString))
+          case a => a
+        }
+      } else
+        parsedOutcome
     }
   }
 

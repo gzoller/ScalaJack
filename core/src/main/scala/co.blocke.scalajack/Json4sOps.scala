@@ -93,15 +93,6 @@ object Json4sOps extends JsonOps[JValue] {
       case _     => false
     }
 
-  override def applyInvalid(): JValue =
-    JNothing
-
-  override def unapplyInvalid(json: JValue): Boolean =
-    json match {
-      case JNothing => true
-      case _        => false
-    }
-
   override def applyObject(appendAllFields: ((String, JValue) => Unit) => Unit): JValue = {
     val fieldsBuilder = List.newBuilder[(String, JValue)]
 
@@ -127,4 +118,6 @@ object Json4sOps extends JsonOps[JValue] {
       case _              => None
     }
 
+  override def isObject(json: JValue): Boolean = json.isInstanceOf[JObject]
+  override def isArray(json: JValue): Boolean = json.isInstanceOf[JArray]
 }

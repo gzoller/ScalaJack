@@ -70,10 +70,6 @@ trait JsonOps[J] {
 
   def unapplyNull(json: J): Boolean
 
-  def applyInvalid(): J
-
-  def unapplyInvalid(json: J): Boolean
-
   /**
    *
    * {{{
@@ -93,5 +89,8 @@ trait JsonOps[J] {
   def applyString(string: String): J
 
   def unapplyString(json: J): Option[String]
+
+  def isObject(json: J): Boolean
+  def isArray(json: J): Boolean
 
 }
