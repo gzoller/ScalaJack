@@ -19,14 +19,14 @@ object Context {
     .withFactory(AnyTypeAdapter)
     .withFactory(TypeTypeAdapter)
     .withFactory(MapTypeAdapter)
-    //    .withFactory(CollectionTypeAdapter)  <-- Deprecated???
+    //    .withFactory(CollectionTypeAdapter) // <-- Deprecated???
     .withFactory(CanBuildFromTypeAdapter)
     .withFactory(TupleTypeAdapter)
 
     .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all
     //              ValueClasses will be interpreted as case classes!
 
-    .withFactory(CaseClassTypeAdapter)
+    //    .withFactory(CaseClassTypeAdapter)  // <-- Deprecated???
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
     .withFactory(EitherTypeAdapter)

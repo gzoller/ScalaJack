@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 
 trait SJCapture {
-
-  var captured: JsonAndOps = _
-
+  var captured: Option[JsonAndOps] = None
 }
+
+// Java classes should inherit this!
+class SJCaptureWrapper extends SJCapture

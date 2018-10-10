@@ -71,7 +71,7 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       }
     }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[CC] =
+  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[CC] = {
     json match {
       case JsonNull() =>
         DeserializationSuccess(nullTypeTagged)
@@ -114,20 +114,12 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                 val instanceOfCaseClass = constructorMirror.apply(constructorArguments: _*).asInstanceOf[CC]
 
                 if (isSJCapture) {
-                  val captured = mutable.Map.empty[String, Any]
-
-                  ops.foreachObjectField(fields, { (name, valueJson) =>
-                    fieldMembersByName.get(name) match {
-                      case Some(_) =>
-                      // do nothing... already built class
-                      case None =>
-                        captured.put(name, valueJson)
-                    }
-                  })
-
-                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = JsonAndOps[J](json)
+                  val partitionedFields = ops.partitionObjectFields(fields, fieldMembersByName.keySet.toList)
+                  val captured = partitionedFields._2
+                  import JsonOps._
+                  implicit val aux: Aux[J, ops.ObjectFields] = ops.asInstanceOf[Aux[J, ops.ObjectFields]]
+                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(JsonAndOps(captured))
                 }
-
                 DeserializationSuccess(TypeTagged[CC](instanceOfCaseClass, caseClassType))
               }
           }
@@ -143,5 +135,6 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       case _ =>
         DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $json", this))
     }
+  }
 
 }

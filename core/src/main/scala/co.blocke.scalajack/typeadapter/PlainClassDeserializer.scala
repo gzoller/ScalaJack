@@ -5,7 +5,7 @@ import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
 import scala.collection.{ immutable, mutable }
 
-class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance: () => C)(implicit tt: TypeTag[C]) extends Deserializer[C] {
+class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance: () => C, isSJCapture: Boolean)(implicit tt: TypeTag[C]) extends Deserializer[C] {
 
   self =>
 
@@ -48,6 +48,14 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
               member.valueSet(instance, memberValue.asInstanceOf[member.Value])
             }
 
+            if (isSJCapture) {
+              val partitionedFields = ops.partitionObjectFields(fields, membersByName.keySet.toList)
+              val captured = partitionedFields._2
+              import JsonOps._
+              implicit val aux: Aux[J, ops.ObjectFields] = ops.asInstanceOf[Aux[J, ops.ObjectFields]]
+              instance.asInstanceOf[SJCapture].captured = Some(JsonAndOps(captured))
+            }
+
             DeserializationSuccess(TypeTagged(instance, instanceType))
           }
         }
@@ -55,5 +63,4 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
       case _ =>
         DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))
     }
-
 }

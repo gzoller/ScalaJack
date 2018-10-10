@@ -17,5 +17,4 @@ class OptionSerializer[T](next: Serializer[T]) extends Serializer[Option[T]] {
       case TypeTagged(None) => SerializationFailure(SerializationError.Nothing)
       case TypeTagged(Some(value)) => next.serialize(new TaggedSomeValue(value, tagged))
     }
-
 }

@@ -99,7 +99,6 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] = {
     val tpe = typeTag.tpe
     if (classSymbol.isClass) {
-
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
       val classMirror = currentMirror.reflectClass(classSymbol)
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
@@ -267,15 +266,15 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case _ if (!classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectScalaGetterSetterFields
           PlainClassTypeAdapter[T](
-            new PlainClassDeserializer[T](members, (() => newInstance())), // FIXME
-            new PlainClassSerializer[T](members)) /*,
-            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]*/
+            new PlainClassDeserializer[T](members, (() => newInstance()), isSJCapture), // FIXME
+            new PlainClassSerializer[T](members, isSJCapture))
         case _ if (classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectJavaGetterSetterFields
           PlainClassTypeAdapter[T](
-            new PlainClassDeserializer[T](members, (() => newInstance())), // FIXME
-            new PlainClassSerializer[T](members)) /*,
-            tpe, constructorMirror, tpe, memberNameTypeAdapter, members, isSJCapture, dbKeys(members), collectionAnnotation).asInstanceOf[TypeAdapter[T]]*/
+            new PlainClassDeserializer[T](members, (() => newInstance()), isSJCapture), // FIXME
+            new PlainClassSerializer[T](members, isSJCapture))
+        // There's no support for Java classes with non-empty constructors.  If multiple, which one to use?
+        // Opens the door for uncertain results.
         case x =>
           next.typeAdapterOf[T]
       }

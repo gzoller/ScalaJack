@@ -29,6 +29,9 @@ class Boom() {
   var name: String = ""
   var other: Try[Embed] = Success(null)
 }
+
 class Cap() extends SJCapture {
   var name: String = ""
 }
+
+case class CaseCap(name: String) extends SJCapture

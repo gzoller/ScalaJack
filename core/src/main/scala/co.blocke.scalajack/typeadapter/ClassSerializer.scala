@@ -69,7 +69,6 @@ class ClassSerializer[C](
             }
 
             val newType = appliedType(tpe.typeConstructor, typeArgs)
-            import collection.JavaConverters._
             val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[C]]
 
             for (member <- newTypeAdapter.fieldMembers) {
@@ -100,22 +99,15 @@ class ClassSerializer[C](
             }
           }
 
+          //def transform[A, B](source: A)(implicit sourceOps: JsonOps[A], targetOps: JsonOps[B]): B =
+
           value match {
             case sjc: SJCapture =>
-              val captured = sjc.captured
-              import captured.{ jsonValue, jsonOps }
-              jsonValue match {
-                case JsonObject(x) =>
-                  val fields = x.asInstanceOf[jsonOps.ObjectFields]
-                  jsonOps.foreachObjectField(fields, { (memberName, memberValue) =>
-                    appendField(memberName, JsonValue.transform[captured.JsonValue, J](memberValue))
-                  })
+              sjc.captured.map { cap =>
+                cap.jsonOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.jsonOps.ObjectFields], { (memberName, memberValue) =>
+                  appendField(memberName, JsonValue.transform[cap.JsonType, J](memberValue)(cap.jsonOps, ops))
+                })
               }
-            //              jsonValue.foreach {
-            //                case (memberName, valueString) =>
-            // FIXME                  memberNameTypeAdapter.write(memberName, writer)
-            // FIXME                  writer.writeRawValue(valueString.asInstanceOf[String])
-            //              }
             case _ =>
           }
         }

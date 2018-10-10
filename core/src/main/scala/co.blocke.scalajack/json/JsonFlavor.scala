@@ -71,8 +71,10 @@ case class JsonFlavor(
     val typeAdapter = context.typeAdapterOf[T]
     implicit val ops: JsonOps[JValue] = Json4sOps
     val serializer = typeAdapter.serializer
-    val SerializationSuccess(json) = serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance)
-    Json4sOps.renderCompact(json, this)
+    serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance) match {
+      case SerializationSuccess(json)                                      => Json4sOps.renderCompact(json, this)
+      case SerializationFailure(f) if f == Seq(SerializationError.Nothing) => ""
+    }
   }
 
   def render(ast: JValue): String =

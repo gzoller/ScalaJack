@@ -23,6 +23,9 @@ object Json4sOps extends JsonOps[JValue] {
   override def getObjectField(fields: List[(String, JValue)], name: String): Option[JValue] =
     fields.find(_._1 == name).map(_._2).filter(_ != JNothing)
 
+  override def partitionObjectFields(fields: ObjectFields, fieldNames: List[String]): (ObjectFields, ObjectFields) =
+    fields.partition(f => fieldNames.contains(f._1))
+
   override def applyArray(appendAllElements: (JValue => Unit) => Unit): JValue = {
     val elementsBuilder = List.newBuilder[JValue]
 

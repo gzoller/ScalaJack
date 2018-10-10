@@ -66,9 +66,14 @@ class Options() extends FunSpec with Matchers {
         val inst = new PlayerOptionMix()
         inst.name = "Fred"
         val js = sj.render(inst)
-        assertResult("""{"name":"Fred"}""") { js }
+        assertResult("""{"name":"Fred"}""") {
+          js
+        }
         assertResult("Fred") {
           sj.read[PlayerOptionMix](js).name
+        }
+        assertResult(None) {
+          sj.read[PlayerOptionMix](js).age
         }
       }
     }

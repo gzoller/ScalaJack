@@ -3,7 +3,7 @@ package typeadapter
 
 import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
-class PlainClassSerializer[C](members: List[PlainFieldMember[C]]) extends Serializer[C] {
+class PlainClassSerializer[C](members: List[PlainFieldMember[C]], isSJCapture: Boolean) extends Serializer[C] {
 
   private type Member = PlainFieldMember[C]
 
@@ -12,29 +12,27 @@ class PlainClassSerializer[C](members: List[PlainFieldMember[C]]) extends Serial
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())
 
-      case TypeTagged(_) =>
+      case TypeTagged(obj) =>
         SerializationSuccess(JsonObject { appendField =>
           for (member <- members) {
             val memberName = member.name
             val memberValue = member.valueIn(tagged)
 
-            val SerializationSuccess(memberValueJson) = member.serializeValue(memberValue)
-            appendField(memberName, memberValueJson)
-          }
+            member.serializeValue(memberValue) match {
+              case SerializationSuccess(memberValueJson)                           => appendField(memberName, memberValueJson)
+              case SerializationFailure(f) if f == Seq(SerializationError.Nothing) => // do nothing--ignore optional fields of value None
+            }
 
-          /*
-          FIXME
-          value match {
-            case sjc: SJCapture =>
-              sjc.captured.foreach {
-                case (memberName, valueString) =>
-                  memberNameTypeAdapter.write(memberName, writer)
-                  writer.writeRawValue(valueString.asInstanceOf[String])
+            if (isSJCapture) {
+              val sjc = obj.asInstanceOf[SJCapture]
+              sjc.captured.map { cap =>
+                cap.jsonOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.jsonOps.ObjectFields], { (memberName, memberValue) =>
+                  appendField(memberName, JsonValue.transform[cap.JsonType, J](memberValue)(cap.jsonOps, ops))
+                })
               }
-            case _ =>
-          }
-           */
+            }
 
+          }
         })
     }
 

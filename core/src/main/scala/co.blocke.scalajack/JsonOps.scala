@@ -29,6 +29,9 @@ trait JsonOps[J] {
 
   def getObjectField(fields: ObjectFields, name: String): Option[J]
 
+  // (for SJCapture) Partition out fields we care about (those in the class) from those we just want to capture and hold "raw"
+  def partitionObjectFields(fields: ObjectFields, fieldNames: List[String]): (ObjectFields, ObjectFields)
+
   /**
    *
    * {{{
@@ -91,6 +94,11 @@ trait JsonOps[J] {
   def unapplyString(json: J): Option[String]
 
   def isObject(json: J): Boolean
+
   def isArray(json: J): Boolean
 
+}
+
+object JsonOps {
+  type Aux[J, OF] = JsonOps[J] { type ObjectFields = OF }
 }
