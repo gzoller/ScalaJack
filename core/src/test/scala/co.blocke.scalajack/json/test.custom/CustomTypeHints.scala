@@ -51,42 +51,41 @@ class CustomTypeHints() extends FunSpec with Matchers {
       it("Use unspecified type hint") {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"bogus":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}"""
-        val msg = """Could not find type field named "which"
-          |Main","city":"New York","state":"NY","postalCode":"39822"}
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [???] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "which"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[Address](js) should have message msg
       }
       it("Ignore type-specific type hint (e.g. use default) when a specific hint is specified") {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-        val msg = """Could not find type field named "which"
-          |city":"New York","state":"NY","postalCode":"39822"}}
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [???] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "which"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[Address](js) should have message msg
       }
       it("Ignore type-specific type hint (e.g. use default) when a specific hint is specified -- newline test") {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New
         |York","state":"NY","postalCode":"39822"}}""".stripMargin
-        val msg = """Could not find type field named "which"
-          |city":"New
-          |York","state":"NY","postalCode":"39822"}}
-          |----------
-          |---------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[Address](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [???] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "which"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[Address](js) should have message msg
       }
       it("Hint value after modification doesn't resolve to known class name") {
         val prependHintMod = ClassNameHintModifier((hint: String) => "co.blocke.scalajack.test.bogus." + hint, (cname: String) => cname.split('.').last)
         val sj = ScalaJack().withHintModifiers((typeOf[Address], prependHintMod))
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-        an[scala.ScalaReflectionException] should be thrownBy sj.read[Demographic](js)
+        an[DeserializationException] should be thrownBy sj.read[Demographic](js)
       }
       it("Unknown string given as type hint value (no cooresponding match to class in mapping)") {
         val strMatchHintMod = StringMatchHintModifier(Map("US" -> typeOf[USAddress]))
         val sj = ScalaJack().withHintModifiers((typeOf[Address], strMatchHintMod))
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"Bogus","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-        val msg = """No Type mapping given for hint Bogus"""
-        the[java.lang.IllegalStateException] thrownBy sj.read[Demographic](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$] Exception was thrown: java.lang.IllegalStateException: No Type mapping given for hint Bogus (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[Demographic](js) should have message msg
       }
       it("Serialize object with unmapped hint class") {
         val strMatchHintMod = StringMatchHintModifier(Map("US" -> typeOf[USAddress]))

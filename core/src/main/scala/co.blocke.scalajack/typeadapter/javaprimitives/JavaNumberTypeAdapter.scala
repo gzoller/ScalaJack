@@ -9,4 +9,4 @@ object JavaNumberTypeAdapter extends TypeAdapterFactory.=:=[java.lang.Number] {
 
 }
 
-class JavaNumberTypeAdapter(override val deserializer: Deserializer[java.lang.Number], override val serializer: Serializer[java.lang.Number]) extends SimpleTypeAdapter.ForTypeSymbolOf[java.lang.Number]
+class JavaNumberTypeAdapter(override val deserializer: Deserializer[java.lang.Number], override val serializer: Serializer[java.lang.Number]) extends TypeAdapter.=:=[java.lang.Number]
