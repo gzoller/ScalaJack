@@ -279,6 +279,9 @@ object JsonParser {
                   skipChar(expected = '}')
                   skipWhitespace()
                   readingFields = false
+
+                case _ =>
+                  throw new IllegalArgumentException(s"Malformed JSON: Expected either ',' or '}'")
               }
             }
         }

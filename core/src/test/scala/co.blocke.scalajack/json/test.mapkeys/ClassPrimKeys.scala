@@ -138,79 +138,67 @@ class ClassPrimKeys() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Bad (invalid--missing field) class json as map key") {
         val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        val msg = """Character out of place. ',' not expected here.
-          |{"nameLarry","age":32,"favorite":"golf"
-          |------------^
-          |Extracted from JSON here:
-          |{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":
-          |------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleSimple](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalArgumentException: Skipped ',', not ':' (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleSimple](js) should have message msg
       }
       it("Bad class json as map key (valid json, but wrong for given class)") {
         val js = """{"m":{"{\"name\":\"Larry\",\"age\":32,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        val msg = """Required field isOk in class co.blocke.scalajack.json.test.mapkeys.SimpleClass is missing from input and has no specified default value
-          |{"m":{"{\"name\":\"Larry\",\"age\":32,\"favorite\":\"gol
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleSimple](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.isOk] Required field missing (reported by: co.blocke.scalajack.typeadapter.BooleanDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleSimple](js) should have message msg
       }
       it("Bad json for member class") {
         val js = """{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",\"simple\":{\"name\":\"Larry\",\"isOk\":true,\"favorite\":\"golf\"},\"allDone\":true}":{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false}}}"""
-        val msg = """Required field age in class co.blocke.scalajack.json.test.mapkeys.SimpleClass is missing from input and has no specified default value
-          |{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleComplex](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.simple.age] Required field missing (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleComplex](js) should have message msg
       }
       it("Bad (invalid) trait json as map key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """Character out of place. ':' not expected here.
-          |"_hint":"co.blocke.scalajack.test.mapkeys.FishPet":"Flipper","food":"Veggies","waterTemp":74.33}
-          |--------------------------------------------------^
-          |Extracted from JSON here:
-          |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Fis
-          |------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalArgumentException: Malformed JSON: Expected either ',' or '}' (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) as map key") {
         val js = """{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """Could not find type field named "_hint"
-          |{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"wate
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "_hint"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) as map key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-          |{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkey
-          |------^""".stripMargin
-        the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.ClassNotFoundException: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad (invalid) trait json for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Character out of place. String not expected here.
-          |blocke.scalajack.json.test.mapkeys.FishPet","name""Flipper","food":"Veggies","waterTemp":74.33}}}
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [???] Exception was thrown: java.lang.IllegalArgumentException: Skipped '"', not ':' (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Could not find type field named "_hint"
-        |}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}
-        |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "_hint"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-        |ido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","nam
-        |--------------------------------------------------^""".stripMargin
-        the[java.lang.ClassNotFoundException] thrownBy sj.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.ClassNotFoundException: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad collection value in map key class having collections") {
         val js = """{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\",\"two\"]}":{"lookup":{"x":9,"y":10},"favs":["aye","you"]}}}"""
-        val msg = """Expected token of type Number, not True
-        |{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\
-        |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SamplePolyClass](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.lookup.a] Expected a JSON int, not JBool(true) (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePolyClass](js) should have message msg
       }
       it("Bad custom hint value for map key trait") {
         val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
@@ -218,10 +206,10 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHints((typeOf[Pet] -> "kind"))
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"sort\":\"BreathsWater\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
-        val msg = """Could not find type field named "kind"
-        |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Shi
-        |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj2.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "kind"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj2.read[SamplePet](js) should have message msg
       }
       it("Bad custom hint value for key member's trait") {
         val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
@@ -229,10 +217,10 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHints((typeOf[Pet] -> "kind"))
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsLava\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
-        val msg = """Could not find type field named "kind"
-        |{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Shi
-        |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj2.read[SamplePet](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.IllegalStateException: Could not find type field named "kind"
+                    | (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj2.read[SamplePet](js) should have message msg
       }
     }
   }
