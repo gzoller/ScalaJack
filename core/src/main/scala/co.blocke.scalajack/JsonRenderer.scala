@@ -1,5 +1,7 @@
 package co.blocke.scalajack
 
+import org.apache.commons.text.StringEscapeUtils.escapeJava
+
 object JsonRenderer {
 
   def renderCompact[J](json: J, sj: ScalaJackLike[_, _])(implicit ops: JsonOps[J]): String = {
@@ -12,21 +14,7 @@ object JsonRenderer {
       var beginIndex = 0
 
       if (sj.isCanonical) {
-        builder.append('"')
-        while (i < length) {
-          string.charAt(i) match {
-            case '"' =>
-              builder.appendAll(string.substring(beginIndex, i))
-              builder.append("""\"""")
-              i += 1
-              beginIndex = i
-
-            case _ =>
-              i += 1
-          }
-        }
-        builder.appendAll(string.substring(beginIndex))
-        builder.append('"')
+        builder.append('"' + string + '"')
       } else {
         string match {
           case "" => builder.append("\"\"")
@@ -37,7 +25,7 @@ object JsonRenderer {
                 beginIndex = i
                 i += 1
 
-              case Marker => // no-quotes rendering
+              case No_Quote_Marker => // no-quotes rendering
                 builder.appendAll(string.tail)
                 beginIndex = i
                 i += 1
@@ -91,19 +79,22 @@ object JsonRenderer {
             } else {
               builder.append(",")
             }
-            appendString(name)
+            if (sj.isCanonical)
+              appendString(escapeJava(name))
+            else {
+              appendString(name)
+            }
             builder.append(":")
             helper(value)
           })
           builder.append('}')
 
         case JsonString(string) =>
-          appendString(string)
+          appendString(escapeJava(string))
       }
 
     helper(json)
 
     builder.result()
   }
-
 }

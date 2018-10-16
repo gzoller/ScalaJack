@@ -45,7 +45,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("Char must work (not nullable)") {
         val inst = SampleChar(Char.MaxValue, 'Z', '\u20A0')
         val js = sj.render(inst)
-        assertResult("""{"c1":"￿","c2":"Z","c3":"₠"}""") { js }
+        assertResult("""{"c1":"\""" + """uFFFF","c2":"Z","c3":"\""" + """u20A0"}""") { js }
         assertResult(inst) {
           sj.read[SampleChar](js)
         }

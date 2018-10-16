@@ -40,7 +40,8 @@ case class JsonFlavor(
       val deserializer = context.typeAdapterOf[T].deserializer
       deserializer.deserialize(Path.Root, js)(Json4sOps, guidance)
     } catch {
-      case e: Exception => DeserializationFailure(Path.Unknown, DeserializationError.ExceptionThrown(e))
+      case e: Exception =>
+        DeserializationFailure(Path.Unknown, DeserializationError.ExceptionThrown(e))
     }
     deserializationResult match {
       case DeserializationSuccess(TypeTagged(result)) =>

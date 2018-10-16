@@ -49,7 +49,7 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Char must work") {
           val inst = SampleJChar('Z', '\u20A0', null)
           val js = sj.render(inst)
-          assertResult("""{"c1":"Z","c2":"₠","c3":null}""") { js }
+          assertResult("""{"c1":"Z","c2":"\""" + """u20A0","c3":null}""") { js }
           assertResult(inst) {
             sj.read[SampleJChar](js)
           }

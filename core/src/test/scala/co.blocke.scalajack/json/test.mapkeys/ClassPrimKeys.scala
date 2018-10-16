@@ -157,7 +157,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       it("Bad (invalid) trait json as map key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
         val msg = """DeserializationException(1 error):
-                    |  [$.m] Exception was thrown: java.lang.IllegalArgumentException: Malformed JSON: Expected either ',' or '}' (reported by: unknown)""".stripMargin
+                    |  [$.m] Exception was thrown: java.lang.IllegalArgumentException: Malformed JSON: Expected either ',' or '}' at position 51 (reported by: unknown)""".stripMargin
         the[DeserializationException] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) as map key") {

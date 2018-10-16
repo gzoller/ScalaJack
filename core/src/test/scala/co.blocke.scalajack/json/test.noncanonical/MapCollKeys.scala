@@ -128,9 +128,7 @@ class MapCollKeys() extends FunSpec with Matchers {
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
       assertResult("""{{{3:null}:{null:99}}:{{null:99}:{3:null}}}""") { js }
-      // nulls become None and Map entries having None values get erased
-      val result = Map(Map(Map(Some(3) -> None) -> Map(None -> Some(99))) -> Map(Map(None -> Some(99)) -> Map(Some(3) -> None)))
-      assertResult(result) {
+      assertResult(inst) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
     }

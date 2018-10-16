@@ -14,7 +14,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = sj.render(inst)
         assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"Fred":"Wilma","293845":"Greg","16":null}}""") { js }
         val read = sj.read[AnyShell](js)
-        assertResult("""List((Small,java.lang.String), (Fred,java.lang.String), (293845,java.lang.Integer), (16,java.lang.Integer), (123.456,java.lang.Float), (false,java.lang.Boolean))""") {
+        assertResult("""List((Small,java.lang.String), (Fred,java.lang.String), (16,java.lang.Long), (293845,java.lang.Long), (123.456,java.lang.Double), (false,java.lang.Boolean))""") {
           read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
         }
       }
@@ -110,80 +110,69 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Bad BigDecimal Key") {
         val js = """{"m":{"789.123":1,"fred":2}}"""
-        val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"m":{"789.123":1,"fred":2}}
-          |------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.fred] Expected a JSON number, not JString(fred) (reported by: co.blocke.scalajack.typeadapter.BigDecimalDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"fred":1,"789":2}}"""
-        val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789":2}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigInt](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.fred] Expected a JSON number (integer value) (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
-        val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
-          |{"m":{"true":false,"123":true}}
-          |-------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.123] Expected a JSON boolean (reported by: co.blocke.scalajack.typeadapter.BooleanDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleBoolean](js) should have message msg
       }
       it("Bad Byte Key") {
         val js = """{"m":{"16":2,"x48":9}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"16":2,"x48":9}}
-          |-------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleByte](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.x48] Expected a JSON number (byte) (reported by: co.blocke.scalajack.typeadapter.ByteDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleByte](js) should have message msg
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
         val js = """{"m":{null:"A","z":"Z"}}"""
-        val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |{"m":{null:"A","z":"Z"}}
-          |------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleChar](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.null] Expected a char (JSON string of length 1), not null (reported by: co.blocke.scalajack.typeadapter.CharDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-        val msg = """Expected token of type Number, not True
-          |{"m":{"12.34":56.78,"true":34.56}}
-          |--------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.true] Expected a JSON number, not JBool(true) (reported by: co.blocke.scalajack.typeadapter.DoubleDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Size$ for "Bogus"
-          |{"m":{"Small":"Large","Bogus":"Medium"}}
-          |----------------------^""".stripMargin
-        the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnumeration](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.Bogus] Enumeration co.blocke.scalajack.json.test.mapkeys.Size$ does not contain a value named Bogus (reported by: co.blocke.scalajack.typeadapter.EnumerationValueDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleEnumeration](js) should have message msg
       }
       it("Bad Float Key") {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-        val msg = """multiple points
-          |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |--------------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleFloat](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m] Exception was thrown: java.lang.NumberFormatException (reported by: unknown)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
-        val msg = """For input string: "12.0"
-          |{"m":{"12.0":56,"90":34}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.12.0] Expected a JSON int, not JDecimal(12.0) (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleInt](js) should have message msg
       }
       it("Bad Long Key") {
         val js = """{"m":{"12":56,"hey":34}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"12":56,"hey":34}}
-          |--------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleLong](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.hey] Expected a JSON number (long) (reported by: co.blocke.scalajack.typeadapter.LongDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleLong](js) should have message msg
       }
       it("Bad Short Key") {
         val js = """{"m":{"99999":56,"90":34}}"""
-        val msg = """Value out of range. Value:"99999" Radix:10
-          |{"m":{"99999":56,"90":34}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleShort](js) should have message msg
+        val msg = """DeserializationException(1 error):
+                    |  [$.m.99999] Short value out of range (reported by: co.blocke.scalajack.typeadapter.ShortDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SampleShort](js) should have message msg
       }
     }
   }

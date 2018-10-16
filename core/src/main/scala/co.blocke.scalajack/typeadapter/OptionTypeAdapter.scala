@@ -14,9 +14,9 @@ object OptionTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Option]
 }
 
 // We need 3 types of Option adapters here:
-//   1: The "normal" one writes nothing for None.  This is used most places: Class members, list items, Map values
-//   2: "Empty" one writes "" for None.  This is used for Map keys that are None
-//   3: "Null" one converts None into null.  This is used mainly for Tuple members
+//   1: The "normal" one writes nothing for None.  This eliminates the None from the structure, e.g. fields in objects.
+//   2: "Empty" one writes "" for None.  This is used for Map keys that are None.
+//   3: "Null" one converts None into null.  This is used mainly for Tuple members and Map values.
 //
 
 case class OptionTypeAdapter[T](override val deserializer: Deserializer[Option[T]], override val serializer: Serializer[Option[T]], valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
@@ -31,6 +31,6 @@ case class OptionTypeAdapter[T](override val deserializer: Deserializer[Option[T
 
 case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]]
 
-// This is for noncanonical map keys, which can be None --> rendered as ""
+// This is for non-canonical map keys, which can be None --> rendered as ""
 // Reads have to reverse-engineer the "" into a None
 case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]]

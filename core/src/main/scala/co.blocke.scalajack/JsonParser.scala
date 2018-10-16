@@ -31,6 +31,11 @@ object JsonParser {
       if (actual == expected) {
         position += 1
       } else {
+        //        println("ERROR: " + source.mkString)
+        //        print("@ pos: " + { (0 to position - 1).map(_ => "-").mkString })
+        //        println("^")
+        //        println("Skip " + actual + " but expected " + expected)
+        //        println(source.mkString)
         throw new IllegalArgumentException(s"Skipped '$actual', not '$expected'")
       }
     }
@@ -61,16 +66,24 @@ object JsonParser {
       var stringBuilder: StringBuilder = null
 
       var reading = true
+      var inSlash = false
       while (reading) {
         val char = source(position)
         char match {
-          case '"' =>
+          case '"' if (!inSlash) =>
             reading = false
+
+          case '"' =>
+            skipChar(expected = '"')
+            stringBuilder.append('"')
+            segmentStart += 1
+            inSlash = false
 
           case '\\' =>
             if (stringBuilder eq null) stringBuilder = new StringBuilder
             stringBuilder.appendAll(source, segmentStart, position - segmentStart)
             skipChar(expected = '\\')
+            inSlash = false
 
             source(position) match {
               case '"' =>
@@ -80,6 +93,7 @@ object JsonParser {
               case '\\' =>
                 skipChar(expected = '\\')
                 stringBuilder.append('\\')
+                inSlash = true
 
               case '/' =>
                 skipChar(expected = '/')
@@ -115,7 +129,7 @@ object JsonParser {
 
             segmentStart = position
 
-          case _ =>
+          case c =>
             position += 1
         }
       }
@@ -131,6 +145,7 @@ object JsonParser {
           stringBuilder.result()
         }
 
+      //      println(string + "\n-----------------------")
       string
     }
 
@@ -199,19 +214,20 @@ object JsonParser {
       var readingNumber = true
       while (position < maxPosition && readingNumber) {
         val char = source(position)
-        if (char == '.') {
-          containsDecimal = true
-          if (char != '-') {
+        char match {
+          case '.' =>
+            containsDecimal = true
+            if (char != '-') {
+              onlyContainsDigits = false
+            }
+            position += 1
+          case _ if (isDigitChar(char)) =>
+            position += 1
+          case _ if (isNumberChar(char)) =>
+            position += 1
             onlyContainsDigits = false
-          }
-          position += 1
-        } else if (isDigitChar(char)) {
-          position += 1
-        } else if (isNumberChar(char)) {
-          position += 1
-          onlyContainsDigits = false
-        } else {
-          readingNumber = false
+          case _ =>
+            readingNumber = false
         }
       }
 
@@ -281,7 +297,7 @@ object JsonParser {
                   readingFields = false
 
                 case _ =>
-                  throw new IllegalArgumentException(s"Malformed JSON: Expected either ',' or '}'")
+                  throw new IllegalArgumentException(s"Malformed JSON: Expected either ',' or '}' at position $position")
               }
             }
         }
