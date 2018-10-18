@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.RunMe.z
+
 import scala.collection.{ immutable, mutable }
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -93,17 +95,22 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                 }
               })
 
-              //              println(fieldMembers)
-              //              println(fieldMembersByName)
+              //                            println(fieldMembers)
+              //                            println(fieldMembersByName)
 
+              // Missing fields in JSON... let's go deeper...
               for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
-                deserializationResultsByField(fieldMember) = fieldMember.deserializeValueFromNothing[J](path \ fieldMember.name)
+                // Substitute any speicifed default values
+                deserializationResultsByField(fieldMember) = if (fieldMember.defaultValue.isDefined)
+                  DeserializationSuccess(TypeTagged(fieldMember.defaultValue.get, fieldMember.declaredValueType))
+                else
+                  fieldMember.deserializeValueFromNothing[J](path \ fieldMember.name)
               }
 
-              if (deserializationResultsByField.exists(_._2.isFailure)) {
-                // Uh-oh!
+              if (deserializationResultsByField.exists(_._2.isFailure))
+                // Uh-oh!  One or more fields *still* didn't deserialize (after default value substitution).
                 DeserializationFailure(deserializationResultsByField.values.flatMap(_.errors).to[immutable.Seq])
-              } else {
+              else {
                 val constructorArguments: Array[Any] = fieldMembers
                   .map { fieldMember =>
                     val DeserializationSuccess(TypeTagged(fieldValue)) = deserializationResultsByField(fieldMember)

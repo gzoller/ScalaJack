@@ -10,14 +10,31 @@ class DefaultValues extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   describe("-------------------------\n:  Default Value Tests  :\n-------------------------") {
     it("Default values are found - not confused by optional values") {
+      SimpleHasDefaults
+      val inst = SimpleHasDefaults("Me")
+      val js = sj.render(inst)
+      assertResult("""{"name":"Me","age":5}""") { js }
+      assertResult(inst) {
+        sj.read[SimpleHasDefaults](js)
+      }
+      val missing = """{"name":"Me"}"""
+      assertResult(inst) {
+        sj.read[SimpleHasDefaults](missing)
+      }
+    }
+    it("Traits with default values handled") {
       val inst = HasDefaults("Me", None)
       val js = sj.render(inst)
-      assertResult("""{"name": "Me", "pet": {"_hint": "co.blocke.scalajack.json.test.misc.Dog", "name": "Fido", "kind": true}}""") { js }
+      assertResult("""{"name":"Me","pet":{"_hint":"co.blocke.scalajack.json.test.misc.Dog","name":"Fido","kind":true}}""") { js }
       assertResult(inst) {
         sj.read[HasDefaults](js)
       }
+      val missing = """{"name":"Me"}"""
+      assertResult(inst) {
+        sj.read[HasDefaults](missing)
+      }
     }
-    it("Marshals default optional value (before asuming None)") {
+    it("Marshals default optional value (before assuming None)") {
       val js = """{"name": "Harry"}"""
       assertResult(DefaultOpt("Harry")) {
         sj.read[DefaultOpt](js)
@@ -31,10 +48,9 @@ class DefaultValues extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     it("Fails if no default is found for a given field") {
       val js = """{"age":null}"""
-      val msg = """Required field name in class co.blocke.scalajack.json.test.misc.DefaultOpt is missing from input and has no specified default value
-        |{"age":null}
-        |-----------^""".stripMargin
-      the[java.lang.IllegalStateException] thrownBy sj.read[DefaultOpt](js) should have message msg
+      val msg = """DeserializationException(1 error):
+                  |  [$.name] Required field missing (reported by: co.blocke.scalajack.typeadapter.StringDeserializer)""".stripMargin
+      the[DeserializationException] thrownBy sj.read[DefaultOpt](js) should have message msg
     }
   }
 }

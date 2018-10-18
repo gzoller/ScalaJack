@@ -36,7 +36,7 @@ class ComplexRelationships extends FunSpec with GivenWhenThen with BeforeAndAfte
         inst.asInstanceOf[Dog[_]].kind.asInstanceOf[Dog[_]].kind.getClass
       }
       // Loss of fidelity on read: Long -> Byte
-      assertResult(classOf[java.lang.Integer]) {
+      assertResult(classOf[java.lang.Long]) {
         val found = sj.read[Pet](js)
         found.asInstanceOf[Dog[_]].kind.asInstanceOf[Dog[_]].kind.getClass
       }

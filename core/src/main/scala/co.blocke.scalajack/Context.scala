@@ -26,7 +26,7 @@ object Context {
     .withFactory(DerivedValueClassAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all
     //              ValueClasses will be interpreted as case classes!
 
-    //    .withFactory(CaseClassTypeAdapter)  // <-- Deprecated???
+    .withFactory(CaseClassTypeAdapter)
     .withFactory(OptionTypeAdapter)
     .withFactory(TryTypeAdapter)
     .withFactory(EitherTypeAdapter)

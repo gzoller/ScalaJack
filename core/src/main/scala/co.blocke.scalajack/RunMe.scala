@@ -8,16 +8,19 @@ case class TT(t: (String, String))
 
 case class Person(name: String, age: Int)
 
+trait X
+case class A() extends X
+case class B() extends X
+case class C() extends X
+
 object RunMe extends App {
 
   val sj = ScalaJack()
 
   // What happens when Map key is null? (vs None key)
 
-  val m1 = Map(Some(1) -> true, None -> false)
-  val m2 = Map(Some(1) -> true, null.asInstanceOf[Option[Int]] -> false)
-
-  println(sj.render(m1))
-  println(sj.render(m2))
+  val z: Seq[(Int, X)] = Seq((1, A()), (2, B()), (3, A()), (4, B()))
+  val x = z.exists(_._2.isInstanceOf[C])
+  println(x)
 }
 

@@ -255,6 +255,8 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         .map(_.tree.children(1).productElement(1).asInstanceOf[scala.reflect.internal.Trees$Literal]
           .value().value).asInstanceOf[Option[String]]
 
+      def dbKeys[Owner](members: List[ClassFieldMember[Owner]]): List[ClassFieldMember[Owner]] = members.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+
       val hasEmptyConstructor = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.isEmpty
       inferConstructorValFields match {
         case members if (!members.isEmpty) =>
@@ -267,12 +269,16 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           val members = reflectScalaGetterSetterFields
           PlainClassTypeAdapter[T](
             new PlainClassDeserializer[T](members, (() => newInstance()), isSJCapture), // FIXME
-            new PlainClassSerializer[T](members, isSJCapture))
+            new PlainClassSerializer[T](members, isSJCapture),
+            dbKeys(members),
+            collectionAnnotation)
         case _ if (classSymbol.isJava && hasEmptyConstructor) =>
           val members = reflectJavaGetterSetterFields
           PlainClassTypeAdapter[T](
             new PlainClassDeserializer[T](members, (() => newInstance()), isSJCapture), // FIXME
-            new PlainClassSerializer[T](members, isSJCapture))
+            new PlainClassSerializer[T](members, isSJCapture),
+            dbKeys(members),
+            collectionAnnotation)
         // There's no support for Java classes with non-empty constructors.  If multiple, which one to use?
         // Opens the door for uncertain results.
         case x =>
@@ -288,7 +294,9 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
 case class PlainClassTypeAdapter[T](
     override val deserializer: Deserializer[T],
-    override val serializer:   Serializer[T]) extends TypeAdapter[T]
+    override val serializer:   Serializer[T],
+    dbKeys:                    List[ClassFieldMember[T]],
+    collectionName:            Option[String]            = None) extends TypeAdapter[T]
 
 /*
 case class PlainClassTypeAdapter[T](

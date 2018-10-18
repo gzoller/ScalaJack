@@ -83,6 +83,7 @@ trait Pet { val name: String }
 case class Dog[A](name: String, kind: A) extends Pet
 
 case class HasDefaults(name: String, age: Option[Int], pet: Pet = Dog("Fido", true))
+case class SimpleHasDefaults(name: String, age: Int = 5)
 
 @Collection(name = "myDefaults")
 case class DefaultOpt(

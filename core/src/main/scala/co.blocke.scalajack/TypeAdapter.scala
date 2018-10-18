@@ -72,6 +72,7 @@ trait TypeAdapter[T] {
   // $COVERAGE-ON$
 
   def resolved: TypeAdapter[T] = this
+
 }
 
 // Marker trait for those TypeAdapters which render as String

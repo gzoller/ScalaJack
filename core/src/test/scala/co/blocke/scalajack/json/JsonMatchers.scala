@@ -1,4 +1,4 @@
-package co.blocke.scalaJack
+package co.blocke.scalajack
 package json
 
 import co.blocke.scalajack.Path

@@ -26,7 +26,7 @@ class SealedTraitSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll 
     }
 
     it("Write - unambiguous") {
-      assertResult("""{"phoneNumber": "12223334444"}""") {
+      assertResult("""{"phoneNumber":"12223334444"}""") {
         sj.render[ContactPoint](PhoneNumber("12223334444"))
       }
     }
@@ -38,7 +38,7 @@ class SealedTraitSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll 
     }
 
     it("Write - ambiguous") {
-      assertResult("""{"_hint": "co.blocke.scalajack.json.test.misc.Car", "numberOfWheels": 3, "color": "Red"}""") {
+      assertResult("""{"_hint":"co.blocke.scalajack.json.test.misc.Car","numberOfWheels":3,"color":"Red"}""") {
         sj.render[Vehicle](Car(numberOfWheels = 3, color = "Red"))
       }
     }

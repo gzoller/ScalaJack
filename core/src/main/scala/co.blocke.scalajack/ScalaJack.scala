@@ -40,9 +40,9 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
    */
   // WARNING: Assumes CaseClassTypeAdapter.members is in constructor-order.  If not, sort on members.index.
   def view[T](master: Any)(implicit tt: TypeTag[T]): T = {
-    val viewTarget = context.typeAdapter(tt.tpe) match {
-      case ta: CaseClassTypeAdapter[_] => ta
-      case _                           => throw new ViewException(s"Output of view() must be a case class.  ${tt.tpe.typeSymbol.fullName} is not a case class.")
+    val viewTarget = context.typeAdapter(tt.tpe).maybeAs[CaseClassTypeAdapter[T]] match {
+      case Some(ta: CaseClassTypeAdapter[T]) => ta
+      case None                              => throw new ViewException(s"Output of view() must be a case class.  ${tt.tpe.typeSymbol.fullName} is not a case class.")
     }
     val masterData = master.getClass.getDeclaredFields
     val args = viewTarget.fieldMembers.map { f =>
@@ -61,9 +61,9 @@ abstract class ScalaJackLike[S, AST] extends JackFlavor[S, AST] {
    * @return the master object with the view object's corresponding fields merged/overlayed
    */
   def spliceInto[T, U](view: T, master: U)(implicit tu: TypeTag[U]): U = {
-    val masterTarget = context.typeAdapter(tu.tpe) match {
-      case ta: CaseClassTypeAdapter[_] => ta
-      case _                           => throw new ViewException(s"Output of spliceInto() must be a case class.  ${tu.tpe.typeSymbol.fullName} is not a case class.")
+    val masterTarget = context.typeAdapter(tu.tpe).maybeAs[CaseClassTypeAdapter[T]] match {
+      case Some(ta: CaseClassTypeAdapter[T]) => ta
+      case None                              => throw new ViewException(s"Output of view() must be a case class.  ${tu.tpe.typeSymbol.fullName} is not a case class.")
     }
     val viewData = view.getClass.getDeclaredFields
     val masterData = master.getClass.getDeclaredFields

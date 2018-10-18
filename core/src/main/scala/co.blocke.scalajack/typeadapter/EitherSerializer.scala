@@ -26,6 +26,9 @@ class EitherSerializer[L, R](leftSerializer: Serializer[L], rightSerializer: Ser
 
       case TypeTagged(Right(rightValue)) =>
         rightSerializer.serialize(new TaggedRightValue(rightValue, taggedEither))
+
+      case TypeTagged(null) => SerializationSuccess(JsonNull())
+
     }
 
 }

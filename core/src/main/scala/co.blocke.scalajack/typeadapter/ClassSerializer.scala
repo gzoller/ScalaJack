@@ -69,7 +69,7 @@ class ClassSerializer[C](
             }
 
             val newType = appliedType(tpe.typeConstructor, typeArgs)
-            val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[C]]
+            val newTypeAdapter = context.typeAdapter(newType).as[ClassLikeTypeAdapter[C]]
 
             for (member <- newTypeAdapter.fieldMembers) {
               val valueSerializationResult = member.serializeValue(member.valueIn(tagged))
