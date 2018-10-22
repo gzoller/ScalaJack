@@ -20,9 +20,6 @@ class PhoneDeserializer()(implicit tt: TypeTag[Phone]) extends Deserializer[Phon
 }
 
 class PhoneSerializer()(implicit tt: TypeTag[Phone]) extends Serializer[Phone] {
-
-  private val nullTypeTagged: TypeTagged[Phone] = TypeTagged[Phone](null.asInstanceOf[Phone], tt.tpe)
-
   def serialize[J](tagged: TypeTagged[Phone])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) => SerializationSuccess(JsonNull())

@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.collection.{ GenTraversableOnce, mutable }
-import scala.reflect.runtime.universe.lub
 
 class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer: Deserializer[E], newBuilder: () => mutable.Builder[E, C])(implicit tt: TypeTag[C]) extends Deserializer[C] {
 

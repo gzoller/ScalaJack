@@ -24,7 +24,7 @@ object MapTypeAdapter extends TypeAdapterFactory.<:<.withTwoTypeParams[GenMap] {
           keyDeserializer   = keyTypeAdapter.deserializer,
           valueDeserializer = valueTypeAdapter.deserializer,
           null,
-          newBuilder)
+          () => newBuilder)
 
         val mapSerializer = new MapSerializer[K, V, M](
           keySerializer   = keyTypeAdapter.serializer,

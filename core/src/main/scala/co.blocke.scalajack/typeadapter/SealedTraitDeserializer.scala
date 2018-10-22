@@ -42,7 +42,7 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
             val implementation = setOfOne.head
             implementation.deserializer.deserialize(path, json)
 
-          case matchingSubclasses =>
+          case _ =>
             throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames")
         }
 

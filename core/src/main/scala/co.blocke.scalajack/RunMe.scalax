@@ -1,7 +1,5 @@
 package co.blocke.scalajack
 
-import org.apache.commons.text.StringEscapeUtils.escapeJava
-
 case class Bar(size: Int, ok: String)
 case class Foo[T](m: T)
 case class TT(t: (String, String))

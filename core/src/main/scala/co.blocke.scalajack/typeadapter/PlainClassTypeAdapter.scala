@@ -89,7 +89,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       Some(None).asInstanceOf[Option[Value]]
     } else None
 
-    override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] = None
+    override def annotationOf[N](implicit tt: TypeTag[N]): Option[universe.Annotation] = None
 
     override def isStringValue: Boolean =
       valueTypeAdapter.isInstanceOf[StringKind]
@@ -150,7 +150,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
           })
         } match {
           case Success(m) => m
-          case Failure(x) =>
+          case Failure(_) =>
             List.empty[ClassFieldMember[T]]
         }
 
@@ -220,34 +220,49 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         }.toList
       }
 
+      def ignoreThisJavaProperty(pd: java.beans.PropertyDescriptor): Boolean = {
+        def annoTypeMatches[A](a: Class[A]): Boolean = a.getTypeName == typeOf[Ignore].toString
+        val getter = pd.getReadMethod match {
+          case null => false
+          case ann  => ann.getAnnotations.toList.map(a => annoTypeMatches(a.annotationType())).foldLeft(false)(_ || _)
+        }
+        val setter = pd.getReadMethod match {
+          case null => false
+          case ann  => ann.getAnnotations.toList.map(a => annoTypeMatches(a.annotationType())).foldLeft(false)(_ || _)
+        }
+        getter || setter
+      }
+
       def reflectJavaGetterSetterFields: List[PlainFieldMember[T]] = {
         var i = 0
-
         val clazz = currentMirror.runtimeClass(tpe.typeSymbol.asClass)
-        Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList.filterNot(_.getName == "class").map { propertyDescriptor =>
-          val memberType = tpe.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
-          val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
-          val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
-          new PlainFieldMember[T] {
-            override implicit val ownerClassTag: ClassTag[T] = ClassTag(runtimeClassOf[T])
-            override type Value = Any
-            override val index: Int = {
-              val idx = i
-              i += 1
-              idx
+
+        // Figure out getters/setters, accouting for @Ignore
+        Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList
+          .filterNot(_.getName == "class").filterNot(ignoreThisJavaProperty(_)).map { propertyDescriptor =>
+            val memberType = tpe.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
+            val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
+            val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
+            new PlainFieldMember[T] {
+              override implicit val ownerClassTag: ClassTag[T] = ClassTag(runtimeClassOf[T])
+              override type Value = Any
+              override val index: Int = {
+                val idx = i
+                i += 1
+                idx
+              }
+              override val name: String = propertyDescriptor.getName
+              override val valueType: Type = memberType
+              override val valueTypeAdapter: TypeAdapter[Value] = memberTypeAdapter
+              override val declaredValueType: Type = declaredMemberType
+              override val valueGetterMethod: Method = propertyDescriptor.getReadMethod
+              override val valueSetterMethodSymbol: Option[MethodSymbol] = None
+              override val valueSetterMethod: Option[Method] = Some(propertyDescriptor.getWriteMethod)
+              override val derivedValueClassConstructorMirror: Option[MethodMirror] = None
+              override val outerClass: Option[java.lang.Class[_]] = None
+              override val dbKeyIndex: Option[Int] = None
             }
-            override val name: String = propertyDescriptor.getName
-            override val valueType: Type = memberType
-            override val valueTypeAdapter: TypeAdapter[Value] = memberTypeAdapter
-            override val declaredValueType: Type = declaredMemberType
-            override val valueGetterMethod: Method = propertyDescriptor.getReadMethod
-            override val valueSetterMethodSymbol: Option[MethodSymbol] = None
-            override val valueSetterMethod: Option[Method] = Some(propertyDescriptor.getWriteMethod)
-            override val derivedValueClassConstructorMirror: Option[MethodMirror] = None
-            override val outerClass: Option[java.lang.Class[_]] = None
-            override val dbKeyIndex: Option[Int] = None
           }
-        }
       }
 
       // Exctract Collection name annotation if present
@@ -281,7 +296,7 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
             collectionAnnotation)
         // There's no support for Java classes with non-empty constructors.  If multiple, which one to use?
         // Opens the door for uncertain results.
-        case x =>
+        case _ =>
           next.typeAdapterOf[T]
       }
 

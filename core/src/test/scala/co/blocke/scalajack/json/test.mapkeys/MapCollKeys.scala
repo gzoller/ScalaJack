@@ -33,11 +33,6 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2 = List(Food.Seeds, Food.Pellets)
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      try {
-        sj.read[Map[Map[List[Food.Value], List[Food.Value]], Map[List[Food.Value], List[Food.Value]]]](js)
-      } catch {
-        case t: Throwable => println("Boom")
-      }
       assertResult("""{"{\"[\\\"Meat\\\",\\\"Veggies\\\"]\":[\"Seeds\",\"Pellets\"]}":{"[\"Seeds\",\"Pellets\"]":["Meat","Veggies"]}}""") { js }
       assertResult(inst) {
         sj.read[Map[Map[List[Food.Value], List[Food.Value]], Map[List[Food.Value], List[Food.Value]]]](js)
@@ -67,8 +62,6 @@ class MapCollKeys() extends FunSpec with Matchers {
     it("Map of Case Class as key") {
       val m1 = Map(DogPet("Fido", Food.Meat, 4) -> FishPet("Flipper", Food.Meat, 87.3))
       val m2 = Map(FishPet("Flipper", Food.Meat, 87.3) -> DogPet("Fido", Food.Meat, 4))
-      val m3 = Map(DogPet("Spot", Food.Meat, 4) -> FishPet("Nemo", Food.Meat, 87.3))
-      val m4 = Map(FishPet("Sharky", Food.Meat, 87.3) -> DogPet("Rover", Food.Meat, 4))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
       assertResult("""{"{\"{\\\"{\\\\\\\"name\\\\\\\":\\\\\\\"Fido\\\\\\\",\\\\\\\"food\\\\\\\":\\\\\\\"Meat\\\\\\\",\\\\\\\"numLegs\\\\\\\":4}\\\":{\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}}\":{\"{\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}}":{"{\"{\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}":{"{\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"name":"Flipper","food":"Meat","waterTemp":87.3}}}}""") { js }

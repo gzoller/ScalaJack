@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.BijectiveFunctions.fullNameToType
-
 object AnyTypeAdapter extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -59,8 +57,8 @@ case class AnyTypeAdapter(
 
   // For writes
   def inspectStringKind(value: Any): Boolean = value match {
-    case string: String          => true
-    case enum: Enumeration#Value => true
-    case _                       => false
+    case _: String            => true
+    case _: Enumeration#Value => true
+    case _                    => false
   }
 }

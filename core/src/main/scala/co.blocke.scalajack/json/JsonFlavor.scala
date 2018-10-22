@@ -34,7 +34,7 @@ case class JsonFlavor(
       first
   }
 
-  def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
+  def readSafely[T](json: String)(implicit tt: TypeTag[T]): Either[DeserializationFailure, T] = {
     val deserializationResult = try {
       val Some(js) = JsonParser.parse(json)(Json4sOps)
       val deserializer = context.typeAdapterOf[T].deserializer
@@ -45,32 +45,24 @@ case class JsonFlavor(
     }
     deserializationResult match {
       case DeserializationSuccess(TypeTagged(result)) =>
-        result
+        Right(result)
 
-      case deserializationFailure @ DeserializationFailure(errors) =>
-        /*  What's this all for?
-        for (error <- errors) {
-          //          println(error)
-          error match {
-            case (path, DeserializationError.ExceptionThrown(e)) =>
-              //              println(path)
-              e.printStackTrace()
-
-            case _ =>
-          }
-        }
-        */
-
-        throw new DeserializationException(deserializationFailure)
+      case failure @ DeserializationFailure(_) =>
+        Left(failure)
     }
   }
+
+  def read[T](json: String)(implicit tt: TypeTag[T]): T =
+    readSafely[T](json) match {
+      case Right(x) => x
+      case Left(x)  => throw new DeserializationException(x)
+    }
 
   def parse(json: String): JValue =
     JsonParser.parse(json)(Json4sOps).getOrElse(JNull)
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
     val typeAdapter = context.typeAdapterOf[T]
-    implicit val ops: JsonOps[JValue] = Json4sOps
     val serializer = typeAdapter.serializer
     serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance) match {
       case SerializationSuccess(json)                                      => Json4sOps.renderCompact(json, this)
@@ -78,7 +70,7 @@ case class JsonFlavor(
     }
   }
 
-  def render(ast: JValue): String =
+  def emit(ast: JValue): String =
     Json4sOps.renderCompact(ast, this)
 
 }

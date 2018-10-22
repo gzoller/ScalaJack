@@ -29,13 +29,14 @@ def scalacOptionsVersion(scalaVersion: String) = {
       }
 
   Seq(
-    "-feature", 
+    "-feature",
     "-deprecation", 
     "-Xlint", 
     "-encoding", "UTF8", 
     "-language:higherKinds",
     // "-language:existentials",
     "-language:implicitConversions",
+    "-Ywarn-unused:-params,-implicits,_",
     "-unchecked"
     //"-Xfatal-warnings"
   ) ++ xver

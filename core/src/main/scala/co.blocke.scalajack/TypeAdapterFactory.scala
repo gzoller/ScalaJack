@@ -18,18 +18,6 @@ object TypeAdapterFactory {
         }
     }
 
-  /* No longer needed--perhaps remove later
-  def apply[V](typeAdapter: TypeAdapter[V])(implicit expectedTypeTag: TypeTag[V]): TypeAdapterFactory =
-    new TypeAdapterFactory {
-      override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, actualTypeTag: TypeTag[T]): TypeAdapter[T] =
-        if (expectedTypeTag.tpe =:= actualTypeTag.tpe) {
-          typeAdapter.asInstanceOf[TypeAdapter[T]]
-        } else {
-          next.typeAdapterOf[T]
-        }
-    }
-    */
-
   trait FromClassSymbol extends TypeAdapterFactory {
 
     override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {

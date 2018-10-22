@@ -3,8 +3,8 @@ package co.blocke.scalajack
 import typeadapter._
 import typeadapter.javatime._
 import typeadapter.javaprimitives._
+import typeadapter.javacollections._
 
-import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
 
@@ -54,6 +54,8 @@ object Context {
     .withFactory(JavaShortTypeAdapter)
     .withFactory(JavaBigDecimalTypeAdapter)
     .withFactory(JavaBigIntegerTypeAdapter)
+    .withFactory(JavaMapTypeAdapter)
+    .withFactory(JavaCollectionTypeAdapter)
     .withFactory(UUIDTypeAdapter)
     .withFactory(DurationTypeAdapter)
     .withFactory(InstantTypeAdapter)

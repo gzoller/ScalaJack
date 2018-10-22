@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json
 package test.json4s
 
-import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JDouble, JInt, JLong, JNothing, JNull, JObject, JString }
+import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JLong, JNull, JObject, JString }
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 

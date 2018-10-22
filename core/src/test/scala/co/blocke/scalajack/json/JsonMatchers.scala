@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package json
 
-import co.blocke.scalajack.Path
-import co.blocke.scalajack.json.JsonDiff
 import org.json4s.JsonAST.JValue
 import org.json4s.native.JsonMethods._
 import org.scalatest.matchers.{ MatchResult, Matcher }

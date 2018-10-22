@@ -6,34 +6,28 @@ class JavaMapDeserializer[K, V, M <: java.util.Map[K, V]](keyDeserializer: Deser
 
   self =>
 
-  private class TaggedMap(override val get: M, taggedKeys: List[TypeTagged[K]], taggedValues: List[TypeTagged[V]]) extends TypeTagged[M] {
-    override lazy val tpe: Type = ???
-  }
+  private val taggedNull: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
   override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[M] =
     json match {
       case JsonObject(x) =>
+
         val objectFields = x.asInstanceOf[ops.ObjectFields]
 
         val map: M = newEmptyMap()
 
         ops.foreachObjectField(objectFields, { (fieldName, fieldValue) =>
           val DeserializationSuccess(TypeTagged(key)) = keyDeserializer.deserialize(path \ fieldName, JsonString(fieldName))
-          ???
+          val DeserializationSuccess(TypeTagged(value)) = valueDeserializer.deserialize(path \ fieldName, fieldValue)
+          map.put(key, value)
         })
 
-        ???
+        DeserializationSuccess(TypeTagged(map, tt.tpe))
 
-      case JsonArray(x) =>
-        val arrayElements = x.asInstanceOf[ops.ArrayElements]
+      case JsonNull() => DeserializationSuccess(taggedNull)
 
-        ops.foreachArrayElement(arrayElements, { (index, element) =>
-          ???
-        })
-
-        ???
-
-      case _ =>
+      case x =>
+        println("X: " + x)
         DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON object", reportedBy = self))
     }
 

@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.Try
 
 object TryTypeAdapter extends TypeAdapterFactory.=:=.withOneTypeParam[Try] {
 

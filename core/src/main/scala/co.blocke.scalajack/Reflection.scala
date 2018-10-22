@@ -37,12 +37,14 @@ object Reflection {
       case nonNull =>
         val valueType = currentMirror.classSymbol(nonNull.getClass).asType.toType
 
+        /*
         valueType.typeConstructor.typeParams match {
           case Nil        =>
 
           case typeParams =>
           // TODO infer type arguments
         }
+        */
 
         valueType
     }

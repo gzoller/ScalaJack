@@ -2,9 +2,9 @@ package co.blocke.scalajack
 package typeadapter
 package javacollections
 
-class JavaCollectionSerializer[E, C <: java.util.Collection[E]](elementSerializer: Serializer[E]) extends Serializer[C] {
+class JavaCollectionSerializer[E, G <: java.util.Collection[E]](elementSerializer: Serializer[E]) extends Serializer[G] {
 
-  override def serialize[J](taggedCollection: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[J](taggedCollection: TypeTagged[G])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     taggedCollection match {
       case TypeTagged(null) =>
         SerializationSuccess(JsonNull())

@@ -1,7 +1,5 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.typeadapter.BackedByJsonValue
-
 object DeserializationException {
 
   private def format(deserializationFailure: DeserializationFailure): String = {

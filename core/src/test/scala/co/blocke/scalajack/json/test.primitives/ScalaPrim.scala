@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json.test.primitives
 
 import org.scalatest.{ FunSpec, Matchers }
-import scala.reflect.runtime.universe._
 
 class ScalaPrim() extends FunSpec with Matchers {
 

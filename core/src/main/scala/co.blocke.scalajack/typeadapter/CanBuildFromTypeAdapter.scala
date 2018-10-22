@@ -2,8 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.collection.generic.CanBuildFrom
-import scala.collection.{ GenMap, GenMapLike, GenTraversableOnce, mutable }
-import scala.language.existentials
+import scala.collection.{ GenMapLike, GenTraversableOnce, mutable }
 
 object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[GenTraversableOnce] {
 
@@ -53,6 +52,11 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
       val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply()
 
       if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+        /*
+
+        I'm not 100% sure what this clause is supposed to do, or what case it handles!  Cutting it out doesn't
+        break any tests so remvoing it for now...
+
         type K = Any
         type V = Any
         type M = GenMap[K, V] with GenMapLike[K, V, Any]
@@ -64,7 +68,8 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
           case kta: OptionTypeAdapter[_] => kta.noneAsEmptyString // output "" for None for map keys
           case kta                       => kta
         }).asInstanceOf[TypeAdapter[K]]
-        val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1)).asInstanceOf[TypeAdapter[V]]
+        val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1)).asIn stanceOf[TypeAdapter[V]]
+        */
         /*
         Some(CanBuildMapTypeAdapter(
           new MapDeserializer[K, V, M](
@@ -81,12 +86,12 @@ object CanBuildFromTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[G
           keyTypeAdapter.asInstanceOf[TypeAdapter[Any]],
           valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
           */
-        ???
+        throw new java.lang.UnsupportedOperationException("This functionality has not yet been implemented")
       } else {
         def newBuilder(): mutable.Builder[E, T] = canBuildFrom.asInstanceOf[CanBuildFrom[Any, E, T]]()
 
         Some(CanBuildFromTypeAdapter[E, T](
-          new CollectionDeserializer[E, T](elementTypeAdapter.deserializer.asInstanceOf[Deserializer[E]], newBuilder),
+          new CollectionDeserializer[E, T](elementTypeAdapter.deserializer.asInstanceOf[Deserializer[E]], () => newBuilder),
           new CollectionSerializer[E, T](elementTypeAdapter.serializer.asInstanceOf[Serializer[E]]),
           canBuildFrom.asInstanceOf[CanBuildFrom[_, E, T]],
           elementTypeAdapter.asInstanceOf[TypeAdapter[E]]))

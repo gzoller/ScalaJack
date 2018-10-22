@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json.test.misc
 
-import co.blocke.scalajack.json.test.mapkeys.SampleShort
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 import org.scalatest.Matchers._
 

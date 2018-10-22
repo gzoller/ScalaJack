@@ -163,7 +163,6 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 
-        val defaults = defaultValueAccessorMirror.map(d => d.apply())
         FieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations)
       }
 

@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.RunMe.z
-
 import scala.collection.{ immutable, mutable }
 import scala.util.Try
 import scala.util.control.NonFatal

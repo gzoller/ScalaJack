@@ -5,8 +5,6 @@ import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
 class PlainClassSerializer[C](members: List[PlainFieldMember[C]], isSJCapture: Boolean) extends Serializer[C] {
 
-  private type Member = PlainFieldMember[C]
-
   override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) =>

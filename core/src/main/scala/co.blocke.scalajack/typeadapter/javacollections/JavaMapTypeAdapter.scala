@@ -5,6 +5,7 @@ package javacollections
 object JavaMapTypeAdapter extends TypeAdapterFactory.<:<.withTwoTypeParams[java.util.Map] {
 
   override def create[K, V, M <: java.util.Map[K, V]](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[M], ttMap: TypeTag[java.util.Map[K, V]], ttKey: TypeTag[K], ttValue: TypeTag[V]): TypeAdapter[M] = {
+
     val mapConstructor: java.lang.reflect.Constructor[M] = runtimeClassOf[M].getConstructor()
 
     def newEmptyMap(): M = mapConstructor.newInstance()

@@ -35,7 +35,7 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val x = sj.read[Envelope[Body]](json)
         // Test match functionality
         val num = x.body match {
-          case y: FancyBody => 1
+          case _: FancyBody => 1
           case _            => 2
         }
         (x, num)

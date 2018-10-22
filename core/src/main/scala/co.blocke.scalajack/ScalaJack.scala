@@ -5,8 +5,6 @@ import co.blocke.scalajack.json.JsonFlavor
 import co.blocke.scalajack.typeadapter.CaseClassTypeAdapter.FieldMember
 import co.blocke.scalajack.typeadapter._
 
-import scala.language.existentials
-
 object ScalaJack {
   def apply[S, AST](kind: ScalaJackLike[S, AST] = JsonFlavor()): ScalaJackLike[S, AST] = kind
 }

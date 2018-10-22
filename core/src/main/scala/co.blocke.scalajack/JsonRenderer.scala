@@ -9,7 +9,6 @@ object JsonRenderer {
 
     def appendString(string: String): Unit = {
       var i = 0
-      val length = string.length
 
       var beginIndex = 0
 
@@ -18,7 +17,7 @@ object JsonRenderer {
       } else {
         string match {
           case "" => builder.append("\"\"")
-          case s =>
+          case _ =>
             string.charAt(i) match {
               case '{' | '[' =>
                 builder.appendAll(string)

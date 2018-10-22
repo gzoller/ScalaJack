@@ -52,7 +52,7 @@ class TraitDeserializer[T](
         val deserializer = context.typeAdapterOf[T].deserializer
         deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
 
-      case x =>
+      case _ =>
         DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))
     }
 

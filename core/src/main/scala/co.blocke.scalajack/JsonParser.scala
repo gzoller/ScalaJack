@@ -129,7 +129,7 @@ object JsonParser {
 
             segmentStart = position
 
-          case c =>
+          case _ =>
             position += 1
         }
       }
@@ -340,7 +340,7 @@ object JsonParser {
           case Some(x) if (ops.isObject(x) || ops.isArray(x)) =>
             // Extra chars at the end of a JSON array or object is a parse error
             throw new IllegalArgumentException(s"Extra, unparsed JSON: '${new String(source.drop(position))}'")
-          case Some(x) =>
+          case Some(_) =>
             // Extra chars at the end of a primitive JSON type -> treat the whole thing as a String, e.g. 0xlr
             // will be detected as a number(0) with "extra" chars 'xlr'.  Gives false result of a Long(0).  Actual
             // result should be String(0xlr).

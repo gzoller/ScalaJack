@@ -1,6 +1,5 @@
 package co.blocke.scalajack
 
-import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.{ FrontEnd, ToolBox }
 
 object ScalaCompiler {

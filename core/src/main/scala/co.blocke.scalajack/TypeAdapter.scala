@@ -49,7 +49,7 @@ trait TypeAdapter[T] {
     try {
       Some(runtimeClass.cast(self).asInstanceOf[U])
     } catch {
-      case e: ClassCastException =>
+      case _: ClassCastException =>
         None
     }
   }

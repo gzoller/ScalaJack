@@ -16,6 +16,7 @@ class TermDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extend
             if (tt.tpe.typeSymbol.isClass) {
               val classSymbol: ClassSymbol = tt.tpe.typeSymbol.asClass
 
+              /*
               val companionSymbol: Symbol = classSymbol.companion
               if (companionSymbol.isModule) {
                 val companionModuleSymbol: ModuleSymbol = companionSymbol.asModule
@@ -23,6 +24,7 @@ class TermDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extend
                 val termMember = companionModuleSymbol.typeSignature.member(TermName(termName))
                 //                println(termMember)
               }
+              */
 
               val ownerType: Type = classSymbol.owner.typeSignature
               // Perhaps the term refers to a sibling type?
@@ -32,12 +34,8 @@ class TermDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extend
                 //                val st = siblingSymbol.asModule.thisPrefix
                 //                val st = SingleType(ownerType, siblingSymbol)
                 val siblingModule = reflectModule(siblingSymbol.asModule).instance
-                //                println(st)
-                //                println(siblingSymbol.asModule)
                 return DeserializationSuccess(TypeTagged[T](siblingModule.asInstanceOf[T], st))
               }
-
-              //              println(classSymbol.owner)
             }
             failure
 

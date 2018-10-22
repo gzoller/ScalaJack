@@ -22,7 +22,7 @@ class SealedTraitSerializer[T](implementations: immutable.Set[Implementation[T]]
   override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
     tagged match {
       case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x) =>
+      case TypeTagged(_) =>
         implementations.find(_.isInstance(tagged)) match {
           case Some(implementation) =>
             implementation.serialize(tagged)

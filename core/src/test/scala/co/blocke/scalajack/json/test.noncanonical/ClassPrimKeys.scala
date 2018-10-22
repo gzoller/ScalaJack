@@ -188,6 +188,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{{"lookup":{"a":true,"b":2},"favs":["one","two"]}:{"lookup":{"x":9,"y":10},"favs":["aye","you"]}}}"""
         val msg = """DeserializationException(1 error):
                     |  [$.lookup.a] Expected a JSON int, not JBool(true) (reported by: co.blocke.scalajack.typeadapter.IntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy sj.read[SamplePolyClass](js) should have message msg
       }
       it("Bad custom hint value for map key trait") {
         val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))

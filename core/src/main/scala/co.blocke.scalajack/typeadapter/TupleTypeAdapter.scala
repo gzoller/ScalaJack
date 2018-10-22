@@ -5,7 +5,6 @@ import java.lang.reflect.Method
 
 import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
-import scala.language.existentials
 import scala.reflect.runtime.universe.TermName
 
 object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {

@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.util.{ Failure, Success, Try }
-
 object EnumerationTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =

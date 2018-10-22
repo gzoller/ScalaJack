@@ -9,7 +9,6 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
   private val BoxedNumberType: Type = typeOf[java.lang.Number]
   private val BoxedDoubleType: Type = typeOf[java.lang.Double]
   private val BoxedLongType: Type = typeOf[java.lang.Long]
-  private val BoxedFloatType: Type = typeOf[java.lang.Float]
   private val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
   private val JavaBigIntegerType: Type = typeOf[java.math.BigInteger]
 
@@ -22,7 +21,7 @@ class BoxedNumberDeserializer() extends Deserializer[java.lang.Number] {
       case JsonInt(scalaBigInt) => DeserializationSuccess(TypeTagged(scalaBigInt.bigInteger, JavaBigIntegerType))
       case JsonLong(longValue) => DeserializationSuccess(TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType))
       case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
-      case JsonString(s) => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
+      case JsonString(_) => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
       case _ => DeserializationFailure(path, DeserializationError.Unsupported("Expected a JSON number", reportedBy = self))
     }
 }

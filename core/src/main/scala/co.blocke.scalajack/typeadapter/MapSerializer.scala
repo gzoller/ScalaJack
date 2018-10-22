@@ -44,7 +44,7 @@ class MapSerializer[K, V, M <: GenMap[K, V]](keySerializer: Serializer[K], value
                     keyJson match {
                       case JsonString(s)               => s
                       case _ if (guidance.isCanonical) => ops.renderCompact(keyJson, context.sjFlavor.get)
-                      case s                           => No_Quote_Marker + ops.renderCompact(keyJson, context.sjFlavor.get)
+                      case _                           => No_Quote_Marker + ops.renderCompact(keyJson, context.sjFlavor.get)
                     }
                   appendField(keyString, valueJson)
 

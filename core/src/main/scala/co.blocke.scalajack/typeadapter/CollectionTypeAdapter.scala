@@ -22,7 +22,7 @@ object CollectionTypeAdapter extends TypeAdapterFactory.<:<.withOneTypeParam[Gen
 
         val deserializer = new CollectionDeserializer[E, C](
           elementDeserializer = elementTypeAdapter.deserializer,
-          newBuilder          = newBuilder)
+          newBuilder          = () => newBuilder)
 
         val serializer = new CollectionSerializer[E, C](
           elementSerializer = elementTypeAdapter.serializer)

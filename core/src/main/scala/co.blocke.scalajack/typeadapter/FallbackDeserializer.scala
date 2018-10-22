@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
 
 class FallbackDeserializer[T](
     primaryDeserializer:   Deserializer[T],
