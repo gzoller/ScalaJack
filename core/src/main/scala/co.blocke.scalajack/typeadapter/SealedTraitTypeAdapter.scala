@@ -44,7 +44,16 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
             }
 
           if (subclassAttempts.exists(_.isFailure)) {
-            next.typeAdapterOf[T]
+            // If subclassAttempts is full of Failure, the "subclasses" may be case objects, not case classes.
+            // This is a common alternative implementation for Enumerations.
+            subclassTypes.headOption match {
+              case Some(t) if t.typeSymbol.isModuleClass => // Bake a serializer/deserializer than handles case objects
+                new TypeAdapter[T] {
+                  override val serializer = new CaseObjectSerializer[T]()
+                  override val deserializer = new CaseObjectDeserializer[T](subclassTypes.map(_.typeSymbol.name.toString))
+                }
+              case _ => typeAdapterOf[T]
+            }
           } else {
             val subclasses = subclassAttempts.map(_.get)
 
@@ -91,8 +100,6 @@ object SealedTraitTypeAdapter extends TypeAdapterFactory {
                       serializer.serialize(tagged)
                   }
                 }).toSet)
-
-                TypeAdapter(deserializer, serializer)
               }
             }
           }

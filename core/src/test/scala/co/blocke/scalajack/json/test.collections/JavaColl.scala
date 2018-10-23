@@ -23,7 +23,6 @@ class JavaColl() extends FunSpec with Matchers {
 
       val inst = new JavaMapColl()
       inst.setName("Fred")
-      //      inst.setTree(jtree)
       inst.setItems(jmap)
       inst.setAge(45)
       inst.weakling = jweak
@@ -33,7 +32,6 @@ class JavaColl() extends FunSpec with Matchers {
 
       val js = sj.render(inst)
       val x = sj.read[JavaMapColl](js)
-      println(js)
 
       assertResult("""{"fine":false,"items":{"a":1,"b":2,"c":3},"name":"Fred","tree":null}""") { js }
 

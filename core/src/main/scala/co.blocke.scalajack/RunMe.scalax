@@ -1,24 +1,25 @@
 package co.blocke.scalajack
 
-case class Bar(size: Int, ok: String)
-case class Foo[T](m: T)
-case class TT(t: (String, String))
+sealed trait Vehicle
+case class Truck(numberOfWheels: Int) extends Vehicle
+case class Car(numberOfWheels: Int, color: String) extends Vehicle
+case class Plane(numberOfEngines: Int) extends Vehicle
 
-case class Person(name: String, age: Int)
-
-trait X
-case class A() extends X
-case class B() extends X
-case class C() extends X
+import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.{ universe => ru }
 
 object RunMe extends App {
 
-  val sj = ScalaJack()
+  val z: Vehicle = Car(4, "red")
 
-  // What happens when Map key is null? (vs None key)
+  val tpe = ru.typeOf[Vehicle]
+  val clazz = tpe.typeSymbol.asClass
+  // if you want to ensure the type is a sealed trait,
+  // then you can use clazz.isSealed and clazz.isTrait
+  clazz.knownDirectSubclasses.foreach(println)
 
-  val z: Seq[(Int, X)] = Seq((1, A()), (2, B()), (3, A()), (4, B()))
-  val x = z.exists(_._2.isInstanceOf[C])
-  println(x)
+  //  val valueType = currentMirror.classSymbol(z.getClass).asType
+  //  println(valueType.info.baseClasses.map(bc => (bc.fullName, bc.isFinal)))
+
 }
 
