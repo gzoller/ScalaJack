@@ -16,9 +16,9 @@ class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructo
     override lazy val tpe: Type = appliedType(tupleTypeConstructor, taggedElements.map(_.tpe).toList)
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Tuple] =
-    json match {
-      case JsonArray(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Tuple] =
+    ast match {
+      case AstArray(x) =>
         val elements = x.asInstanceOf[ops.ArrayElements]
         val deserializationResults: Array[DeserializationResult[Any]] = new Array[DeserializationResult[Any]](fields.length)
 
@@ -39,11 +39,11 @@ class TupleDeserializer[Tuple](fields: IndexedSeq[Field[Tuple]], tupleConstructo
           })
         }
 
-      case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
+      case AstString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s.asInstanceOf[S]))(ops, guidance = guidance.copy(isMapKey = false))
 
-      case JsonNull()                           => DeserializationSuccess(nullTypeTagged)
+      case AstNull()                           => DeserializationSuccess(nullTypeTagged)
 
-      case _                                    => DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON array, not $json", reportedBy = self))
+      case _                                   => DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON array, not $ast", reportedBy = self))
     }
 
 }

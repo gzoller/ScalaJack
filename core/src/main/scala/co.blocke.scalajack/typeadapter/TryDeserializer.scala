@@ -13,9 +13,9 @@ class TryDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends
     override lazy val tpe: Type = appliedType(successTypeConstructor, taggedValue.tpe)
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Try[T]] =
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Try[T]] =
     try {
-      val deserializationResult = next.deserialize(path, json) map {
+      val deserializationResult = next.deserialize(path, ast) map {
         case tagged @ TypeTagged(value) =>
           new TaggedSuccess(Success(value), tagged)
       }
@@ -25,24 +25,26 @@ class TryDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends
           deserializationResult
 
         case deserializationFailure @ DeserializationFailure(_) =>
-          val exceptionWithBackingJsonValue = new DeserializationException(deserializationFailure) with BackedByJsonValue {
-            override type BackingJsonValue = J
-            override val backingJsonValue: BackingJsonValue = json
-            override val backingJsonOps: JsonOps[BackingJsonValue] = ops
+          val exceptionWithBackingAstValue = new DeserializationException(deserializationFailure) with BackedByAstValue {
+            override type BackingAstValue = AST
+            override type SrcType = S
+            override val backingAstValue: BackingAstValue = ast
+            override val backingAstOps: AstOps[BackingAstValue, SrcType] = ops
           }
-          DeserializationSuccess(TypeTagged(Failure(exceptionWithBackingJsonValue), failureType))
+          DeserializationSuccess(TypeTagged(Failure(exceptionWithBackingAstValue), failureType))
       }
     } catch {
-      case exception: DeserializationException with BackedByJsonValue =>
+      case exception: DeserializationException with BackedByAstValue =>
         DeserializationSuccess(TypeTagged(Failure(exception), failureType))
 
       case exception: DeserializationException =>
-        val exceptionWithBackingJsonValue = new DeserializationException(exception.deserializationFailure) with BackedByJsonValue {
-          override type BackingJsonValue = J
-          override val backingJsonValue: BackingJsonValue = json
-          override val backingJsonOps: JsonOps[BackingJsonValue] = ops
+        val exceptionWithBackingAstValue = new DeserializationException(exception.deserializationFailure) with BackedByAstValue {
+          override type BackingAstValue = AST
+          override type SrcType = S
+          override val backingAstValue: BackingAstValue = ast
+          override val backingAstOps: AstOps[BackingAstValue, SrcType] = ops
         }
-        DeserializationSuccess(TypeTagged(Failure(exceptionWithBackingJsonValue), failureType))
+        DeserializationSuccess(TypeTagged(Failure(exceptionWithBackingAstValue), failureType))
 
       case NonFatal(e) =>
         DeserializationSuccess(TypeTagged(Failure(e), failureType))

@@ -3,10 +3,10 @@ package typeadapter
 
 class CaseObjectSerializer[C]()(implicit tt: TypeTag[C]) extends Serializer[C] {
 
-  def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  def serialize[AST, S](tagged: TypeTagged[C])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(c)    => SerializationSuccess(JsonString(c.toString))
+      case TypeTagged(null) => SerializationSuccess(AstNull())
+      case TypeTagged(c)    => SerializationSuccess(AstString(c.toString))
     }
 
 }

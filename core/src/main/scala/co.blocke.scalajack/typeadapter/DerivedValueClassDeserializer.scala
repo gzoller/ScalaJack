@@ -9,8 +9,8 @@ class DerivedValueClassDeserializer[Derived, Source](
 
   override def toString: String = s"DerivedValueClassDeserializer[${derivedTypeTag.tpe}, ${sourceTypeTag.tpe}]"
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Derived] =
-    sourceDeserializer.deserialize(path, json) map {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Derived] =
+    sourceDeserializer.deserialize(path, ast) map {
       case TypeTagged(source) =>
         val derived = derive(source)
         TypeTagged(derived, derivedType)

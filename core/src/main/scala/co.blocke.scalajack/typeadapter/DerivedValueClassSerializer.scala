@@ -7,7 +7,7 @@ class DerivedValueClassSerializer[Derived, Source](
 
   private val sourceType: Type = sourceTypeTag.tpe
 
-  override def serialize[J](tagged: TypeTagged[Derived])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Derived])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
       case TypeTagged(derived) =>
         val source = unwrap(derived)

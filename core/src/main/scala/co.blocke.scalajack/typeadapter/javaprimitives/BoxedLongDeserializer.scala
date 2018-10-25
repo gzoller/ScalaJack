@@ -6,13 +6,13 @@ class BoxedLongDeserializer(longDeserializer: Deserializer[Long]) extends Deseri
 
   private val BoxedLongType: Type = typeOf[java.lang.Long]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Long] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.lang.Long] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedLongType))
 
       case _ =>
-        longDeserializer.deserialize(path, json) map {
+        longDeserializer.deserialize(path, ast) map {
           case TypeTaggedLong(longValue) => TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType)
           case TypeTagged(longValue)     => TypeTagged(java.lang.Long.valueOf(longValue), BoxedLongType)
         }

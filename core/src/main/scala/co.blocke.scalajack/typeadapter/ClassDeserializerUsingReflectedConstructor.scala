@@ -21,21 +21,21 @@ class ClassDeserializerUsingReflectedConstructor[CC](
   private val typeMembersByName: Map[String, TypeMember] = typeMembers.map(typeMember => typeMember.name -> typeMember).toMap
   private val fieldMembersByName: Map[String, FieldMember] = fieldMembers.map(fieldMember => fieldMember.name -> fieldMember).toMap
 
-  private def inferConcreteDeserializer[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): Option[Deserializer[_ <: CC]] =
+  private def inferConcreteDeserializer[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): Option[Deserializer[_ <: CC]] =
     if (typeMembers.isEmpty) {
       None
     } else {
-      json match {
-        case JsonObject(x) =>
+      ast match {
+        case AstObject(x) =>
           val fields = x.asInstanceOf[ops.ObjectFields]
 
           import scala.collection.mutable
 
           val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
 
-          ops.foreachObjectField(fields, { (fieldName, fieldValueJson) =>
+          ops.foreachObjectField(fields, { (fieldName, fieldValueAst) =>
             for (typeMember <- typeMembersByName.get(fieldName)) {
-              val actualType: Type = Try(typeDeserializer.deserialize(path \ fieldName, fieldValueJson)).map(_.get.get).getOrElse(typeMember.baseType)
+              val actualType: Type = Try(typeDeserializer.deserialize(path \ fieldName, fieldValueAst)).map(_.get.get).getOrElse(typeMember.baseType)
 
               // Solve for each type parameter
               for (typeParam <- caseClassType.typeConstructor.typeParams) {
@@ -71,25 +71,25 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       }
     }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[CC] = {
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[CC] = {
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
 
-      case JsonObject(x) =>
+      case AstObject(x) =>
         try {
           val fields = x.asInstanceOf[ops.ObjectFields]
 
           val deserializationResultsByField: mutable.Map[FieldMember, DeserializationResult[Any]] = new mutable.HashMap[FieldMember, DeserializationResult[Any]]
 
-          inferConcreteDeserializer(path, json) match {
+          inferConcreteDeserializer(path, ast) match {
             case Some(concreteDeserializer) =>
-              concreteDeserializer.deserialize(path, json)
+              concreteDeserializer.deserialize(path, ast)
 
             case None =>
-              ops.foreachObjectField(fields, { (fieldName, fieldValueJson) =>
+              ops.foreachObjectField(fields, { (fieldName, fieldValueAst) =>
                 for (fieldMember <- fieldMembersByName.get(fieldName)) {
-                  deserializationResultsByField(fieldMember) = fieldMember.deserializeValue[J](path \ fieldName, fieldValueJson)
+                  deserializationResultsByField(fieldMember) = fieldMember.deserializeValue[AST, S](path \ fieldName, fieldValueAst)
                 }
               })
 
@@ -98,11 +98,11 @@ class ClassDeserializerUsingReflectedConstructor[CC](
 
               // Missing fields in JSON... let's go deeper...
               for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
-                // Substitute any speicifed default values
+                // Substitute any specified default values
                 deserializationResultsByField(fieldMember) = if (fieldMember.defaultValue.isDefined)
                   DeserializationSuccess(TypeTagged(fieldMember.defaultValue.get, fieldMember.declaredValueType))
                 else
-                  fieldMember.deserializeValueFromNothing[J](path \ fieldMember.name)
+                  fieldMember.deserializeValueFromNothing[AST, S](path \ fieldMember.name)
               }
 
               if (deserializationResultsByField.exists(_._2.isFailure))
@@ -121,9 +121,9 @@ class ClassDeserializerUsingReflectedConstructor[CC](
                 if (isSJCapture) {
                   val partitionedFields = ops.partitionObjectFields(fields, fieldMembersByName.keySet.toList)
                   val captured = partitionedFields._2
-                  import JsonOps._
-                  implicit val aux: Aux[J, ops.ObjectFields] = ops.asInstanceOf[Aux[J, ops.ObjectFields]]
-                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(JsonAndOps(captured))
+                  import AstOps._
+                  implicit val aux: Aux[AST, ops.ObjectFields, S] = ops.asInstanceOf[Aux[AST, ops.ObjectFields, S]]
+                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(AstAndOps(captured))
                 }
                 DeserializationSuccess(TypeTagged[CC](instanceOfCaseClass, caseClassType))
               }
@@ -133,12 +133,12 @@ class ClassDeserializerUsingReflectedConstructor[CC](
             DeserializationFailure(path, DeserializationError.ExceptionThrown(e))
         }
 
-      case JsonString(s) if (guidance.isMapKey) =>
+      case AstString(s) if (guidance.isMapKey) =>
         val deserializer = context.typeAdapterOf[CC].deserializer
-        deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
+        deserializer.deserialize(Path.Root, ops.parse(s.asInstanceOf[S]))
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $json", this))
+        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON object, not $ast", this))
     }
   }
 

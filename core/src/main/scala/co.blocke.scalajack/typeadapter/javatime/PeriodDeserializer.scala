@@ -11,15 +11,15 @@ class PeriodDeserializer extends Deserializer[Period] {
 
   private val PeriodType: Type = typeOf[Period]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Period] =
-    json match {
-      case JsonString(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Period] =
+    ast match {
+      case AstString(x) =>
         DeserializationResult(path)(TypeTagged(Period.parse(x), PeriodType), {
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, PeriodType))
 
       case _ =>

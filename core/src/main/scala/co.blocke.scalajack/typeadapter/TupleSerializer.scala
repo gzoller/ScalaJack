@@ -7,21 +7,21 @@ import scala.collection.immutable
 
 class TupleSerializer[Tuple](fields: Seq[Field[Tuple]]) extends Serializer[Tuple] {
 
-  override def serialize[J](taggedTuple: TypeTagged[Tuple])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](taggedTuple: TypeTagged[Tuple])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     taggedTuple match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(_) =>
         val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
 
-        val json = JsonArray[J] { appendElement =>
+        val json = AstArray[AST, S] { appendElement =>
           for (field <- fields) {
             val taggedFieldValue = field.valueIn(taggedTuple)
-            val fieldSerializationResult = field.valueSerializer.serialize[J](taggedFieldValue)
+            val fieldSerializationResult = field.valueSerializer.serialize[AST, S](taggedFieldValue)
             fieldSerializationResult match {
-              case SerializationSuccess(fieldValueJson) =>
-                appendElement(fieldValueJson)
+              case SerializationSuccess(fieldValueAst) =>
+                appendElement(fieldValueAst)
 
               case SerializationFailure(fieldErrors) =>
                 if (fieldErrors.head.toString == "Nothing")

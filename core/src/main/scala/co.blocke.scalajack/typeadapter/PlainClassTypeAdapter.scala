@@ -74,13 +74,13 @@ object PlainClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         case None       => valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
       }
 
-    override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value] =
+    override def deserializeValueFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[Value] =
       valueTypeAdapter.deserializer.deserializeFromNothing(path)
 
-    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Value] =
-      valueTypeAdapter.deserializer.deserialize(path, json)
+    override def deserializeValue[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Value] =
+      valueTypeAdapter.deserializer.deserialize(path, ast)
 
-    override def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+    override def serializeValue[AST, S](tagged: TypeTagged[Value])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
       valueTypeAdapter.serializer.serialize(tagged)
 
     // Find any specified default value for this field.  If none...and this is an Optional field, return None (the value)
@@ -312,17 +312,3 @@ case class PlainClassTypeAdapter[T](
     override val serializer:   Serializer[T],
     dbKeys:                    List[ClassFieldMember[T]],
     collectionName:            Option[String]            = None) extends TypeAdapter[T]
-
-/*
-case class PlainClassTypeAdapter[T](
-    override val deserializer: Deserializer[T],
-    override val serializer:   Serializer[T],
-    caseClassType:             Type,
-    constructorMirror:         MethodMirror,
-    tpe:                       Type,
-    memberNameTypeAdapter:     TypeAdapter[MemberName],
-    members:                   List[PlainFieldMember[T]],
-    isSJCapture:               Boolean,
-    dbKeys:                    List[PlainFieldMember[T]],
-    collectionName:            Option[String]            = None) extends TypeAdapter[T]
-*/ 

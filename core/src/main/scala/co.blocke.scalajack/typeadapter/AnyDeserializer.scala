@@ -12,48 +12,48 @@ class AnyDeserializer(
 
   private val nullTypeTagged = TypeTagged(null, typeOf[Any])
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Any] =
-    json match {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Any] =
+    ast match {
       // For map keys of type Any, all of these will be string.  We need to test and see if we can deserialize a specific type or not.
       // If not, stay with the string, otherwise use the more specific type.
-      case JsonString(js) if (guidance.isMapKey) =>
+      case AstString(s) if (guidance.isMapKey) =>
         try {
-          context.typeAdapterOf[Any].deserializer.deserialize(path, JsonParser.parse(js).get) match {
+          context.typeAdapterOf[Any].deserializer.deserialize(path, ops.parse(s.asInstanceOf[S])) match {
             case success: DeserializationSuccess[_] => success
-            case _                                  => stringDeserializer.deserialize(path, json)
+            case _                                  => stringDeserializer.deserialize(path, ast)
           }
         } catch {
           // Nope... no embedded typed thing found... must be a plain 'ol String
-          case _: Throwable => stringDeserializer.deserialize(path, json)
+          case _: Throwable => stringDeserializer.deserialize(path, ast)
         }
 
-      case JsonObject(x) =>
+      case AstObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]
 
         val concreteTypeFieldName = context.defaultHint
 
         ops.getObjectField(fields, concreteTypeFieldName) match {
-          case Some(concreteTypeJson) =>
-            val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ concreteTypeFieldName, concreteTypeJson)
-            context.typeAdapter(concreteType).deserializer.deserialize(path, json)
+          case Some(concreteTypeAst) =>
+            val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ concreteTypeFieldName, concreteTypeAst)
+            context.typeAdapter(concreteType).deserializer.deserialize(path, ast)
 
           case None =>
-            mapDeserializer.deserialize(path, json)
+            mapDeserializer.deserialize(path, ast)
         }
 
-      case JsonArray(_) =>
-        listDeserializer.deserialize(path, json)
+      case AstArray(_) =>
+        listDeserializer.deserialize(path, ast)
 
-      case JsonString(_) =>
-        stringDeserializer.deserialize(path, json)
+      case AstString(_) =>
+        stringDeserializer.deserialize(path, ast)
 
-      case JsonBoolean(_) =>
-        booleanDeserializer.deserialize(path, json)
+      case AstBoolean(_) =>
+        booleanDeserializer.deserialize(path, ast)
 
-      case JsonDouble(_) | JsonDecimal(_) | JsonInt(_) | JsonLong(_) =>
-        numberDeserializer.deserialize(path, json)
+      case AstDouble(_) | AstDecimal(_) | AstInt(_) | AstLong(_) =>
+        numberDeserializer.deserialize(path, ast)
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
     }
 

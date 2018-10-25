@@ -8,21 +8,21 @@ class EnumerationValueDeserializer[E <: Enumeration](enumeration: E)(implicit tt
   private val enumerationName: String = enumeration.getClass.getName
   private val enumerationValueType: Type = tt.tpe
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[E#Value] = {
-    json match {
-      case JsonString(name) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[E#Value] = {
+    ast match {
+      case AstString(name) =>
         DeserializationResult(path)(TypeTagged(enumeration.withName(name), enumerationValueType), {
           case _: NoSuchElementException =>
             DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value named $name", reportedBy = self)
         })
 
-      case JsonLong(index) =>
+      case AstLong(index) =>
         DeserializationResult(path)(TypeTagged(enumeration(index.intValue), enumerationValueType), {
           case _: NoSuchElementException =>
             DeserializationError.Malformed(s"Enumeration $enumerationName does not contain a value at index $index", reportedBy = self)
         })
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, enumerationValueType))
 
       case _ =>

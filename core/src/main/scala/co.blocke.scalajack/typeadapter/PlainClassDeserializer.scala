@@ -14,20 +14,20 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
   private val nullTypeTagged: TypeTagged[C] = TypeTagged(null.asInstanceOf[C], instanceType)
   private val membersByName: Map[String, Member] = members.map(member => member.name -> member).toMap
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[C] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
 
-      case JsonObject(x) =>
+      case AstObject(x) =>
         DeserializationResult.trapExceptions(path) {
           val fields = x.asInstanceOf[ops.ObjectFields]
 
           val deserializationResultsByMember = new mutable.HashMap[Member, DeserializationResult[Any]]
 
-          ops.foreachObjectField(fields, { (name, valueJson) =>
+          ops.foreachObjectField(fields, { (name, valueAst) =>
             for (member <- membersByName.get(name)) {
-              val deserializationResult = member.deserializer.deserialize(path \ name, valueJson)
+              val deserializationResult = member.deserializer.deserialize(path \ name, valueAst)
               deserializationResultsByMember += member -> deserializationResult
             }
           })
@@ -51,9 +51,9 @@ class PlainClassDeserializer[C](members: List[PlainFieldMember[C]], newInstance:
             if (isSJCapture) {
               val partitionedFields = ops.partitionObjectFields(fields, membersByName.keySet.toList)
               val captured = partitionedFields._2
-              import JsonOps._
-              implicit val aux: Aux[J, ops.ObjectFields] = ops.asInstanceOf[Aux[J, ops.ObjectFields]]
-              instance.asInstanceOf[SJCapture].captured = Some(JsonAndOps(captured))
+              import AstOps._
+              implicit val aux: Aux[AST, ops.ObjectFields, S] = ops.asInstanceOf[Aux[AST, ops.ObjectFields, S]]
+              instance.asInstanceOf[SJCapture].captured = Some(AstAndOps(captured))
             }
 
             DeserializationSuccess(TypeTagged(instance, instanceType))

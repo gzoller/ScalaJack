@@ -11,15 +11,15 @@ class InstantDeserializer extends Deserializer[Instant] {
 
   private val InstantType: Type = typeOf[Instant]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Instant] =
-    json match {
-      case JsonString(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Instant] =
+    ast match {
+      case AstString(x) =>
         DeserializationResult(path)(TypeTagged(Instant.parse(x), InstantType), {
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, InstantType))
 
       case _ =>

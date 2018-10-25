@@ -11,7 +11,7 @@ object SealedTraitSerializer {
 
     def isInstance(tagged: TypeTagged[T]): Boolean
 
-    def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J]
+    def serialize[AST, S](tagged: TypeTagged[T])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST]
 
   }
 
@@ -19,9 +19,9 @@ object SealedTraitSerializer {
 
 class SealedTraitSerializer[T](implementations: immutable.Set[Implementation[T]]) extends Serializer[T] {
 
-  override def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[T])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
+      case TypeTagged(null) => SerializationSuccess(AstNull())
       case TypeTagged(_) =>
         implementations.find(_.isInstance(tagged)) match {
           case Some(implementation) =>

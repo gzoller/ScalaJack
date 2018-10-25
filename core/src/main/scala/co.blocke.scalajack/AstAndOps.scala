@@ -1,19 +1,21 @@
 package co.blocke.scalajack
 
-trait JsonAndOps {
+trait AstAndOps {
   type FieldsValueType
-  type JsonType
+  type ASTType
+  type SrcType
   val capturedFields: FieldsValueType
-  implicit val jsonOps: JsonOps[JsonType]
+  implicit val astOps: AstOps[ASTType, SrcType]
 }
 
-object JsonAndOps {
-  def apply[J, OF](captured: OF)(implicit ops: JsonOps.Aux[J, OF]): JsonAndOps =
-    new JsonAndOps {
+object AstAndOps {
+  def apply[AST, OF, S](captured: OF)(implicit ops: AstOps.Aux[AST, OF, S]): AstAndOps =
+    new AstAndOps {
       override type FieldsValueType = OF
-      override type JsonType = J
+      override type ASTType = AST
+      override type SrcType = S
       override val capturedFields: FieldsValueType = captured
-      override implicit val jsonOps: JsonOps[J] = ops
+      override implicit val astOps: AstOps[ASTType, SrcType] = ops
     }
 
 }

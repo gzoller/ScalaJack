@@ -10,22 +10,22 @@ class PhoneDeserializer()(implicit tt: TypeTag[Phone]) extends Deserializer[Phon
 
   private val nullTypeTagged: TypeTagged[Phone] = TypeTagged[Phone](null.asInstanceOf[Phone], tt.tpe)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Phone] =
-    json match {
-      case JsonNull() => DeserializationSuccess(nullTypeTagged)
-      case JsonString(s) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Phone] =
+    ast match {
+      case AstNull() => DeserializationSuccess(nullTypeTagged)
+      case AstString(s) =>
         val fixed: Phone = s.replaceAll("-", "")
         DeserializationSuccess(TypeTagged(fixed, tt.tpe))
     }
 }
 
 class PhoneSerializer()(implicit tt: TypeTag[Phone]) extends Serializer[Phone] {
-  def serialize[J](tagged: TypeTagged[Phone])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  def serialize[AST, S](tagged: TypeTagged[Phone])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
+      case TypeTagged(null) => SerializationSuccess(AstNull())
       case TypeTagged(value) =>
         val fixed = "%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6))
-        SerializationSuccess(JsonString(fixed))
+        SerializationSuccess(AstString(fixed))
     }
 }
 

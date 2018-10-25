@@ -11,11 +11,11 @@ object JsonValueType extends Enumeration {
 }
 import JsonValueType._
 
-trait JsonOpsSpec[J] extends FunSpec {
+trait JsonOpsSpec[AST, S] extends FunSpec {
 
-  val ops: JsonOps[J]
+  val ops: AstOps[AST, S]
 
-  def sniffJsonValueTypes(jsonValue: J): Set[JsonValueType] = {
+  def sniffJsonValueTypes(jsonValue: AST): Set[JsonValueType] = {
     val builder = Set.newBuilder[JsonValueType]
     if (ops.unapplyArray(jsonValue).isDefined) builder += JsonValueType.JsonArrayType
     if (ops.unapplyBoolean(jsonValue).isDefined) builder += JsonValueType.JsonBooleanType
@@ -29,7 +29,7 @@ trait JsonOpsSpec[J] extends FunSpec {
     builder.result()
   }
 
-  def sniffJsonValueType(jsonValue: J): JsonValueType = {
+  def sniffJsonValueType(jsonValue: AST): JsonValueType = {
     val jsonValueTypes = sniffJsonValueTypes(jsonValue)
     if (jsonValueTypes.isEmpty) {
       throw new IllegalArgumentException(s"Cannot determine JSON value type of $jsonValue")
@@ -43,20 +43,20 @@ trait JsonOpsSpec[J] extends FunSpec {
   describe("--------------------\n:  JSON Ops Tests  :\n--------------------") {
     describe("JsonOps") {
       it("it should create a JSON array") {
-        val expectedElements: List[J] = (for (i <- 1 to 10) yield ops.applyString("element" + i)).toList
+        val expectedElements: List[AST] = (for (i <- 1 to 10) yield ops.applyString("element" + i)).toList
 
         val json = ops.applyArray { appendElement =>
           expectedElements.foreach(appendElement)
         }
         sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonArrayType))
 
-        val actualElementsBuilder = List.newBuilder[J]
+        val actualElementsBuilder = List.newBuilder[AST]
 
         ops.foreachArrayElement(ops.unapplyArray(json).get.asInstanceOf[ops.ArrayElements], { (index, element) =>
           actualElementsBuilder += element
         })
 
-        val actualElements: List[J] = actualElementsBuilder.result()
+        val actualElements: List[AST] = actualElementsBuilder.result()
         actualElements should be(expectedElements)
       }
 
@@ -135,7 +135,7 @@ trait JsonOpsSpec[J] extends FunSpec {
       }
 
       it("should create a JSON object") {
-        val expectedFields: List[(String, J)] = (for (i <- 1 to 10) yield ("key" + i, ops.applyString("value" + i))).toList
+        val expectedFields: List[(String, AST)] = (for (i <- 1 to 10) yield ("key" + i, ops.applyString("value" + i))).toList
 
         val json = ops.applyObject { appendField =>
           for ((fieldName, fieldValue) <- expectedFields) {
@@ -145,13 +145,13 @@ trait JsonOpsSpec[J] extends FunSpec {
 
         sniffJsonValueTypes(json) should be(Set(JsonValueType.JsonObjectType))
 
-        val actualFieldsBuilder = List.newBuilder[(String, J)]
+        val actualFieldsBuilder = List.newBuilder[(String, AST)]
 
         ops.foreachObjectField(ops.unapplyObject(json).get.asInstanceOf[ops.ObjectFields], { (fieldName, fieldValue) =>
           actualFieldsBuilder += fieldName -> fieldValue
         })
 
-        val actualFields: List[(String, J)] = actualFieldsBuilder.result()
+        val actualFields: List[(String, AST)] = actualFieldsBuilder.result()
 
         actualFields should be(expectedFields)
       }

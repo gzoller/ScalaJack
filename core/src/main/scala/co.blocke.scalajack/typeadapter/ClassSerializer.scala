@@ -15,15 +15,15 @@ class ClassSerializer[C](
   private val tpe: Type = tt.tpe
   private val TypeType: Type = typeOf[Type]
 
-  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[C])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(value) =>
         val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
 
-        val json = JsonObject[J] { appendField =>
+        val json = AstObject[AST, S] { appendField =>
           if (typeMembers.nonEmpty) {
             import scala.collection.mutable
 
@@ -61,8 +61,8 @@ class ClassSerializer[C](
               val ttt = typeMember.typeSignature.substituteTypes(substitutions.map(_._1), substitutions.map(_._2))
               val typeSerializationResult = typeSerializer.serialize(TypeTagged(ttt, TypeType))
               typeSerializationResult match {
-                case SerializationSuccess(typeJson) =>
-                  appendField(typeMember.name, typeJson)
+                case SerializationSuccess(typeAst) =>
+                  appendField(typeMember.name, typeAst)
                 case SerializationFailure(typeErrors) =>
                   errorsBuilder ++= typeErrors
               }
@@ -74,8 +74,8 @@ class ClassSerializer[C](
             for (member <- newTypeAdapter.fieldMembers) {
               val valueSerializationResult = member.serializeValue(member.valueIn(tagged))
               valueSerializationResult match {
-                case SerializationSuccess(valueJson) =>
-                  appendField(member.name, valueJson)
+                case SerializationSuccess(valueAst) =>
+                  appendField(member.name, valueAst)
                 case SerializationFailure(valueErrors) =>
                   errorsBuilder ++= valueErrors
               }
@@ -89,8 +89,8 @@ class ClassSerializer[C](
               val valueSerializationResult = member.serializeValue(taggedMemberValue)
 
               valueSerializationResult match {
-                case SerializationSuccess(memberValueJson) =>
-                  appendField(memberName, memberValueJson)
+                case SerializationSuccess(memberValueAst) =>
+                  appendField(memberName, memberValueAst)
                 case failure @ SerializationFailure(_) if failure.isNothing =>
                 // Nothing to do here
                 case SerializationFailure(valueErrors) =>
@@ -99,13 +99,11 @@ class ClassSerializer[C](
             }
           }
 
-          //def transform[A, B](source: A)(implicit sourceOps: JsonOps[A], targetOps: JsonOps[B]): B =
-
           value match {
             case sjc: SJCapture =>
               sjc.captured.map { cap =>
-                cap.jsonOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.jsonOps.ObjectFields], { (memberName, memberValue) =>
-                  appendField(memberName, JsonValue.transform[cap.JsonType, J](memberValue)(cap.jsonOps, ops))
+                cap.astOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.astOps.ObjectFields], { (memberName, memberValue) =>
+                  appendField(memberName, AstValue.transform[cap.ASTType, AST, cap.SrcType, S](memberValue)(cap.astOps, ops))
                 })
               }
             case _ =>

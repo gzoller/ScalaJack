@@ -11,15 +11,15 @@ class DurationDeserializer extends Deserializer[Duration] {
 
   private val DurationType: Type = typeOf[Duration]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Duration] =
-    json match {
-      case JsonString(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Duration] =
+    ast match {
+      case AstString(x) =>
         DeserializationResult(path)(TypeTagged(Duration.parse(x), DurationType), {
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, DurationType))
 
       case _ =>

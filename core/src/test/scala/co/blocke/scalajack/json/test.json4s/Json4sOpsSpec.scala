@@ -4,8 +4,8 @@ package test.json4s
 
 import org.json4s.JsonAST.JValue
 
-class Json4sOpsSpec extends JsonOpsSpec[JValue] {
+class Json4sOpsSpec extends JsonOpsSpec[JValue, String] {
 
-  override val ops: JsonOps[JValue] = Json4sOps
+  override val ops: AstOps[JValue, String] = Json4sOps
 
 }

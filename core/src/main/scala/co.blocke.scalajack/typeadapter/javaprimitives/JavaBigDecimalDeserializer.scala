@@ -6,8 +6,8 @@ class JavaBigDecimalDeserializer(scalaBigDecimalDeserializer: Deserializer[scala
 
   private val JavaBigDecimalType: Type = typeOf[java.math.BigDecimal]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.math.BigDecimal] =
-    scalaBigDecimalDeserializer.deserialize(path, json) map {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.math.BigDecimal] =
+    scalaBigDecimalDeserializer.deserialize(path, ast) map {
       case TypeTagged(null)            => TypeTagged(null, JavaBigDecimalType)
       case TypeTagged(scalaBigDecimal) => TypeTagged(scalaBigDecimal.bigDecimal, JavaBigDecimalType)
     }

@@ -67,13 +67,13 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
     override def defaultValue: Option[Value] =
       defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
 
-    override def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+    override def deserializeValueFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[T] =
       valueTypeAdapter.deserializer.deserializeFromNothing(path)
 
-    override def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
-      valueTypeAdapter.deserializer.deserialize(path, json)
+    override def deserializeValue[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] =
+      valueTypeAdapter.deserializer.deserialize(path, ast)
 
-    override def serializeValue[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+    override def serializeValue[AST, S](tagged: TypeTagged[T])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
       valueTypeAdapter.serializer.serialize(tagged)
 
     override def annotationOf[A](implicit tt: TypeTag[A]): Option[universe.Annotation] =

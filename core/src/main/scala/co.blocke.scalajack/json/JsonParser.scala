@@ -1,16 +1,17 @@
 package co.blocke.scalajack
+package json
 
-object JsonParser {
+object JsonParser extends Parser[String] {
 
   private val NumberOfDigitsInMaxLongValue: Int = Long.MaxValue.toString.length
 
-  def parse[J](source: String)(implicit ops: JsonOps[J]): Option[J] =
-    parse[J](source.toCharArray)
+  def parse[AST](source: String)(implicit ops: AstOps[AST, String]): Option[AST] =
+    parse[AST](source.toCharArray)
 
-  def parse[J](source: Array[Char])(implicit ops: JsonOps[J]): Option[J] =
-    parse[J](source, 0, source.length)
+  def parse[AST](source: Array[Char])(implicit ops: AstOps[AST, String]): Option[AST] =
+    parse[AST](source, 0, source.length)
 
-  def parse[J](source: Array[Char], offset: Int, length: Int)(implicit ops: JsonOps[J]): Option[J] = {
+  def parse[AST](source: Array[Char], offset: Int, length: Int)(implicit ops: AstOps[AST, String]): Option[AST] = {
     var position = offset
     val maxPosition = offset + length
 
@@ -149,14 +150,14 @@ object JsonParser {
       string
     }
 
-    def readField(): (String, J) = {
+    def readField(): (String, AST) = {
       val startPosition = position
       val key = readJsonValue()
       val endPosition = position
 
       val keyString =
         key match {
-          case JsonString(string) => string
+          case AstString(string) => string
           case _ =>
             // Non-standard JSON key
             new String(source, startPosition, endPosition - startPosition)
@@ -171,7 +172,7 @@ object JsonParser {
       (keyString, value)
     }
 
-    def readJsonArray(): J =
+    def readJsonArray(): AST =
       ops applyArray { appendElement =>
         skipChar(expected = '[')
         skipWhitespace()
@@ -205,7 +206,7 @@ object JsonParser {
         }
       }
 
-    def readJsonNumber(): J = {
+    def readJsonNumber(): AST = {
       val beginIndex = position
 
       var containsDecimal = false
@@ -266,7 +267,7 @@ object JsonParser {
       jsonNumber
     }
 
-    def readJsonObject(): J =
+    def readJsonObject(): AST =
       ops applyObject { appendField =>
         skipChar(expected = '{')
         skipWhitespace()
@@ -303,10 +304,10 @@ object JsonParser {
         }
       }
 
-    def readJsonString(): J =
+    def readJsonString(): AST =
       ops.applyString(readString())
 
-    def readJsonValue(): J = {
+    def readJsonValue(): AST = {
       source(position) match {
         case '{' =>
           readJsonObject()

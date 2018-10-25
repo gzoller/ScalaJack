@@ -1,10 +1,11 @@
 package co.blocke.scalajack
+package json
 
 import org.apache.commons.text.StringEscapeUtils.escapeJava
 
-object JsonRenderer {
+object JsonRenderer extends Renderer[String] {
 
-  def renderCompact[J](json: J, sj: ScalaJackLike[_, _])(implicit ops: JsonOps[J]): String = {
+  def renderCompact[AST](ast: AST, sj: ScalaJackLike[_, _])(implicit ops: AstOps[AST, String]): String = {
     val builder = new StringBuilder
 
     def appendString(string: String): Unit = {
@@ -39,9 +40,9 @@ object JsonRenderer {
       }
     }
 
-    def helper(json: J): Unit =
-      json match {
-        case JsonArray(x) =>
+    def helper(ast: AST): Unit =
+      ast match {
+        case AstArray(x) =>
           builder.append('[')
           ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, element) =>
             if (index > 0) {
@@ -51,25 +52,25 @@ object JsonRenderer {
           })
           builder.append(']')
 
-        case JsonBoolean(booleanValue) =>
+        case AstBoolean(booleanValue) =>
           builder.append(if (booleanValue) "true" else "false")
 
-        case JsonDecimal(bigDecimal) =>
+        case AstDecimal(bigDecimal) =>
           builder.append(bigDecimal.toString)
 
-        case JsonDouble(doubleValue) =>
+        case AstDouble(doubleValue) =>
           builder.append(doubleValue)
 
-        case JsonInt(bigInt) =>
+        case AstInt(bigInt) =>
           builder.append(bigInt.toString)
 
-        case JsonLong(longValue) =>
+        case AstLong(longValue) =>
           builder.append(longValue)
 
-        case JsonNull() =>
+        case AstNull() =>
           builder.append("null")
 
-        case JsonObject(x) =>
+        case AstObject(x) =>
           builder.append('{')
           var isFirst = true
           ops.foreachObjectField(x.asInstanceOf[ops.ObjectFields], { (name, value) =>
@@ -88,11 +89,11 @@ object JsonRenderer {
           })
           builder.append('}')
 
-        case JsonString(string) =>
+        case AstString(string) =>
           appendString(escapeJava(string))
       }
 
-    helper(json)
+    helper(ast)
 
     builder.result()
   }

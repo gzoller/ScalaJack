@@ -6,13 +6,13 @@ class BoxedFloatDeserializer(floatDeserializer: Deserializer[Float]) extends Des
 
   private val BoxedFloatType: Type = typeOf[java.lang.Float]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Float] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.lang.Float] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedFloatType))
 
       case _ =>
-        floatDeserializer.deserialize(path, json) map {
+        floatDeserializer.deserialize(path, ast) map {
           case TypeTaggedFloat(floatValue) => TypeTagged(java.lang.Float.valueOf(floatValue), BoxedFloatType)
           case TypeTagged(floatValue)      => TypeTagged(java.lang.Float.valueOf(floatValue), BoxedFloatType)
         }

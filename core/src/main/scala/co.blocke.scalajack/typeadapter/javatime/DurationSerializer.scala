@@ -6,10 +6,10 @@ import java.time.Duration
 
 class DurationSerializer extends Serializer[Duration] {
 
-  override def serialize[J](tagged: TypeTagged[Duration])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Duration])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.toString))
+      case TypeTagged(null) => SerializationSuccess(AstNull())
+      case TypeTagged(x)    => SerializationSuccess(AstString(x.toString))
     }
 
 }

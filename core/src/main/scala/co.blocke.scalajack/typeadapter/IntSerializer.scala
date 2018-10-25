@@ -3,10 +3,10 @@ package typeadapter
 
 class IntSerializer extends Serializer[Int] {
 
-  override def serialize[J](tagged: TypeTagged[Int])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Int])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTaggedInt(intValue) => SerializationSuccess(JsonLong(intValue))
-      case TypeTagged(intValue)    => SerializationSuccess(JsonLong(intValue))
+      case TypeTaggedInt(intValue) => SerializationSuccess(AstLong(intValue))
+      case TypeTagged(intValue)    => SerializationSuccess(AstLong(intValue))
     }
 
 }

@@ -3,10 +3,10 @@ package typeadapter
 
 class ByteSerializer extends Serializer[Byte] {
 
-  override def serialize[J](tagged: TypeTagged[Byte])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Byte])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTaggedByte(byteValue) => SerializationSuccess(JsonLong(byteValue.longValue))
-      case TypeTagged(byteValue)     => SerializationSuccess(JsonLong(byteValue.longValue))
+      case TypeTaggedByte(byteValue) => SerializationSuccess(AstLong(byteValue.longValue))
+      case TypeTagged(byteValue)     => SerializationSuccess(AstLong(byteValue.longValue))
     }
 
 }

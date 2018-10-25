@@ -32,22 +32,22 @@ object TupleDeserializerUsingCompilation {
         |    override lazy val tpe: sj.Type = sj.appliedType(tupleTypeConstructor, List(${(1 to size).map(i => s"taggedElement$i.tpe").mkString(", ")}))
         |  }
         |
-        |  override def deserialize[J](path: sj.Path, json: J)(implicit sj.JsonOps[J], guidance: SerializationGuidance): sj.DeserializationResult[(${(1 to size).map(i => s"T$i").mkString(", ")})] =
+        |  override def deserialize[AST,S](path: sj.Path, ast: AST)(implicit sj.AstOps[AST,S], guidance: SerializationGuidance): sj.DeserializationResult[(${(1 to size).map(i => s"T$i").mkString(", ")})] =
         |    json match {
-        |      case sj.JsonNull() => sj.DeserializationSuccess(sj.TypeTagged(null, tupleType))
-        |      case sj.JsonArray(x) =>
+        |      case sj.AstNull() => sj.DeserializationSuccess(sj.TypeTagged(null, tupleType))
+        |      case sj.AstArray(x) =>
         |${(1 to size).map(i => s"""        var deserializationResult$i: sj.DeserializationResult[T$i] = null""").mkString("\n")}
         |
         |        val errorsBuilder = scala.collection.immutable.Seq.newBuilder[(sj.Path, sj.DeserializationError)]
         |
-        |        ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, elementJson) =>
+        |        ops.foreachArrayElement(x.asInstanceOf[ops.ArrayElements], { (index, elementAst) =>
         |          index match {
-        |${(1 to size).map(i => s"""            case ${i - 1} => deserializationResult$i = deserializer$i.deserialize(path \\ index, elementJson); errorsBuilder ++= deserializationResult$i.errors""").mkString("\n")}
+        |${(1 to size).map(i => s"""            case ${i - 1} => deserializationResult$i = deserializer$i.deserialize(path \\ index, elementAst); errorsBuilder ++= deserializationResult$i.errors""").mkString("\n")}
         |            case _ => errorsBuilder += (path \\ index, sj.DeserializationError.Unexpected("A tuple of size $size must not have an element at index " + index))
         |          }
         |        })
         |
-        |${(1 to size).map(i => s"""        if (deserializationResult$i eq null) { deserializationResult$i = deserializer$i.deserializeFromNothing[J](path \\ ${i - 1}); errors ++= deserializationResult$i.errors }""").mkString("\n")}
+        |${(1 to size).map(i => s"""        if (deserializationResult$i eq null) { deserializationResult$i = deserializer$i.deserializeFromNothing[AST,S](path \\ ${i - 1}); errors ++= deserializationResult$i.errors }""").mkString("\n")}
         |
         |        val errors = errorsBuilder.result()
         |

@@ -3,10 +3,10 @@ package typeadapter
 
 class BigIntSerializer extends Serializer[BigInt] {
 
-  override def serialize[J](tagged: TypeTagged[BigInt])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[BigInt])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null)   => SerializationSuccess(JsonNull())
-      case TypeTagged(bigInt) => SerializationSuccess(JsonInt(bigInt))
+      case TypeTagged(null)   => SerializationSuccess(AstNull())
+      case TypeTagged(bigInt) => SerializationSuccess(AstInt(bigInt))
     }
 
 }

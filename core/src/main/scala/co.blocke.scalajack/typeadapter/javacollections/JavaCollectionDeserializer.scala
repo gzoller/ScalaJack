@@ -14,21 +14,21 @@ class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeseria
     override lazy val tpe: Type = appliedType(collectionTypeConstructor, taggedElements.map(_.tpe)) // FIXME `C` may not actually have a type parameter.
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[C] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
 
-      case JsonArray(x) =>
-        val elementsJson = x.asInstanceOf[ops.ArrayElements]
+      case AstArray(x) =>
+        val elementsAst = x.asInstanceOf[ops.ArrayElements]
 
         DeserializationResult(path) {
           val collection: C = newEmptyCollection()
 
           val taggedElementsBuilder = List.newBuilder[TypeTagged[E]]
 
-          ops.foreachArrayElement(elementsJson, { (index, elementJson) =>
-            val DeserializationSuccess(taggedElement) = elementDeserializer.deserialize(path \ index, elementJson)
+          ops.foreachArrayElement(elementsAst, { (index, elementAst) =>
+            val DeserializationSuccess(taggedElement) = elementDeserializer.deserialize(path \ index, elementAst)
             val TypeTagged(element) = taggedElement
             taggedElementsBuilder += taggedElement
             collection.add(element)
@@ -40,7 +40,7 @@ class JavaCollectionDeserializer[E, C <: java.util.Collection[E]](elementDeseria
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $json", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unsupported(s"Expected a JSON array, not $ast", reportedBy = self))
     }
 
 }

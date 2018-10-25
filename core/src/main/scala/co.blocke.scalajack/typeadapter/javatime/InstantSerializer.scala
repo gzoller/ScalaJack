@@ -6,10 +6,10 @@ import java.time.Instant
 
 class InstantSerializer extends Serializer[Instant] {
 
-  override def serialize[J](tagged: TypeTagged[Instant])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Instant])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(x)    => SerializationSuccess(JsonString(x.toString))
+      case TypeTagged(null) => SerializationSuccess(AstNull())
+      case TypeTagged(x)    => SerializationSuccess(AstString(x.toString))
     }
 
 }

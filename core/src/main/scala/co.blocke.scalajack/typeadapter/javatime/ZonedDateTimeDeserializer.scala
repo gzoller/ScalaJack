@@ -11,10 +11,10 @@ class ZonedDateTimeDeserializer(formatter: DateTimeFormatter) extends Deserializ
 
   private val ZonedDateTimeType: Type = typeOf[ZonedDateTime]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[ZonedDateTime] =
-    json match {
-      case JsonNull() => DeserializationSuccess(TypeTagged(null, ZonedDateTimeType))
-      case JsonString(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[ZonedDateTime] =
+    ast match {
+      case AstNull() => DeserializationSuccess(TypeTagged(null, ZonedDateTimeType))
+      case AstString(x) =>
         DeserializationResult(path)(TypeTagged(ZonedDateTime.parse(x, formatter), ZonedDateTimeType), {
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e, reportedBy = self)

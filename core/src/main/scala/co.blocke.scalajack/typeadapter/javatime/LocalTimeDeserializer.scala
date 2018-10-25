@@ -11,15 +11,15 @@ class LocalTimeDeserializer(formatter: DateTimeFormatter) extends Deserializer[L
 
   private val LocalTimeType: Type = typeOf[LocalTime]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[LocalTime] =
-    json match {
-      case JsonString(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[LocalTime] =
+    ast match {
+      case AstString(x) =>
         DeserializationResult(path)(TypeTagged(LocalTime.parse(x, formatter), LocalTimeType), {
           case e: DateTimeParseException =>
             DeserializationError.Malformed(e, reportedBy = self)
         })
 
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, LocalTimeType))
 
       case _ =>

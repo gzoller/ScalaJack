@@ -17,13 +17,13 @@ class EitherDeserializer[L, R](leftDeserializer: Deserializer[L], rightDeseriali
     override lazy val tpe: Type = appliedType(rightTypeConstructor, defaultLeftValueType, taggedRightValue.tpe)
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Either[L, R]] =
-    rightDeserializer.deserialize(path, json) match {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Either[L, R]] =
+    rightDeserializer.deserialize(path, ast) match {
       case DeserializationSuccess(taggedRightValue @ TypeTagged(rightValue)) =>
         DeserializationSuccess(new TaggedRight(Right(rightValue), taggedRightValue))
 
       case DeserializationFailure(rightErrors) =>
-        leftDeserializer.deserialize(path, json) match {
+        leftDeserializer.deserialize(path, ast) match {
           case DeserializationSuccess(taggedLeftValue @ TypeTagged(leftValue)) =>
             DeserializationSuccess(new TaggedLeft(Left(leftValue), taggedLeftValue))
 

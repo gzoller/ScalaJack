@@ -5,10 +5,10 @@ import java.util.UUID
 
 class UUIDSerializer extends Serializer[UUID] {
 
-  override def serialize[J](tagged: TypeTagged[UUID])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[UUID])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(uuid) => SerializationSuccess(JsonString(uuid.toString))
+      case TypeTagged(null) => SerializationSuccess(AstNull())
+      case TypeTagged(uuid) => SerializationSuccess(AstString(uuid.toString))
     }
 
 }

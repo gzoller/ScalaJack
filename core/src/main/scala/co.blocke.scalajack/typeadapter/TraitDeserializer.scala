@@ -19,20 +19,20 @@ class TraitDeserializer[T](
   def populateConcreteType(concreteType: Type): Type =
     populatedConcreteTypeCache.getOrElseUpdate(concreteType, Reflection.populateChildTypeArgs(polymorphicType, concreteType))
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
 
-      case JsonObject(x) =>
+      case AstObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]
 
         var maybeConcreteType: Option[Type] = None
 
-        ops.foreachObjectField(fields, { (fieldName, fieldValueJson) =>
+        ops.foreachObjectField(fields, { (fieldName, fieldValueAst) =>
           if (fieldName == typeFieldName) {
-            maybeConcreteType = f.map(_.apply(ops.unapplyString(fieldValueJson).get)).orElse {
-              val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ fieldName, fieldValueJson)
+            maybeConcreteType = f.map(_.apply(ops.unapplyString(fieldValueAst).get)).orElse {
+              val DeserializationSuccess(TypeTagged(concreteType)) = typeDeserializer.deserialize(path \ fieldName, fieldValueAst)
               Some(concreteType)
             }
           }
@@ -42,15 +42,15 @@ class TraitDeserializer[T](
           case Some(concreteType) =>
             val populatedConcreteType = populateConcreteType(concreteType)
             val concreteDeserializer = context.deserializer(populatedConcreteType)
-            concreteDeserializer.deserialize(path, json).asInstanceOf[DeserializationResult[T]]
+            concreteDeserializer.deserialize(path, ast).asInstanceOf[DeserializationResult[T]]
 
           case None =>
             throw new java.lang.IllegalStateException(s"""Could not find type field named "$typeFieldName"\n""" /* FIXME + reader.showError()*/ )
         }
 
-      case JsonString(s) if (guidance.isMapKey) =>
+      case AstString(s) if (guidance.isMapKey) =>
         val deserializer = context.typeAdapterOf[T].deserializer
-        deserializer.deserialize(Path.Root, JsonParser.parse(s).get)
+        deserializer.deserialize(Path.Root, ops.parse(s.asInstanceOf[S]))
 
       case _ =>
         DeserializationFailure(path, DeserializationError.Unexpected("Expected a JSON object", reportedBy = self))

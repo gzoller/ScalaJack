@@ -17,10 +17,10 @@ class DeserializerReference[T](initialDeserializer: Deserializer[T]) extends Des
 
   referencedDeserializer = initialDeserializer
 
-  override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
-    ref.get().deserializeFromNothing[J](path)
+  override def deserializeFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[T] =
+    ref.get().deserializeFromNothing[AST, S](path)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
-    ref.get().deserialize[J](path, json)
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] =
+    ref.get().deserialize[AST, S](path, ast)
 
 }

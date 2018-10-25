@@ -12,7 +12,7 @@ case class JsonFlavor(
     parseOrElseMap:    Map[Type, Type]          = Map.empty[Type, Type],
     defaultHint:       String                   = "_hint",
     isCanonical:       Boolean                  = true,
-    secondLookParsing: Boolean                  = false) extends ScalaJackLike[String, JValue] {
+    secondLookParsing: Boolean                  = false) extends ScalaJackLike[JValue, String] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -52,19 +52,13 @@ case class JsonFlavor(
     }
   }
 
-  def read[T](json: String)(implicit tt: TypeTag[T]): T =
-    readSafely[T](json) match {
-      case Right(x) => x
-      case Left(x)  => throw new DeserializationException(x)
-    }
-
   def parse(json: String): JValue =
     JsonParser.parse(json)(Json4sOps).getOrElse(JNull)
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
     val typeAdapter = context.typeAdapterOf[T]
     val serializer = typeAdapter.serializer
-    serializer.serialize[JValue](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance) match {
+    serializer.serialize[JValue, String](TypeTagged(value, valueTypeTag.tpe))(Json4sOps, guidance) match {
       case SerializationSuccess(json)                                      => Json4sOps.renderCompact(json, this)
       case SerializationFailure(f) if f == Seq(SerializationError.Nothing) => ""
     }

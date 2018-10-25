@@ -6,13 +6,13 @@ class BoxedBooleanDeserializer(booleanDeserializer: Deserializer[Boolean]) exten
 
   private val BoxedBooleanType: Type = typeOf[java.lang.Boolean]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Boolean] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.lang.Boolean] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedBooleanType))
 
       case _ =>
-        booleanDeserializer.deserialize(path, json) map {
+        booleanDeserializer.deserialize(path, ast) map {
           case TypeTaggedBoolean(booleanValue) => TypeTagged(java.lang.Boolean.valueOf(booleanValue), BoxedBooleanType)
           case TypeTagged(booleanValue)        => TypeTagged(java.lang.Boolean.valueOf(booleanValue), BoxedBooleanType)
         }

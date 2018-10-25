@@ -6,13 +6,13 @@ class BoxedDoubleDeserializer(doubleDeserializer: Deserializer[Double]) extends 
 
   private val BoxedDoubleType: Type = typeOf[java.lang.Double]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Double] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.lang.Double] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedDoubleType))
 
       case _ =>
-        doubleDeserializer.deserialize(path, json) map {
+        doubleDeserializer.deserialize(path, ast) map {
           case TypeTaggedDouble(doubleValue) => TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType)
           case TypeTagged(doubleValue)       => TypeTagged(java.lang.Double.valueOf(doubleValue), BoxedDoubleType)
         }

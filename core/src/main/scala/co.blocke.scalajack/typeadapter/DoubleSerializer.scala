@@ -3,10 +3,10 @@ package typeadapter
 
 class DoubleSerializer extends Serializer[Double] {
 
-  override def serialize[J](tagged: TypeTagged[Double])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Double])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTaggedDouble(doubleValue) => SerializationSuccess(JsonDouble(doubleValue))
-      case TypeTagged(doubleValue)       => SerializationSuccess(JsonDouble(doubleValue))
+      case TypeTaggedDouble(doubleValue) => SerializationSuccess(AstDouble(doubleValue))
+      case TypeTagged(doubleValue)       => SerializationSuccess(AstDouble(doubleValue))
     }
 
 }

@@ -6,13 +6,13 @@ class BoxedCharDeserializer(charDeserializer: Deserializer[Char]) extends Deseri
 
   private val BoxedCharType: Type = typeOf[java.lang.Character]
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[java.lang.Character] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[java.lang.Character] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(TypeTagged(null, BoxedCharType))
 
       case _ =>
-        charDeserializer.deserialize(path, json) map {
+        charDeserializer.deserialize(path, ast) map {
           case TypeTaggedChar(charValue) => TypeTagged(java.lang.Character.valueOf(charValue), BoxedCharType)
           case TypeTagged(charValue)     => TypeTagged(java.lang.Character.valueOf(charValue), BoxedCharType)
         }

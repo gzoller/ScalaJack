@@ -10,10 +10,10 @@ class FloatSerializer extends Serializer[Float] {
     f - diff
   }
 
-  override def serialize[J](tagged: TypeTagged[Float])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] = {
+  override def serialize[AST, S](tagged: TypeTagged[Float])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] = {
     tagged match {
-      case TypeTaggedFloat(floatValue) => SerializationSuccess(JsonDouble(capFloat(floatValue)))
-      case TypeTagged(floatValue)      => SerializationSuccess(JsonDouble(capFloat(floatValue)))
+      case TypeTaggedFloat(floatValue) => SerializationSuccess(AstDouble(capFloat(floatValue)))
+      case TypeTagged(floatValue)      => SerializationSuccess(AstDouble(capFloat(floatValue)))
     }
   }
 

@@ -11,19 +11,19 @@ class OptionDeserializer[T](next: Deserializer[T]) extends Deserializer[Option[T
     override lazy val tpe: Type = appliedType(SomeTypeConstructor, taggedValue.tpe)
   }
 
-  override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Option[T]] =
+  override def deserializeFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[Option[T]] =
     DeserializationSuccess(TaggedNone)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Option[T]] =
-    json match {
-      case JsonNull() if (guidance.isMapKey) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Option[T]] =
+    ast match {
+      case AstNull() if (guidance.isMapKey) =>
         DeserializationSuccess(TaggedNull)
-      case JsonNull() =>
+      case AstNull() =>
         DeserializationSuccess(TaggedNone)
-      case JsonString(s) if (s == "") =>
+      case AstString(s) if (s == "") =>
         DeserializationSuccess(TaggedNone)
       case _ =>
-        next.deserialize(path, json) map {
+        next.deserialize(path, ast) map {
           case tagged @ TypeTagged(value) =>
             Option(value) match {
               case None =>

@@ -1,8 +1,8 @@
 package co.blocke.scalajack
 package csv
 
-import scala.reflect.runtime.universe.{ Type, TypeTag }
-import java.lang.{ UnsupportedOperationException => UOE }
+import scala.reflect.runtime.universe.{Type, TypeTag}
+import java.lang.{UnsupportedOperationException => UOE}
 
 import typeadapter.DerivedValueClassAdapter
 
@@ -14,7 +14,7 @@ case class CSVFlavor() extends {
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
   val defaultHint: String = "_hint"
   val isCanonical: Boolean = true
-} with ScalaJackLike[String] {
+} with ScalaJackLike[String, ???] {
 
   def withAdapters(ta: TypeAdapterFactory*) = throw new UOE("Not available for CSV formatting")
   def withHints(h: (Type, String)*) = throw new UOE("Not available for CSV formatting")
@@ -29,7 +29,7 @@ case class CSVFlavor() extends {
     ctx.copy(factories = DerivedValueClassAdapter :: CSVCaseClassTypeAdapter :: ctx.factories)
   }
 
-  def read[T](csv: String)(implicit valueTypeTag: TypeTag[T]): T = {
+  def readSafely[T](csv: String)(implicit tt: TypeTag[T]): Either[DeserializationFailure, T] = {
     val tokenizer = new Tokenizer
 
     val source = csv.toCharArray
@@ -43,4 +43,8 @@ case class CSVFlavor() extends {
     context.typeAdapterOf[T].write(value, writer)
     writer.csvString
   }
+
+  def parse(csv: String): AST
+  def emit(ast: AST): String
+
 }

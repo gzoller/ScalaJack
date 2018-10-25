@@ -16,20 +16,20 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
     }
   }
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[C] =
-    json match {
-      case JsonNull() =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[C] =
+    ast match {
+      case AstNull() =>
         DeserializationSuccess(taggedNull)
 
-      case JsonArray(x) =>
+      case AstArray(x) =>
         val arrayElements = x.asInstanceOf[ops.ArrayElements]
 
         val elementsBuilder = newBuilder()
         val taggedElementsBuilder = List.newBuilder[TypeTagged[E]]
         val errorSequencesBuilder = Seq.newBuilder[Seq[(Path, DeserializationError)]]
 
-        ops.foreachArrayElement(arrayElements, { (index, elementJson) =>
-          elementDeserializer.deserialize(path \ index, elementJson) match {
+        ops.foreachArrayElement(arrayElements, { (index, elementAst) =>
+          elementDeserializer.deserialize(path \ index, elementAst) match {
             case DeserializationSuccess(taggedElement @ TypeTagged(element)) =>
               elementsBuilder += element
               taggedElementsBuilder += taggedElement
@@ -48,7 +48,7 @@ class CollectionDeserializer[E, C <: GenTraversableOnce[E]](elementDeserializer:
         }
 
       case _ =>
-        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON array, not $json", reportedBy = self))
+        DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON array, not $ast", reportedBy = self))
     }
 
 }

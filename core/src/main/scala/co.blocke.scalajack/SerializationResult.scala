@@ -23,8 +23,8 @@ case class SerializationSuccess[+J](get: J) extends SerializationResult[J] {
 
 object SerializationFailure {
 
-  def apply[J](errors: SerializationError*)(implicit ops: JsonOps[J]): SerializationFailure[J] =
-    new SerializationFailure[J](errors.to[immutable.Seq])
+  def apply[AST, S](errors: SerializationError*)(implicit ops: AstOps[AST, S]): SerializationFailure[AST] =
+    new SerializationFailure[AST](errors.to[immutable.Seq])
 
 }
 

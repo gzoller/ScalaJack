@@ -2,6 +2,6 @@ package co.blocke.scalajack
 
 trait Serializer[T] {
 
-  def serialize[J](tagged: TypeTagged[T])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J]
+  def serialize[AST, S](tagged: TypeTagged[T])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST]
 
 }

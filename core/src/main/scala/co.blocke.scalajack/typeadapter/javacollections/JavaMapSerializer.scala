@@ -6,10 +6,10 @@ class JavaMapSerializer[K, V, M <: java.util.Map[K, V]](keySerializer: Serialize
 
   private val mapSymbol: Symbol = symbolOf[java.util.Map[_, _]]
 
-  override def serialize[J](tagged: TypeTagged[M])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[M])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(map) =>
         lazy val baseType: Type = tagged.tpe.baseType(mapSymbol)
@@ -32,13 +32,13 @@ class JavaMapSerializer[K, V, M <: java.util.Map[K, V]](keySerializer: Serialize
           override def tpe: Type = valueType
         }
 
-        SerializationSuccess(JsonObject { appendField =>
+        SerializationSuccess(AstObject { appendField =>
           val iterator = map.entrySet().iterator()
           while (iterator.hasNext) {
             val mapEntry = iterator.next()
-            val SerializationSuccess(JsonString(keyString)) = keySerializer.serialize(new TaggedKey(mapEntry.getKey))
-            val SerializationSuccess(valueJson) = valueSerializer.serialize(new TaggedValue(mapEntry.getValue))
-            appendField(keyString, valueJson)
+            val SerializationSuccess(AstString(keyString)) = keySerializer.serialize(new TaggedKey(mapEntry.getKey))
+            val SerializationSuccess(valueAst) = valueSerializer.serialize(new TaggedValue(mapEntry.getValue))
+            appendField(keyString, valueAst)
           }
         })
     }

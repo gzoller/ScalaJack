@@ -9,10 +9,10 @@ object TypeSerializer {
 
 class TypeSerializer(typeToTypeName: Type => String = TypeSerializer.typeToTypeName) extends Serializer[Type] {
 
-  override def serialize[J](tagged: TypeTagged[Type])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Type])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(JsonNull())
-      case TypeTagged(tpe)  => SerializationSuccess(JsonString(typeToTypeName(tpe)))
+      case TypeTagged(null) => SerializationSuccess(AstNull())
+      case TypeTagged(tpe)  => SerializationSuccess(AstString(typeToTypeName(tpe)))
     }
 
 }

@@ -8,23 +8,23 @@ class JavaMapDeserializer[K, V, M <: java.util.Map[K, V]](keyDeserializer: Deser
 
   private val taggedNull: TypeTagged[M] = TypeTagged(null.asInstanceOf[M], tt.tpe)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[M] =
-    json match {
-      case JsonObject(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[M] =
+    ast match {
+      case AstObject(x) =>
 
         val objectFields = x.asInstanceOf[ops.ObjectFields]
 
         val map: M = newEmptyMap()
 
         ops.foreachObjectField(objectFields, { (fieldName, fieldValue) =>
-          val DeserializationSuccess(TypeTagged(key)) = keyDeserializer.deserialize(path \ fieldName, JsonString(fieldName))
+          val DeserializationSuccess(TypeTagged(key)) = keyDeserializer.deserialize(path \ fieldName, AstString(fieldName))
           val DeserializationSuccess(TypeTagged(value)) = valueDeserializer.deserialize(path \ fieldName, fieldValue)
           map.put(key, value)
         })
 
         DeserializationSuccess(TypeTagged(map, tt.tpe))
 
-      case JsonNull() => DeserializationSuccess(taggedNull)
+      case AstNull() => DeserializationSuccess(taggedNull)
 
       case x =>
         println("X: " + x)

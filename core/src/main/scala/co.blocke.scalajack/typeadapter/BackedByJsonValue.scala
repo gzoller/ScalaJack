@@ -1,15 +1,17 @@
 package co.blocke.scalajack
 package typeadapter
 
-trait BackedByJsonValue {
+trait BackedByAstValue {
 
-  type BackingJsonValue
+  type BackingAstValue
+  type SrcType
 
-  def backingJsonValue: BackingJsonValue
+  def backingAstValue: BackingAstValue
 
-  def backingJsonValueAs[J: JsonOps]: J =
-    JsonValue.transform[BackingJsonValue, J](backingJsonValue)
+  //  def backingAstValueAs[A: AstOps]: A =
+  def backingAstValueAs[AST, S]()(implicit ops: AstOps[AST, S]): AST =
+    AstValue.transform[BackingAstValue, AST, SrcType, S](backingAstValue)
 
-  implicit def backingJsonOps: JsonOps[BackingJsonValue]
+  implicit def backingAstOps: AstOps[BackingAstValue, SrcType]
 
 }

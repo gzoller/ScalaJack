@@ -7,13 +7,13 @@ class DoubleDeserializer extends Deserializer[Double] {
 
   import NumberConverters._
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Double] =
-    json match {
-      case JsonDecimal(x)                       => DeserializationResult(path)(TypeTagged(x.toDoubleExact))
-      case JsonDouble(doubleValue)              => DeserializationSuccess(TypeTagged(doubleValue))
-      case JsonString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s))(ops, guidance = guidance.copy(isMapKey = false))
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Double] =
+    ast match {
+      case AstDecimal(x)                       => DeserializationResult(path)(TypeTagged(x.toDoubleExact))
+      case AstDouble(doubleValue)              => DeserializationSuccess(TypeTagged(doubleValue))
+      case AstString(s) if (guidance.isMapKey) => this.deserialize(path, ops.parse(s.asInstanceOf[S]))(ops, guidance = guidance.copy(isMapKey = false))
       // TODO handle other JSON types
-      case _                                    => DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON number, not $json", reportedBy = self))
+      case _                                   => DeserializationFailure(path, DeserializationError.Unexpected(s"Expected a JSON number, not $ast", reportedBy = self))
     }
 
 }

@@ -4,9 +4,9 @@ package javaprimitives
 
 class BoxedDoubleSerializer(doubleSerializer: Serializer[Double]) extends Serializer[java.lang.Double] {
 
-  override def serialize[J](tagged: TypeTagged[java.lang.Double])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[java.lang.Double])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(null)  => SerializationSuccess(AstNull())
       case TypeTagged(boxed) => doubleSerializer.serialize(TypeTagged(boxed.doubleValue))
     }
 

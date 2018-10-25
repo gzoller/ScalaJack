@@ -2,17 +2,17 @@ package co.blocke.scalajack
 
 class TermDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends Deserializer[T] {
 
-  override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+  override def deserializeFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[T] =
     next.deserializeFromNothing(path)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
-    next.deserialize(path, json) match {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] =
+    next.deserialize(path, ast) match {
       case success @ DeserializationSuccess(_) =>
         success
 
       case failure @ DeserializationFailure(_) if failure.isUnsupported(path) =>
-        json match {
-          case JsonString(termName) =>
+        ast match {
+          case AstString(termName) =>
             if (tt.tpe.typeSymbol.isClass) {
               val classSymbol: ClassSymbol = tt.tpe.typeSymbol.asClass
 

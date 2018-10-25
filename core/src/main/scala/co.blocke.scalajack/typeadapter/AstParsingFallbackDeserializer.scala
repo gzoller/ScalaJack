@@ -9,25 +9,25 @@ import scala.util.{ Failure, Success, Try }
  * @param next
  * @tparam T
  */
-class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends Deserializer[T] {
+class AstParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends Deserializer[T] {
 
   private val isNullSupported: Boolean = typeOf[Null] <:< tt.tpe
   private val taggedNull = TypeTagged(null.asInstanceOf[T], tt.tpe)
 
-  override def deserializeFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[T] =
+  override def deserializeFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[T] =
     next.deserializeFromNothing(path) // TODO any fall-backs here?
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] = {
-    next.deserialize(path, json) match {
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] = {
+    next.deserialize(path, ast) match {
       case deserializationSuccess @ DeserializationSuccess(_) =>
         deserializationSuccess
 
       case deserializationFailure @ DeserializationFailure(errors) if deserializationFailure.isUnexpected(path) =>
-        json match {
-          case JsonString(string) if (guidance.isMapKey || guidance.secondLookParsing) =>
-            Try(JsonParser.parse(string)) match {
-              case Success(Some(fallbackJson)) =>
-                next.deserialize(path, fallbackJson) match {
+        ast match {
+          case AstString(string) if (guidance.isMapKey || guidance.secondLookParsing) =>
+            Try(ops.parse(string.asInstanceOf[S])) match {
+              case Success(fallbackAst) =>
+                next.deserialize(path, fallbackAst) match {
                   case deserializationSuccess @ DeserializationSuccess(_) =>
                     deserializationSuccess
 
@@ -35,18 +35,6 @@ class JsonParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: Typ
                     DeserializationFailure(errors)
                   // Note: We don't accumulate errors here because the initial error is considered ok
                   // for map keys or second look parsing.
-                }
-
-              case Success(None) =>
-                next.deserializeFromNothing(path) match {
-                  case deserializationSuccess @ DeserializationSuccess(_) =>
-                    deserializationSuccess
-
-                  case fallbackDeserializationError @ DeserializationFailure(_) if isNullSupported && fallbackDeserializationError.isUnsupported(path) =>
-                    DeserializationSuccess(taggedNull)
-
-                  case DeserializationFailure(fallbackErrors) =>
-                    DeserializationFailure(errors ++ fallbackErrors)
                 }
 
               case Failure(_) =>

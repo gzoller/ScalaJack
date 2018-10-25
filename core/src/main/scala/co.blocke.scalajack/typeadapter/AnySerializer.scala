@@ -14,11 +14,11 @@ class AnySerializer(
   private val StringType: Type = typeOf[String]
   private val TypeType: Type = typeOf[Type]
 
-  override def serialize[J](tagged: TypeTagged[Any])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[Any])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     // TODO come up with a better way to obtain the value's type
     tagged match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(_: String) =>
         stringSerializer.serialize(tagged.asInstanceOf[TypeTagged[String]])
@@ -40,13 +40,13 @@ class AnySerializer(
         val valueSerializer = context.serializer(valueType).asInstanceOf[Serializer[Any]]
 
         valueSerializer.serialize(tagged) map {
-          case JsonObject(x) =>
+          case AstObject(x) =>
             val fields = x.asInstanceOf[ops.ObjectFields]
 
-            val SerializationSuccess(typeJson) = typeSerializer.serialize(TypeTagged(valueType, TypeType))
+            val SerializationSuccess(typeAst) = typeSerializer.serialize(TypeTagged(valueType, TypeType))
 
-            JsonObject { appendField =>
-              appendField("_hint", typeJson)
+            AstObject { appendField =>
+              appendField("_hint", typeAst)
               ops.foreachObjectField(fields, { (name, value) =>
                 appendField(name, value)
               })

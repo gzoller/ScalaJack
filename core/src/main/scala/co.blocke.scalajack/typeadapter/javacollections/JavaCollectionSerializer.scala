@@ -4,10 +4,10 @@ package javacollections
 
 class JavaCollectionSerializer[E, G <: java.util.Collection[E]](elementSerializer: Serializer[E]) extends Serializer[G] {
 
-  override def serialize[J](taggedCollection: TypeTagged[G])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](taggedCollection: TypeTagged[G])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     taggedCollection match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(collection) =>
         lazy val elementType: Type = {
@@ -19,12 +19,12 @@ class JavaCollectionSerializer[E, G <: java.util.Collection[E]](elementSerialize
           override def tpe: Type = elementType
         }
 
-        SerializationSuccess(JsonArray { appendElement =>
+        SerializationSuccess(AstArray { appendElement =>
           val i = collection.iterator()
           while (i.hasNext) {
             val element = i.next()
-            val SerializationSuccess(elementJson) = elementSerializer.serialize(new TaggedElement(element))
-            appendElement(elementJson)
+            val SerializationSuccess(elementAst) = elementSerializer.serialize(new TaggedElement(element))
+            appendElement(elementAst)
           }
         })
     }

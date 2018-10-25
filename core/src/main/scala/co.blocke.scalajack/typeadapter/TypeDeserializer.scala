@@ -18,10 +18,10 @@ class TypeDeserializer(typeNameToType: String => Type = TypeDeserializer.typeNam
   private val TypeType: Type = typeOf[Type]
   private val nullTypeTagged = TypeTagged(null, TypeType)
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Type] =
-    json match {
-      case JsonNull()           => DeserializationSuccess(nullTypeTagged)
-      case JsonString(typeName) => DeserializationSuccess(TypeTagged(typeNameToType(typeName), TypeType))
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Type] =
+    ast match {
+      case AstNull()           => DeserializationSuccess(nullTypeTagged)
+      case AstString(typeName) => DeserializationSuccess(TypeTagged(typeNameToType(typeName), TypeType))
     }
 
 }

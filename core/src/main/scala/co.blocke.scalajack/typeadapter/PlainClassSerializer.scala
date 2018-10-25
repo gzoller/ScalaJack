@@ -5,27 +5,27 @@ import co.blocke.scalajack.typeadapter.PlainClassTypeAdapter.PlainFieldMember
 
 class PlainClassSerializer[C](members: List[PlainFieldMember[C]], isSJCapture: Boolean) extends Serializer[C] {
 
-  override def serialize[J](tagged: TypeTagged[C])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[C])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
       case TypeTagged(null) =>
-        SerializationSuccess(JsonNull())
+        SerializationSuccess(AstNull())
 
       case TypeTagged(obj) =>
-        SerializationSuccess(JsonObject { appendField =>
+        SerializationSuccess(AstObject { appendField =>
           for (member <- members) {
             val memberName = member.name
             val memberValue = member.valueIn(tagged)
 
             member.serializeValue(memberValue) match {
-              case SerializationSuccess(memberValueJson)                           => appendField(memberName, memberValueJson)
+              case SerializationSuccess(memberValueAst)                            => appendField(memberName, memberValueAst)
               case SerializationFailure(f) if f == Seq(SerializationError.Nothing) => // do nothing--ignore optional fields of value None
             }
 
             if (isSJCapture) {
               val sjc = obj.asInstanceOf[SJCapture]
               sjc.captured.map { cap =>
-                cap.jsonOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.jsonOps.ObjectFields], { (memberName, memberValue) =>
-                  appendField(memberName, JsonValue.transform[cap.JsonType, J](memberValue)(cap.jsonOps, ops))
+                cap.astOps.foreachObjectField(cap.capturedFields.asInstanceOf[cap.astOps.ObjectFields], { (memberName, memberValue) =>
+                  appendField(memberName, AstValue.transform[cap.ASTType, AST, cap.SrcType, S](memberValue)(cap.astOps, ops))
                 })
               }
             }

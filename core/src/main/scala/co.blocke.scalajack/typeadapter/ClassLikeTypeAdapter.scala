@@ -25,11 +25,11 @@ object ClassLikeTypeAdapter {
 
     def valueIn(owner: TypeTagged[Owner]): TypeTagged[Value]
 
-    def deserializeValueFromNothing[J](path: Path)(implicit ops: JsonOps[J]): DeserializationResult[Value]
+    def deserializeValueFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[Value]
 
-    def deserializeValue[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[Value]
+    def deserializeValue[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Value]
 
-    def serializeValue[J](tagged: TypeTagged[Value])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J]
+    def serializeValue[AST, S](tagged: TypeTagged[Value])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST]
 
     def annotationOf[A](implicit tt: TypeTag[A]): Option[Annotation]
 

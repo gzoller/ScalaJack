@@ -21,9 +21,9 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
 
   self =>
 
-  override def deserialize[J](path: Path, json: J)(implicit ops: JsonOps[J], guidance: SerializationGuidance): DeserializationResult[T] =
-    json match {
-      case JsonObject(x) =>
+  override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[T] =
+    ast match {
+      case AstObject(x) =>
         val fields = x.asInstanceOf[ops.ObjectFields]
 
         val allFieldNamesBuilder = immutable.Set.newBuilder[String]
@@ -40,7 +40,7 @@ class SealedTraitDeserializer[T](implementations: immutable.Set[Implementation[T
 
           case setOfOne if setOfOne.size == 1 =>
             val implementation = setOfOne.head
-            implementation.deserializer.deserialize(path, json)
+            implementation.deserializer.deserialize(path, ast)
 
           case _ =>
             throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames")

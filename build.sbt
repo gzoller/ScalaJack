@@ -48,7 +48,6 @@ lazy val basicSettings = Seq(
   crossScalaVersions          := Seq("2.11.12", "2.12.6"),
   publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
   scalaVersion                := "2.12.3",
-//  resolvers                   ++= resolutionRepos,
   coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum       := true,
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
@@ -56,7 +55,6 @@ lazy val basicSettings = Seq(
     .setPreference(AlignParameters, true)
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(DoubleIndentConstructorArguments, true),
-  // .setPreference(PreserveDanglingCloseParenthesis, true),
   scalacOptions := scalacOptionsVersion(scalaVersion.value),
   testOptions in Test += Tests.Argument("-oDF")
 )

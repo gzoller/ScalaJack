@@ -4,9 +4,9 @@ package javaprimitives
 
 class BoxedByteSerializer(byteSerializer: Serializer[Byte]) extends Serializer[java.lang.Byte] {
 
-  override def serialize[J](tagged: TypeTagged[java.lang.Byte])(implicit ops: JsonOps[J], guidance: SerializationGuidance): SerializationResult[J] =
+  override def serialize[AST, S](tagged: TypeTagged[java.lang.Byte])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null)  => SerializationSuccess(JsonNull())
+      case TypeTagged(null)  => SerializationSuccess(AstNull())
       case TypeTagged(boxed) => byteSerializer.serialize(TypeTagged(boxed.byteValue))
     }
 
