@@ -11,9 +11,6 @@ import scala.util.{ Failure, Success, Try }
  */
 class AstParsingFallbackDeserializer[T](next: Deserializer[T])(implicit tt: TypeTag[T]) extends Deserializer[T] {
 
-  private val isNullSupported: Boolean = typeOf[Null] <:< tt.tpe
-  private val taggedNull = TypeTagged(null.asInstanceOf[T], tt.tpe)
-
   override def deserializeFromNothing[AST, S](path: Path)(implicit ops: AstOps[AST, S]): DeserializationResult[T] =
     next.deserializeFromNothing(path) // TODO any fall-backs here?
 
