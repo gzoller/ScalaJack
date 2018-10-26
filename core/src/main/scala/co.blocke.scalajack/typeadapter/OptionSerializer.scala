@@ -9,7 +9,7 @@ class OptionSerializer[T](next: Serializer[T]) extends Serializer[Option[T]] {
     override lazy val tpe: Type = taggedOption.tpe.baseType(OptionTypeSymbol).typeArgs.head
   }
 
-  override def serialize[AST, S](tagged: TypeTagged[Option[T]])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
+  override def serialize[AST, S](tagged: TypeTagged[Option[T]])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] = {
     tagged match {
       case TypeTagged(null) => SerializationSuccess(AstNull())
       case TypeTagged(None) if (guidance.isMapKey) => SerializationSuccess(AstString(""))
@@ -17,4 +17,5 @@ class OptionSerializer[T](next: Serializer[T]) extends Serializer[Option[T]] {
       case TypeTagged(None) => SerializationFailure(SerializationError.Nothing)
       case TypeTagged(Some(value)) => next.serialize(new TaggedSomeValue(value, tagged))
     }
+  }
 }

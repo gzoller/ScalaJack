@@ -31,6 +31,18 @@ trait AstOps[AST, S] {
 
   def foreachObjectField(fields: ObjectFields, f: (String, AST) => Unit): Unit
 
+  def mapArrayElements[A](fields: ArrayElements, f: (Int, AST) => A): List[A] = {
+    val res = scala.collection.mutable.ListBuffer.empty[A]
+    foreachArrayElement(fields, { (index, element) => res.append(f(index, element)) })
+    res.toList
+  }
+
+  def mapObjectFields[A](fields: ObjectFields, f: (String, AST) => A): List[A] = {
+    val res = scala.collection.mutable.ListBuffer.empty[A]
+    foreachObjectField(fields, { (fieldname, element) => res.append(f(fieldname, element)) })
+    res.toList
+  }
+
   def getObjectField(fields: ObjectFields, name: String): Option[AST]
 
   // (for SJCapture) Partition out fields we care about (those in the class) from those we just want to capture and hold "raw"
@@ -50,6 +62,11 @@ trait AstOps[AST, S] {
    * @return
    */
   def applyArray(appendAllElements: (AST => Unit) => Unit): AST
+
+  def applyArray(elements: List[AST]): AST =
+    applyArray { appendElement =>
+      elements.foreach(appendElement)
+    }
 
   def unapplyArray(json: AST): Option[ArrayElements]
 

@@ -25,7 +25,7 @@ class CSVTests() extends FunSpec with Matchers {
         val inst = HasAny(true, "hey, you", 34.56)
         val csv = sj.render(inst)
         assertResult("""true,"hey, you",34.56""") { csv }
-        assertResult((classOf[java.lang.Boolean], classOf[String], classOf[java.lang.Float])) {
+        assertResult((classOf[java.lang.Boolean], classOf[String], classOf[java.lang.Double])) {
           val c = sj.read[HasAny](csv)
           (c.a1.getClass, c.a2.getClass, c.a3.getClass)
         }
@@ -40,18 +40,16 @@ class CSVTests() extends FunSpec with Matchers {
       }
       it("Fails when CSV field count doesn't match case class member count") {
         val csv = """123.45,123,true,64,Z,12.34,Large,12.34,5,5,54cab778-7b9e-4b07-9d37-87b97a011e55"""
-        val msg = """Expected value token of type String, not EndObject when reading UUID value.
-          |rge,12.34,5,5,54cab778-7b9e-4b07-9d37-87b97a011e55
-          |--------------------------------------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy
+        val msg = """DeserializationException(1 error):
+                    |  [$.u] Required field missing (reported by: co.blocke.scalajack.typeadapter.UUIDDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy
           sj.read[BasicScala](csv) should have message msg
       }
       it("Fails when types of CSV field don't match ordered case class constructor arguments") {
-        val csv = """123.45,"123",true,64,Z,12.34,Large,12.34,5,5,wow,54cab778-7b9e-4b07-9d37-87b97a011e55"""
-        val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
-          |123.45,"123",true,64,Z,12.34,Large,12.34,5,5,wow,54cab778-
-          |--------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy
+        val csv = """123.45,"m123",true,64,Z,12.34,Large,12.34,5,5,wow,54cab778-7b9e-4b07-9d37-87b97a011e55"""
+        val msg = """DeserializationException(1 error):
+                    |  [$.bi] Expected a JSON number (integer value) (reported by: co.blocke.scalajack.typeadapter.BigIntDeserializer)""".stripMargin
+        the[DeserializationException] thrownBy
           sj.read[BasicScala](csv) should have message msg
       }
     }
@@ -85,8 +83,8 @@ class CSVTests() extends FunSpec with Matchers {
       it("Renders Some() - empty string") {
         val inst = Maybe("yes", Some(""), true)
         val csv = sj.render(inst)
-        assertResult("""yes,"",true""") { csv }
-        assertResult(inst) {
+        assertResult("""yes,,true""") { csv }
+        assertResult(Maybe("yes", None, true)) {
           sj.read[Maybe](csv)
         }
       }
@@ -141,16 +139,16 @@ class CSVTests() extends FunSpec with Matchers {
       it("Renders null (empty field) - nullable 2") {
         val inst = Strings("", null, "three")
         val csv = sj.render(inst)
-        assertResult("\"\",,three") { csv }
-        assertResult(inst) { // null converts to empty String
+        assertResult(",,three") { csv }
+        assertResult(Strings(null, null, "three")) { // null converts to empty String
           sj.read[Strings](csv)
         }
       }
       it("Renders null (empty field) - nullable 3") {
         val inst = Strings("", "two", null)
         val csv = sj.render(inst)
-        assertResult("\"\",two,") { csv }
-        assertResult(inst) { // null converts to empty String
+        assertResult(",two,") { csv }
+        assertResult(Strings(null, "two", null)) { // null converts to empty String
           sj.read[Strings](csv)
         }
       }
@@ -158,13 +156,17 @@ class CSVTests() extends FunSpec with Matchers {
     describe("Collections/nested (failures):") {
       it("Fails when given an object having a nested object (not flat)") {
         val inst = Nested("K-9", Thing("Robot dog", 1))
-        the[java.lang.UnsupportedOperationException] thrownBy
-          sj.render(inst) should have message "Writing a nested object is not supported in CSV format"
+        val msg = """SerializationException(1 error):
+                    |  ExceptionThrown(java.lang.UnsupportedOperationException: CSV serialization of a field of type JObject is unsupported.)""".stripMargin
+        the[SerializationException] thrownBy
+          sj.render(inst) should have message msg
       }
       it("Fails when given an object having a nested array (not flat)") {
         val inst = Nested2("K-9", List(Thing("Robot dog", 1)))
-        the[java.lang.UnsupportedOperationException] thrownBy
-          sj.render(inst) should have message "Writing a nested array is not supported in CSV format"
+        val msg = """SerializationException(1 error):
+                    |  ExceptionThrown(java.lang.UnsupportedOperationException: CSV serialization of a field of type JArray is unsupported.)""".stripMargin
+        the[SerializationException] thrownBy
+          sj.render(inst) should have message msg
       }
     }
     describe("ScalaJack creation 'with' modifiers (failure):") {
@@ -195,14 +197,6 @@ class CSVTests() extends FunSpec with Matchers {
       it("No isCanonical") {
         the[java.lang.UnsupportedOperationException] thrownBy
           ScalaJack(CSVFlavor()).isCanonical(false) should have message "Not available for CSV formatting"
-      }
-    }
-    describe("Parsing") {
-      it("Tokenizer can grow capacity") {
-        val t = new Tokenizer()
-        val input = "foo,bar,blather,stuff,more,and,more"
-        val csv = t.tokenize(input.toCharArray, 0, input.length, 4)
-        csv.numberOfTokens should equal(10)
       }
     }
   }

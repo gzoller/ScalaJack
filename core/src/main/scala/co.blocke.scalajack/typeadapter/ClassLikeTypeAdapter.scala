@@ -6,9 +6,7 @@ import scala.reflect.runtime.universe.Annotation
 object ClassLikeTypeAdapter {
 
   sealed trait Member[Owner] {
-
     def name: MemberName
-
   }
 
   trait TypeMember[Owner] extends Member[Owner]

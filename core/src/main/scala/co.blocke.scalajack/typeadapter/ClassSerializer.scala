@@ -23,7 +23,7 @@ class ClassSerializer[C](
       case TypeTagged(value) =>
         val errorsBuilder = immutable.Seq.newBuilder[SerializationError]
 
-        val json = AstObject[AST, S] { appendField =>
+        val ast = AstObject[AST, S] { appendField =>
           if (typeMembers.nonEmpty) {
             import scala.collection.mutable
 
@@ -115,7 +115,7 @@ class ClassSerializer[C](
         if (errors.nonEmpty) {
           SerializationFailure(errors)
         } else {
-          SerializationSuccess(json)
+          SerializationSuccess(ast)
         }
     }
 

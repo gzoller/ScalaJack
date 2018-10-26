@@ -1,15 +1,13 @@
 package co.blocke.scalajack
+package json
 
 import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JDouble, JInt, JLong, JNothing, JNull, JObject, JString, JValue }
 
-object Json4sOps extends AstOps[JValue, String] {
+trait Json4sOpsBase extends AstOps[JValue, String] {
 
   override type ArrayElements = List[JValue]
 
   override type ObjectFields = List[(String, JValue)]
-
-  val parser: Parser[String] = json.JsonParser
-  val renderer: Renderer[String] = json.JsonRenderer
 
   override def foreachArrayElement(elements: List[JValue], f: (Int, JValue) => Unit): Unit = {
     for ((element, index) <- elements.zipWithIndex if element != JNothing) {
@@ -126,4 +124,11 @@ object Json4sOps extends AstOps[JValue, String] {
 
   override def isObject(json: JValue): Boolean = json.isInstanceOf[JObject]
   override def isArray(json: JValue): Boolean = json.isInstanceOf[JArray]
+}
+
+object Json4sOps extends Json4sOpsBase {
+
+  val parser: Parser[String] = JsonParser
+  val renderer: Renderer[String] = JsonRenderer
+
 }

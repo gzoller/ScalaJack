@@ -13,7 +13,6 @@ trait ClassFieldMember[Owner] extends ClassLikeTypeAdapter.FieldMember[Owner] {
 }
 
 object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
-
   case class TypeMember[Owner](name: MemberName, typeSignature: Type, baseType: Type) extends ClassLikeTypeAdapter.TypeMember[Owner]
 
   case class FieldMember[Owner, T](
@@ -102,7 +101,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
       val tm = tt.tpe.members.filter(_.isType).toList
       val classTypeParamMap = tt.tpe.typeSymbol.asClass.typeParams.zip(tt.tpe.typeArgs).toMap
       val typeMembers = tm map { m =>
-        TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
+        CaseClassTypeAdapter.TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
       }
 
       val params1 = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten
@@ -163,7 +162,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 
-        FieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations)
+        CaseClassTypeAdapter.FieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations)
       }
 
       // Exctract Collection name annotation if present
