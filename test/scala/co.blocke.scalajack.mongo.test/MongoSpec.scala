@@ -24,7 +24,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   def mongoScalaJack = ScalaJack(MongoFlavor())
 
-  //  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(MongoOffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
+  def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(MongoOffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 
   describe("---------------------------\n:  Mongo Tests (MongoDB)  :\n---------------------------") {
     describe("MongoDB/Casbah Support") {
@@ -34,7 +34,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         dbo.toJson should equal("""{ "_id" : "Fred", "two" : { "foo" : "blah", "bar" : true } }""")
         mongoScalaJack.read[Five](dbo) should equal(five)
       }
-      /*
       it("MongoKey Annotation (_id field generation) - single key -- Missing Non-Key Field") {
         val dbo = Document("_id" -> BsonString("Fred"), "two" -> BsonDocument("bar" -> BsonBoolean(true)))
         dbo.toJson should equal("""{ "_id" : "Fred", "two" : { "bar" : true } }""")
@@ -123,11 +122,9 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val b = mongoScalaJack.read[SampleZonedDateTime](dbo)
         b should equal(inst)
       }
-      */
     }
     describe("Parameterized Class Support") {
       describe("Basic Parameterized Case Class") {
-        /*
         it("Simple parameters - Foo[A](x:A) where A -> simple type") {
           val w = Wrap("number", true, 15)
           val w2 = Wrap("number", true, "wow")
@@ -162,10 +159,8 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           jsonScalaJack.read[Wrap[Boolean, Two]](js) should equal(w)
           mongoScalaJack.read[Wrap[Boolean, Two]](db) should equal(w)
         }
-        */
       }
       describe("Advanced Parameterized Case Class") {
-        /*
         it("Parameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int]") {
           val w = Carry("Bob", Wrap("Mary", 3, "Available"))
           val x = Carry("Mary", Wrap("Greg", false, "Done"))
@@ -218,10 +213,8 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           jsonScalaJack.read[Carry[Zoo[Boolean]]](js) should equal(w)
           mongoScalaJack.read[Carry[Zoo[Boolean]]](db) should equal(w)
         }
-        */
       }
       describe("Basic Collection Support") {
-        /*
         it("Case class having List parameter - Foo[A](x:A) where A -> List of simple type") {
           val w = Carry("Trey", Wrap("Hobbies", List(true, true, false), "all"))
           val js = jsonScalaJack.render(w)
@@ -290,10 +283,8 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[BagOpt[String]](db) should equal(w)
           mongoScalaJack.read[BagOpt[String]](db2) should equal(x)
         }
-        */
       }
       describe("Advanced Collection Support - collections of parameterized case class") {
-        /*
         it("Case class having List parameter - Foo[A](x:A) where A -> List of Bar[Int]") {
           val w = Carry("Trey", Wrap("Hobbies", List(Zoo("one", 1), Zoo("two", 2)), "all"))
           val js = jsonScalaJack.render(w)
@@ -430,10 +421,8 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[Carry[Option[Zoo[Wrapper]]]](db) should equal(w)
           mongoScalaJack.read[Carry[Option[Zoo[Wrapper]]]](db2) should equal(x)
         }
-        */
       }
       describe("Basic trait support") {
-        /*
         it("Parameter is a simple trait") {
           val w = Carry[Pop]("Surprise", Wrap("Yellow", Wow2("three", 3), "Done"))
           val js = jsonScalaJack.render(w)
@@ -521,10 +510,8 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[Carry[Option[Pop]]](db) should equal(w)
           mongoScalaJack.read[Carry[Option[Pop]]](db2) should equal(x)
         }
-        */
       }
       describe("Advanced trait support -- parameters are traits, themselves having parameters") {
-        /*
         it("Case class having an embedded parameterized trait") {
           val w = Breakfast(true, Toast(7, "Burnt"))
           val js = jsonScalaJack.render(w)
@@ -629,11 +616,9 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
           mongoScalaJack.read[BagOpt[Tart[String]]](db) should equal(w)
           mongoScalaJack.read[BagOpt[Tart[String]]](db2) should equal(x)
         }
-      */
       }
     }
     describe("Thread Safety Test") {
-      /*
       it("Should not crash when multiple threads access Analyzer (Scala 2.10.x reflection bug)") {
         import scala.concurrent.ExecutionContext.Implicits.global
         import scala.concurrent.duration._
@@ -652,7 +637,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val res = Await.result(Future.sequence(z), 3 seconds).reduce((a, b) => a && b)
         res should be(true)
       }
-      */
     }
   }
 }

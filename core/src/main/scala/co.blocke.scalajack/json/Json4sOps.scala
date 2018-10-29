@@ -6,7 +6,6 @@ import org.json4s.JsonAST.{ JArray, JBool, JDecimal, JDouble, JInt, JLong, JNoth
 trait Json4sOpsBase extends AstOps[JValue, String] {
 
   override type ArrayElements = List[JValue]
-
   override type ObjectFields = List[(String, JValue)]
 
   override def foreachArrayElement(elements: List[JValue], f: (Int, JValue) => Unit): Unit = {

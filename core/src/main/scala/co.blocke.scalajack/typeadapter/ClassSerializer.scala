@@ -15,6 +15,9 @@ class ClassSerializer[C](
   private val tpe: Type = tt.tpe
   private val TypeType: Type = typeOf[Type]
 
+  // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
+  protected def handleDBKeys[AST, S](ast: AST, members: List[ClassFieldMember[C]])(implicit ops: AstOps[AST, S]): AST = ast
+
   override def serialize[AST, S](tagged: TypeTagged[C])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
       case TypeTagged(null) =>
@@ -115,7 +118,7 @@ class ClassSerializer[C](
         if (errors.nonEmpty) {
           SerializationFailure(errors)
         } else {
-          SerializationSuccess(ast)
+          SerializationSuccess(handleDBKeys(ast, fieldMembers))
         }
     }
 

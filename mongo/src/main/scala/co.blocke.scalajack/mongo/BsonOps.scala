@@ -1,14 +1,25 @@
 package co.blocke.scalajack
 package mongo
 
+import scala.collection.JavaConverters._
 import org.bson.types.Decimal128
-import org.bson.{ BsonArray, BsonBoolean, BsonDecimal128, BsonDocument, BsonDouble, BsonElement, BsonInt64, BsonNull, BsonString, BsonValue }
+import org.bson._
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.MongoClient
 
-object BsonOps extends JsonOps[BsonValue] {
+object BsonOps extends AstOps[BsonValue, Document] {
 
   override type ArrayElements = BsonArray
-
   override type ObjectFields = BsonDocument
+
+  val parser: Parser[Document] = new Parser[Document] {
+    def parse[AST](source: Document)(implicit ops: AstOps[AST, Document]): Option[AST] =
+      Some(source.toBsonDocument(classOf[BsonDocument], MongoClient.DEFAULT_CODEC_REGISTRY).asInstanceOf[AST])
+  }
+  val renderer: Renderer[Document] = new Renderer[Document] {
+    def renderCompact[AST](ast: AST, sj: ScalaJackLike[_, _])(implicit ops: AstOps[AST, Document]): Document =
+      Document(ast.asInstanceOf[BsonValue].asDocument)
+  }
 
   override def foreachArrayElement(bson: BsonArray, f: (Int, BsonValue) => Unit): Unit = {
     val iterator = bson.iterator
@@ -30,6 +41,13 @@ object BsonOps extends JsonOps[BsonValue] {
 
   override def getObjectField(bson: BsonDocument, name: String): Option[BsonValue] =
     Option(bson.get(name))
+
+  override def partitionObjectFields(fields: ObjectFields, fieldNames: List[String]): (ObjectFields, ObjectFields) = {
+    val (one, two) = fields.asInstanceOf[BsonDocument].entrySet.asScala.partition(f => fieldNames.contains(f.getKey))
+    def makeBsonDoc(in: Set[java.util.Map.Entry[String, BsonValue]]): BsonDocument =
+      new BsonDocument(in.map(s => new BsonElement(s.getKey, s.getValue)).toList.asJava)
+    (makeBsonDoc(one.toSet), makeBsonDoc(two.toSet))
+  }
 
   override def applyArray(appendAllElements: (BsonValue => Unit) => Unit): BsonValue = {
     val values = new java.util.ArrayList[BsonValue]
@@ -63,10 +81,10 @@ object BsonOps extends JsonOps[BsonValue] {
     if (bson.isDouble) Some(bson.asDouble.getValue) else None
 
   override def applyInt(value: BigInt): BsonValue =
-    new BsonDecimal128(new Decimal128(new java.math.BigDecimal(value.bigInteger)))
+    new BsonInt32(value.intValue)
 
   override def unapplyInt(bson: BsonValue): Option[BigInt] =
-    None
+    if (bson.isInt32) Some(bson.asInt32.getValue) else None
 
   override def applyLong(value: Long): BsonValue =
     new BsonInt64(value)
@@ -98,5 +116,8 @@ object BsonOps extends JsonOps[BsonValue] {
 
   override def unapplyString(bson: BsonValue): Option[String] =
     if (bson.isString) Some(bson.asString.getValue) else None
+
+  override def isObject(bson: BsonValue): Boolean = bson.isInstanceOf[BsonDocument]
+  override def isArray(bson: BsonValue): Boolean = bson.isInstanceOf[BsonArray]
 
 }

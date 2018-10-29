@@ -6,17 +6,16 @@ import org.bson.BsonObjectId
 
 case class BsonObjectIdContainer($oid: String)
 
-object BsonObjectIdTypeAdapter extends TypeAdapterFactory.=:=[ObjectId] {
+object BsonObjectIdTypeAdapter extends TypeAdapterFactory.=:=[BsonObjectId] {
 
-  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[ObjectId]): TypeAdapter[ObjectId] = {
+  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[BsonObjectId]): TypeAdapter[BsonObjectId] = {
     val typeAdapter = context.typeAdapterOf[BsonObjectIdContainer]
     BsonObjectIdTypeAdapter(typeAdapter)
   }
 
 }
 
-case class BsonObjectIdTypeAdapter(containerTypeAdapter: TypeAdapter[BsonObjectIdContainer]) extends TypeAdapter[ObjectId]
-/*
+case class BsonObjectIdTypeAdapter(containerTypeAdapter: TypeAdapter[BsonObjectIdContainer]) extends TypeAdapter[BsonObjectId] {
 
   override def read(reader: Reader): org.mongodb.scala.bson.BsonObjectId = {
     val container = containerTypeAdapter.read(reader)
@@ -39,4 +38,3 @@ case class BsonObjectIdTypeAdapter(containerTypeAdapter: TypeAdapter[BsonObjectI
   }
 
 }
-*/ 

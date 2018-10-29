@@ -15,8 +15,7 @@ object BsonDateTimeTypeAdapter extends TypeAdapterFactory.=:=[BsonDateTime] {
 
 }
 
-case class BsonDateTimeTypeAdapter(containerTypeAdapter: TypeAdapter[DateContainer]) extends TypeAdapter[BsonDateTime]
-/*
+case class BsonDateTimeTypeAdapter(containerTypeAdapter: TypeAdapter[DateContainer]) extends TypeAdapter[BsonDateTime] {
 
   override def read(reader: Reader): BsonDateTime = {
     val container = containerTypeAdapter.read(reader)
@@ -37,4 +36,3 @@ case class BsonDateTimeTypeAdapter(containerTypeAdapter: TypeAdapter[DateContain
     }
 
 }
-*/

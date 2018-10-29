@@ -10,6 +10,8 @@ class AnyDeserializer(
     booleanDeserializer: Deserializer[Boolean],
     context:             Context) extends Deserializer[Any] {
 
+  self =>
+
   private val nullTypeTagged = TypeTagged(null, typeOf[Any])
 
   override def deserialize[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): DeserializationResult[Any] =
@@ -55,6 +57,8 @@ class AnyDeserializer(
 
       case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
+
+      case _ => DeserializationFailure(path, DeserializationError.Unexpected(s"Given value is of unknown type: $ast", reportedBy = self))
     }
 
 }

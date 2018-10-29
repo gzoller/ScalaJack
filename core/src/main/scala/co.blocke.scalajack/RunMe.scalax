@@ -1,12 +1,17 @@
 package co.blocke.scalajack
 
-import csv._
+import co.blocke.scalajack.mongo._
+import org.mongodb.scala.bson._
+
 
 case class Maybe(s: String, dunno: Option[String], more: Boolean)
 
 object RunMe extends App {
 
   val sj = ScalaJack(CSVFlavor())
+
+  BsonDocument("foo" -> BsonString("blah"), "bar" -> BsonBoolean(true))
+
   val inst = Maybe("no", None, false)
   val csv = sj.render(inst)
   println(csv)

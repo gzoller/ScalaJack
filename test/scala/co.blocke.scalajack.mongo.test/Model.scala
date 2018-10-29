@@ -3,7 +3,7 @@ package mongo
 package test
 
 import java.time._
-//import co.blocke.scalajack.typeadapter.BasicTypeAdapter
+import co.blocke.scalajack.typeadapter.BasicTypeAdapter
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -129,7 +129,22 @@ case class Animal(val name: String, val legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport(name: String, wrap: Wrapper, more: Boolean)
-
+/*
+object Wrapper extends ExtJson {
+	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
+	override def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any = {
+		jp.nextToken // consume '{'
+		jp.getCurrentName // consume 'num' label
+		jp.nextToken // scan to value
+		val v = jp.getValueAsInt // consume 'num' value
+		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
+			jp.nextToken
+		}
+		jp.nextToken // consume '}'
+		v
+	}
+}
+*/
 case class ListValSupport(name: String, wrap: List[Wrapper], more: Boolean)
 case class OptValSupport(name: String, wrap: Option[Wrapper])
 case class MapValSupport(name: String, wrap: Map[String, Wrapper])
@@ -209,7 +224,6 @@ object MyTypes {
 }
 import MyTypes._
 
-/*
 object PhoneAdapter extends BasicTypeAdapter[Phone] {
   override def read(reader: Reader): Phone = {
     reader.peek match {
@@ -230,7 +244,6 @@ object PhoneAdapter extends BasicTypeAdapter[Phone] {
       // writer.writeString(value.replaceAll("-", ""))
     }
 }
-*/
 case class Person(@DBKey name: String, phone: Phone)
 
 case class Loose(a: Char, b: Float, c: Short, d: Byte)
