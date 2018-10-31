@@ -16,28 +16,21 @@ class MongoCaseClassSerializer[C](
 
   override protected def handleDBKeys[AST, S](ast: AST, members: List[ClassFieldMember[C]])(implicit ops: AstOps[AST, S]): AST = {
 
-    val keysWithIndex = members.zipWithIndex.filter { case (member, idx) => member.dbKeyIndex == idx }
-
-    //    val dbkeyFields = keysWithIndex.map(_._1)
-    //    val dbkeyFieldNames = dbkeyFields.map(_.name)
-    //    val (astDBfields, astNonDBfields) = ops.partitionObjectFields(ast.asInstanceOf[ops.ObjectFields], { case (fieldname, _) => dbkeyFieldNames.contains(fieldname) })
-
     dbKeys.size match {
       case 0 => ast // no db keys specified... do nothing and return original ast
       case 1 => // simplified _id : value notation
         val keyFieldName = dbKeys.head.name
-        val fixed = ops.mapObjectFields(ast.asInstanceOf[ops.ObjectFields], { (fieldname, value) =>
+        ops.mapObjectFields(ast.asInstanceOf[ops.ObjectFields], { (fieldname, value) =>
           fieldname match {
             case s: String if s == keyFieldName => (idMemberName, value)
             case _                              => (fieldname, value)
           }
-        })
-        ops.applyObject { appendField =>
-          for ((fieldName, fieldValue) <- fixed) {
-            appendField(fieldName, fieldValue)
-          }
-        }
-      case _ => ??? // compound notation _id : { key:value, key:value}
+        }).asInstanceOf[AST]
+      case _ => // compound notation _id : { key:value, key:value}
+        val dbkeyFieldNames = dbKeys.map(_.name)
+        val (astDBfields, astNonDBfields) = ops.partitionObjectFields(ast.asInstanceOf[ops.ObjectFields], dbkeyFieldNames)
+        val id = ops.applyObject(appendField => appendField(idMemberName, astDBfields.asInstanceOf[AST]))
+        ops.mergeObjectFields(id.asInstanceOf[ops.ObjectFields], astNonDBfields.asInstanceOf[ops.ObjectFields]).asInstanceOf[AST]
     }
   }
 }

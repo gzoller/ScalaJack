@@ -21,6 +21,9 @@ class ClassDeserializerUsingReflectedConstructor[CC](
   private val typeMembersByName: Map[String, TypeMember] = typeMembers.map(typeMember => typeMember.name -> typeMember).toMap
   private val fieldMembersByName: Map[String, FieldMember] = fieldMembers.map(fieldMember => fieldMember.name -> fieldMember).toMap
 
+  // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
+  protected def handleDBKeys[AST, S](path: Path, ast: AST, members: List[ClassFieldMember[CC]])(implicit ops: AstOps[AST, S]): Either[DeserializationFailure, AST] = Right(ast)
+
   private def inferConcreteDeserializer[AST, S](path: Path, ast: AST)(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): Option[Deserializer[_ <: CC]] =
     if (typeMembers.isEmpty) {
       None
@@ -76,56 +79,59 @@ class ClassDeserializerUsingReflectedConstructor[CC](
       case AstNull() =>
         DeserializationSuccess(nullTypeTagged)
 
-      case AstObject(x) =>
+      case AstObject(_) =>
         try {
-          val fields = x.asInstanceOf[ops.ObjectFields]
+          handleDBKeys(path, ast, fieldMembers) match {
+            case Left(fail) => fail
+            case Right(postDBKey) =>
+              val deserializationResultsByField: mutable.Map[FieldMember, DeserializationResult[Any]] = new mutable.HashMap[FieldMember, DeserializationResult[Any]]
 
-          val deserializationResultsByField: mutable.Map[FieldMember, DeserializationResult[Any]] = new mutable.HashMap[FieldMember, DeserializationResult[Any]]
+              inferConcreteDeserializer(path, postDBKey) match {
+                case Some(concreteDeserializer) =>
+                  concreteDeserializer.deserialize(path, ast)
 
-          inferConcreteDeserializer(path, ast) match {
-            case Some(concreteDeserializer) =>
-              concreteDeserializer.deserialize(path, ast)
+                case None =>
+                  val fields = AstObject.unapply(postDBKey).get.asInstanceOf[ops.ObjectFields]
+                  ops.foreachObjectField(fields, { (fieldName, fieldValueAst) =>
+                    for (fieldMember <- fieldMembersByName.get(fieldName)) {
+                      deserializationResultsByField(fieldMember) = fieldMember.deserializeValue[AST, S](path \ fieldName, fieldValueAst)
+                    }
+                  })
 
-            case None =>
-              ops.foreachObjectField(fields, { (fieldName, fieldValueAst) =>
-                for (fieldMember <- fieldMembersByName.get(fieldName)) {
-                  deserializationResultsByField(fieldMember) = fieldMember.deserializeValue[AST, S](path \ fieldName, fieldValueAst)
-                }
-              })
+                  //                            println(fieldMembers)
+                  //                            println(fieldMembersByName)
 
-              //                            println(fieldMembers)
-              //                            println(fieldMembersByName)
-
-              // Missing fields in JSON... let's go deeper...
-              for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
-                // Substitute any specified default values
-                deserializationResultsByField(fieldMember) = if (fieldMember.defaultValue.isDefined)
-                  DeserializationSuccess(TypeTagged(fieldMember.defaultValue.get, fieldMember.declaredValueType))
-                else
-                  fieldMember.deserializeValueFromNothing[AST, S](path \ fieldMember.name)
-              }
-
-              if (deserializationResultsByField.exists(_._2.isFailure))
-                // Uh-oh!  One or more fields *still* didn't deserialize (after default value substitution).
-                DeserializationFailure(deserializationResultsByField.values.flatMap(_.errors).to[immutable.Seq])
-              else {
-                val constructorArguments: Array[Any] = fieldMembers
-                  .map { fieldMember =>
-                    val DeserializationSuccess(TypeTagged(fieldValue)) = deserializationResultsByField(fieldMember)
-                    fieldValue
+                  // Missing fields in JSON... let's go deeper...
+                  for (fieldMember <- fieldMembers if !deserializationResultsByField.contains(fieldMember)) {
+                    // Substitute any specified default values
+                    deserializationResultsByField(fieldMember) = if (fieldMember.defaultValue.isDefined)
+                      DeserializationSuccess(TypeTagged(fieldMember.defaultValue.get, fieldMember.declaredValueType))
+                    else
+                      fieldMember.deserializeValueFromNothing[AST, S](path \ fieldMember.name)
                   }
-                  .toArray
 
-                val instanceOfCaseClass = constructorMirror.apply(constructorArguments: _*).asInstanceOf[CC]
+                  if (deserializationResultsByField.exists(_._2.isFailure))
+                    // Uh-oh!  One or more fields *still* didn't deserialize (after default value substitution).
+                    DeserializationFailure(deserializationResultsByField.values.flatMap(_.errors).to[immutable.Seq])
+                  else {
+                    val constructorArguments: Array[Any] = fieldMembers
+                      .map { fieldMember =>
+                        val DeserializationSuccess(TypeTagged(fieldValue)) = deserializationResultsByField(fieldMember)
+                        fieldValue
+                      }
+                      .toArray
 
-                if (isSJCapture) {
-                  val partitionedFields = ops.partitionObjectFields(fields, fieldMembersByName.keySet.toList)
-                  val captured = partitionedFields._2
-                  import AstOps._
-                  implicit val aux: Aux[AST, ops.ObjectFields, S] = ops.asInstanceOf[Aux[AST, ops.ObjectFields, S]]
-                  instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(AstAndOps(captured))
-                }
-                DeserializationSuccess(TypeTagged[CC](instanceOfCaseClass, caseClassType))
+                    val instanceOfCaseClass = constructorMirror.apply(constructorArguments: _*).asInstanceOf[CC]
+
+                    if (isSJCapture) {
+                      val partitionedFields = ops.partitionObjectFields(fields, fieldMembersByName.keySet.toList)
+                      val captured = partitionedFields._2
+                      import AstOps._
+                      implicit val aux: Aux[AST, ops.ObjectFields, S] = ops.asInstanceOf[Aux[AST, ops.ObjectFields, S]]
+                      instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(AstAndOps(captured))
+                    }
+                    DeserializationSuccess(TypeTagged[CC](instanceOfCaseClass, caseClassType))
+                  }
               }
           }
         } catch {

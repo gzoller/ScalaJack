@@ -37,7 +37,30 @@ trait AstOps[AST, S] {
     res.toList
   }
 
-  def mapObjectFields[A](fields: ObjectFields, f: (String, AST) => A): List[A] = {
+  def mapObjectFields(fields: ObjectFields, f: (String, AST) => (String, AST)): ObjectFields = {
+    val res = scala.collection.mutable.ListBuffer.empty[(String, AST)]
+    foreachObjectField(fields, { (fieldname, element) => res.append(f(fieldname, element)) })
+    applyObject { appendField =>
+      for ((fieldName, fieldValue) <- res) {
+        appendField(fieldName, fieldValue)
+      }
+    }.asInstanceOf[ObjectFields]
+  }
+
+  def mergeObjectFields(fields1: ObjectFields, fields2: ObjectFields): ObjectFields = {
+    val f1 = scala.collection.mutable.ListBuffer.empty[(String, AST)]
+    val f2 = scala.collection.mutable.ListBuffer.empty[(String, AST)]
+    foreachObjectField(fields1, { (fieldname, element) => f1.append((fieldname, element)) })
+    foreachObjectField(fields2, { (fieldname, element) => f2.append((fieldname, element)) })
+    val sum = f1 ++ f2
+    applyObject { appendField =>
+      for ((fieldName, fieldValue) <- sum) {
+        appendField(fieldName, fieldValue)
+      }
+    }.asInstanceOf[ObjectFields]
+  }
+
+  def map[A](fields: ObjectFields, f: (String, AST) => A): List[A] = {
     val res = scala.collection.mutable.ListBuffer.empty[A]
     foreachObjectField(fields, { (fieldname, element) => res.append(f(fieldname, element)) })
     res.toList

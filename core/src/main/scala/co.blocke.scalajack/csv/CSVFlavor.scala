@@ -78,7 +78,7 @@ case class CSVFlavor() extends {
       case SerializationSuccess(objectOutput) =>
         objectOutput match {
           case AstObject(obj) =>
-            val valuesOnly = ops.mapObjectFields(obj.asInstanceOf[ops.ObjectFields], { (_, element) => element })
+            val valuesOnly = ops.map(obj.asInstanceOf[ops.ObjectFields], { (_, element) => element })
             ops.renderCompact(ops.applyArray(valuesOnly), this)
           case AstArray(_) => ops.renderCompact(objectOutput, this)
           case AstNull()   => ""

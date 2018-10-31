@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package mongo
 package test
 
-import mongo._
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 import org.mongodb.scala._

@@ -54,8 +54,7 @@ case class MongoFlavor(
 
   override protected def bakeContext(): Context = {
     val ctx = super.bakeContext()
-    ctx.copy(factories = MongoCaseClassTypeAdapter :: BsonObjectIdTypeAdapter :: BsonDateTimeTypeAdapter :: ctx.factories)
-    //      ctx.copy(factories = MongoCaseClassTypeAdapter :: MongoOffsetDateTimeTypeAdapter :: MongoZonedDateTimeTypeAdapter :: BsonObjectIdTypeAdapter :: BsonDateTimeTypeAdapter :: ctx.factories)
+    ctx.copy(factories = MongoCaseClassTypeAdapter :: BsonDateTimeTypeAdapter :: MongoOffsetDateTimeTypeAdapter :: MongoZonedDateTimeTypeAdapter :: BsonObjectIdTypeAdapter :: ctx.factories)
   }
 
 }

@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package mongo
 package test
 
-import mongo._
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 import org.mongodb.scala._
@@ -44,23 +43,16 @@ class LooseChange extends FunSpec {
       the[DeserializationException] thrownBy sjM.read[Something](dbo) should have message msg
     }
     it("No withTypeModifier") {
-      //      try {
-      //        ScalaJack(MongoFlavor()).withTypeModifier(null.asInstanceOf[HintModifier])
-      //      } catch {
-      //        case t: Throwable =>
-      //          println(t.getMessage)
-      //      }
       the[java.lang.UnsupportedOperationException] thrownBy
         ScalaJack(MongoFlavor()).withTypeModifier(null.asInstanceOf[HintModifier]) should have message "Not available for Mongo formatting"
     }
-    /*
     it("ZonedDateTime must work") {
-      val dbo = Document("o1" -> BsonDateTime(1196676930000L), "o2" -> BsonNull())
-      sjM.read[SampleZonedDateTime](dbo)
-      // Can't test value here as it is local-specific, i.e. value here will be different than in Jenkins build, etc.
-      // So if it didn't crash--it worked, I guess...
+      val dbo = Document("o1" -> BsonDateTime(1540922698874L), "o2" -> BsonNull())
+      val z = sjM.read[SampleZonedDateTime](dbo)
+      z.o1.toString should be("2018-10-30T18:04:58.874Z[UTC]")
+      z.o2 should be(null)
+      sjM.render(z) should be(dbo)
     }
-    */
     it("Handles Null") {
       val dbo = Document("o1" -> BsonNull(), "o2" -> BsonNull())
       val inst = sjM.read[SampleZonedDateTime](dbo)
@@ -80,13 +72,11 @@ class LooseChange extends FunSpec {
       dbo.toJson should be("""{ "_id" : "wonder", "a_b" : { "$numberLong" : "25" }, "count" : 3, "big_mac" : "hungry" }""")
       sjM.read[MapFactorId](dbo) should be(mfp)
     }
-    /*
     it("Field name remapping on dbkey with multi-part keys must work") {
       val mfp = MapFactorId2("wonder", 25L, 1, 3, "hungry")
       val dbo = sjM.render(mfp)
-      dbo.toJson should be("""{ "_id" : { "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "hey" : 1 }, "count" : 3, "big_mac" : "hungry" }""")
+      dbo.toJson should be("""{ "_id" : { "a_b" : { "$numberLong" : "25" }, "hey" : 1, "foo_bar" : "wonder" }, "big_mac" : "hungry", "count" : 3 }""")
       sjM.read[MapFactorId2](dbo) should be(mfp)
     }
-    */
   }
 }

@@ -1,0 +1,42 @@
+package co.blocke.scalajack
+package mongo
+
+import org.mongodb.scala.bson._
+import org.mongodb.scala._
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+import java.time._
+
+case class Movie(name: String, age: Double)
+case class Things(_id: ObjectId, name: String, when: MongoTime)
+
+object MRun extends App {
+
+  val sj = ScalaJack(MongoFlavor())
+  val mongoClient: MongoClient = MongoClient()
+  val database: MongoDatabase = mongoClient.getDatabase("mydb")
+  val collection: MongoCollection[Document] = database.getCollection("things");
+
+  //   db.movie.insert({"name":"tutorials point","age":5})
+  //   db.things.insert({"name":"box","when":ISODate()})
+
+  // ISODate in Mongo: Tue Oct 30 2018 17:45:17 GMT+0000 (UTC)
+
+  val now = OffsetDateTime.now()
+
+  val zzz = collection.find().toFuture()
+  val yyy = Await.result(zzz, 5000 millis).toList
+  println(yyy)
+
+  val readIn = yyy.map(sj.read[Things](_))
+  println(readIn)
+  println("\n-----------\n")
+
+  val writeOut = readIn.map(sj.render(_))
+  println(writeOut)
+
+  // ISODate("2018-10-30T18:04:58.874Z")
+  //          2018-10-30T18:04:58.874Z[UTC]
+}
+

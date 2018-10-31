@@ -2,14 +2,16 @@ package co.blocke.scalajack
 package mongo
 package typeadapter
 
-import org.bson.BsonDateTime
+import org.mongodb.scala.bson.BsonDateTime
 
-class BsonDateTimeSerializer(containerTypeAdapter: TypeAdapter[DateContainer]) extends Serializer[BsonDateTime] {
+class BsonDateTimeSerializer() extends Serializer[MongoTime] {
 
-  override def serialize[AST, S](tagged: TypeTagged[BsonDateTime])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
+  override def serialize[AST, S](tagged: TypeTagged[MongoTime])(implicit ops: AstOps[AST, S], guidance: SerializationGuidance): SerializationResult[AST] =
     tagged match {
-      case TypeTagged(null) => SerializationSuccess(AstNull())
-      case TypeTagged(datetime) =>
-        containerTypeAdapter.serializer.serialize(TypeTagged(DateContainer(datetime.getValue), typeOf[DateContainer]))
+      case TypeTagged(datetime: MongoTime) =>
+        if (ops == BsonOps)
+          SerializationSuccess(new BsonDateTime(datetime).asInstanceOf[AST])
+        else
+          SerializationSuccess(AstLong(datetime))
     }
 }
