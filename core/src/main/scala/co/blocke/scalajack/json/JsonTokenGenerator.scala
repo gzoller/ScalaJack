@@ -3,57 +3,62 @@ package json
 
 import parser._
 
-case class JsonParserState(json: String) extends ParserState {
+case class JsonParserState(json: String) extends ParserState[String] {
   private[json] var pos: Int = 0
   private val chars = json.toCharArray
   private val maxPos = chars.length
-  private var savedPos = -1
 
   private[json] def skipWhitespace() =
-    while( pos < maxPos && chars(pos).isWhitespace )
+    while (pos < maxPos && chars(pos).isWhitespace)
       pos += 1
 
-  private[json] def skipInt() =
-    while( pos < maxPos && chars(pos).is )
+  @inline private[json] def skipInt() =
+    while (pos < maxPos && ((chars(pos) >= '0' && chars(pos) <= '9') || chars(pos) == '-' || chars(pos) == '+' || chars(pos) == 'e' || chars(pos) == 'E'))
       pos += 1
 
-  //  private[json] def savePos(): Unit =
-//    savedPos = pos
-//  private[json] def restorePos(): Unit =
-//    if( savedPos >= 0 )
-//      pos = savedPos
+  @inline private[json] def skipTrue(): Boolean =
+    if (pos + 3 < maxPos && json.substring(pos, pos + 4) == "true") {
+      pos += 4
+      true
+    } else false
+
+  @inline private[json] def skipFalse(): Boolean =
+    if (pos + 4 < maxPos && json.substring(pos, pos + 5) == "false") {
+      pos += 5
+      true
+    } else false
 }
 
-case class JsonBooleanParser() extends BooleanParser {
-  protected[parser] override def consume( ps: ParserState ): Boolean = {
+case class JsonBooleanParser() extends SimpleParser[String] {
+  override def consumeBoolean(ps: ParserState[String]): Boolean = {
     val jsps = ps.asInstanceOf[JsonParserState]
     jsps.skipWhitespace()
-    if (jsps.json.substring(jsps.pos, 4) == "true") {
-      jsps.pos += 4
+    if (jsps.skipTrue) {
       true
-    }
-    else if (jsps.json.substring(jsps.pos, 5) == "false") {
-      jsps.pos += 5
+    } else if (jsps.skipFalse) {
       false
-    }
-    else super.consume(ps)
+    } else super.consumeBoolean(ps)
   }
 }
 
-
-case class IntBooleanParser() extends IntParser {
-  protected[parser] override def consume( ps: ParserState ): Boolean = {
+case class JsonIntParser() extends SimpleParser[String] {
+  override def consume[BigInt](ps: ParserState[String]): BigInt = {
+    //  override def consumeInt(ps: ParserState[String]): BigInt = {
     val jsps = ps.asInstanceOf[JsonParserState]
     jsps.skipWhitespace()
     val mark = jsps.pos
-    if (jsps.json.substring(jsps.pos, 4) == "true") {
-      jsps.pos += 4
-      true
+    jsps.skipInt()
+    try {
+      BigInt(jsps.json.substring(mark, jsps.pos))
+    } catch {
+      case t: Throwable => super.consumeInt(ps)
     }
-    else if (jsps.json.substring(jsps.pos, 5) == "false") {
-      jsps.pos += 5
-      false
-    }
-    else super.consume(ps)
   }
 }
+
+//case class JsonArrayParser[E, A <: Array[E]](elementPath: Path[E]) extends ArrayParser[E,A,String] {
+//  override def consume(ps: ParserState[String]): A = ???
+//}
+//
+//trait ArrayParser[E, A <: Array[E], IN] extends Parser[IN] {
+//  def consume(ps: ParserState[IN]) = consumeArray(ps)

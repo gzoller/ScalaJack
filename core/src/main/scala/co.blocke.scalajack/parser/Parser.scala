@@ -1,46 +1,39 @@
 package co.blocke.scalajack
 package parser
 
-trait ParserState
+import scala.collection.mutable.LinkedHashMap
 
-trait Parser {
-//  protected[parser] def consume[T]( ps: ParserState ): T
+trait ParserState[IN]
 
-  private[parser] def consumeBoolean( ps: ParserState ): Boolean =
+trait Parser[IN] {
+
+  def consume[U](ps: ParserState[IN]): U
+
+  def consumeBoolean(ps: ParserState[IN]): Boolean =
     throw new UnexpectedException("Expected a Boolean value")
-  private[parser] def consumeDecimal( ps: ParserState ): BigDecimal =
+  def consumeDecimal(ps: ParserState[IN]): BigDecimal =
     throw new UnexpectedException("Expected a Decimal value")
-  private[parser] def consumeInt( ps: ParserState ): BigInt =
-    throw new UnexpectedException("Expected a Integer value")
-  private[parser] def consumeString( ps: ParserState ): String =
+  def consumeInt(ps: ParserState[IN]): BigInt =
+    throw new UnexpectedException("Expected an Integer value")
+  def consumeString(ps: ParserState[IN]): String =
     throw new UnexpectedException("Expected a String value")
-
-  def init(path: Path): Unit = {}
+  def consumeMap[K, V](ps: ParserState[IN]): Map[K, V] =
+    throw new UnexpectedException("Expected a Map value")
+  def consumeArray[E](ps: ParserState[IN]): Array[E] =
+    throw new UnexpectedException("Expected an Array value")
+  def consumeObject[V](ps: ParserState[IN]): LinkedHashMap[String, V] =
+    throw new UnexpectedException("Expected an Object value")
 }
 
-trait BooleanParser extends Parser {
-  protected[parser] def consume( ps: ParserState ) = consumeBoolean(ps)
+trait SimpleParser[IN] extends Parser[IN]
+
+trait KVParser[K, V, M <: Map[K, V], IN] extends Parser[IN] {
+  protected def consume(ps: ParserState[IN]) = consumeMap(ps)
+  val keyPath: Path[K]
+  val valuePath: Path[V]
 }
 
-trait DecimalParser extends Parser {
-  protected[parser] def consume( ps: ParserState ) = consumeDecimal(ps)
-}
-
-trait IntParser extends Parser {
-  protected[parser] def consume( ps: ParserState ) = consumeInt(ps)
-}
-
-trait StringParser extends Parser {
-  protected[parser] def consume( ps: ParserState ) = consumeString(ps)
-}
-
-trait KVParser extends Parser {
-  protected[parser] def consume[K,V,M <: Map[K,V]]( ps: ParserState ): M
-  val keyPath: Path
-  val valuePath: Path
-}
-
-trait ArrayParser extends Parser {
-  protected[parser] def consume[E,A <: Array[E]]( ps: ParserState ): A
-  val elementPath: Path
+trait ArrayParser[E, A <: Array[E], IN] extends Parser[IN] {
+  def consume(ps: ParserState[IN]) = consumeArray(ps)
+  val elementPath: Path[E]
 }

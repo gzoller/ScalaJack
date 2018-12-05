@@ -40,6 +40,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
 }
 
 lazy val basicSettings = Seq(
+  resolvers += Resolver.jcenterRepo,
   organization                := "co.blocke",
   startYear                   := Some(2015),
   crossScalaVersions          := Seq("2.11.12", "2.12.7"),
@@ -66,7 +67,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
-  .aggregate(scalajack)
+  .aggregate(scalajackX)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -79,11 +80,12 @@ val pubSettings = Seq (
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
 
-lazy val scalajack = project.in(file("core"))
+lazy val scalajackX = project.in(file("core"))
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+    Seq("co.blocke" %% "scalajack" % "5.0.10") ++
       // compile(scala_reflect) ++
       test(scalatest)
   )
