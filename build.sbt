@@ -85,6 +85,7 @@ lazy val scalajackX = project.in(file("core"))
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+    Seq("org.json4s" %% "json4s-core" % "3.6.2") ++
     Seq("co.blocke" %% "scalajack" % "5.0.10") ++
       // compile(scala_reflect) ++
       test(scalatest)
