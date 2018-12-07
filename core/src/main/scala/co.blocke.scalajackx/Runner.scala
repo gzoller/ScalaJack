@@ -1,138 +1,62 @@
 package co.blocke.scalajackx
 
-import co.blocke.scalajack.ScalaJack
-
 object Runner extends App {
 
-  val sj = ScalaJack()
+  val js = "[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]"
 
-  /*
-  p1()
-  println("---------")
-  p2()
+  val ser = json4s.JsonSerializer()
 
-  def p1(): Unit = {
-    import parser1._
-    val intTypeAdapter = IntTypeAdapter(JsonIntParser())
-    //    val booleanTypeAdapter = BooleanTypeAdapter(JsonBooleanParser())
-    val arrayTypeAdapter = ListIntTypeAdapter(JsonArrayParser(intTypeAdapter))
-    val arrayTypeAdapter2 = ListListIntTypeAdapter(JsonArrayParser(arrayTypeAdapter))
+  val prim = ser.parseToPrimitive(js)
 
-    //    val ps = JsonParserState("12345 67890")
-    //    val bs = JsonParserState("true false")
-    //    val as = JsonParserState("[1,2,3,4,5]")
-    //    val as2 = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+  println(prim)
 
-    println("Simple (parser1) ==>")
+  //------ Json4s Native parsing + values (flattening JValue structures)
 
-    val one = timer(() => {
-      for (x <- 1 to 1000000) {
-        val ps = JsonParserState("12345")
-        intTypeAdapter.parse(ps)
-      }
-    })
+  val ita = json4s.IntTypeAdapter()
+  val lta = json4s.ListTypeAdapter[Int](ita)
+  val llta = json4s.ListTypeAdapter[List[Int]](lta)
 
-    val two = timer(() => {
-      for (x <- 1 to 1000000) {
-        sj.read[Int]("12345")
-      }
-    })
+  val one = timer(() => {
+    for (x <- 1 to 1000000) {
+      val prim = ser.parseToPrimitive(js)
+      llta.read(prim)
+    }
+  })
+  println("Json4s: " + one)
 
-    println("   X: " + one)
-    println("  v5: " + two)
+  //------ SJ Parsing + SJ value flattening
 
-    println("\nMulti-Array (parser1) ==>")
+  val intTypeAdapter = uroll.IntTypeAdapter(uroll.JsonIntParser())
+  val arrayTypeAdapter = uroll.ListTypeAdapter[Int](uroll.JsonArrayParser(intTypeAdapter))
+  val arrayTypeAdapter2 = uroll.ListTypeAdapter[List[Int]](uroll.JsonArrayParser(arrayTypeAdapter))
 
-    val three = timer(() => {
-      for (x <- 1 to 1000000) {
-        val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-        arrayTypeAdapter2.parse(ps)
-      }
-    })
-    val four = timer(() => {
-      for (x <- 1 to 1000000) {
-        sj.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-      }
-    })
+  val two = timer(() => {
+    for (x <- 1 to 1000000) {
+      val ps = uroll.JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+      arrayTypeAdapter2.parser.materialize(arrayTypeAdapter2.parser.parse(ps))
+    }
+  })
+  println("U-Roll: " + two)
 
-    println(" X: " + three)
-    println("v5: " + four)
-  }
+  //------ SJ Parsing + Json4s flattening
+  val h_intTypeAdapter = hybrid.IntTypeAdapter(hybrid.JsonIntParser())
+  val h_arrayTypeAdapter = hybrid.ListTypeAdapter[Int](hybrid.JsonArrayParser(h_intTypeAdapter))
+  val h_arrayTypeAdapter2 = hybrid.ListTypeAdapter[List[Int]](hybrid.JsonArrayParser(h_arrayTypeAdapter))
 
-  def p2(): Unit = {
-    import parser2._
-    val intTypeAdapter = IntTypeAdapter(JsonIntParser())
-    //    val booleanTypeAdapter = BooleanTypeAdapter(JsonBooleanParser())
-    val arrayTypeAdapter = ListIntTypeAdapter(JsonArrayParser(intTypeAdapter))
-    val arrayTypeAdapter2 = ListListIntTypeAdapter(JsonArrayParser(arrayTypeAdapter))
+  val three = timer(() => {
+    for (x <- 1 to 1000000) {
+      val ps = hybrid.JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+      val prim = h_arrayTypeAdapter2.parser.toPrimitives(h_arrayTypeAdapter2.parser.parse(ps))
+      h_arrayTypeAdapter2.materialize(prim)
+    }
+  })
+  println("Hybrid: " + three)
 
-    //    val ps = JsonParserState("12345 67890")
-    //    val bs = JsonParserState("true false")
-    //    val as = JsonParserState("[1,2,3,4,5]")
-    //    val as2 = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-
-    println("Simple (parser2) ==>")
-
-    val one = timer(() => {
-      for (x <- 1 to 1000000) {
-        val ps = JsonParserState("12345")
-        intTypeAdapter.parser.materialize(intTypeAdapter.parser.parse(ps))
-      }
-    })
-
-    val two = timer(() => {
-      for (x <- 1 to 1000000) {
-        sj.read[Int]("12345")
-      }
-    })
-
-    println("   X: " + one)
-    println("  v5: " + two)
-
-    println("\nMulti-Array (parser2) ==>")
-
-    val three = timer(() => {
-      for (x <- 1 to 1000000) {
-        val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-        arrayTypeAdapter2.parser.materialize(arrayTypeAdapter2.parser.parse(ps))
-      }
-    })
-    val four = timer(() => {
-      for (x <- 1 to 1000000) {
-        sj.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-      }
-    })
-
-    println(" X: " + three)
-    println("v5: " + four)
-    /*
-    import parser2._
-    val intTypeAdapter = IntTypeAdapter(JsonIntParser())
-    val booleanTypeAdapter = BooleanTypeAdapter(JsonBooleanParser())
-    val arrayTypeAdapter = ListIntTypeAdapter(JsonArrayParser(intTypeAdapter))
-
-    val three = timer(() => {
-      for (x <- 1 to 1000000) {
-        val bs = JsonParserState("true")
-        booleanTypeAdapter.parser.materialize(booleanTypeAdapter.parser.parse(bs))
-      }
-    })
-    val four = timer(() => {
-      for (x <- 1 to 1000000) {
-        sj.read[Boolean]("true")
-      }
-    })
-    println(" X: " + three)
-    println("v5: " + four)
-    */
-  }
-
+  //-------------------------
   def timer(fn: () => Unit): Long = {
     val now = System.currentTimeMillis()
     fn()
     val later = System.currentTimeMillis()
     return (later - now)
   }
-  */
-
 }

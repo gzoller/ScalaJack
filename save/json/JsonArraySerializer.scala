@@ -31,5 +31,5 @@ case class JsonArraySerializer[E](elementTypeAdapter: TypeAdapter[E]) extends Js
   }
 
   override def emit(ast: AST): String =
-    ast.asInstanceOf[JArray].arr.map( e => elementTypeAdapter.serializer.emit(e.asInstanceOf[elementTypeAdapter.serializer.AST]) ).mkString("[",",","]")
+    ast.asInstanceOf[JArray].arr.map(e => elementTypeAdapter.serializer.emit(e.asInstanceOf[elementTypeAdapter.serializer.AST])).mkString("[", ",", "]")
 }

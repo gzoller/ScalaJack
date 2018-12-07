@@ -1,7 +1,5 @@
 package co.blocke.scalajackx
 
-trait Serializer extends AstAdapter with WireSerializer
-
 trait AstOps[AST] {
 
   self =>

@@ -75,4 +75,4 @@ object ASTString {
   @inline final def apply[AST](value: String)(implicit ops: OpsBase[AST]): AST = ops.applyString(value)
   @inline final def unapply[AST](ir: AST)(implicit ops: OpsBase[AST]): Option[String] = ops.unapplyString(ir)
 }
-*/
+*/ 
