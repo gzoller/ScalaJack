@@ -1,4 +1,4 @@
-package co.blocke.scalajack;
+package co.blocke.scalajackx;
 
 import java.lang.annotation.*;
 

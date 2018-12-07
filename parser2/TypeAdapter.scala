@@ -1,10 +1,7 @@
 package co.blocke.scalajack
-package parser2
 
 trait TypeAdapter[T] {
-  val name: String = "*"
-
-  val parser: Parser // a parser capable of parsing this TypeAdapter
+  val serializer: Serializer
 }
 
 object TypeAdapter {

@@ -1,9 +1,12 @@
-package co.blocke.scalajack
+package co.blocke.scalajackx
+
+import co.blocke.scalajack.ScalaJack
 
 object Runner extends App {
 
   val sj = ScalaJack()
 
+  /*
   p1()
   println("---------")
   p2()
@@ -130,5 +133,6 @@ object Runner extends App {
     val later = System.currentTimeMillis()
     return (later - now)
   }
+  */
 
 }
