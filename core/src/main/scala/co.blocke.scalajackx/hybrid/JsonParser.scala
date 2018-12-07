@@ -18,6 +18,10 @@ case class JsonIntParser() extends JsonParser with Parser {
   }
 
   override def toPrimitives(ast: AST): Any = ast.asInstanceOf[JInt].num
+  override def fromPrimitives(prim: Any): AST = prim match {
+    case b: BigInt => JInt(b)
+    case _ => throw new Exception("Boom - from Int")
+  }
 }
 
 case class JsonArrayParser[E](elementTypeAdapter: TypeAdapter[E]) extends JsonParser with ArrayParser[E] {
@@ -49,4 +53,8 @@ case class JsonArrayParser[E](elementTypeAdapter: TypeAdapter[E]) extends JsonPa
   }
 
   override def toPrimitives(ast: AST): Any = ast.values
+  override def fromPrimitives(prim: Any): AST = prim match {
+    case a: List[_] => JArray( a.map( e => elementTypeAdapter.parser.fromPrimitives(e).asInstanceOf[AST] ) )
+    case _ => throw new Exception("Boom - from Array")
+  }
 }
