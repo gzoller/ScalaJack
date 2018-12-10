@@ -1,9 +1,7 @@
-package co.blocke.scalajackx
-package hybrid
+package co.blocke.scalajack
+package json
 
-case class JsonParserState(json: String) extends ParserState {
-
-  type WIRE = String
+case class JsonParserState(json: String) {
 
   private var pos: Int = 0
   private val chars = json.toCharArray

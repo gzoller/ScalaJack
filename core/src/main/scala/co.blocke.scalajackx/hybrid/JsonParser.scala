@@ -3,11 +3,11 @@ package hybrid
 
 import org.json4s._
 
-trait JsonParser {
+trait Json4sParser {
   type AST = JValue
 }
 
-case class JsonIntParser() extends JsonParser with Parser {
+trait JsonIntParser extends Json4sParser with Parser {
 
   type T = BigInt
 
@@ -20,13 +20,15 @@ case class JsonIntParser() extends JsonParser with Parser {
   override def toPrimitives(ast: AST): Any = ast.asInstanceOf[JInt].num
   override def fromPrimitives(prim: Any): AST = prim match {
     case b: BigInt => JInt(b)
-    case _ => throw new Exception("Boom - from Int")
+    case _         => throw new Exception("Boom - from Int")
   }
 }
 
-case class JsonArrayParser[E](elementTypeAdapter: TypeAdapter[E]) extends JsonParser with ArrayParser[E] {
+trait JsonArrayParser[E] extends Json4sParser with ArrayParser[E] {
 
   type T = List[E]
+
+  val elementTypeAdapter: TypeAdapter[E]
 
   override def parse(ps: ParserState): AST = {
     val jsps = ps.asInstanceOf[JsonParserState]
@@ -39,7 +41,7 @@ case class JsonArrayParser[E](elementTypeAdapter: TypeAdapter[E]) extends JsonPa
     val list = scala.collection.mutable.ListBuffer.empty[AST]
     var index = 0
     while (jsps.char != ']') {
-      list += elementTypeAdapter.parser.parse(ps).asInstanceOf[AST]
+      list += elementTypeAdapter.serializer.parse(ps).asInstanceOf[AST]
       jsps.char match {
         case ',' =>
           jsps.advance
@@ -54,7 +56,7 @@ case class JsonArrayParser[E](elementTypeAdapter: TypeAdapter[E]) extends JsonPa
 
   override def toPrimitives(ast: AST): Any = ast.values
   override def fromPrimitives(prim: Any): AST = prim match {
-    case a: List[_] => JArray( a.map( e => elementTypeAdapter.parser.fromPrimitives(e).asInstanceOf[AST] ) )
-    case _ => throw new Exception("Boom - from Array")
+    case a: List[_] => JArray(a.map(e => elementTypeAdapter.serializer.fromPrimitives(e).asInstanceOf[AST]))
+    case _          => throw new Exception("Boom - from Array")
   }
 }

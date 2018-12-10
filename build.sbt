@@ -33,9 +33,11 @@ def scalacOptionsVersion(scalaVersion: String) = {
     "-deprecation", 
     "-Xlint", 
     "-encoding", 
-    "UTF8", 
-    "-unchecked", 
-    "-Xfatal-warnings"
+    "UTF8",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-unchecked"
+//    "-Xfatal-warnings"
   ) ++ xver
 }
 
@@ -67,7 +69,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
-  .aggregate(scalajackX)
+  .aggregate(scalajack, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -80,14 +82,31 @@ val pubSettings = Seq (
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
 
-lazy val scalajackX = project.in(file("core"))
+lazy val scalajack = project.in(file("core"))
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+    Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
     Seq("org.json4s" %% "json4s-core" % "3.6.2") ++
     Seq("org.json4s" %% "json4s-native" % "3.6.2") ++
-    Seq("co.blocke" %% "scalajack" % "5.0.10") ++
+    Seq("org.apache.commons" % "commons-text" % "1.6") ++
+    Seq("commons-codec" % "commons-codec" % "1.11") ++
       // compile(scala_reflect) ++
       test(scalatest)
   )
+
+lazy val scalajack_benchmarks = project.in(file("benchmarks"))
+  .enablePlugins(JmhPlugin)
+  .settings(basicSettings: _*)
+  .settings(pubSettings: _*)
+  .settings(libraryDependencies ++=
+    compile( mongo_scala ) ++
+      test( scalatest, slf4j_simple ) ++
+      List(
+        "com.typesafe.play" %% "play-json" % "2.6.7",
+        "org.json4s" %% "json4s-native" % "3.6.2",
+        "net.liftweb" %% "lift-json" % "3.3.0",
+        "io.spray" %% "spray-json" % "1.3.2"
+      )
+  ).dependsOn( scalajack )

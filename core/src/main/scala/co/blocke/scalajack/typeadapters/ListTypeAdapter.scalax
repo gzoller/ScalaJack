@@ -1,0 +1,10 @@
+package co.blocke.scalajack
+package typeadapters
+
+import model._
+
+object ListTypeAdapterFactory extends TypeAdapterFactory {
+  def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+
+  }
+}

@@ -1,0 +1,43 @@
+package co.blocke.scalajack
+package benchmarks
+
+object PersonTypeAdapter_Series6 extends TypeAdapter.===[Person] {
+  override val irTransceiver: IRTransceiver[Person] = new PersonIRTransceiver()
+}
+
+class PersonIRTransceiver()(implicit tt: TypeTag[Person]) extends IRTransceiver[Person] {
+
+  private val nullTypeTagged: TypeTagged[Person] = TypeTagged[Person](null.asInstanceOf[Person], tt.tpe)
+
+  override def read[IR, WIRE](path: Path, ir: IR)(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): ReadResult[Person] =
+    ir match {
+      case IRNull() => ReadSuccess(nullTypeTagged)
+      case IRString(s) =>
+        val fixed: Phone = s.replaceAll("-", "")
+        ReadSuccess(TypeTagged(fixed, tt.tpe))
+    }
+
+  override def read(reader: Reader): Person = {
+    reader.beginObject()
+
+    var id: Long = 0L
+    var firstName: String = ""
+    var lastName: String = ""
+    var email: String = ""
+    var gender: String = ""
+    var ipAddress: String = ""
+
+    while (reader.hasMoreMembers) {
+      stringTA.read(reader) match {
+        case "id"         => id = longTA.read(reader) //reader.readLong
+        case "first_name" => firstName = stringTA.read(reader) //reader.readString
+        case "last_name"  => lastName = stringTA.read(reader) //reader.readString
+        case "email"      => email = stringTA.read(reader) //reader.readString
+        case "gender"     => gender = stringTA.read(reader) //reader.readString
+        case "ip_address" => ipAddress = stringTA.read(reader) //reader.readString
+      }
+    }
+    reader.endObject()
+    Person(id, firstName, lastName, email, gender, ipAddress)
+  }
+}
