@@ -12,10 +12,10 @@ object IntTypeAdapterFactory extends TypeAdapterFactory.=:=[Int] {
 
 case class IntTypeAdapter(parser: Parser) extends TypeAdapter[Int] {
 
-  override def materialize(primitive: AST_PRIMITIVE): Int = primitive match {
-    case b: BigInt => b.intValue()
+  override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
+    case AstInt(i) => i.intValue()
     case _         => throw new Exception("Boom Int")
   }
 
-  override def dematerialize(t: Int): AST_PRIMITIVE = BigInt(t)
+  override def dematerialize[AST](t: Int)(implicit ops: Ops[AST]): AST = AstInt(BigInt(t))
 }

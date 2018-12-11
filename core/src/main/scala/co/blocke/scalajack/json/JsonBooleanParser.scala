@@ -1,20 +1,20 @@
 package co.blocke.scalajack
 package json
 
-import model.Parser
+import model._
 import org.json4s.{ JBool, JNull }
 
 trait Json4sBooleanParser extends Parser {
 
-  def parse[PARSER_STATE, AST](ps: PARSER_STATE): AST = {
+  def parse[PARSER_STATE, AST](ps: PARSER_STATE)(implicit ops: Ops[AST]): AST = {
     val jsps = ps.asInstanceOf[JsonParserState]
     jsps.skipWhitespace()
     if (jsps.skipTrue)
-      JBool(true).asInstanceOf[AST]
+      AstBoolean(true)
     else if (jsps.skipFalse)
-      JBool(false).asInstanceOf[AST]
+      AstBoolean(false)
     else
-      JNull.asInstanceOf[AST]
+      AstNull()
   }
 }
 

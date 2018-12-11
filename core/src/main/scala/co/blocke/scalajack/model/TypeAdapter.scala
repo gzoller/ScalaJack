@@ -36,8 +36,8 @@ abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory
 trait TypeAdapter[T] {
 
   val parser: Parser
-  def materialize(primitive: AST_PRIMITIVE): T
-  def dematerialize(t: T): AST_PRIMITIVE
+  def materialize[AST](ast: AST)(implicit ops: Ops[AST]): T
+  def dematerialize[AST](t: T)(implicit ops: Ops[AST]): AST
 
   def defaultValue: Option[T] = None
 

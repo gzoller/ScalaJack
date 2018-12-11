@@ -9,6 +9,8 @@ trait JackFlavor[N] {
   type WIRE
   type PARSER_STATE
 
+  implicit val ops: Ops[AST]
+
   protected def genEmitterState(): EmitterState[WIRE]
   protected def genParserState(input: WIRE): PARSER_STATE
 
@@ -43,14 +45,11 @@ trait JackFlavor[N] {
 
   def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = {
     val typeAdapaterOfT = context.typeAdapterOf[T]
-    val prim = toPrimitives(typeAdapaterOfT.parser.parse(genParserState(wire)))
-    typeAdapaterOfT.materialize(prim)
+    typeAdapaterOfT.materialize(typeAdapaterOfT.parser.parse(genParserState(wire)))
   }
 
-  def fastRead(wire: WIRE): N = {
-    val prim = toPrimitives(nativeTypeAdapter.parser.parse(genParserState(wire)))
-    nativeTypeAdapter.materialize(prim)
-  }
+  def fastRead(wire: WIRE): N =
+    nativeTypeAdapter.materialize(nativeTypeAdapter.parser.parse(genParserState(wire)))
 
   // Back 'n forth between AST and WIRE
   //------------------------------------
@@ -63,13 +62,9 @@ trait JackFlavor[N] {
 
   // Back 'n forth between Scala and AST
   //------------------------------------
-  def materialize[T](ast: AST)(implicit tt: TypeTag[T]): T = {
-    val typeAdapaterOfT = context.typeAdapterOf[T]
-    typeAdapaterOfT.materialize(toPrimitives(ast))
-  }
+  def materialize[T](ast: AST)(implicit tt: TypeTag[T], ops: Ops[AST]): T =
+    context.typeAdapterOf[T].materialize(ast)
 
-  def dematerialize[T](t: T)(implicit tt: TypeTag[T]): AST = {
-    val typeAdapaterOfT = context.typeAdapterOf[T]
-    fromPrimitives(typeAdapaterOfT.dematerialize(t))
-  }
+  def dematerialize[T](t: T)(implicit tt: TypeTag[T], ops: Ops[AST]): AST =
+    context.typeAdapterOf[T].dematerialize(t)
 }

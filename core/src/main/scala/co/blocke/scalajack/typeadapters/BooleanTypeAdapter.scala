@@ -12,10 +12,10 @@ object BooleanTypeAdapterFactory extends TypeAdapterFactory.=:=[Boolean] {
 
 case class BooleanTypeAdapter(parser: Parser) extends TypeAdapter[Boolean] {
 
-  override def materialize(primitive: AST_PRIMITIVE): Boolean = primitive match {
-    case b: Boolean => b
-    case _          => throw new Exception("Boom Boolean")
+  override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
+    case AstBoolean(b) => b
+    case _             => throw new Exception("Boom Boolean")
   }
 
-  override def dematerialize(t: Boolean): AST_PRIMITIVE = t
+  override def dematerialize[AST](t: Boolean)(implicit ops: Ops[AST]): AST = AstBoolean(t)
 }

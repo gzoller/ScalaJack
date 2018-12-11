@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package model
 
 trait Parser {
-  def parse[PARSER_STATE, AST](ps: PARSER_STATE): AST // Wire reader
+  def parse[PARSER_STATE, AST](ps: PARSER_STATE)(implicit ops: Ops[AST]): AST // Wire reader
 }
 
 trait ArrayParser[E] extends Parser {

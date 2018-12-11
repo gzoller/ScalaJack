@@ -21,6 +21,8 @@ case class JsonFlavor[N](
   type WIRE = String
   type PARSER_STATE = JsonParserState
 
+  implicit val ops: Ops[AST] = Json4sOps
+
   val nativeTypeAdapter: TypeAdapter[N] = context.typeAdapterOf[N]
   def forType[N2](implicit tt: TypeTag[N2]): ScalaJackLike[N2] = JsonFlavor[N2](defaultHint)
 

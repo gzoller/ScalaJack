@@ -8,7 +8,7 @@ trait Json4sArrayParser[E] extends ArrayParser[E] {
 
   val elementTypeAdapter: TypeAdapter[E]
 
-  def parse[PARSER_STATE, AST](ps: PARSER_STATE): AST = {
+  def parse[PARSER_STATE, AST](ps: PARSER_STATE)(implicit ops: Ops[AST]): AST = {
     val jsps = ps.asInstanceOf[JsonParserState]
     jsps.skipWhitespace()
     if (jsps.char == '[')
@@ -29,7 +29,7 @@ trait Json4sArrayParser[E] extends ArrayParser[E] {
       }
     }
     jsps.advance
-    JArray(list.toList.asInstanceOf[List[JValue]]).asInstanceOf[AST]
+    AstArray(list.toList)
   }
 }
 
