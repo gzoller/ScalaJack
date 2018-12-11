@@ -61,8 +61,9 @@ object Runner extends App {
 
   val five = timer(() => {
     for (x <- 1 to iterations) {
-      val y = sj.read[List[Set[Int]]](js.asInstanceOf[sj.WIRE])
+      val y = sj.read[List[Set[Int]]](js)
       println(y)
+      println(sj.render(y))
     }
   })
   println("SJ 6: " + five)

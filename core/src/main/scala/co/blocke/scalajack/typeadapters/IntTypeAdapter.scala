@@ -3,14 +3,7 @@ package typeadapters
 
 import model._
 
-object IntTypeAdapterFactory extends TypeAdapterFactory.=:=[Int] {
-
-  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Int]): TypeAdapter[Int] =
-    new IntTypeAdapter(context.flavor.getIntParser())
-
-}
-
-case class IntTypeAdapter(parser: Parser) extends TypeAdapter[Int] {
+object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] {
 
   override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
     case AstInt(i) => i.intValue()

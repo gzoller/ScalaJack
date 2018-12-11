@@ -3,14 +3,7 @@ package typeadapters
 
 import model._
 
-object BooleanTypeAdapterFactory extends TypeAdapterFactory.=:=[Boolean] {
-
-  override def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Boolean]): TypeAdapter[Boolean] =
-    new BooleanTypeAdapter(context.flavor.getIntParser())
-
-}
-
-case class BooleanTypeAdapter(parser: Parser) extends TypeAdapter[Boolean] {
+object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] {
 
   override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
     case AstBoolean(b) => b

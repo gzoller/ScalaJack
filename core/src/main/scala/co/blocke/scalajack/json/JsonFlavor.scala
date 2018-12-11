@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json
 
-import org.json4s.JsonAST._
+import play.api.libs.json._
 import model._
 
 //import scala.reflect.runtime.universe.Type
@@ -15,42 +15,15 @@ case class JsonFlavor[N](
     defaultHint: String = "_hint"
 //   isCanonical:       Boolean                  = true,
 //   secondLookParsing: Boolean                  = false
-)(implicit tt: TypeTag[N]) extends ScalaJackLike[N] {
+)(implicit tt: TypeTag[N]) extends ScalaJackLike[N, JsValue, String] {
 
-  type AST = JValue
-  type WIRE = String
-  type PARSER_STATE = JsonParserState
-
-  implicit val ops: Ops[AST] = Json4sOps
+  implicit val ops: Ops[JsValue] = PlayJsonOps
 
   val nativeTypeAdapter: TypeAdapter[N] = context.typeAdapterOf[N]
-  def forType[N2](implicit tt: TypeTag[N2]): ScalaJackLike[N2] = JsonFlavor[N2](defaultHint)
+  def forType[N2](implicit tt: TypeTag[N2]): ScalaJackLike[N2, JsValue, String] = JsonFlavor[N2](defaultHint)
 
-  protected def genEmitterState(): EmitterState[String] = JsonEmitterState()
-  protected def genParserState(input: WIRE): PARSER_STATE = JsonParserState(input)
-
-  def getArrayParser[E]()(implicit tt: TypeTag[E]): ArrayParser[E] = JsonArrayParser(context.typeAdapterOf[E])
-  def getBooleanParser(): Parser = JsonBooleanParser()
-  def getIntParser(): Parser = JsonIntParser()
-
-  def toPrimitives(ast: JValue): AST_PRIMITIVE = ast.values
-
-  def fromPrimitives(prim: AST_PRIMITIVE): JValue = prim match {
-    case a: List[AST_PRIMITIVE] => JArray(a.map(e => fromPrimitives(e)))
-    case b: Boolean             => JBool(b)
-    case b: BigInt              => JInt(b)
-    case d: BigDecimal          => JDecimal(d)
-    case m: Map[AST_PRIMITIVE, AST_PRIMITIVE] =>
-      JObject(m.map {
-        case (k, v) =>
-          (fromPrimitives(k) match {
-            case JString(s) => s
-            case x          => emit(x)
-          }, fromPrimitives(v))
-      }.toSeq: _*)
-    case null      => JNull
-    case s: String => JString(s)
-  }
+  def parse(src: String): JsValue = Json.parse(src)
+  def emit(ast: JsValue): String = Json.stringify(ast)
 
   /*
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
@@ -72,8 +45,6 @@ case class JsonFlavor[N](
     else
       first
   }
-
-  implicit val ops: Ops[JValue, String] = Json4sOps
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
     val typeAdapter = context.typeAdapterOf[T]

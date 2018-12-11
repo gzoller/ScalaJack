@@ -8,11 +8,12 @@ import json.JsonFlavor
 //import co.blocke.scalajack.typeadapter._
 
 object ScalaJack {
-  def apply[N](kind: ScalaJackLike[N] = JsonFlavor[Int]()): ScalaJackLike[N] = kind
+  def apply[N, AST, WIRE](kind: ScalaJackLike[N, AST, WIRE] = JsonFlavor[Int]()): ScalaJackLike[N, AST, WIRE] = kind
 }
 
-abstract class ScalaJackLike[N] extends JackFlavor[N] {
+abstract class ScalaJackLike[N, AST, WIRE] extends JackFlavor[N, AST, WIRE] {
   val defaultHint: String
+
   /*
   val customAdapters: List[TypeAdapterFactory]
   val hintMap: Map[Type, String]
@@ -34,7 +35,7 @@ abstract class ScalaJackLike[N] extends JackFlavor[N] {
 
   val context: Context = bakeContext()
 
-  def forType[N2](implicit tt: TypeTag[N2]): ScalaJackLike[N2]
+  def forType[N2](implicit tt: TypeTag[N2]): ScalaJackLike[N2, AST, WIRE]
   val nativeTypeAdapter: TypeAdapter[N]
 
   /**

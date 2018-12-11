@@ -21,7 +21,6 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     typeAdapter
   }
 
-  override val parser: Parser = new DeferredSerializerReference(() => resolved.parser)
   override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = resolved.materialize(ast)
   override def dematerialize[AST](t: T)(implicit ops: Ops[AST]): AST = resolved.dematerialize(t)
 }

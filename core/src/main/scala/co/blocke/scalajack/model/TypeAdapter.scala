@@ -18,28 +18,28 @@ package model
  * in this case.  With strict matching String != Phone.
  *
  */
-/*
 object TypeAdapter {
 
-abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
-  override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
-}
+  abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
+    override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
+  }
 
-abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with TypeAdapter[X]
-//  {
-//    override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
-//  }
+  abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with TypeAdapter[X] {
+    override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
+  }
 
 }
-*/
 
 trait TypeAdapter[T] {
 
-  val parser: Parser
   def materialize[AST](ast: AST)(implicit ops: Ops[AST]): T
   def dematerialize[AST](t: T)(implicit ops: Ops[AST]): AST
 
   def defaultValue: Option[T] = None
 
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
+}
+
+trait ArrayTypeAdapter[T, E] extends TypeAdapter[T] {
+  val elementTypeAdapter: TypeAdapter[E]
 }

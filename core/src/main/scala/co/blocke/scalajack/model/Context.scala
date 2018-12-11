@@ -81,7 +81,7 @@ object Context {
 }
 
 case class Context(
-    flavor:      JackFlavor[_],
+    flavor:      JackFlavor[_, _, _],
     defaultHint: String                   = "",
     factories:   List[TypeAdapterFactory] = Nil) {
 

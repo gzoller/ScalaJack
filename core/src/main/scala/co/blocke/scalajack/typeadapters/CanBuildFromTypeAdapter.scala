@@ -65,7 +65,7 @@ object CanBuildFromTypeAdapterFactory extends TypeAdapterFactory.<:<.withOneType
           canBuildFrom.asInstanceOf[CanBuildFrom[_, E, T]],
           elementTypeAdapter.asInstanceOf[TypeAdapter[E]]))
           */
-        Some(CanBuildFromTypeAdapter[E, T](() => newBuilder, context.flavor.getArrayParser[E]()))
+        Some(CanBuildFromTypeAdapter[E, T](() => newBuilder, elementTypeAdapter.asInstanceOf[TypeAdapter[E]]))
       }
     }
 
@@ -85,12 +85,12 @@ object CanBuildFromTypeAdapterFactory extends TypeAdapterFactory.<:<.withOneType
 //  canBuildFrom:               CanBuildFrom[_, Elem, To],
 //  elementTypeAdapter:         TypeAdapter[Elem])(implicit tt: TypeTag[To]) extends TypeAdapter[To]
 
-case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](newBuilder: () => mutable.Builder[Elem, To], parser: ArrayParser[Elem]) extends TypeAdapter[To] {
+case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](newBuilder: () => mutable.Builder[Elem, To], elementTypeAdapter: TypeAdapter[Elem]) extends ArrayTypeAdapter[To, Elem] {
 
   override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
     case AstArray(elements) =>
       val elementsBuilder = newBuilder()
-      elements.foreach(e => elementsBuilder += parser.elementTypeAdapter.materialize(e))
+      elements.foreach(e => elementsBuilder += elementTypeAdapter.materialize(e))
       elementsBuilder.result
 
     case AstNull() => null.asInstanceOf[To]
@@ -98,6 +98,6 @@ case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](newBuil
   }
 
   override def dematerialize[AST](t: To)(implicit ops: Ops[AST]): AST = {
-    AstArray(t.seq.map(e => parser.elementTypeAdapter.dematerialize(e)).toList)
+    AstArray(t.seq.map(e => elementTypeAdapter.dematerialize(e)).toList)
   }
 }

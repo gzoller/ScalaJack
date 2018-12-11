@@ -77,12 +77,12 @@ class BaseBenchmarks {
 
   @Benchmark
   def readSeries6ScalaJack(state: BaseBenchmarksState): List[List[Int]] = {
-    state.series6ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]".asInstanceOf[state.series6ScalaJack.WIRE])
+    state.series6ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
   }
 
   @Benchmark
   def readSeries6XScalaJack(state: BaseBenchmarksState): List[List[Int]] = {
-    state.series6X.fastRead("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]".asInstanceOf[state.series6X.WIRE])
+    state.series6X.fastRead("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
     //    val series6TA = state.series6ScalaJack.context.typeAdapterOf[List[List[Int]]] // This line is causing the slowness!
     //    val ps = co.blocke.scalajack.json.JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
     //    val prim = series6TA.serializer.toPrimitives(state.series6TA.serializer.parse(ps))

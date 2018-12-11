@@ -68,11 +68,11 @@ object TypeAdapterFactory {
 
   abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory {
 
-    def create(next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X]): TypeAdapter[X]
+    def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X]
 
     override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
       if (tt.tpe =:= ttFactory.tpe) {
-        create(next)(context, tt.asInstanceOf[TypeTag[X]]).asInstanceOf[TypeAdapter[T]]
+        create(next)(tt.asInstanceOf[TypeTag[X]]).asInstanceOf[TypeAdapter[T]]
       } else {
         next.typeAdapterOf[T]
       }
