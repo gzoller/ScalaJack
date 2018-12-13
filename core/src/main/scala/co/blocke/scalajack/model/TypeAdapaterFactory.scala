@@ -39,19 +39,19 @@ object TypeAdapterFactory {
         }
     }
 
-  //  trait FromClassSymbol extends TypeAdapterFactory {
-  //
-  //    override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
-  //      val typeSymbol = tt.tpe.typeSymbol
-  //      if (typeSymbol.isClass) {
-  //        typeAdapterOf[T](typeSymbol.asClass, next)
-  //      } else {
-  //        next.typeAdapterOf[T]
-  //      }
-  //    }
-  //
-  //    def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T]
-  //  }
+  trait FromClassSymbol extends TypeAdapterFactory {
+
+    override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+      val typeSymbol = tt.tpe.typeSymbol
+      if (typeSymbol.isClass) {
+        typeAdapterOf[T](typeSymbol.asClass, next)
+      } else {
+        next.typeAdapterOf[T]
+      }
+    }
+
+    def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T]
+  }
 
   abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory {
 
@@ -76,6 +76,58 @@ object TypeAdapterFactory {
       } else {
         next.typeAdapterOf[T]
       }
+  }
+
+  object =:= {
+
+    /*
+    def apply[T: TypeTag](typeAdapter: TypeAdapter[T]): TypeAdapterFactory =
+      new TypeAdapterFactory.=:=[T] {
+        override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] = typeAdapter
+      }
+
+    def apply[T: TypeTag](irTrans: IRTransceiver[T]): TypeAdapterFactory = {
+      new TypeAdapterFactory.=:=[T] {
+        private val typeAdapter = new TypeAdapter[T] {
+          override val irTransceiver: IRTransceiver[T] = irTrans
+        }
+        // $COVERAGE-OFF$This is present for completeness--never actually used
+        override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[T]): TypeAdapter[T] = typeAdapter
+        // $COVERAGE-ON$
+      }
+    }
+    */
+
+    abstract class withOneTypeParam[X[_]](implicit ttFactory: TypeTag[X[Any]]) extends TypeAdapterFactory {
+
+      def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[X[E]], ttElement: TypeTag[E]): TypeAdapter[X[E]]
+
+      override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+        if (tt.tpe.typeConstructor =:= ttFactory.tpe.typeConstructor) {
+          type E = Any
+          val elementType :: Nil = tt.tpe.typeArgs
+          create[E](next)(context, tt.asInstanceOf[TypeTag[X[E]]], TypeTags.of[E](elementType)).asInstanceOf[TypeAdapter[T]]
+        } else {
+          next.typeAdapterOf[T]
+        }
+    }
+
+    /*
+    abstract class withTwoTypeParams[X[_, _]](implicit ttFactory: TypeTag[X[Any, Any]]) extends TypeAdapterFactory {
+
+      def create[E1, E2](next: TypeAdapterFactory)(implicit tt: TypeTag[X[E1, E2]], ttElement1: TypeTag[E1], ttElement2: TypeTag[E2]): TypeAdapter[X[E1, E2]]
+
+      override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+        if (tt.tpe.typeConstructor =:= ttFactory.tpe.typeConstructor) {
+          type E1 = Any
+          type E2 = Any
+          val elementType1 :: elementType2 :: Nil = tt.tpe.typeArgs
+          create[E1, E2](next)(tt.asInstanceOf[TypeTag[X[E1, E2]]], TypeTags.of[E1](elementType1), TypeTags.of[E2](elementType2)).asInstanceOf[TypeAdapter[T]]
+        } else {
+          next.typeAdapterOf[T]
+        }
+    }
+    */
   }
 
   //  abstract class <:<[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory {

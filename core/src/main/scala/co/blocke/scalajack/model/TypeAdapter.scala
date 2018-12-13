@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package model
 
+import util.Path
+
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
  * custom adapters.  The two matching behaviors are '===' and '=:='.
@@ -32,8 +34,12 @@ object TypeAdapter {
 
 trait TypeAdapter[T] {
 
-  def materialize[AST](ast: AST)(implicit ops: Ops[AST]): T
-  def dematerialize[AST](t: T)(implicit ops: Ops[AST]): AST
+  def read[AST](path: Path, ast: AST)(implicit ops: Ops[AST], g: SerializationGuidance): T =
+    throw new UnsupportedOperationException("read is unsupported at this Path")
+  def readFromNothing[AST](path: Path)(implicit ops: Ops[AST]): T =
+    throw new UnsupportedOperationException("readFromNothing is unsupported at this Path")
+  def write[AST](t: T)(implicit ops: Ops[AST], g: SerializationGuidance): AST =
+    throw new UnsupportedOperationException("write is unsupported at this Path")
 
   def defaultValue: Option[T] = None
 

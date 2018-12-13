@@ -6,31 +6,31 @@ trait Ops[AST] {
   self =>
 
   def applyArray(value: Seq[AST]): AST
-  def unapplyArray(ir: AST): Option[Seq[AST]]
+  def unapplyArray(ast: AST): Option[Seq[AST]]
 
   def applyBoolean(value: Boolean): AST
-  def unapplyBoolean(ir: AST): Option[Boolean]
+  def unapplyBoolean(ast: AST): Option[Boolean]
 
   def applyDecimal(value: BigDecimal): AST
-  def unapplyDecimal(ir: AST): Option[BigDecimal]
+  def unapplyDecimal(ast: AST): Option[BigDecimal]
 
   def applyDouble(value: Double): AST
-  def unapplyDouble(ir: AST): Option[Double]
+  def unapplyDouble(ast: AST): Option[Double]
 
   def applyInt(value: BigInt): AST
-  def unapplyInt(ir: AST): Option[BigInt]
+  def unapplyInt(ast: AST): Option[BigInt]
 
   def applyLong(value: Long): AST
-  def unapplyLong(ir: AST): Option[Long]
+  def unapplyLong(ast: AST): Option[Long]
 
   def applyNull(): AST
-  def unapplyNull(ir: AST): Boolean
+  def unapplyNull(ast: AST): Boolean
 
   def applyObject(elements: Seq[(String, AST)]): AST
-  def unapplyObject(ir: AST): Option[Seq[(String, AST)]]
+  def unapplyObject(ast: AST): Option[Seq[(String, AST)]]
 
   def applyString(value: String): AST
-  def unapplyString(ir: AST): Option[String]
+  def unapplyString(ast: AST): Option[String]
 
   /*
   def getArrayElement(arr: ArrayType, index: Int): Option[AST]

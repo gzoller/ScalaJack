@@ -1,5 +1,7 @@
 package co.blocke.scalajackx
 
+case class Person(name: String = "unknown", thing: Option[Int], age: Int)
+
 object Runner extends App {
 
   val js = "[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]"
@@ -8,8 +10,6 @@ object Runner extends App {
   val ser = json4s.JsonSerializer()
 
   val prim = ser.parseToPrimitive(js)
-
-  println(prim)
 
   //------ Json4s Native parsing + values (flattening JValue structures)
 
@@ -61,9 +61,9 @@ object Runner extends App {
 
   val five = timer(() => {
     for (x <- 1 to iterations) {
-      val y = sj.read[List[Set[Int]]](js)
+      val y = sj.read[Person]("""{"age":52}""") //(js)
       println(y)
-      println(sj.render(y))
+      //      println(sj.render(y))
     }
   })
   println("SJ 6: " + five)

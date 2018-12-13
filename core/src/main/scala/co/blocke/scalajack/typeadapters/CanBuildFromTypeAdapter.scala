@@ -87,17 +87,18 @@ object CanBuildFromTypeAdapterFactory extends TypeAdapterFactory.<:<.withOneType
 
 case class CanBuildFromTypeAdapter[Elem, To <: GenTraversableOnce[Elem]](newBuilder: () => mutable.Builder[Elem, To], elementTypeAdapter: TypeAdapter[Elem]) extends ArrayTypeAdapter[To, Elem] {
 
-  override def materialize[AST](ast: AST)(implicit ops: Ops[AST]) = ast match {
+  override def read[AST](path: Path, ast: AST)(implicit ops: Ops[AST], g: SerializationGuidance) = ast match {
     case AstArray(elements) =>
       val elementsBuilder = newBuilder()
-      elements.foreach(e => elementsBuilder += elementTypeAdapter.materialize(e))
+      var i = 0
+      elements.foreach { e => elementsBuilder += elementTypeAdapter.read(path \ i, e); i += 1 }
       elementsBuilder.result
 
     case AstNull() => null.asInstanceOf[To]
-    case _         => throw new Exception("Boom Array")
+    case x         => throw new ReadException(path, s"Expected an collection value but read $x")
   }
 
-  override def dematerialize[AST](t: To)(implicit ops: Ops[AST]): AST = {
-    AstArray(t.seq.map(e => elementTypeAdapter.dematerialize(e)).toList)
+  override def write[AST](t: To)(implicit ops: Ops[AST], g: SerializationGuidance): AST = {
+    AstArray(t.seq.map(e => elementTypeAdapter.write(e)).toList)
   }
 }

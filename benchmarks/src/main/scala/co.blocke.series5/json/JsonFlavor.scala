@@ -4,13 +4,14 @@ package json
 import scala.reflect.runtime.universe.{ Type, TypeTag }
 
 case class JsonFlavor(
-    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-    hintMap:        Map[Type, String]        = Map.empty[Type, String],
-    hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
-    typeModifier:   Option[HintModifier]     = None,
-    parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-    defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true) extends ScalaJackLike[String] {
+    nativeTypeAdapter: TypeAdapter[_]           = null,
+    customAdapters:    List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    hintMap:           Map[Type, String]        = Map.empty[Type, String],
+    hintModifiers:     Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
+    typeModifier:      Option[HintModifier]     = None,
+    parseOrElseMap:    Map[Type, Type]          = Map.empty[Type, Type],
+    defaultHint:       String                   = "_hint",
+    isCanonical:       Boolean                  = true) extends ScalaJackLike[String] {
 
   def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
@@ -28,11 +29,20 @@ case class JsonFlavor(
       ctx
   }
 
+  def forType[N2](implicit tt: TypeTag[N2]): JsonFlavor = this.copy(nativeTypeAdapter = context.typeAdapterOf[N2])
+
   def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
     val tokenizer = new Tokenizer(isCanonical)
     val source = json.toCharArray
     val reader = tokenizer.tokenize(source, 0, source.length)
     context.typeAdapterOf[T].read(reader)
+  }
+
+  def fastRead[N](json: String): N = {
+    val tokenizer = new Tokenizer(isCanonical)
+    val source = json.toCharArray
+    val reader = tokenizer.tokenize(source, 0, source.length)
+    nativeTypeAdapter.read(reader).asInstanceOf[N]
   }
 
   def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {

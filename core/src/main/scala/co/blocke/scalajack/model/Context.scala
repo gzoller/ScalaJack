@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package model
 
 import typeadapters._
+import typeadapters.forclasses._
 /*
 import typeadapter.javatime._
 import typeadapter.javaprimitives._
@@ -19,9 +20,12 @@ import scala.util.{ Success, Try }
 object Context {
 
   val StandardFactories: List[TypeAdapterFactory] = List(
+    CaseClassTypeAdapterFactory,
     BooleanTypeAdapterFactory,
     IntTypeAdapterFactory,
-    CanBuildFromTypeAdapterFactory
+    CanBuildFromTypeAdapterFactory,
+    OptionTypeAdapterFactory,
+    StringTypeAdapterFactory
   )
   /*
     .withFactory(IRParsingFallbackTypeAdapter)
