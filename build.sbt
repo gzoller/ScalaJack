@@ -69,7 +69,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
-  .aggregate(scalajack, scalajack_benchmarks)
+  .aggregate(scalajack)//, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 

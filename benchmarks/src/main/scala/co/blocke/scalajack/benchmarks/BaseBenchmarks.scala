@@ -2,10 +2,10 @@ package co.blocke.scalajack
 package benchmarks
 
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
-import scala.reflect.runtime.universe.{ Type, typeOf }
-import co.blocke.scalajackx.hybrid._
-
-import scala.util.Try
+//import scala.reflect.runtime.universe.{ Type, typeOf }
+//import co.blocke.scalajackx.hybrid._
+//
+//import scala.util.Try
 
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
@@ -62,6 +62,18 @@ class BaseBenchmarksState {
 
   val jsonPerson = """{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
 
+  val jsList = """[[123,456,789],[394,2983,393],[111,222,333]]"""
+
+  //--------------- Series 5
+  val series5Tokenizer = new co.blocke.series5.json.Tokenizer()
+  val sj5 = co.blocke.series5.ScalaJack()
+
+  //--------------- Series 6
+  val series6Tokenizer = co.blocke.scalajack.json.JsonTokenizer()
+  val sj6 = co.blocke.scalajack.ScalaJack()
+  val sj6X = sj6.forType[List[List[Int]]]
+
+  /*
   //--------------- Series X ScalaJack Setup
   val h_intTypeAdapter = IntTypeAdapter(IntJsonSerializer())
   val h_arrayTypeAdapter = ListTypeAdapter[Int](ArrayJsonSerializer(h_intTypeAdapter))
@@ -112,18 +124,43 @@ class BaseBenchmarksState {
     })
   )
   val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
-
+  */
 }
 
 @State(Scope.Thread)
 class BaseBenchmarks {
+
+  @Benchmark
+  def tokenizeSeries5(state: BaseBenchmarksState): Any = {
+    state.series5Tokenizer.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
+  }
+
+  @Benchmark
+  def tokenizeSeries6(state: BaseBenchmarksState): Any = {
+    state.series6Tokenizer.tokenize(state.jsonString)
+  }
+
+  @Benchmark
+  def readSeries5(state: BaseBenchmarksState): Any = {
+    state.sj5.read[List[List[Int]]](state.jsList)
+  }
+
+  @Benchmark
+  def readSeries6(state: BaseBenchmarksState): Any = {
+    state.sj6.read[List[List[Int]]](state.jsList)
+  }
+
+  @Benchmark
+  def readSeries6X(state: BaseBenchmarksState): Any = {
+    state.sj6X.fastRead(state.jsList)
+  }
 
   //  import play.api.libs.json._
   //  @Benchmark
   //  def writePlayJson(state: BaseBenchmarksState): Unit = {
   //    println(Try { Json.stringify(Json.toJson(state.listOfPersons)) })
   //  }
-
+  /*
   //  @Benchmark
   def readPrototype(state: BaseBenchmarksState): List[List[Int]] = {
     val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
@@ -163,5 +200,6 @@ class BaseBenchmarks {
     //    state.series4ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]", state.series4vc)
     state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
   }
+  */
 
 }
