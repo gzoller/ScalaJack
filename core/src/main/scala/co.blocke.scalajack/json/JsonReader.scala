@@ -11,6 +11,8 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
 
   private var p: Int = 0
 
+  // TODO:  Add isMapKey:Boolean to each reader.  If true, String is a valid input type and it must be re-parsed.
+
   def readArray[Elem, To](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To =
     tokens(p).tokenType match {
       case BeginArray =>
@@ -25,6 +27,25 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
         null.asInstanceOf[To]
       case _ =>
         throw new Exception("Boom -- expected an Array but got " + tokens(p).tokenType)
+    }
+
+  def readMap[Key, Value, To](canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To =
+    tokens(p).tokenType match {
+      case BeginObject =>
+        val builder = canBuildFrom()
+        while (p <= tokens.length && tokens(p).tokenType != EndObject) {
+          p += 1
+          val key = keyTypeAdapter.read(this)
+          p += 1 // skip kv separator
+          val value = valueTypeAdapter.read(this)
+          builder += key -> value
+        }
+        p += 1
+        builder.result
+      case Null =>
+        null.asInstanceOf[To]
+      case _ =>
+        throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
     }
 
   def readBoolean(): Boolean = {
