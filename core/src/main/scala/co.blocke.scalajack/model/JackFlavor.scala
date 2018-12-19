@@ -5,8 +5,8 @@ trait JackFlavor[N, WIRE] {
 
   def parse(wire: WIRE): Reader
 
-  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(parse(wire)).asInstanceOf[T]
-  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(parse(wire))
+  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(parse(wire), false).asInstanceOf[T]
+  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(parse(wire), false)
 
   val defaultHint: String = "_hint"
 

@@ -62,7 +62,7 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
         throw new ClassNotFoundException(s"""Unable to find class named "$typeName"\n""", e)
     }
 
-  def read(reader: Reader): Type = reader.readString() match {
+  def read(reader: Reader, isMapKey: Boolean = false): Type = reader.readString() match {
     case s: String => typeNameToType(s)
     case null      => null
   }

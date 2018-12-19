@@ -30,9 +30,8 @@ object Context {
     ShortTypeAdapterFactory,
     StringTypeAdapterFactory,
     CanBuildFromTypeAdapterFactory,
-    TypeTypeAdapterFactory
-  //    OptionTypeAdapterFactory,
-  //    StringTypeAdapterFactory
+    TypeTypeAdapterFactory,
+    OptionTypeAdapterFactory
   )
   /*
     .withFactory(IRParsingFallbackTypeAdapter)

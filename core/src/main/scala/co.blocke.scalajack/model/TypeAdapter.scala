@@ -32,7 +32,7 @@ object TypeAdapter {
 
 trait TypeAdapter[T] {
 
-  def read(reader: Reader): T
+  def read(reader: Reader, isMapKey: Boolean): T
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction

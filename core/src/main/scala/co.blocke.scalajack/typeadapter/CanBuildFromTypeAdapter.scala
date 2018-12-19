@@ -81,10 +81,10 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
     keyTypeAdapter:   TypeAdapter[Key],
     valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
 
-  def read(reader: Reader): To = reader.readMap[Key, Value, To](canBuildFrom, keyTypeAdapter, valueTypeAdapter)
+  def read(reader: Reader, isMapKey: Boolean = false): To = reader.readMap[Key, Value, To](canBuildFrom, keyTypeAdapter, valueTypeAdapter, isMapKey)
 }
 
 case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
 
-  def read(reader: Reader): To = reader.readArray[Elem, To](canBuildFrom, elementTypeAdapter)
+  def read(reader: Reader, isMapKey: Boolean = false): To = reader.readArray[Elem, To](canBuildFrom, elementTypeAdapter, isMapKey)
 }
