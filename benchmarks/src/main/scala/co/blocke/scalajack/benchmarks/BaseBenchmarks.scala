@@ -71,7 +71,7 @@ class BaseBenchmarksState {
   //--------------- Series 6
   val series6Tokenizer = co.blocke.scalajack.json.JsonTokenizer()
   val sj6 = co.blocke.scalajack.ScalaJack()
-  val sj6X = sj6.forType[List[List[Int]]]
+  val sj6X = sj6.forType[List[Person]] //[List[List[Int]]]
 
   /*
   //--------------- Series X ScalaJack Setup
@@ -130,6 +130,7 @@ class BaseBenchmarksState {
 @State(Scope.Thread)
 class BaseBenchmarks {
 
+  /*
   @Benchmark
   def tokenizeSeries5(state: BaseBenchmarksState): Any = {
     state.series5Tokenizer.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
@@ -139,7 +140,9 @@ class BaseBenchmarks {
   def tokenizeSeries6(state: BaseBenchmarksState): Any = {
     state.series6Tokenizer.tokenize(state.jsonString)
   }
+  */
 
+  /*
   @Benchmark
   def readSeries5(state: BaseBenchmarksState): Any = {
     state.sj5.read[List[List[Int]]](state.jsList)
@@ -153,6 +156,22 @@ class BaseBenchmarks {
   @Benchmark
   def readSeries6X(state: BaseBenchmarksState): Any = {
     state.sj6X.fastRead(state.jsList)
+  }
+  */
+
+  @Benchmark
+  def readSeries5(state: BaseBenchmarksState): Any = {
+    state.sj5.read[List[Person]](state.jsonString)
+  }
+
+  @Benchmark
+  def readSeries6(state: BaseBenchmarksState): Any = {
+    state.sj6.read[List[Person]](state.jsonString)
+  }
+
+  @Benchmark
+  def readSeries6X(state: BaseBenchmarksState): Any = {
+    state.sj6X.fastRead(state.jsonString)
   }
 
   //  import play.api.libs.json._

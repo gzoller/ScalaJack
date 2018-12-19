@@ -20,7 +20,6 @@ import scala.util.{ Success, Try }
 object Context {
 
   val StandardFactories: List[TypeAdapterFactory] = List(
-    //    CaseClassTypeAdapterFactory,
     BooleanTypeAdapterFactory,
     ByteTypeAdapterFactory,
     DoubleTypeAdapterFactory,
@@ -31,7 +30,8 @@ object Context {
     StringTypeAdapterFactory,
     CanBuildFromTypeAdapterFactory,
     TypeTypeAdapterFactory,
-    OptionTypeAdapterFactory
+    OptionTypeAdapterFactory,
+    classes.CaseClassTypeAdapterFactory
   )
   /*
     .withFactory(IRParsingFallbackTypeAdapter)

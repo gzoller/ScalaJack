@@ -5,13 +5,14 @@ import model._
 import model.TokenType._
 
 import collection.mutable.ArrayBuffer
+import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.generic.CanBuildFrom
 
-case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
+case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Tokenizer[String] = JsonTokenizer()) extends Reader {
+
+  type WIRE = String
 
   private var p: Int = 0
-
-  // TODO:  Add isMapKey:Boolean to each reader.  If true, String is a valid input type and it must be re-parsed.
 
   def readArray[Elem, To](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
     tokens(p).tokenType match {
@@ -25,6 +26,12 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
         builder.result
       case Null =>
         null.asInstanceOf[To]
+      case String if isMapKey =>
+        val jt = tokens(p).asInstanceOf[JsonToken]
+        val js = json.substring(jt.begin, jt.end)
+        val arrTokens = tokenizer.tokenize(js)
+        p += 1
+        JsonReader(js, arrTokens, tokenizer).readArray(canBuildFrom, elementTypeAdapter, false)
       case _ =>
         throw new Exception("Boom -- expected an Array but got " + tokens(p).tokenType)
     }
@@ -35,15 +42,21 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
         val builder = canBuildFrom()
         while (p <= tokens.length && tokens(p).tokenType != EndObject) {
           p += 1
-          val key = keyTypeAdapter.read(this, isMapKey)
+          val key = keyTypeAdapter.read(this, true)
           p += 1 // skip kv separator
-          val value = valueTypeAdapter.read(this, isMapKey)
+          val value = valueTypeAdapter.read(this, false)
           builder += key -> value
         }
         p += 1
         builder.result
       case Null =>
         null.asInstanceOf[To]
+      case String if isMapKey =>
+        val jt = tokens(p).asInstanceOf[JsonToken]
+        val js = json.substring(jt.begin, jt.end)
+        val arrTokens = tokenizer.tokenize(js)
+        p += 1
+        JsonReader(js, arrTokens, tokenizer).readMap(canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
       case _ =>
         throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
     }
@@ -105,6 +118,32 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token]) extends Reader {
     }
     p += 1
     value
+  }
+
+  def readObjectFields[T](fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): Map[String, Any] = {
+    tokens(p).tokenType match {
+      case BeginObject =>
+        val builder = collection.mutable.Map.empty[String, Any]
+        while (p <= tokens.length && tokens(p).tokenType != EndObject) {
+          p += 1
+          //          val jt = tokens(p).asInstanceOf[JsonToken]
+          //          val key = json.substring(jt.begin, jt.end)
+          //          p += 2 // skip kv separator
+          //          builder.put(key, fields(key).valueTypeAdapter.read(this, false))
+        }
+        p += 1
+        builder.toMap
+      case Null =>
+        null
+      //      case String if isMapKey =>
+      //        val jt = tokens(p).asInstanceOf[JsonToken]
+      //        val js = json.substring(jt.begin, jt.end)
+      //        val arrTokens = tokenizer.tokenize(js)
+      //        p += 1
+      //        JsonReader(js, arrTokens, tokenizer).readMap(canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
+      case _ =>
+        throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
+    }
   }
 
   def readString(): String = {
