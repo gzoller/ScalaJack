@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package model
 
+import util.Path
+
 case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T] {
 
   var resolvedTypeAdapter: TypeAdapter[T] = _
@@ -21,6 +23,6 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     typeAdapter
   }
 
-  def read(reader: Reader, isMapKey: Boolean = false): T = resolved.read(reader, isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): T = resolved.read(path, reader, isMapKey)
   //  override def write[AST](t: T)(implicit ops: Ops[AST], g: SerializationGuidance): AST = resolved.write(t)
 }

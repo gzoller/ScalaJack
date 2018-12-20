@@ -1,6 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
+import util.Path
 import model._
 
 /*
@@ -62,7 +63,7 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
         throw new ClassNotFoundException(s"""Unable to find class named "$typeName"\n""", e)
     }
 
-  def read(reader: Reader, isMapKey: Boolean = false): Type = reader.readString() match {
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Type = reader.readString() match {
     case s: String => typeNameToType(s)
     case null      => null
   }

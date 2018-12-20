@@ -1,12 +1,16 @@
 package co.blocke.scalajack
 package model
 
+import util.Path
+import typeadapter.classes._
+import typeadapter._
+
 trait JackFlavor[N, WIRE] {
 
   def parse(wire: WIRE): Reader
 
-  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(parse(wire), false).asInstanceOf[T]
-  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(parse(wire), false)
+  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(Path.Root, parse(wire), false).asInstanceOf[T]
+  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   val defaultHint: String = "_hint"
 
@@ -151,9 +155,13 @@ trait JackFlavor[N, WIRE] {
       intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
       */
 
-    Context(
+    val c = Context(
       this,
       defaultHint,
-      factories = Context.StandardFactories)
+      factories = Context.StandardFactories ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
+    )
+    AnyTypeAdapterFactory.hintLabel = defaultHint
+    AnyTypeAdapterFactory.context = c
+    c
   }
 }

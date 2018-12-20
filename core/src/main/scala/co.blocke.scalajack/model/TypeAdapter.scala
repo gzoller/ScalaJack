@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package model
 
+import util.Path
+
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
  * custom adapters.  The two matching behaviors are '===' and '=:='.
@@ -32,7 +34,7 @@ object TypeAdapter {
 
 trait TypeAdapter[T] {
 
-  def read(reader: Reader, isMapKey: Boolean): T
+  def read(path: Path, reader: Reader, isMapKey: Boolean): T
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction

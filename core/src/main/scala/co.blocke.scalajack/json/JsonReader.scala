@@ -3,24 +3,61 @@ package json
 
 import model._
 import model.TokenType._
+import util.Path
 
-import collection.mutable.ArrayBuffer
-import scala.collection.immutable.{ ListMap, Map }
+import scala.collection.immutable.Map
 import scala.collection.generic.CanBuildFrom
 
-case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Tokenizer[String] = JsonTokenizer()) extends Reader {
+case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer()) extends Reader {
 
   type WIRE = String
 
   private var p: Int = 0
+  private var saved: Int = -1
 
-  def readArray[Elem, To](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
+  val tokens = tokenizer.tokenize(json)
+
+  def savePos() = saved = p
+  def rollbackToSave() = p = saved
+  def peek(): TokenType = tokens(p).tokenType
+  def tokenText(): String = {
+    val jt = tokens(p).asInstanceOf[JsonToken]
+    json.substring(jt.begin, jt.end)
+  }
+  def skip() = if (p < tokens.length) p += 1
+  def lookAheadForField(fieldName: String): Option[String] = {
+    if (tokens(p).tokenType != BeginObject)
+      None
+    else {
+      var done = tokens(p).tokenType == EndObject
+      var found: Option[String] = None
+      while (p < tokens.length && !done) {
+        p += 1
+        val jt = tokens(p).asInstanceOf[JsonToken]
+        val js = json.substring(jt.begin, jt.end)
+        if (js == fieldName) {
+          p += 1
+          found = Some(tokenText)
+          done = true
+        } else if (tokens(p).tokenType == EndObject)
+          done = true
+      }
+      found
+    }
+  }
+
+  def cloneWithSource(source: String): Reader = // used for Any parsing
+    new JsonReader(source, tokenizer)
+
+  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
     tokens(p).tokenType match {
       case BeginArray =>
         val builder = canBuildFrom()
-        while (p <= tokens.length && tokens(p).tokenType != EndArray) {
-          p += 1
-          builder += elementTypeAdapter.read(this, isMapKey)
+        var i = 0
+        p += 1
+        while (p < tokens.length && tokens(p).tokenType != EndArray) {
+          builder += elementTypeAdapter.read(path \ i, this, isMapKey)
+          i += 1
         }
         p += 1
         builder.result
@@ -29,22 +66,21 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Token
       case String if isMapKey =>
         val jt = tokens(p).asInstanceOf[JsonToken]
         val js = json.substring(jt.begin, jt.end)
-        val arrTokens = tokenizer.tokenize(js)
+        val subReader = this.cloneWithSource(js)
         p += 1
-        JsonReader(js, arrTokens, tokenizer).readArray(canBuildFrom, elementTypeAdapter, false)
+        subReader.readArray(path, canBuildFrom, elementTypeAdapter, false)
       case _ =>
         throw new Exception("Boom -- expected an Array but got " + tokens(p).tokenType)
     }
 
-  def readMap[Key, Value, To](canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To =
+  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To =
     tokens(p).tokenType match {
       case BeginObject =>
         val builder = canBuildFrom()
-        while (p <= tokens.length && tokens(p).tokenType != EndObject) {
-          p += 1
-          val key = keyTypeAdapter.read(this, true)
-          p += 1 // skip kv separator
-          val value = valueTypeAdapter.read(this, false)
+        p += 1
+        while (p < tokens.length && tokens(p).tokenType != EndObject) {
+          val key = keyTypeAdapter.read(path \ "(map key)", this, true)
+          val value = valueTypeAdapter.read(path \ key.toString, this, false)
           builder += key -> value
         }
         p += 1
@@ -54,9 +90,9 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Token
       case String if isMapKey =>
         val jt = tokens(p).asInstanceOf[JsonToken]
         val js = json.substring(jt.begin, jt.end)
-        val arrTokens = tokenizer.tokenize(js)
+        val subReader = this.cloneWithSource(js)
         p += 1
-        JsonReader(js, arrTokens, tokenizer).readMap(canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
+        subReader.readMap(path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
       case _ =>
         throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
     }
@@ -82,6 +118,18 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Token
       case String if isMapKey => BigDecimal(json.substring(jt.begin, jt.end))
       case Null               => null
       case x                  => throw new Exception("Boom -- expected a Number but got " + x)
+    }
+    p += 1
+    value
+  }
+
+  def readBigInt(isMapKey: Boolean): BigInt = {
+    val jt = tokens(p).asInstanceOf[JsonToken]
+    val value = jt.tokenType match {
+      case Number             => BigInt(json.substring(jt.begin, jt.end))
+      case String if isMapKey => BigInt(json.substring(jt.begin, jt.end))
+      case Null               => null
+      case x                  => throw new Exception("Boom -- expected a BigDecimal but got " + x)
     }
     p += 1
     value
@@ -120,27 +168,34 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Token
     value
   }
 
-  def readObjectFields[T](fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): Map[String, Any] = {
+  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): (Boolean, Array[Any], Array[Boolean]) = {
     tokens(p).tokenType match {
       case BeginObject =>
-        val builder = collection.mutable.Map.empty[String, Any]
-        while (p <= tokens.length && tokens(p).tokenType != EndObject) {
+        var fieldCount = 0
+        p += 1
+        val args = new Array[Any](fields.size)
+        val flags = new Array[Boolean](fields.size)
+        while (p < tokens.length && tokens(p).tokenType != EndObject) {
+          val key = json.substring(tokens(p).asInstanceOf[JsonToken].begin, tokens(p).asInstanceOf[JsonToken].end)
           p += 1
-          //          val jt = tokens(p).asInstanceOf[JsonToken]
-          //          val key = json.substring(jt.begin, jt.end)
-          //          p += 2 // skip kv separator
-          //          builder.put(key, fields(key).valueTypeAdapter.read(this, false))
+          fields.get(key).map { oneField =>
+            fields.get(key).map { f =>
+              args(f.index) = oneField.valueTypeAdapter.read(path \ key, this, false)
+              flags(f.index) = true
+              fieldCount += 1
+            }
+          }
         }
         p += 1
-        builder.toMap
+        (fieldCount == fields.size, args, flags)
       case Null =>
         null
-      //      case String if isMapKey =>
-      //        val jt = tokens(p).asInstanceOf[JsonToken]
-      //        val js = json.substring(jt.begin, jt.end)
-      //        val arrTokens = tokenizer.tokenize(js)
-      //        p += 1
-      //        JsonReader(js, arrTokens, tokenizer).readMap(canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
+      case String if isMapKey =>
+        val jt = tokens(p).asInstanceOf[JsonToken]
+        val js = json.substring(jt.begin, jt.end)
+        val subReader = this.cloneWithSource(js)
+        p += 1
+        subReader.readObjectFields(path, fields, isMapKey)
       case _ =>
         throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
     }
@@ -150,6 +205,7 @@ case class JsonReader(json: String, tokens: ArrayBuffer[Token], tokenizer: Token
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
       case String => json.substring(jt.begin, jt.end)
+      case Null   => null
       case x      => throw new Exception("Boom -- expected a String but got " + x)
     }
     p += 1

@@ -45,10 +45,8 @@ case class JsonTokenizer() extends Tokenizer[String] {
             tokenspace += JsonToken(EndObject, i, i)
             i += 1
           case ':' =>
-            tokenspace += JsonToken(KVSeparator, i, i)
             i += 1
           case ',' =>
-            tokenspace += JsonToken(ItemSeparator, i, i)
             i += 1
           case n if isNumberChar(n) =>
             val mark = i

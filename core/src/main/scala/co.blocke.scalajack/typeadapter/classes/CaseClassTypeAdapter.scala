@@ -2,11 +2,10 @@ package co.blocke.scalajack
 package typeadapter
 package classes
 
-import co.blocke.scalajack.util.Path
+import util.Path
 import model._
 
 import scala.collection.immutable.{ ListMap, Map }
-import scala.collection.generic.CanBuildFrom
 
 case class CaseClassTypeAdapter[T](
     typeMembers:       List[ClassHelper.TypeMember[T]],
@@ -73,29 +72,19 @@ case class CaseClassTypeAdapter[T](
     }
     */
 
-  def read(reader: Reader, isMapKey: Boolean): T =
-    reader.readObjectFields[T](fieldMembers, isMapKey) match {
-      case v =>
-        null.asInstanceOf[T]
-      // TODO:  Since the object marshalling area isn't doing any work,
-      //        and we know tokenization is a good bit faster than Series 5,
-      //        and we're still much slower than Series 5,
-      //        it must be the Reader that's killing us!
-      /*
-        val fieldValues = handleDBKeys(v)
-        val arguments = new Array[Any](fieldMembers.size)
-        fieldValues.map {
-          case (fname, fval) =>
-            fieldMembers.get(fname).map(field => arguments(field.index) = fval)
-        }
-        //
-        //        val constructorArguments: Array[Any] = fieldMembers.map { constructorField =>
-        //          fieldValues.get(constructorField.name)
-        //            .getOrElse(if (constructorField.isOptional) None else constructorField.defaultValue.getOrElse(throw new Exception("Boom")))
-        //        }
-        constructorMirror.apply(arguments: _*).asInstanceOf[T]
-        */
+  def read(path: Path, reader: Reader, isMapKey: Boolean): T =
+    reader.readObjectFields[T](path, fieldMembers, isMapKey) match {
       case null => null.asInstanceOf[T]
+      case (allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
+        if (!allFound) {
+          val fieldArray = fieldMembers.values.toArray
+          for (p <- 0 to fieldArray.size - 1) {
+            if (!flags(p)) {
+              fieldArray(p).defaultValue.map(default => args(p) = default).orElse(if (fieldArray(p).isOptional) None else throw new Exception(s"Boom -- Class missing field ${fieldArray(p).name}"))
+            }
+          }
+        }
+        constructorMirror.apply(args: _*).asInstanceOf[T]
     }
 }
 

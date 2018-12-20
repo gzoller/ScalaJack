@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 object TokenType extends Enumeration {
   type TokenType = Value
 
-  val BeginObject, EndObject, BeginArray, EndArray, ItemSeparator, KVSeparator, Number, String, True, False, Null, End = Value
+  val BeginObject, EndObject, BeginArray, EndArray, Number, String, True, False, Null, End = Value
 }
 
 import TokenType._

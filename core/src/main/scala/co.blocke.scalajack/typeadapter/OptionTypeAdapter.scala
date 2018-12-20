@@ -1,6 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
+import util.Path
 import model._
 
 object OptionTypeAdapterFactory extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
@@ -32,8 +33,8 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
 
   private val OptionTypeSymbol: TypeSymbol = symbolOf[Option[_]]
 
-  def read(reader: Reader, isMapKey: Boolean): Option[E] =
-    valueTypeAdapter.read(reader, isMapKey) match {
+  def read(path: Path, reader: Reader, isMapKey: Boolean): Option[E] =
+    valueTypeAdapter.read(path, reader, isMapKey) match {
       case null if isMapKey => null
       case null             => None
       case s: String if s == "" =>
