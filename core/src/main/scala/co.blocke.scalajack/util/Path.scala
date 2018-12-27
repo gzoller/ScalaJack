@@ -7,6 +7,10 @@ object Path {
     override def toString: String = "$"
   }
 
+  case object Tokenizing extends Path {
+    override def toString: String = "<tokenizing>"
+  }
+
   case object Unknown extends Path {
     override def toString: String = "???"
   }

@@ -5,50 +5,66 @@ import util.Path
 import model._
 import java.util.UUID
 
+import scala.util.{Failure, Success, Try}
+
 object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigDecimal = reader.readDecimal(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigDecimal = reader.readDecimal(path, isMapKey)
 }
 
 object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigInt = reader.readBigInt(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigInt = reader.readBigInt(path, isMapKey)
 }
 
 object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Boolean = reader.readBoolean(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Boolean = reader.readBoolean(path, isMapKey)
 }
 
 object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Byte = reader.readInt(isMapKey).toByte
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Byte = reader.readInt(path, isMapKey).toByte
 }
 
 object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Char = reader.readString().toCharArray()(0)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Char = {
+    val chars = reader.readString(path).toCharArray()
+    if(chars.size == 0)
+      throw new SJReadError(path, Invalid, "Tried to read a Char but empty string found")
+    else
+      chars(0)
+  }
 }
 
 object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Double = reader.readDouble(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Double = reader.readDouble(path, isMapKey)
 }
 
 object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Float = reader.readDouble(isMapKey).toFloat
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Float = reader.readDouble(path, isMapKey).toFloat
 }
 
 object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Int = reader.readInt(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Int = reader.readInt(path, isMapKey)
 }
 
 object LongTypeAdapterFactory extends TypeAdapter.=:=[Long] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Long = reader.readLong(isMapKey)
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Long = reader.readLong(path, isMapKey)
 }
 
 object ShortTypeAdapterFactory extends TypeAdapter.=:=[Short] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Short = reader.readInt(isMapKey).toShort
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Short = reader.readInt(path, isMapKey).toShort
 }
 
 object StringTypeAdapterFactory extends TypeAdapter.=:=[String] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): String = reader.readString()
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): String = reader.readString(path)
 }
 
 object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): UUID = UUID.fromString(reader.readString())
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): UUID = {
+    val rawStr = reader.readString(path)
+    Try(UUID.fromString(rawStr)) match {s
+      case Success(u) => u
+      case Failure(u) => throw new SJReadError(path, Invalid,
+        s"Failed to create UUID value from parsed text ${rawStr}",
+        List.empty[String], Some(u))
+    }
+  }
 }

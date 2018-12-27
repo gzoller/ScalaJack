@@ -38,6 +38,7 @@ object Context {
     EitherTypeAdapterFactory,
     UUIDTypeAdapterFactory,
     EnumerationTypeAdapterFactory,
+    TryTypeAdapterFactory,
     AnyTypeAdapterFactory
   )
   /*

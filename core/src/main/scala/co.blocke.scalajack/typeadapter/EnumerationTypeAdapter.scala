@@ -28,12 +28,12 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
   def read(path: Path, reader: Reader, isMapKey: Boolean): E#Value =
     reader.peek match {
       case TokenType.String =>
-        Try(enum.withName(reader.readString())) match {
+        Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
           case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}")
         }
       case TokenType.Number =>
-        Try(enum(reader.readInt(isMapKey))) match {
+        Try(enum(reader.readInt(path, isMapKey))) match {
           case Success(u) => u
           case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}")
         }

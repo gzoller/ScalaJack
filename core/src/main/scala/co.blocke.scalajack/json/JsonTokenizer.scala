@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json
 
 import model._
+import util.Path
 import TokenType._
 import collection.mutable.ArrayBuffer
 
@@ -63,7 +64,7 @@ case class JsonTokenizer() extends Tokenizer[String] {
             tokenspace += JsonToken(False, i, i)
             i += 5
           case x =>
-            throw new Exception(s"Boom... unexpected character $x at position $i")
+            throw new SJReadError(Path.Tokenizing, Unexpected, s"Unexpected character $x at position $i", List(x.toString, i.toString))
         }
       }
       tokenspace += JsonToken(End, i, i)

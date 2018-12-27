@@ -5,6 +5,7 @@ import model._
 import model.TokenType._
 import util.Path
 
+import scala.util.{ Try, Success, Failure }
 import scala.collection.immutable.Map
 import scala.collection.generic.CanBuildFrom
 
@@ -70,7 +71,7 @@ case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer
         p += 1
         subReader.readArray(path, canBuildFrom, elementTypeAdapter, false)
       case _ =>
-        throw new Exception("Boom -- expected an Array but got " + tokens(p).tokenType)
+        throw new SJReadError(path, Unexpected, s"Expected an Array but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
 
   def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To =
@@ -94,10 +95,10 @@ case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer
         p += 1
         subReader.readMap(path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
       case _ =>
-        throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
+        throw new SJReadError(path, Unexpected, s"Expected a Map but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
 
-  def readBoolean(isMapKey: Boolean): Boolean = {
+  def readBoolean(path: Path, isMapKey: Boolean): Boolean = {
     val value = tokens(p).tokenType match {
       case True  => true
       case False => false
@@ -105,64 +106,120 @@ case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer
         val jt = tokens(p).asInstanceOf[JsonToken]
         val s = json.substring(jt.begin, jt.end)
         if (s == "true") true else false
-      case x => throw new Exception("Boom -- expected a Boolean but got " + x)
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a Boolean but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
   }
 
-  def readDecimal(isMapKey: Boolean): BigDecimal = {
+  def readDecimal(path: Path, isMapKey: Boolean): BigDecimal = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
-      case Number             => BigDecimal(json.substring(jt.begin, jt.end))
-      case String if isMapKey => BigDecimal(json.substring(jt.begin, jt.end))
-      case Null               => null
-      case x                  => throw new Exception("Boom -- expected a Number but got " + x)
+      case Number => Try(BigDecimal(json.substring(jt.begin, jt.end))) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case String if isMapKey => Try(BigDecimal(json.substring(jt.begin, jt.end))) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case Null => null
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a Number (Decimal) but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
   }
 
-  def readBigInt(isMapKey: Boolean): BigInt = {
+  def readBigInt(path: Path, isMapKey: Boolean): BigInt = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
-      case Number             => BigInt(json.substring(jt.begin, jt.end))
-      case String if isMapKey => BigInt(json.substring(jt.begin, jt.end))
-      case Null               => null
-      case x                  => throw new Exception("Boom -- expected a BigDecimal but got " + x)
+      case Number => Try(BigInt(json.substring(jt.begin, jt.end))) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case String if isMapKey => Try(BigInt(json.substring(jt.begin, jt.end))) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case Null => null
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a BigInt but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
   }
 
-  def readDouble(isMapKey: Boolean): Double = {
+  def readDouble(path: Path, isMapKey: Boolean): Double = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
-      case Number             => json.substring(jt.begin, jt.end).toDouble
-      case String if isMapKey => json.substring(jt.begin, jt.end).toDouble
-      case x                  => throw new Exception("Boom -- expected a Number but got " + x)
+      case Number => Try(json.substring(jt.begin, jt.end).toDouble) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case String if isMapKey => Try(json.substring(jt.begin, jt.end).toDouble) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a Double but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
   }
 
-  def readInt(isMapKey: Boolean): Int = {
+  def readInt(path: Path, isMapKey: Boolean): Int = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
-      case Number             => json.substring(jt.begin, jt.end).toInt
-      case String if isMapKey => json.substring(jt.begin, jt.end).toInt
-      case x                  => throw new Exception("Boom -- expected a Number but got " + x)
+      case Number => Try(json.substring(jt.begin, jt.end).toInt) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case String if isMapKey => Try(json.substring(jt.begin, jt.end).toInt) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected an Int but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
   }
 
-  def readLong(isMapKey: Boolean): Long = {
+  def readLong(path: Path, isMapKey: Boolean): Long = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
-      case Number             => json.substring(jt.begin, jt.end).toLong
-      case String if isMapKey => json.substring(jt.begin, jt.end).toLong
-      case x                  => throw new Exception("Boom -- expected a Number but got " + x)
+      case Number => Try(json.substring(jt.begin, jt.end).toLong) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case String if isMapKey => Try(json.substring(jt.begin, jt.end).toLong) match {
+        case Success(u) => u
+        case Failure(u) => throw new SJReadError(path, Invalid,
+          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end)}",
+                                                 List.empty[String], Some(u))
+      }
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a Long but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value
@@ -197,16 +254,17 @@ case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer
         p += 1
         subReader.readObjectFields(path, fields, isMapKey)
       case _ =>
-        throw new Exception("Boom -- expected an Object but got " + tokens(p).tokenType)
+        throw new SJReadError(path, Unexpected, s"Expected an Object (map with String keys) but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
   }
 
-  def readString(): String = {
+  def readString(path: Path): String = {
     val jt = tokens(p).asInstanceOf[JsonToken]
     val value = jt.tokenType match {
       case String => json.substring(jt.begin, jt.end)
       case Null   => null
-      case x      => throw new Exception("Boom -- expected a String but got " + x)
+      case _ =>
+        throw new SJReadError(path, Unexpected, s"Expected a String but parsed ${tokens(p).tokenType}", List(tokens(p).tokenType.toString))
     }
     p += 1
     value

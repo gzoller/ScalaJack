@@ -32,14 +32,14 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
       case BeginArray =>
         reader.readArray(path, Vector.canBuildFrom[Any], this, isMapKey).toList
       case Number =>
-        reader.readDecimal(isMapKey) match {
+        reader.readDecimal(path, isMapKey) match {
           case i if i.isValidInt    => i.toIntExact
           case i if i.isValidLong   => i.toLongExact
           case d if d.isExactDouble => d.toDouble
           case d                    => d
         }
       case String if isMapKey =>
-        val text = reader.readString()
+        val text = reader.readString(path)
         if (text == "")
           text
         else {
@@ -52,9 +52,9 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
           }
         }
       case String =>
-        reader.readString()
+        reader.readString(path)
       case True | False =>
-        reader.readBoolean(isMapKey)
+        reader.readBoolean(path, isMapKey)
       case Null =>
         reader.skip()
         null
