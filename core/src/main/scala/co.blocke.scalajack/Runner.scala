@@ -22,6 +22,8 @@ case class Truck(numberOfWheels: Int) extends Vehicle
 case class Car(numberOfWheels: Int, color: String) extends Vehicle
 case class Plane(numberOfEngines: Int) extends Vehicle
 
+case class VCLong(vc: Long) extends AnyVal
+
 object Runner extends App {
 
   val sj = ScalaJack().forType[List[List[String]]]
@@ -44,6 +46,8 @@ object Runner extends App {
 
   println(sj.read[ContactPoint]("""{"emailAddress":"foo@bar.com"}"""))
   println(sj.read[Vehicle]("""{"_hint":"co.blocke.scalajack.Truck","numberOfWheels":4}"""))
+
+  println(sj.read[VCLong]("100"))
 
   //  val t = JsonTokenizer()
   //  val tok = t.tokenize("""{"name":"Greg\"Zoller","age":52}""")

@@ -34,6 +34,8 @@ object Context {
     CanBuildFromTypeAdapterFactory,
     TypeTypeAdapterFactory,
     OptionTypeAdapterFactory,
+    classes.ValueClassTypeAdapterFactory, // <-- WARNING: This must preceed CaseClassTypeAdapter or all
+    //              ValueClasses will be interpreted as case classes!
     classes.CaseClassTypeAdapterFactory,
     EitherTypeAdapterFactory,
     UUIDTypeAdapterFactory,
