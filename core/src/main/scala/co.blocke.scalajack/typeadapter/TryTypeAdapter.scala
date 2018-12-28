@@ -32,8 +32,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
       case Failure(cause) =>
         reader.rollbackToSave()
-        throw cause
-      //        Failure(new UnreadableException(reader.captureValue(), cause))
+        throw new SJReadError(path, Invalid, s"Reading Try type failed", List.empty[String], Some(cause))
     }
   }
 

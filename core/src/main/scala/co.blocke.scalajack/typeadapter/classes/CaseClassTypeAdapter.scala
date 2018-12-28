@@ -2,16 +2,19 @@ package co.blocke.scalajack
 package typeadapter
 package classes
 
+import co.blocke.scalajack.model.ClassHelper.{ FieldMember, TypeMember }
 import util.Path
 import model._
 
 import scala.collection.immutable.{ ListMap, Map }
 
 case class CaseClassTypeAdapter[T](
+    className:         String,
     typeMembers:       List[ClassHelper.TypeMember[T]],
     fieldMembers:      ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-    constructorMirror: MethodMirror
-) extends TypeAdapter[T] {
+    constructorMirror: MethodMirror,
+    collectionName:    Option[String]                                        = None
+) extends ClassHelper.ClassLikeTypeAdapter[T] {
 
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys[AST](fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
@@ -80,7 +83,12 @@ case class CaseClassTypeAdapter[T](
           val fieldArray = fieldMembers.values.toArray
           for (p <- 0 to fieldArray.size - 1) {
             if (!flags(p)) {
-              fieldArray(p).defaultValue.map(default => args(p) = default).orElse(if (fieldArray(p).isOptional) None else throw new Exception(s"Boom -- Class missing field ${fieldArray(p).name}"))
+              fieldArray(p).defaultValue.map(default => args(p) = default).orElse(
+                if (fieldArray(p).isOptional)
+                  None
+                else
+                  throw new SJReadError(path, Missing, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name))
+              )
             }
           }
         }

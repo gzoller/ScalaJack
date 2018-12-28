@@ -14,12 +14,13 @@ case class TraitTypeAdapterFactory(hintLabel: String, specificType: Option[Type]
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (specificType.map(_ == tt.tpe).getOrElse(true) && classSymbol.isTrait)
-      TraitTypeAdapter(hintLabel, tt.tpe)
+      TraitTypeAdapter(classSymbol.fullName, hintLabel, tt.tpe)
     else
       next.typeAdapterOf[T]
 }
 
 case class TraitTypeAdapter[T](
+    traitName:       String,
     typeFieldName:   MemberName, // hint label
     polymorphicType: Type,
     hintModFn:       Option[BijectiveFunction[String, Type]] = None // optional string->type map (hint value modifier)
@@ -38,7 +39,7 @@ case class TraitTypeAdapter[T](
     reader.savePos()
     val concreteType = reader.lookAheadForField(typeFieldName)
       .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader, false)))
-      .getOrElse(throw new Exception("Boom -- no type hint found"))
+      .getOrElse(throw new SJReadError(path, Missing, s"No type hint found for trait $traitName", List(traitName)))
     reader.rollbackToSave()
     context.typeAdapter(concreteType).read(path, reader, isMapKey).asInstanceOf[T]
   }

@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package model
 
 import util.Path
+import scala.reflect.ClassTag
 
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
@@ -34,10 +35,25 @@ object TypeAdapter {
 
 trait TypeAdapter[T] {
 
+  self =>
+
   def read(path: Path, reader: Reader, isMapKey: Boolean): T
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
+
+  def as[U <: TypeAdapter[_]: ClassTag]: U =
+    maybeAs[U].getOrElse(throw new RuntimeException(s"$self is not an instance of ${implicitly[ClassTag[U]].runtimeClass}"))
+
+  def maybeAs[U <: TypeAdapter[_]: ClassTag]: Option[U] = {
+    val runtimeClass = implicitly[ClassTag[U]].runtimeClass
+    try {
+      Some(runtimeClass.cast(self).asInstanceOf[U])
+    } catch {
+      case _: ClassCastException =>
+        None
+    }
+  }
 }
 
 trait ArrayTypeAdapter[T, E] extends TypeAdapter[T] {

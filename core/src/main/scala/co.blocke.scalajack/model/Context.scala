@@ -39,7 +39,8 @@ object Context {
     UUIDTypeAdapterFactory,
     EnumerationTypeAdapterFactory,
     TryTypeAdapterFactory,
-    AnyTypeAdapterFactory
+    AnyTypeAdapterFactory,
+    SealedTraitTypeAdapterFactory
   )
   /*
     .withFactory(IRParsingFallbackTypeAdapter)

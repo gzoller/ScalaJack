@@ -104,6 +104,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       //        collectionAnnotation)
 
       CaseClassTypeAdapter(
+        classSymbol.name.toString(),
         typeMembers,
         orderdFieldMembers,
         constructorMirror

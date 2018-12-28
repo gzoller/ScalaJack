@@ -44,8 +44,8 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
         Try(leftTypeAdapter.read(path, reader, isMapKey)) match {
           case Success(leftValue) =>
             Left(leftValue.asInstanceOf[L])
-          case Failure(_) =>
-            throw new Exception("Boom, either failed")
+          case Failure(x) =>
+            throw new SJReadError(path, Invalid, s"Failed to read either side of Either", List.empty[String], Some(x))
         }
     }
   }

@@ -4,8 +4,9 @@ package typeadapter
 import util.Path
 import model._
 import java.util.UUID
+import org.apache.commons.codec.binary.Base64
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
   def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigDecimal = reader.readDecimal(path, isMapKey)
@@ -13,6 +14,14 @@ object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
 
 object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] {
   def read(path: Path, reader: Reader, isMapKey: Boolean = false): BigInt = reader.readBigInt(path, isMapKey)
+}
+
+object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] {
+  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Array[Byte] =
+    reader.readString(path) match {
+      case null      => null
+      case s: String => Base64.decodeBase64(s)
+    }
 }
 
 object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] {
@@ -26,7 +35,7 @@ object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] {
 object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] {
   def read(path: Path, reader: Reader, isMapKey: Boolean = false): Char = {
     val chars = reader.readString(path).toCharArray()
-    if(chars.size == 0)
+    if (chars.size == 0)
       throw new SJReadError(path, Invalid, "Tried to read a Char but empty string found")
     else
       chars(0)
@@ -59,12 +68,15 @@ object StringTypeAdapterFactory extends TypeAdapter.=:=[String] {
 
 object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
   def read(path: Path, reader: Reader, isMapKey: Boolean = false): UUID = {
-    val rawStr = reader.readString(path)
-    Try(UUID.fromString(rawStr)) match {s
-      case Success(u) => u
-      case Failure(u) => throw new SJReadError(path, Invalid,
-        s"Failed to create UUID value from parsed text ${rawStr}",
-        List.empty[String], Some(u))
+    reader.readString(path) match {
+      case null => null
+      case s: String =>
+        Try(UUID.fromString(s)) match {
+          case Success(u) => u
+          case Failure(u) => throw new SJReadError(path, Invalid,
+            s"Failed to create UUID value from parsed text ${s}",
+                                                   List(s), Some(u))
+        }
     }
   }
 }

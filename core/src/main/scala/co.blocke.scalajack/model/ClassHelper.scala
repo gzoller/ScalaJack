@@ -5,6 +5,8 @@ import java.lang.reflect.Method
 
 import co.blocke.scalajack.MemberName
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
+
+import scala.collection.immutable.ListMap
 import scala.reflect.runtime.universe._
 
 object ClassHelper {
@@ -82,10 +84,12 @@ object ClassHelper {
   }
 
   trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
+    val className: String
     val typeMembers: List[TypeMember[C]]
-    val fieldMembers: List[FieldMember[C]]
+    val fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[C, Any]]
+    //    val fieldMembers: List[FieldMember[C]]
     val collectionName: Option[String]
-    def dbKeys: List[FieldMember[C]] = fieldMembers.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-    def members = typeMembers ++ fieldMembers
+    def dbKeys: List[FieldMember[C]] = fieldMembers.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+    def members = typeMembers ++ fieldMembers.values
   }
 }

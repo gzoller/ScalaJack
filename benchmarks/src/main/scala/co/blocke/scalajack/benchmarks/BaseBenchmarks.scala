@@ -130,7 +130,6 @@ class BaseBenchmarksState {
 @State(Scope.Thread)
 class BaseBenchmarks {
 
-  /*
   @Benchmark
   def tokenizeSeries5(state: BaseBenchmarksState): Any = {
     state.series5Tokenizer.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
@@ -140,7 +139,6 @@ class BaseBenchmarks {
   def tokenizeSeries6(state: BaseBenchmarksState): Any = {
     state.series6Tokenizer.tokenize(state.jsonString)
   }
-  */
 
   /*
   @Benchmark

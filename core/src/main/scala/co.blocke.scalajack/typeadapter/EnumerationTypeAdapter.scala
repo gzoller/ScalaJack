@@ -30,19 +30,21 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
-          case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}")
+          case Failure(u) =>
+            throw new SJReadError(path, Invalid, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
         }
       case TokenType.Number =>
         Try(enum(reader.readInt(path, isMapKey))) match {
           case Success(u) => u
-          case Failure(u) => throw new java.util.NoSuchElementException(s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}")
+          case Failure(u) =>
+            throw new SJReadError(path, Invalid, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
         }
       case TokenType.Null =>
         reader.skip()
         null
       case actual =>
         reader.skip()
-        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading Enumeration value.")
+        throw new SJReadError(path, Unexpected, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
     }
 
   //  override def write(value: E#Value, writer: Writer): Unit =

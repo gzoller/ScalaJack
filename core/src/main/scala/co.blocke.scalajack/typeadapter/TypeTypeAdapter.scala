@@ -55,16 +55,16 @@ trait HintModifier
 
 case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
 
-  def typeNameToType(typeName: String): Type =
+  def typeNameToType(path: Path, typeName: String): Type =
     try {
       staticClass(typeName).toType
     } catch {
       case e: ScalaReflectionException =>
-        throw new ClassNotFoundException(s"""Unable to find class named "$typeName"\n""", e)
+        throw new SJReadError(path, Missing, s"""Unable to find class named "$typeName"\n""", List(typeName))
     }
 
   def read(path: Path, reader: Reader, isMapKey: Boolean = false): Type = reader.readString(path) match {
-    case s: String => typeNameToType(s)
+    case s: String => typeNameToType(path, s)
     case null      => null
   }
 }
