@@ -3,6 +3,8 @@ package model
 
 import util.Path
 
+import scala.collection.mutable.Builder
+
 case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T] {
 
   var resolvedTypeAdapter: TypeAdapter[T] = _
@@ -23,6 +25,6 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     typeAdapter
   }
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): T = resolved.read(path, reader, isMapKey)
-  //  override def write[AST](t: T)(implicit ops: Ops[AST], g: SerializationGuidance): AST = resolved.write(t)
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): T = resolved.read(path, reader, isMapKey)
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
 }

@@ -5,6 +5,8 @@ package classes
 import model._
 import util.{ Path, Reflection, TypeTags }
 
+import scala.collection.mutable.Builder
+
 object ValueClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -37,11 +39,12 @@ object ValueClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class ValueClassAdapter[DerivedValueClass, Value](
-                                                        sourceTypeAdapter: TypeAdapter[Value],
-                                                        unwrap:            DerivedValueClass => Value,
-                                                        derive:            Value => DerivedValueClass) extends TypeAdapter[DerivedValueClass] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean): DerivedValueClass =
+    sourceTypeAdapter: TypeAdapter[Value],
+    unwrap:            DerivedValueClass => Value,
+    derive:            Value => DerivedValueClass) extends TypeAdapter[DerivedValueClass] {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): DerivedValueClass =
     derive(sourceTypeAdapter.read(path, reader, isMapKey))
+  def write(t: DerivedValueClass, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
 }
 /*
                                                                override val irTransceiver: IRTransceiver[DerivedValueClass]) extends TypeAdapter[DerivedValueClass]

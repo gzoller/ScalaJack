@@ -3,6 +3,8 @@ package typeadapter
 
 import model._
 import util.Path
+
+import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag }
 import scala.util.{ Failure, Success, Try }
 
@@ -25,7 +27,7 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): E#Value =
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): E#Value =
     reader.peek match {
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {
@@ -46,6 +48,8 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         reader.skip()
         throw new SJReadError(path, Unexpected, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
     }
+
+  def write(t: E#Value, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
 
   //  override def write(value: E#Value, writer: Writer): Unit =
   //    if (value == null) {

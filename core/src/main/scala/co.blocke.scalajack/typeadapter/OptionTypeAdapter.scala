@@ -4,6 +4,8 @@ package typeadapter
 import util.Path
 import model._
 
+import scala.collection.mutable.Builder
+
 object OptionTypeAdapterFactory extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
 
   override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] = {
@@ -33,7 +35,7 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
 
   private val OptionTypeSymbol: TypeSymbol = symbolOf[Option[_]]
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): Option[E] =
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Option[E] =
     valueTypeAdapter.read(path, reader, isMapKey) match {
       case null if isMapKey => null
       case null             => None
@@ -45,6 +47,12 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
         }
       case v =>
         Some(v)
+    }
+
+  def write(t: Option[E], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    t match {
+      case Some(e) => valueTypeAdapter.write(e, writer)(out)
+      case None    =>
     }
 
   /*

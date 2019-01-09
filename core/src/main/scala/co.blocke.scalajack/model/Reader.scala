@@ -7,10 +7,12 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.Map
 
 trait Reader {
-  type WIRE
+
+  this: Transceiver =>
+
   val tokenizer: Tokenizer[WIRE]
 
-  def cloneWithSource(source: WIRE): Reader // used for Any parsing
+  def cloneWithSource(source: WIRE): Transceiver // used for Any parsing
 
   def savePos()
   def rollbackToSave()

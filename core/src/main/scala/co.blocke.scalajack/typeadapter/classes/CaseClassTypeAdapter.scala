@@ -7,6 +7,7 @@ import util.Path
 import model._
 
 import scala.collection.immutable.{ ListMap, Map }
+import scala.collection.mutable.Builder
 
 case class CaseClassTypeAdapter[T](
     className:         String,
@@ -75,7 +76,7 @@ case class CaseClassTypeAdapter[T](
     }
     */
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): T =
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T =
     reader.readObjectFields[T](path, fieldMembers, isMapKey) match {
       case null => null.asInstanceOf[T]
       case (allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
@@ -94,6 +95,9 @@ case class CaseClassTypeAdapter[T](
         }
         constructorMirror.apply(args: _*).asInstanceOf[T]
     }
+
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+
 }
 
 /*

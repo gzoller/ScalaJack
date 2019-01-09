@@ -49,6 +49,8 @@ object Runner extends App {
 
   println(sj.read[VCLong]("100"))
 
+  println("WRITE: " + sj.write(Map("x" -> "foo", "y" -> """bar "none"""")))
+
   //  val t = JsonTokenizer()
   //  val tok = t.tokenize("""{"name":"Greg\"Zoller","age":52}""")
   //  println(tok.toList)

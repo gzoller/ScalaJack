@@ -4,6 +4,7 @@ package typeadapter
 import util.Path
 import model._
 
+import scala.collection.mutable.Builder
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
@@ -34,7 +35,7 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): Either[L, R] = {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Either[L, R] = {
     reader.savePos()
     Try(rightTypeAdapter.read(path, reader, isMapKey)) match {
       case Success(rightValue) =>
@@ -49,6 +50,12 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
         }
     }
   }
+
+  def write(t: Either[L, R], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    t match {
+      case Left(v)  => leftTypeAdapter.write(v, writer)(out)
+      case Right(v) => rightTypeAdapter.write(v, writer)(out)
+    }
 }
 
 /*

@@ -5,6 +5,8 @@ import model._
 import util.Path
 import model.TokenType._
 
+import scala.collection.mutable.Builder
+
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   var hintLabel: String = null // Very un-functional, but must be set externally because Context isn't created until later.
@@ -15,7 +17,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Any = {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): Any = {
     reader.peek() match {
       case BeginObject => // Could be Trait or Map
         reader.savePos()
@@ -60,4 +62,6 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
         null
     }
   }
+
+  def write(t: Any, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
 }

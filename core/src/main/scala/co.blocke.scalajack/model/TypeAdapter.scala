@@ -3,6 +3,7 @@ package model
 
 import util.Path
 import scala.reflect.ClassTag
+import scala.collection.mutable.Builder
 
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
@@ -37,7 +38,8 @@ trait TypeAdapter[T] {
 
   self =>
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): T
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction

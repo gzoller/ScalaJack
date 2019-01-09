@@ -5,6 +5,7 @@ import util.Path
 import model._
 
 import scala.collection.immutable
+import scala.collection.mutable.Builder
 import scala.util.Try
 
 object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
@@ -99,7 +100,7 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean): T = reader.readString(path) match {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
@@ -107,6 +108,12 @@ class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]
       objInstance
     case x => throw new SJReadError(path, Unexpected, s"Expected a valid subclass of ${typeOf[T]} but got ${x}", List(typeOf[T].toString, x))
   }
+
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    t match {
+      case null => writer.writeString(null, out)
+      case _    => writer.writeString(t.toString, out)
+    }
 }
 
 trait SealedImplementation[T] {
@@ -117,7 +124,10 @@ trait SealedImplementation[T] {
 }
 
 class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit context: Context, tt: TypeTag[T]) extends TypeAdapter[T] {
-  def read(path: Path, reader: Reader, isMapKey: Boolean): T = {
+
+  val stringTypeAdapter = context.typeAdapterOf[String]
+
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = {
     reader.savePos()
     reader.readMap(path, Map.canBuildFrom[String, Any], context.typeAdapterOf[String], context.typeAdapterOf[Any], isMapKey) match {
       case null => null.asInstanceOf[T]
@@ -136,76 +146,14 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
         }
     }
   }
-}
 
-/*
-class CaseObjectIRTransceiver[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends IRTransceiver[T] {
-
-  self =>
-
-  private val CaseObjectType: Type = typeOf[T]
-  private val taggedNull: TypeTagged[T] = TypeTagged(null.asInstanceOf[T], tt.tpe)
-
-  override def read[IR, WIRE](path: Path, ir: IR)(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): ReadResult[T] =
-    ir match {
-      case IRNull() => ReadSuccess(taggedNull)
-
-      case IRString(s) if (subclasses.contains(s)) =>
-        val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
-        val objInstance = clazz.getField("MODULE$").get(null).asInstanceOf[T]
-        ReadSuccess(TypeTagged(objInstance, typeOf[T]))
-
-      case _ => ReadFailure(path, ReadError.Unexpected(s"Expected a valid subclass of $CaseObjectType", reportedBy = self))
-    }
-
-  override def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR] =
-    tagged match {
-      case TypeTagged(null) => WriteSuccess(IRNull())
-      case TypeTagged(c)    => WriteSuccess(IRString(c.toString))
-    }
-}0
-
-object SealedTraitIRTransceiver {
-  trait Implementation[T] {
-    val fieldNames: immutable.Set[String]
-    val irTransceiver: IRTransceiver[T]
-    def isInstance(tagged: TypeTagged[T]): Boolean
-    def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR]
-  }
-}
-
-class SealedTraitIRTransceiver[T](implementations: immutable.Set[SealedTraitIRTransceiver.Implementation[T]])(implicit tt: TypeTag[T]) extends IRTransceiver[T] {
-
-  self =>
-
-  override def read[IR, WIRE](path: Path, ir: IR)(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): ReadResult[T] =
-    ir match {
-      case IRObject(fields) =>
-        val allFieldNames = fields.map(_._1).toSet
-        implementations.filter(implementation => implementation.fieldNames.subsetOf(allFieldNames)) match {
-          case emptySet if emptySet.isEmpty =>
-            throw new RuntimeException(s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames")
-
-          case setOfOne if setOfOne.size == 1 =>
-            val implementation = setOfOne.head
-            implementation.irTransceiver.read(path, ir)
-
-          case _ =>
-            throw new RuntimeException(s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames")
-        }
-
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    t match {
+      case null => writer.writeString(null, out)
       case _ =>
-        ReadFailure(path, ReadError.Unexpected("Expected a JSON object", reportedBy = self))
-    }
-
-  override def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR] =
-    tagged match {
-      case TypeTagged(null) => WriteSuccess(IRNull())
-      case TypeTagged(_) =>
-        implementations.find(_.isInstance(tagged)) match {
-          case Some(implementation) => implementation.write(tagged)
-          case None                 => ??? // TODO: What's this ??? mean here?
+        implementations.find(_.isInstance(t)) match {
+          case Some(implementation) => ??? // Write a map of name/value here??? implementation.typeAdapter.write(t, writer)(out)
+          case None                 => throw new Exception("Boom... Given object 't' doesn't seem to be a sealed trait here.")
         }
     }
 }
-*/ 

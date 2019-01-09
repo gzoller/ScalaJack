@@ -4,6 +4,8 @@ package typeadapter
 import util.Path
 import model._
 
+import scala.collection.mutable.Builder
+
 /*
 object TypeTypeIRTransceiver {
   def typeNameToType(typeName: String): Type =
@@ -63,8 +65,11 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
         throw new SJReadError(path, Missing, s"""Unable to find class named "$typeName"\n""", List(typeName))
     }
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean = false): Type = reader.readString(path) match {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): Type = reader.readString(path) match {
     case s: String => typeNameToType(path, s)
     case null      => null
   }
+
+  def write(t: Type, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    writer.writeString(t.typeSymbol.fullName, out)
 }

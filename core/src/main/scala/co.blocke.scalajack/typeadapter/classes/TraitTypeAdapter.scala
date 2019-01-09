@@ -6,6 +6,7 @@ import model._
 import util._
 
 import scala.collection.mutable
+import scala.collection.mutable.Builder
 
 // This should come *after* SealedTraitTypeAdapter in the Context factory list, as all sealed traits are
 // also traits, and this factory would pick them all up, hiding the sealed ones.
@@ -35,7 +36,7 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read(path: Path, reader: Reader, isMapKey: Boolean): T = {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = {
     reader.savePos()
     val concreteType = reader.lookAheadForField(typeFieldName)
       .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader, false)))
@@ -43,4 +44,7 @@ case class TraitTypeAdapter[T](
     reader.rollbackToSave()
     context.typeAdapter(concreteType).read(path, reader, isMapKey).asInstanceOf[T]
   }
+
+  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+
 }

@@ -9,14 +9,19 @@ import scala.util.{ Try, Success, Failure }
 import scala.collection.immutable.Map
 import scala.collection.generic.CanBuildFrom
 
-case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer()) extends Reader {
+trait JsonReader extends Reader {
 
-  type WIRE = String
+  this: JsonTransciever =>
+
+  val context: Context
+
+  val json: String
+  val tokenizer: Tokenizer[WIRE]
 
   private var p: Int = 0
   private var saved: Int = -1
 
-  val tokens = tokenizer.tokenize(json)
+  val tokens = tokenizer.tokenize(json.asInstanceOf[WIRE])
 
   def savePos() = saved = p
   def rollbackToSave() = p = saved
@@ -47,8 +52,8 @@ case class JsonReader(json: String, tokenizer: Tokenizer[String] = JsonTokenizer
     }
   }
 
-  def cloneWithSource(source: String): Reader = // used for Any parsing
-    new JsonReader(source, tokenizer)
+  def cloneWithSource(source: String): Transceiver = // used for Any parsing
+    new JsonReaderWriter(source, context, tokenizer.asInstanceOf[Tokenizer[String]])
 
   def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
     tokens(p).tokenType match {

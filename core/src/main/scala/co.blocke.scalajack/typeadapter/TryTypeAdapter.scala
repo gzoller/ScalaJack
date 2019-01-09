@@ -4,6 +4,7 @@ package typeadapter
 import model._
 import util.Path
 
+import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
@@ -24,7 +25,7 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
 
 case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
-  def read(path: Path, reader: Reader, isMapKey: Boolean): Try[T] = {
+  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Try[T] = {
     reader.savePos()
     Try { valueTypeAdapter.read(path, reader, isMapKey) } match {
       case self @ Success(_) =>
@@ -36,19 +37,9 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
     }
   }
 
-  /*
-  override def write(value: Try[T], writer: Writer): Unit =
-    value match {
-      case Success(v) =>
-        valueTypeAdapter.write(v, writer)
-
-      case Failure(e: UnreadableException) =>
-        e.write(writer)
-
-      case Failure(e) =>
-        // $COVERAGE-OFF$USafety catch--shouldn't be possible
-        throw e
-      // $COVERAGE-ON$
+  def write(t: Try[T], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+    t match {
+      case Success(v) => valueTypeAdapter.write(v, writer)(out)
+      case Failure(e) => throw e
     }
-  */
 }
