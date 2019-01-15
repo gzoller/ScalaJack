@@ -17,17 +17,17 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): Any = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Any = {
     reader.peek() match {
       case BeginObject => // Could be Trait or Map
         reader.savePos()
         reader.lookAheadForField(hintLabel) match {
-          case Some(found) =>
+          case Some(_) => // type hint found... this is a trait
             val concreteType = typeTypeAdapter.read(path, reader, false)
             reader.rollbackToSave()
             context.typeAdapter(concreteType).read(path, reader, isMapKey)
 
-          case None =>
+          case None =>  // no hint found... treat as a Map
             reader.rollbackToSave()
             reader.readMap(path, Map.canBuildFrom[Any, Any], this, this, isMapKey)
         }
@@ -47,7 +47,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
         else {
           text.toCharArray.head match {
             case c if c == '[' || c == '{' || isNumberChar(c) || text == "true" || text == "false" =>
-              val subReader = reader.cloneWithSource(text.asInstanceOf[reader.WIRE])
+              val subReader = reader.cloneWithSource(text.asInstanceOf[WIRE])
               this.read(path, subReader, false)
             case _ =>
               text
@@ -63,5 +63,5 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
     }
   }
 
-  def write(t: Any, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
 }

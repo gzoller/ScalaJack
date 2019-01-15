@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package model
 
-import scala.collection.mutable.ArrayBuffer
+//import collection.mutable.ArrayBuffer
+import java.util.ArrayList
 
 object TokenType extends Enumeration {
   type TokenType = Value
@@ -16,5 +17,5 @@ trait Token {
 }
 
 trait Tokenizer[WIRE] {
-  def tokenize(source: WIRE): ArrayBuffer[Token]
+  def tokenize(source: WIRE): ArrayList[Token] //ArrayBuffer[Token]
 }

@@ -7,11 +7,9 @@ import scala.collection.{ GenMap, GenIterable }
 import org.apache.commons.text.StringEscapeUtils.escapeJava
 import scala.collection.mutable.Builder
 
-trait JsonWriter extends Writer {
+trait JsonWriter extends Writer[String] {
 
   this: JsonTransciever =>
-
-  val stringTypeAdapter: TypeAdapter[String]
 
   @inline def addString(s: String, out: Builder[Any, String]): Unit = s.toCharArray.map(c => out += c)
 
@@ -21,7 +19,7 @@ trait JsonWriter extends Writer {
       out += '['
       val iter = a.iterator
       while (iter.hasNext) {
-        elemTypeAdapter.write(iter.next, this)(out)
+        elemTypeAdapter.write(iter.next, this, out)
         if (iter.hasNext)
           out += ','
       }
@@ -53,6 +51,7 @@ trait JsonWriter extends Writer {
   def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[Any, String]): Unit = t match {
     case null => addString("null", out)
     // Optimization if Key is String.  Don't need to build a sub-StringBuilder to stringify a non-String key
+    /*
     case a if keyTypeAdapter == stringTypeAdapter =>
       out += '{'
       val iter = a.iterator
@@ -65,16 +64,17 @@ trait JsonWriter extends Writer {
           out += ','
       }
       out += '}'
+      */
     case a =>
       out += '{'
       val iter = a.iterator
       while (iter.hasNext) {
         val kv = iter.next
         val out2 = new StringBuilder().asInstanceOf[Builder[Any, String]] // stringify a non-string key
-        keyTypeAdapter.write(kv._1, this)(out2)
+        keyTypeAdapter.write(kv._1, this, out2)
         writeString(out2.result(), out)
         out += ':'
-        valueTypeAdapter.write(kv._2, this)(out)
+        valueTypeAdapter.write(kv._2, this, out)
         if (iter.hasNext)
           out += ','
       }

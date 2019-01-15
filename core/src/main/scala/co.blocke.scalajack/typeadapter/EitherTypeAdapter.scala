@@ -35,7 +35,7 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Either[L, R] = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): Either[L, R] = {
     reader.savePos()
     Try(rightTypeAdapter.read(path, reader, isMapKey)) match {
       case Success(rightValue) =>
@@ -46,15 +46,15 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
           case Success(leftValue) =>
             Left(leftValue.asInstanceOf[L])
           case Failure(x) =>
-            throw new SJReadError(path, Invalid, s"Failed to read either side of Either", List.empty[String], Some(x))
+            throw new ReadMalformedError(path, s"Failed to read either side of Either", List.empty[String], x)
         }
     }
   }
 
-  def write(t: Either[L, R], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: Either[L, R], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
-      case Left(v)  => leftTypeAdapter.write(v, writer)(out)
-      case Right(v) => rightTypeAdapter.write(v, writer)(out)
+      case Left(v)  => leftTypeAdapter.write(v, writer, out)
+      case Right(v) => rightTypeAdapter.write(v, writer, out)
     }
 }
 

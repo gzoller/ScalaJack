@@ -85,9 +85,6 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
                       case null => false
                       case x    => runtimeClass.isInstance(x)
                     }
-
-                  //                    override def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR] =
-                  //                      irTransceiver.write(tagged)
                 }
               }.toSet
               new SealedTraitTypeAdapter[T](impls)
@@ -100,16 +97,16 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
       val objInstance = clazz.getField("MODULE$").get(null).asInstanceOf[T]
       objInstance
-    case x => throw new SJReadError(path, Unexpected, s"Expected a valid subclass of ${typeOf[T]} but got ${x}", List(typeOf[T].toString, x))
+    case x => throw new ReadUnexpectedError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}", List(typeOf[T].toString, x))
   }
 
-  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
       case null => writer.writeString(null, out)
       case _    => writer.writeString(t.toString, out)
@@ -127,7 +124,7 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
 
   val stringTypeAdapter = context.typeAdapterOf[String]
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = {
     reader.savePos()
     reader.readMap(path, Map.canBuildFrom[String, Any], context.typeAdapterOf[String], context.typeAdapterOf[Any], isMapKey) match {
       case null => null.asInstanceOf[T]
@@ -139,15 +136,15 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
             setOfOne.head.typeAdapter.read(path, reader, isMapKey)
 
           case emptySet if emptySet.isEmpty =>
-            throw new SJReadError(path, Invalid, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames", List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
+            throw new ReadInvalidError(path, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames", List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
 
           case _ =>
-            throw new SJReadError(path, Invalid, s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames", List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
+            throw new ReadInvalidError(path, s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames", List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
         }
     }
   }
 
-  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
       case null => writer.writeString(null, out)
       case _ =>

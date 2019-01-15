@@ -36,15 +36,15 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = {
     reader.savePos()
     val concreteType = reader.lookAheadForField(typeFieldName)
       .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader, false)))
-      .getOrElse(throw new SJReadError(path, Missing, s"No type hint found for trait $traitName", List(traitName)))
+      .getOrElse(throw new ReadMissingError(path, s"No type hint found for trait $traitName", List(traitName)))
     reader.rollbackToSave()
     context.typeAdapter(concreteType).read(path, reader, isMapKey).asInstanceOf[T]
   }
 
-  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
 
 }

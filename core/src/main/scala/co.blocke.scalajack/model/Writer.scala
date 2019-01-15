@@ -9,9 +9,7 @@ import scala.collection.mutable.Builder
 //  def result(): B
 //}
 
-trait Writer {
-
-  this: Transceiver =>
+trait Writer[WIRE] {
 
   def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[Any, WIRE]): Unit
   def writeBigInt(t: BigInt, out: Builder[Any, WIRE]): Unit

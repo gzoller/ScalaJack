@@ -38,8 +38,8 @@ trait TypeAdapter[T] {
 
   self =>
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T
-  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction

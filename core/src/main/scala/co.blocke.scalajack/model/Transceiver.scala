@@ -1,6 +1,4 @@
 package co.blocke.scalajack
 package model
 
-trait Transceiver extends Reader with Writer {
-  type WIRE
-}
+trait Transceiver[WIRE] extends Reader[WIRE] with Writer[WIRE]

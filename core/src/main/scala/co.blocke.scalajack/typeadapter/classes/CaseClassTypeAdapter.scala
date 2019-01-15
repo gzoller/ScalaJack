@@ -76,27 +76,28 @@ case class CaseClassTypeAdapter[T](
     }
     */
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): T =
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T =
     reader.readObjectFields[T](path, fieldMembers, isMapKey) match {
       case null => null.asInstanceOf[T]
-      case (allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
-        if (!allFound) {
+      case objectFieldResult: ObjectFieldResult => //(allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
+        if (!objectFieldResult.allThere) {
           val fieldArray = fieldMembers.values.toArray
           for (p <- 0 to fieldArray.size - 1) {
-            if (!flags(p)) {
-              fieldArray(p).defaultValue.map(default => args(p) = default).orElse(
+            if (!objectFieldResult.fieldSet(p)) {
+              fieldArray(p).defaultValue.map(default => objectFieldResult.objectArgs(p) = default).orElse(
                 if (fieldArray(p).isOptional)
                   None
                 else
-                  throw new SJReadError(path, Missing, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name))
+                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name))
               )
             }
           }
         }
-        constructorMirror.apply(args: _*).asInstanceOf[T]
+        constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
     }
 
-  def write(t: T, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+  }
 
 }
 

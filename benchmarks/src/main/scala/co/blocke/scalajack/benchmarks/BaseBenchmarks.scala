@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package benchmarks
 
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
+import scala.concurrent.Future
 //import scala.reflect.runtime.universe.{ Type, typeOf }
 //import co.blocke.scalajackx.hybrid._
 //
@@ -71,7 +72,8 @@ class BaseBenchmarksState {
   //--------------- Series 6
   val series6Tokenizer = co.blocke.scalajack.json.JsonTokenizer()
   val sj6 = co.blocke.scalajack.ScalaJack()
-  val sj6X = sj6.forType[List[Person]] //[List[List[Int]]]
+  //  val sj6X = sj6.forType[Double]
+  //  val sj6X = sj6.forType[List[Person]] //[List[List[Int]]]
 
   /*
   //--------------- Series X ScalaJack Setup
@@ -130,6 +132,7 @@ class BaseBenchmarksState {
 @State(Scope.Thread)
 class BaseBenchmarks {
 
+  /*ZZZ
   @Benchmark
   def tokenizeSeries5(state: BaseBenchmarksState): Any = {
     state.series5Tokenizer.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
@@ -139,8 +142,21 @@ class BaseBenchmarks {
   def tokenizeSeries6(state: BaseBenchmarksState): Any = {
     state.series6Tokenizer.tokenize(state.jsonString)
   }
+  */
 
-  /*
+  /* SIMPLE
+  @Benchmark
+  def simpleSeries5(state: BaseBenchmarksState): Any = {
+    state.sj5.read[Double]("123.456")
+  }
+
+  @Benchmark
+  def simpleSeries6(state: BaseBenchmarksState): Any = {
+    state.sj6.read[Double]("123.456")
+  }
+  */
+
+  /* Medium
   @Benchmark
   def readSeries5(state: BaseBenchmarksState): Any = {
     state.sj5.read[List[List[Int]]](state.jsList)
@@ -150,7 +166,9 @@ class BaseBenchmarks {
   def readSeries6(state: BaseBenchmarksState): Any = {
     state.sj6.read[List[List[Int]]](state.jsList)
   }
+  */
 
+  /*
   @Benchmark
   def readSeries6X(state: BaseBenchmarksState): Any = {
     state.sj6X.fastRead(state.jsList)
@@ -167,10 +185,12 @@ class BaseBenchmarks {
     state.sj6.read[List[Person]](state.jsonString)
   }
 
+  /*
   @Benchmark
   def readSeries6X(state: BaseBenchmarksState): Any = {
-    state.sj6X.fastRead(state.jsonString)
+  state.sj6X.fastRead(state.jsonString)
   }
+  */
 
   //  import play.api.libs.json._
   //  @Benchmark
@@ -178,45 +198,45 @@ class BaseBenchmarks {
   //    println(Try { Json.stringify(Json.toJson(state.listOfPersons)) })
   //  }
   /*
-  //  @Benchmark
-  def readPrototype(state: BaseBenchmarksState): List[List[Int]] = {
-    val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-    val prim = state.h_arrayTypeAdapter2.serializer.toPrimitives(state.h_arrayTypeAdapter2.serializer.parse(ps))
-    state.h_arrayTypeAdapter2.materialize(prim)
-  }
+//  @Benchmark
+def readPrototype(state: BaseBenchmarksState): List[List[Int]] = {
+val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+val prim = state.h_arrayTypeAdapter2.serializer.toPrimitives(state.h_arrayTypeAdapter2.serializer.parse(ps))
+state.h_arrayTypeAdapter2.materialize(prim)
+}
 
-  @Benchmark
-  def readSeries6ScalaJack(state: BaseBenchmarksState): Person = {
-    //    state.series6ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-    state.series6ScalaJack.read[Person](state.jsonPerson)
-  }
+@Benchmark
+def readSeries6ScalaJack(state: BaseBenchmarksState): Person = {
+//    state.series6ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+state.series6ScalaJack.read[Person](state.jsonPerson)
+}
 
-  @Benchmark
-  def readSeries6XScalaJack(state: BaseBenchmarksState): Person = {
-    //    state.series6X.fastRead("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-    //    state.series6X.fastRead(state.jsonString)
-    state.series6X.fastRead(state.jsonPerson)
-  }
+@Benchmark
+def readSeries6XScalaJack(state: BaseBenchmarksState): Person = {
+//    state.series6X.fastRead("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+//    state.series6X.fastRead(state.jsonString)
+state.series6X.fastRead(state.jsonPerson)
+}
 
-  @Benchmark
-  def readSeries5ScalaJack(state: BaseBenchmarksState): Person = {
-    //    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-    //    state.series5ScalaJack.read[List[Person]](state.jsonString)
-    state.series5ScalaJack.read[Person](state.jsonPerson)
-  }
+@Benchmark
+def readSeries5ScalaJack(state: BaseBenchmarksState): Person = {
+//    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+//    state.series5ScalaJack.read[List[Person]](state.jsonString)
+state.series5ScalaJack.read[Person](state.jsonPerson)
+}
 
-  @Benchmark
-  def readSeries5XScalaJack(state: BaseBenchmarksState): Person = {
-    //    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-    //    state.series5ScalaJack.read[List[Person]](state.jsonString)
-    state.series5XScalaJack.fastRead(state.jsonPerson)
-  }
+@Benchmark
+def readSeries5XScalaJack(state: BaseBenchmarksState): Person = {
+//    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
+//    state.series5ScalaJack.read[List[Person]](state.jsonString)
+state.series5XScalaJack.fastRead(state.jsonPerson)
+}
 
-  //  @Benchmark
-  def readSeries4ScalaJack(state: BaseBenchmarksState): List[Person] = {
-    //    state.series4ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]", state.series4vc)
-    state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
-  }
-  */
+//  @Benchmark
+def readSeries4ScalaJack(state: BaseBenchmarksState): List[Person] = {
+//    state.series4ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]", state.series4vc)
+state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
+}
+*/
 
 }

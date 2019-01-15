@@ -83,11 +83,11 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
     keyTypeAdapter:   TypeAdapter[Key],
     valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, isMapKey)
-  def write(t: To, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = writer.writeMap(t.asInstanceOf[GenMap[Key, Value]], keyTypeAdapter, valueTypeAdapter, out)
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, isMapKey)
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeMap(t.asInstanceOf[GenMap[Key, Value]], keyTypeAdapter, valueTypeAdapter, out)
 }
 
 case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter, isMapKey)
-  def write(t: To, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = writer.writeArray(t.asInstanceOf[GenIterable[Elem]], elementTypeAdapter, out)
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter, isMapKey)
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeArray(t.asInstanceOf[GenIterable[Elem]], elementTypeAdapter, out)
 }

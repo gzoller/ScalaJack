@@ -26,15 +26,16 @@ case class VCLong(vc: Long) extends AnyVal
 
 object Runner extends App {
 
-  val sj = ScalaJack().forType[List[List[String]]]
+  val sj = ScalaJack() //.forType[List[List[String]]]
 
-  println(sj.fastRead("""[["a","b","c"],["a","b","c"]]"""))
+  //  println(sj.fastRead("""[["a","b","c"],["a","b","c"]]"""))
 
+  println(sj.read[Person]("""{"name":"Greg","age":52}"""))
+
+  /*
   println(sj.read[Map[String, Int]]("""{"a":1,"b":2}"""))
 
   println(sj.read[Map[List[Int], Boolean]]("""{"[1,2,3]":true,"[4,5,6]":false}"""))
-
-  println(sj.read[Person]("""{"name":"Greg","age":52}"""))
 
   println(sj.read[Pet]("""{"name":"George","numLegs":4,"_hint":"co.blocke.scalajack.Dog","weight": 12.34}"""))
 
@@ -54,4 +55,7 @@ object Runner extends App {
   //  val t = JsonTokenizer()
   //  val tok = t.tokenize("""{"name":"Greg\"Zoller","age":52}""")
   //  println(tok.toList)
+  */
+
+  println(sj.read[Double]("123.455"))
 }

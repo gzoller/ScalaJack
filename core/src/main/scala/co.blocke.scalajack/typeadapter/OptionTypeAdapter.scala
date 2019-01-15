@@ -35,7 +35,7 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
 
   private val OptionTypeSymbol: TypeSymbol = symbolOf[Option[_]]
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Option[E] =
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): Option[E] =
     valueTypeAdapter.read(path, reader, isMapKey) match {
       case null if isMapKey => null
       case null             => None
@@ -49,9 +49,9 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
         Some(v)
     }
 
-  def write(t: Option[E], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
-      case Some(e) => valueTypeAdapter.write(e, writer)(out)
+      case Some(e) => valueTypeAdapter.write(e, writer, out)
       case None    =>
     }
 

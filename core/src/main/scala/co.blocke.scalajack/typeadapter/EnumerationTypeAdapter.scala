@@ -27,29 +27,29 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): E#Value =
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): E#Value =
     reader.peek match {
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new SJReadError(path, Invalid, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
         }
       case TokenType.Number =>
         Try(enum(reader.readInt(path, isMapKey))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new SJReadError(path, Invalid, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
         }
       case TokenType.Null =>
         reader.skip()
         null
       case actual =>
         reader.skip()
-        throw new SJReadError(path, Unexpected, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
+        throw new ReadUnexpectedError(path, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
     }
 
-  def write(t: E#Value, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit = {}
+  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
 
   //  override def write(value: E#Value, writer: Writer): Unit =
   //    if (value == null) {

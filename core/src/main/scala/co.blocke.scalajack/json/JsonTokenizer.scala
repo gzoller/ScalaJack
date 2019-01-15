@@ -4,20 +4,20 @@ package json
 import model._
 import util.Path
 import TokenType._
-import collection.mutable.ArrayBuffer
+import java.util.ArrayList
 
 case class JsonTokenizer() extends Tokenizer[String] {
 
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
-  def tokenize(source: String): ArrayBuffer[Token] = {
+  def tokenize(source: String): ArrayList[Token] = {
     try {
       val chars = source.toCharArray
       val max = chars.length
       var i: Int = 0
       var p: Int = 0
-      val tokenspace = new ArrayBuffer[Token](3000)
+      val tokenspace = new ArrayList[Token]()
 
       while (i < max) {
         chars(i) match {
@@ -29,21 +29,21 @@ case class JsonTokenizer() extends Tokenizer[String] {
                 i += 1
               i += 1
             }
-            tokenspace += JsonToken(String, mark, i)
+            tokenspace.add(JsonToken(String, mark, i))
             i += 1
           case c if c.isWhitespace =>
             i += 1
           case '[' =>
-            tokenspace += JsonToken(BeginArray, i, i)
+            tokenspace.add(JsonToken(BeginArray, i, i))
             i += 1
           case ']' =>
-            tokenspace += JsonToken(EndArray, i, i)
+            tokenspace.add(JsonToken(EndArray, i, i))
             i += 1
           case '{' =>
-            tokenspace += JsonToken(BeginObject, i, i)
+            tokenspace.add(JsonToken(BeginObject, i, i))
             i += 1
           case '}' =>
-            tokenspace += JsonToken(EndObject, i, i)
+            tokenspace.add(JsonToken(EndObject, i, i))
             i += 1
           case ':' =>
             i += 1
@@ -53,21 +53,22 @@ case class JsonTokenizer() extends Tokenizer[String] {
             val mark = i
             while (i < max && isNumberChar(chars(i)))
               i += 1
-            tokenspace += JsonToken(Number, mark, i)
+            tokenspace.add(JsonToken(Number, mark, i))
           case 'n' =>
-            tokenspace += JsonToken(Null, i, i)
+            tokenspace.add(JsonToken(Null, i, i))
             i += 4
           case 't' =>
-            tokenspace += JsonToken(True, i, i)
+            tokenspace.add(JsonToken(True, i, i))
             i += 4
           case 'f' =>
-            tokenspace += JsonToken(False, i, i)
+            tokenspace.add(JsonToken(False, i, i))
             i += 5
           case x =>
-            throw new SJReadError(Path.Tokenizing, Unexpected, s"Unexpected character $x at position $i", List(x.toString, i.toString))
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character $x at position $i", List(x.toString, i.toString))
         }
       }
-      tokenspace += JsonToken(End, i, i)
+      tokenspace.add(JsonToken(End, i, i))
+      tokenspace
     }
   }
 }

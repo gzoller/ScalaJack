@@ -25,7 +25,7 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
 
 case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean): Try[T] = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): Try[T] = {
     reader.savePos()
     Try { valueTypeAdapter.read(path, reader, isMapKey) } match {
       case self @ Success(_) =>
@@ -33,13 +33,13 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
       case Failure(cause) =>
         reader.rollbackToSave()
-        throw new SJReadError(path, Invalid, s"Reading Try type failed", List.empty[String], Some(cause))
+        throw new ReadMalformedError(path, s"Reading Try type failed", List.empty[String], cause)
     }
   }
 
-  def write(t: Try[T], writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
-      case Success(v) => valueTypeAdapter.write(v, writer)(out)
+      case Success(v) => valueTypeAdapter.write(v, writer, out)
       case Failure(e) => throw e
     }
 }

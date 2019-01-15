@@ -6,13 +6,13 @@ import util.Path
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.Map
 
-trait Reader {
+case class ObjectFieldResult(allThere: Boolean, objectArgs: Array[Any], fieldSet: Array[Boolean])
 
-  this: Transceiver =>
+trait Reader[WIRE] {
 
   val tokenizer: Tokenizer[WIRE]
 
-  def cloneWithSource(source: WIRE): Transceiver // used for Any parsing
+  def cloneWithSource(source: WIRE): Transceiver[WIRE] // used for Any parsing
 
   def savePos()
   def rollbackToSave()
@@ -29,6 +29,7 @@ trait Reader {
   def readInt(path: Path, isMapKey: Boolean): Int
   def readLong(path: Path, isMapKey: Boolean): Long
   def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To
-  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): (Boolean, Array[Any], Array[Boolean])
+  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
   def readString(path: Path): String
 }
+

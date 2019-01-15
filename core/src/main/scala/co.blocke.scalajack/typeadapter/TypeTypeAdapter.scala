@@ -62,14 +62,14 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
       staticClass(typeName).toType
     } catch {
       case e: ScalaReflectionException =>
-        throw new SJReadError(path, Missing, s"""Unable to find class named "$typeName"\n""", List(typeName))
+        throw new ReadMissingError(path, s"""Unable to find class named "$typeName"\n""", List(typeName))
     }
 
-  def read(path: Path, reader: Transceiver, isMapKey: Boolean = false): Type = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Type = reader.readString(path) match {
     case s: String => typeNameToType(path, s)
     case null      => null
   }
 
-  def write(t: Type, writer: Transceiver)(out: Builder[Any, writer.WIRE]): Unit =
+  def write[WIRE](t: Type, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     writer.writeString(t.typeSymbol.fullName, out)
 }

@@ -7,10 +7,10 @@ import typeadapter._
 
 trait JackFlavor[N, WIRE] {
 
-  def parse(wire: WIRE): Transceiver
+  def parse(wire: WIRE): Transceiver[WIRE]
 
   def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(Path.Root, parse(wire), false).asInstanceOf[T]
-  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
+  //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def write[T](t: T)(implicit tt: TypeTag[T]): WIRE
 
@@ -37,8 +37,8 @@ trait JackFlavor[N, WIRE] {
 
   val context: Context = bakeContext()
 
-  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
-  val nativeTypeAdapter: TypeAdapter[N]
+  //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
+  //  val nativeTypeAdapter: TypeAdapter[N]
 
   /**
    * Project fields from given master object to a view object of type T.  Field names/types must match master
