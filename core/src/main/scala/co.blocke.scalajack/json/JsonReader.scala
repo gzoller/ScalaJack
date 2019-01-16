@@ -9,6 +9,7 @@ import scala.util.{ Try, Success, Failure }
 import scala.collection.immutable.Map
 import scala.collection.generic.CanBuildFrom
 import java.util.ArrayList
+import org.apache.commons.text.StringEscapeUtils.unescapeJson
 
 trait JsonReader extends Reader[String] {
 
@@ -277,6 +278,7 @@ trait JsonReader extends Reader[String] {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
       case String => json.substring(jt.begin, jt.end)
+      //      case String => unescapeJson(json.substring(jt.begin, jt.end))
       case Null   => null
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected a String but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))

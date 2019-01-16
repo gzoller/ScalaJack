@@ -27,7 +27,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
             reader.rollbackToSave()
             context.typeAdapter(concreteType).read(path, reader, isMapKey)
 
-          case None =>  // no hint found... treat as a Map
+          case None => // no hint found... treat as a Map
             reader.rollbackToSave()
             reader.readMap(path, Map.canBuildFrom[Any, Any], this, this, isMapKey)
         }

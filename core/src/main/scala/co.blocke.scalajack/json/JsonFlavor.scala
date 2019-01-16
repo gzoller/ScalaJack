@@ -13,7 +13,7 @@ case class JsonFlavor[N]()(implicit tt: TypeTag[N]) extends JackFlavor[N, String
 
   def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context)
 
-  def write[T](t: T)(implicit tt: TypeTag[T]): String = {
+  def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = new StringBuilder().asInstanceOf[Builder[Any, String]]
     context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context), sb)
     sb.result()

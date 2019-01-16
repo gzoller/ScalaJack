@@ -24,6 +24,8 @@ case class Plane(numberOfEngines: Int) extends Vehicle
 
 case class VCLong(vc: Long) extends AnyVal
 
+case class SampleChar(c1: Char, c2: Char, c3: Char)
+
 object Runner extends App {
 
   val sj = ScalaJack() //.forType[List[List[String]]]
@@ -31,6 +33,16 @@ object Runner extends App {
   //  println(sj.fastRead("""[["a","b","c"],["a","b","c"]]"""))
 
   println(sj.read[Person]("""{"name":"Greg","age":52}"""))
+  println(sj.render(Person("Mike", 32, Some(3L))))
+
+  val inst = SampleChar(Char.MaxValue, 'Z', '\u20A0')
+  val js = sj.render(inst)
+  println(js)
+  val comp = """{"c1":"\""" + """uFFFF","c2":"Z","c3":"\""" + """u20A0"}"""
+  println(comp)
+  println(js == comp)
+  println(inst)
+  println(sj.read[SampleChar](js))
 
   /*
   println(sj.read[Map[String, Int]]("""{"a":1,"b":2}"""))

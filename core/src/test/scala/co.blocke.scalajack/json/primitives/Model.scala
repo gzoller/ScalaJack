@@ -1,6 +1,5 @@
 package co.blocke.scalajack
-package json
-package primitives
+package json.test.primitives
 
 import java.util.UUID
 import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Number => JNumber, Short => JShort }
@@ -70,3 +69,4 @@ case class VCShort(vc: Short) extends AnyVal
 case class VCString(vc: String) extends AnyVal
 case class VCUUID(vc: UUID) extends AnyVal
 case class VCNumber(vc: Number) extends AnyVal
+

@@ -57,17 +57,3 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
       case Right(v) => rightTypeAdapter.write(v, writer, out)
     }
 }
-
-/*
-  override def write(either: Either[L, R], writer: Writer): Unit =
-    either match {
-      case null =>
-        writer.writeNull()
-
-      case Left(value) =>
-        leftTypeAdapter.write(value, writer)
-
-      case Right(value) =>
-        rightTypeAdapter.write(value, writer)
-    }
-    */

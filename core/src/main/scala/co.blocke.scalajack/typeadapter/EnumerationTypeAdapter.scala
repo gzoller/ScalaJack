@@ -49,7 +49,11 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         throw new ReadUnexpectedError(path, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
     }
 
-  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
+  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case v    => writer.writeString(v.toString, out)
+    }
 
   //  override def write(value: E#Value, writer: Writer): Unit =
   //    if (value == null) {

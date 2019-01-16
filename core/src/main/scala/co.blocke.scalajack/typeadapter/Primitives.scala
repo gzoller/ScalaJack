@@ -17,7 +17,10 @@ object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
 
 object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): BigInt = reader.readBigInt(path, isMapKey)
-  def write[WIRE](t: BigInt, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString(t.toString, out)
+  def write[WIRE](t: BigInt, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeRawString(t.toString, out)
+  }
 }
 
 object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] {

@@ -96,8 +96,8 @@ case class CaseClassTypeAdapter[T](
         constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
     }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
-  }
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    writer.writeObject(t, fieldMembers, out)
 
 }
 
