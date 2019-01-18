@@ -62,7 +62,7 @@ object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] {
 
 object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Float = reader.readDouble(path, isMapKey).toFloat
-  def write[WIRE](t: Float, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeDouble(t, out)
+  def write[WIRE](t: Float, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeDouble(util.FixFloat.capFloat(t), out)
 }
 
 object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] {

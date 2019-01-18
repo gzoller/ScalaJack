@@ -43,6 +43,17 @@ object Context {
     EnumerationTypeAdapterFactory,
     TryTypeAdapterFactory,
     AnyTypeAdapterFactory,
+    JavaBigDecimalTypeAdapterFactory,
+    JavaBigIntegerTypeAdapterFactory,
+    JavaBooleanTypeAdapterFactory,
+    JavaByteTypeAdapterFactory,
+    JavaCharacterTypeAdapterFactory,
+    JavaDoubleTypeAdapterFactory,
+    JavaFloatTypeAdapterFactory,
+    JavaIntTypeAdapterFactory,
+    JavaLongTypeAdapterFactory,
+    JavaNumberTypeAdapterFactory,
+    JavaShortTypeAdapterFactory,
     SealedTraitTypeAdapterFactory
   )
   /*

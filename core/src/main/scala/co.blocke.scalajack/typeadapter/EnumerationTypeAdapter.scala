@@ -46,7 +46,7 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         null
       case actual =>
         reader.skip()
-        throw new ReadUnexpectedError(path, s"Expected value token of type String, not $actual when reading Enumeration value.", List("String", actual.toString))
+        throw new ReadUnexpectedError(path, s"Expected value token of type String or Int, not $actual when reading Enumeration value.", List(actual.toString))
     }
 
   def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =

@@ -3,79 +3,13 @@ package json.test.primitives
 
 import org.scalatest.{ FunSpec, Matchers }
 import scala.math.BigDecimal
-import model._
 import util.Path
 import java.util.UUID
+import TestUtil._
 
 class ScalaPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
-
-  def expectUnexpected(fn: () => Any, path: Path, related: List[String]): Boolean = {
-    try {
-      fn()
-      throw new Exception("fn() worked--it shoudln't have!")
-    } catch {
-      case t: ReadUnexpectedError =>
-        if (t.path != path)
-          throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
-        if (t.related != related)
-          throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
-      case x =>
-        throw x
-    }
-    true
-  }
-
-  def expectInvalid(fn: () => Any, path: Path, related: List[String]): Boolean = {
-    try {
-      fn()
-      throw new Exception("fn() worked--it shoudln't have!")
-    } catch {
-      case t: ReadInvalidError =>
-        if (t.path != path)
-          throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
-        if (t.related != related) {
-          println(t.msg)
-          throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
-        }
-      case x =>
-        throw x
-    }
-    true
-  }
-
-  def expectMalformed[W](fn: () => Any, path: Path, related: List[String])(implicit tt: TypeTag[W]): Boolean = {
-    try {
-      fn()
-      throw new Exception("fn() worked--it shoudln't have!")
-    } catch {
-      case t: ReadMalformedError =>
-        if (t.path != path)
-          throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
-        if (t.related != related)
-          throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
-        if (tt.tpe.typeSymbol.fullName != t.wrappedException.getClass.getCanonicalName)
-          throw new Exception("Expected a wrapped exception " + tt.tpe.typeSymbol.fullName + " but found " + t.wrappedException.getClass.getCanonicalName)
-      case x =>
-        throw x
-    }
-    true
-  }
-
-  def hexStringToByteArray(s: String): Array[Byte] = {
-    val len = s.length
-    val data = new Array[Byte](len / 2)
-    var i = 0
-    while ({
-      i < len
-    }) {
-      data(i / 2) = ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16)).toByte
-
-      i += 2
-    }
-    data
-  }
 
   describe("----------------------------\n:  Scala Primitives Tests  :\n----------------------------") {
     describe("+++ Positive Tests +++") {
@@ -124,7 +58,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("Char must work (not nullable)") {
         val inst = SampleChar(Char.MaxValue, 'Z', '\u20A0')
         val js = sj.render(inst)
-        assertResult("""{"c1":"\""" + """uFFFF","c2":"Z","c3":"\""" + """u20A0"}""") { js }
+        assertResult("""{"c1":"\""" + """uffff","c2":"Z","c3":"\""" + """u20a0"}""") { js }
         assertResult(inst) {
           sj.read[SampleChar](js)
         }
@@ -150,7 +84,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("Float must work") {
         val inst = SampleFloat(Float.MaxValue, Float.MinValue, 0.0F, -123.4567F)
         val js = sj.render(inst)
-        assertResult("""{"f1":3.4028234663852886E38,"f2":-3.4028234663852886E38,"f3":0.0,"f4":-123.45670318603516}""") { js }
+        assertResult("""{"f1":3.4028235E38,"f2":-3.4028235E38,"f3":0.0,"f4":-123.4567}""") { js }
         assertResult(inst) {
           sj.read[SampleFloat](js)
         }
@@ -235,6 +169,8 @@ class ScalaPrim() extends FunSpec with Matchers {
         assert(expectInvalid(() => sj.read[SampleEnum](js), Path.Root \ "e2", List("co.blocke.scalajack.json.test.primitives.Size$", "Bogus")))
         val js2 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}"""
         assert(expectInvalid(() => sj.read[SampleEnum](js2), Path.Root \ "e5", List("co.blocke.scalajack.json.test.primitives.Size$", "9")))
+        val js3 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":false}"""
+        assert(expectUnexpected(() => sj.read[SampleEnum](js3), Path.Root \ "e5", List("False")))
       }
       it("Float must break") {
         val js = """{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}"""

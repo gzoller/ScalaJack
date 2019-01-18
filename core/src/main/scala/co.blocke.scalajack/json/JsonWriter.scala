@@ -92,7 +92,27 @@ trait JsonWriter extends Writer[String] {
     case null => addString("null", out)
     case s: String =>
       out += '"'
-      addString(escapeJson(s), out)
+      var i = 0
+      val length = t.length
+      val chars = t.toCharArray
+
+      while (i < length) {
+        chars(i) match {
+          case '"'  => addString("""\"""", out)
+          case '\\' => addString("""\\""", out)
+          case '/'  => addString("""\/""", out)
+          case '\b' => addString("""\b""", out)
+          case '\f' => addString("""\f""", out)
+          case '\n' => addString("""\n""", out)
+          case '\r' => addString("""\r""", out)
+          case '\t' => addString("""\t""", out)
+          case ch if ch <= 32 || ch >= 128 =>
+            addString("""\""" + "u" + "%04x".format(ch.toInt), out)
+          case c => out += c
+        }
+
+        i += 1
+      }
       out += '"'
   }
 
