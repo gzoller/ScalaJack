@@ -134,7 +134,7 @@ object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] {
       case d: scala.BigDecimal if (d.isValidLong) => d.toLongExact
       case d: scala.BigDecimal if (d.isDecimalFloat) => d.toFloat
       case d: scala.BigDecimal if (d.isDecimalDouble) => d.toDouble
-      case x => throw new ReadUnexpectedError(path, s"Can't map a decimal value to valid Java Number subclas (possibly out of range)", List.empty[String])
+      case _ => throw new ReadInvalidError(path, s"Can't map a decimal value to valid Java Number subclas (possibly out of range)", List("Can't map value"))
     }
   def write[WIRE](t: java.lang.Number, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
     case null                                   => writer.writeNull(out)

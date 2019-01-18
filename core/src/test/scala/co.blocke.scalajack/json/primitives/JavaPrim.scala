@@ -216,6 +216,8 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Char must break") {
           val js = """{"c1":"Z","c2":3,"c3":null}"""
           assert(expectUnexpected(() => sj.read[SampleJChar](js), Path.Root \ "c2", List("Number")))
+          val js2 = """{"c1":"Z","c2":"","c3":null}"""
+          assert(expectInvalid(() => sj.read[SampleJChar](js2), Path.Root \ "c2", List("Empty String")))
         }
         it("Double must break") {
           val js = """{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}"""
@@ -240,6 +242,8 @@ class JavaPrim() extends FunSpec with Matchers {
         it("Number must break") {
           val js = """{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":9923372036854755810,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":1.8E+308,"n16":0.0,"n17":null}"""
           assert(expectUnexpected(() => sj.read[SampleJNumber](js), Path.Root \ "n3", List("String")))
+          val js2 = """{"n1":-128,"n2":127,"n3":9923372036854755810,"n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":9923372036854755810,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":1.8E+308,"n16":0.0,"n17":null}"""
+          assert(expectInvalid(() => sj.read[SampleJNumber](js2), Path.Root \ "n3", List("Can't map value")))
         }
         it("Short must break") {
           val js = """{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
