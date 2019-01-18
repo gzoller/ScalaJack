@@ -63,6 +63,20 @@ class ScalaPrim() extends FunSpec with Matchers {
     true
   }
 
+  def hexStringToByteArray(s: String): Array[Byte] = {
+    val len = s.length
+    val data = new Array[Byte](len / 2)
+    var i = 0
+    while ({
+      i < len
+    }) {
+      data(i / 2) = ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16)).toByte
+
+      i += 2
+    }
+    data
+  }
+
   describe("----------------------------\n:  Scala Primitives Tests  :\n----------------------------") {
     describe("+++ Positive Tests +++") {
       it("BigDecimal must work") {
@@ -79,6 +93,16 @@ class ScalaPrim() extends FunSpec with Matchers {
         assertResult("""{"bi1":-90182736451928374653345,"bi2":90182736451928374653345,"bi3":0,"bi4":null}""") { js }
         assertResult(inst) {
           sj.read[SampleBigInt](js)
+        }
+      }
+      it("Binary must work") {
+        val inst = SampleBinary(null, hexStringToByteArray("e04fd020ea3a6910a2d808002b30309d"))
+        val js = sj.render(inst)
+        assertResult("""{"b1":null,"b2":"4E\/QIOo6aRCi2AgAKzAwnQ=="}""") { js }
+        val inst2 = sj.read[SampleBinary](js)
+        assertResult(null) { inst2.b1 }
+        assertResult(true) {
+          inst.b2.toList == inst2.b2.toList
         }
       }
       it("Boolean must work (not nullable)") {
@@ -165,9 +189,9 @@ class ScalaPrim() extends FunSpec with Matchers {
         }
       }
       it("UUID must work") {
-        val inst = SampleUUID(UUID.fromString("b81306aa-2fab-427e-9e3c-817a494ccc58"), UUID.fromString("580afe0d-81c0-458f-9e09-4486c7af0fe9"))
+        val inst = SampleUUID(null, UUID.fromString("580afe0d-81c0-458f-9e09-4486c7af0fe9"))
         val js = sj.render(inst)
-        assertResult("""{"u1":"b81306aa-2fab-427e-9e3c-817a494ccc58","u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}""") { js }
+        assertResult("""{"u1":null,"u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}""") { js }
         assertResult(inst) {
           sj.read[SampleUUID](js)
         }

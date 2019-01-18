@@ -29,7 +29,10 @@ object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] {
       case null      => null
       case s: String => Base64.decodeBase64(s)
     }
-  def write[WIRE](t: Array[Byte], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString("binary here", out)
+  def write[WIRE](t: Array[Byte], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString(Base64.encodeBase64String(t), out)
+  }
 }
 
 object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] {
@@ -95,5 +98,8 @@ object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
         }
     }
   }
-  def write[WIRE](t: UUID, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString(t.toString, out)
+  def write[WIRE](t: UUID, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString(t.toString, out)
+  }
 }

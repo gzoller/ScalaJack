@@ -22,6 +22,7 @@ object Context {
   val StandardFactories: List[TypeAdapterFactory] = List(
     BigDecimalTypeAdapterFactory,
     BigIntTypeAdapterFactory,
+    BinaryTypeAdapterFactory,
     BooleanTypeAdapterFactory,
     ByteTypeAdapterFactory,
     CharTypeAdapterFactory,

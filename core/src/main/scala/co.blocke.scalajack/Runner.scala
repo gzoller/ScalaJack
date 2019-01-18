@@ -32,6 +32,7 @@ object Runner extends App {
 
   //  println(sj.fastRead("""[["a","b","c"],["a","b","c"]]"""))
 
+  /*
   println(sj.read[Person]("""{"name":"Greg","age":52}"""))
   println(sj.render(Person("Mike", 32, Some(3L))))
 
@@ -46,6 +47,16 @@ object Runner extends App {
 
   val xjs = """{"c1":"￿","c2":"Z","c3":"₠"}"""
   println(sj.read[SampleChar](xjs))
+  */
+
+  import org.apache.commons.codec.binary.Base64
+  val x: Array[Byte] = Array(101, 54, 32, 5)
+  //  val b64 = new Base64(true)
+  val y = Base64.encodeBase64String(x)
+  println("Y: " + y)
+  println(y.length)
+  val z = Base64.decodeBase64(y)
+  println(z.toList)
 
   /*
   println(sj.read[Map[String, Int]]("""{"a":1,"b":2}"""))

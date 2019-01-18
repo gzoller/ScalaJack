@@ -9,6 +9,7 @@ import java.time._
 // === Scala
 case class SampleBigDecimal(bd1: BigDecimal, bd2: BigDecimal, bd3: BigDecimal, bd4: BigDecimal, bd5: BigDecimal, bd6: BigDecimal)
 case class SampleBigInt(bi1: BigInt, bi2: BigInt, bi3: BigInt, bi4: BigInt)
+case class SampleBinary(b1: Array[Byte], b2: Array[Byte])
 case class SampleBoolean(bool1: Boolean, bool2: Boolean)
 case class SampleByte(b1: Byte, b2: Byte, b3: Byte, b4: Byte)
 case class SampleChar(c1: Char, c2: Char, c3: Char)
