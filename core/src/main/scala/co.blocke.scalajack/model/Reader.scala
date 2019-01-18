@@ -17,7 +17,7 @@ trait Reader[WIRE] {
   def savePos()
   def rollbackToSave()
   def peek(): TokenType.Value
-  def tokenText(): String
+  def lastTokenText(): String
   def skip()
   def lookAheadForField(fieldName: String): Option[String]
 

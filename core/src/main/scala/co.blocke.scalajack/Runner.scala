@@ -44,6 +44,9 @@ object Runner extends App {
   println(inst)
   println(sj.read[SampleChar](js))
 
+  val xjs = """{"c1":"￿","c2":"Z","c3":"₠"}"""
+  println(sj.read[SampleChar](xjs))
+
   /*
   println(sj.read[Map[String, Int]]("""{"a":1,"b":2}"""))
 

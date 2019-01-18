@@ -3,7 +3,6 @@ package model
 
 import java.lang.reflect.Method
 
-import co.blocke.scalajack.MemberName
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
 import scala.collection.immutable.ListMap

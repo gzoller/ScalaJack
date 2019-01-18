@@ -43,13 +43,12 @@ object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] {
 }
 
 object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Char = {
-    val chars = reader.readString(path).toCharArray()
-    if (chars.size == 0)
-      throw new ReadInvalidError(path, "Tried to read a Char but empty string found")
-    else
-      chars(0)
-  }
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Char =
+    reader.readString(path) match {
+      case null         => throw new ReadInvalidError(path, "A Char typed value cannot be null", List("Null"))
+      case c if c != "" => c.toCharArray()(0)
+      case _            => throw new ReadInvalidError(path, "Tried to read a Char but empty string found", List("Empty String"))
+    }
   def write[WIRE](t: Char, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString(t.toString, out)
 }
 

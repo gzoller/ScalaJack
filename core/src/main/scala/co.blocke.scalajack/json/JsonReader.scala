@@ -9,7 +9,7 @@ import scala.util.{ Try, Success, Failure }
 import scala.collection.immutable.Map
 import scala.collection.generic.CanBuildFrom
 import java.util.ArrayList
-import org.apache.commons.text.StringEscapeUtils.unescapeJson
+//import org.apache.commons.text.StringEscapeUtils.unescapeJson
 
 trait JsonReader extends Reader[String] {
 
@@ -27,8 +27,8 @@ trait JsonReader extends Reader[String] {
   def savePos() = saved = p
   def rollbackToSave() = p = saved
   def peek(): TokenType = tokens.get(p).tokenType
-  def tokenText(): String = {
-    val jt = tokens.get(p)
+  def lastTokenText(): String = {
+    val jt = tokens.get(p - 1)
     json.substring(jt.begin, jt.end)
   }
   def skip() = if (p < tokens.size()) p += 1
@@ -44,7 +44,7 @@ trait JsonReader extends Reader[String] {
         val js = json.substring(jt.begin, jt.end)
         if (js == fieldName) {
           p += 1
-          found = Some(tokenText)
+          found = Some(json.substring(tokens.get(p).begin, tokens.get(p).end))
           done = true
         } else if (tokens.get(p).tokenType == EndObject)
           done = true
@@ -277,9 +277,75 @@ trait JsonReader extends Reader[String] {
   def readString(path: Path): String = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case String => json.substring(jt.begin, jt.end)
+      case String =>
+        var builder: StringBuilder = null
+        var startOfUnescapedCharacters = jt.begin
+        var position = jt.begin
+
+        while (position < jt.end) {
+          json(position) match {
+            case '\\' =>
+              if (builder == null) builder = new StringBuilder()
+              builder.appendAll(json.toCharArray, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
+
+              json(position + 1) match {
+                case '"' =>
+                  builder.append('"')
+                  position += 2
+
+                case '\\' =>
+                  builder.append('\\')
+                  position += 2
+
+                case '/' =>
+                  builder.append('/')
+                  position += 2
+
+                case 'b' =>
+                  builder.append('\b')
+                  position += 2
+
+                case 'f' =>
+                  builder.append('\f')
+                  position += 2
+
+                case 'n' =>
+                  builder.append('\n')
+                  position += 2
+
+                case 'r' =>
+                  builder.append('\r')
+                  position += 2
+
+                case 't' =>
+                  builder.append('\t')
+                  position += 2
+
+                case 'u' =>
+                  val hexEncoded = json.substring(position + 2, position + 6)
+                  val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
+                  builder.append(unicodeChar)
+                  position += 6
+              }
+
+              startOfUnescapedCharacters = position
+
+            case ch =>
+              position += 1
+          }
+        }
+
+        if (builder == null) {
+          json.substring(jt.begin, jt.end)
+        } else {
+          builder.appendAll(json.toCharArray, startOfUnescapedCharacters, jt.end - startOfUnescapedCharacters)
+          builder.toString()
+        }
+      /*
+        json.substring(jt.begin, jt.end)
       //      case String => unescapeJson(json.substring(jt.begin, jt.end))
-      case Null   => null
+      */
+      case Null => null
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected a String but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }

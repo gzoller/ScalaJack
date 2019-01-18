@@ -33,13 +33,13 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))
         }
       case TokenType.Number =>
         Try(enum(reader.readInt(path, isMapKey))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.tokenText}", List(enum.getClass.getName, reader.tokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))
         }
       case TokenType.Null =>
         reader.skip()
