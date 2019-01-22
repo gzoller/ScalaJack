@@ -14,8 +14,7 @@ case class CaseClassTypeAdapter[T](
     typeMembers:       List[ClassHelper.TypeMember[T]],
     fieldMembers:      ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
     constructorMirror: MethodMirror,
-    collectionName:    Option[String]                                        = None
-) extends ClassHelper.ClassLikeTypeAdapter[T] {
+    collectionName:    Option[String]                                        = None) extends ClassHelper.ClassLikeTypeAdapter[T] {
 
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys[AST](fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
@@ -88,8 +87,7 @@ case class CaseClassTypeAdapter[T](
                 if (fieldArray(p).isOptional)
                   None
                 else
-                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name))
-              )
+                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name)))
             }
           }
         }

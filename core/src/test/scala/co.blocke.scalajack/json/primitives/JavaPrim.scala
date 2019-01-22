@@ -100,8 +100,7 @@ class JavaPrim() extends FunSpec with Matchers {
             new JDouble("1.7e-308"), new JDouble("1.7e+308"),
             null, //new JBigDecimal("1.8e+308"),
             new JFloat("0.0"),
-            null
-          )
+            null)
           val js = sj.render(inst)
           assertResult("""{"n1":-128,"n2":127,"n3":-32768,"n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":null,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":null,"n16":0.0,"n17":null}""") { js }
           assertResult(inst) {

@@ -25,8 +25,7 @@ object JsonValidator {
     JSstringInList -> List(JScommaInList, JSlistEnd, JSlistEndInList),
     JSstringObjKey -> List(JScolon),
     JSnumber -> List(JScomma, JSobjEnd, JSobjEndInList),
-    JSnumberInList -> List(JScommaInList, JSlistEnd, JSlistEndInList)
-  )
+    JSnumberInList -> List(JScommaInList, JSlistEnd, JSlistEndInList))
 
   private val validNonCanonical = validCanonical ++ Map(
     JSobjStart -> List(JSstringObjKey, JSlistEndObjKey, JSnumberObjKey, JSobjStart, JSobjEnd, JSlistStart, JSfalseObjKey, JStrueObjKey),
@@ -44,8 +43,7 @@ object JsonValidator {
     JSstringObjKey -> List(JScolon),
     JSnumberObjKey -> List(JScolon),
     JStrueObjKey -> List(JScolon),
-    JSfalseObjKey -> List(JScolon)
-  )
+    JSfalseObjKey -> List(JScolon))
 
   def validate(pos: Int, lastToken: Byte, thisToken: Byte, isCanonical: Boolean) = {
     // if( lastToken > 0 && thisToken > 0)

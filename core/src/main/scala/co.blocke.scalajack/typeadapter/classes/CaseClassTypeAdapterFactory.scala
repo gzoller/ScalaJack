@@ -107,8 +107,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         classSymbol.name.toString(),
         typeMembers,
         orderdFieldMembers,
-        constructorMirror
-      )
+        constructorMirror)
     } else {
       next.typeAdapterOf[T]
     }

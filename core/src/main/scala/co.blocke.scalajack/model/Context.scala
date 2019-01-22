@@ -54,8 +54,7 @@ object Context {
     JavaLongTypeAdapterFactory,
     JavaNumberTypeAdapterFactory,
     JavaShortTypeAdapterFactory,
-    SealedTraitTypeAdapterFactory
-  )
+    SealedTraitTypeAdapterFactory)
   /*
     .withFactory(IRParsingFallbackTypeAdapter)
     .withFactory(TermTypeAdapterFactory)

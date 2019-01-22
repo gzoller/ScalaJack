@@ -2,8 +2,7 @@ package co.blocke.series4
 
 case class CustomReadRender(
     read:   PartialFunction[(KindMarker, Any), Any],
-    render: PartialFunction[(KindMarker, Any), Any]
-)
+    render: PartialFunction[(KindMarker, Any), Any])
 
 case class VisitorContext(
     isCanonical:     Boolean                         = true, // allow non-string keys in Maps--not part of JSON spec

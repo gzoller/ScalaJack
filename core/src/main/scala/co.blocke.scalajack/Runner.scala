@@ -1,6 +1,7 @@
 package co.blocke.scalajack
 
 import json._
+import scala.language.experimental.macros
 
 case class Person(name: String, age: Int, other: Option[Long])
 trait Pet {
@@ -83,5 +84,4 @@ object Runner extends App {
   //  println(tok.toList)
   */
 
-  println(sj.read[Double]("123.455"))
 }

@@ -18,8 +18,7 @@ object PrimitiveTypes {
     "java.lang.Boolean" -> 10,
     "java.util.UUID" -> 11,
     "org.joda.time.DateTime" -> 12,
-    "scala.Any" -> 13
-  )
+    "scala.Any" -> 13)
 
   val INT = 0
   val STRING = 3
@@ -78,8 +77,7 @@ object PrimitiveTypes {
     "scala.Tuple19" -> 47,
     "scala.Tuple20" -> 48,
     "scala.Tuple21" -> 49,
-    "scala.Tuple22" -> 50
-  )
+    "scala.Tuple22" -> 50)
 
   private[series4] val primTypes: List[(String) => Any] = List(
     { (s: String) => s.toInt },
@@ -150,8 +148,7 @@ object PrimitiveTypes {
     { (a: Any) => { val t = a.asInstanceOf[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]]; (t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19) } },
     { (a: Any) => { val t = a.asInstanceOf[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]]; (t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20) } },
     { (a: Any) => { val t = a.asInstanceOf[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]]; (t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21) } },
-    { (a: Any) => { val t = a.asInstanceOf[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]]; (t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21, t._22) } }
-  )
+    { (a: Any) => { val t = a.asInstanceOf[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]]; (t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21, t._22) } })
 
   // The following collections are not supported because there's no way to infer the implicit Ordering:
   // "scala.collection.immutable.TreeMap"

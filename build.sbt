@@ -82,20 +82,25 @@ val pubSettings = Seq (
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
 
+lazy val core_macros = project.in(file("core_macros"))
+  .settings(libraryDependencies ++=
+    Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+    Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
+
 lazy val scalajack = project.in(file("core"))
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
-    Seq("com.typesafe.play" %% "play-json" % "2.6.10") ++
-    Seq("org.json4s" %% "json4s-core" % "3.6.2") ++
-    Seq("org.json4s" %% "json4s-native" % "3.6.2") ++
+//    Seq("com.typesafe.play" %% "play-json" % "2.6.10") ++
+//    Seq("org.json4s" %% "json4s-core" % "3.6.2") ++
+//    Seq("org.json4s" %% "json4s-native" % "3.6.2") ++
     Seq("org.apache.commons" % "commons-text" % "1.6") ++
     Seq("commons-codec" % "commons-codec" % "1.11") ++
       // compile(scala_reflect) ++
       test(scalatest)
-  )
+  )//.dependsOn(core_macros)
 
 lazy val scalajack_benchmarks = project.in(file("benchmarks"))
   .enablePlugins(JmhPlugin)

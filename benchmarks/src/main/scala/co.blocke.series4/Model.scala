@@ -58,8 +58,7 @@ trait ValueClassCustom extends Any {
 }
 case class VCCustomMethods(
     read:   PartialFunction[(KindMarker, _), Any],
-    render: PartialFunction[(KindMarker, _), Any]
-)
+    render: PartialFunction[(KindMarker, _), Any])
 
 trait KindMarker
 
@@ -67,8 +66,7 @@ case class TraitType(
     name:     String,
     members:  LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType],
     paramMap: LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType],
-    default:  Option[Any]                  = None
-) extends AType {
+    default:  Option[Any]                  = None) extends AType {
   def dup = this.copy()
 }
 
