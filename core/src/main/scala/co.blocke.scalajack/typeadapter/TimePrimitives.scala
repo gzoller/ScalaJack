@@ -10,6 +10,7 @@ import scala.util.{ Try, Success, Failure }
 import java.time._
 import java.time.format.DateTimeFormatter._
 
+// Abortive Macro adventure...
 //object Foo {
 //  val duration: Any = MyMacro.readWrite[Duration]((s: String) => Duration.parse(s), "Duration", (t: Duration) => t.toString)
 //}
@@ -79,5 +80,40 @@ object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] {
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_DATE), out)
+    }
+}
+
+
+object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): OffsetDateTime =
+    reader.readString(path) match {
+      case null => null
+      case s => Try(OffsetDateTime.parse(s, ISO_OFFSET_DATE_TIME)) match {
+        case Success(d) => d
+        case Failure(u) => throw new ReadMalformedError(path, s"""Failed to parse OffsetDateTime from input '$s'""", List.empty[String], u)
+      }
+    }
+
+  def write[WIRE](t: OffsetDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(t.format(ISO_OFFSET_DATE_TIME), out)
+    }
+}
+
+object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): OffsetTime =
+    reader.readString(path) match {
+      case null => null
+      case s => Try(OffsetTime.parse(s, ISO_OFFSET_TIME)) match {
+        case Success(d) => d
+        case Failure(u) => throw new ReadMalformedError(path, s"""Failed to parse OffsetTime from input '$s'""", List.empty[String], u)
+      }
+    }
+
+  def write[WIRE](t: OffsetTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(t.format(ISO_OFFSET_TIME), out)
     }
 }
