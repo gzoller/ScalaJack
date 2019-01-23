@@ -4,6 +4,9 @@ package json.test.primitives
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
 
+import TestUtil.expectMalformed
+import util.Path
+
 class ValueClassPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -160,17 +163,14 @@ class ValueClassPrim() extends FunSpec with Matchers {
         assertResult("""25""") { js }
         assertResult((inst, true)) {
           val r = sj.read[VCNumber](js)
-          (r, r.vc.isInstanceOf[Integer])
+          (r, r.vc.isInstanceOf[Byte])
         }
       }
     }
     describe("--- Negative Tests ---") {
       it("Wrong JSON for wrapped type") {
         val js = """100.25"""
-        val msg = """For input string: "100.25"
-          |100.25
-          |^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[VCShort](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[VCShort](js), Path.Root, List.empty[String]))
       }
     }
   }

@@ -44,7 +44,8 @@ case class ValueClassAdapter[DerivedValueClass, Value](
     derive:            Value => DerivedValueClass) extends TypeAdapter[DerivedValueClass] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): DerivedValueClass =
     derive(sourceTypeAdapter.read(path, reader, isMapKey))
-  def write[WIRE](t: DerivedValueClass, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
+  def write[WIRE](t: DerivedValueClass, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    sourceTypeAdapter.write(unwrap(t), writer, out)
 }
 /*
                                                                override val irTransceiver: IRTransceiver[DerivedValueClass]) extends TypeAdapter[DerivedValueClass]
