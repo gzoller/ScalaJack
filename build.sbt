@@ -82,10 +82,12 @@ val pubSettings = Seq (
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
 
+/* Doesn't work!
 lazy val core_macros = project.in(file("core_macros"))
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
+    */
 
 lazy val scalajack = project.in(file("core"))
   .settings(basicSettings: _*)

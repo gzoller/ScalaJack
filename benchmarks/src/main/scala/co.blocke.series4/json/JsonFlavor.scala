@@ -42,10 +42,10 @@ trait JsonJackFlavor extends JackFlavor[String] {
     }
 
     private def _render[T](
-      graph:    AType,
-      instance: T,
-      buf:      StringBuilder,
-      typeArgs: List[Type]    = List.empty[Type])(implicit tt: TypeTag[T], vc: VisitorContext): Boolean = {
+        graph:    AType,
+        instance: T,
+        buf:      StringBuilder,
+        typeArgs: List[Type]    = List.empty[Type])(implicit tt: TypeTag[T], vc: VisitorContext): Boolean = {
       graph match {
         case _ if (instance == null) =>
           buf.append("null")

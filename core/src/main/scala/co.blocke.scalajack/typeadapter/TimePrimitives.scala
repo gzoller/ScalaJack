@@ -83,6 +83,22 @@ object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] {
     }
 }
 
+object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): LocalTime =
+    reader.readString(path) match {
+      case null => null
+      case s => Try(LocalTime.parse(s, ISO_LOCAL_TIME)) match {
+        case Success(d) => d
+        case Failure(u) => throw new ReadMalformedError(path, s"""Failed to parse LocalTime from input '$s'""", List.empty[String], u)
+      }
+    }
+
+  def write[WIRE](t: LocalTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(t.format(ISO_LOCAL_TIME), out)
+    }
+}
 
 object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): OffsetDateTime =
@@ -115,5 +131,39 @@ object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] {
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_OFFSET_TIME), out)
+    }
+}
+
+object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Period =
+    reader.readString(path) match {
+      case null => null
+      case s => Try(Period.parse(s)) match {
+        case Success(d) => d
+        case Failure(u) => throw new ReadMalformedError(path, s"""Failed to parse Period from input '$s'""", List.empty[String], u)
+      }
+    }
+
+  def write[WIRE](t: Period, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(t.toString, out)
+    }
+}
+
+object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): ZonedDateTime =
+    reader.readString(path) match {
+      case null => null
+      case s => Try(ZonedDateTime.parse(s, ISO_ZONED_DATE_TIME)) match {
+        case Success(d) => d
+        case Failure(u) => throw new ReadMalformedError(path, s"""Failed to parse ZonedDateTime from input '$s'""", List.empty[String], u)
+      }
+    }
+
+  def write[WIRE](t: ZonedDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(t.format(ISO_ZONED_DATE_TIME), out)
     }
 }

@@ -54,6 +54,15 @@ object Context {
     JavaLongTypeAdapterFactory,
     JavaNumberTypeAdapterFactory,
     JavaShortTypeAdapterFactory,
+    DurationTypeAdapterFactory,
+    InstantTypeAdapterFactory,
+    LocalDateTimeTypeAdapterFactory,
+    LocalDateTypeAdapterFactory,
+    LocalTimeTypeAdapterFactory,
+    OffsetDateTimeTypeAdapterFactory,
+    OffsetTimeTypeAdapterFactory,
+    PeriodTypeAdapterFactory,
+    ZonedDateTimeTypeAdapterFactory,
     SealedTraitTypeAdapterFactory)
   /*
     .withFactory(IRParsingFallbackTypeAdapter)
