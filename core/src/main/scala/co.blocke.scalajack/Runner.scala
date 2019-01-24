@@ -1,8 +1,5 @@
 package co.blocke.scalajack
 
-import json._
-import scala.language.experimental.macros
-
 case class Person(name: String, age: Int, other: Option[Long])
 trait Pet {
   val numLegs: Int

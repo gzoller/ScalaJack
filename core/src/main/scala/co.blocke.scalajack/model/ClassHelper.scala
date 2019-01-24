@@ -6,6 +6,7 @@ import java.lang.reflect.Method
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe._
 
 object ClassHelper {
@@ -90,5 +91,12 @@ object ClassHelper {
     val collectionName: Option[String]
     def dbKeys: List[FieldMember[C]] = fieldMembers.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
     def members = typeMembers ++ fieldMembers.values
+  }
+
+  case class ExtraFieldValue[T](
+      value:            T,
+      valueTypeAdapter: TypeAdapter[T]
+  ) {
+    def write[WIRE](writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = valueTypeAdapter.write(value, writer, out)
   }
 }

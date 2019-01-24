@@ -12,7 +12,8 @@ trait Reader[WIRE] {
 
   val tokenizer: Tokenizer[WIRE]
 
-  def cloneWithSource(source: WIRE): Transceiver[WIRE] // used for Any parsing
+  // Used for sub-parsing, e.g. Stringified Map keys or secondLookParsing
+  def cloneWithSource(source: WIRE): Transceiver[WIRE]
 
   def savePos()
   def rollbackToSave()

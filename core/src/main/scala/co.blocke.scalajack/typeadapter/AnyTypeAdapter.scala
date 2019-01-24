@@ -13,6 +13,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   var context: Context = null
 
   private lazy val typeTypeAdapter = context.typeAdapterOf[Type]
+  private lazy val numberTypeAdapter = context.typeAdapterOf[java.lang.Number]
 
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
@@ -35,10 +36,10 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
         reader.readArray(path, Vector.canBuildFrom[Any], this, isMapKey).toList
       case Number =>
         reader.readDecimal(path, isMapKey) match {
-          case i if i.isValidInt    => i.toIntExact
-          case i if i.isValidLong   => i.toLongExact
-          case d if d.isExactDouble => d.toDouble
-          case d                    => d
+          case i if i.isValidInt      => i.toIntExact
+          case i if i.isValidLong     => i.toLongExact
+          case d if d.isDecimalDouble => d.toDouble
+          case d                      => d
         }
       case String if isMapKey =>
         val text = reader.readString(path)
@@ -63,5 +64,24 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
     }
   }
 
-  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
+  // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
+  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE])(implicit tt: TypeTag[X]) = {
+    val valueType = staticClass(value.getClass.getName).toType
+    val valueTA = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[X]]
+    valueTA.write(value, writer, out)
+  }
+
+  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    t match {
+      case null                    => writer.writeNull(out)
+      case s: String               => writer.writeString(s, out)
+      case b: Boolean              => writer.writeBoolean(b, out)
+      case bi: BigInt              => writer.writeBigInt(bi, out)
+      case bd: BigDecimal          => writer.writeDecimal(bd, out)
+      case n: Number               => numberTypeAdapter.write(n, writer, out)
+      case enum: Enumeration#Value => writer.writeString(enum.toString, out)
+      case list: List[_]           => writer.writeArray(list, this, out)
+      case mmap: Map[Any, Any]     => writer.writeMap(mmap, this, this, out)
+      case v                       => unpack(v, writer, out)
+    }
 }

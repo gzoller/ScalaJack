@@ -32,8 +32,8 @@ trait JackFlavor[N, WIRE] {
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
     def parseOrElse(poe: (Type, Type)*): ScalaJackLike[IR, WIRE]
     def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
-    def withSecondLookParsing(): ScalaJackLike[IR, WIRE]
     */
+  def withSecondLookParsing(): JackFlavor[N, WIRE]
 
   val context: Context = bakeContext()
 

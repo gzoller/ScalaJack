@@ -2,10 +2,9 @@ package co.blocke.scalajack
 package json
 
 import model._
+import ClassHelper.ExtraFieldValue
 
 import scala.collection.{ GenIterable, GenMap }
-import org.apache.commons.text.StringEscapeUtils.escapeJson
-
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.Builder
 
@@ -53,7 +52,6 @@ trait JsonWriter extends Writer[String] {
   def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[Any, String]): Unit = t match {
     case null => addString("null", out)
     // Optimization if Key is String.  Don't need to build a sub-StringBuilder to stringify a non-String key
-    /*
     case a if keyTypeAdapter == stringTypeAdapter =>
       out += '{'
       val iter = a.iterator
@@ -61,12 +59,11 @@ trait JsonWriter extends Writer[String] {
         val kv = iter.next
         writeString(kv._1.asInstanceOf[String], out)
         out += ':'
-        valueTypeAdapter.write(kv._2, this)(out)
+        valueTypeAdapter.write(kv._2, this, out)
         if (iter.hasNext)
           out += ','
       }
       out += '}'
-      */
     case a =>
       out += '{'
       val iter = a.iterator
@@ -118,7 +115,11 @@ trait JsonWriter extends Writer[String] {
 
   def writeNull(out: Builder[Any, String]): Unit = addString("null", out)
 
-  def writeObject[T](t: T, fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]], out: Builder[Any, String]): Unit = {
+  def writeObject[T](
+      t:            T,
+      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+      out:          Builder[Any, String],
+      extras:       List[(String, ExtraFieldValue[_])]): Unit = {
     if (t == null) {
       addString("null", out)
     } else {
@@ -176,15 +177,24 @@ trait JsonWriter extends Writer[String] {
       } else {
       */
       var first = true
+      for ((label, extraVal) <- extras) {
+        if (first)
+          first = false
+        else
+          out += ','
+        writeString(label, out)
+        out += ':'
+        extraVal.write(this, out)
+      }
       for ((memberName, member) <- fieldMembers) {
         if (first)
           first = false
         else
           out += ','
-        val memberValue = member.valueIn(t)
         //        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
         writeString(memberName, out)
         out += ':'
+        val memberValue = member.valueIn(t)
         member.valueTypeAdapter.write(memberValue, this, out)
       }
 
@@ -201,7 +211,6 @@ trait JsonWriter extends Writer[String] {
       */
 
       out += '}'
-
     }
   }
 }

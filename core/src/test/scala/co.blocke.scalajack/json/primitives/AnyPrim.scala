@@ -32,7 +32,7 @@ class AnyPrim() extends FunSpec with Matchers {
         assertResult("""{"a":12345678901234567890}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && (parsed.getClass == payload.getClass)
+          (parsed == payload) && (parsed.isInstanceOf[BigDecimal])
         }
       }
       it("Boolean works") {
@@ -86,7 +86,7 @@ class AnyPrim() extends FunSpec with Matchers {
         assertResult("""{"a":1234.5677}""") { js }
         assertResult(true) {
           val parsed = sj.read[AnyShell](js).a
-          (parsed == payload) && parsed.isInstanceOf[Float] // float becomes Float
+          (parsed.toString == payload.toString) && parsed.isInstanceOf[Double] // float becomes Double
         }
       }
       it("Int works") {
@@ -133,6 +133,8 @@ class AnyPrim() extends FunSpec with Matchers {
         }
       }
     }
+    // TODO: List, Map, Collections, Classes, Traits
+
     // describe("--- Negative Tests ---") {
     //   No real negative tests yet... can't think of how to break Any primitives, given well-formed JSON input.
     //   It may not infer what you want/expect, but it should always infer something.

@@ -54,11 +54,4 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
       case null => writer.writeNull(out)
       case v    => writer.writeString(v.toString, out)
     }
-
-  //  override def write(value: E#Value, writer: Writer): Unit =
-  //    if (value == null) {
-  //      writer.writeNull()
-  //    } else {
-  //      writer.writeString(value.toString)
-  //    }
 }

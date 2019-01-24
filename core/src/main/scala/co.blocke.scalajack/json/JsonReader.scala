@@ -54,7 +54,7 @@ trait JsonReader extends Reader[String] {
   }
 
   def cloneWithSource(source: String): Transceiver[String] = // used for Any parsing
-    new JsonTransciever(source, context)
+    new JsonTransciever(source, context, stringTypeAdapter, secondLookParsing)
 
   def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
     tokens.get(p).tokenType match {
@@ -80,7 +80,7 @@ trait JsonReader extends Reader[String] {
         throw new ReadUnexpectedError(path, s"Expected an Array but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
 
-  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To =
+  def readMap[MapKey, MapValue, To](path: Path, canBuildFrom: CanBuildFrom[_, (MapKey, MapValue), To], keyTypeAdapter: TypeAdapter[MapKey], valueTypeAdapter: TypeAdapter[MapValue], isMapMapKey: Boolean): To =
     tokens.get(p).tokenType match {
       case BeginObject =>
         val builder = canBuildFrom()
@@ -94,14 +94,14 @@ trait JsonReader extends Reader[String] {
         builder.result
       case Null =>
         null.asInstanceOf[To]
-      case String if isMapKey =>
+      case String if isMapMapKey =>
         val jt = tokens.get(p)
         val js = json.substring(jt.begin, jt.end)
         val subReader = this.cloneWithSource(js)
         p += 1
         subReader.readMap(path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, false)
       case _ =>
-        throw new ReadUnexpectedError(path, "Expected a Map but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Map but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
 
   def readBoolean(path: Path, isMapKey: Boolean): Boolean = {

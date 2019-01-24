@@ -3,7 +3,7 @@ package typeadapter
 package classes
 
 import model._
-import util.{ Path, Reflection, TypeTags }
+import util.{ Path, Reflection }
 
 import scala.collection.mutable.Builder
 
@@ -22,11 +22,8 @@ object ValueClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
 
       type Derived = T
-      val derivedTypeTag: TypeTag[Derived] = tt.asInstanceOf[TypeTag[Derived]]
-
       type Source = Any
       val valueType = parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
-      val sourceTypeTag: TypeTag[Source] = TypeTags.of[Source](valueType)
       val valueTypeAdapter = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[Source]]
 
       def wrap(source: Source): Derived = constructorMirror.apply(source).asInstanceOf[Derived]
