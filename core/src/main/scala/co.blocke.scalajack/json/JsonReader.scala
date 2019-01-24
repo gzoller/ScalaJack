@@ -54,7 +54,7 @@ trait JsonReader extends Reader[String] {
   }
 
   def cloneWithSource(source: String): Transceiver[String] = // used for Any parsing
-    new JsonTransciever(source, context, stringTypeAdapter, secondLookParsing)
+    new JsonTransciever(source, context, stringTypeAdapter, jackFlavor)
 
   def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To =
     tokens.get(p).tokenType match {

@@ -15,7 +15,6 @@ case class JsonTokenizer() extends Tokenizer[String] {
     val chars = source.toCharArray
     val max = chars.length
     var i: Int = 0
-    var p: Int = 0
     val tokenspace = new ArrayList[Token]()
 
     while (i < max) {

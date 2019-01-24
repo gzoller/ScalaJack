@@ -38,6 +38,7 @@ object Context {
     classes.ValueClassTypeAdapterFactory, // <-- WARNING: This must preceed CaseClassTypeAdapter or all
     //              ValueClasses will be interpreted as case classes!
     classes.CaseClassTypeAdapterFactory,
+    classes.TraitTypeAdapterFactory,
     EitherTypeAdapterFactory,
     UUIDTypeAdapterFactory,
     EnumerationTypeAdapterFactory,
@@ -121,10 +122,7 @@ object Context {
     */
 }
 
-case class Context(
-    flavor:      JackFlavor[_, _],
-    defaultHint: String                   = "",
-    factories:   List[TypeAdapterFactory] = Nil) {
+case class Context(factories: List[TypeAdapterFactory] = Nil) {
 
   sealed trait Phase
   case object Uninitialized extends Phase

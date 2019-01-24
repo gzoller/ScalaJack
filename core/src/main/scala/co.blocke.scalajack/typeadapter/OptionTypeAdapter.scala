@@ -21,19 +21,13 @@ object OptionTypeAdapterFactory extends TypeAdapterFactory.=:=.withOneTypeParam[
 //   3: "Null" one converts None into null.  This is used mainly for Tuple members and Map values.
 //
 
-case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E], tu: TypeTag[Option[E]]) extends TypeAdapter[Option[E]] {
+case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
   // Must be called by parent of the Option when appropriate to get the null-writing version.
   //  def noneAsNull: TypeAdapter[Option[E]] = OptionTypeAdapterNull(valueTypeAdapter)
   //  def noneAsEmptyString: TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
-
-  private val SomeTypeConstructor: Type = typeOf[Some[_]].typeConstructor
-  private val TaggedNone: None.type = None
-  private val TaggedNull: None.type = null.asInstanceOf[None.type]
-
-  private val OptionTypeSymbol: TypeSymbol = symbolOf[Option[_]]
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): Option[E] =
     valueTypeAdapter.read(path, reader, isMapKey) match {

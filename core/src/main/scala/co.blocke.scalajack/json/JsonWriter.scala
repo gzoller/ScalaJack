@@ -96,6 +96,7 @@ trait JsonWriter extends Writer[String] {
       while (i < length) {
         chars(i) match {
           case '"'  => addString("""\"""", out)
+          case ' '  => addString(" ", out)
           case '\\' => addString("""\\""", out)
           case '/'  => addString("""\/""", out)
           case '\b' => addString("""\b""", out)

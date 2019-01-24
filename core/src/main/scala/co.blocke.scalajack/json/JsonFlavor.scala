@@ -5,7 +5,9 @@ import model._
 import scala.collection.mutable.Builder
 
 case class JsonFlavor[N](
-    secondLookParsing: Boolean = false
+    override val defaultHint: String            = "_hint",
+    override val hintMap:     Map[Type, String] = Map.empty[Type, String],
+    secondLookParsing:        Boolean           = false
 )(implicit tt: TypeTag[N]) extends JackFlavor[N, String] {
 
   //  val tokenizer = JsonTokenizer()
@@ -13,15 +15,15 @@ case class JsonFlavor[N](
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, String] = JsonFlavor[N2]()
   //  val nativeTypeAdapter: TypeAdapter[N] = context.typeAdapterOf[N]
 
+  def withDefaultHint(hint: String): JackFlavor[N, String] = this.copy(defaultHint = hint)
+  def withHints(h: (Type, String)*): JackFlavor[N, String] = this.copy(hintMap = this.hintMap ++ h)
   def withSecondLookParsing(): JackFlavor[N, String] = this.copy(secondLookParsing = true)
 
-  private val stringTypeAdapter = context.typeAdapterOf[String]
-
-  def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context, stringTypeAdapter, secondLookParsing)
+  def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context, stringTypeAdapter, this)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = new StringBuilder().asInstanceOf[Builder[Any, String]]
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context, stringTypeAdapter, secondLookParsing), sb)
+    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context, stringTypeAdapter, this), sb)
     sb.result()
   }
 }
@@ -30,6 +32,6 @@ case class JsonTransciever(
     json:              String,
     context:           Context,
     stringTypeAdapter: TypeAdapter[String],
-    secondLookParsing: Boolean) extends Transceiver[String] with JsonReader with JsonWriter {
+    jackFlavor:        JackFlavor[_, String]) extends Transceiver[String] with JsonReader with JsonWriter {
   val tokenizer: Tokenizer[String] = JsonTokenizer()
 }

@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package typeadapter
 package classes
 
-import co.blocke.scalajack.model.ClassHelper.{ FieldMember, TypeMember }
 import util.Path
 import model._
 

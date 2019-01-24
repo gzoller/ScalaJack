@@ -9,11 +9,8 @@ import scala.collection.mutable.Builder
 
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
-  var hintLabel: String = null // Very un-functional, but must be set externally because Context isn't created until later.
-  var context: Context = null
-
-  private lazy val typeTypeAdapter = context.typeAdapterOf[Type]
-  private lazy val numberTypeAdapter = context.typeAdapterOf[java.lang.Number]
+  private var typeTypeAdapter: TypeAdapter[Type] = null
+  private var numberTypeAdapter: TypeAdapter[Number] = null
 
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
@@ -22,11 +19,15 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
     reader.peek() match {
       case BeginObject => // Could be Trait or Map
         reader.savePos()
-        reader.lookAheadForField(hintLabel) match {
+        reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
           case Some(_) => // type hint found... this is a trait
-            val concreteType = typeTypeAdapter.read(path, reader, false)
+            val concreteType = {
+              if (typeTypeAdapter == null)
+                typeTypeAdapter = reader.jackFlavor.context.typeAdapterOf[Type]
+              typeTypeAdapter.read(path, reader, false)
+            }
             reader.rollbackToSave()
-            context.typeAdapter(concreteType).read(path, reader, isMapKey)
+            reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader, isMapKey)
 
           case None => // no hint found... treat as a Map
             reader.rollbackToSave()
@@ -65,23 +66,26 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   }
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
-  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE])(implicit tt: TypeTag[X]) = {
+  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = {
     val valueType = staticClass(value.getClass.getName).toType
-    val valueTA = context.typeAdapter(valueType).asInstanceOf[TypeAdapter[X]]
+    val valueTA = writer.jackFlavor.context.typeAdapter(valueType).asInstanceOf[TypeAdapter[X]]
     valueTA.write(value, writer, out)
   }
 
   def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
-      case null                    => writer.writeNull(out)
-      case s: String               => writer.writeString(s, out)
-      case b: Boolean              => writer.writeBoolean(b, out)
-      case bi: BigInt              => writer.writeBigInt(bi, out)
-      case bd: BigDecimal          => writer.writeDecimal(bd, out)
-      case n: Number               => numberTypeAdapter.write(n, writer, out)
+      case null           => writer.writeNull(out)
+      case s: String      => writer.writeString(s, out)
+      case b: Boolean     => writer.writeBoolean(b, out)
+      case bi: BigInt     => writer.writeBigInt(bi, out)
+      case bd: BigDecimal => writer.writeDecimal(bd, out)
+      case n: Number =>
+        if (numberTypeAdapter == null)
+          numberTypeAdapter = writer.jackFlavor.context.typeAdapterOf[Number]
+        numberTypeAdapter.write(n, writer, out)
       case enum: Enumeration#Value => writer.writeString(enum.toString, out)
       case list: List[_]           => writer.writeArray(list, this, out)
-      case mmap: Map[Any, Any]     => writer.writeMap(mmap, this, this, out)
+      case mmap: Map[_, _]         => writer.writeMap(mmap.asInstanceOf[Map[Any, Any]], this, this, out)
       case v                       => unpack(v, writer, out)
     }
 }

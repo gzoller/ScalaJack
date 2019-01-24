@@ -2,8 +2,6 @@ package co.blocke.scalajack
 package model
 
 import util.Path
-import typeadapter.classes._
-import typeadapter._
 
 trait JackFlavor[N, WIRE] {
 
@@ -15,6 +13,7 @@ trait JackFlavor[N, WIRE] {
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
 
   val defaultHint: String = "_hint"
+  val hintMap: Map[Type, String] = Map.empty[Type, String]
 
   /*
     val customAdapters: List[TypeAdapterFactory]
@@ -26,16 +25,22 @@ trait JackFlavor[N, WIRE] {
     val secondLookParsing: Boolean
 
     def withAdapters(ta: TypeAdapterFactory*): ScalaJackLike[IR, WIRE]
-    def withHints(h: (Type, String)*): ScalaJackLike[IR, WIRE]
     def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[IR, WIRE]
-    def withDefaultHint(hint: String): ScalaJackLike[IR, WIRE]
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
     def parseOrElse(poe: (Type, Type)*): ScalaJackLike[IR, WIRE]
     def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
     */
+  def withDefaultHint(hint: String): JackFlavor[N, WIRE]
+  def withHints(h: (Type, String)*): JackFlavor[N, WIRE]
   def withSecondLookParsing(): JackFlavor[N, WIRE]
 
   val context: Context = bakeContext()
+
+  // This is so pervasively handy, let's just pre-stage it for easy access
+  val stringTypeAdapter = context.typeAdapterOf[String]
+
+  // Look up any custom hint label for given type, and if none then use default
+  def getHintLabelFor(tpe: Type) = hintMap.get(tpe).getOrElse(defaultHint)
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
   //  val nativeTypeAdapter: TypeAdapter[N]
@@ -157,13 +162,6 @@ trait JackFlavor[N, WIRE] {
       intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
       */
 
-    val c = Context(
-      this,
-      defaultHint,
-      factories = Context.StandardFactories ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
-    )
-    AnyTypeAdapterFactory.hintLabel = defaultHint
-    AnyTypeAdapterFactory.context = c
-    c
+    Context(Context.StandardFactories) // ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
   }
 }
