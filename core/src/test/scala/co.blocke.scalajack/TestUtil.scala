@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import co.blocke.scalajack.model.{ ReadInvalidError, ReadMalformedError, ReadUnexpectedError }
+import co.blocke.scalajack.model.{ ReadInvalidError, ReadMalformedError, ReadMissingError, ReadUnexpectedError }
 import co.blocke.scalajack.util.Path
 
 object TestUtil {
@@ -29,7 +29,23 @@ object TestUtil {
         if (t.path != path)
           throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
         if (t.related != related) {
-          println(t.msg)
+          throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
+        }
+      case x =>
+        throw x
+    }
+    true
+  }
+
+  def expectMissing(fn: () => Any, path: Path, related: List[String]): Boolean = {
+    try {
+      fn()
+      throw new Exception("fn() worked--it shoudln't have!")
+    } catch {
+      case t: ReadMissingError =>
+        if (t.path != path)
+          throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
+        if (t.related != related) {
           throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
         }
       case x =>

@@ -9,8 +9,10 @@ import scala.collection.mutable.Builder
 
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
-  private var typeTypeAdapter: TypeAdapter[Type] = null
-  private var numberTypeAdapter: TypeAdapter[Number] = null
+  var jackFlavor: JackFlavor[_, _] = null
+
+  private lazy val typeTypeAdapter: TypeAdapter[Type] = jackFlavor.context.typeAdapterOf[Type]
+  private lazy val numberTypeAdapter: TypeAdapter[Number] = jackFlavor.context.typeAdapterOf[Number]
 
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
@@ -22,8 +24,6 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
         reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
           case Some(_) => // type hint found... this is a trait
             val concreteType = {
-              if (typeTypeAdapter == null)
-                typeTypeAdapter = reader.jackFlavor.context.typeAdapterOf[Type]
               typeTypeAdapter.read(path, reader, false)
             }
             reader.rollbackToSave()
@@ -74,15 +74,12 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
-      case null           => writer.writeNull(out)
-      case s: String      => writer.writeString(s, out)
-      case b: Boolean     => writer.writeBoolean(b, out)
-      case bi: BigInt     => writer.writeBigInt(bi, out)
-      case bd: BigDecimal => writer.writeDecimal(bd, out)
-      case n: Number =>
-        if (numberTypeAdapter == null)
-          numberTypeAdapter = writer.jackFlavor.context.typeAdapterOf[Number]
-        numberTypeAdapter.write(n, writer, out)
+      case null                    => writer.writeNull(out)
+      case s: String               => writer.writeString(s, out)
+      case b: Boolean              => writer.writeBoolean(b, out)
+      case bi: BigInt              => writer.writeBigInt(bi, out)
+      case bd: BigDecimal          => writer.writeDecimal(bd, out)
+      case n: Number               => numberTypeAdapter.write(n, writer, out)
       case enum: Enumeration#Value => writer.writeString(enum.toString, out)
       case list: List[_]           => writer.writeArray(list, this, out)
       case mmap: Map[_, _]         => writer.writeMap(mmap.asInstanceOf[Map[Any, Any]], this, this, out)

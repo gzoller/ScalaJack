@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package model
 
+import typeadapter.AnyTypeAdapterFactory
+import typeadapter.classes.TraitTypeAdapterFactory
 import util.Path
 
 trait JackFlavor[N, WIRE] {
@@ -14,6 +16,7 @@ trait JackFlavor[N, WIRE] {
 
   val defaultHint: String = "_hint"
   val hintMap: Map[Type, String] = Map.empty[Type, String]
+  val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]
 
   /*
     val customAdapters: List[TypeAdapterFactory]
@@ -25,13 +28,13 @@ trait JackFlavor[N, WIRE] {
     val secondLookParsing: Boolean
 
     def withAdapters(ta: TypeAdapterFactory*): ScalaJackLike[IR, WIRE]
-    def withHintModifiers(hm: (Type, HintModifier)*): ScalaJackLike[IR, WIRE]
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
     def parseOrElse(poe: (Type, Type)*): ScalaJackLike[IR, WIRE]
     def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
     */
   def withDefaultHint(hint: String): JackFlavor[N, WIRE]
   def withHints(h: (Type, String)*): JackFlavor[N, WIRE]
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, WIRE]
   def withSecondLookParsing(): JackFlavor[N, WIRE]
 
   val context: Context = bakeContext()
@@ -41,6 +44,9 @@ trait JackFlavor[N, WIRE] {
 
   // Look up any custom hint label for given type, and if none then use default
   def getHintLabelFor(tpe: Type) = hintMap.get(tpe).getOrElse(defaultHint)
+
+  //  def getHintValueForType(traitType: Type, origValue: String): Type =
+  //    hintValueModifiers.get(traitType).map(_.apply(origValue)).getOrElse(???)
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
   //  val nativeTypeAdapter: TypeAdapter[N]
@@ -162,6 +168,10 @@ trait JackFlavor[N, WIRE] {
       intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
       */
 
-    Context(Context.StandardFactories) // ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
+    val c = Context(Context.StandardFactories) // ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
+    // A little wiring to inject JackFlavor into a few places
+    AnyTypeAdapterFactory.jackFlavor = this
+    TraitTypeAdapterFactory.jackFlavor = this
+    c
   }
 }

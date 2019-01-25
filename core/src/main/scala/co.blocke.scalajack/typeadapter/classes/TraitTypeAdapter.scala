@@ -14,9 +14,11 @@ import scala.reflect.runtime.currentMirror
 //
 object TraitTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
+  var jackFlavor: JackFlavor[_, _] = null
+
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isTrait)
-      TraitTypeAdapter(classSymbol.fullName, tt.tpe)
+      TraitTypeAdapter(classSymbol.fullName, tt.tpe, jackFlavor.hintValueModifiers.get(tt.tpe))
     else
       next.typeAdapterOf[T]
 }
@@ -24,7 +26,7 @@ object TraitTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 case class TraitTypeAdapter[T](
     traitName:       String,
     polymorphicType: Type,
-    hintModFn:       Option[BijectiveFunction[String, Type]] = None // optional string->type map (hint value modifier)
+    hintModFn:       Option[BijectiveFunction[String, Type]]
 )(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
 
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
@@ -44,10 +46,11 @@ case class TraitTypeAdapter[T](
   // and re-read the object as a case class.
   def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = {
     reader.savePos()
+    val hintLabel = getHintLabel(reader)
     val concreteType =
-      reader.lookAheadForField(getHintLabel(reader))
+      reader.lookAheadForField(hintLabel)
         .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader, false)))
-        .getOrElse(throw new ReadMissingError(path, s"No type hint found for trait $traitName", List(traitName)))
+        .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName", List(traitName)))
     reader.rollbackToSave()
     val populatedConcreteType = populateConcreteType(concreteType)
     context.typeAdapter(populatedConcreteType).read(path, reader, isMapKey).asInstanceOf[T]
@@ -58,7 +61,8 @@ case class TraitTypeAdapter[T](
     val populatedConcreteType = populateConcreteType(concreteType)
     context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
       case cc: CaseClassTypeAdapter[T] =>
-        writer.writeObject(t, cc.fieldMembers, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(t.getClass.getName, writer.jackFlavor.stringTypeAdapter))))
+        val hintValue = hintModFn.map(_.unapply(populatedConcreteType)).getOrElse(t.getClass.getName)
+        writer.writeObject(t, cc.fieldMembers, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
     }
   }
 

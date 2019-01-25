@@ -5,9 +5,10 @@ import model._
 import scala.collection.mutable.Builder
 
 case class JsonFlavor[N](
-    override val defaultHint: String            = "_hint",
-    override val hintMap:     Map[Type, String] = Map.empty[Type, String],
-    secondLookParsing:        Boolean           = false
+    override val defaultHint:        String                       = "_hint",
+    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
+    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
+    secondLookParsing:               Boolean                      = false
 )(implicit tt: TypeTag[N]) extends JackFlavor[N, String] {
 
   //  val tokenizer = JsonTokenizer()
@@ -17,6 +18,7 @@ case class JsonFlavor[N](
 
   def withDefaultHint(hint: String): JackFlavor[N, String] = this.copy(defaultHint = hint)
   def withHints(h: (Type, String)*): JackFlavor[N, String] = this.copy(hintMap = this.hintMap ++ h)
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, String] = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
   def withSecondLookParsing(): JackFlavor[N, String] = this.copy(secondLookParsing = true)
 
   def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context, stringTypeAdapter, this)
