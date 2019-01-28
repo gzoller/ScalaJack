@@ -22,15 +22,15 @@ trait Reader[WIRE] {
   def skip()
   def lookAheadForField(fieldName: String): Option[String]
 
-  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem], isMapKey: Boolean): To
-  def readBigInt(path: Path, isMapKey: Boolean): BigInt
-  def readBoolean(path: Path, isMapKey: Boolean): Boolean
-  def readDecimal(path: Path, isMapKey: Boolean): BigDecimal
-  def readDouble(path: Path, isMapKey: Boolean): Double
-  def readInt(path: Path, isMapKey: Boolean): Int
-  def readLong(path: Path, isMapKey: Boolean): Long
-  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], isMapKey: Boolean): To
-  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]], isMapKey: Boolean): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
+  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To
+  def readBigInt(path: Path): BigInt
+  def readBoolean(path: Path): Boolean
+  def readDecimal(path: Path): BigDecimal
+  def readDouble(path: Path): Double
+  def readInt(path: Path): Int
+  def readLong(path: Path): Long
+  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
+  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
   def readString(path: Path): String
 }
 

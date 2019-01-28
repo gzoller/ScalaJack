@@ -97,7 +97,7 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
@@ -124,16 +124,16 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
 
   val stringTypeAdapter = context.typeAdapterOf[String]
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     reader.savePos()
-    reader.readMap(path, Map.canBuildFrom[String, Any], context.typeAdapterOf[String], context.typeAdapterOf[Any], isMapKey) match {
+    reader.readMap(path, Map.canBuildFrom[String, Any], context.typeAdapterOf[String], context.typeAdapterOf[Any]) match {
       case null => null.asInstanceOf[T]
       case fields: Map[String, Any] =>
         val allFieldNames = fields.map(_._1).toSet
         implementations.filter(implementation => implementation.fieldNames.subsetOf(allFieldNames)) match {
           case setOfOne if setOfOne.size == 1 =>
             reader.rollbackToSave()
-            setOfOne.head.typeAdapter.read(path, reader, isMapKey)
+            setOfOne.head.typeAdapter.read(path, reader)
 
           case emptySet if emptySet.isEmpty =>
             throw new ReadInvalidError(path, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames", List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))

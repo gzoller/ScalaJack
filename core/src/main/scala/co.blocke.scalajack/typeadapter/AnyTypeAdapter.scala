@@ -17,48 +17,48 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Any = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
       case BeginObject => // Could be Trait or Map
         reader.savePos()
         reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
           case Some(_) => // type hint found... this is a trait
             val concreteType = {
-              typeTypeAdapter.read(path, reader, false)
+              typeTypeAdapter.read(path, reader)
             }
             reader.rollbackToSave()
-            reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader, isMapKey)
+            reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
 
           case None => // no hint found... treat as a Map
             reader.rollbackToSave()
-            reader.readMap(path, Map.canBuildFrom[Any, Any], this, this, isMapKey)
+            reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
         }
       case BeginArray =>
-        reader.readArray(path, Vector.canBuildFrom[Any], this, isMapKey).toList
+        reader.readArray(path, Vector.canBuildFrom[Any], this).toList
       case Number =>
-        reader.readDecimal(path, isMapKey) match {
+        reader.readDecimal(path) match {
           case i if i.isValidInt      => i.toIntExact
           case i if i.isValidLong     => i.toLongExact
           case d if d.isDecimalDouble => d.toDouble
           case d                      => d
         }
-      case String if isMapKey =>
-        val text = reader.readString(path)
-        if (text == "")
-          text
-        else {
-          text.toCharArray.head match {
-            case c if c == '[' || c == '{' || isNumberChar(c) || text == "true" || text == "false" =>
-              val subReader = reader.cloneWithSource(text.asInstanceOf[WIRE])
-              this.read(path, subReader, false)
-            case _ =>
-              text
-          }
-        }
+      //      case String if isMapKey =>
+      //        val text = reader.readString(path)
+      //        if (text == "")
+      //          text
+      //        else {
+      //          text.toCharArray.head match {
+      //            case c if c == '[' || c == '{' || isNumberChar(c) || text == "true" || text == "false" =>
+      //              val subReader = reader.cloneWithSource(text.asInstanceOf[WIRE])
+      //              this.read(path, subReader, false)
+      //            case _ =>
+      //              text
+      //          }
+      //        }
       case String =>
         reader.readString(path)
       case True | False =>
-        reader.readBoolean(path, isMapKey)
+        reader.readBoolean(path)
       case Null =>
         reader.skip()
         null

@@ -25,9 +25,9 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
 
 case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): Try[T] = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Try[T] = {
     reader.savePos()
-    Try { valueTypeAdapter.read(path, reader, isMapKey) } match {
+    Try { valueTypeAdapter.read(path, reader) } match {
       case self @ Success(_) =>
         self
 

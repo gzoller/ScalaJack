@@ -27,7 +27,7 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): E#Value =
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): E#Value =
     reader.peek match {
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {
@@ -36,7 +36,7 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
             throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))
         }
       case TokenType.Number =>
-        Try(enum(reader.readInt(path, isMapKey))) match {
+        Try(enum(reader.readInt(path))) match {
           case Success(u) => u
           case Failure(u) =>
             throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))

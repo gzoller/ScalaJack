@@ -39,8 +39,9 @@ class Options() extends FunSpec with Matchers {
 
       val inst3: Map[Option[List[Int]], Int] = Map(None -> 2, Some(List(1, 2, 3)) -> 1)
       val js3 = sj.render(inst3)
-      assertResult("""{"":2,"[1,2,3]":1}""") { js3 }
-      println(sj.read[Map[Option[List[Int]], Int]](js3))
+      println(js3)
+      assertResult("""{"[1,2,3]":1}""") { js3 }
+      println(sj.read[Map[Option[List[Int]], Int]](js3)) ///(Map(Some(List(1, 2, 3)) -> 1)))
       /*
       assertResult(inst3) {
         sj.read[Map[Option[List[Int]], Int]](js3)

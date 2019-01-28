@@ -8,7 +8,13 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection._
 
-object CanBuildFromTypeAdapterFactory extends TypeAdapterFactory {
+object CanBuildFromTypeAdapterFactory extends CanBuildFromTypeAdapterFactoryPrototype {
+  val stringifyMapKeys = false
+}
+
+trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
+
+  val stringifyMapKeys: Boolean
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
@@ -60,9 +66,17 @@ object CanBuildFromTypeAdapterFactory extends TypeAdapterFactory {
           //        }
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
+          // Wrap Map keys in a StringWrapTypeAdapter?
+          val finalKeyTypeAdapter = {
+            if (keyType =:= typeOf[String] || keyType =:= typeOf[Option[String]] || !stringifyMapKeys)
+              keyTypeAdapter
+            else
+              new StringWrapTypeAdapter(keyTypeAdapter)
+          }
+
           Some(CanBuildMapTypeAdapter(
             canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]],
-            keyTypeAdapter.asInstanceOf[TypeAdapter[Any]],
+            finalKeyTypeAdapter.asInstanceOf[TypeAdapter[Any]],
             valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
         } else {
           // elementTypeAdapter == TypeAdapter[String]
@@ -83,11 +97,27 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
     keyTypeAdapter:   TypeAdapter[Key],
     valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter, isMapKey)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeMap(t.asInstanceOf[GenMap[Key, Value]], keyTypeAdapter, valueTypeAdapter, out)
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+    val filterKey = keyTypeAdapter match {
+      case kta if kta.isInstanceOf[OptionTypeAdapter[_]] || (kta.isInstanceOf[StringWrapTypeAdapter[_]] && kta.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) =>
+        t.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => k == None }
+      case _ => t
+    }
+    val filterValue = valueTypeAdapter match {
+      case vta if vta.isInstanceOf[OptionTypeAdapter[_]] || (vta.isInstanceOf[StringWrapTypeAdapter[_]] && vta.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) =>
+        filterKey.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => v == None }
+      case _ => filterKey
+    }
+    writer.writeMap(filterValue.asInstanceOf[GenMap[Key, Value]], keyTypeAdapter, valueTypeAdapter, out)
+  }
 }
 
 case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]](canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter, isMapKey)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeArray(t.asInstanceOf[GenIterable[Elem]], elementTypeAdapter, out)
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter)
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+    if (elementTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
+      writer.writeArray(t.asInstanceOf[GenIterable[Elem]].filterNot(_ == None), elementTypeAdapter, out)
+    else
+      writer.writeArray(t.asInstanceOf[GenIterable[Elem]], elementTypeAdapter, out)
 }

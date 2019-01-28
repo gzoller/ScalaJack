@@ -51,27 +51,12 @@ trait JsonWriter extends Writer[String] {
 
   def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[Any, String]): Unit = t match {
     case null => addString("null", out)
-    // Optimization if Key is String.  Don't need to build a sub-StringBuilder to stringify a non-String key
-    case a if keyTypeAdapter == stringTypeAdapter =>
-      out += '{'
-      val iter = a.iterator
-      while (iter.hasNext) {
-        val kv = iter.next
-        writeString(kv._1.asInstanceOf[String], out)
-        out += ':'
-        valueTypeAdapter.write(kv._2, this, out)
-        if (iter.hasNext)
-          out += ','
-      }
-      out += '}'
     case a =>
       out += '{'
       val iter = a.iterator
       while (iter.hasNext) {
         val kv = iter.next
-        val out2 = new StringBuilder().asInstanceOf[Builder[Any, String]] // stringify a non-string key
-        keyTypeAdapter.write(kv._1, this, out2)
-        writeString(out2.result(), out)
+        keyTypeAdapter.write(kv._1, this, out)
         out += ':'
         valueTypeAdapter.write(kv._2, this, out)
         if (iter.hasNext)
@@ -87,7 +72,7 @@ trait JsonWriter extends Writer[String] {
 
   def writeString(t: String, out: Builder[Any, String]): Unit = t match {
     case null => addString("null", out)
-    case s: String =>
+    case _: String =>
       out += '"'
       var i = 0
       val length = t.length
@@ -117,10 +102,10 @@ trait JsonWriter extends Writer[String] {
   def writeNull(out: Builder[Any, String]): Unit = addString("null", out)
 
   def writeObject[T](
-      t:            T,
-      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          Builder[Any, String],
-      extras:       List[(String, ExtraFieldValue[_])]): Unit = {
+    t:            T,
+    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+    out:          Builder[Any, String],
+    extras:       List[(String, ExtraFieldValue[_])]): Unit = {
     if (t == null) {
       addString("null", out)
     } else {

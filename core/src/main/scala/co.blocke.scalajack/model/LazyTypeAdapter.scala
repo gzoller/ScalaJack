@@ -25,6 +25,6 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     typeAdapter
   }
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): T = resolved.read(path, reader, isMapKey)
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = resolved.read(path, reader)
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {}
 }

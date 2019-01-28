@@ -74,8 +74,8 @@ case class CaseClassTypeAdapter[T](
     }
     */
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T =
-    reader.readObjectFields[T](path, fieldMembers, isMapKey) match {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T =
+    reader.readObjectFields[T](path, fieldMembers) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult => //(allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
         if (!objectFieldResult.allThere) {

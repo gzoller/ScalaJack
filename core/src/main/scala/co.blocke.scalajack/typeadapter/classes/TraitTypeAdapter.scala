@@ -26,8 +26,7 @@ object TraitTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 case class TraitTypeAdapter[T](
     traitName:       String,
     polymorphicType: Type,
-    hintModFn:       Option[BijectiveFunction[String, Type]]
-)(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
+    hintModFn:       Option[BijectiveFunction[String, Type]])(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
 
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
   private val typeTypeAdapter = context.typeAdapterOf[Type]
@@ -44,16 +43,16 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     reader.savePos()
     val hintLabel = getHintLabel(reader)
     val concreteType =
       reader.lookAheadForField(hintLabel)
-        .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader, false)))
+        .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader)))
         .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName", List(traitName)))
     reader.rollbackToSave()
     val populatedConcreteType = populateConcreteType(concreteType)
-    context.typeAdapter(populatedConcreteType).read(path, reader, isMapKey).asInstanceOf[T]
+    context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
   }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {

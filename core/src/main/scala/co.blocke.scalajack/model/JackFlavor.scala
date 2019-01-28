@@ -9,7 +9,7 @@ trait JackFlavor[N, WIRE] {
 
   def parse(wire: WIRE): Transceiver[WIRE]
 
-  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(Path.Root, parse(wire), false).asInstanceOf[T]
+  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(Path.Root, parse(wire)).asInstanceOf[T]
   //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
@@ -45,7 +45,8 @@ trait JackFlavor[N, WIRE] {
   val stringTypeAdapter = context.typeAdapterOf[String]
 
   // Look up any custom hint label for given type, and if none then use default
-  def getHintLabelFor(tpe: Type) = hintMap.get(tpe).getOrElse(defaultHint)
+  def getHintLabelFor(tpe: Type) =
+    hintMap.get(tpe).getOrElse(defaultHint)
 
   //  def getHintValueForType(traitType: Type, origValue: String): Type =
   //    hintValueModifiers.get(traitType).map(_.apply(origValue)).getOrElse(???)

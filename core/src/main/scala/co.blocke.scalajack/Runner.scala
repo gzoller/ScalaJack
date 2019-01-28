@@ -58,9 +58,14 @@ object Runner extends App {
 
   println("--------")
 
-  val m = Map(List(1, 2) -> "foo")
-  println(sj.render(m))
+  val m = List(Some(1), None, Some(2))
+  val js = sj.render(m)
+  println(js)
 
+  //  val m2 = Map("t" -> "a", "x" -> "c")
+  val m2: Map[String, String] = Map("t" -> "a")
+  println(m2)
+  println(sj.render(m2))
 
   /*
   Empty String Rules:

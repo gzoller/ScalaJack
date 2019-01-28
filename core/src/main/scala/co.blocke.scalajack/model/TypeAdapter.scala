@@ -38,7 +38,7 @@ trait TypeAdapter[T] {
 
   self =>
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): T
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit
 
   def defaultValue: Option[T] = None

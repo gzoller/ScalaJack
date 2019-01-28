@@ -50,11 +50,11 @@ object Analyzer {
   }
 
   private[series4] def know(
-      t:               Type,
-      t_alias:         Type,
-      relativeToTrait: Option[TraitType]            = None,
-      isParamType:     Boolean                      = false,
-      preResolved:     LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType]): AType = this.synchronized {
+    t:               Type,
+    t_alias:         Type,
+    relativeToTrait: Option[TraitType]            = None,
+    isParamType:     Boolean                      = false,
+    preResolved:     LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType]): AType = this.synchronized {
     // NOTE: Had to add synchronized here because we're adding an "empty" case class type into readyToEat first,
     // then building case class method field lists as we go.  THis is to support self-referencing.
     // If other threads see a not-yet-complete in readyToEat it will blow up.  This sync ensures we wait

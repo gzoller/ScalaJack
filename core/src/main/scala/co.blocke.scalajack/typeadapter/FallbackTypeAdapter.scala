@@ -9,13 +9,13 @@ import scala.util.{ Failure, Success, Try }
 
 case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: TypeAdapter[A], orElseTypeAdapter: TypeAdapter[B]) extends TypeAdapter[A] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean): A = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): A = {
     reader.savePos()
-    Try(attemptedTypeAdapter.read(path, reader, isMapKey)) match {
+    Try(attemptedTypeAdapter.read(path, reader)) match {
       case Success(a) => a
       case Failure(_) =>
         reader.rollbackToSave()
-        orElseTypeAdapter.read(path, reader, isMapKey)
+        orElseTypeAdapter.read(path, reader)
     }
   }
 
