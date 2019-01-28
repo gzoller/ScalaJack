@@ -5,53 +5,38 @@ object MyTypes {
   type Phone = String
 }
 import MyTypes._
+import util.Path
+import model.{ Transceiver, TypeAdapter }
+
+import scala.collection.mutable.Builder
 
 // Override just Phone
-/*
-object PhoneAdapter extends BasicTypeAdapter[Phone] {
-  override def read(reader: Reader): Phone = {
-    reader.peek match {
-      case TokenType.String =>
-        val raw = reader.readString()
-        raw.replaceAll("-", "").asInstanceOf[Phone]
-      // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
-      case TokenType.Null =>
-        reader.readNull()
+object PhoneAdapter extends TypeAdapter.===[Phone] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Phone =
+    reader.readString(path) match {
+      case s: String => s.replaceAll("-", "")
+      case null      => null
     }
-  }
 
-  override def write(value: Phone, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
-      // writer.writeString(value.replaceAll("-", ""))
-    }
+  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
+  }
 }
 
 // Override Phone...and its parents (String)!
-object OopsPhoneAdapter extends SimpleTypeAdapter[Phone] {
-  override def read(reader: Reader): Phone = {
-    reader.peek match {
-      case TokenType.String =>
-        val raw = reader.readString()
-        raw.replaceAll("-", "").asInstanceOf[Phone]
-      case TokenType.Null =>
-        reader.readNull()
+object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE], isMapKey: Boolean = false): Phone =
+    reader.readString(path) match {
+      case s: String => s.replaceAll("-", "")
+      case null      => null
     }
-  }
 
-  override def write(value: Phone, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      if (value.length > 6)
-        writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
-      else
-        writer.writeString(value)
-    }
+  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
+  }
 }
-*/
 
 case class Person(name: String, phone: Phone)
 

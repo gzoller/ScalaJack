@@ -56,6 +56,21 @@ object Runner extends App {
   val z = Base64.decodeBase64(y)
   println(z.toList)
 
+  println("--------")
+
+  val m = Map(List(1, 2) -> "foo")
+  println(sj.render(m))
+
+
+  /*
+  Empty String Rules:
+
+  If Option[] -> None
+  If String typed then ""
+  If Non-String & Non-Permissive (normal) -> Error
+  If Non-String & Permissive -> null
+  */
+
   /*
   println(sj.read[Map[String, Int]]("""{"a":1,"b":2}"""))
 

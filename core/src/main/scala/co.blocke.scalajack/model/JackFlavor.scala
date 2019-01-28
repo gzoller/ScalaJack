@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package model
 
-import typeadapter.AnyTypeAdapterFactory
+import typeadapter.{ AnyTypeAdapterFactory, FallbackTypeAdapter }
 import typeadapter.classes.TraitTypeAdapterFactory
 import util.Path
 
@@ -15,8 +15,10 @@ trait JackFlavor[N, WIRE] {
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
 
   val defaultHint: String = "_hint"
+  val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]
+  val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
 
   /*
     val customAdapters: List[TypeAdapterFactory]
@@ -27,15 +29,15 @@ trait JackFlavor[N, WIRE] {
     val typeModifier: Option[HintModifier]
     val secondLookParsing: Boolean
 
-    def withAdapters(ta: TypeAdapterFactory*): ScalaJackLike[IR, WIRE]
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
-    def parseOrElse(poe: (Type, Type)*): ScalaJackLike[IR, WIRE]
     def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
     */
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[N, WIRE]
   def withDefaultHint(hint: String): JackFlavor[N, WIRE]
   def withHints(h: (Type, String)*): JackFlavor[N, WIRE]
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, WIRE]
   def withSecondLookParsing(): JackFlavor[N, WIRE]
+  def parseOrElse(poe: (Type, Type)*): JackFlavor[N, WIRE]
 
   val context: Context = bakeContext()
 
@@ -168,10 +170,32 @@ trait JackFlavor[N, WIRE] {
       intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
       */
 
-    val c = Context(Context.StandardFactories) // ::: List(TraitTypeAdapterFactory(defaultHint)) //, PlanClassTypeAdapterFactory)
+    val intermediateContext = Context(customAdapters ::: Context.StandardFactories)
+
+    // ParseOrElse functionality
+    val parseOrElseFactories = parseOrElseMap.map {
+      case (attemptedType, fallbackType @ _) =>
+        val attemptedTypeAdapter = intermediateContext.typeAdapter(attemptedType)
+        val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
+
+        new TypeAdapterFactory {
+          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] =
+            if (typeTag.tpe =:= attemptedType) {
+              val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
+              val secondary = fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]]
+              FallbackTypeAdapter[T, T](primary, secondary)
+            } else {
+              next.typeAdapterOf[T]
+            }
+        }
+    }.toList
+
+    val ctx = intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
+
     // A little wiring to inject JackFlavor into a few places
     AnyTypeAdapterFactory.jackFlavor = this
     TraitTypeAdapterFactory.jackFlavor = this
-    c
+
+    ctx
   }
 }
