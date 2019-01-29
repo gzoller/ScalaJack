@@ -8,7 +8,6 @@ class Options() extends FunSpec with Matchers {
   val sj = ScalaJack()
 
   describe("------------------\n:  Option Tests  :\n------------------") {
-    /*
     it("Option of primitive (naked)") {
       val inst: Option[BigInt] = Some(BigInt(5))
       val js = sj.render(inst)
@@ -65,7 +64,6 @@ class Options() extends FunSpec with Matchers {
         sj.read[Map[Option[Map[String, Boolean]], Int]](js3)
       }
     }
-    */
 
     /*
     it("Option of Tuple") {
@@ -90,7 +88,6 @@ class Options() extends FunSpec with Matchers {
     }
     */
 
-    /*
     it("Option of Case Class") {
       val inst: Option[SomeClass] = Some(SomeClass("Mike", 2))
       val js = sj.render(inst)
@@ -201,8 +198,6 @@ class Options() extends FunSpec with Matchers {
         sj.read[Map[Option[String], Int]](js)
       }
     }
-    */
-    //----
 
     /*
     it("Option is None (in Tuple)") {
@@ -218,10 +213,9 @@ class Options() extends FunSpec with Matchers {
       val js = "null"
       assertResult(null) { sj.read[Option[Int]](js) }
     }
-    /*
     it("Reading null into optional class field") {
       val js = """{"name":"Mike","age":null}"""
-      assertResult(OptionClass("Mike", None)) { sj.read[OptionClass](js) }
+      assertResult(OptionClass("Mike", null)) { sj.read[OptionClass](js) }
     }
     it("Reading null into optional List item") {
       val js = """[1,null,2]"""
@@ -229,8 +223,9 @@ class Options() extends FunSpec with Matchers {
     }
     it("Reading null into optional Map item") {
       val js = """{"1":"one","2":null,"3":"three"}"""
-      assertResult(Map(1 -> Some("one"), 3 -> Some("three"))) { sj.read[Map[Int, Option[String]]](js) }
+      assertResult(Map(1 -> Some("one"), 2 -> null, 3 -> Some("three"))) { sj.read[Map[Int, Option[String]]](js) }
     }
+    /*
     it("Reading null into optional Tuple item") {
       val js = """[{"foo":1,"t":[true,"ok",2]},{"foo":5,"t":[false,null,3]}]"""
       assertResult(List(OptionTuple(1, (true, Some("ok"), 2)), OptionTuple(5, (false, None, 3)))) { sj.read[List[OptionTuple]](js) }

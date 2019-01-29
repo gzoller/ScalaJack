@@ -33,17 +33,15 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] = {
-// TODO: Handle Null better!
-    println("Peek: " + reader.peek())
-    reader.savePos()
-    println(valueTypeAdapter.read(path, reader))
-    reader.rollbackToSave()
-    valueTypeAdapter.read(path, reader) match {
-      case null => null
-      case v    => Some(v)
-    }
-  }
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
+    // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
+    // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
+    // these cases.
+    if (reader.peek() == TokenType.Null) {
+      reader.skip()
+      null
+    } else
+      Some(valueTypeAdapter.read(path, reader))
 
   def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {

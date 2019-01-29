@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package model
 
-import typeadapter.{ AnyTypeAdapterFactory, FallbackTypeAdapter }
+import typeadapter._
 import typeadapter.classes.TraitTypeAdapterFactory
 import util.Path
 
@@ -19,6 +19,7 @@ trait JackFlavor[N, WIRE] {
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
+  val permissivesOk: Boolean = false
 
   /*
     val customAdapters: List[TypeAdapterFactory]
@@ -38,6 +39,7 @@ trait JackFlavor[N, WIRE] {
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, WIRE]
   def withSecondLookParsing(): JackFlavor[N, WIRE]
   def parseOrElse(poe: (Type, Type)*): JackFlavor[N, WIRE]
+  def allowPermissivePrimitives(): JackFlavor[N, WIRE]
 
   val context: Context = bakeContext()
 
@@ -114,6 +116,34 @@ trait JackFlavor[N, WIRE] {
 
     val intermediateContext = Context(customAdapters ::: Context.StandardFactories)
 
+    val permissives = if (permissivesOk)
+      List(
+        PermissiveBigDecimalTypeAdapterFactory,
+        PermissiveBigIntTypeAdapterFactory,
+        PermissiveBinaryTypeAdapterFactory,
+        PermissiveBooleanTypeAdapterFactory,
+        PermissiveByteTypeAdapterFactory,
+        PermissiveCharTypeAdapterFactory,
+        PermissiveDoubleTypeAdapterFactory,
+        PermissiveFloatTypeAdapterFactory,
+        PermissiveIntTypeAdapterFactory,
+        PermissiveLongTypeAdapterFactory,
+        PermissiveShortTypeAdapterFactory,
+        PermissiveJavaBigDecimalTypeAdapterFactory,
+        PermissiveJavaBigIntegerTypeAdapterFactory,
+        PermissiveJavaBooleanTypeAdapterFactory,
+        PermissiveJavaByteTypeAdapterFactory,
+        PermissiveJavaCharacterTypeAdapterFactory,
+        PermissiveJavaDoubleTypeAdapterFactory,
+        PermissiveJavaFloatTypeAdapterFactory,
+        PermissiveJavaIntTypeAdapterFactory,
+        PermissiveJavaLongTypeAdapterFactory,
+        PermissiveJavaNumberTypeAdapterFactory,
+        PermissiveJavaShortTypeAdapterFactory
+      )
+    else
+      List.empty[TypeAdapterFactory]
+
     // ParseOrElse functionality
     val parseOrElseFactories = parseOrElseMap.map {
       case (attemptedType, fallbackType @ _) =>
@@ -132,7 +162,7 @@ trait JackFlavor[N, WIRE] {
         }
     }.toList
 
-    val ctx = intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
+    val ctx = intermediateContext.copy(factories = parseOrElseFactories ::: permissives ::: intermediateContext.factories)
 
     // A little wiring to inject JackFlavor into a few places
     AnyTypeAdapterFactory.jackFlavor = this

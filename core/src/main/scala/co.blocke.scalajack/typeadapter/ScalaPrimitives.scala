@@ -3,19 +3,19 @@ package typeadapter
 
 import util.Path
 import model._
-import java.util.UUID
 
 import org.apache.commons.codec.binary.Base64
 
 import scala.collection.mutable.Builder
-import scala.util.{ Failure, Success, Try }
 
-object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
+object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with BigDecimalTypeAdapter
+trait BigDecimalTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigDecimal = reader.readDecimal(path)
   def write[WIRE](t: BigDecimal, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeDecimal(t, out)
 }
 
-object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] {
+object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] with BigIntTypeAdapter
+trait BigIntTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigInt = reader.readBigInt(path)
   def write[WIRE](t: BigInt, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
     case null => writer.writeNull(out)
@@ -23,7 +23,8 @@ object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] {
   }
 }
 
-object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] {
+object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] with BinaryTypeAdapter
+trait BinaryTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Array[Byte] =
     reader.readString(path) match {
       case null      => null
@@ -35,17 +36,20 @@ object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] {
   }
 }
 
-object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] {
+object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with BooleanTypeAdapter
+trait BooleanTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Boolean = reader.readBoolean(path)
   def write[WIRE](t: Boolean, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeBoolean(t, out)
 }
 
-object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] {
+object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter
+trait ByteTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Byte = reader.readInt(path).toByte
   def write[WIRE](t: Byte, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeInt(t, out)
 }
 
-object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] {
+object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] with CharTypeAdapter
+trait CharTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Char =
     reader.readString(path) match {
       case null         => throw new ReadInvalidError(path, "A Char typed value cannot be null", List("Null"))
@@ -55,27 +59,32 @@ object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] {
   def write[WIRE](t: Char, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString(t.toString, out)
 }
 
-object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] {
+object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] with DoubleTypeAdapter
+trait DoubleTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Double = reader.readDouble(path)
   def write[WIRE](t: Double, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeDouble(t, out)
 }
 
-object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] {
+object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with FloatTypeAdapter
+trait FloatTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Float = reader.readDouble(path).toFloat
   def write[WIRE](t: Float, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeDouble(util.FixFloat.capFloat(t), out)
 }
 
-object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] {
+object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntTypeAdapter
+trait IntTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Int = reader.readInt(path)
   def write[WIRE](t: Int, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeInt(t, out)
 }
 
-object LongTypeAdapterFactory extends TypeAdapter.=:=[Long] {
+object LongTypeAdapterFactory extends TypeAdapter.=:=[Long] with LongTypeAdapter
+trait LongTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Long = reader.readLong(path)
   def write[WIRE](t: Long, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeLong(t, out)
 }
 
-object ShortTypeAdapterFactory extends TypeAdapter.=:=[Short] {
+object ShortTypeAdapterFactory extends TypeAdapter.=:=[Short] with ShortTypeAdapter
+trait ShortTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Short = reader.readInt(path).toShort
   def write[WIRE](t: Short, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeInt(t, out)
 }
@@ -85,21 +94,3 @@ object StringTypeAdapterFactory extends TypeAdapter.=:=[String] {
   def write[WIRE](t: String, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = writer.writeString(t, out)
 }
 
-object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): UUID = {
-    reader.readString(path) match {
-      case null => null
-      case s: String =>
-        Try(UUID.fromString(s)) match {
-          case Success(u) => u
-          case Failure(u) => throw new ReadMalformedError(
-            path,
-            s"Failed to create UUID value from parsed text ${s}", List(s), u)
-        }
-    }
-  }
-  def write[WIRE](t: UUID, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
-    case null => writer.writeNull(out)
-    case _    => writer.writeString(t.toString, out)
-  }
-}

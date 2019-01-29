@@ -30,6 +30,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
       val implicitConversions = for (method <- methods if method.isImplicit && method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[CanBuildFrom[_, _, _]]) yield method
 
       val matchingTypeAdapters = implicitConversions flatMap { method =>
+
         val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[CanBuildFrom[_, _, _]].typeSymbol)
 
         // typeParam == A
@@ -55,15 +56,10 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
         val elementTypeAfterSubstitution = elementTypeBeforeSubstitution.substituteTypes(typeParamSubstitutions.map(_._1), typeParamSubstitutions.map(_._2))
 
         val companionInstance = reflectModule(companionSymbol).instance
-        val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply()
 
         if (tt.tpe <:< typeOf[GenMapLike[_, _, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
           val keyType = elementTypeAfterSubstitution.typeArgs(0)
           val keyTypeAdapter = context.typeAdapter(keyType)
-          //        val keyTypeAdapter = context.typeAdapter(keyType) match {
-          //          case kta: OptionTypeAdapter[_] => kta.noneAsEmptyString // output "" for None for map keys
-          //          case kta                       => kta
-          //        }
           val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
           // Wrap Map keys in a StringWrapTypeAdapter?
@@ -74,15 +70,10 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
               new StringWrapTypeAdapter(keyTypeAdapter)
           }
 
-          Some(CanBuildMapTypeAdapter(
-            canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenMapLike[Any, Any, Any] with Null]],
-            finalKeyTypeAdapter.asInstanceOf[TypeAdapter[Any]],
-            valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+          buildMapTA(companionInstance, method, finalKeyTypeAdapter, valueTypeAdapter)
         } else {
-          // elementTypeAdapter == TypeAdapter[String]
           val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution) // This dies for Map!
-
-          Some(CanBuildFromTypeAdapter[Any, GenTraversableOnce[Any]](canBuildFrom.asInstanceOf[CanBuildFrom[Any, Any, GenTraversableOnce[Any]]], elementTypeAdapter.asInstanceOf[TypeAdapter[Any]]))
+          buildListTA(companionInstance, method, elementTypeAdapter)
         }
       }
 
@@ -90,21 +81,40 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
     } else {
       next.typeAdapterOf[T]
     }
+
+  // These two bits of wonderment here are to extract the specific Key, Value, and Elem types so they're clearly defined
+  // when the CanBuildFromTypeAdapters are constructed.  Otherwise we'd just have Any, which is unhelpful.
+  private def buildMapTA[Key, Value, To >: Null <: scala.collection.GenMapLike[Key, Value, To]](companionInstance: Any, method: MethodSymbol, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key], valueTT: TypeTag[Value], toTT: TypeTag[To]) = {
+    val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, (Key, Value), To]]
+    Some(CanBuildMapTypeAdapter(
+      canBuildFrom,
+      keyTypeAdapter,
+      valueTypeAdapter))
+  }
+
+  private def buildListTA[Elem, To >: Null <: GenTraversableOnce[Elem]](companionInstance: Any, method: MethodSymbol, elemTypeAdapter: TypeAdapter[Elem])(implicit elemTT: TypeTag[Elem], toTT: TypeTag[To]) = {
+    val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, Elem, To]]
+    Some(CanBuildFromTypeAdapter(
+      canBuildFrom,
+      elemTypeAdapter))
+  }
 }
 
 case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Value, To]](
     canBuildFrom:     CanBuildFrom[_, (Key, Value), To],
     keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value]) extends TypeAdapter[To] {
+    valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
   def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
     val filterKey = keyTypeAdapter match {
+      // TODO: Move all this nasty checking into the Factory!
       case kta if kta.isInstanceOf[OptionTypeAdapter[_]] || (kta.isInstanceOf[StringWrapTypeAdapter[_]] && kta.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) =>
         t.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => k == None }
       case _ => t
     }
     val filterValue = valueTypeAdapter match {
+      // TODO: Move all this nasty checking into the Factory!
       case vta if vta.isInstanceOf[OptionTypeAdapter[_]] || (vta.isInstanceOf[StringWrapTypeAdapter[_]] && vta.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) =>
         filterKey.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => v == None }
       case _ => filterKey

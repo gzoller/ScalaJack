@@ -7,6 +7,7 @@ import scala.collection.mutable.Builder
 
 case class JsonFlavor[N](
     override val defaultHint:        String                       = "_hint",
+    override val permissivesOk:      Boolean                      = false,
     override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
     override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
@@ -24,6 +25,7 @@ case class JsonFlavor[N](
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, String] = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
   def withSecondLookParsing(): JackFlavor[N, String] = this.copy(secondLookParsing = true)
   def parseOrElse(poe: (Type, Type)*): JackFlavor[N, String] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
+  def allowPermissivePrimitives(): JackFlavor[N, String] = this.copy(permissivesOk = true)
 
   protected override def bakeContext(): Context =
     new Context(JsonCanBuildFromTypeAdapterFactory +: super.bakeContext().factories)

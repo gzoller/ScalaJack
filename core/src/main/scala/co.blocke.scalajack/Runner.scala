@@ -62,10 +62,11 @@ object Runner extends App {
   val js = sj.render(m)
   println(js)
 
-  //  val m2 = Map("t" -> "a", "x" -> "c")
-  val m2: Map[String, String] = Map("t" -> "a")
-  println(m2)
-  println(sj.render(m2))
+  // TODO: Continue from here... (debug to see why strings are double wrapped)
+  val inst3: Map[Option[List[Int]], Int] = Map(None -> 2, Some(List(1, 2, 3)) -> 1)
+  val js3 = sj.render(inst3)
+  println(js3)
+  //sj.read[Map[Option[List[Int]], Int]](js3)
 
   /*
   Empty String Rules:

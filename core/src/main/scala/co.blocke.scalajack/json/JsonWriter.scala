@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json
 
 import model._
+import typeadapter._
 import ClassHelper.ExtraFieldValue
 
 import scala.collection.{ GenIterable, GenMap }
@@ -49,14 +50,25 @@ trait JsonWriter extends Writer[String] {
   def writeLong(t: Long, out: Builder[Any, String]): Unit =
     addString(t.toString, out)
 
-  def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[Any, String]): Unit = t match {
+  def writeMap[Key, Value, To](
+      t:                GenMap[Key, Value],
+      keyTypeAdapter:   TypeAdapter[Key],
+      valueTypeAdapter: TypeAdapter[Value],
+      out:              Builder[Any, String])(implicit keyTT: TypeTag[Key]): Unit = t match {
     case null => addString("null", out)
     case a =>
       out += '{'
+      val resolvedKeyTypeAdapter = if (keyTT.tpe == typeOf[Any]) // Stringify Any map keys
+        new StringWrapTypeAdapter(keyTypeAdapter)
+      else
+        keyTypeAdapter
       val iter = a.iterator
       while (iter.hasNext) {
         val kv = iter.next
-        keyTypeAdapter.write(kv._1, this, out)
+        if (!kv._1.isInstanceOf[String])
+          resolvedKeyTypeAdapter.write(kv._1, this, out)
+        else
+          keyTypeAdapter.write(kv._1, this, out)
         out += ':'
         valueTypeAdapter.write(kv._2, this, out)
         if (iter.hasNext)
@@ -102,10 +114,10 @@ trait JsonWriter extends Writer[String] {
   def writeNull(out: Builder[Any, String]): Unit = addString("null", out)
 
   def writeObject[T](
-    t:            T,
-    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-    out:          Builder[Any, String],
-    extras:       List[(String, ExtraFieldValue[_])]): Unit = {
+      t:            T,
+      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+      out:          Builder[Any, String],
+      extras:       List[(String, ExtraFieldValue[_])]): Unit = {
     if (t == null) {
       addString("null", out)
     } else {
@@ -173,15 +185,17 @@ trait JsonWriter extends Writer[String] {
         extraVal.write(this, out)
       }
       for ((memberName, member) <- fieldMembers) {
-        if (first)
-          first = false
-        else
-          out += ','
-        //        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
-        writeString(memberName, out)
-        out += ':'
         val memberValue = member.valueIn(t)
-        member.valueTypeAdapter.write(memberValue, this, out)
+        if (memberValue != None) {
+          if (first)
+            first = false
+          else
+            out += ','
+          //        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
+          writeString(memberName, out)
+          out += ':'
+          member.valueTypeAdapter.write(memberValue, this, out)
+        }
       }
 
       /*

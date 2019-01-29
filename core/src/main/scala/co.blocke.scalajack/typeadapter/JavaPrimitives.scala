@@ -10,7 +10,8 @@ import util.Path
 import scala.util.{ Try, Success, Failure }
 import scala.collection.mutable.Builder
 
-object JavaBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
+object JavaBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with JavaBigDecimalTypeAdapter
+trait JavaBigDecimalTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigDecimal = reader.readDecimal(path) match {
     case null => null
     case bd   => bd.bigDecimal
@@ -21,7 +22,8 @@ object JavaBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] {
   }
 }
 
-object JavaBigIntegerTypeAdapterFactory extends TypeAdapter.=:=[BigInteger] {
+object JavaBigIntegerTypeAdapterFactory extends TypeAdapter.=:=[BigInteger] with JavaBigIntegerTypeAdapter
+trait JavaBigIntegerTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigInteger = reader.readBigInt(path) match {
     case null => null
     case bi   => bi.bigInteger
@@ -32,7 +34,8 @@ object JavaBigIntegerTypeAdapterFactory extends TypeAdapter.=:=[BigInteger] {
   }
 }
 
-object JavaBooleanTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Boolean] {
+object JavaBooleanTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Boolean] with JavaBooleanTypeAdapter
+trait JavaBooleanTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Boolean =
     Try(reader.readBoolean(path)) match {
       case Success(b) => b
@@ -45,7 +48,8 @@ object JavaBooleanTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Boolean] 
   }
 }
 
-object JavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Byte] {
+object JavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Byte] with JavaByteTypeAdapter
+trait JavaByteTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Byte =
     Try(reader.readInt(path).toByte) match {
       case Success(b) => b
@@ -59,7 +63,8 @@ object JavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Byte] {
   }
 }
 
-object JavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Character] {
+object JavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Character] with JavaCharacterTypeAdapter
+trait JavaCharacterTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Character =
     reader.readString(path) match {
       case null         => null
@@ -72,7 +77,8 @@ object JavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Charact
   }
 }
 
-object JavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] {
+object JavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] with JavaDoubleTypeAdapter
+trait JavaDoubleTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Double =
     Try(reader.readDouble(path)) match {
       case Success(d) => d
@@ -85,7 +91,8 @@ object JavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] {
   }
 }
 
-object JavaFloatTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Float] {
+object JavaFloatTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Float] with JavaFloatTypeAdapter
+trait JavaFloatTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Float =
     Try(reader.readDouble(path)) match {
       case Success(d) => d.floatValue()
@@ -98,7 +105,8 @@ object JavaFloatTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Float] {
   }
 }
 
-object JavaIntTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Integer] {
+object JavaIntTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Integer] with JavaIntTypeAdapter
+trait JavaIntTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Integer =
     Try(reader.readInt(path)) match {
       case Success(d) => d
@@ -111,7 +119,8 @@ object JavaIntTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Integer] {
   }
 }
 
-object JavaLongTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Long] {
+object JavaLongTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Long] with JavaLongTypeAdapter
+trait JavaLongTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Long =
     Try(reader.readLong(path)) match {
       case Success(d) => d
@@ -124,7 +133,8 @@ object JavaLongTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Long] {
   }
 }
 
-object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] {
+object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] with JavaNumberTypeAdapter
+trait JavaNumberTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Number =
     reader.readDecimal(path) match {
       case null => null
@@ -147,7 +157,8 @@ object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] {
   }
 }
 
-object JavaShortTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Short] {
+object JavaShortTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Short] with JavaShortTypeAdapter
+trait JavaShortTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Short =
     Try(reader.readInt(path)) match {
       case Success(d) => d.shortValue()
