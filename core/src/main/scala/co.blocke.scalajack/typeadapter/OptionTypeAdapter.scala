@@ -33,11 +33,17 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] = {
+// TODO: Handle Null better!
+    println("Peek: " + reader.peek())
+    reader.savePos()
+    println(valueTypeAdapter.read(path, reader))
+    reader.rollbackToSave()
     valueTypeAdapter.read(path, reader) match {
       case null => null
       case v    => Some(v)
     }
+  }
 
   def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {

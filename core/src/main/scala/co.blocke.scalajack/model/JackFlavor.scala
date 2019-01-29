@@ -111,65 +111,6 @@ trait JackFlavor[N, WIRE] {
     */
 
   protected def bakeContext(): Context = {
-    /*
-      // Types where either the label or the type value (or both) are modified
-      val polymorphicTypes: Set[Type] = hintModifiers.keySet ++ hintMap.keySet
-
-      val polymorphicTypeAdapterFactories = polymorphicTypes.map { polymorphicType: Type =>
-        val hintLabel = hintMap.getOrElse(polymorphicType, defaultHint)
-        val hintToType = hintModifiers.getOrElse(polymorphicType, fullNameToType)
-
-        new TypeAdapterFactory {
-          override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] = {
-            if (typeTag.tpe.typeSymbol == polymorphicType.typeSymbol) {
-              val typeTypeAdapter = context.typeAdapterOf[Type]
-              TraitTypeAdapter[T](
-                new TraitIRTransceiver[T](hintLabel, typeTypeAdapter.irTransceiver, Some(hintToType.memoized)),
-                typeTag.tpe)
-            } else
-              next.typeAdapterOf[T]
-          }
-        }
-      }.toList
-
-      val typeModFactories = typeModifier.map(mod => List(new TypeAdapterFactory {
-        override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
-          if (tt.tpe =:= typeOf[Type]) {
-            TypeTypeAdapter(
-              new TypeTypeIRTransceiver(mod.unapply, mod.apply),
-              tt.mirror,
-              Some(mod)).asInstanceOf[TypeAdapter[T]]
-          } else {
-            next.typeAdapterOf[T]
-          }
-        }
-      })).getOrElse(List.empty[TypeAdapterFactory])
-
-      val intermediateContext = Context(
-        defaultHint,
-        factories = customAdapters ::: typeModFactories ::: polymorphicTypeAdapterFactories ::: Context.StandardContext.factories ::: List(TraitTypeAdapterFactory(defaultHint), PlainClassTypeAdapter),
-        Some(this))
-
-      // ParseOrElse functionality
-      val parseOrElseFactories = parseOrElseMap.map {
-        case (attemptedType, fallbackType @ _) =>
-          val attemptedTypeAdapter = intermediateContext.typeAdapter(attemptedType)
-          val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
-
-          new TypeAdapterFactory {
-            override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, typeTag: TypeTag[T]): TypeAdapter[T] =
-              if (typeTag.tpe =:= attemptedType) {
-                val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
-                val secondary = fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]]
-                FallbackTypeAdapter[T](primary, secondary)
-              } else {
-                next.typeAdapterOf[T]
-              }
-          }
-      }.toList
-
-      intermediateContext.copy(factories = parseOrElseFactories ::: intermediateContext.factories)
-      */
 
     val intermediateContext = Context(customAdapters ::: Context.StandardFactories)
 
