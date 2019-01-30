@@ -24,22 +24,17 @@ class AnyColl() extends FunSpec with Matchers {
         sj.read[Any](js)
       }
     }
-    /*
-    it("List works (Class)") {
+    it("First-Level List works (Class)") {
       val inst: Any = List(Player("Mike", 34), Player("Sarah", 29))
-      val js = sj.render[Any](inst)
-      println(js)
-      println(sj.read[List[Any]](js))
+      val js = sj.render(inst)
       assertResult("""[{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Mike","age":34},{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Sarah","age":29}]""") { js }
       assertResult(List(Player("Mike", 34), Player("Sarah", 29))) {
         sj.read[List[Any]](js)
       }
     }
-    */
     it("Map works (Int,Int)") {
       val inst: Any = Map(1 -> 2, 3 -> 4)
       val js = sj.render(inst)
-      println(js)
       assertResult("""{"1":2,"3":4}""") { js }
       assertResult(Map("1" -> 2, "3" -> 4)) {
         sj.read[Any](js)
@@ -53,15 +48,11 @@ class AnyColl() extends FunSpec with Matchers {
         sj.read[Any](js)
       }
     }
-    /*
-    it("Map works (Class,Int)") {
-      val inst: Any = Map(Player("Mike", 34) -> 1, Player("Sarah", 29) -> 2)
-      val js = sj.render(inst)
-      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Mike\",\"age\":34}":1,"{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Sarah\",\"age\":29}":2}""") { js }
-      assertResult(Map(Player("Mike", 34) -> 1, Player("Sarah", 29) -> 2)) {
+    it("First-Level Map works (Class)") {
+      val js = """{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Mike","age":34}"""
+      assertResult(Player("Mike", 34)) {
         sj.read[Any](js)
       }
     }
-    */
   }
 }

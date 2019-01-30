@@ -120,10 +120,8 @@ trait JackFlavor[N, WIRE] {
       List(
         PermissiveBigDecimalTypeAdapterFactory,
         PermissiveBigIntTypeAdapterFactory,
-        PermissiveBinaryTypeAdapterFactory,
         PermissiveBooleanTypeAdapterFactory,
         PermissiveByteTypeAdapterFactory,
-        PermissiveCharTypeAdapterFactory,
         PermissiveDoubleTypeAdapterFactory,
         PermissiveFloatTypeAdapterFactory,
         PermissiveIntTypeAdapterFactory,
@@ -133,7 +131,6 @@ trait JackFlavor[N, WIRE] {
         PermissiveJavaBigIntegerTypeAdapterFactory,
         PermissiveJavaBooleanTypeAdapterFactory,
         PermissiveJavaByteTypeAdapterFactory,
-        PermissiveJavaCharacterTypeAdapterFactory,
         PermissiveJavaDoubleTypeAdapterFactory,
         PermissiveJavaFloatTypeAdapterFactory,
         PermissiveJavaIntTypeAdapterFactory,

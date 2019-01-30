@@ -39,14 +39,6 @@ object PermissiveJavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.By
       super.read(path, reader)
 }
 
-object PermissiveJavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Character] with JavaCharacterTypeAdapter {
-  override def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Character =
-    if (reader.peek() == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
-    else
-      super.read(path, reader)
-}
-
 object PermissiveJavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] with JavaDoubleTypeAdapter {
   override def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Double =
     if (reader.peek() == TokenType.String)

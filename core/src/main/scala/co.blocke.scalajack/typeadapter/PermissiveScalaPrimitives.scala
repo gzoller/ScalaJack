@@ -4,10 +4,6 @@ package typeadapter
 import util.Path
 import model._
 
-import org.apache.commons.codec.binary.Base64
-
-import scala.collection.mutable.Builder
-
 object PermissiveBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with BigDecimalTypeAdapter {
   override def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigDecimal =
     if (reader.peek() == TokenType.String)
@@ -24,14 +20,6 @@ object PermissiveBigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] with B
       super.read(path, reader)
 }
 
-object PermissiveBinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] with BinaryTypeAdapter {
-  override def read[WIRE](path: Path, reader: Transceiver[WIRE]): Array[Byte] =
-    if (reader.peek() == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
-    else
-      super.read(path, reader)
-}
-
 object PermissiveBooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with BooleanTypeAdapter {
   override def read[WIRE](path: Path, reader: Transceiver[WIRE]): Boolean =
     if (reader.peek() == TokenType.String)
@@ -42,14 +30,6 @@ object PermissiveBooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with
 
 object PermissiveByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter {
   override def read[WIRE](path: Path, reader: Transceiver[WIRE]): Byte =
-    if (reader.peek() == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
-    else
-      super.read(path, reader)
-}
-
-object PermissiveCharTypeAdapterFactory extends TypeAdapter.=:=[Char] with CharTypeAdapter {
-  override def read[WIRE](path: Path, reader: Transceiver[WIRE]): Char =
     if (reader.peek() == TokenType.String)
       (new StringWrapTypeAdapter(this)).read(path, reader)
     else

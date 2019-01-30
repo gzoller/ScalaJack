@@ -19,13 +19,11 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
-      case BeginObject => // Could be Trait or Map
+      case BeginObject => // Could be Class/Trait or Map
         reader.savePos()
         reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
-          case Some(_) => // type hint found... this is a trait
-            val concreteType = {
-              typeTypeAdapter.read(path, reader)
-            }
+          case Some(_) => // type hint found... this is a Class/Trait
+            val concreteType = typeTypeAdapter.read(path, reader)
             reader.rollbackToSave()
             reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
 
@@ -42,19 +40,6 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
           case d if d.isDecimalDouble => d.toDouble
           case d                      => d
         }
-      //      case String if isMapKey =>
-      //        val text = reader.readString(path)
-      //        if (text == "")
-      //          text
-      //        else {
-      //          text.toCharArray.head match {
-      //            case c if c == '[' || c == '{' || isNumberChar(c) || text == "true" || text == "false" =>
-      //              val subReader = reader.cloneWithSource(text.asInstanceOf[WIRE])
-      //              this.read(path, subReader, false)
-      //            case _ =>
-      //              text
-      //          }
-      //        }
       case String =>
         reader.readString(path)
       case True | False =>
@@ -69,7 +54,10 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = {
     val valueType = staticClass(value.getClass.getName).toType
     val valueTA = writer.jackFlavor.context.typeAdapter(valueType).asInstanceOf[TypeAdapter[X]]
-    valueTA.write(value, writer, out)
+    if (valueTA.isInstanceOf[classes.CaseClassTypeAdapter[X]])
+      valueTA.asInstanceOf[classes.CaseClassTypeAdapter[X]].writeWithHint(value, writer, out)
+    else
+      valueTA.write(value, writer, out)
   }
 
   def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =

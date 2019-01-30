@@ -13,7 +13,7 @@ case class CaseClassTypeAdapter[T](
     typeMembers:       List[ClassHelper.TypeMember[T]],
     fieldMembers:      ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
     constructorMirror: MethodMirror,
-    collectionName:    Option[String]                                        = None) extends ClassHelper.ClassLikeTypeAdapter[T] {
+    collectionName:    Option[String]                                        = None)(implicit tt: TypeTag[T]) extends ClassHelper.ClassLikeTypeAdapter[T] {
 
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys[AST](fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
@@ -73,7 +73,6 @@ case class CaseClassTypeAdapter[T](
       }
     }
     */
-
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T =
     reader.readObjectFields[T](path, fieldMembers) match {
       case null => null.asInstanceOf[T]
@@ -96,6 +95,14 @@ case class CaseClassTypeAdapter[T](
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     writer.writeObject(t, fieldMembers, out)
 
+  // Used by AnyTypeAdapter to insert type hint (not normally needed) into output so object
+  // may be reconsituted on read
+  def writeWithHint[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+    val hintValue = t.getClass.getName
+    val hintLabel = writer.jackFlavor.getHintLabelFor(tt.tpe)
+    val extra = List((hintLabel, ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter)))
+    writer.writeObject(t, fieldMembers, out, extra)
+  }
 }
 
 /*
