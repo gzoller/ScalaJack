@@ -6,6 +6,7 @@ import util.Path
 import model.TokenType._
 
 import scala.collection.mutable.Builder
+import scala.util.Try
 
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
@@ -13,9 +14,11 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   private lazy val typeTypeAdapter: TypeAdapter[Type] = jackFlavor.context.typeAdapterOf[Type]
   private lazy val numberTypeAdapter: TypeAdapter[Number] = jackFlavor.context.typeAdapterOf[Number]
+  private lazy val mapAnyTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
+  private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
 
-  @inline def isNumberChar(char: Char): Boolean =
-    ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
+  //  @inline def isNumberChar(char: Char): Boolean =
+  //    ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
@@ -29,7 +32,24 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
           case None => // no hint found... treat as a Map
             reader.rollbackToSave()
-            reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+            val raw = reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+            // We need to check the keys for raw in case they're an embedded list or object.  If not--just return raw
+            raw.map {
+              case (k, v) =>
+                k match {
+                  case s: String if s.startsWith("{") && s.endsWith("}") =>
+                    Try(mapAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))).map(worked =>
+                      if (worked.contains(reader.jackFlavor.defaultHint)) {
+                        val ta = reader.jackFlavor.context.typeAdapter(typeFromClassName(worked(reader.jackFlavor.defaultHint).asInstanceOf[String]))
+                        (ta.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE])), v)
+                      } else
+                        (worked, v)
+                    ).getOrElse((k, v))
+                  case s: String if s.startsWith("[") && s.endsWith("]") =>
+                    (listAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE])), v)
+                  case _ => (k, v)
+                }
+            }
         }
       case BeginArray =>
         reader.readArray(path, Vector.canBuildFrom[Any], this).toList
@@ -52,8 +72,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
   private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = {
-    val valueType = staticClass(value.getClass.getName).toType
-    val valueTA = writer.jackFlavor.context.typeAdapter(valueType).asInstanceOf[TypeAdapter[X]]
+    val valueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(value.getClass.getName)).asInstanceOf[TypeAdapter[X]]
     if (valueTA.isInstanceOf[classes.CaseClassTypeAdapter[X]])
       valueTA.asInstanceOf[classes.CaseClassTypeAdapter[X]].writeWithHint(value, writer, out)
     else

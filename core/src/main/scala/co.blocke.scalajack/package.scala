@@ -53,6 +53,8 @@ package object scalajack {
 
   implicit val typeTagType: TypeTag[Type] = TypeTags.of[Type](TypeTagHacks.TypeType)
 
+  @inline final def typeFromClassName(className: String) = staticClass(className).toType
+
   // Type Extractors
   object SingleType {
     def apply(tpe: Type, sym: Symbol): Type =

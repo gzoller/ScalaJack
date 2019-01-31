@@ -54,5 +54,17 @@ class AnyColl() extends FunSpec with Matchers {
         sj.read[Any](js)
       }
     }
+    it("Second-Level Map works (Class keys) (Class)") {
+      val js = """{"{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Mike\",\"age\":34}":15, "{\"name\":\"Mike\",\"age\":34}":16}"""
+      assertResult(Map(Player("Mike", 34) -> 15, Map("name" -> "Mike", "age" -> 34) -> 16)) {
+        sj.read[Any](js)
+      }
+    }
+    it("Second-Level Map (List keys) works (Class)") {
+      val js = """{"[{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Mike\",\"age\":34},{\"name\":\"Mike\",\"age\":34}]":15}"""
+      assertResult(Map(List(Player("Mike", 34), Map("name" -> "Mike", "age" -> 34)) -> 15)) {
+        sj.read[Any](js)
+      }
+    }
   }
 }

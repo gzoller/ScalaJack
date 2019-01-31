@@ -5,7 +5,7 @@ import co.blocke.scalajack.TestUtil._
 import co.blocke.scalajack.util.Path
 import org.scalatest.{ FunSpec, Matchers }
 
-case class Bogus(num: Int)
+case class Bogus(num: Int, unneeded: Option[Boolean], t: Option[(Int, Boolean)] = Some((5, true)))
 
 class PlugHoles() extends FunSpec with Matchers {
 
@@ -36,6 +36,8 @@ class PlugHoles() extends FunSpec with Matchers {
     assertResult("\"This\\\\that\"") { sj.render(strSlash) }
     val nullObj: Bogus = null
     assertResult("null") { sj.render(nullObj) }
+    val nullBigInt: BigInt = null
+    assertResult("null") { sj.render(nullBigInt) }
   }
   it("JsonReader") {
     val jsNull = "null"
@@ -51,5 +53,18 @@ class PlugHoles() extends FunSpec with Matchers {
     assert(expectUnexpected(() => sj.read[Bogus](jsNotAnArray), Path.Root, List("String")))
     val strSlash = "\"This\\\\that\""
     assertResult("""This\that""") { sj.read[String](strSlash) }
+  }
+  describe("TypeAdapters") {
+    it("Tuples") {
+      val jsNull = "null"
+      assertResult(null) { sj.read[(Int, Boolean)](jsNull) }
+    }
+    it("Options") {
+      val js = """{"num":11}"""
+      assertResult(Bogus(11, None, Some((5, true)))) { sj.read[Bogus](js) }
+    }
+    it("Classes") {
+      assert(expectMissing(() => sj.read[Bogus]("{}"), Path.Root, List("Bogus", "num")))
+    }
   }
 }
