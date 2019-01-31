@@ -213,4 +213,17 @@ trait JsonWriter extends Writer[String] {
       out += '}'
     }
   }
+
+  def writeTuple(writeFns: List[(Transceiver[String], Builder[Any, String]) => Unit], out: Builder[Any, String]): Unit = {
+    out += '['
+    var first = true
+    writeFns.map { f =>
+      if (!first)
+        out += ','
+      else
+        first = false
+      f(this, out)
+    }
+    out += ']'
+  }
 }

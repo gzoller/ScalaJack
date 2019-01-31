@@ -58,9 +58,10 @@ object Runner extends App {
 
   println("--------")
 
-  val jsx = sj.render(Person("Greg", 52, None))
+  val t = ("A", Some(5), true)
+  val jsx = sj.render(t)
   println(jsx)
-  println(sj.read[Any](jsx))
+  println(sj.read[(String, Option[Int], Boolean)](jsx))
 
   /*
   Empty String Rules:

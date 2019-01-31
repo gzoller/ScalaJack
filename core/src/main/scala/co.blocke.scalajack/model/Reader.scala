@@ -32,5 +32,7 @@ trait Reader[WIRE] {
   def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
   def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
   def readString(path: Path): String
+  def readTuple(path: Path, readFns: List[(Path, Transceiver[WIRE]) => Any]): List[Any]
+
 }
 

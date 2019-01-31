@@ -44,7 +44,6 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
           null.asInstanceOf[TypeAdapter[T]]
 
           if (subclassAttempts.exists(_.isFailure)) {
-            println("--3--")
             // If subclassAttempts is full of Failure, the "subclasses" may be case objects, not case classes.
             // This is a common alternative implementation for Enumerations.
             subclassTypes.headOption match {

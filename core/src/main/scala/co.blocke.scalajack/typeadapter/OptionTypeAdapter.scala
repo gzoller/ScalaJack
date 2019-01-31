@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import util.Path
+import util.{ Path, TypeTags }
 import model._
 
 import scala.collection.mutable.Builder
@@ -24,9 +24,13 @@ import scala.collection.mutable.Builder
      doesn't leave many choices here.
  */
 
-object OptionTypeAdapterFactory extends TypeAdapterFactory.=:=.withOneTypeParam[Option] {
-  override def create[E](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[Option[E]], ttElement: TypeTag[E]): TypeAdapter[Option[E]] =
-    OptionTypeAdapter(context.typeAdapterOf[E])
+object OptionTypeAdapterFactory extends TypeAdapterFactory {
+  def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe <:< typeOf[Option[_]]) {
+      val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
+      OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
+    } else
+      next.typeAdapterOf[T]
 }
 
 case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
@@ -48,6 +52,8 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
       case Some(e) => valueTypeAdapter.write(e, writer, out)
       case None    =>
     }
+
+  def toTupleVariant() = new TupleOptionTypeAdapter(valueTypeAdapter)
 }
 
 case class TupleOptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
@@ -55,14 +61,15 @@ case class TupleOptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit 
   override def defaultValue: Option[Option[E]] = Some(None)
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
-    valueTypeAdapter.read(path, reader) match {
-      case null => None // <-- Difference from main OptionTypeAdapter... treat null as None to preserve order in tuple
-      case v    => Some(v)
-    }
+    if (reader.peek() == TokenType.Null) {
+      reader.skip()
+      None // Difference from normal version...treat null as None to preserve order in tuple
+    } else
+      Some(valueTypeAdapter.read(path, reader))
 
   def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
     t match {
       case Some(e) => valueTypeAdapter.write(e, writer, out)
-      case None    =>
+      case None    => writer.writeNull(out)
     }
 }

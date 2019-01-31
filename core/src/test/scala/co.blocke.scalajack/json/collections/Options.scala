@@ -64,8 +64,6 @@ class Options() extends FunSpec with Matchers {
         sj.read[Map[Option[Map[String, Boolean]], Int]](js3)
       }
     }
-
-    /*
     it("Option of Tuple") {
       val inst: Option[(String, Boolean)] = Some(("a", true))
       val js = sj.render(inst)
@@ -81,13 +79,11 @@ class Options() extends FunSpec with Matchers {
 
       val inst3: Map[Option[(String, Boolean)], Int] = Map(None -> 2, Some(("a", true)) -> 1)
       val js3 = sj.render(inst3)
-      assertResult("""{"":2,"[\"a\",true]":1}""") { js3 }
-      assertResult(inst3) {
+      assertResult("""{"[\"a\",true]":1}""") { js3 }
+      assertResult(Map(Some(("a", true)) -> 1)) {
         sj.read[Map[Option[(String, Boolean)], Int]](js3)
       }
     }
-    */
-
     it("Option of Case Class") {
       val inst: Option[SomeClass] = Some(SomeClass("Mike", 2))
       val js = sj.render(inst)
@@ -198,8 +194,6 @@ class Options() extends FunSpec with Matchers {
         sj.read[Map[Option[String], Int]](js)
       }
     }
-
-    /*
     it("Option is None (in Tuple)") {
       val inst = List(OptionTuple(1, (true, Some("ok"), 2)), OptionTuple(5, (false, None, 3)))
       val js = sj.render(inst)
@@ -208,7 +202,6 @@ class Options() extends FunSpec with Matchers {
         sj.read[List[OptionTuple]](js)
       }
     }
-    */
     it("Reading null into optional (naked)") {
       val js = "null"
       assertResult(null) { sj.read[Option[Int]](js) }
@@ -225,11 +218,9 @@ class Options() extends FunSpec with Matchers {
       val js = """{"1":"one","2":null,"3":"three"}"""
       assertResult(Map(1 -> Some("one"), 2 -> null, 3 -> Some("three"))) { sj.read[Map[Int, Option[String]]](js) }
     }
-    /*
     it("Reading null into optional Tuple item") {
       val js = """[{"foo":1,"t":[true,"ok",2]},{"foo":5,"t":[false,null,3]}]"""
       assertResult(List(OptionTuple(1, (true, Some("ok"), 2)), OptionTuple(5, (false, None, 3)))) { sj.read[List[OptionTuple]](js) }
     }
-    */
   }
 }

@@ -24,4 +24,5 @@ trait Writer[WIRE] {
       extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit
   def writeRawString(t: String, out: Builder[Any, WIRE]): Unit
   def writeString(t: String, out: Builder[Any, WIRE]): Unit
+  def writeTuple(writeFns: List[(Transceiver[WIRE], Builder[Any, WIRE]) => Unit], out: Builder[Any, WIRE]): Unit
 }

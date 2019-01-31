@@ -24,13 +24,18 @@ trait JsonReader extends Reader[String] {
   lazy val tokens = tokenizer.tokenize(json).asInstanceOf[ArrayList[JsonToken]] //ArrayBuffer[JsonToken]]
 
   def savePos() = saved = p
+
   def rollbackToSave() = p = saved
+
   def peek(): TokenType = tokens.get(p).tokenType
+
   def lastTokenText(): String = {
     val jt = tokens.get(p - 1)
     json.substring(jt.begin, jt.end)
   }
+
   def skip() = if (p < tokens.size()) p += 1
+
   def lookAheadForField(fieldName: String): Option[String] = {
     if (tokens.get(p).tokenType != BeginObject)
       None
@@ -56,8 +61,8 @@ trait JsonReader extends Reader[String] {
   def cloneWithSource(source: String): Transceiver[String] = // used for Any parsing
     new JsonTransciever(source, context, stringTypeAdapter, jackFlavor)
 
-  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To =
-    tokens.get(p).tokenType match {
+  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To = {
+    val value = tokens.get(p).tokenType match {
       case BeginArray =>
         val builder = canBuildFrom()
         var i = 0
@@ -66,16 +71,18 @@ trait JsonReader extends Reader[String] {
           builder += elementTypeAdapter.read(path \ i, this)
           i += 1
         }
-        p += 1
         builder.result
       case Null =>
         null.asInstanceOf[To]
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected an Array but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
+    p += 1
+    value
+  }
 
-  def readMap[MapKey, MapValue, To](path: Path, canBuildFrom: CanBuildFrom[_, (MapKey, MapValue), To], keyTypeAdapter: TypeAdapter[MapKey], valueTypeAdapter: TypeAdapter[MapValue]): To =
-    tokens.get(p).tokenType match {
+  def readMap[MapKey, MapValue, To](path: Path, canBuildFrom: CanBuildFrom[_, (MapKey, MapValue), To], keyTypeAdapter: TypeAdapter[MapKey], valueTypeAdapter: TypeAdapter[MapValue]): To = {
+    val value = tokens.get(p).tokenType match {
       case BeginObject =>
         val builder = canBuildFrom()
         p += 1
@@ -84,13 +91,15 @@ trait JsonReader extends Reader[String] {
           val value = valueTypeAdapter.read(path \ key.toString, this)
           builder += key -> value
         }
-        p += 1
         builder.result
       case Null =>
         null.asInstanceOf[To]
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected a Map but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
+    p += 1
+    value
+  }
 
   def readBoolean(path: Path): Boolean = {
     val value = tokens.get(p).tokenType match {
@@ -191,7 +200,7 @@ trait JsonReader extends Reader[String] {
   }
 
   def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = { //(Boolean, Array[Any], Array[Boolean]) = {
-    tokens.get(p).tokenType match {
+    val value = tokens.get(p).tokenType match {
       case BeginObject =>
         var fieldCount = 0
         p += 1
@@ -208,13 +217,14 @@ trait JsonReader extends Reader[String] {
             case _ =>
           }
         }
-        p += 1
         ObjectFieldResult(fieldCount == fields.size, args, flags)
       case Null =>
         null
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected an Object (map with String keys) but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
+    p += 1
+    value
   }
 
   def readString(path: Path): String = {
@@ -287,6 +297,25 @@ trait JsonReader extends Reader[String] {
       case Null => null
       case _ =>
         throw new ReadUnexpectedError(path, s"Expected a String but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+    }
+    p += 1
+    value
+  }
+
+  def readTuple(path: Path, readFns: List[(Path, Transceiver[String]) => Any]): List[Any] = {
+    var fnPos = 0
+    val value = tokens.get(p).tokenType match {
+      case BeginArray =>
+        p += 1
+        readFns.map { fn =>
+          val a = fn(path \ fnPos, this)
+          fnPos += 1
+          a
+        }
+      case Null =>
+        null
+      case _ =>
+        throw new ReadUnexpectedError(path, s"Expected an Tuple (Array) but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
