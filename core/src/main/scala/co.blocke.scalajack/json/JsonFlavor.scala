@@ -1,9 +1,16 @@
 package co.blocke.scalajack
 package json
 
-import model._
+import model.{ JackFlavor, _ }
 
 import scala.collection.mutable.Builder
+
+object JsonFlavorMaker {
+  def apply[N, WIRE](): () => JackFlavor[N, WIRE] = (() => {
+    val jf: JackFlavor[N, WIRE] = JsonFlavor().asInstanceOf[JackFlavor[N, WIRE]]
+    jf
+  })
+}
 
 case class JsonFlavor[N](
     override val defaultHint:        String                       = "_hint",
@@ -14,6 +21,7 @@ case class JsonFlavor[N](
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
     secondLookParsing:               Boolean                      = false)(implicit tt: TypeTag[N]) extends JackFlavor[N, String] {
 
+  println("== NEW ==")
   //  val tokenizer = JsonTokenizer()
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, String] = JsonFlavor[N2]()

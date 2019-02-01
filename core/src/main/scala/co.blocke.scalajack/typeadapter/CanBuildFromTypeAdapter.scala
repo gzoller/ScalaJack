@@ -68,20 +68,6 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
             || keyType =:= typeOf[Any]
             || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
             keyTypeAdapter
-          /*
-        val finalKeyTypeAdapter =
-          if (keyType <:< typeOf[String]
-            || keyType <:< typeOf[Option[String]]
-            || keyType =:= typeOf[Any] // Any types must manage their own wrapping...
-            || keyType <:< typeOf[Char]
-            || keyType <:< typeOf[Option[Char]]
-            || keyType <:< typeOf[java.lang.Character]
-            || keyType <:< typeOf[Option[java.lang.Character]]
-            || keyType <:< typeOf[Enumeration#Value]
-            || keyType <:< typeOf[Option[Enumeration#Value]]
-            || !stringifyMapKeys)
-            keyTypeAdapter
-            */
           else
             new StringWrapTypeAdapter(keyTypeAdapter)
 
@@ -103,7 +89,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
 
   // These two bits of wonderment here are to extract the specific Key, Value, and Elem types so they're clearly defined
   // when the CanBuildFromTypeAdapters are constructed.  Otherwise we'd just have Any, which is unhelpful.
-  private def buildMapTA[Key, Value, To >: Null <: scala.collection.GenMapLike[Key, Value, To]](companionInstance: Any, method: MethodSymbol, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key], valueTT: TypeTag[Value], toTT: TypeTag[To]) = {
+  private def buildMapTA[Key, Value, To >: Null <: scala.collection.GenMapLike[Key, Value, To]](companionInstance: Any, method: MethodSymbol, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) = {
     val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, (Key, Value), To]]
     val keyIsOptional = keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] || (keyTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
     val valueIsOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] || (valueTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && valueTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
@@ -116,7 +102,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
       valueTypeAdapter)
   }
 
-  private def buildListTA[Elem, To >: Null <: GenTraversableOnce[Elem]](companionInstance: Any, method: MethodSymbol, elemTypeAdapter: TypeAdapter[Elem])(implicit elemTT: TypeTag[Elem], toTT: TypeTag[To]) = {
+  private def buildListTA[Elem, To >: Null <: GenTraversableOnce[Elem]](companionInstance: Any, method: MethodSymbol, elemTypeAdapter: TypeAdapter[Elem]) = {
     val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, Elem, To]]
     val elemIsOptional = elemTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
     CanBuildFromTypeAdapter(
