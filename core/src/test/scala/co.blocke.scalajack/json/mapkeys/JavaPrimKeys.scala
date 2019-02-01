@@ -85,6 +85,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
             sj.read[SampleJLong](js)
           }
         }
+
         it("With Number Key") {
           val inst = SampleJNumber(Map(
             JByte.valueOf("-128") -> JByte.valueOf("127"),
@@ -96,14 +97,25 @@ class JavaPrimKeys() extends FunSpec with Matchers {
             JDouble.valueOf("1.7e-308") -> JDouble.valueOf("1.7e+308"),
             new JBigDecimal("1.8e+308") -> JFloat.valueOf("0.0")
           ))
+          val result = SampleJNumber(Map(
+            JByte.valueOf("0") -> new JBigDecimal("9923372036854755810"),
+            JInteger.valueOf("-2147483648") -> JInteger.valueOf("2147483647"),
+            JLong.valueOf("-9223372036854775808") -> JLong.valueOf("9223372036854755807"),
+            JByte.valueOf("-128") -> JByte.valueOf("127"),
+            JFloat.valueOf("3.4E-38") -> JFloat.valueOf("3.4E38"),
+            JShort.valueOf("-32768") -> JShort.valueOf("32767"),
+            new JBigDecimal("1.8E+308") -> JByte.valueOf("0"),
+            JDouble.valueOf("1.7E-308") -> JDouble.valueOf("1.7E308")
+          ))
           val js = sj.render(inst)
           assertResult("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}""") { js }
           val read = sj.read[SampleJNumber](js)
-          assertResult(inst) { read }
-          assertResult("List((1.8E+308,java.math.BigDecimal), (-9223372036854775808,java.lang.Long), (-32768,java.lang.Integer), (-128,java.lang.Integer), (0,java.lang.Integer), (-2147483648,java.lang.Integer), (3.4E-38,java.lang.Float), (1.7E-308,java.lang.Double))") {
-            // Hokem to ensure consistent ordering of keys from Map for success comparison
-            read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
-          }
+          //          val sb = new StringBuffer()
+          //          read.m.map {
+          //            case (k, v) =>
+          //              sb.append(k + " / " + k.getClass.getName + " --> " + v + " / " + v.getClass.getName+"\n")
+          //          }
+          assertResult(result) { read }
         }
         it("With Short Key") {
           val inst = SampleJShort(Map(12.toShort.asInstanceOf[JShort] -> 56.toShort.asInstanceOf[JShort], 90.toShort.asInstanceOf[JShort] -> 34.toShort.asInstanceOf[JShort]))

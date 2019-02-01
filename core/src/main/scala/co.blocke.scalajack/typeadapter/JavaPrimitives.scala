@@ -144,16 +144,19 @@ trait JavaNumberTypeAdapter {
       case d: scala.BigDecimal if (d.isValidLong) => d.toLongExact
       case d: scala.BigDecimal if (d.isDecimalFloat) => d.toFloat
       case d: scala.BigDecimal if (d.isDecimalDouble) => d.toDouble
+      case d: scala.BigDecimal => d.bigDecimal
       case _ => throw new ReadInvalidError(path, s"Can't map a decimal value to valid Java Number subclas (possibly out of range)", List("Can't map value"))
     }
   def write[WIRE](t: java.lang.Number, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
-    case null                                   => writer.writeNull(out)
-    case t if t.isInstanceOf[java.lang.Integer] => writer.writeInt(t.intValue, out)
-    case t if t.isInstanceOf[java.lang.Long]    => writer.writeLong(t.longValue, out)
-    case t if t.isInstanceOf[java.lang.Byte]    => writer.writeInt(t.byteValue, out)
-    case t if t.isInstanceOf[java.lang.Short]   => writer.writeInt(t.shortValue, out)
-    case t if t.isInstanceOf[java.lang.Float]   => writer.writeDouble(util.FixFloat.capFloat(t.floatValue), out)
-    case t if t.isInstanceOf[java.lang.Double]  => writer.writeDouble(t.doubleValue, out)
+    case null                                      => writer.writeNull(out)
+    case t if t.isInstanceOf[java.lang.Integer]    => writer.writeInt(t.intValue, out)
+    case t if t.isInstanceOf[java.lang.Long]       => writer.writeLong(t.longValue, out)
+    case t if t.isInstanceOf[java.lang.Byte]       => writer.writeInt(t.byteValue, out)
+    case t if t.isInstanceOf[java.lang.Short]      => writer.writeInt(t.shortValue, out)
+    case t if t.isInstanceOf[java.lang.Float]      => writer.writeDouble(util.FixFloat.capFloat(t.floatValue), out)
+    case t if t.isInstanceOf[java.lang.Double]     => writer.writeDouble(t.doubleValue, out)
+    case t if t.isInstanceOf[java.math.BigInteger] => writer.writeBigInt(BigInt(t.asInstanceOf[BigInteger]), out)
+    case t if t.isInstanceOf[java.math.BigDecimal] => writer.writeDecimal(scala.BigDecimal(t.asInstanceOf[BigDecimal]), out)
   }
 }
 

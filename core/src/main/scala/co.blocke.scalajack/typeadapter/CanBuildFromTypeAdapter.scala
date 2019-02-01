@@ -63,6 +63,13 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
 
         // Wrap Map keys in a StringWrapTypeAdapter?
         val finalKeyTypeAdapter =
+          if (!stringifyMapKeys
+            || keyTypeAdapter.isInstanceOf[Stringish]
+            || keyType =:= typeOf[Any]
+            || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
+            keyTypeAdapter
+          /*
+        val finalKeyTypeAdapter =
           if (keyType <:< typeOf[String]
             || keyType <:< typeOf[Option[String]]
             || keyType =:= typeOf[Any] // Any types must manage their own wrapping...
@@ -74,6 +81,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
             || keyType <:< typeOf[Option[Enumeration#Value]]
             || !stringifyMapKeys)
             keyTypeAdapter
+            */
           else
             new StringWrapTypeAdapter(keyTypeAdapter)
 

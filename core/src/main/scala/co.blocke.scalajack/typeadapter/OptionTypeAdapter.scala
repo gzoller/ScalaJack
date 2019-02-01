@@ -37,6 +37,8 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E], nullIsNone: Bo
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
+  def valueIsStringish(): Boolean = valueTypeAdapter.isInstanceOf[Stringish]
+
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
     // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
     // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
