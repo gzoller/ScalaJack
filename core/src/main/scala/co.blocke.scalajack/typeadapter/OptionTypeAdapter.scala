@@ -33,7 +33,7 @@ object OptionTypeAdapterFactory extends TypeAdapterFactory {
       next.typeAdapterOf[T]
 }
 
-case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
+case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E], nullIsNone: Boolean = false)(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
@@ -41,35 +41,23 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: T
     // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
     // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
     // these cases.
-    if (reader.peek() == TokenType.Null) {
-      reader.skip()
-      null
-    } else
-      Some(valueTypeAdapter.read(path, reader))
-
-  def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
-    t match {
-      case Some(e) => valueTypeAdapter.write(e, writer, out)
-      case None    =>
+    reader.peek() match {
+      case TokenType.Null if nullIsNone =>
+        reader.skip()
+        None
+      case TokenType.Null =>
+        reader.skip()
+        null
+      case _ =>
+        Some(valueTypeAdapter.read(path, reader))
     }
 
-  def toTupleVariant() = new TupleOptionTypeAdapter(valueTypeAdapter)
-}
-
-case class TupleOptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E])(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
-
-  override def defaultValue: Option[Option[E]] = Some(None)
-
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
-    if (reader.peek() == TokenType.Null) {
-      reader.skip()
-      None // Difference from normal version...treat null as None to preserve order in tuple
-    } else
-      Some(valueTypeAdapter.read(path, reader))
-
-  def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case Some(e) => valueTypeAdapter.write(e, writer, out)
-      case None    => writer.writeNull(out)
+      case Some(e)            => valueTypeAdapter.write(e, writer, out, isMapKey)
+      case None if nullIsNone => writer.writeNull(out)
+      case None               =>
     }
+
+  def toTupleVariant() = this.copy(nullIsNone = true)
 }

@@ -37,9 +37,9 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
     }
   }
 
-  def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case Success(v) => valueTypeAdapter.write(v, writer, out)
+      case Success(v) => valueTypeAdapter.write(v, writer, out, isMapKey)
       case Failure(e) => throw e
     }
 }

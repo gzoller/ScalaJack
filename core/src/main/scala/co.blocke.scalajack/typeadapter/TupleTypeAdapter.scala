@@ -24,8 +24,8 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
     def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any =
       valueTypeAdapter.read(path, reader)
 
-    def write[WIRE, T](tuple: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
-      valueTypeAdapter.write(valueIn(tuple), writer, out)
+    def write[WIRE, T](tuple: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+      valueTypeAdapter.write(valueIn(tuple), writer, out, isMapKey)
   }
 
   val tupleFullName = """scala.Tuple(\d+)""".r
@@ -75,9 +75,12 @@ case class TupleTypeAdapter[T >: Null](
 
   // Create functions that know how to self-write each field.  The actual writing of each element
   // is done in TupleField where the specific field type F is known.
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
-    writer.writeTuple(
-      fields.map(field => (w: Transceiver[WIRE], builder: Builder[Any, WIRE]) => field.write(t, w, builder)),
-      out
-    )
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+    if (t == null)
+      writer.writeNull(out)
+    else
+      writer.writeTuple(
+        fields.map(field => (w: Transceiver[WIRE], builder: Builder[Any, WIRE]) => field.write(t, w, builder, isMapKey)),
+        out
+      )
 }

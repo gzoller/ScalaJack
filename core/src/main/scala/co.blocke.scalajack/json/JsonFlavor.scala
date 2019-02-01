@@ -19,6 +19,8 @@ case class JsonFlavor[N](
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, String] = JsonFlavor[N2]()
   //  val nativeTypeAdapter: TypeAdapter[N] = context.typeAdapterOf[N]
 
+  override val stringifyMapKeys: Boolean = true
+
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[N, String] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withDefaultHint(hint: String): JackFlavor[N, String] = this.copy(defaultHint = hint)
   def withHints(h: (Type, String)*): JackFlavor[N, String] = this.copy(hintMap = this.hintMap ++ h)
@@ -34,7 +36,7 @@ case class JsonFlavor[N](
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = new StringBuilder().asInstanceOf[Builder[Any, String]]
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context, stringTypeAdapter, this), sb)
+    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context, stringTypeAdapter, this), sb, false)
     sb.result()
   }
 }

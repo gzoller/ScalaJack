@@ -39,7 +39,7 @@ trait TypeAdapter[T] {
   self =>
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
@@ -56,6 +56,11 @@ trait TypeAdapter[T] {
         None
     }
   }
+}
+
+// Marker trait for anything that boils down to String, e.g. Char, UUID, etc.
+trait Stringish {
+  this: TypeAdapter[_] =>
 }
 
 trait ArrayTypeAdapter[T, E] extends TypeAdapter[T] {

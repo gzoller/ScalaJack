@@ -25,7 +25,7 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
 
 }
 
-case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
+case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] with Stringish {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): E#Value =
     reader.peek match {
@@ -49,7 +49,7 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         throw new ReadUnexpectedError(path, s"Expected value token of type String or Int, not $actual when reading Enumeration value.", List(actual.toString))
     }
 
-  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case v    => writer.writeString(v.toString, out)

@@ -35,6 +35,6 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
     case null      => null
   }
 
-  def write[WIRE](t: Type, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Type, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     writer.writeString(t.typeSymbol.fullName, out)
 }

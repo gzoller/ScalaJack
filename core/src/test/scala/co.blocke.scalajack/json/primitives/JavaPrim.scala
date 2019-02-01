@@ -88,16 +88,16 @@ class JavaPrim() extends FunSpec with Matchers {
       }
       it("Number must work") {
         val inst = SampleJNumber(
-          new JByte("-128"), new JByte("127"),
-          new JShort("-32768"), new JShort("32767"),
-          new JInt("-2147483648"), new JInt("2147483647"),
-          new JLong("-9223372036854775808"), new JLong("9223372036854755807"),
+          JByte.valueOf("-128"), JByte.valueOf("127"),
+          JShort.valueOf("-32768"), JShort.valueOf("32767"),
+          JInt.valueOf("-2147483648"), JInt.valueOf("2147483647"),
+          JLong.valueOf("-9223372036854775808"), JLong.valueOf("9223372036854755807"),
           null, //new JBigInteger("9923372036854755810"),
-          new JByte("0"),
-          new JFloat("3.4e-038"), new JFloat("3.4e+038"),
-          new JDouble("1.7e-308"), new JDouble("1.7e+308"),
+          JByte.valueOf("0"),
+          JFloat.valueOf("3.4e-038"), JFloat.valueOf("3.4e+038"),
+          JDouble.valueOf("1.7e-308"), JDouble.valueOf("1.7e+308"),
           null, //new JBigDecimal("1.8e+308"),
-          new JFloat("0.0"),
+          JFloat.valueOf("0.0"),
           null)
         val js = sj.render(inst)
         assertResult("""{"n1":-128,"n2":127,"n3":-32768,"n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":null,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":null,"n16":0.0,"n17":null}""") { js }

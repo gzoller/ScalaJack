@@ -55,7 +55,7 @@ case class TraitTypeAdapter[T](
     context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val concreteType = currentMirror.classSymbol(t.getClass).toType
     val populatedConcreteType = populateConcreteType(concreteType)
     context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {

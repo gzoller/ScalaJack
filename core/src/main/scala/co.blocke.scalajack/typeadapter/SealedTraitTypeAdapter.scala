@@ -105,7 +105,7 @@ class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]
     case x => throw new ReadUnexpectedError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}", List(typeOf[T].toString, x))
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeString(null, out)
       case _    => writer.writeString(t.toString, out)
@@ -143,7 +143,7 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
     }
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeString(null, out)
       case _ =>

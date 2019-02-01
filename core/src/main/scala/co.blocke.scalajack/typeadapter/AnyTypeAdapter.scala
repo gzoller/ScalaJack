@@ -4,9 +4,18 @@ package typeadapter
 import model._
 import util.Path
 import model.TokenType._
+import typeadapter.classes.CaseClassTypeAdapter
 
-import scala.collection.mutable.Builder
+import scala.collection.mutable.{ Builder, StringBuilder }
+import scala.collection.GenTraversableOnce
 import scala.util.Try
+
+object BigIntExtractor {
+  def unapply(s: String): Option[BigInt] = Try(BigInt(s)).toOption
+}
+object BigDecimalExtractor {
+  def unapply(s: String): Option[BigDecimal] = Try(BigDecimal(s)).toOption
+}
 
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
@@ -14,8 +23,10 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   private lazy val typeTypeAdapter: TypeAdapter[Type] = jackFlavor.context.typeAdapterOf[Type]
   private lazy val numberTypeAdapter: TypeAdapter[Number] = jackFlavor.context.typeAdapterOf[Number]
-  private lazy val mapAnyTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
+  private lazy val classMapTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
+  private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
+  private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
 
   //  @inline def isNumberChar(char: Char): Boolean =
   //    ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
@@ -37,15 +48,15 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
             raw.map {
               case (k, v) =>
                 k match {
-                  case s: String if s.startsWith("{") && s.endsWith("}") =>
-                    Try(mapAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))).map(worked =>
+                  case s: String if s.startsWith("{") && s.endsWith("}") => // WARNING:  JSON-specific!
+                    Try(classMapTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))).map(worked =>
                       if (worked.contains(reader.jackFlavor.defaultHint)) {
                         val ta = reader.jackFlavor.context.typeAdapter(typeFromClassName(worked(reader.jackFlavor.defaultHint).asInstanceOf[String]))
                         (ta.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE])), v)
                       } else
                         (worked, v)
                     ).getOrElse((k, v))
-                  case s: String if s.startsWith("[") && s.endsWith("]") =>
+                  case s: String if s.startsWith("[") && s.endsWith("]") => // WARNING:  JSON-specific!
                     (listAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE])), v)
                   case _ => (k, v)
                 }
@@ -61,7 +72,17 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
           case d                      => d
         }
       case String =>
-        reader.readString(path)
+        reader.readString(path) match { // course attempt to assign a meaningful type to Any value
+          case "true"                 => true
+          case "false"                => false
+          case BigIntExtractor(s)     => s
+          case BigDecimalExtractor(s) => s
+          case s if s.startsWith("{") && s.endsWith("}") => // WARNING:  JSON-specific!
+            this.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))
+          case s if s.startsWith("[") && s.endsWith("]") => // WARNING:  JSON-specific!
+            listAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))
+          case s => s
+        }
       case True | False =>
         reader.readBoolean(path)
       case Null =>
@@ -71,25 +92,46 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   }
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
-  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = {
-    val valueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(value.getClass.getName)).asInstanceOf[TypeAdapter[X]]
-    if (valueTA.isInstanceOf[classes.CaseClassTypeAdapter[X]])
-      valueTA.asInstanceOf[classes.CaseClassTypeAdapter[X]].writeWithHint(value, writer, out)
-    else
-      valueTA.write(value, writer, out)
+  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean)(implicit tt: TypeTag[X]) = {
+    try {
+      val rawValueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(value.getClass.getName)).asInstanceOf[TypeAdapter[X]]
+      rawValueTA match {
+        case cc: CaseClassTypeAdapter[X] if isMapKey && writer.jackFlavor.stringifyMapKeys =>
+          val stringBuilder = new StringBuilder()
+          rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, stringBuilder.asInstanceOf[Builder[Any, WIRE]], false)
+          writer.writeString(stringBuilder.result, out)
+        case cc: CaseClassTypeAdapter[X] =>
+          rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, out, isMapKey)
+        case _: Stringish =>
+          rawValueTA.write(value, writer, out, isMapKey)
+        case _ if isMapKey && writer.jackFlavor.stringifyMapKeys =>
+          (new StringWrapTypeAdapter(rawValueTA)).write(value, writer, out, isMapKey)
+        case _ =>
+          rawValueTA.write(value, writer, out, isMapKey)
+      }
+    } catch {
+      case _: java.util.NoSuchElementException => throw new Exception("Unable to discern type adapter for value " + value)
+    }
   }
 
-  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
-    t match {
-      case null                    => writer.writeNull(out)
-      case s: String               => writer.writeString(s, out)
-      case b: Boolean              => writer.writeBoolean(b, out)
-      case bi: BigInt              => writer.writeBigInt(bi, out)
-      case bd: BigDecimal          => writer.writeDecimal(bd, out)
-      case n: Number               => numberTypeAdapter.write(n, writer, out)
-      case enum: Enumeration#Value => writer.writeString(enum.toString, out)
-      case list: List[_]           => writer.writeArray(list, this, out)
-      case mmap: Map[_, _]         => writer.writeMap(mmap.asInstanceOf[Map[Any, Any]], this, this, out)
-      case v                       => unpack(v, writer, out)
-    }
+  // TODO: Can't handle containers at all.... Must add string wrappers where needed for Map keys
+  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+    if (isMapKey && writer.jackFlavor.stringifyMapKeys)
+      t match {
+        case null                        => writer.writeNull(out)
+        case enum: Enumeration#Value     => writer.writeString(enum.toString, out)
+        case map: Map[_, _]              => (new StringWrapTypeAdapter(mapAnyTypeAdapter)).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
+        case list: GenTraversableOnce[_] => (new StringWrapTypeAdapter(listAnyTypeAdapter)).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
+        case opt: Option[_]              => (new StringWrapTypeAdapter(optionAnyTypeAdapter)).write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
+        case v                           => unpack(v, writer, out, isMapKey)
+      }
+    else
+      t match {
+        case null                        => writer.writeNull(out)
+        case enum: Enumeration#Value     => writer.writeString(enum.toString, out)
+        case map: Map[_, _]              => mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
+        case list: GenTraversableOnce[_] => listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
+        case opt: Option[_]              => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
+        case v                           => unpack(v, writer, out, isMapKey)
+      }
 }

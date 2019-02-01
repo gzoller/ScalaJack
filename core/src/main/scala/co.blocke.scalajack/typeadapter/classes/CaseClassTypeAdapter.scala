@@ -92,12 +92,12 @@ case class CaseClassTypeAdapter[T](
         constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
     }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     writer.writeObject(t, fieldMembers, out)
 
   // Used by AnyTypeAdapter to insert type hint (not normally needed) into output so object
   // may be reconsituted on read
-  def writeWithHint[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+  def writeWithHint[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val hintValue = t.getClass.getName
     val hintLabel = writer.jackFlavor.getHintLabelFor(tt.tpe)
     val extra = List((hintLabel, ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter)))

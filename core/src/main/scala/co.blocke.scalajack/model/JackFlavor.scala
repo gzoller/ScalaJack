@@ -15,6 +15,7 @@ trait JackFlavor[N, WIRE] {
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
 
   val defaultHint: String = "_hint"
+  val stringifyMapKeys: Boolean = false
   val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]

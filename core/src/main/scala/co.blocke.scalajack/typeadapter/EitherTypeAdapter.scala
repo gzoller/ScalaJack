@@ -51,9 +51,9 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
     }
   }
 
-  def write[WIRE](t: Either[L, R], writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Either[L, R], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case Left(v)  => leftTypeAdapter.write(v, writer, out)
-      case Right(v) => rightTypeAdapter.write(v, writer, out)
+      case Left(v)  => leftTypeAdapter.write(v, writer, out, isMapKey)
+      case Right(v) => rightTypeAdapter.write(v, writer, out, isMapKey)
     }
 }

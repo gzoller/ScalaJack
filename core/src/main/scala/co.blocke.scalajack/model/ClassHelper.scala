@@ -96,6 +96,6 @@ object ClassHelper {
   case class ExtraFieldValue[T](
       value:            T,
       valueTypeAdapter: TypeAdapter[T]) {
-    def write[WIRE](writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = valueTypeAdapter.write(value, writer, out)
+    def write[WIRE](writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = valueTypeAdapter.write(value, writer, out, false)
   }
 }

@@ -62,12 +62,21 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
         val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
 
         // Wrap Map keys in a StringWrapTypeAdapter?
-        val finalKeyTypeAdapter = {
-          if (keyType =:= typeOf[String] || keyType =:= typeOf[Option[String]] || !stringifyMapKeys)
+        val finalKeyTypeAdapter =
+          if (keyType <:< typeOf[String]
+            || keyType <:< typeOf[Option[String]]
+            || keyType =:= typeOf[Any] // Any types must manage their own wrapping...
+            || keyType <:< typeOf[Char]
+            || keyType <:< typeOf[Option[Char]]
+            || keyType <:< typeOf[java.lang.Character]
+            || keyType <:< typeOf[Option[java.lang.Character]]
+            || keyType <:< typeOf[Enumeration#Value]
+            || keyType <:< typeOf[Option[Enumeration#Value]]
+            || !stringifyMapKeys)
             keyTypeAdapter
           else
             new StringWrapTypeAdapter(keyTypeAdapter)
-        }
+
         buildMapTA(companionInstance, method, finalKeyTypeAdapter, valueTypeAdapter)
       } else {
         val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution) // This dies for Map!
@@ -112,7 +121,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
     valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = {
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val filterKey = {
       if (keyIsOptional)
         t.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => k == None }
@@ -134,7 +143,7 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
     elemIsOptional:     Boolean,
     elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     if (elemIsOptional)
       writer.writeArray(t.asInstanceOf[GenIterable[Elem]].filterNot(_ == None), elementTypeAdapter, out)
     else

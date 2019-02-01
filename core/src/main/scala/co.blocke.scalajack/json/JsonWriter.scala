@@ -21,7 +21,7 @@ trait JsonWriter extends Writer[String] {
       out += '['
       val iter = a.iterator
       while (iter.hasNext) {
-        elemTypeAdapter.write(iter.next, this, out)
+        elemTypeAdapter.write(iter.next, this, out, false)
         if (iter.hasNext)
           out += ','
       }
@@ -58,19 +58,19 @@ trait JsonWriter extends Writer[String] {
     case null => addString("null", out)
     case a =>
       out += '{'
-      val resolvedKeyTypeAdapter = if (keyTT.tpe == typeOf[Any]) // Stringify Any map keys
-        new StringWrapTypeAdapter(keyTypeAdapter)
-      else
-        keyTypeAdapter
+      //      val resolvedKeyTypeAdapter = if (keyTT.tpe == typeOf[Any]) // Stringify Any map keys
+      //        new StringWrapTypeAdapter(keyTypeAdapter)
+      //      else
+      //        keyTypeAdapter
       val iter = a.iterator
       while (iter.hasNext) {
         val kv = iter.next
-        if (!kv._1.isInstanceOf[String])
-          resolvedKeyTypeAdapter.write(kv._1, this, out)
-        else
-          keyTypeAdapter.write(kv._1, this, out)
+        //        if (!kv._1.isInstanceOf[String])
+        //          resolvedKeyTypeAdapter.write(kv._1, this, out)
+        //        else
+        keyTypeAdapter.write(kv._1, this, out, true)
         out += ':'
-        valueTypeAdapter.write(kv._2, this, out)
+        valueTypeAdapter.write(kv._2, this, out, false)
         if (iter.hasNext)
           out += ','
       }
@@ -194,7 +194,7 @@ trait JsonWriter extends Writer[String] {
           //        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
           writeString(memberName, out)
           out += ':'
-          member.valueTypeAdapter.write(memberValue, this, out)
+          member.valueTypeAdapter.write(memberValue, this, out, false)
         }
       }
 

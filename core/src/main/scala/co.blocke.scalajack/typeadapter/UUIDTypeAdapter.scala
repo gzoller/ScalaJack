@@ -8,7 +8,7 @@ import java.util.UUID
 import scala.collection.mutable.Builder
 import scala.util.{ Failure, Success, Try }
 
-object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
+object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): UUID = {
     reader.readString(path) match {
       case null => null
@@ -21,7 +21,7 @@ object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] {
         }
     }
   }
-  def write[WIRE](t: UUID, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+  def write[WIRE](t: UUID, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString(t.toString, out)
   }

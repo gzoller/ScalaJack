@@ -6,33 +6,33 @@ object MyTypes {
 }
 import MyTypes._
 import util.Path
-import model.{ Transceiver, TypeAdapter }
+import model.{ Stringish, Transceiver, TypeAdapter }
 
 import scala.collection.mutable.Builder
 
 // Override just Phone
-object PhoneAdapter extends TypeAdapter.===[Phone] {
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Phone =
     reader.readString(path) match {
       case s: String => s.replaceAll("-", "")
       case null      => null
     }
 
-  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
   }
 }
 
 // Override Phone...and its parents (String)!
-object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] {
+object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Phone =
     reader.readString(path) match {
       case s: String => s.replaceAll("-", "")
       case null      => null
     }
 
-  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit = t match {
+  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
   }

@@ -14,7 +14,7 @@ object TestUtil {
           throw new Exception("Exeption path " + t.path + " didn't match expected path " + path)
         if (t.related != related)
           throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
-      case x =>
+      case x: Throwable =>
         throw x
     }
     true
@@ -31,7 +31,7 @@ object TestUtil {
         if (t.related != related) {
           throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
         }
-      case x =>
+      case x: Throwable =>
         throw x
     }
     true
@@ -48,7 +48,7 @@ object TestUtil {
         if (t.related != related) {
           throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
         }
-      case x =>
+      case x: Throwable =>
         throw x
     }
     true
@@ -66,7 +66,7 @@ object TestUtil {
           throw new Exception("Exeption related " + t.related.mkString("(", ",", ")") + " didn't match expected related " + related.mkString("(", ",", ")"))
         if (tt.tpe.typeSymbol.fullName != t.wrappedException.getClass.getCanonicalName)
           throw new Exception("Expected a wrapped exception " + tt.tpe.typeSymbol.fullName + " but found " + t.wrappedException.getClass.getCanonicalName)
-      case x =>
+      case x: Throwable =>
         throw x
     }
     true

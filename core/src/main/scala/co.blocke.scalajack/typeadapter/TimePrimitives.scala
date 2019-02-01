@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter._
 //  val duration: Any = MyMacro.readWrite[Duration]((s: String) => Duration.parse(s), "Duration", (t: Duration) => t.toString)
 //}
 
-object DurationTypeAdapterFactory extends TypeAdapter.=:=[Duration] {
+object DurationTypeAdapterFactory extends TypeAdapter.=:=[Duration] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Duration =
     reader.readString(path) match {
       case null => null
@@ -25,14 +25,14 @@ object DurationTypeAdapterFactory extends TypeAdapter.=:=[Duration] {
       }
     }
 
-  def write[WIRE](t: Duration, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Duration, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
 }
 
-object InstantTypeAdapterFactory extends TypeAdapter.=:=[Instant] {
+object InstantTypeAdapterFactory extends TypeAdapter.=:=[Instant] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Instant =
     reader.readString(path) match {
       case null => null
@@ -42,14 +42,14 @@ object InstantTypeAdapterFactory extends TypeAdapter.=:=[Instant] {
       }
     }
 
-  def write[WIRE](t: Instant, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Instant, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
 }
 
-object LocalDateTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalDateTime] {
+object LocalDateTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalDateTime] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): LocalDateTime =
     reader.readString(path) match {
       case null => null
@@ -59,14 +59,14 @@ object LocalDateTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalDateTime] {
       }
     }
 
-  def write[WIRE](t: LocalDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: LocalDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_DATE_TIME), out)
     }
 }
 
-object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] {
+object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): LocalDate =
     reader.readString(path) match {
       case null => null
@@ -76,14 +76,14 @@ object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] {
       }
     }
 
-  def write[WIRE](t: LocalDate, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: LocalDate, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_DATE), out)
     }
 }
 
-object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] {
+object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): LocalTime =
     reader.readString(path) match {
       case null => null
@@ -93,14 +93,14 @@ object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] {
       }
     }
 
-  def write[WIRE](t: LocalTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: LocalTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_TIME), out)
     }
 }
 
-object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] {
+object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): OffsetDateTime =
     reader.readString(path) match {
       case null => null
@@ -110,14 +110,14 @@ object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] 
       }
     }
 
-  def write[WIRE](t: OffsetDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: OffsetDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_OFFSET_DATE_TIME), out)
     }
 }
 
-object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] {
+object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): OffsetTime =
     reader.readString(path) match {
       case null => null
@@ -127,14 +127,14 @@ object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] {
       }
     }
 
-  def write[WIRE](t: OffsetTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: OffsetTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_OFFSET_TIME), out)
     }
 }
 
-object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] {
+object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Period =
     reader.readString(path) match {
       case null => null
@@ -144,14 +144,14 @@ object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] {
       }
     }
 
-  def write[WIRE](t: Period, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: Period, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
 }
 
-object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
+object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): ZonedDateTime =
     reader.readString(path) match {
       case null => null
@@ -161,7 +161,7 @@ object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
       }
     }
 
-  def write[WIRE](t: ZonedDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE]): Unit =
+  def write[WIRE](t: ZonedDateTime, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_ZONED_DATE_TIME), out)
