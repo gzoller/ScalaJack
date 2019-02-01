@@ -77,7 +77,12 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
           else
             new StringWrapTypeAdapter(keyTypeAdapter)
 
-        buildMapTA(companionInstance, method, finalKeyTypeAdapter, valueTypeAdapter)
+        val finalValueTypeAdapter = if (elementTypeAfterSubstitution.typeArgs(1) <:< typeOf[Option[_]])
+          valueTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].convertNullToNone()
+        else
+          valueTypeAdapter
+
+        buildMapTA(companionInstance, method, finalKeyTypeAdapter, finalValueTypeAdapter)
       } else {
         val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution) // This dies for Map!
         buildListTA(companionInstance, method, elementTypeAdapter)

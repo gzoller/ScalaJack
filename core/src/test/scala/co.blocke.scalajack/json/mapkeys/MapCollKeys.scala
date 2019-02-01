@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package json.test.mapkeys
 
+import co.blocke.scalajack.TestUtil.expectInvalid
+import co.blocke.scalajack.util.Path
 import org.scalatest.{ FunSpec, Matchers }
 
 class MapCollKeys() extends FunSpec with Matchers {
@@ -113,8 +115,8 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2: Map[Option[Int], Option[Int]] = Map(None -> Some(2), Some(5) -> null)
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{"{\"{}\":{\"\":2,\"5\":null}}":{"{\"\":2,\"5\":null}":{}}}""") { js }
-      assertResult(Map(Map(Map() -> Map(None -> Some(2), Some(5) -> None)) -> Map(Map(None -> Some(2), Some(5) -> None) -> Map()))) {
+      assertResult("""{"{\"{}\":{\"5\":null}}":{"{\"5\":null}":{}}}""") { js }
+      assertResult(Map(Map(Map() -> Map(Some(5) -> None)) -> Map(Map(Some(5) -> None) -> Map()))) {
         sj.read[Map[Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]], Map[Map[Option[Int], Option[Int]], Map[Option[Int], Option[Int]]]]](js)
       }
     }
@@ -124,7 +126,7 @@ class MapCollKeys() extends FunSpec with Matchers {
       val bad: Option[Int] = null
       val m2 = m0 + (bad -> Some(99))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
-      val msg = """Attempting to write a null map key (map keys may not be null)."""
+      val msg = "Map keys cannot be null."
       the[java.lang.IllegalStateException] thrownBy sj.render(inst) should have message msg
     }
     it("Map of ValueClass as key") {

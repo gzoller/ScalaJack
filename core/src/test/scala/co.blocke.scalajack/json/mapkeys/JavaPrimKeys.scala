@@ -87,14 +87,14 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("With Number Key") {
           val inst = SampleJNumber(Map(
-            new JByte("-128") -> new JByte("127"),
-            new JShort("-32768") -> new JShort("32767"),
-            new JInteger("-2147483648") -> new JInteger("2147483647"),
-            new JLong("-9223372036854775808") -> new JLong("9223372036854755807"),
-            new JByte("0") -> new JBigInteger("9923372036854755810"),
-            new JFloat("3.4e-038") -> new JFloat("3.4e+038"),
-            new JDouble("1.7e-308") -> new JDouble("1.7e+308"),
-            new JBigDecimal("1.8e+308") -> new JFloat("0.0")
+            JByte.valueOf("-128") -> JByte.valueOf("127"),
+            JShort.valueOf("-32768") -> JShort.valueOf("32767"),
+            JInteger.valueOf("-2147483648") -> JInteger.valueOf("2147483647"),
+            JLong.valueOf("-9223372036854775808") -> JLong.valueOf("9223372036854755807"),
+            JByte.valueOf("0") -> new JBigInteger("9923372036854755810"),
+            JFloat.valueOf("3.4e-038") -> JFloat.valueOf("3.4e+038"),
+            JDouble.valueOf("1.7e-308") -> JDouble.valueOf("1.7e+308"),
+            new JBigDecimal("1.8e+308") -> JFloat.valueOf("0.0")
           ))
           val js = sj.render(inst)
           assertResult("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}""") { js }

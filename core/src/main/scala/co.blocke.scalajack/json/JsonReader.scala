@@ -88,6 +88,8 @@ trait JsonReader extends Reader[String] {
         p += 1
         while (p < tokens.size && tokens.get(p).tokenType != EndObject) {
           val key = keyTypeAdapter.read(path \ "(map key)", this)
+          if (key == null)
+            throw new ReadInvalidError(path, "Map keys cannot be null", List.empty[String])
           val value = valueTypeAdapter.read(path \ key.toString, this)
           builder += key -> value
         }

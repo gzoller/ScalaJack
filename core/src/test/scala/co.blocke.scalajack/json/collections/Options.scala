@@ -216,7 +216,7 @@ class Options() extends FunSpec with Matchers {
     }
     it("Reading null into optional Map item") {
       val js = """{"1":"one","2":null,"3":"three"}"""
-      assertResult(Map(1 -> Some("one"), 2 -> null, 3 -> Some("three"))) { sj.read[Map[Int, Option[String]]](js) }
+      assertResult(Map(1 -> Some("one"), 2 -> None, 3 -> Some("three"))) { sj.read[Map[Int, Option[String]]](js) }
     }
     it("Reading null into optional Tuple item") {
       val js = """[{"foo":1,"t":[true,"ok",2]},{"foo":5,"t":[false,null,3]}]"""

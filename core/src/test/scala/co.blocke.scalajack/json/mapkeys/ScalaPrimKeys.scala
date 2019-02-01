@@ -12,11 +12,8 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       it("With Any Key") {
         val inst = AnyShell(Map(List(1, 2, 3) -> List("a", "b", "c"), DogPet("Fido", Food.Meat, 4) -> DogPet("Fifi", Food.Meat, 4), Size.Small -> "ok", 123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
         val js = sj.render(inst)
-        println(js)
         assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}""") { js }
         val read = sj.read[AnyShell](js)
-        println(read)
-        println(read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString)
         assertResult("""List((16,scala.math.BigInt), (293845,scala.math.BigInt), (123.456,scala.math.BigDecimal), (List(1, 2, 3),scala.collection.immutable.$colon$colon), (Small,java.lang.String), (Fred,java.lang.String), (false,java.lang.Boolean), (DogPet(Fido,Meat,4),co.blocke.scalajack.json.test.mapkeys.DogPet))""") {
           read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
         }

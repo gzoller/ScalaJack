@@ -39,7 +39,7 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         val fields = for (i <- 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
           val fieldTypeAdapter = context.typeAdapter(fieldType) match {
-            case opt: OptionTypeAdapter[_] => opt.toTupleVariant()
+            case opt: OptionTypeAdapter[_] => opt.convertNullToNone()
             case ta                        => ta
           }
 

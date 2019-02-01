@@ -58,16 +58,11 @@ trait JsonWriter extends Writer[String] {
     case null => addString("null", out)
     case a =>
       out += '{'
-      //      val resolvedKeyTypeAdapter = if (keyTT.tpe == typeOf[Any]) // Stringify Any map keys
-      //        new StringWrapTypeAdapter(keyTypeAdapter)
-      //      else
-      //        keyTypeAdapter
       val iter = a.iterator
       while (iter.hasNext) {
         val kv = iter.next
-        //        if (!kv._1.isInstanceOf[String])
-        //          resolvedKeyTypeAdapter.write(kv._1, this, out)
-        //        else
+        if (kv._1 == null)
+          throw new IllegalStateException("Map keys cannot be null.")
         keyTypeAdapter.write(kv._1, this, out, true)
         out += ':'
         valueTypeAdapter.write(kv._2, this, out, false)

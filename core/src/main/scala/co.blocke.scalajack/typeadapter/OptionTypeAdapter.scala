@@ -54,10 +54,11 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E], nullIsNone: Bo
 
   def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
+      case null               => writer.writeNull(out)
       case Some(e)            => valueTypeAdapter.write(e, writer, out, isMapKey)
       case None if nullIsNone => writer.writeNull(out)
       case None               =>
     }
 
-  def toTupleVariant() = this.copy(nullIsNone = true)
+  def convertNullToNone() = this.copy(nullIsNone = true)
 }

@@ -46,22 +46,30 @@ case class TraitTypeAdapter[T](
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     reader.savePos()
     val hintLabel = getHintLabel(reader)
-    val concreteType =
-      reader.lookAheadForField(hintLabel)
-        .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader)))
-        .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName", List(traitName)))
-    reader.rollbackToSave()
-    val populatedConcreteType = populateConcreteType(concreteType)
-    context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
+    if (reader.peek() == TokenType.Null)
+      null.asInstanceOf[T]
+    else {
+      val concreteType =
+        reader.lookAheadForField(hintLabel)
+          .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader)))
+          .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName", List(traitName)))
+      reader.rollbackToSave()
+      val populatedConcreteType = populateConcreteType(concreteType)
+      context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
+    }
   }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
-    val concreteType = currentMirror.classSymbol(t.getClass).toType
-    val populatedConcreteType = populateConcreteType(concreteType)
-    context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
-      case cc: CaseClassTypeAdapter[T] =>
-        val hintValue = hintModFn.map(_.unapply(populatedConcreteType)).getOrElse(t.getClass.getName)
-        writer.writeObject(t, cc.fieldMembers, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
+    if (t == null)
+      writer.writeNull(out)
+    else {
+      val concreteType = currentMirror.classSymbol(t.getClass).toType
+      val populatedConcreteType = populateConcreteType(concreteType)
+      context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
+        case cc: CaseClassTypeAdapter[T] =>
+          val hintValue = hintModFn.map(_.unapply(populatedConcreteType)).getOrElse(t.getClass.getName)
+          writer.writeObject(t, cc.fieldMembers, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
+      }
     }
   }
 
