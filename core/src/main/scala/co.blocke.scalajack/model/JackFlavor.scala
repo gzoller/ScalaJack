@@ -27,16 +27,8 @@ trait JackFlavor[WIRE] {
   val permissivesOk: Boolean = false
 
   /*
-    val customAdapters: List[TypeAdapterFactory]
-    val hintMap: Map[Type, String]
-    val hintModifiers: Map[Type, HintModifier]
-    val parseOrElseMap: Map[Type, Type]
-    val isCanonical: Boolean
     val typeModifier: Option[HintModifier]
-    val secondLookParsing: Boolean
-
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
-    def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
     */
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[WIRE]
   def withDefaultHint(hint: String): JackFlavor[WIRE]
