@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import util.{ Path, TypeTags }
+import util.Path
 import model._
 
 import scala.collection.mutable.Builder

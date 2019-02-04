@@ -14,19 +14,16 @@ import scala.reflect.runtime.currentMirror
 //
 object TraitTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
-  var jackFlavor: JackFlavor[_, _] = null
-
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isTrait)
-      TraitTypeAdapter(classSymbol.fullName, tt.tpe, jackFlavor.hintValueModifiers.get(tt.tpe))
+      TraitTypeAdapter(classSymbol.fullName, tt.tpe)
     else
       next.typeAdapterOf[T]
 }
 
 case class TraitTypeAdapter[T](
     traitName:       String,
-    polymorphicType: Type,
-    hintModFn:       Option[BijectiveFunction[String, Type]])(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
+    polymorphicType: Type)(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
 
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
   private val typeTypeAdapter = context.typeAdapterOf[Type]
@@ -44,6 +41,7 @@ case class TraitTypeAdapter[T](
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+    val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     reader.savePos()
     val hintLabel = getHintLabel(reader)
     if (reader.peek() == TokenType.Null)
@@ -60,6 +58,7 @@ case class TraitTypeAdapter[T](
   }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+    val hintModFn = writer.jackFlavor.hintValueModifiers.get(tt.tpe)
     if (t == null)
       writer.writeNull(out)
     else {

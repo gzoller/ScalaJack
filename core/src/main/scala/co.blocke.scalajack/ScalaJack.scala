@@ -1,30 +1,15 @@
 package co.blocke.scalajack
 
 import model._
-import json.JsonFlavor
+import json._
 
 object ScalaJack {
 
-  type MAKER = () => JackFlavor[_, _]
+  def apply() = JsonFlavorMaker.make()
+  def apply(maker: FlavorMaker) = maker.make()
 
   // TODO:  This may not be thread-safe!  Need to create a *NEW* JsonFlavor on each call to apply()
   //  def apply[N, WIRE](kind: JackFlavor[N, WIRE] = JsonFlavor()): JackFlavor[N, WIRE] = new JsonFlavor().asInstanceOf[JackFlavor[N, WIRE]] //kind
-
-  //  def apply[N, WIRE](maker: () => JackFlavor[N, WIRE] = json.JsonFlavorMaker()): JackFlavor[N, WIRE] = {
-  //    println(maker)
-  //    (new JsonFlavor()).asInstanceOf[JackFlavor[N, WIRE]]
-  //  }
-
-  //  def apply[N, WIRE](maker: () => JackFlavor[N, WIRE] = () => JsonFlavor()): JackFlavor[N, WIRE] = {
-  //    println("STARTED")
-  //    maker()
-  //  }
-
-  def apply[N, WIRE](maker: MAKER = () => JsonFlavor()): JackFlavor[N, WIRE] = {
-    println("STARTED")
-    maker()
-  }
-
 }
 
 case class ViewException(msg: String) extends Exception(msg)

@@ -2,10 +2,14 @@ package co.blocke.scalajack
 package model
 
 import typeadapter._
-import typeadapter.classes.TraitTypeAdapterFactory
 import util.Path
 
-trait JackFlavor[N, WIRE] {
+trait FlavorMaker {
+  type WIRE
+  def make(): JackFlavor[WIRE]
+}
+
+trait JackFlavor[WIRE] {
 
   def parse(wire: WIRE): Transceiver[WIRE]
 
@@ -34,13 +38,13 @@ trait JackFlavor[N, WIRE] {
     def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
     def isCanonical(canonical: Boolean): ScalaJackLike[IR, WIRE]
     */
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[N, WIRE]
-  def withDefaultHint(hint: String): JackFlavor[N, WIRE]
-  def withHints(h: (Type, String)*): JackFlavor[N, WIRE]
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[N, WIRE]
-  def withSecondLookParsing(): JackFlavor[N, WIRE]
-  def parseOrElse(poe: (Type, Type)*): JackFlavor[N, WIRE]
-  def allowPermissivePrimitives(): JackFlavor[N, WIRE]
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[WIRE]
+  def withDefaultHint(hint: String): JackFlavor[WIRE]
+  def withHints(h: (Type, String)*): JackFlavor[WIRE]
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[WIRE]
+  def withSecondLookParsing(): JackFlavor[WIRE]
+  def parseOrElse(poe: (Type, Type)*): JackFlavor[WIRE]
+  def allowPermissivePrimitives(): JackFlavor[WIRE]
 
   val context: Context = bakeContext()
 
@@ -164,7 +168,6 @@ trait JackFlavor[N, WIRE] {
 
     // A little wiring to inject JackFlavor into a few places
     AnyTypeAdapterFactory.jackFlavor = this
-    TraitTypeAdapterFactory.jackFlavor = this
 
     ctx
   }

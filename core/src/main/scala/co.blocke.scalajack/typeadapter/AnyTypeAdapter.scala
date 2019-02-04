@@ -19,10 +19,9 @@ object BigDecimalExtractor {
 
 object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
-  var jackFlavor: JackFlavor[_, _] = null
+  var jackFlavor: JackFlavor[_] = null
 
   private lazy val typeTypeAdapter: TypeAdapter[Type] = jackFlavor.context.typeAdapterOf[Type]
-  private lazy val numberTypeAdapter: TypeAdapter[Number] = jackFlavor.context.typeAdapterOf[Number]
   private lazy val classMapTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
   private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
@@ -92,7 +91,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   }
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
-  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean)(implicit tt: TypeTag[X]) = {
+  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean) = {
     try {
       val rawValueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(value.getClass.getName)).asInstanceOf[TypeAdapter[X]]
       rawValueTA match {

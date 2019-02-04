@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package json
 
 import model._
-import typeadapter._
 import ClassHelper.ExtraFieldValue
 
 import scala.collection.{ GenIterable, GenMap }
