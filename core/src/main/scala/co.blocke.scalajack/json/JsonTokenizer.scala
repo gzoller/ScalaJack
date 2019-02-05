@@ -53,14 +53,23 @@ case class JsonTokenizer() extends Tokenizer[String] {
             i += 1
           tokenspace.add(JsonToken(Number, mark, i))
         case 'n' =>
-          tokenspace.add(JsonToken(Null, i, i))
-          i += 4
+          if (source.length >= i + 4 && source.substring(i, i + 4) == "null") {
+            tokenspace.add(JsonToken(Null, i, i))
+            i += 4
+          } else
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'n' at position $i", List(chars(i).toString, i.toString))
         case 't' =>
-          tokenspace.add(JsonToken(True, i, i))
-          i += 4
+          if (source.length >= i + 4 && source.substring(i, i + 4) == "true") {
+            tokenspace.add(JsonToken(True, i, i))
+            i += 4
+          } else
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 't' at position $i", List(chars(i).toString, i.toString))
         case 'f' =>
-          tokenspace.add(JsonToken(False, i, i))
-          i += 5
+          if (source.length >= i + 5 && source.substring(i, i + 5) == "false") {
+            tokenspace.add(JsonToken(False, i, i))
+            i += 5
+          } else
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'f' at position $i", List(chars(i).toString, i.toString))
         case x =>
           throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character $x at position $i", List(x.toString, i.toString))
       }

@@ -4,6 +4,9 @@ package json.test.mapkeys
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
 
+import TestUtil._
+import util.Path
+
 class ValueClassKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -219,170 +222,95 @@ class ValueClassKeys() extends FunSpec with Matchers {
         }
       }
     }
-    /*
     describe("--- Negative Primitive Tests ---") {
       it("Bad BigDecimal Key") {
         val js = """{"m":{"true":56.78}}"""
-        val msg = """Expected value token of type Number, not True when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"m":{"true":56.78}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCBigDecimal](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCBigDecimal](js), Path.Root \ "m" \ Path.MapKey, List("True")))
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"12.5":56}}"""
-        val msg = """For input string: "12.5"
-          |{"m":{"12.5":56}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCBigInt](js) should have message msg
-      }
-      it("Bad Byte Key") {
-        val js = """{"m":{"12234":56}}"""
-        val msg = """Value out of range. Value:"12234" Radix:10
-          |{"m":{"12234":56}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCByte](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleVCBigInt](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"1":false}}"""
-        val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
-          |{"m":{"1":false}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCBoolean](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCBoolean](js), Path.Root \ "m" \ Path.MapKey, List("Number")))
       }
       it("Bad Char Key") {
         val js = """{"m":{"null":"A"}}"""
-        val msg = """Expected token of type String, not Null
-          |{"m":{"null":"A"}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCChar](js) should have message msg
+        assert(expectInvalid(() => sj.read[SampleVCChar](js), Path.Root \ "m" \ Path.MapKey, List("Null")))
       }
       it("Bad Double Key") {
         val js = """{"m":{"false":56.78}}"""
-        val msg = """Expected token of type Number, not False
-          |{"m":{"false":56.78}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCDouble](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCDouble](js), Path.Root \ "m" \ Path.MapKey, List("False")))
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"\"Bogus\"":"Meat"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Food$ for "Bogus"
-          |"Bogus"
-          |^""".stripMargin
-        the[java.util.NoSuchElementException] thrownBy sj.read[SampleVCEnumeration](js) should have message msg
+        assert(expectInvalid(() => sj.read[SampleVCEnumeration](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.Food$", "Bogus")))
       }
       it("Bad Float Key") {
         val js = """{"m":{"hey":56.2}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"hey":56.2}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCFloat](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCFloat](js), Path.Tokenizing, List("h", "0")))
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.5":56}}"""
-        val msg = """For input string: "12.5"
-          |{"m":{"12.5":56}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCInt](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleVCInt](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad Long Key") {
         val js = """{"m":{"12.5":56}}"""
-        val msg = """For input string: "12.5"
-          |{"m":{"12.5":56}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCLong](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleVCLong](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad Short Key") {
         val js = """{"m":{"12.5":56}}"""
-        val msg = """For input string: "12.5"
-          |{"m":{"12.5":56}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCShort](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleVCShort](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad String Key") {
         val js = """{"m":{"true":"B"}}"""
-        val msg = """Expected value token of type String, not True when reading String value.
-          |{"m":{"true":"B"}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCString](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCString](js), Path.Root \ "m" \ Path.MapKey, List("True")))
       }
       it("Bad UUID Key") {
         val js = """{"m":{"\"bogus\"":"54cab778-7b9e-4b07-9d37-87b97a011e55"}}"""
-        val msg = """Invalid UUID string: bogus
-          |"bogus"
-          |^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleVCUUID](js) should have message msg
+        assert(expectMalformed[IllegalArgumentException](() => sj.read[SampleVCUUID](js), Path.Root \ "m" \ Path.MapKey, List("bogus")))
       }
     }
     describe("--- Negative Collection Tests ---") {
       it("Bad List Key") {
         val js = """{"m":{"[1,2,\"a\"]":[4,5,6]}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"[1,2,\"a\"]":[4,5,6]}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCList](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCList](js), Path.Root \ "m" \ Path.MapKey \ 2, List("String")))
       }
       it("Bad Map Key") {
         val js = """{"m":{"{[true]:2}":{"3":4}}}"""
-        val msg = """Character out of place. '[' not expected here.
-          |{[true]:2}
-          |-^
-          |Extracted from JSON here:
-          |{"m":{"{[true]:2}":{"3":4}}}
-          |------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleVCMap](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCMap](js), Path.Root \ "m" \ Path.MapKey \ Path.MapKey, List("BeginArray")))
       }
       it("Bad Tupple Key") {
         val js = """{"m":{"[1,\"one\",true,1]":[2,"two",false]}}"""
-        val msg = """Expected token of type EndArray, not Number
-          |{"m":{"[1,\"one\",true,1]":[2,"two",false]}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCTuple](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCTuple](js), Path.Root \ "m" \ Path.MapKey, List("EndArray")))
       }
     }
     describe("--- Negative Complex Tests ---") {
       it("Bad Case Class Key") {
         val js = """{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",\"simple\":{\"bogus\":\"Larry\",\"age\":32,\"isOk\":true,\"favorite\":\"golf\"},\"allDone\":true}":{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false}}}"""
-        val msg = """Required field name in class co.blocke.scalajack.json.test.mapkeys.SimpleClass is missing from input and has no specified default value
-          |{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCClass](js) should have message msg
+        assert(expectMissing(() => sj.read[SampleVCClass](js), Path.Root \ "m" \ Path.MapKey \ "simple", List("SimpleClass", "name")))
       }
       it("Bad Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-          |{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkey
-          |------^""".stripMargin
-        the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCTrait](js) should have message msg
+        assert(expectMissing(() => sj.read[SampleVCTrait](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.Bogus")))
       }
       it("Bad Parameterized Case Class Key") {
         val js = """{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}"""
-        val msg = """For input string: "5.5"
-          |{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCParamClass[String, Int]](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleVCParamClass[String, Int]](js), Path.Root \ "m" \ Path.MapKey \ "a", List.empty[String]))
       }
       it("Bad Parameterized Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ZThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":6,"b":"zoom"}}}"""
-        val msg = """Unable to find class named "co.blocke.scalajack.json.test.mapkeys.ZThing"
-          |{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkey
-          |------^""".stripMargin
-        the[java.lang.ClassNotFoundException] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
+        assert(expectMissing(() => sj.read[SampleVCParamTrait[Int, String]](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.ZThing")))
       }
       it("Bad Option Key") {
         val js = """{"m":{"true":"there"}}"""
-        val msg = """Expected value token of type String, not True when reading String value.
-          |{"m":{"true":"there"}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCOption](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCOption](js), Path.Root \ "m" \ Path.MapKey, List("True")))
       }
       it("Bad Nested Collection Key") {
         val js = """{"m":{"[{\"a\":\"b\"},{\"c\":9}]":[{"t":"u"},{"x":"y"}]}}"""
-        val msg = """Expected value token of type String, not Number when reading String value.
-          |{"m":{"[{\"a\":\"b\"},{\"c\":9}]":[{"t":"u"},{"x":"y"}]}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleVCNested](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleVCNested](js), Path.Root \ "m" \ Path.MapKey \ 1 \ "c", List("Number")))
       }
     }
-    */
   }
 }

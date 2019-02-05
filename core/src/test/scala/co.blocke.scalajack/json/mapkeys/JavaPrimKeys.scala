@@ -6,6 +6,9 @@ import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Doubl
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
 
+import TestUtil._
+import util.Path
+
 class JavaPrimKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -201,153 +204,87 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
       }
     }
-    /*
     describe("--- Negative Tests ---") {
       describe("Simple Primitives:") {
         it("Bad BigDecimal Key") {
           val js = """{"m":{"fred":1,"789.123":2}}"""
-          val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789.123":2}}
-          |------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJBigDecimal](js), Path.Tokenizing, List("f", "0")))
         }
         it("Bad BigInt Key") {
           val js = """{"m":{"fred":1,"789":2}}"""
-          val msg = """Expected value token of type Number, not String when reading BigInteger value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789":2}}
-          |------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBigInteger](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJBigInteger](js), Path.Tokenizing, List("f", "0")))
         }
         it("Bad Boolean Key") {
           val js = """{"m":{"true":false,"123":true}}"""
-          val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes?)
-          |{"m":{"true":false,"123":true}}
-          |-------------------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJBoolean](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJBoolean](js), Path.Root \ "m" \ Path.MapKey, List("Number")))
         }
         it("Bad Byte Key") {
-          val js = """{"m":{"16":2,"x48":9}}"""
-          val msg = """Expected value token of type Number, not String when reading Byte value.  (Is your value wrapped in quotes?)
-          |{"m":{"16":2,"x48":9}}
-          |-------------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJByte](js) should have message msg
+          val js = """{"m":{"16":2,"4x8":9}}"""
+          assert(expectUnexpected(() => sj.read[SampleJByte](js), Path.Tokenizing, List("x", "1")))
         }
         it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
           val js = """{"m":{null:"A","z":"Z"}}"""
-          val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |{"m":{null:"A","z":"Z"}}
-          |------^""".stripMargin
-          the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleJChar](js) should have message msg
+          assert(expectInvalid(() => sj.read[SampleJChar](js), Path.Root \ "m", List.empty[String]))
         }
         it("Bad Double Key") {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-          val msg = """Expected value token of type Number, not True when reading Double value.  (Is your value wrapped in quotes?)
-          |{"m":{"12.34":56.78,"true":34.56}}
-          |--------------------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJDouble](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJDouble](js), Path.Root \ "m" \ Path.MapKey, List("True")))
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-          val msg = """multiple points
-          |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |--------------------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJFloat](js) should have message msg
+          assert(expectMalformed[NumberFormatException](() => sj.read[SampleJFloat](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.0":56,"90":34}}"""
-          val msg = """For input string: "12.0"
-          |{"m":{"12.0":56,"90":34}}
-          |------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJInteger](js) should have message msg
+          assert(expectMalformed[NumberFormatException](() => sj.read[SampleJInteger](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad Long Key") {
           val js = """{"m":{"12":56,"hey":34}}"""
-          val msg = """Expected value token of type Number, not String when reading Long value.  (Is your value wrapped in quotes?)
-          |{"m":{"12":56,"hey":34}}
-          |--------------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJLong](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJLong](js), Path.Tokenizing, List("h", "0")))
         }
         it("Bad Number Key") {
           val js = """{"m":{"flume":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          val msg = """Expected value token of type Number, not String when reading Number value.  (Is your value wrapped in quotes?)
-          |{"m":{"flume":9923372036854755810,"-2147483648":21474836
-          |------^""".stripMargin
-          the[java.lang.IllegalStateException] thrownBy sj.read[SampleJNumber](js) should have message msg
-        }
-        it("Bad Short Key") {
-          val js = """{"m":{"99999":56,"90":34}}"""
-          val msg = """Value out of range. Value:"99999" Radix:10
-          |{"m":{"99999":56,"90":34}}
-          |------^""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleJShort](js) should have message msg
+          assert(expectUnexpected(() => sj.read[SampleJNumber](js), Path.Tokenizing, List("f", "0")))
         }
       }
       describe("Time Primitives:") {
         it("Bad Duration Key") {
           val js = """{"m":{"PT0SXXX":"PT51H4M"}}"""
-          val msg = """Text cannot be parsed to a Duration
-          |{"m":{"PT0SXXX":"PT51H4M"}}
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleDuration](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleDuration](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad Instant Key") {
           val js = """{"m":{"1970-01-01T00:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}"""
-          val msg = """Text 'bogus' could not be parsed at index 0
-          |0:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
-          |--------------------------------------------------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleInstant](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleInstant](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad LocalDateTime Key") {
           val js = """{"m":{"+999999999-12-31T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}"""
-          val msg = """Text 'bogus' could not be parsed at index 0
-          |1T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
-          |--------------------------------------------------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad LocalDate Key") {
           val js = """{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}"""
-          val msg = """Text 'bogus' could not be parsed at index 0
-          |{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalDate](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalDate](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad LocalTime Key") {
           val js = """{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}"""
-          val msg = """Text 'nada' could not be parsed at index 0
-          |{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}
-          |--------------------------------------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleLocalTime](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad OffsetDateTime Key") {
           val js = """{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:15:30+01:00":null}}"""
-          val msg = """Text 'false' could not be parsed at index 0
-          |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleOffsetDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad OffsetTime Key") {
           val js = """{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}"""
-          val msg = """Text '2007-12-03T10:15:30+01:00[Europe/Bogus]' could not be parsed at index 2
-          |{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleOffsetTime](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleOffsetTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad Period Key") {
           val js = """{"m":{"P0D???":"P1Y2M3D"}}"""
-          val msg = """Text cannot be parsed to a Period
-          |{"m":{"P0D???":"P1Y2M3D"}}
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SamplePeriod](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SamplePeriod](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
         it("Bad ZonedDateTime Key") {
           val js = """{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","10:15:30+01:00":null}}"""
-          val msg = """Text 'FRED23:59:59.999999999-18:00' could not be parsed at index 0
-          |{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","1
-          |------^""".stripMargin
-          the[java.time.format.DateTimeParseException] thrownBy sj.read[SampleZonedDateTime](js) should have message msg
+          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleZonedDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
         }
       }
     }
-    */
   }
 }

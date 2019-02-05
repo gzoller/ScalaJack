@@ -11,6 +11,10 @@ object Path {
     override def toString: String = "<tokenizing>"
   }
 
+  case object MapKey extends Path {
+    override def toString: String = "(map key)"
+  }
+
   case object Unknown extends Path {
     override def toString: String = "???"
   }
@@ -43,8 +47,8 @@ object Path {
 sealed trait Path {
 
   def \(fieldName: String): Path.Field = Path.Field(this, fieldName)
-
   def \(elementIndex: Int): Path.Element = Path.Element(this, elementIndex)
+  def \(p: Path): Path.Field = Path.Field(this, p.toString)
 
   def +(next: String) = this match {
     case e: Path.Element => e

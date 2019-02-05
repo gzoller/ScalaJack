@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package json.test.mapkeys
 
+import TestUtil._
+import util.Path
 import org.scalatest.{ FunSpec, Matchers }
 
 class ScalaPrimKeys() extends FunSpec with Matchers {
@@ -107,86 +109,51 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         }
       }
     }
-    /*
     describe("--- Negative Tests ---") {
       it("Bad BigDecimal Key") {
         val js = """{"m":{"789.123":1,"fred":2}}"""
-        val msg = """Expected value token of type Number, not String when reading BigDecimal value.  (Is your value wrapped in quotes?)
-          |{"m":{"789.123":1,"fred":2}}
-          |------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigDecimal](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleBigDecimal](js), Path.Tokenizing, List("f", "0")))
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"fred":1,"789":2}}"""
-        val msg = """Expected value token of type Number, not String when reading BigInt value.  (Is your value wrapped in quotes?)
-          |{"m":{"fred":1,"789":2}}
-          |------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBigInt](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleBigInt](js), Path.Tokenizing, List("f", "0")))
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
-        val msg = """Expected value token of type True or False, not Number when reading Boolean value.  (Is your value wrapped in quotes or a number?)
-          |{"m":{"true":false,"123":true}}
-          |-------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleBoolean](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleBoolean](js), Path.Root \ "m" \ Path.MapKey, List("Number")))
       }
       it("Bad Byte Key") {
         val js = """{"m":{"16":2,"x48":9}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"16":2,"x48":9}}
-          |-------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleByte](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleByte](js), Path.Tokenizing, List("x", "0")))
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
         val js = """{"m":{null:"A","z":"Z"}}"""
-        val msg = """Character out of place. Un-quoted literal not expected here.  (Possile un-terminated string earlier in your JSON.)
-          |{"m":{null:"A","z":"Z"}}
-          |------^""".stripMargin
-        the[java.lang.IllegalArgumentException] thrownBy sj.read[SampleChar](js) should have message msg
+        assert(expectInvalid(() => sj.read[SampleChar](js), Path.Root \ "m" \ Path.MapKey, List("Null")))
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-        val msg = """Expected token of type Number, not True
-          |{"m":{"12.34":56.78,"true":34.56}}
-          |--------------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleDouble](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleDouble](js), Path.Root \ "m" \ Path.MapKey, List("True")))
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg = """No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Size$ for "Bogus"
-          |{"m":{"Small":"Large","Bogus":"Medium"}}
-          |----------------------^""".stripMargin
-        the[java.util.NoSuchElementException] thrownBy sj.read[SampleEnumeration](js) should have message msg
+        assert(expectInvalid(() => sj.read[SampleEnumeration](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.Size$", "Bogus")))
       }
       it("Bad Float Key") {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-        val msg = """multiple points
-          |{"m":{"12.34":56.78,"90.12.3":34.56}}
-          |--------------------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleFloat](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleFloat](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
-        val msg = """For input string: "12.0"
-          |{"m":{"12.0":56,"90":34}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js) should have message msg
+        assert(expectMalformed[NumberFormatException](() => sj.read[SampleInt](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
       }
       it("Bad Long Key") {
         val js = """{"m":{"12":56,"hey":34}}"""
-        val msg = """Expected token of type Number, not String
-          |{"m":{"12":56,"hey":34}}
-          |--------------^""".stripMargin
-        the[java.lang.IllegalStateException] thrownBy sj.read[SampleLong](js) should have message msg
+        assert(expectUnexpected(() => sj.read[SampleLong](js), Path.Tokenizing, List("h", "0")))
       }
       it("Bad Short Key") {
-        val js = """{"m":{"99999":56,"90":34}}"""
-        val msg = """Value out of range. Value:"99999" Radix:10
-          |{"m":{"99999":56,"90":34}}
-          |------^""".stripMargin
-        the[java.lang.NumberFormatException] thrownBy sj.read[SampleShort](js) should have message msg
+        val js = """{"m":{"p99999":56,"90":34}}"""
+        assert(expectUnexpected(() => sj.read[SampleShort](js), Path.Tokenizing, List("p", "0")))
       }
     }
-    */
   }
 }

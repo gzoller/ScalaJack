@@ -87,7 +87,7 @@ trait JsonReader extends Reader[String] {
         val builder = canBuildFrom()
         p += 1
         while (p < tokens.size && tokens.get(p).tokenType != EndObject) {
-          val key = keyTypeAdapter.read(path \ "(map key)", this)
+          val key = keyTypeAdapter.read(path \ Path.MapKey, this)
           if (key == null)
             throw new ReadInvalidError(path, "Map keys cannot be null", List.empty[String])
           val value = valueTypeAdapter.read(path \ key.toString, this)
@@ -309,11 +309,20 @@ trait JsonReader extends Reader[String] {
     val value = tokens.get(p).tokenType match {
       case BeginArray =>
         p += 1
-        readFns.map { fn =>
+        val tup = readFns.map { fn =>
           val a = fn(path \ fnPos, this)
           fnPos += 1
           a
         }
+        if (tokens.get(p).tokenType != EndArray) {
+          var c = 0
+          while (tokens.get(p).tokenType != EndArray) {
+            c += 1
+            p += 1
+          }
+          throw new ReadUnexpectedError(path, s"Too many values in tuple list.  Should be ${readFns.size} but actually there's ${readFns.size + c}", List("EndArray"))
+        }
+        tup
       case Null =>
         null
       case _ =>
