@@ -5,13 +5,6 @@ import model.{ JackFlavor, _ }
 
 import scala.collection.mutable.Builder
 
-//object JsonFlavorMaker {
-//  def apply[N, WIRE](): () => JackFlavor[N, WIRE] = (() => {
-//    val jf: JackFlavor[N, WIRE] = JsonFlavor().asInstanceOf[JackFlavor[N, WIRE]]
-//    jf
-//  })
-//}
-
 object JsonFlavorMaker extends FlavorMaker {
   type WIRE = String
   def make(): JackFlavor[String] = new JsonFlavor()
@@ -56,5 +49,5 @@ case class JsonTransciever(
     context:           Context,
     stringTypeAdapter: TypeAdapter[String],
     jackFlavor:        JackFlavor[String]) extends Transceiver[String] with JsonReader with JsonWriter {
-  val tokenizer: Tokenizer[String] = JsonTokenizer()
+  val tokenizer: Tokenizer[String] = StrictTokenizer2()
 }
