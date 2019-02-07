@@ -63,9 +63,9 @@ object Runner extends App {
                      {"id":50,"first_name":"Alice","last_name":"Davis","email":"adavis1d@ow.ly","gender":"Female","ip_address":"4.124.35.181"}]""".stripMargin
 */
 
-  val strict = new json.StrictTokenizer2()
+  val strict = new json.StrictTokenizer()
 
-  val source = """{"foo":true, "bar":33}"""
+  val source = """"""
   //  val source = """[1,true,3]"""
 
   //  try {

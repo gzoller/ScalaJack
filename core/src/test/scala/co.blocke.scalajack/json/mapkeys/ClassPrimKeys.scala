@@ -12,7 +12,7 @@ import model.StringMatchHintModifier
 
 class ClassPrimKeys() extends FunSpec with Matchers {
 
-  val sj = ScalaJack()
+  val sj = ScalaJack().withStrictParser()
 
   describe("-------------------------\n:  Class Map Key Tests  :\n-------------------------") {
     describe("+++ Positive Tests +++") {
@@ -143,7 +143,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Bad (invalid--missing field) class json as map key") {
         val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        assert(expectMissing(() => sj.read[SampleSimple](js), Path.Root \ "m" \ Path.MapKey, List("SimpleClass", "name")))
+        assert(expectUnexpected(() => sj.read[SampleSimple](js), Path.Tokenizing, List("Colon")))
       }
       it("Bad class json as map key (valid json, but wrong for given class)") {
         val js = """{"m":{"{\"name\":\"Larry\",\"age\":32,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
@@ -154,8 +154,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         assert(expectMissing(() => sj.read[SampleComplex](js), Path.Root \ "m" \ Path.MapKey \ "simple", List("SimpleClass", "age")))
       }
       it("Bad (invalid) trait json as map key") {
-        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        assert(expectMissing(() => sj.read[SamplePet](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.test.mapkeys.FishPet")))
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\" \"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        assert(expectUnexpected(() => sj.read[SamplePet](js), Path.Tokenizing, List("Comma")))
       }
       it("Bad trait json (missing hint) as map key") {
         val js = """{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
@@ -167,7 +167,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad (invalid) trait json for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name"}"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        assert(expectUnexpected(() => sj.read[SamplePet](js), Path.Root \ "m" \ "CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))" \ "name", List("EndObject")))
+        assert(expectUnexpected(() => sj.read[SamplePet](js), Path.Tokenizing, List("Colon")))
       }
       it("Bad trait json (missing hint) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""

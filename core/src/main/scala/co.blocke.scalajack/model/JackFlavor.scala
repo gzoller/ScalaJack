@@ -25,6 +25,7 @@ trait JackFlavor[WIRE] {
   val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
   val permissivesOk: Boolean = false
+  val useStrictParser: Boolean = false
 
   /*
     val typeModifier: Option[HintModifier]
@@ -37,6 +38,7 @@ trait JackFlavor[WIRE] {
   def withSecondLookParsing(): JackFlavor[WIRE]
   def parseOrElse(poe: (Type, Type)*): JackFlavor[WIRE]
   def allowPermissivePrimitives(): JackFlavor[WIRE]
+  def withStrictParser(): JackFlavor[WIRE]
 
   val context: Context = bakeContext()
 
