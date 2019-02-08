@@ -52,9 +52,9 @@ object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] with CharTypeAdapter
 trait CharTypeAdapter {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Char =
     reader.readString(path) match {
-      case null         => throw new ReadInvalidError(path, "A Char typed value cannot be null", List("Null"))
+      case null         => throw new ReadInvalidError(path, "A Char typed value cannot be null\n" + reader.showError(), List("Null"))
       case c if c != "" => c.toCharArray()(0)
-      case _            => throw new ReadInvalidError(path, "Tried to read a Char but empty string found", List("Empty String"))
+      case _            => throw new ReadInvalidError(path, "Tried to read a Char but empty string found\n" + reader.showError(), List("Empty String"))
     }
   def write[WIRE](t: Char, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = writer.writeString(t.toString, out)
 }

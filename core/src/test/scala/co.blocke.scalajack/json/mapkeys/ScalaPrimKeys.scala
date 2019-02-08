@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package json.test.mapkeys
 
-import TestUtil._
-import util.Path
 import org.scalatest.{ FunSpec, Matchers }
 
 class ScalaPrimKeys() extends FunSpec with Matchers {
@@ -112,47 +110,80 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Bad BigDecimal Key") {
         val js = """{"m":{"789.123":1,"fred":2}}"""
-        assert(expectUnexpected(() => sj.read[SampleBigDecimal](js), Path.Tokenizing, List("f", "0")))
+        val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
+                    |fred
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"fred":1,"789":2}}"""
-        assert(expectUnexpected(() => sj.read[SampleBigInt](js), Path.Tokenizing, List("f", "0")))
+        val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
+                    |fred
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
-        assert(expectUnexpected(() => sj.read[SampleBoolean](js), Path.Root \ "m" \ Path.MapKey, List("Number")))
+        val msg = """[$.m.(map key)]: Expected a Boolean but parsed Number
+                    |123
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js) should have message msg
       }
       it("Bad Byte Key") {
         val js = """{"m":{"16":2,"x48":9}}"""
-        assert(expectUnexpected(() => sj.read[SampleByte](js), Path.Tokenizing, List("x", "0")))
+        val msg = """[<tokenizing>]: Unexpected character x at position 0
+                    |x48
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleByte](js) should have message msg
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
         val js = """{"m":{null:"A","z":"Z"}}"""
-        assert(expectInvalid(() => sj.read[SampleChar](js), Path.Root \ "m" \ Path.MapKey, List("Null")))
+        val msg = """[$.m.(map key)]: A Char typed value cannot be null
+                    |{"m":{null:"A","z":"Z"}}
+                    |----------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-        assert(expectUnexpected(() => sj.read[SampleDouble](js), Path.Root \ "m" \ Path.MapKey, List("True")))
+        val msg = """[$.m.(map key)]: Expected a Double but parsed True
+                    |true
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        assert(expectInvalid(() => sj.read[SampleEnumeration](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.Size$", "Bogus")))
+        val msg = """[$.m.(map key)]: No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Size$ for Bogus
+                    |{"m":{"Small":"Large","Bogus":"Medium"}}
+                    |-----------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleEnumeration](js) should have message msg
       }
       it("Bad Float Key") {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-        assert(expectMalformed[NumberFormatException](() => sj.read[SampleFloat](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+        val msg = """[$.m.(map key)]: Failed to create Double value from parsed text 90.12.3
+                    |90.12.3
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
-        assert(expectMalformed[NumberFormatException](() => sj.read[SampleInt](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+        val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.0
+                    |12.0
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInt](js) should have message msg
       }
       it("Bad Long Key") {
         val js = """{"m":{"12":56,"hey":34}}"""
-        assert(expectUnexpected(() => sj.read[SampleLong](js), Path.Tokenizing, List("h", "0")))
+        val msg = """[<tokenizing>]: Unexpected character h at position 0
+                    |hey
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleLong](js) should have message msg
       }
       it("Bad Short Key") {
         val js = """{"m":{"p99999":56,"90":34}}"""
-        assert(expectUnexpected(() => sj.read[SampleShort](js), Path.Tokenizing, List("p", "0")))
+        val msg = """[<tokenizing>]: Unexpected character p at position 0
+                    |p99999
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleShort](js) should have message msg
       }
     }
   }

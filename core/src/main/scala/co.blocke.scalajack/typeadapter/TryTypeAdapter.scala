@@ -33,7 +33,7 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
       case Failure(cause) =>
         reader.rollbackToSave()
-        throw new ReadMalformedError(path, s"Reading Try type failed", List.empty[String], cause)
+        throw new ReadMalformedError(path, s"Reading Try type failed\n" + reader.showError(), List.empty[String], cause)
     }
   }
 

@@ -10,8 +10,6 @@ case class ObjectFieldResult(allThere: Boolean, objectArgs: Array[Any], fieldSet
 
 trait Reader[WIRE] {
 
-  val tokenizer: Tokenizer[WIRE]
-
   // Used for sub-parsing, e.g. Stringified Map keys or secondLookParsing
   def cloneWithSource(source: WIRE): Transceiver[WIRE]
 
@@ -21,6 +19,10 @@ trait Reader[WIRE] {
   def lastTokenText(): String
   def skip()
   def lookAheadForField(fieldName: String): Option[String]
+
+  def isDone(): Boolean
+
+  def showError(): String
 
   def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To
   def readBigInt(path: Path): BigInt

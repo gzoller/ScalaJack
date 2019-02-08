@@ -7,8 +7,7 @@ import java.util.ArrayList
 object TokenType extends Enumeration {
   type TokenType = Value
 
-  val BeginObject, EndObject, BeginArray, EndArray, Number, String, True, False, Null, End, // These are purely for strict parsing
-  Colon, Comma, JValue = Value
+  val BeginObject, EndObject, BeginArray, EndArray, Number, String, True, False, Null, End, Colon, Comma, JValue = Value
 }
 
 import TokenType._

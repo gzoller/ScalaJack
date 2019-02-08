@@ -6,9 +6,6 @@ import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Doubl
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
 
-import TestUtil._
-import util.Path
-
 class JavaPrimKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -208,81 +205,138 @@ class JavaPrimKeys() extends FunSpec with Matchers {
       describe("Simple Primitives:") {
         it("Bad BigDecimal Key") {
           val js = """{"m":{"fred":1,"789.123":2}}"""
-          assert(expectUnexpected(() => sj.read[SampleJBigDecimal](js), Path.Tokenizing, List("f", "0")))
+          val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
+                      |fred
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJBigDecimal](js) should have message msg
         }
         it("Bad BigInt Key") {
           val js = """{"m":{"fred":1,"789":2}}"""
-          assert(expectUnexpected(() => sj.read[SampleJBigInteger](js), Path.Tokenizing, List("f", "0")))
+          val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
+                      |fred
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJBigInteger](js) should have message msg
         }
         it("Bad Boolean Key") {
           val js = """{"m":{"true":false,"123":true}}"""
-          assert(expectUnexpected(() => sj.read[SampleJBoolean](js), Path.Root \ "m" \ Path.MapKey, List("Number")))
+          val msg = """[$.m.(map key)]: Expected a Boolean but parsed Number
+                      |123
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJBoolean](js) should have message msg
         }
         it("Bad Byte Key") {
           val js = """{"m":{"16":2,"4x8":9}}"""
-          assert(expectUnexpected(() => sj.read[SampleJByte](js), Path.Tokenizing, List("x", "1")))
+          val msg = """[<tokenizing>]: Unexpected character x at position 1
+                      |4x8
+                      |-^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJByte](js) should have message msg
         }
         it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
           val js = """{"m":{null:"A","z":"Z"}}"""
-          assert(expectInvalid(() => sj.read[SampleJChar](js), Path.Root \ "m", List.empty[String]))
+          val msg = """[$.m]: Map keys cannot be null
+                      |{"m":{null:"A","z":"Z"}}
+                      |----------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleJChar](js) should have message msg
         }
         it("Bad Double Key") {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-          assert(expectUnexpected(() => sj.read[SampleJDouble](js), Path.Root \ "m" \ Path.MapKey, List("True")))
+          val msg = """[$.m.(map key)]: Expected a Double but parsed True
+                      |true
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-          assert(expectMalformed[NumberFormatException](() => sj.read[SampleJFloat](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to create Double value from parsed text 90.12.3
+                      |90.12.3
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleJFloat](js) should have message msg
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.0":56,"90":34}}"""
-          assert(expectMalformed[NumberFormatException](() => sj.read[SampleJInteger](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.0
+                      |12.0
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleJInteger](js) should have message msg
         }
         it("Bad Long Key") {
           val js = """{"m":{"12":56,"hey":34}}"""
-          assert(expectUnexpected(() => sj.read[SampleJLong](js), Path.Tokenizing, List("h", "0")))
+          val msg = """[<tokenizing>]: Unexpected character h at position 0
+                      |hey
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJLong](js) should have message msg
         }
         it("Bad Number Key") {
           val js = """{"m":{"flume":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""
-          assert(expectUnexpected(() => sj.read[SampleJNumber](js), Path.Tokenizing, List("f", "0")))
+          val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
+                      |flume
+                      |^""".stripMargin
+          the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
       }
       describe("Time Primitives:") {
         it("Bad Duration Key") {
           val js = """{"m":{"PT0SXXX":"PT51H4M"}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleDuration](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse Duration from input 'PT0SXXX'
+                      |{"m":{"PT0SXXX":"PT51H4M"}}
+                      |---------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleDuration](js) should have message msg
         }
         it("Bad Instant Key") {
           val js = """{"m":{"1970-01-01T00:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleInstant](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse Instant from input 'bogus'
+                      |Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
+                      |--------------------------------------------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInstant](js) should have message msg
         }
         it("Bad LocalDateTime Key") {
           val js = """{"m":{"+999999999-12-31T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse LocalDateTime from input 'bogus'
+                      |:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
+                      |--------------------------------------------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
         }
         it("Bad LocalDate Key") {
           val js = """{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalDate](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse LocalDate from input 'bogus'
+                      |{"m":{"bogus":"-999999999-01-01","2007-12-03":null}}
+                      |-------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalDate](js) should have message msg
         }
         it("Bad LocalTime Key") {
           val js = """{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleLocalTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse LocalTime from input 'nada'
+                      |{"m":{"23:59:59.999999999":"00:00:00","nada":"12:00:00","10:15:30":null}}
+                      |--------------------------------------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalTime](js) should have message msg
         }
         it("Bad OffsetDateTime Key") {
           val js = """{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:15:30+01:00":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleOffsetDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse OffsetDateTime from input 'false'
+                      |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:
+                      |-------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
         }
         it("Bad OffsetTime Key") {
           val js = """{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleOffsetTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse OffsetTime from input '2007-12-03T10:15:30+01:00[Europe/Bogus]'
+                      |{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}
+                      |------------------------------------------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetTime](js) should have message msg
         }
         it("Bad Period Key") {
           val js = """{"m":{"P0D???":"P1Y2M3D"}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SamplePeriod](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse Period from input 'P0D???'
+                      |{"m":{"P0D???":"P1Y2M3D"}}
+                      |--------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SamplePeriod](js) should have message msg
         }
         it("Bad ZonedDateTime Key") {
           val js = """{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","10:15:30+01:00":null}}"""
-          assert(expectMalformed[java.time.format.DateTimeParseException](() => sj.read[SampleZonedDateTime](js), Path.Root \ "m" \ Path.MapKey, List.empty[String]))
+          val msg = """[$.m.(map key)]: Failed to parse ZonedDateTime from input 'FRED23:59:59.999999999-18:00'
+                      |{"m":{"FRED23:59:59.999999999-18:00":"00:00:00+18:00","10:15:30+01:00":null}}
+                      |------------------------------------^""".stripMargin
+          the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleZonedDateTime](js) should have message msg
         }
       }
     }

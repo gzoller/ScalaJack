@@ -18,6 +18,3 @@ class ReadInvalidError(val path: Path, val msg: String, val related: List[String
 class ReadMissingError(val path: Path, val msg: String, val related: List[String] = List.empty[String]) extends SJError(s"[$path]: " + msg, related) {
   override def toString() = s"[$path]: $msg"
 }
-
-//class SJReadError(path: Path, reason: ErrorReason, msg: String, related: List[String] = List.empty[String], captured: Option[Throwable] = None)
-//  extends SJError(reason, msg, related)

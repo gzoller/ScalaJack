@@ -6,6 +6,23 @@ object Size extends Enumeration {
 
 case class Person(name: String, age: Int)
 
+object Food extends Enumeration {
+  val Seeds, Meat, Pellets, Veggies = Value
+}
+trait Pet {
+  val name: String
+  val food: Food.Value
+}
+case class FishPet(name: String, food: Food.Value, waterTemp: Double) extends Pet
+case class DogPet(name: String, food: Food.Value, numLegs: Int) extends Pet
+case class CompoundPet(name: String, food: Food.Value, pet: Pet) extends Pet
+trait PetHolder {
+  val address: String
+  val pet: Pet
+}
+case class ShinyPetHolder(address: String, pet: Pet) extends PetHolder
+case class SamplePet(m: Map[Pet, Pet])
+
 object Runner extends App {
 
   val sj = ScalaJack() //.forType[List[List[String]]]
@@ -68,11 +85,11 @@ object Runner extends App {
   val source = """"""
   //  val source = """[1,true,3]"""
 
-  //  try {
-  val tokens = strict.tokenize(source)
-  println(tokens)
-  //  } catch {
-  //    case t: Throwable => println(t.getMessage())
-  //  }
+  //  val tokens = strict.tokenize(source)
+  //  println(tokens)
+
+  val js = """[1,2,3,4,5]"""
+  println(js)
+  println(sj.read[List[Int]](js))
 
 }

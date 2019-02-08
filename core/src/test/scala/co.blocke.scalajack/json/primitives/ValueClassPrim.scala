@@ -4,9 +4,6 @@ package json.test.primitives
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
 
-import TestUtil.expectMalformed
-import util.Path
-
 class ValueClassPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -170,7 +167,10 @@ class ValueClassPrim() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Wrong JSON for wrapped type") {
         val js = """100.25"""
-        assert(expectMalformed[NumberFormatException](() => sj.read[VCShort](js), Path.Root, List.empty[String]))
+        val msg = """[$]: Failed to create Int value from parsed text 100.25
+                    |100.25
+                    |^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[VCShort](js) should have message msg
       }
     }
   }

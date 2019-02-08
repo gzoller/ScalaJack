@@ -36,23 +36,31 @@ trait JsonReader extends Reader[String] {
 
   def skip() = if (p < tokens.size()) p += 1
 
+  def isDone(): Boolean = p == tokens.size
+
   def lookAheadForField(fieldName: String): Option[String] = {
     if (tokens.get(p).tokenType != BeginObject)
       None
     else {
+      p += 1
       var done = tokens.get(p).tokenType == EndObject
       var found: Option[String] = None
+      var first = true
       while (p < tokens.size && !done) {
-        p += 1
+        if (!first)
+          p += 1 // skip comma
+        first = false
         val jt = tokens.get(p)
         val js = json.substring(jt.begin, jt.end)
+        p += 2 // skip colon
         if (js == fieldName) {
-          p += 1
           val jt2 = tokens.get(p)
           found = Some(json.substring(jt2.begin, jt2.end))
           done = true
-        } else if (tokens.get(p).tokenType == EndObject)
+        } else if (p < tokens.size && tokens.get(p).tokenType == EndObject)
           done = true
+        else
+          p += 1
       }
       found
     }
@@ -67,15 +75,24 @@ trait JsonReader extends Reader[String] {
         val builder = canBuildFrom()
         var i = 0
         p += 1
+        var first = true
         while (p < tokens.size && tokens.get(p).tokenType != EndArray) {
+          if (!first) {
+            if (tokens.get(p).tokenType != Comma)
+              throw new ReadUnexpectedError(path \ i, "Expected comma here.\n" + showError(), List("Comma"))
+            p += 1
+          }
+          first = false
           builder += elementTypeAdapter.read(path \ i, this)
           i += 1
         }
+        if (tokens.get(p).tokenType != EndArray)
+          throw new ReadUnexpectedError(path, s"Unterminated JSON array\n" + showError())
         builder.result
       case Null =>
         null.asInstanceOf[To]
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected an Array but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected an Array but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -86,18 +103,30 @@ trait JsonReader extends Reader[String] {
       case BeginObject =>
         val builder = canBuildFrom()
         p += 1
+        var first = true
         while (p < tokens.size && tokens.get(p).tokenType != EndObject) {
+          if (!first) {
+            if (tokens.get(p).tokenType != Comma)
+              throw new ReadUnexpectedError(path, "Expected comma here.\n" + showError(), List("Comma"))
+            p += 1
+          }
+          first = false
           val key = keyTypeAdapter.read(path \ Path.MapKey, this)
           if (key == null)
-            throw new ReadInvalidError(path, "Map keys cannot be null", List.empty[String])
+            throw new ReadInvalidError(path, "Map keys cannot be null\n" + showError(), List.empty[String])
+          if (tokens.get(p).tokenType != TokenType.Colon)
+            throw new ReadUnexpectedError(path \ key.toString, s"Expected a colon here", List("Colon"))
+          p += 1
           val value = valueTypeAdapter.read(path \ key.toString, this)
           builder += key -> value
         }
+        if (tokens.get(p).tokenType != EndObject)
+          throw new ReadUnexpectedError(path, s"Unterminated JSON object\n" + showError())
         builder.result
       case Null =>
         null.asInstanceOf[To]
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a Map but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Map but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -108,7 +137,7 @@ trait JsonReader extends Reader[String] {
       case True  => true
       case False => false
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a Boolean but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Boolean but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -121,12 +150,12 @@ trait JsonReader extends Reader[String] {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end)}",
+          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
           List.empty[String], u)
       }
       case Null => null
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a Number (Decimal) but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Number (Decimal) but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -139,12 +168,12 @@ trait JsonReader extends Reader[String] {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end)}",
+          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
           List.empty[String], u)
       }
       case Null => null
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a BigInt but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a BigInt but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -157,11 +186,11 @@ trait JsonReader extends Reader[String] {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end)}",
+          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a Double but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Double but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -174,11 +203,11 @@ trait JsonReader extends Reader[String] {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end)}",
+          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected an Int but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected an Int but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -191,11 +220,11 @@ trait JsonReader extends Reader[String] {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end)}",
+          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a Long but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a Long but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -208,8 +237,20 @@ trait JsonReader extends Reader[String] {
         p += 1
         val args = new Array[Any](fields.size)
         val flags = new Array[Boolean](fields.size)
+        var first = true
         while (p < tokens.size && tokens.get(p).tokenType != EndObject) {
+          if (!first) {
+            if (tokens.get(p).tokenType != Comma)
+              throw new ReadUnexpectedError(path, "Expected comma here.\n" + showError(), List("Comma"))
+            p += 1
+          }
+          first = false
+          if (tokens.get(p).tokenType != TokenType.String)
+            throw new ReadUnexpectedError(path, s"Expected a JSON string here\n" + showError(), List("String"))
           val key = json.substring(tokens.get(p).begin, tokens.get(p).end)
+          p += 1
+          if (tokens.get(p).tokenType != TokenType.Colon)
+            throw new ReadUnexpectedError(path \ key, s"Expected a colon here\n" + showError(), List("Colon"))
           p += 1
           fields.get(key) match {
             case Some(oneField) =>
@@ -217,13 +258,16 @@ trait JsonReader extends Reader[String] {
               flags(oneField.index) = true
               fieldCount += 1
             case _ =>
+              p += 1
           }
         }
+        if (tokens.get(p).tokenType != EndObject)
+          throw new ReadUnexpectedError(path, s"Unterminated JSON object\n" + showError())
         ObjectFieldResult(fieldCount == fields.size, args, flags)
       case Null =>
         null
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected an Object (map with String keys) but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected an Object (map with String keys) but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -298,7 +342,7 @@ trait JsonReader extends Reader[String] {
         }
       case Null => null
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected a String but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected a String but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
@@ -309,7 +353,15 @@ trait JsonReader extends Reader[String] {
     val value = tokens.get(p).tokenType match {
       case BeginArray =>
         p += 1
+        var first = true
         val tup = readFns.map { fn =>
+          if (!first) {
+            if (tokens.get(p).tokenType != Comma) {
+              throw new ReadUnexpectedError(path, "Expected comma here.\n" + showError())
+            }
+            p += 1
+          }
+          first = false
           val a = fn(path \ fnPos, this)
           fnPos += 1
           a
@@ -320,15 +372,33 @@ trait JsonReader extends Reader[String] {
             c += 1
             p += 1
           }
-          throw new ReadUnexpectedError(path, s"Too many values in tuple list.  Should be ${readFns.size} but actually there's ${readFns.size + c}", List("EndArray"))
+          throw new ReadUnexpectedError(path, s"Too many values in tuple list.  Should be ${readFns.size} but actually there's ${readFns.size + c}\n" + showError(), List("EndArray"))
         }
         tup
       case Null =>
         null
       case _ =>
-        throw new ReadUnexpectedError(path, s"Expected an Tuple (Array) but parsed ${tokens.get(p).tokenType}", List(tokens.get(p).tokenType.toString))
+        throw new ReadUnexpectedError(path, s"Expected an Tuple (Array) but parsed ${tokens.get(p).tokenType}\n" + showError(), List(tokens.get(p).tokenType.toString))
     }
     p += 1
     value
+  }
+
+  override def showError(): String = {
+    if (p >= tokens.size)
+      p = tokens.size - 1
+    val charPos = tokens.get(p).begin
+    val startPosOffset = if (charPos - 50 < 0) charPos else 50
+    val startPos = charPos - startPosOffset
+    val endPos = if (charPos + 50 > json.length) json.length else charPos + 50
+    val buf = new StringBuffer()
+    buf.append(json.subSequence(startPos, endPos).toString + "\n")
+    val line = json.subSequence(startPos, startPos + startPosOffset).toString.map(_ match {
+      case '\n' => '\n'
+      case _    => '-'
+    }).mkString + "^"
+    buf.append(line)
+    // buf.append("-" * startPosOffset + "^")
+    buf.toString
   }
 }

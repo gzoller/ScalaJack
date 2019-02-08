@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package json.test.mapkeys
 
-import co.blocke.scalajack.TestUtil.expectInvalid
-import co.blocke.scalajack.util.Path
 import org.scalatest.{ FunSpec, Matchers }
 
 class MapCollKeys() extends FunSpec with Matchers {

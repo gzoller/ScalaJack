@@ -33,20 +33,20 @@ case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter
         Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}\n" + reader.showError(), List(enum.getClass.getName, reader.lastTokenText))
         }
       case TokenType.Number =>
         Try(enum(reader.readInt(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}", List(enum.getClass.getName, reader.lastTokenText))
+            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}\n" + reader.showError(), List(enum.getClass.getName, reader.lastTokenText))
         }
       case TokenType.Null =>
         reader.skip()
         null
       case actual =>
         reader.skip()
-        throw new ReadUnexpectedError(path, s"Expected value token of type String or Int, not $actual when reading Enumeration value.", List(actual.toString))
+        throw new ReadUnexpectedError(path, s"Expected value token of type String or Int, not $actual when reading Enumeration value.\n" + reader.showError, List(actual.toString))
     }
 
   def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =

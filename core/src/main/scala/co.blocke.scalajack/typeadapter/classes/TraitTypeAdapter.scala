@@ -8,6 +8,7 @@ import util._
 import scala.collection.mutable
 import scala.collection.mutable.Builder
 import scala.reflect.runtime.currentMirror
+import scala.util.Try
 
 // This should come *after* SealedTraitTypeAdapter in the Context factory list, as all sealed traits are
 // also traits, and this factory would pick them all up, hiding the sealed ones.
@@ -44,13 +45,17 @@ case class TraitTypeAdapter[T](
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     reader.savePos()
     val hintLabel = getHintLabel(reader)
-    if (reader.peek() == TokenType.Null)
+    if (reader.peek() == TokenType.Null) {
+      reader.skip()
       null.asInstanceOf[T]
-    else {
+    } else {
       val concreteType =
+        //        Try{
         reader.lookAheadForField(hintLabel)
-          .map(typeHint => hintModFn.map(_.apply(typeHint)).getOrElse(typeTypeAdapter.read(path, reader)))
-          .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName", List(traitName)))
+          .map(typeHint => hintModFn.map(th => Try(th.apply(typeHint)).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't materialize class for $typeHint\n" + reader.showError()))).getOrElse(typeTypeAdapter.read(path, reader)))
+          .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName\n" + reader.showError(), List(traitName)))
+      //    }
+      //          .getOrElse()
       reader.rollbackToSave()
       val populatedConcreteType = populateConcreteType(concreteType)
       context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]

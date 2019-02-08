@@ -51,5 +51,5 @@ case class JsonTransciever(
     context:           Context,
     stringTypeAdapter: TypeAdapter[String],
     jackFlavor:        JackFlavor[String]) extends Transceiver[String] with JsonReader with JsonWriter {
-  val tokenizer: Tokenizer[String] = StrictTokenizer() // if (jackFlavor.useStrictParser) StrictTokenizer() else JsonTokenizer()
+  val tokenizer: Tokenizer[String] = JsonTokenizer() //StrictTokenizer() // if (jackFlavor.useStrictParser) StrictTokenizer() else JsonTokenizer()
 }

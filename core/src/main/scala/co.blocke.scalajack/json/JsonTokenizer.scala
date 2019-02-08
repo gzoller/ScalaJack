@@ -44,8 +44,10 @@ case class JsonTokenizer() extends Tokenizer[String] {
           tokenspace.add(JsonToken(EndObject, i, i))
           i += 1
         case ':' =>
+          tokenspace.add(JsonToken(Colon, i, i))
           i += 1
         case ',' =>
+          tokenspace.add(JsonToken(Comma, i, i))
           i += 1
         case n if isNumberChar(n) =>
           val mark = i
@@ -57,24 +59,39 @@ case class JsonTokenizer() extends Tokenizer[String] {
             tokenspace.add(JsonToken(Null, i, i))
             i += 4
           } else
-            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'n' at position $i", List(chars(i).toString, i.toString))
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'n' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))
         case 't' =>
           if (source.length >= i + 4 && source.substring(i, i + 4) == "true") {
             tokenspace.add(JsonToken(True, i, i))
             i += 4
           } else
-            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 't' at position $i", List(chars(i).toString, i.toString))
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 't' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))
         case 'f' =>
           if (source.length >= i + 5 && source.substring(i, i + 5) == "false") {
             tokenspace.add(JsonToken(False, i, i))
             i += 5
           } else
-            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'f' at position $i", List(chars(i).toString, i.toString))
+            throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'f' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))
         case x =>
-          throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character $x at position $i", List(x.toString, i.toString))
+          throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character $x at position $i\n" + showError(i, source), List(x.toString, i.toString))
       }
     }
     tokenspace.add(JsonToken(End, i, i))
     tokenspace
+  }
+
+  def showError(charPos: Int, json: String): String = {
+    val startPosOffset = if (charPos - 50 < 0) charPos else 50
+    val startPos = charPos - startPosOffset
+    val endPos = if (charPos + 50 > json.length) json.length else charPos + 50
+    val buf = new StringBuffer()
+    buf.append(json.subSequence(startPos, endPos).toString + "\n")
+    val line = json.subSequence(startPos, startPos + startPosOffset).toString.map(_ match {
+      case '\n' => '\n'
+      case _    => '-'
+    }).mkString + "^"
+    buf.append(line)
+    // buf.append("-" * startPosOffset + "^")
+    buf.toString
   }
 }

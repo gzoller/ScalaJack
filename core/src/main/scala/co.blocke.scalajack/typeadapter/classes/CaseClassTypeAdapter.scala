@@ -85,7 +85,7 @@ case class CaseClassTypeAdapter[T](
                 if (fieldArray(p).isOptional)
                   None
                 else
-                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}", List(className, fieldArray(p).name)))
+                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(), List(className, fieldArray(p).name)))
             }
           }
         }

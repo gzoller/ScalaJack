@@ -17,7 +17,7 @@ object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] with Stringish {
           case Success(u) => u
           case Failure(u) => throw new ReadMalformedError(
             path,
-            s"Failed to create UUID value from parsed text ${s}", List(s), u)
+            s"Failed to create UUID value from parsed text ${s}\n" + reader.showError(), List(s), u)
         }
     }
   }

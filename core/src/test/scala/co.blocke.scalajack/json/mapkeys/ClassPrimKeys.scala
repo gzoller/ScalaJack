@@ -3,10 +3,6 @@ package json.test.mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
-
-import TestUtil._
-import util.Path
-
 import scala.reflect.runtime.universe.typeOf
 import model.StringMatchHintModifier
 
@@ -142,44 +138,74 @@ class ClassPrimKeys() extends FunSpec with Matchers {
     }
     describe("--- Negative Tests ---") {
       it("Bad (invalid--missing field) class json as map key") {
-        val js = """{"m":{"{\"nameLarry\",\"age\":32,\"favorite\":\"golf\"":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        assert(expectUnexpected(() => sj.read[SampleSimple](js), Path.Tokenizing, List("Colon")))
+        val js = """{"m":{"{\"age\":32,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
+        val msg = """[$.m.(map key)]: Class SimpleClass missing field name
+                    |{"age":32,"favorite":"golf"}
+                    |----------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleSimple](js) should have message msg
       }
       it("Bad class json as map key (valid json, but wrong for given class)") {
         val js = """{"m":{"{\"name\":\"Larry\",\"age\":32,\"favorite\":\"golf\"}":{"name":"Mike","age":27,"isOk":false,"favorite":125}}}"""
-        assert(expectMissing(() => sj.read[SampleSimple](js), Path.Root \ "m" \ Path.MapKey, List("SimpleClass", "isOk")))
+        val msg = """[$.m.(map key)]: Class SimpleClass missing field isOk
+                    |{"name":"Larry","age":32,"favorite":"golf"}
+                    |-------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleSimple](js) should have message msg
       }
       it("Bad json for member class") {
         val js = """{"m":{"{\"id\":\"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9c\",\"simple\":{\"name\":\"Larry\",\"isOk\":true,\"favorite\":\"golf\"},\"allDone\":true}":{"id":"1e6c2b31-4dfe-4bf6-a0a0-882caaff0e9d","simple":{"name":"Mike","age":27,"isOk":false,"favorite":125},"allDone":false}}}"""
-        assert(expectMissing(() => sj.read[SampleComplex](js), Path.Root \ "m" \ Path.MapKey \ "simple", List("SimpleClass", "age")))
+        val msg = """[$.m.(map key)._hint]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |ple":{"name":"Larry","isOk":true,"favorite":"golf"},"allDone":true}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad (invalid) trait json as map key") {
-        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.FishPet\":\"Flipper\" \"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        assert(expectUnexpected(() => sj.read[SamplePet](js), Path.Tokenizing, List("Comma")))
+        val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.FishPet\":\"Flipper\" \"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
+        val msg = """[$.m.(map key)]: Expected comma here.
+                    |t":"co.blocke.scalajack.json.test.mapkeys.FishPet":"Flipper" "food":"Veggies","waterTemp":74.33}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) as map key") {
         val js = """{"m":{"{\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        assert(expectMissing(() => sj.read[SamplePet](js), Path.Root \ "m" \ Path.MapKey \ "_hint", List("co.blocke.scalajack.json.test.mapkeys.Pet")))
+        val msg = """[$.m.(map key)._hint]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |ame":"Flipper","food":"Veggies","waterTemp":74.33}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) as map key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        assert(expectMissing(() => sj.read[SamplePet](js), Path.Root \ "m" \ Path.MapKey, List("co.blocke.scalajack.json.test.mapkeys.Bogus")))
+        val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+                    |int":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad (invalid) trait json for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name"}"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        assert(expectUnexpected(() => sj.read[SamplePet](js), Path.Tokenizing, List("Colon")))
+        val msg = """[$.m.CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3)).name]: Expected a colon here
+                    |blocke.scalajack.json.test.mapkeys.FishPet","name"}"Flipper","food":"Veggies","waterTemp":74.33}}}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (missing hint) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        assert(expectMissing(() => sj.read[SamplePet](js), Path.Root \ "m" \ "CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))" \ "_hint", List("co.blocke.scalajack.json.test.mapkeys.Pet")))
+        val msg = """[$.m.CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))._hint]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |e":"Flipper","food":"Veggies","waterTemp":74.33}}}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad trait json (hint to unknown classs) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
-        assert(expectMissing(() => sj.read[SamplePet](js), Path.Root \ "m" \ "CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))", List("co.blocke.scalajack.json.test.mapkeys.Bogus")))
+        val msg = """[$.m.CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
+                    |int":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad collection value in map key class having collections") {
         val js = """{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\",\"two\"]}":{"lookup":{"x":9,"y":10},"favs":["aye","you"]}}}"""
-        assert(expectUnexpected(() => sj.read[SamplePolyClass](js), Path.Root \ "m" \ Path.MapKey \ "lookup" \ "a", List("True")))
+        val msg = """[$.m.(map key)._hint]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |{"lookup":{"a":true,"b":2},"favs":["one","two"]}
+                    |-------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
       it("Bad custom hint value for map key trait") {
         val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
@@ -187,7 +213,10 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHints((typeOf[Pet] -> "kind"))
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"sort\":\"BreathsWater\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
-        assert(expectMissing(() => sj2.read[SamplePet](js), Path.Root \ "m" \ Path.MapKey \ "kind", List("co.blocke.scalajack.json.test.mapkeys.Pet")))
+        val msg = """[$.m.(map key).kind]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |name":"Flipper","food":"Veggies","waterTemp":74.33}}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj2.read[SamplePet](js) should have message msg
       }
       it("Bad custom hint value for key member's trait") {
         val petHintMod = StringMatchHintModifier(Map("BreathsWater" -> typeOf[FishPet], "BreathsAir" -> typeOf[DogPet]))
@@ -195,7 +224,10 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHints((typeOf[Pet] -> "kind"))
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsLava\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
-        the[java.lang.IllegalStateException] thrownBy sj2.read[SamplePet](js) should have message "No Type mapping given for hint BreathsLava"
+        val msg = """[$.m.(map key).kind]: No type hint found for trait co.blocke.scalajack.json.test.mapkeys.Pet
+                    |name":"Flipper","food":"Veggies","waterTemp":74.33}}
+                    |--------------------------------------------------^""".stripMargin
+        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj2.read[SamplePet](js) should have message msg
       }
     }
   }

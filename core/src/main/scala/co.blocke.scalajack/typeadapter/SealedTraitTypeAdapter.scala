@@ -102,7 +102,7 @@ class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
       val objInstance = clazz.getField("MODULE$").get(null).asInstanceOf[T]
       objInstance
-    case x => throw new ReadUnexpectedError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}", List(typeOf[T].toString, x))
+    case x => throw new ReadUnexpectedError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}\n" + reader.showError(), List(typeOf[T].toString, x))
   }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =

@@ -46,7 +46,7 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
           case Success(leftValue) =>
             Left(leftValue.asInstanceOf[L])
           case Failure(x) =>
-            throw new ReadMalformedError(path, s"Failed to read either side of Either", List.empty[String], x)
+            throw new ReadMalformedError(path, s"Failed to read either side of Either\n" + reader.showError(), List.empty[String], x)
         }
     }
   }
