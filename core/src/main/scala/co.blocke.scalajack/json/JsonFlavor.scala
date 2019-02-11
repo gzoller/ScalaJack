@@ -17,7 +17,7 @@ case class JsonFlavor(
     override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val useStrictParser:    Boolean                      = false,
+    override val enumsAsInt:         Boolean                      = false,
     secondLookParsing:               Boolean                      = false) extends JackFlavor[String] {
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, String] = JsonFlavor[N2]()
@@ -32,10 +32,10 @@ case class JsonFlavor(
   def withSecondLookParsing(): JackFlavor[String] = this.copy(secondLookParsing = true)
   def parseOrElse(poe: (Type, Type)*): JackFlavor[String] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def allowPermissivePrimitives(): JackFlavor[String] = this.copy(permissivesOk = true)
-  def withStrictParser(): JackFlavor[String] = this.copy(useStrictParser = true)
+  def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
   protected override def bakeContext(): Context =
-    new Context(JsonCanBuildFromTypeAdapterFactory +: super.bakeContext().factories)
+    new Context(JsonCanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
 
   def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context, stringTypeAdapter, this)
 
@@ -51,5 +51,5 @@ case class JsonTransciever(
     context:           Context,
     stringTypeAdapter: TypeAdapter[String],
     jackFlavor:        JackFlavor[String]) extends Transceiver[String] with JsonReader with JsonWriter {
-  val tokenizer: Tokenizer[String] = JsonTokenizer() //StrictTokenizer() // if (jackFlavor.useStrictParser) StrictTokenizer() else JsonTokenizer()
+  val tokenizer: Tokenizer[String] = JsonTokenizer()
 }

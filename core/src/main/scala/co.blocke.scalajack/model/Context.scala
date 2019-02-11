@@ -32,17 +32,21 @@ object Context {
     LongTypeAdapterFactory,
     ShortTypeAdapterFactory,
     StringTypeAdapterFactory,
-    CanBuildFromTypeAdapterFactory,
     TypeTypeAdapterFactory,
     OptionTypeAdapterFactory,
     TupleTypeAdapterFactory,
-    classes.ValueClassTypeAdapterFactory, // <-- WARNING: This must preceed CaseClassTypeAdapter or all
-    //              ValueClasses will be interpreted as case classes!
+    EnumerationTypeAdapterFactory,
+
+    // wARNING: These two must precede CaseClassTypeAdapter in this list or all
+    //     ValueClasses will be interpreted as case classes, and case objects
+    //     will likewise be hidden (interpreted as regular classes).
+    SealedTraitTypeAdapterFactory,
+    classes.ValueClassTypeAdapterFactory,
+
     classes.CaseClassTypeAdapterFactory,
     classes.TraitTypeAdapterFactory,
     EitherTypeAdapterFactory,
     UUIDTypeAdapterFactory,
-    EnumerationTypeAdapterFactory,
     TryTypeAdapterFactory,
     AnyTypeAdapterFactory,
     JavaBigDecimalTypeAdapterFactory,
@@ -64,63 +68,7 @@ object Context {
     OffsetDateTimeTypeAdapterFactory,
     OffsetTimeTypeAdapterFactory,
     PeriodTypeAdapterFactory,
-    ZonedDateTimeTypeAdapterFactory,
-    SealedTraitTypeAdapterFactory)
-  /*
-    .withFactory(IRParsingFallbackTypeAdapter)
-    .withFactory(TermTypeAdapterFactory)
-    .withFactory(TypeParameterTypeAdapter)
-    .withFactory(AnyTypeAdapter)
-    .withFactory(TypeTypeAdapter)
-    .withFactory(MapTypeAdapter)
-    .withFactory(BinaryTypeAdapter)
-    .withFactory(CanBuildFromTypeAdapter)
-    .withFactory(TupleTypeAdapter)
-
-    .withFactory(DerivedValueClassTypeAdapter) // <-- WARNING: This must preceed CaseClassTypeAdapter or all
-    //              ValueClasses will be interpreted as case classes!
-
-    .withFactory(CaseClassTypeAdapter)
-    .withFactory(OptionTypeAdapter)
-    .withFactory(TryTypeAdapter)
-    .withFactory(EitherTypeAdapter)
-    .withFactory(SealedTraitTypeAdapter)
-    .withFactory(BooleanTypeAdapter)
-    .withFactory(CharTypeAdapter)
-    .withFactory(ByteTypeAdapter)
-    .withFactory(ShortTypeAdapter)
-    .withFactory(IntTypeAdapter)
-    .withFactory(LongTypeAdapter)
-    .withFactory(FloatTypeAdapter)
-    .withFactory(DoubleTypeAdapter)
-    .withFactory(BigDecimalTypeAdapter)
-    .withFactory(BigIntTypeAdapter)
-    .withFactory(StringTypeAdapter)
-    .withFactory(EnumerationTypeAdapter)
-    .withFactory(UUIDTypeAdapter)
-    .withFactory(JavaNumberTypeAdapter)
-    .withFactory(JavaBooleanTypeAdapter)
-    .withFactory(JavaByteTypeAdapter)
-    .withFactory(JavaCharacterTypeAdapter)
-    .withFactory(JavaDoubleTypeAdapter)
-    .withFactory(JavaFloatTypeAdapter)
-    .withFactory(JavaIntegerTypeAdapter)
-    .withFactory(JavaLongTypeAdapter)
-    .withFactory(JavaShortTypeAdapter)
-    .withFactory(JavaBigDecimalTypeAdapter)
-    .withFactory(JavaBigIntegerTypeAdapter)
-    .withFactory(JavaMapTypeAdapter)
-    .withFactory(JavaCollectionTypeAdapter)
-    .withFactory(DurationTypeAdapter)
-    .withFactory(InstantTypeAdapter)
-    .withFactory(LocalDateTimeTypeAdapter)
-    .withFactory(LocalDateTypeAdapter)
-    .withFactory(LocalTimeTypeAdapter)
-    .withFactory(OffsetDateTimeTypeAdapter)
-    .withFactory(OffsetTimeTypeAdapter)
-    .withFactory(PeriodTypeAdapter)
-    .withFactory(ZonedDateTimeTypeAdapter)
-    */
+    ZonedDateTimeTypeAdapterFactory)
 }
 
 case class Context(factories: List[TypeAdapterFactory] = Nil) {

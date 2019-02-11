@@ -95,7 +95,7 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
     }
 }
 
-class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
+class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] with Stringish {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>

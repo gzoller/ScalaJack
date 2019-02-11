@@ -8,7 +8,7 @@ import model.StringMatchHintModifier
 
 class ClassPrimKeys() extends FunSpec with Matchers {
 
-  val sj = ScalaJack().withStrictParser()
+  val sj = ScalaJack()
 
   describe("-------------------------\n:  Class Map Key Tests  :\n-------------------------") {
     describe("+++ Positive Tests +++") {

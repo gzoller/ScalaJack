@@ -8,13 +8,14 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection._
 
-object CanBuildFromTypeAdapterFactory extends CanBuildFromTypeAdapterFactoryPrototype {
-  val stringifyMapKeys = false
+case class CanBuildFromTypeAdapterFactory(override val enumsAsInt: Boolean) extends CanBuildFromTypeAdapterFactoryPrototype {
+  val stringifyMapKeys = false // Json stringifies, other wire formats might not
 }
 
 trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
 
   val stringifyMapKeys: Boolean
+  val enumsAsInt: Boolean
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
@@ -65,6 +66,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
         val finalKeyTypeAdapter =
           if (!stringifyMapKeys
             || keyTypeAdapter.isInstanceOf[Stringish]
+            || keyType <:< typeOf[Enumeration#Value] && !enumsAsInt
             || keyType =:= typeOf[Any]
             || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
             keyTypeAdapter

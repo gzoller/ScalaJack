@@ -3,6 +3,6 @@ package json
 
 import typeadapter.CanBuildFromTypeAdapterFactoryPrototype
 
-object JsonCanBuildFromTypeAdapterFactory extends CanBuildFromTypeAdapterFactoryPrototype {
+case class JsonCanBuildFromTypeAdapterFactory(override val enumsAsInt: Boolean) extends CanBuildFromTypeAdapterFactoryPrototype {
   val stringifyMapKeys = true
 }
