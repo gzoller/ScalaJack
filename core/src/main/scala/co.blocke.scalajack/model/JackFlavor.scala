@@ -35,7 +35,6 @@ trait JackFlavor[WIRE] {
   def withDefaultHint(hint: String): JackFlavor[WIRE]
   def withHints(h: (Type, String)*): JackFlavor[WIRE]
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[WIRE]
-  def withSecondLookParsing(): JackFlavor[WIRE]
   def parseOrElse(poe: (Type, Type)*): JackFlavor[WIRE]
   def allowPermissivePrimitives(): JackFlavor[WIRE]
   def enumsAsInts(): JackFlavor[WIRE]

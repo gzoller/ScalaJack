@@ -38,6 +38,7 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Either[L, R] = {
     reader.savePos()
     Try(rightTypeAdapter.read(path, reader)) match {
+      case null => null
       case Success(rightValue) =>
         Right(rightValue.asInstanceOf[R])
       case Failure(_) => // Right parse failed... try left
@@ -53,6 +54,7 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
 
   def write[WIRE](t: Either[L, R], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
+      case null     => writer.writeNull(out)
       case Left(v)  => leftTypeAdapter.write(v, writer, out, isMapKey)
       case Right(v) => rightTypeAdapter.write(v, writer, out, isMapKey)
     }

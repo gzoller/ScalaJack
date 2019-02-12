@@ -33,9 +33,11 @@ object Context {
     ShortTypeAdapterFactory,
     StringTypeAdapterFactory,
     TypeTypeAdapterFactory,
+    TypeParameterTypeAdapterFactory,
     OptionTypeAdapterFactory,
     TupleTypeAdapterFactory,
-    EnumerationTypeAdapterFactory,
+    EitherTypeAdapterFactory,
+    EnumerationTypeAdapterFactory, // Either must precede SealedTraitTypeAdapter
 
     // wARNING: These two must precede CaseClassTypeAdapter in this list or all
     //     ValueClasses will be interpreted as case classes, and case objects
@@ -45,7 +47,6 @@ object Context {
 
     classes.CaseClassTypeAdapterFactory,
     classes.TraitTypeAdapterFactory,
-    EitherTypeAdapterFactory,
     UUIDTypeAdapterFactory,
     TryTypeAdapterFactory,
     AnyTypeAdapterFactory,
