@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.custom
+package json.misc
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -22,6 +22,20 @@ class PlugHoles() extends FunSpec with Matchers {
       val js = """{"s1":something,"s2":-19,"s3":null}"""
       val msg = """[<tokenizing>]: Unexpected character s at position 6
                   |{"s1":something,"s2":-19,"s3":null}
+                  |------^""".stripMargin
+      the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Any]](js) should have message msg
+    }
+    it("Bad n char") {
+      val js = """{"sx":new}"""
+      val msg = """[<tokenizing>]: Unexpected character 'n' at position 6
+                  |{"sx":new}
+                  |------^""".stripMargin
+      the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Any]](js) should have message msg
+    }
+    it("Bad t char") {
+      val js = """{"sx":test}"""
+      val msg = """[<tokenizing>]: Unexpected character 't' at position 6
+                  |{"sx":test}
                   |------^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Any]](js) should have message msg
     }
@@ -71,6 +85,14 @@ class PlugHoles() extends FunSpec with Matchers {
     assertResult("""This\that""") { sj.read[String](strSlash) }
   }
   describe("TypeAdapters") {
+    it("Any") {
+      val js = """[1,2,3]"""
+      assertResult(List(1, 2, 3)) { sj.read[Any](js) }
+      val js2 = """{"_hint":"co.blocke.scalajack.json.misc.SimpleHasDefaults","name":"Fred"}"""
+      assertResult(SimpleHasDefaults("Fred", 5)) { sj.read[Any](js2) }
+      val js3 = """{"name":"Fred"}"""
+      assertResult(Map("name" -> "Fred")) { sj.read[Any](js3) }
+    }
     it("Tuples") {
       val jsNull = "null"
       assertResult(null) { sj.read[(Int, Boolean)](jsNull) }

@@ -20,5 +20,7 @@ case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: TypeAdapter[A], 
   }
 
   // Does nothing because writes aren't supported for this TypeAdapter
+  // $COVERAGE-OFF$Can't test--never called
   def write[WIRE](t: A, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {}
+  // $COVERAGE-ON$
 }

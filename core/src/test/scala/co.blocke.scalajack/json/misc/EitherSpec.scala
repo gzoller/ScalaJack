@@ -69,7 +69,7 @@ class EitherSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         assertResult("null") {
           js
         }
-        assertResult(Right(null)) {
+        assertResult(null) {
           sj.read[Either[Parrot, String]](js)
         }
       }

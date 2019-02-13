@@ -230,7 +230,7 @@ trait JsonReader extends Reader[String] {
     value
   }
 
-  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = { //(Boolean, Array[Any], Array[Boolean]) = {
+  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = {
     val value = tokens.get(p).tokenType match {
       case BeginObject =>
         var fieldCount = 0

@@ -185,7 +185,6 @@ trait JsonWriter extends Writer[String] {
             first = false
           else
             out += ','
-          //        val memberName = mappedFieldsByName.get(member.name).map(_.fieldMapName.get).getOrElse(member.name)
           writeString(memberName, out)
           out += ':'
           member.valueTypeAdapter.write(memberValue, this, out, false)

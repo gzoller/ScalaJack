@@ -37,17 +37,20 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Either[L, R] = {
     reader.savePos()
-    Try(rightTypeAdapter.read(path, reader)) match {
-      case null => null
-      case Success(rightValue) =>
-        Right(rightValue.asInstanceOf[R])
-      case Failure(_) => // Right parse failed... try left
-        reader.rollbackToSave()
-        Try(leftTypeAdapter.read(path, reader)) match {
-          case Success(leftValue) =>
-            Left(leftValue.asInstanceOf[L])
-          case Failure(x) =>
-            throw new ReadMalformedError(path, s"Failed to read either side of Either\n" + reader.showError(), List.empty[String], x)
+    reader.peek() match {
+      case TokenType.Null => null
+      case v =>
+        Try(rightTypeAdapter.read(path, reader)) match {
+          case Success(rightValue) =>
+            Right(rightValue.asInstanceOf[R])
+          case Failure(_) => // Right parse failed... try left
+            reader.rollbackToSave()
+            Try(leftTypeAdapter.read(path, reader)) match {
+              case Success(leftValue) =>
+                Left(leftValue.asInstanceOf[L])
+              case Failure(x) =>
+                throw new ReadMalformedError(path, s"Failed to read either side of Either\n" + reader.showError(), List.empty[String], x)
+            }
         }
     }
   }
