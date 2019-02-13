@@ -89,35 +89,14 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       // Exctract Collection name annotation if present
       val collectionAnnotation = ClassHelper.getAnnotationValue[Collection, String](classSymbol)
 
-      //      val ccTransceiver = CaseClassIRTransceiver(
-      //        context,
-      //        constructorMirror,
-      //        context.typeAdapterOf[Type].irTransceiver,
-      //        typeMembers,
-      //        fieldMembers,
-      //        isSJCapture,
-      //        tt)
-
-      //      CaseClassTypeAdapter[T](
-      //        ccTransceiver,
-      //        typeMembers,
-      //        fieldMembers,
-      //        collectionAnnotation)
-
       CaseClassTypeAdapter(
         classSymbol.name.toString(),
         typeMembers,
         orderdFieldMembers,
+        isSJCapture,
         constructorMirror)
     } else {
       next.typeAdapterOf[T]
     }
 
 }
-
-//case class CaseClassTypeAdapter[T](
-//    override val irTransceiver: IRTransceiver[T],
-//    typeMembers:                List[ClassLikeTypeAdapter.TypeMember[T]],
-//    fieldMembers:               List[ClassLikeTypeAdapter.FieldMember[T]],
-//    collectionName:             Option[String]                            = None) extends ClassLikeTypeAdapter[T] {
-//}

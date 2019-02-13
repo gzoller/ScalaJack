@@ -15,7 +15,7 @@ class MapNameSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       r should be(MapFactor("thing", 123L, 2))
       sj.render(r) should be(js)
     }
-    /*
+    /*  TODO: Implement plan class support
     it("Mapping name for non-case class fields works") {
       val js = """{"count":2,"a_b":123,"foo_bar":"thing"}"""
       val mfp = new MapFactorPlain()
