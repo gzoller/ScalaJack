@@ -5,10 +5,9 @@ package json
 
 import java.util.ArrayList
 
-import co.blocke.scalajack.util.Path
 import model.Tokenizer
 import model.TokenType._
-import model.{ ReadUnexpectedError, Token, TokenType }
+import model.{ Token, TokenType }
 
 /**
  * This class is included for demonstration purposes only!

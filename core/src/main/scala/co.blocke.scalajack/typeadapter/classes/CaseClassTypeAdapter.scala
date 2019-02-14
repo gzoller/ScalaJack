@@ -75,7 +75,7 @@ case class CaseClassTypeAdapter[T](
     }
     */
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T =
-    reader.readObjectFields[T](path, fieldMembers) match {
+    reader.readObjectFields[T](path, isSJCapture, fieldMembers) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult => //(allFound: Boolean, args: Array[Any], flags: Array[Boolean]) =>
         if (!objectFieldResult.allThere) {
@@ -90,7 +90,10 @@ case class CaseClassTypeAdapter[T](
             }
           }
         }
-        constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
+        if (isSJCapture)
+          asBuilt.asInstanceOf[SJCapture].captured = objectFieldResult.captured.get
+        asBuilt
     }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =

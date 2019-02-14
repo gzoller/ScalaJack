@@ -191,17 +191,21 @@ trait JsonWriter extends Writer[String] {
         }
       }
 
-      /*
-      value match {
+      t match {
         case sjc: SJCapture =>
+          val anyTA = context.typeAdapterOf[Any]
           sjc.captured.foreach {
-            case (memberName, valueString) =>
-              memberNameTypeAdapter.write(memberName, writer)
-              writer.writeRawValue(valueString.asInstanceOf[String])
+            case (memberName, capturedValue) =>
+              if (first)
+                first = false
+              else
+                out += ','
+              writeString(memberName, out)
+              out += ':'
+              anyTA.write(capturedValue, this, out, false)
           }
         case _ =>
       }
-      */
 
       out += '}'
     }

@@ -230,10 +230,11 @@ trait JsonReader extends Reader[String] {
     value
   }
 
-  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = {
+  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = {
     val value = tokens.get(p).tokenType match {
       case BeginObject =>
         var fieldCount = 0
+        var captured = if (isSJCapture) Map.empty[String, Any] else null
         p += 1
         val args = new Array[Any](fields.size)
         val flags = new Array[Boolean](fields.size)
@@ -257,13 +258,15 @@ trait JsonReader extends Reader[String] {
               args(oneField.index) = oneField.valueTypeAdapter.read(path \ key, this)
               flags(oneField.index) = true
               fieldCount += 1
+            case _ if (isSJCapture) =>
+              captured = captured.+((key, context.typeAdapterOf[Any].read(path \ key, this)))
             case _ =>
               p += 1
           }
         }
         if (tokens.get(p).tokenType != EndObject)
           throw new ReadUnexpectedError(path, s"Unterminated JSON object\n" + showError())
-        ObjectFieldResult(fieldCount == fields.size, args, flags)
+        ObjectFieldResult(fieldCount == fields.size, args, flags, Option(captured))
       case Null =>
         null
       case _ =>

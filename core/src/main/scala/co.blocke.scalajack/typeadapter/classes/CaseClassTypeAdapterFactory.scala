@@ -10,8 +10,6 @@ import scala.reflect.runtime.universe._
 import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 
-trait SJCapture
-
 object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -93,8 +91,8 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         classSymbol.name.toString(),
         typeMembers,
         orderdFieldMembers,
-        isSJCapture,
-        constructorMirror)
+        constructorMirror,
+        isSJCapture)
     } else {
       next.typeAdapterOf[T]
     }

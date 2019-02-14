@@ -8,6 +8,8 @@ import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
+class ValueBackedException(val value: Any, val throwable: Throwable) extends Exception(throwable.getMessage())
+
 object TryTypeAdapterFactory extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -18,12 +20,12 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
       case asTry =>
         val valueType :: Nil = asTry.typeArgs
         val valueTypeAdapter = context.typeAdapter(valueType)
-        TryTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
+        TryTypeAdapter(valueTypeAdapter, context.typeAdapterOf[Any]).asInstanceOf[TypeAdapter[T]]
     }
 
 }
 
-case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
+case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[Try[T]] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Try[T] = {
     reader.savePos()
@@ -33,13 +35,14 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapt
 
       case Failure(cause) =>
         reader.rollbackToSave()
-        throw new ReadMalformedError(path, s"Reading Try type failed\n" + reader.showError(), List.empty[String], cause)
+        Failure(new ValueBackedException(anyTypeAdapter.read(path, reader), cause))
     }
   }
 
   def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case Success(v) => valueTypeAdapter.write(v, writer, out, isMapKey)
-      case Failure(e) => throw e
+      case Success(v)                       => valueTypeAdapter.write(v, writer, out, isMapKey)
+      case Failure(e: ValueBackedException) => anyTypeAdapter.write(e.value, writer, out, isMapKey)
+      case Failure(e)                       => throw e
     }
 }

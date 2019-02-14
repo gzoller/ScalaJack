@@ -35,11 +35,12 @@ object Context {
     TypeTypeAdapterFactory,
     TypeParameterTypeAdapterFactory,
     OptionTypeAdapterFactory,
+    TryTypeAdapterFactory,
     TupleTypeAdapterFactory,
     EitherTypeAdapterFactory,
     EnumerationTypeAdapterFactory, // Either must precede SealedTraitTypeAdapter
 
-    // wARNING: These two must precede CaseClassTypeAdapter in this list or all
+    // WARNING: These two must precede CaseClassTypeAdapter in this list or all
     //     ValueClasses will be interpreted as case classes, and case objects
     //     will likewise be hidden (interpreted as regular classes).
     SealedTraitTypeAdapterFactory,
@@ -48,7 +49,6 @@ object Context {
     classes.CaseClassTypeAdapterFactory,
     classes.TraitTypeAdapterFactory,
     UUIDTypeAdapterFactory,
-    TryTypeAdapterFactory,
     AnyTypeAdapterFactory,
     JavaBigDecimalTypeAdapterFactory,
     JavaBigIntegerTypeAdapterFactory,

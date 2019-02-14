@@ -6,7 +6,7 @@ import util.Path
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.Map
 
-case class ObjectFieldResult(allThere: Boolean, objectArgs: Array[Any], fieldSet: Array[Boolean])
+case class ObjectFieldResult(allThere: Boolean, objectArgs: Array[Any], fieldSet: Array[Boolean], captured: Option[Map[String, Any]] = None)
 
 trait Reader[WIRE] {
 
@@ -32,7 +32,7 @@ trait Reader[WIRE] {
   def readInt(path: Path): Int
   def readLong(path: Path): Long
   def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
-  def readObjectFields[T](path: Path, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
+  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
   def readString(path: Path): String
   def readTuple(path: Path, readFns: List[(Path, Transceiver[WIRE]) => Any]): List[Any]
 
