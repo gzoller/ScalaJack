@@ -258,7 +258,8 @@ trait JsonReader extends Reader[String] {
             case _ if (isSJCapture) =>
               captured = captured.+((key, context.typeAdapterOf[Any].read(path \ key, this)))
             case _ =>
-              p += 1
+              // Skip over field not in class if we're not capturing
+              context.typeAdapterOf[Any].read(path \ key, this)
           }
         }
         if (tokens.get(p).tokenType != EndObject)

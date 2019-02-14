@@ -124,6 +124,8 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
 
   private val typeEntries = new ConcurrentHashMap[Type, TypeEntry]
 
+  def withFactory(factory: TypeAdapterFactory): Context = copy(factories = factories :+ factory)
+
   def typeAdapter(tpe: Type): TypeAdapter[_] = typeEntries.computeIfAbsent(tpe, TypeEntryFactory).typeAdapter
   //def typeAdapterOf[T: TypeTag]: TypeAdapter[T] = typeAdapter(implicitly[TypeTag[T]].tpe).asInstanceOf[TypeAdapter[T]]
   def typeAdapterOf[T](implicit valueTypeTag: TypeTag[T]): TypeAdapter[T] =
