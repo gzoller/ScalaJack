@@ -1,6 +1,7 @@
 package co.blocke.scalajack
 package model
 
+import co.blocke.scalajack.json.JsonTransciever
 import typeadapter._
 import util.Path
 
@@ -13,7 +14,13 @@ trait JackFlavor[WIRE] {
 
   def parse(wire: WIRE): Transceiver[WIRE]
 
-  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = context.typeAdapter(tt.tpe).read(Path.Root, parse(wire)).asInstanceOf[T]
+  def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = {
+    val p = parse(wire)
+    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    if (!p.isDone())
+      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError())
+    v
+  }
   //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE

@@ -71,10 +71,7 @@ trait JsonWriter extends Writer[String] {
       out += '}'
   }
 
-  def writeRawString(t: String, out: Builder[Any, String]): Unit = t match {
-    case null      => addString("null", out)
-    case s: String => addString(s, out)
-  }
+  def writeRawString(t: String, out: Builder[Any, String]): Unit = addString(t, out)
 
   def writeString(t: String, out: Builder[Any, String]): Unit = t match {
     case null => addString("null", out)

@@ -38,7 +38,9 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Either[L, R] = {
     reader.savePos()
     reader.peek() match {
-      case TokenType.Null => null
+      case TokenType.Null =>
+        reader.skip()
+        null
       case v =>
         Try(rightTypeAdapter.read(path, reader)) match {
           case Success(rightValue) =>

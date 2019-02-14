@@ -43,6 +43,8 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], anyTypeAdapter: T
     t match {
       case Success(v)                       => valueTypeAdapter.write(v, writer, out, isMapKey)
       case Failure(e: ValueBackedException) => anyTypeAdapter.write(e.value, writer, out, isMapKey)
+      // $COVERAGE-OFF$Can't test--never called, but compiler requires this case for match completeness
       case Failure(e)                       => throw e
+      // $COVERAGE-ON$
     }
 }

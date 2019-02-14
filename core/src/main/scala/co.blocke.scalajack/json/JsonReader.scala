@@ -36,34 +36,31 @@ trait JsonReader extends Reader[String] {
 
   def skip() = if (p < tokens.size()) p += 1
 
-  def isDone(): Boolean = p == tokens.size
+  def isDone(): Boolean = p == tokens.size - 1
+  //  def show(): String = "Tokens: " + tokens.size + "  P: " + p
 
   def lookAheadForField(fieldName: String): Option[String] = {
-    if (tokens.get(p).tokenType != BeginObject)
-      None
-    else {
-      p += 1
-      var done = tokens.get(p).tokenType == EndObject
-      var found: Option[String] = None
-      var first = true
-      while (p < tokens.size && !done) {
-        if (!first)
-          p += 1 // skip comma
-        first = false
-        val jt = tokens.get(p)
-        val js = json.substring(jt.begin, jt.end)
-        p += 2 // skip colon
-        if (js == fieldName) {
-          val jt2 = tokens.get(p)
-          found = Some(json.substring(jt2.begin, jt2.end))
-          done = true
-        } else if (p < tokens.size && tokens.get(p).tokenType == EndObject)
-          done = true
-        else
-          p += 1
-      }
-      found
+    p += 1
+    var done = tokens.get(p).tokenType == EndObject
+    var found: Option[String] = None
+    var first = true
+    while (p < tokens.size && !done) {
+      if (!first)
+        p += 1 // skip comma
+      first = false
+      val jt = tokens.get(p)
+      val js = json.substring(jt.begin, jt.end)
+      p += 2 // skip colon
+      if (js == fieldName) {
+        val jt2 = tokens.get(p)
+        found = Some(json.substring(jt2.begin, jt2.end))
+        done = true
+      } else if (p < tokens.size && tokens.get(p).tokenType == EndObject)
+        done = true
+      else
+        p += 1
     }
+    found
   }
 
   def cloneWithSource(source: String): Transceiver[String] = // used for Any parsing

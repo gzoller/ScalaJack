@@ -39,6 +39,13 @@ class PlugHoles() extends FunSpec with Matchers {
                   |------^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Any]](js) should have message msg
     }
+    it("Long json error") {
+      val js = """["a""In the dark night when the wolves roam wild did the little rabbit dispair of life itself."]"""
+      val msg = """[$[1]]: Expected comma here.
+                  |["a""In the dark night when the wolves roam wild did th
+                  |-----^""".stripMargin
+      the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[String]](js) should have message msg
+    }
   }
   it("JsonWriter") {
     val thing: List[BigInt] = List(BigInt(1), null, BigInt(2))
@@ -100,6 +107,13 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Options") {
       val js = """{"num":11}"""
       assertResult(Bogus(11, None, Some((5, true)))) { sj.read[Bogus](js) }
+    }
+    it("Extra chars in JSON") {
+      val js = """[1,2,3]]"""
+      val msg = """[$]: Extra input after read.
+                  |[1,2,3]]
+                  |-------^""".stripMargin
+      the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[List[Int]](js) should have message msg
     }
     it("Classes") {
       val msg = """[$]: Class Bogus missing field num

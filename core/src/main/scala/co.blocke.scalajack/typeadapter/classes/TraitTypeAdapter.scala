@@ -45,17 +45,20 @@ case class TraitTypeAdapter[T](
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     reader.savePos()
     val hintLabel = getHintLabel(reader)
-    if (reader.peek() == TokenType.Null) {
-      reader.skip()
-      null.asInstanceOf[T]
-    } else {
-      val concreteType =
-        reader.lookAheadForField(hintLabel)
-          .map(typeHint => hintModFn.map(th => Try(th.apply(typeHint)).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't materialize class for $typeHint\n" + reader.showError()))).getOrElse(typeTypeAdapter.read(path, reader)))
-          .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName\n" + reader.showError(), List(traitName)))
-      reader.rollbackToSave()
-      val populatedConcreteType = populateConcreteType(concreteType)
-      context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
+    reader.peek() match {
+      case TokenType.Null =>
+        reader.skip()
+        null.asInstanceOf[T]
+      case TokenType.BeginObject =>
+        val concreteType =
+          reader.lookAheadForField(hintLabel)
+            .map(typeHint => hintModFn.map(th => Try(th.apply(typeHint)).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't materialize class for $typeHint\n" + reader.showError()))).getOrElse(typeTypeAdapter.read(path, reader)))
+            .getOrElse(throw new ReadMissingError(path \ hintLabel, s"No type hint found for trait $traitName\n" + reader.showError(), List(traitName)))
+        reader.rollbackToSave()
+        val populatedConcreteType = populateConcreteType(concreteType)
+        context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
+      case t =>
+        throw new ReadUnexpectedError(path, "Expected start of an object but read token " + t, List.empty[String])
     }
   }
 
