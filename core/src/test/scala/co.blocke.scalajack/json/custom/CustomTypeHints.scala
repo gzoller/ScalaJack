@@ -53,7 +53,7 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"bogus":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}"""
         val msg = """[$.which]: No type hint found for trait co.blocke.scalajack.json.test.custom.Address
-                    |ity":"New York","state":"NY","postalCode":"39822"}
+                    |city":"New York","state":"NY","postalCode":"39822"}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[Address](js) should have message msg
       }
@@ -61,7 +61,7 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
         val msg = """[$.which]: No type hint found for trait co.blocke.scalajack.json.test.custom.Address
-                    |city":"New York","state":"NY","postalCode":"39822"}}
+                    |ity":"New York","state":"NY","postalCode":"39822"}}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[Address](js) should have message msg
       }
@@ -70,10 +70,10 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New
         |York","state":"NY","postalCode":"39822"}}""".stripMargin
         val msg = """[$.which]: No type hint found for trait co.blocke.scalajack.json.test.custom.Address
-                    |city":"New
+                    |ity":"New
                     |York","state":"NY","postalCode":"39822"}}
-                    |----------
-                    |---------------------------------------^""".stripMargin
+                    |---------
+                    |----------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[Address](js) should have message msg
       }
       it("Hint value after modification doesn't resolve to known class name") {

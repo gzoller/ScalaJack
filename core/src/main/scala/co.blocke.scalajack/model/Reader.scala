@@ -6,7 +6,12 @@ import util.Path
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.Map
 
-case class ObjectFieldResult(allThere: Boolean, objectArgs: Array[Any], fieldSet: Array[Boolean], captured: Option[Map[String, Any]] = None)
+case class ObjectFieldResult(
+    allThere:   Boolean, // True if all fields found (Ok to create object)
+    objectArgs: Array[Any], // Ordered arguments matching object constructor
+    fieldSet:   Array[Boolean], // Bit map of fields set in case any missing
+    captured:   Option[Map[String, Any]] = None // Captured fields if SJCapture
+)
 
 trait Reader[WIRE] {
 
@@ -18,7 +23,7 @@ trait Reader[WIRE] {
   def peek(): TokenType.Value
   def lastTokenText(): String
   def skip()
-  def lookAheadForField(fieldName: String): Option[String]
+  def lookAheadForTypeHint(fieldName: String, typeMaterializer: String => Type): Option[Type]
 
   def isDone(): Boolean
 

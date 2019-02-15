@@ -39,27 +39,51 @@ trait JsonReader extends Reader[String] {
   def isDone(): Boolean = p == tokens.size - 1
   //  def show(): String = "Tokens: " + tokens.size + "  P: " + p
 
-  def lookAheadForField(fieldName: String): Option[String] = {
+  // WARNING: Presumes we're in a JSON object!
+  def lookAheadForTypeHint(fieldName: String, typeMaterializer: String => Type): Option[Type] = {
+    savePos()
+    var objStack = 0
+    var arrayStack = 0
     p += 1
     var done = tokens.get(p).tokenType == EndObject
-    var found: Option[String] = None
-    var first = true
+    var found: Option[Type] = None
     while (p < tokens.size && !done) {
-      if (!first)
-        p += 1 // skip comma
-      first = false
-      val jt = tokens.get(p)
-      val js = json.substring(jt.begin, jt.end)
-      p += 2 // skip colon
-      if (js == fieldName) {
-        val jt2 = tokens.get(p)
-        found = Some(json.substring(jt2.begin, jt2.end))
-        done = true
-      } else if (p < tokens.size && tokens.get(p).tokenType == EndObject)
-        done = true
-      else
-        p += 1
+      tokens.get(p).tokenType match {
+        case TokenType.String if (objStack == 0 && arrayStack == 0) =>
+          val jt = tokens.get(p)
+          val js = json.substring(jt.begin, jt.end)
+          if (js == fieldName) {
+            p += 2
+            done = true
+            tokens.get(p).tokenType match {
+              case TokenType.String =>
+                val jt2 = tokens.get(p)
+                val hintString = json.substring(jt2.begin, jt2.end)
+                found = Some(typeMaterializer(hintString))
+              case _ => p -= 1 // do nothing
+            }
+          } else if (tokens.get(p + 2).tokenType == TokenType.String)
+            p += 2 // skip colon + string value if not what we're looking for
+          else
+            p += 1 // skip colon
+        case TokenType.BeginObject =>
+          objStack += 1
+        case TokenType.BeginArray =>
+          arrayStack += 1
+        case TokenType.EndArray =>
+          arrayStack -= 1
+        case TokenType.EndObject =>
+          if (objStack == 0) {
+            p -= 1
+            done = true
+          } else
+            objStack -= 1
+        case _ =>
+      }
+      p += 1
     }
+    if (found.isDefined)
+      rollbackToSave()
     found
   }
 

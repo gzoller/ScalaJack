@@ -33,15 +33,12 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
       case BeginObject => // Could be Class/Trait or Map
-        reader.savePos()
-        reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
-          case Some(_) => // type hint found... this is a Class/Trait
-            val concreteType = typeTypeAdapter.read(path, reader)
-            reader.rollbackToSave()
+        reader.lookAheadForTypeHint(reader.jackFlavor.defaultHint, (s: String) => typeTypeAdapter.read(path, reader)) match {
+          case Some(concreteType) => // type hint found... this is a Class/Trait
             reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
 
           case None => // no hint found... treat as a Map
-            reader.rollbackToSave()
+            reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
             val raw = reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
             // We need to check the keys for raw in case they're an embedded list or object.  If not--just return raw
             raw.map {

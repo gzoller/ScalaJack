@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 
 import co.blocke.scalajack.typeadapter.OptionTypeAdapter
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe._
 
@@ -85,12 +85,11 @@ object ClassHelper {
 
   trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
     val className: String
-    val typeMembers: List[TypeMember[C]]
-    val fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[C, Any]]
-    //    val fieldMembers: List[FieldMember[C]]
+    val typeMembersByName: Map[String, ClassHelper.TypeMember[C]]
+    val fieldMembersByName: ListMap[String, ClassHelper.ClassFieldMember[C, Any]]
     val collectionName: Option[String]
-    def dbKeys: List[FieldMember[C]] = fieldMembers.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-    def members = typeMembers ++ fieldMembers.values
+    def dbKeys: List[FieldMember[C]] = fieldMembersByName.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+    def members = typeMembersByName.values ++ fieldMembersByName.values
   }
 
   case class ExtraFieldValue[T](
