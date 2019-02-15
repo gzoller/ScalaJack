@@ -15,7 +15,12 @@ object ClassHelper {
     def name: String
   }
 
-  case class TypeMember[Owner](name: MemberName, typeSignature: Type, baseType: Type) extends Member[Owner]
+  case class TypeMember[Owner](
+      name:                MemberName, // name of the type
+      typeSignature:       Type, // signature (i.e. the generic letter 'T', e.g. Foo[T]
+      baseType:            Type, // defined type (likely a trait)
+      runtimeConcreteType: Option[Type] = None // inferred concrete type reflecting on actual class (or materialized from input)
+  ) extends Member[Owner]
 
   trait FieldMember[Owner] extends Member[Owner] {
 

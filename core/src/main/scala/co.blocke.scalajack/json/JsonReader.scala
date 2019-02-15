@@ -6,7 +6,7 @@ import model.TokenType._
 import util.Path
 
 import scala.util.{ Try, Success, Failure }
-import scala.collection.immutable.Map
+import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.generic.CanBuildFrom
 import java.util.ArrayList
 
@@ -251,7 +251,7 @@ trait JsonReader extends Reader[String] {
     value
   }
 
-  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: Map[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = {
+  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult = {
     val value = tokens.get(p).tokenType match {
       case BeginObject =>
         var fieldCount = 0

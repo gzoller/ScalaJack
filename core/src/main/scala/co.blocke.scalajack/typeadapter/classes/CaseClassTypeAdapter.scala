@@ -7,8 +7,7 @@ import model._
 
 import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.mutable.Builder
-import scala.util.Try
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, NoType, Symbol, TermName, Type, TypeTag, appliedType, typeOf }
+import scala.reflect.runtime.universe.{ MethodMirror, Type, TypeTag }
 
 case class CaseClassTypeAdapter[T](
     className:          String,
@@ -25,59 +24,34 @@ case class CaseClassTypeAdapter[T](
   // OK, so all this hokem is to figure out what to do for embedded type member (i.e. externalized type hint feature).  Doesn't seem to be needed
   // for anything else.
   //  private def inferConcreteCaseClassTypeAdapter[WIRE](path: Path, reader: Transceiver[WIRE]): Option[TypeAdapter[_ <: T]] = {
-  private def inferConcreteCaseClassTypeAdapter(): Option[TypeAdapter[_ <: T]] = {
-    println("TMemb: " + typeMembersByName)
-    None
-    //    if (typeMembers.isEmpty) {
-    //      None
-    //    } else {
-    //      import scala.collection.mutable
-    //      val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
-    //
-    //      typeMembers.foreach { typeMember =>
-    //        val fieldName = typeMember.name.toString
+  private def inferConcreteCaseClassTypeAdapter[WIRE](path: Path, reader: Transceiver[WIRE]): ListMap[String, ClassHelper.ClassFieldMember[T, Any]] = {
+    if (typeMembersByName.isEmpty) {
+      fieldMembersByName
+    } else {
+      // If type members are defined --> externalized trait concrete type
+      // Create a mapping of type label, e.g. 'T', to TypeMember where we've resolved the type member's value into a Type
+      val concrete = typeMembersByName.map { case (name, tm) => (tm.typeSignature.toString, tm.copy(runtimeConcreteType = reader.lookAheadForTypeHint(name, (s: String) => typeTypeAdapter.read(path, reader)))) }
 
-    /*
-        for (oneMember <- typeMembersByName.get(fieldName)) {
-          val actualType: Type = Try(typeTypeAdapter.read(path \ fieldName, reader)).getOrElse(typeMember.baseType)
-
-          // Solve for each type parameter
-          for (typeParam <- caseClassType.typeConstructor.typeParams) {
-            val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-              haystackBeforeSubstitution = typeMember.typeSignature,
-              haystackAfterSubstitution  = actualType,
-              needleBeforeSubstitution   = typeParam.asType.toType)
-
-            for (typeArg <- optionalTypeArg) {
-              setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
-            }
+      // Now buzz through known field members and replaces all the 'T' type with the concrete type and insert the correct concrete TypeAdapter
+      fieldMembersByName.map {
+        case (name, field) =>
+          val findConcrete = concrete.get(field.declaredValueType.toString) match {
+            case Some(c) => field.copy(
+              valueTypeAdapter  = context.typeAdapter(c.runtimeConcreteType.get),
+              declaredValueType = c.runtimeConcreteType.get
+            ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
+            case None => field
           }
-        }
+          (name, findConcrete) //.map(actual => field.copy(declaredValueType = actual.runtimeConcreteType.get)).getOrElse(field))
       }
-        */
-
-    //          val typeArgs = for (typeParam <- caseClassType.typeConstructor.typeParams) yield {
-    //            val possibleTypeArgs = setsOfTypeArgsByTypeParam(typeParam).toList
-    //            val typeArg :: Nil = possibleTypeArgs
-    //            typeArg
-    //          }
-
-    //          val concreteType = appliedType(caseClassType.typeConstructor, typeArgs)
-    //
-    //          if (concreteType =:= tt.tpe)
-    //            None // YAY! BUSINESS AS USUAL
-    //          else
-    //            Some(context.typeAdapter(concreteType).asInstanceOf[TypeAdapter[_ <: T]])
-
-    //      None
-    //    }
+    }
   }
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T =
-    reader.readObjectFields[T](path, isSJCapture, fieldMembersByName) match {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+    val fixed = inferConcreteCaseClassTypeAdapter(path, reader)
+    reader.readObjectFields[T](path, isSJCapture, fixed) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult =>
-        inferConcreteCaseClassTypeAdapter()
         if (!objectFieldResult.allThere) {
           val fieldArray = fieldMembersByName.values.toArray
           for (p <- 0 to fieldArray.size - 1) {
@@ -95,6 +69,7 @@ case class CaseClassTypeAdapter[T](
           asBuilt.asInstanceOf[SJCapture].captured = objectFieldResult.captured.get
         asBuilt
     }
+  }
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     writer.writeObject(t, fieldMembersByName, out)

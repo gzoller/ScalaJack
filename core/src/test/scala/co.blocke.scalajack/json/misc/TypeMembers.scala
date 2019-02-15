@@ -30,25 +30,17 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   describe("-----------------------------\n:  Externalized Type Tests  :\n-----------------------------") {
     it("Read and match") {
-      //      val json = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
-      val json = """{"id":"ABC","body":{"stuff":[1,2,3],"_hint":"co.blocke.scalajack.json.misc.AnyBody"}}"""
-      try {
+      val json = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
+      val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
+      assertResult((expected, 1)) {
         val x = sj.read[Envelope[Body]](json)
-        println(x)
-      } catch {
-        case t: Throwable => println("Boom! " + t.getMessage())
+        // Test match functionality
+        val num = x.body match {
+          case _: FancyBody => 1
+          case _            => 2
+        }
+        (x, num)
       }
-
-      //      val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
-      //      assertResult((expected, 1)) {
-      //        val x = sj.read[Envelope[Body]](json)
-      //        // Test match functionality
-      //        val num = x.body match {
-      //          case _: FancyBody => 1
-      //          case _            => 2
-      //        }
-      //        (x, num)
-      //      }
     }
     /*
     it("Write") {

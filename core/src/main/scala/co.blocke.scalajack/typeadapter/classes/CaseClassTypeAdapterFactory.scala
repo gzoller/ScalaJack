@@ -27,8 +27,9 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
       val tm = tt.tpe.members.filter(_.isType).toList
       val classTypeParamMap = tt.tpe.typeSymbol.asClass.typeParams.zip(tt.tpe.typeArgs).toMap
-      val typeMembers = tm map { m =>
-        ClassHelper.TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
+      val typeMembers = tm collect {
+        case m if !m.typeSignature.typeSymbol.isClass => // Ignore any user-set type declarations that aren't class parameters, e.g. type Foo = Int
+          ClassHelper.TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
       }
 
       val params1 = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten
