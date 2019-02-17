@@ -7,7 +7,7 @@ import model._
 
 import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.mutable.Builder
-import scala.reflect.runtime.universe.{ MethodMirror, Type, TypeTag }
+import scala.reflect.runtime.universe._ //{ MethodMirror, Type, TypeTag }
 
 case class CaseClassTypeAdapter[T](
     className:          String,
@@ -21,9 +21,29 @@ case class CaseClassTypeAdapter[T](
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys[AST](fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
 
+  // If the given field f is involved with type member parameter T then create a new wrapped type over the now-known concrete type for T.
+  // For example if the f is Option[T] and we know T is Foo, then create Type Option[Foo] and update f with the new type and
+  // appropriate TypeAdapter for Option[Foo].
+  private def wrap1Type[T](f: ClassHelper.ClassFieldMember[T,Any], typeHit: Option[ClassHelper.TypeMember[Nothing]]): ClassHelper.ClassFieldMember[T,Any] =
+    typeHit match {
+      case Some(hit) =>
+        val mirror = runtimeMirror(ClassLoader.getSystemClassLoader)
+        // from Scala tutorial...not recommended due to use of internals, but...
+        val optionType = mirror.universe.internal.typeRef(
+          definitions.PredefModule.typeSignature,
+          f.valueType.typeSymbol,
+          List(hit.runtimeConcreteType.get)
+        )
+        f.copy(
+          declaredValueType = optionType,
+          valueTypeAdapter = context.typeAdapter(optionType),
+        ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
+      case None =>
+        f
+    }
+
   // OK, so all this hokem is to figure out what to do for embedded type member (i.e. externalized type hint feature).  Doesn't seem to be needed
   // for anything else.
-  //  private def inferConcreteCaseClassTypeAdapter[WIRE](path: Path, reader: Transceiver[WIRE]): Option[TypeAdapter[_ <: T]] = {
   private def inferConcreteCaseClassTypeAdapter[WIRE](path: Path, reader: Transceiver[WIRE]): ListMap[String, ClassHelper.ClassFieldMember[T, Any]] = {
     if (typeMembersByName.isEmpty) {
       fieldMembersByName
@@ -32,15 +52,29 @@ case class CaseClassTypeAdapter[T](
       // Create a mapping of type label, e.g. 'T', to TypeMember where we've resolved the type member's value into a Type
       val concrete = typeMembersByName.map { case (name, tm) => (tm.typeSignature.toString, tm.copy(runtimeConcreteType = reader.lookAheadForTypeHint(name, (s: String) => typeTypeAdapter.read(path, reader)))) }
 
-      // Now buzz through known field members and replaces all the 'T' type with the concrete type and insert the correct concrete TypeAdapter
+      // Now buzz through known field members and replaces all the 'T' type with the concrete type and insert the correct concrete TypeAdapter.
       fieldMembersByName.map {
         case (name, field) =>
-          val findConcrete = concrete.get(field.declaredValueType.toString) match {
-            case Some(c) => field.copy(
-              valueTypeAdapter  = context.typeAdapter(c.runtimeConcreteType.get),
-              declaredValueType = c.runtimeConcreteType.get
-            ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
-            case None => field
+          val findDirect = concrete.get(field.declaredValueType.toString) match {
+            case Some(c) =>
+              field.copy(
+                valueTypeAdapter  = context.typeAdapter(c.runtimeConcreteType.get),
+                declaredValueType = c.runtimeConcreteType.get
+              ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
+            case None =>
+              field
+          }
+
+          // Also handle any Try[T], Other[T], Either[T,T], CanBuildFrom[T]
+          val findConcrete = field.valueTypeAdapter.asInstanceOf[TypeAdapter[_]] match {
+            case _: OptionTypeAdapter[_] =>
+              wrap1Type(field, concrete.get(field.declaredValueType.typeArgs(0).toString))
+            case _: CanBuildFromTypeAdapter[_,_] =>
+              wrap1Type(field, concrete.get(field.declaredValueType.typeArgs(0).toString))
+            case _: TryTypeAdapter[_] =>
+              wrap1Type(field, concrete.get(field.declaredValueType.typeArgs(0).toString))
+            case _ =>
+              findDirect
           }
           (name, findConcrete) //.map(actual => field.copy(declaredValueType = actual.runtimeConcreteType.get)).getOrElse(field))
       }
@@ -83,75 +117,3 @@ case class CaseClassTypeAdapter[T](
     writer.writeObject(t, fieldMembersByName, out, extra)
   }
 }
-
-/*
-  ast match {
-    case AstObject(astKV) =>
-      val astFieldMap = handleDBKeys(path, astKV, fieldMembersByName).toMap
-      val constructorArguments: Array[Any] = fieldMembersByName.map { constructorField =>
-        astFieldMap.get(constructorField.name.toString)
-          .map(fieldAst => constructorField.valueTypeAdapter.read(path \ constructorField.name.toString, fieldAst))
-          .getOrElse(if (constructorField.isOptional) None else constructorField.defaultValue.getOrElse(throw new Exception("Boom")))
-      }
-      constructorMirror.apply(constructorArguments: _*).asInstanceOf[T]
-      */
-
-/*
-      val readResultsByField: mutable.Map[ClassHelper.FieldMember[T], Any] = new mutable.HashMap[ClassHelper.FieldMember[T], Any]
-
-      inferConcreteCaseClassTypeAdapter(path, postDBKey) match {
-        case Some(inferredCaseClassTypeAdapter) =>
-          inferredCaseClassTypeAdapter.read(path, ast)
-
-        case None =>
-          val irobj @ AstObject(fields) = postDBKey
-
-          // First the easy stuff... pick up the known fields we find in the AST
-          fields.foreach {
-            case (fieldName, fieldValueAST) =>
-              for (fieldMember <- fieldMembersByNameByName.get(fieldName)) {
-                readResultsByField(fieldMember) = fieldMember.valueTypeAdapter.read(path \ fieldName, fieldValueAST)
-              }
-          }
-
-          // Missing fields in AST... let's go deeper...
-          for (fieldMember <- fieldMembersByName if !readResultsByField.contains(fieldMember))
-            // Substitute any specified default values
-            readResultsByField(fieldMember) = fieldMember.defaultValue.getOrElse {
-              try {
-                fieldMember.valueTypeAdapter.readFromNothing(path \ fieldMember.name)
-              } catch {
-                case t: Throwable => throw new ReadException(path \ fieldMember.name, "Missing required field " + fieldMember.name)
-              }
-            }
-
-          // Now build the object by calling the constructor
-          val constructorArguments: Array[Any] = fieldMembersByName.map(fieldMember => readResultsByField(fieldMember)).toArray
-          val instanceOfCaseClass = constructorMirror.apply(constructorArguments: _*).asInstanceOf[T]
-
-          /*
-            if (isSJCapture) {
-              val partitionedFields = ops.partitionObject(irobj, (name, _) => fieldMembersByNameByName.keySet.contains(name))
-              val captured = partitionedFields._2.asInstanceOf[ops.ObjectType] // fields not in class we need to save
-
-              val aux = ops.asInstanceOf[Ops.Aux[IR, WIRE, ops.ObjectType]]
-              instanceOfCaseClass.asInstanceOf[SJCapture].captured = Some(IRAndOps[IR, WIRE, ops.ObjectType](captured)(aux))
-            }
-            */
-          instanceOfCaseClass
-        }
-
-    case AstNull() =>
-      null.asInstanceOf[T]
-
-    //      case AstString(s) if (g.isMapKey) =>
-    //        this.read(path, g.flavor.parse(s.asInstanceOf[g.flavor.WIRE_TYPE]).asInstanceOf[AST])(ops, g.copy(isMapKey = false))
-
-    case _ =>
-      throw new ReadException(path, s"Expected a JSON object, not $ast")
-  }
-
-  //  override def write[AST](t: T)(implicit ops: Ops[AST], g: SerializationGuidance): AST =
-  //    throw new Exception("Write BOOM!")
-}
-  */

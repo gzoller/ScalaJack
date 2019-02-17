@@ -42,14 +42,16 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         (x, num)
       }
     }
-    /*
     it("Write") {
       val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
       val expected = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
+      // TODO: Properly handle external type hint writes!
+      println(sj.render[Envelope[Body]](value))
       assertResult(expected) {
         sj.render[Envelope[Body]](value)
       }
     }
+    /*
     it("Wrapped") {
       val inst = Bigger(25, Envelope("abc", FancyBody("msg here")))
       val js = sj.render(inst)
