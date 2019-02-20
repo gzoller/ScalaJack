@@ -338,10 +338,10 @@ class ValueClassKeys() extends FunSpec with Matchers {
       }
       it("Bad Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-        val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-                    |int":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.
+        val msg = """[$.m.(map key)._hint]: Couldn't materialize class for trait co.blocke.scalajack.json.test.mapkeys.Pet hint _hint
+                    |t":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33
                     |--------------------------------------------------^""".stripMargin
-        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleVCTrait](js) should have message msg
+        the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleVCTrait](js) should have message msg
       }
       it("Bad Parameterized Case Class Key") {
         val js = """{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}"""
@@ -352,10 +352,10 @@ class ValueClassKeys() extends FunSpec with Matchers {
       }
       it("Bad Parameterized Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ZThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":6,"b":"zoom"}}}"""
-        val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.ZThing"
-                    |nt":"co.blocke.scalajack.json.test.mapkeys.ZThing","a":5,"b":"wow"}
+        val msg = """[$.m.(map key)._hint]: Couldn't materialize class for trait co.blocke.scalajack.json.test.mapkeys.Thing hint _hint
+                    |":"co.blocke.scalajack.json.test.mapkeys.ZThing","a":5,"b":"wow"}
                     |--------------------------------------------------^""".stripMargin
-        the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
+        the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
       }
       it("Bad Option Key") {
         val js = """{"m":{"true":"there"}}"""

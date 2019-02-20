@@ -113,58 +113,6 @@ trait JsonWriter extends Writer[String] {
       addString("null", out)
     } else {
       out += '{'
-
-      /*
-      if (typeMembers.nonEmpty) {
-        import scala.collection.mutable
-
-        val setsOfTypeArgsByTypeParam = new mutable.HashMap[Symbol, mutable.HashSet[Type]]
-
-        for (fieldMember <- fieldMembers) {
-          val fieldValue = fieldMember.valueIn(value)
-          val declaredFieldValueType = fieldMember.declaredValueType
-          val actualFieldValueType = Reflection.inferTypeOf(fieldValue)(fieldMember.valueTypeTag)
-
-          for (typeParam <- tpe.typeConstructor.typeParams) {
-            for (typeMember <- typeMembers) {
-              val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-                haystackBeforeSubstitution = declaredFieldValueType,
-                haystackAfterSubstitution  = actualFieldValueType,
-                needleBeforeSubstitution   = typeParam.asType.toType)
-
-              for (typeArg <- optionalTypeArg) {
-                setsOfTypeArgsByTypeParam.getOrElseUpdate(typeParam, new mutable.HashSet[Type]) += typeArg
-              }
-            }
-          }
-        }
-
-        val substitutions: List[(Symbol, Type)] = (for ((typeParam, setOfTypes) <- setsOfTypeArgsByTypeParam) yield {
-          typeParam -> universe.lub(setOfTypes.toList)
-        }).toList
-
-        val substitutionMap = substitutions.toMap
-
-        val typeParams = tpe.typeConstructor.typeParams
-        val typeArgs = typeParams.map(typeParam => substitutionMap(typeParam))
-
-        for (typeMember <- typeMembers) {
-          val ttt = typeMember.typeSignature.substituteTypes(substitutions.map(_._1), substitutions.map(_._2))
-          memberNameTypeAdapter.write(typeMember.name, writer)
-          typeTypeAdapter.write(ttt, writer)
-        }
-
-        val newType = appliedType(tpe.typeConstructor, typeArgs)
-        val newTypeAdapter = context.typeAdapter(newType).asInstanceOf[ClassLikeTypeAdapter[T]]
-
-        for (member <- newTypeAdapter.fieldMembers) {
-          val memberValue = member.valueIn(value)
-
-          memberNameTypeAdapter.write(member.name, writer)
-          member.writeValue(memberValue, writer)
-        }
-      } else {
-      */
       var first = true
       for ((label, extraVal) <- extras) {
         if (first)

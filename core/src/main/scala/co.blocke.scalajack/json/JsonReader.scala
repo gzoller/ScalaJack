@@ -59,7 +59,7 @@ trait JsonReader extends Reader[String] {
               case TokenType.String =>
                 val jt2 = tokens.get(p)
                 val hintString = json.substring(jt2.begin, jt2.end)
-                found = Some(typeMaterializer(hintString))
+                found = Try(typeMaterializer(hintString)).toOption
               case _ => p -= 1 // do nothing
             }
           } else if (tokens.get(p + 2).tokenType == TokenType.String)

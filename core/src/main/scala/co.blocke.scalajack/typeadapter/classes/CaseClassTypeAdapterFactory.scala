@@ -92,7 +92,6 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         classSymbol.name.toString(),
         typeMembers.map(typeMember => typeMember.name -> typeMember).toMap,
         orderdFieldMembers,
-        context.typeAdapterOf[Type],
         constructorMirror,
         isSJCapture)
     } else {

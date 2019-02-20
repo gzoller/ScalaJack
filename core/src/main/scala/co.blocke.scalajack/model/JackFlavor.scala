@@ -30,6 +30,7 @@ trait JackFlavor[WIRE] {
   val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier]
+  val typeValueModifier: Option[HintValueModifier] = None
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
   val permissivesOk: Boolean = false
   val enumsAsInt: Boolean = false
@@ -42,14 +43,17 @@ trait JackFlavor[WIRE] {
   def withDefaultHint(hint: String): JackFlavor[WIRE]
   def withHints(h: (Type, String)*): JackFlavor[WIRE]
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[WIRE]
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[WIRE]
   def parseOrElse(poe: (Type, Type)*): JackFlavor[WIRE]
   def allowPermissivePrimitives(): JackFlavor[WIRE]
   def enumsAsInts(): JackFlavor[WIRE]
 
   val context: Context = bakeContext()
 
-  // This is so pervasively handy, let's just pre-stage it for easy access
+  // These is so pervasively handy, let's just pre-stage it for easy access
   val stringTypeAdapter = context.typeAdapterOf[String]
+  val typeTypeAdapter = context.typeAdapterOf[Type]
+  val anyTypeAdapter = context.typeAdapterOf[Any]
 
   // Look up any custom hint label for given type, and if none then use default
   def getHintLabelFor(tpe: Type) =
@@ -157,7 +161,7 @@ trait JackFlavor[WIRE] {
             if (typeTag.tpe =:= attemptedType) {
               val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
               val secondary = fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]]
-              FallbackTypeAdapter[T, T](primary, secondary)
+              FallbackTypeAdapter[T, T](Some(primary), secondary)
             } else {
               next.typeAdapterOf[T]
             }

@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json.misc
 
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import model._
 
 import scala.reflect.runtime.universe.typeOf
 
@@ -44,33 +45,32 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     it("Write") {
       val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
-      val expected = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
-      // TODO: Properly handle external type hint writes!
-      println(sj.render[Envelope[Body]](value))
+      val expected = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
       assertResult(expected) {
         sj.render[Envelope[Body]](value)
       }
     }
-    /*
     it("Wrapped") {
       val inst = Bigger(25, Envelope("abc", FancyBody("msg here")))
       val js = sj.render(inst)
-      assertResult("""{"foo":25,"env":{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"abc","body":{"message":"msg here"}}}""") { js }
+      assertResult("""{"foo":25,"env":{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"abc","body":{"message":"msg here"}}}""") { js }
       assertResult(inst) {
         sj.read[Bigger](js)
       }
     }
     it("Type modifier works") {
-      val sjm = ScalaJack().withTypeModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.test.misc." + hint, (cname: String) => cname.split('.').last))
+      val sjm = ScalaJack().withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
       val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
       val js = sjm.render[Envelope[Body]](value)
-      assertResult("""{"Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"}}""") { js }
+      assertResult("""{"Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"}}""") {
+        js
+      }
       assertResult(value) {
         sjm.read[Envelope[Body]](js)
       }
     }
     it("Handles mutliple externalized types (bonus: with modifier)") {
-      val sjm = ScalaJack().withTypeModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.test.misc." + hint, (cname: String) => cname.split('.').last))
+      val sjm = ScalaJack().withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
       val value: BigEnvelope[Body, Hobby] = BigEnvelope("DEF", FancyBody("BOO"), InsideHobby("stamps"))
       val js = sjm.render[BigEnvelope[Body, Hobby]](value)
       assertResult("""{"Hippo":"InsideHobby","Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"},"hobby":{"desc":"stamps"}}""") { js }
@@ -78,20 +78,19 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         sjm.read[BigEnvelope[Body, Hobby]](js)
       }
     }
-    it("In case we need TypeTags") {
-      val json = """{"Giraffe":"co.blocke.scalajack.json.test.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
+    it("In case we need to use TypeTags vs a type [T] for read") {
+      val json = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"ABC","body":{"message":"Hello"}}"""
       val expected: Envelope[Body] = Envelope("ABC", FancyBody("Hello"))
       assertResult(expected) {
-        sj.read[Envelope[Body]](json)(TypeTags.of(typeOf[Envelope[Body]]))
+        sj.read(json)(TypeTags.of(typeOf[Envelope[Body]]))
       }
     }
     it("Works with ParseOrElse") {
-      val js = """{"Giraffe":"co.blocke.scalajack.json.test.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
+      val js = """{"Giraffe":"co.blocke.scalajack.json.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
       val expected: Envelope[Body] = Envelope("DEF", DefaultBody("BOO"))
       assertResult(expected) {
         sj2.read[Envelope[Body]](js)
       }
     }
-    */
   }
 }
