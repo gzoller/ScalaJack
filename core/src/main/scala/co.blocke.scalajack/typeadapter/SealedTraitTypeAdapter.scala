@@ -70,9 +70,9 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
                 a.memberNames.subsetOf(b.memberNames) || b.memberNames.subsetOf(a.memberNames)
             }
 
-            if (someSubclassesAreAmbiguous)
+            if (someSubclassesAreAmbiguous) {
               next.typeAdapterOf[T]
-            else {
+            } else {
               val impls: Set[SealedImplementation[T]] = subclasses.map { subclass =>
                 new SealedImplementation[T] {
                   private val runtimeClass: RuntimeClass = subclass.subclassClass
@@ -148,7 +148,7 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
       case null => writer.writeString(null, out)
       case _ =>
         implementations.find(_.isInstance(t)) match {
-          case Some(implementation) => ??? // Write a map of name/value here??? implementation.typeAdapter.write(t, writer)(out)
+          case Some(implementation) => implementation.typeAdapter.write(t, writer, out, isMapKey)
           case None                 => throw new Exception("Boom... Given object 't' doesn't seem to be a sealed trait here.")
         }
     }
