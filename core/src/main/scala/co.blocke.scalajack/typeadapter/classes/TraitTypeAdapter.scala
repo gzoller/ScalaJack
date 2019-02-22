@@ -8,7 +8,6 @@ import util._
 import scala.collection.mutable
 import scala.collection.mutable.Builder
 import scala.reflect.runtime.currentMirror
-import scala.util.Try
 
 // This should come *after* SealedTraitTypeAdapter in the Context factory list, as all sealed traits are
 // also traits, and this factory would pick them all up, hiding the sealed ones.
@@ -27,7 +26,6 @@ case class TraitTypeAdapter[T](
     polymorphicType: Type)(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
 
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
-  private val typeTypeAdapter = context.typeAdapterOf[Type]
   private var hintLabel: Option[String] = None
 
   private def populateConcreteType(concreteType: Type): Type =
@@ -52,7 +50,7 @@ case class TraitTypeAdapter[T](
         val concreteType =
           reader.lookAheadForTypeHint(hintLabel, (hintString: String) =>
             hintModFn.map(th => th.apply(hintString))
-              .getOrElse(typeTypeAdapter.read(path, reader))
+              .getOrElse(reader.jackFlavor.typeTypeAdapter.read(path, reader))
           ).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't materialize class for trait $traitName hint $hintLabel\n" + reader.showError()))
         val populatedConcreteType = populateConcreteType(concreteType)
         context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]

@@ -20,12 +20,12 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
       case asTry =>
         val valueType :: Nil = asTry.typeArgs
         val valueTypeAdapter = context.typeAdapter(valueType)
-        TryTypeAdapter(valueTypeAdapter, context.typeAdapterOf[Any]).asInstanceOf[TypeAdapter[T]]
+        TryTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
     }
 
 }
 
-case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[Try[T]] {
+case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Try[T] = {
     reader.savePos()
@@ -35,14 +35,14 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], anyTypeAdapter: T
 
       case Failure(cause) =>
         reader.rollbackToSave()
-        Failure(new ValueBackedException(anyTypeAdapter.read(path, reader), cause))
+        Failure(new ValueBackedException(reader.jackFlavor.anyTypeAdapter.read(path, reader), cause))
     }
   }
 
   def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
     t match {
       case Success(v)                       => valueTypeAdapter.write(v, writer, out, isMapKey)
-      case Failure(e: ValueBackedException) => anyTypeAdapter.write(e.value, writer, out, isMapKey)
+      case Failure(e: ValueBackedException) => writer.jackFlavor.anyTypeAdapter.write(e.value, writer, out, isMapKey)
       // $COVERAGE-OFF$Can't test--never called, but compiler requires this case for match completeness
       case Failure(e)                       => throw e
       // $COVERAGE-ON$

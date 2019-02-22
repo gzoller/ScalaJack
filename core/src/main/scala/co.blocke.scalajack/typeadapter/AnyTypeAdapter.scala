@@ -21,7 +21,6 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
 
   var jackFlavor: JackFlavor[_] = null
 
-  private lazy val typeTypeAdapter: TypeAdapter[Type] = jackFlavor.context.typeAdapterOf[Type]
   private lazy val classMapTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
   private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
@@ -33,7 +32,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
       case BeginObject => // Could be Class/Trait or Map
-        reader.lookAheadForTypeHint(reader.jackFlavor.defaultHint, (s: String) => typeTypeAdapter.read(path, reader)) match {
+        reader.lookAheadForTypeHint(reader.jackFlavor.defaultHint, (s: String) => this.jackFlavor.typeTypeAdapter.read(path, reader)) match {
           case Some(concreteType) => // type hint found... this is a Class/Trait
             reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
 

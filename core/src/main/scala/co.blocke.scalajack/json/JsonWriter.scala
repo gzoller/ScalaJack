@@ -138,7 +138,6 @@ trait JsonWriter extends Writer[String] {
 
       t match {
         case sjc: SJCapture =>
-          val anyTA = context.typeAdapterOf[Any]
           sjc.captured.foreach {
             case (memberName, capturedValue) =>
               if (first)
@@ -147,7 +146,7 @@ trait JsonWriter extends Writer[String] {
                 out += ','
               writeString(memberName, out)
               out += ':'
-              anyTA.write(capturedValue, this, out, false)
+              this.jackFlavor.anyTypeAdapter.write(capturedValue, this, out, false)
           }
         case _ =>
       }

@@ -6,9 +6,6 @@ import util._
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 import org.scalatest.Matchers._
 
-import scala.reflect.runtime.universe.typeOf
-import typeadapter.classes.CaseClassTypeAdapter
-
 class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()

@@ -10,7 +10,7 @@ trait FlavorMaker {
   def make(): JackFlavor[WIRE]
 }
 
-trait JackFlavor[WIRE] {
+trait JackFlavor[WIRE] extends ViewSplice {
 
   def parse(wire: WIRE): Transceiver[WIRE]
 
@@ -51,9 +51,9 @@ trait JackFlavor[WIRE] {
   val context: Context = bakeContext()
 
   // These is so pervasively handy, let's just pre-stage it for easy access
-  val stringTypeAdapter = context.typeAdapterOf[String]
-  val typeTypeAdapter = context.typeAdapterOf[Type]
-  val anyTypeAdapter = context.typeAdapterOf[Any]
+  lazy val stringTypeAdapter = context.typeAdapterOf[String]
+  lazy val typeTypeAdapter = context.typeAdapterOf[Type]
+  lazy val anyTypeAdapter = context.typeAdapterOf[Any]
 
   // Look up any custom hint label for given type, and if none then use default
   def getHintLabelFor(tpe: Type) =
@@ -64,62 +64,6 @@ trait JackFlavor[WIRE] {
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
   //  val nativeTypeAdapter: TypeAdapter[N]
-
-  /**
-   * Project fields from given master object to a view object of type T.  Field names/types must match master
-   * precisely.
-   * @param master the master object from which the smaller object is projected
-   * @return an object of type T which is a "subset" of the master
-   */
-  /*
-    def view[T](master: Any)(implicit tt: TypeTag[T]): T =
-      if (tt.tpe.typeSymbol.asClass.isCaseClass)
-        (dematerialize(master) match {
-          case WriteSuccess(w)  => materialize[T](w)
-          case wf: WriteFailure => throw new ViewException(wf.toString)
-        }) match {
-          case ReadSuccess(t)  => t.get
-          case rf: ReadFailure => throw new ViewException(rf.toString)
-        }
-      else
-        throw new ViewException(s"Output of view() must be a case class, not ${tt.tpe}")
-        */
-
-  /**
-   * Splice a view (subset) object's fields into a master object's fields.
-   * @param view the subset object
-   * @param master master object
-   * @return the master object with the view object's corresponding fields merged/overlayed
-   */
-  /*
-    def spliceInto[T, U](view: T, master: U)(implicit tt: TypeTag[T], tu: TypeTag[U]): U = {
-      val viewIR = (dematerialize(view) match {
-        case WriteSuccess(ws) => ws match {
-          case IRObject(x) => x
-          case _           => throw new ViewException(s"View must be a case class, not ${tt.tpe}")
-        }
-        // $COVERAGE-OFF$Not sure how to trigger this! Here for extra safety, really.
-        case wf: WriteFailure => throw new ViewException(wf.toString)
-        // $COVERAGE-ON$
-      }).toMap
-      val masterIR = (dematerialize(master) match {
-        case WriteSuccess(ws) => ws match {
-          case IRObject(x) => x
-          case _           => throw new ViewException(s"Master must be a case class, not ${tu.tpe}")
-        }
-        // $COVERAGE-OFF$Not sure how to trigger this! Here for extra safety, really.
-        case wf: WriteFailure => throw new ViewException(wf.toString)
-        // $COVERAGE-ON$
-      }).toMap
-      val newMaster = masterIR.map { case (name, value) => (name, viewIR.getOrElse(name, value)) }.toSeq
-      materialize[U](ops.applyObject(newMaster)) match {
-        case ReadSuccess(t)  => t.get
-        // $COVERAGE-OFF$Not sure how to trigger this! Here for extra safety, really.
-        case rf: ReadFailure => throw new ViewException(rf.toString)
-        // $COVERAGE-ON$
-      }
-    }
-    */
 
   protected def bakeContext(): Context = {
 

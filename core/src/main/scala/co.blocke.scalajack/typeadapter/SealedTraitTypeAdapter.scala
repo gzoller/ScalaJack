@@ -121,11 +121,9 @@ trait SealedImplementation[T] {
 
 class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit context: Context, tt: TypeTag[T]) extends TypeAdapter[T] {
 
-  val stringTypeAdapter = context.typeAdapterOf[String]
-
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     reader.savePos()
-    reader.readMap(path, Map.canBuildFrom[String, Any], context.typeAdapterOf[String], context.typeAdapterOf[Any]) match {
+    reader.readMap(path, Map.canBuildFrom[String, Any], reader.jackFlavor.stringTypeAdapter, reader.jackFlavor.anyTypeAdapter) match {
       case null => null.asInstanceOf[T]
       case fields: Map[String, Any] =>
         val allFieldNames = fields.map(_._1).toSet
