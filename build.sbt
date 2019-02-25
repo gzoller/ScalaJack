@@ -94,7 +94,6 @@ lazy val scalajack = project.in(file("core"))
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
-    Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value) ++
     Seq("org.apache.commons" % "commons-text" % "1.6") ++
     Seq("commons-codec" % "commons-codec" % "1.11") ++
       test(scalatest) ++

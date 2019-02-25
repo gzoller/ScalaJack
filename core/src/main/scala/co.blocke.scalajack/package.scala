@@ -1,7 +1,7 @@
 package co.blocke
 
 import scala.reflect.ClassTag
-import scalajack.util.{ TypeTags, TypeTagHacks }
+import scalajack.util.TypeTagHacks
 
 package object scalajack {
 

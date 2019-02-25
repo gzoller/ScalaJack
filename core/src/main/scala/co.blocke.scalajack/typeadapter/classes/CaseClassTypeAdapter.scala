@@ -8,7 +8,7 @@ import model._
 
 import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.mutable.Builder
-import scala.reflect.runtime.universe._ //{ MethodMirror, Type, TypeTag }
+import scala.reflect.runtime.universe._
 
 case class CaseClassTypeAdapter[T](
     className:          String,
@@ -16,43 +16,10 @@ case class CaseClassTypeAdapter[T](
     fieldMembersByName: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
     constructorMirror:  MethodMirror,
     isSJCapture:        Boolean,
-    collectionName:     Option[String]                                        = None)(implicit context: Context, tt: TypeTag[T]) extends ClassHelper.ClassLikeTypeAdapter[T] {
+    collectionName:     Option[String])(implicit context: Context, tt: TypeTag[T]) extends ClassHelper.ClassLikeTypeAdapter[T] {
 
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
-  protected def handleDBKeys[AST](fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
-
-  // OK, so all this hokem is to figure out what to do for embedded type member (i.e. externalized type hint feature).  Doesn't seem to be needed
-  // for anything else.
-  private def fixTypeMemberFields[WIRE](concrete: Map[String, ClassHelper.TypeMember[_]]): ListMap[String, ClassHelper.ClassFieldMember[T, Any]] = {
-    if (typeMembersByName.isEmpty) {
-      fieldMembersByName
-    } else {
-      // If type members are defined --> externalized trait concrete type
-      // Create a mapping of type label, e.g. 'T', to TypeMember where we've resolved the type member's value into a Type
-
-      // Now buzz through known field members and replaces all the 'T' type with the concrete type and insert the correct concrete TypeAdapter.
-      fieldMembersByName.map {
-        case (name, field) =>
-          val findConcrete = concrete.get(field.declaredValueType.toString) match {
-            case Some(c) =>
-              val runtimeTypeAdapter = c.runtimeConcreteType.map(context.typeAdapter(_))
-              val newTypeAdapter = field.valueTypeAdapter match {
-                case falling: FallbackTypeAdapter[_, _] =>
-                  FallbackTypeAdapter(runtimeTypeAdapter.asInstanceOf[Option[TypeAdapter[Any]]], falling.orElseTypeAdapter)
-                case _ =>
-                  runtimeTypeAdapter.getOrElse(throw new IllegalStateException("Can't find type value (e.g. unknown class) for hint " + name))
-              }
-              field.copy(
-                valueTypeAdapter  = newTypeAdapter,
-                declaredValueType = c.runtimeConcreteType.getOrElse(field.declaredValueType)
-              ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
-            case None =>
-              field
-          }
-          (name, findConcrete)
-      }
-    }
-  }
+  protected def handleDBKeys(fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     val concreteTypes = typeMembersByName.map {
@@ -69,7 +36,7 @@ case class CaseClassTypeAdapter[T](
           lookAhead
         }))
     }
-    reader.readObjectFields[T](path, isSJCapture, fixTypeMemberFields(concreteTypes)) match {
+    reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult =>
         if (!objectFieldResult.allThere) {
@@ -109,7 +76,7 @@ case class CaseClassTypeAdapter[T](
         extras.append((typeMemberName, ExtraFieldValue(typeMemberValue, writer.jackFlavor.stringTypeAdapter)))
         (tm.typeSignature.toString, tmWithActualType)
     }
-    writer.writeObject(t, fixTypeMemberFields(typeMembersWithRealTypes.toMap), out, extras.toList)
+    writer.writeObject(t, ClassHelper.applyConcreteTypeMembersToFields(typeMembersWithRealTypes, typeMembersByName, fieldMembersByName), out, extras.toList)
   }
 
   // Used by AnyTypeAdapter to insert type hint (not normally needed) into output so object

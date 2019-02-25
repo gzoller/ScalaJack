@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package model
 
-import co.blocke.scalajack.json.JsonTransciever
 import typeadapter._
 import util.Path
 

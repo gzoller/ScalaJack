@@ -37,8 +37,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
       val fieldMembers = for (((member, param2), index) <- (params1 zip params2).zipWithIndex) yield {
         val memberName = member.name.encodedName.toString
-        val accessorMethodSymbol = tt.tpe.member(TermName(memberName)).asMethod
-        val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)
+        val accessorMethod = Reflection.methodToJava(tt.tpe.member(TermName(memberName)).asMethod)
 
         val (derivedValueClassConstructorMirror, memberClass) =
           if (member.typeSignature.typeSymbol.isClass) {
@@ -80,8 +79,21 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 
-        (optionalMapName.getOrElse(memberName), ClassHelper.ClassFieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations))
-        //        (member.name.toString, ClassHelper.ClassFieldMember[T, Any](index, optionalMapName.getOrElse(memberName), memberType, memberTypeAdapter, declaredMemberType, accessorMethodSymbol, accessorMethod, derivedValueClassConstructorMirror, defaultValueAccessorMirror, memberClass, optionalDbKeyIndex, optionalMapName, member.annotations))
+        (optionalMapName.getOrElse(memberName), ClassHelper.ClassFieldMember[T, Any](
+          index,
+          optionalMapName.getOrElse(memberName),
+          memberType,
+          memberTypeAdapter,
+          declaredMemberType,
+          accessorMethod,
+          derivedValueClassConstructorMirror,
+          defaultValueAccessorMirror,
+          memberClass,
+          optionalDbKeyIndex,
+          optionalMapName,
+          None,
+          None,
+          List.empty[Annotation]))
       }
       val orderdFieldMembers = ListMap(fieldMembers: _*)
 
@@ -93,7 +105,8 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         typeMembers.map(typeMember => typeMember.name -> typeMember).toMap,
         orderdFieldMembers,
         constructorMirror,
-        isSJCapture)
+        isSJCapture,
+        collectionAnnotation)
     } else {
       next.typeAdapterOf[T]
     }

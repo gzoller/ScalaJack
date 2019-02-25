@@ -119,7 +119,7 @@ trait SealedImplementation[T] {
   //  def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR]
 }
 
-class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit context: Context, tt: TypeTag[T]) extends TypeAdapter[T] {
+class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     reader.savePos()
