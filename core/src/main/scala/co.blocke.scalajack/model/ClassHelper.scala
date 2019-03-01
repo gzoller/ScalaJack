@@ -31,19 +31,20 @@ object ClassHelper {
       declaredValueType:                  Type,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
-      defaultValueMirror:                 Option[MethodMirror],
+      defaultValueMethod:                 Option[Method],
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
       fieldMapName:                       Option[String],
 
-      // These 3 are only for Plain Classes -- unused for Case Classes
+      // These 4 are only for Plain Classes -- unused for Case Classes
       valueSetterMethodSymbol: Option[MethodSymbol], // for Scala
       valueSetterMethod:       Option[Method], // for Java
-      annotations:             List[Annotation]
-  ) extends Member[Owner] {
+      isIgnore: Boolean = false,
+      isMaybe: Boolean = false
+  )(implicit ot:TypeTag[Owner]) extends Member[Owner] {
     type Value = T
 
-    val defaultValue: Option[T] = defaultValueMirror.map(_.apply().asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
+    val defaultValue: Option[T] = defaultValueMethod.map(_.invoke(ot.tpe.typeSymbol.asClass).asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
 
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -65,15 +66,18 @@ object ClassHelper {
     }
 
     // For Plain Classes only
-    def valueSet(instance: Owner, value: Value)(implicit ct: ClassTag[Owner]): Unit =
+    def valueSet(instance: Owner, value: Value)(implicit tt: TypeTag[Owner], ct: ClassTag[Owner]): Unit =
       valueSetterMethodSymbol match {
-        case Some(vsms) => scala.reflect.runtime.currentMirror.reflect(instance).reflectMethod(vsms)(value)
-        case None       => valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])
+        case Some(vsms) =>
+          scala.reflect.runtime.currentMirror.reflect(instance).reflectMethod(vsms)(value) // Scala
+        case None       =>
+          valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])  // Java
       }
   }
 
   //----- Helpful Utilities ----
 
+  // Picks up annotations for class and case class parameters
   def getAnnotationValue[T, U](sym: Symbol, default: Option[U] = None)(implicit tt: TypeTag[T]): Option[U] = {
     val annotation = sym.annotations.find(_.tree.tpe =:= typeOf[T])
     annotation.flatMap { a =>
@@ -85,6 +89,12 @@ object ClassHelper {
         }).headOption
     }.asInstanceOf[Option[U]]
   }
+
+  @inline def extractDefaultConstructorParamValueMethod(clazz: Class[_], iParam: Int): Option[Method] =
+    clazz.getMethods().find(_.getName == "$lessinit$greater$default$" + iParam)
+
+  def annotationExists[T](sym: Symbol)(implicit tt: TypeTag[T]) =
+    sym.annotations.find(_.tree.tpe =:= typeOf[T]).isDefined
 
   trait ClassLikeTypeAdapter[C] extends TypeAdapter[C] {
     val className: String

@@ -54,18 +54,18 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           } else {
             (None, None)
           }
-
-        val defaultValueAccessorMirror =
-          if (member.typeSignature.typeSymbol.isClass) {
-            val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
-            if (defaultValueAccessor.isMethod) {
-              Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
-            } else {
-              None
-            }
-          } else {
-            None
-          }
+        //
+        //        val defaultValueAccessorMirror =
+        //          if (member.typeSignature.typeSymbol.isClass) {
+        //            val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
+        //            if (defaultValueAccessor.isMethod) {
+        //              Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
+        //            } else {
+        //              None
+        //            }
+        //          } else {
+        //            None
+        //          }
 
         val memberType = member.asTerm.typeSignature
 
@@ -87,13 +87,12 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           declaredMemberType,
           accessorMethod,
           derivedValueClassConstructorMirror,
-          defaultValueAccessorMirror,
+          None, //defaultValueAccessorMirror,
           memberClass,
           optionalDbKeyIndex,
           optionalMapName,
           None,
-          None,
-          List.empty[Annotation]))
+          None))
       }
       val orderdFieldMembers = ListMap(fieldMembers: _*)
 

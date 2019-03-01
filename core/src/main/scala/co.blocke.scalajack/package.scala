@@ -1,7 +1,8 @@
 package co.blocke
 
-import scala.reflect.ClassTag
 import scalajack.util.TypeTagHacks
+import reflect.runtime.universe._
+import reflect.ClassTag
 
 package object scalajack {
 
@@ -54,6 +55,10 @@ package object scalajack {
   implicit val typeTagType: TypeTag[Type] = TypeTags.of[Type](TypeTagHacks.TypeType)
 
   @inline final def typeFromClassName(className: String) = staticClass(className).toType
+
+  def typeToClassTag[T: TypeTag]: ClassTag[T] = {
+    ClassTag[T](typeTag[T].mirror.runtimeClass(typeTag[T].tpe))
+  }
 
   // Type Extractors
   object SingleType {

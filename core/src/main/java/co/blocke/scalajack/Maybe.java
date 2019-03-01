@@ -3,7 +3,8 @@ package co.blocke.scalajack;
 import java.lang.annotation.*;
 
 @Inherited
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Ignore {
+public @interface Maybe {
 }
+
