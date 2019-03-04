@@ -39,7 +39,6 @@ object ClassHelper {
       // These 4 are only for Plain Classes -- unused for Case Classes
       valueSetterMethodSymbol: Option[MethodSymbol], // for Scala
       valueSetterMethod:       Option[Method], // for Java
-      isIgnore: Boolean = false,
       isMaybe: Boolean = false
   )(implicit ot:TypeTag[Owner]) extends Member[Owner] {
     type Value = T

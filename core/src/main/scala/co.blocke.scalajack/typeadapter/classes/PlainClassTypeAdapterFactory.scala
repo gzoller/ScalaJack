@@ -4,7 +4,7 @@ package classes
 
 import model.{ ClassHelper, _ }
 import util.Reflection
-import java.beans.Introspector
+import java.beans.{ Introspector, PropertyDescriptor }
 
 import ClassHelper._
 
@@ -28,6 +28,9 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       val isSJCapture = !(tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
       val clazz = currentMirror.runtimeClass(classSymbol)
+
+      // For Java classes
+      val maybeClass = currentMirror.runtimeClass(typeOf[Maybe].typeSymbol.asClass)
 
       // Exctract Collection name annotation if present
       val collectionAnnotation = ClassHelper.getAnnotationValue[Collection, String](classSymbol)
@@ -102,21 +105,25 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         })
       }
 
-      def dontIgnore(p: Symbol) = {
-        // Annoying... @Ignore may be on backing field in a superclass...so we must go find it.
-        val includeSuper = tpe.members ++ tpe.typeSymbol.asClass.baseClasses.map(c => c.typeSignature.members).flatten
-        val foundPrivateVar = includeSuper.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
-        val ignoreAnno = foundPrivateVar.flatMap(_.annotations.find(_.tree.tpe =:= typeOf[Ignore]))
-        ignoreAnno.isEmpty
-      }
-
       def reflectScalaGetterSetterFields(startingIndex: Int): List[ClassFieldMember[T, Any]] = {
         var index = startingIndex
-        tpe.members.filter(p => p.isPublic && p.isMethod).collect {
-          // Scala case
-          case p if (dontIgnore(p) && p.name.toString.endsWith("_$eq") && p.owner != typeOf[SJCapture].typeSymbol) =>
+        val setters = tpe.members.filter(p => p.isPublic && p.isMethod && p.name.toString.endsWith("_$eq"))
+        val getters = setters.map { s =>
+          val simpleName = s.name.toString.stripSuffix("_$eq")
+          tpe.members.find(f => f.name.toString == simpleName).getOrElse(throw new Exception("Boom--can't find getter for setter " + simpleName))
+        }
+        val getterSetter = getters.zip(setters)
+        val setterWithIgnoreAnnotation = getterSetter.map {
+          case (getter, setter) =>
+            val foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == getter.name.toString.trim).headOption
+            (setter, foundPrivateVar.map(ClassHelper.annotationExists[Ignore](_)).getOrElse(false) ||
+              ClassHelper.annotationExists[Ignore](getter) ||
+              ClassHelper.annotationExists[Ignore](setter))
+        }
+        setterWithIgnoreAnnotation.collect {
+          case (s, ignore) if !ignore && s.owner != typeOf[SJCapture].typeSymbol =>
             index += 1
-            bakeScalaPlainFieldMember(p, index - 1)
+            bakeScalaPlainFieldMember(s, index - 1)
         }.toList
       }
 
@@ -124,7 +131,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         val simpleName = setterMethod.name.toString.stripSuffix("_$eq")
 
         // p is the actual member.  Find it from the given setterMethod by stripping the suffix.
-        val p = tpe.members.filter(f => f.name.toString == simpleName).head
+        val p = tpe.members.find(f => f.name.toString == simpleName).getOrElse(throw new Exception("Boom--can't find getter for setter " + simpleName))
 
         val memberType = p.asMethod.returnType
         val declaredMemberType = tpe.typeSymbol.asType.toType.member(p.name).asMethod.returnType
@@ -153,16 +160,13 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
         val mapNameAnno = foundPrivateVar.flatMap(ClassHelper.getAnnotationValue[MapName, String](_))
 
-        // Extract Ignore annotation if present
-        val isIgnore = foundPrivateVar.map(ClassHelper.annotationExists[Ignore](_)).getOrElse(false)
-
+        // TODO: Test @Maybe with interitance.  See if it works when the @Maybe field is in a superclass.
+        // Might need to treat it like @Ignore that way...
         // Extract Maybe annotation if present... For var: on private shadow member.  For getter/setter it could be on either...check both.
-        foundPrivateVar.map(f => println("Private: " + f.annotations))
         val isMaybe =
           foundPrivateVar.map(ClassHelper.annotationExists[Maybe](_)).getOrElse(false) ||
             ClassHelper.annotationExists[Maybe](p) ||
             ClassHelper.annotationExists[Maybe](setterMethod)
-        println("Field: " + simpleName + " " + isMaybe)
 
         ClassFieldMember[T, Any](
           index,
@@ -178,41 +182,25 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           mapNameAnno,
           Some(setterMethod.asMethod),
           None,
-          isIgnore,
           isMaybe
         )
       }
 
-      def ignoreThisJavaProperty(pd: java.beans.PropertyDescriptor): Boolean = {
-        def annoTypeMatches[A](a: Class[A]): Boolean = a.getTypeName == typeOf[Ignore].toString
-        val getter = pd.getReadMethod match {
-          case null => false
-          case ann  => ann.getAnnotations.toList.map(a => annoTypeMatches(a.annotationType())).foldLeft(false)(_ || _)
-        }
-        val setter = pd.getReadMethod match {
-          case null => false
-          case ann  => ann.getAnnotations.toList.map(a => annoTypeMatches(a.annotationType())).foldLeft(false)(_ || _)
-        }
-        getter || setter
-      }
-
       def reflectJavaGetterSetterFields: List[ClassFieldMember[T, Any]] = {
-        val clazz = currentMirror.runtimeClass(tpe.typeSymbol.asClass)
         var index = 0
 
         // Figure out getters/setters, accouting for @Ignore
-        Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList
-          .filterNot(_.getName == "class").filterNot(ignoreThisJavaProperty(_)).map { propertyDescriptor =>
+        Introspector.getBeanInfo(clazz).getPropertyDescriptors.toList.filterNot(_.getName == "class").collect {
+          case DontIgnore_Java(propertyDescriptor) =>
             val memberType = tpe.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
             val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
             val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
             index += 1
 
-            // Extract Ignore annotation if present
-            val isIgnore = ClassHelper.getAnnotationValue[Ignore, String](memberType.typeSymbol).isDefined
-
-            // Extract Maybe annotation if present
-            val isMaybe = ClassHelper.getAnnotationValue[Maybe, String](memberType.typeSymbol).isDefined
+            // Extract Maybe annotation if present... For var: on private shadow member.  For getter/setter it could be on either...check both.
+            val isMaybe =
+              Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined ||
+                Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined
 
             ClassFieldMember[T, Any](
               index - 1,
@@ -228,32 +216,12 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               None,
               None,
               Some(propertyDescriptor.getWriteMethod),
-              isIgnore,
               isMaybe
             )
-          }
+        }
       }
 
       //-------------------------------------------------------------------------------
-
-      // Gets var and getter/setter annotations (Scala)
-      // *Doesn't* get constructor parameter annotations (Scala)
-      //      val fieldAnnotations = {
-      //        typeOf[T].decls.collect {
-      //          case m: MethodSymbol => m
-      //          case f: TermSymbol   => f
-      //        }.withFilter {
-      //          _.annotations.nonEmpty
-      //        }.map { m =>
-      //          m.name.toString.stripSuffix("_$eq") -> m.annotations.map { a =>
-      //            a.tree.tpe.typeSymbol.name.toString -> a.tree.children.withFilter {
-      //              _.productPrefix eq "AssignOrNamedArg"
-      //            }.map { tree =>
-      //              tree.productElement(0).toString -> tree.productElement(1)
-      //            }.toMap
-      //          }.toMap
-      //        }.toMap
-      //      }
 
       val (constructorFields, allOtherFields) =
         if (classSymbol.isJava) {
@@ -278,4 +246,32 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
     }
   }
 
+}
+
+object DontIgnore_Java {
+  val ignoreClass = currentMirror.runtimeClass(typeOf[Ignore].typeSymbol.asClass)
+
+  def unapply(javabeanPropertyDescriptor: PropertyDescriptor): Option[PropertyDescriptor] = {
+    val isIgnore =
+      Option(javabeanPropertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined ||
+        Option(javabeanPropertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined
+    if (isIgnore)
+      None
+    else
+      Some(javabeanPropertyDescriptor)
+  }
+}
+
+object DontIgnore_Scala {
+  val ignoreClass = currentMirror.runtimeClass(typeOf[Ignore].typeSymbol.asClass)
+
+  def unapply(javabeanPropertyDescriptor: PropertyDescriptor): Option[PropertyDescriptor] = {
+    val isIgnore =
+      Option(javabeanPropertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined ||
+        Option(javabeanPropertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined
+    if (isIgnore)
+      None
+    else
+      Some(javabeanPropertyDescriptor)
+  }
 }

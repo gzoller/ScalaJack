@@ -73,11 +73,11 @@ Annotations:
 @Collection(name = "Stuff")
 class MapFactorPlain(val t: Option[Int] = Some(15)) {
   var fooBar: String = ""
-  @Maybe var thingy: Long = 1L
+  var thingy: Long = 1L
   var count: Option[Int] = Some(1)
 
   private var _age: VCDouble = VCDouble(0.3)
-  @Maybe def age: VCDouble = _age // getter/setter member
+  @Ignore def age: VCDouble = _age // getter/setter member
   def age_=(a: VCDouble) = _age = a
 }
 
@@ -88,18 +88,18 @@ object Runner extends App {
   //  println(sj.read[Perhaps]("""{"a":5,"c":2}""").b)
 
   val js = """{"t":19,"fooBar":"Mike","count":7,"thingy":123}"""
-  //  val js = """{"name":"Bob","id":123,"count":3}"""
+  //  val js = """{"id":123,"count":3}"""
 
-  //  try {
-  //
-  //  println(sj.read[JavaTestClass2](js).name)
-  //
-  val x = sj.read[MapFactorPlain](js)
-  println(x.age)
-  //
-  //  } catch {
-  //    case t: Throwable => println("Boom " + t.getMessage())
-  //  }
+  try {
+    //
+    //  println(sj.read[JavaTestClass2](js).name)
+    //
+    val x = sj.read[MapFactorPlain](js)
+    println(x.thingy)
+    //
+  } catch {
+    case t: Throwable => println("Boom " + t.getMessage())
+  }
 
 }
 

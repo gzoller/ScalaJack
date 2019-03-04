@@ -1,7 +1,7 @@
 package co.blocke.scalajack;
 
 public class JavaTestClass2 {
-    String name;
+    String name = "Mike";
     int id;
 
     public int count;
@@ -9,7 +9,7 @@ public class JavaTestClass2 {
 
     public JavaTestClass2() {}
 
-    public String getName() {
+    @Ignore public String getName() {
         return name;
     }
     public void setName(String newName) {

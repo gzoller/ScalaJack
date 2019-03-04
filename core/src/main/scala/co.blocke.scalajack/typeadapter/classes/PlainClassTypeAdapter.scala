@@ -22,17 +22,7 @@ case class PlainClassTypeAdapter[T](
   isScala: Boolean,
   )(implicit context: Context, tt: TypeTag[T]) extends ClassLikeTypeAdapter[T] {
 
-//  val wrappedCaseClassTypeAdapter = CaseClassTypeAdapter[T](
-//    className,
-//    typeMembersByName,
-//    fieldMembersByName,
-//    constructorMirror,
-//    isSJCapture,
-//    collectionName)
-
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
-
-    println("------------------------------")
 
     // Any externalized trait hints? (as type members)
     val concreteTypes = typeMembersByName.map {
@@ -56,10 +46,6 @@ case class PlainClassTypeAdapter[T](
     reader.readObjectFields[T](path, isSJCapture, both) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult =>
-
-        println("Fields: "+both.map(_._1))
-        println("Args: "+objectFieldResult.objectArgs.toList)
-        println("Set: "+objectFieldResult.fieldSet.toList)
 
         val finalConstructorArgList =
           if (!objectFieldResult.allThere) {
@@ -96,13 +82,13 @@ case class PlainClassTypeAdapter[T](
             // Exclude any @Maybe fields and remove corresponding field elements from list
             nonConstructorFields.values.zip(nonConstructorArgs.zip(nonConstructorIsSet)).collect{
               // Missing but optional
-              case ((field, (_, false))) if field.isOptional =>
+              case (field, (_, false)) if field.isOptional && !field.isMaybe =>
                 (field, None)
               // Any other missing (but not @Maybe)
-              case ((field, (_, false))) if !field.isMaybe =>
+              case (field, (_, false)) if !field.isMaybe =>
                 throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(), List(className, field.name))
               // Anything else... as-read
-              case ((field, (arg, true))) =>
+              case (field, (arg, true)) =>
                 (field, arg)
             }.toList
           } else
@@ -110,7 +96,6 @@ case class PlainClassTypeAdapter[T](
             nonConstructorFields.values.zip(objectFieldResult.objectArgs.takeRight(nonConstructorFields.size)).toList
 
         fieldsAndArgs.foreach{ case(field, aValue) =>
-          println("Set "+field.name.toString+" to value "+aValue)
             field.valueSet(asBuilt, aValue)(tt, typeToClassTag[T])
         }
 
