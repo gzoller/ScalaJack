@@ -160,9 +160,6 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
         val mapNameAnno = foundPrivateVar.flatMap(ClassHelper.getAnnotationValue[MapName, String](_))
 
-        // TODO: Test @Maybe with interitance.  See if it works when the @Maybe field is in a superclass.
-        // Might need to treat it like @Ignore that way...
-        // Extract Maybe annotation if present... For var: on private shadow member.  For getter/setter it could be on either...check both.
         val isMaybe =
           foundPrivateVar.map(ClassHelper.annotationExists[Maybe](_)).getOrElse(false) ||
             ClassHelper.annotationExists[Maybe](p) ||
@@ -231,6 +228,9 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           (constFields, reflectScalaGetterSetterFields(constFields.size))
         }
 
+      if (classSymbol.isAbstract)
+        throw new IllegalArgumentException("Unable to find a type adapter for " + classSymbol.name.toString + " (may be abstract or a dependency of an abstract class)")
+
       PlainClassTypeAdapter(
         classSymbol.name.toString(),
         typeMembers.map(t => (t.name, t)).toMap,
@@ -249,20 +249,6 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 }
 
 object DontIgnore_Java {
-  val ignoreClass = currentMirror.runtimeClass(typeOf[Ignore].typeSymbol.asClass)
-
-  def unapply(javabeanPropertyDescriptor: PropertyDescriptor): Option[PropertyDescriptor] = {
-    val isIgnore =
-      Option(javabeanPropertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined ||
-        Option(javabeanPropertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == ignoreClass)).isDefined
-    if (isIgnore)
-      None
-    else
-      Some(javabeanPropertyDescriptor)
-  }
-}
-
-object DontIgnore_Scala {
   val ignoreClass = currentMirror.runtimeClass(typeOf[Ignore].typeSymbol.asClass)
 
   def unapply(javabeanPropertyDescriptor: PropertyDescriptor): Option[PropertyDescriptor] = {

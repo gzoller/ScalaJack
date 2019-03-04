@@ -43,28 +43,26 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
             }
           null.asInstanceOf[TypeAdapter[T]]
 
-          if (subclassAttempts.exists(_.isFailure)) {
-            // If subclassAttempts is full of Failure, the "subclasses" may be case objects, not case classes.
-            // This is a common alternative implementation for Enumerations.
-            subclassTypes.headOption match {
-              case Some(t) if t.typeSymbol.isModuleClass => // Bake a serializer/deserializer than handles case objects
-                new CaseObjectTypeAdapter(subclassTypes.map(_.typeSymbol.name.toString))
-              case _ => typeAdapterOf[T]
-            }
-          } else {
-            val subclasses = subclassAttempts.map(_.get)
+          val subclasses = subclassAttempts.map(_.get)
 
-            def allPairsOf[E](superset: Set[E]): Set[(E, E)] =
-              superset.subsets(2)
-                .map(_.toList)
-                .map(list => {
-                  val a :: b :: Nil = list
-                  (a, b)
-                })
-                .toSet
+          def allPairsOf[E](superset: Set[E]): Set[(E, E)] =
+            superset.subsets(2)
+              .map(_.toList)
+              .map(list => {
+                val a :: b :: Nil = list
+                (a, b)
+              })
+              .toSet
 
-            val allPairsOfSubclasses: Set[(Subclass[T], Subclass[T])] = allPairsOf(subclasses.toSet)
+          val allPairsOfSubclasses: Set[(Subclass[T], Subclass[T])] = allPairsOf(subclasses.toSet)
 
+          val isCaseObjects = subclasses.foldRight(true) {
+            case (oneSubclass, acc) =>
+              acc && oneSubclass.subclassType.typeSymbol.isModuleClass
+          }
+          if (isCaseObjects)
+            new CaseObjectTypeAdapter(subclassTypes.map(_.typeSymbol.name.toString))
+          else {
             val someSubclassesAreAmbiguous = allPairsOfSubclasses.exists {
               case (a, b) =>
                 a.memberNames.subsetOf(b.memberNames) || b.memberNames.subsetOf(a.memberNames)
@@ -116,7 +114,7 @@ trait SealedImplementation[T] {
   val fieldNames: immutable.Set[String]
   val typeAdapter: TypeAdapter[T]
   def isInstance(tagged: T): Boolean
-  //  def write[IR, WIRE](tagged: TypeTagged[T])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR]
+  //  override def toString() = "Fields: " + fieldNames + " TypeAdapter: " + typeAdapter
 }
 
 class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {

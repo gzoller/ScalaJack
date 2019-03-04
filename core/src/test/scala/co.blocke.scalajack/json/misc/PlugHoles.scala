@@ -106,7 +106,10 @@ class PlugHoles() extends FunSpec with Matchers {
     }
     it("Options") {
       val js = """{"num":11}"""
-      assertResult(Bogus(11, None, Some((5, true)))) { sj.read[Bogus](js) }
+      //case class Bogus(num: Int, unneeded: Option[Boolean], t: Option[(Int, Boolean)] = Some((5, true)))
+      assertResult(Bogus(11, None, Some((5, true)))) {
+        sj.read[Bogus](js)
+      }
     }
     it("Extra chars in JSON") {
       val js = """[1,2,3]]"""

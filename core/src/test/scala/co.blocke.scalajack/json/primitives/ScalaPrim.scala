@@ -269,7 +269,7 @@ class ScalaPrim() extends FunSpec with Matchers {
       }
       it("Can't find TypeAdapter for given type") {
         val js = """{"hey":"you"}"""
-        val msg = "Unable to find a type adapter for Process"
+        val msg = "Unable to find a type adapter for InputStream (may be abstract or a dependency of an abstract class)"
         the[java.lang.IllegalArgumentException] thrownBy sj.read[java.lang.Process](js) should have message msg
       }
     }

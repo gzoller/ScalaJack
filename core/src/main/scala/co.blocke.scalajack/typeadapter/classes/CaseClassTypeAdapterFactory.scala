@@ -14,14 +14,11 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (classSymbol.isCaseClass) {
+      val clazz = currentMirror.runtimeClass(classSymbol)
       val constructorSymbol = classSymbol.primaryConstructor.asMethod
 
       val classMirror = currentMirror.reflectClass(classSymbol)
       val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
-
-      val companionType: Type = classSymbol.companion.typeSignature
-      val companionObject = currentMirror.reflectModule(classSymbol.companion.asModule).instance
-      val companionMirror = currentMirror.reflect(companionObject)
 
       val isSJCapture = !(tt.tpe.baseType(typeOf[SJCapture].typeSymbol) == NoType)
 
@@ -54,18 +51,6 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           } else {
             (None, None)
           }
-        //
-        //        val defaultValueAccessorMirror =
-        //          if (member.typeSignature.typeSymbol.isClass) {
-        //            val defaultValueAccessor = companionType.member(TermName("apply$default$" + (index + 1)))
-        //            if (defaultValueAccessor.isMethod) {
-        //              Some(companionMirror.reflectMethod(defaultValueAccessor.asMethod))
-        //            } else {
-        //              None
-        //            }
-        //          } else {
-        //            None
-        //          }
 
         val memberType = member.asTerm.typeSignature
 
@@ -87,7 +72,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           declaredMemberType,
           accessorMethod,
           derivedValueClassConstructorMirror,
-          None, //defaultValueAccessorMirror,
+          ClassHelper.extractDefaultConstructorParamValueMethod(clazz, index + 1),
           memberClass,
           optionalDbKeyIndex,
           optionalMapName,

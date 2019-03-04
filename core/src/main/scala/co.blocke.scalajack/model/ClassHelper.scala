@@ -31,7 +31,7 @@ object ClassHelper {
       declaredValueType:                  Type,
       valueAccessorMethod:                Method,
       derivedValueClassConstructorMirror: Option[MethodMirror],
-      defaultValueMethod:                 Option[Method],
+      defaultValueMethod:                 Option[Method],  // <-- Need a Java Method here to work with Java classes too!
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
       fieldMapName:                       Option[String],
@@ -101,8 +101,11 @@ object ClassHelper {
     val fieldMembersByName: ListMap[String, ClassFieldMember[C, Any]]
     val collectionName: Option[String]
 
-    def dbKeys: List[ClassFieldMember[C, Any]] = fieldMembersByName.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
-    def members = typeMembersByName.values ++ fieldMembersByName.values
+    def dbKeys: List[ClassFieldMember[C, Any]] =
+      fieldMembersByName.values.toList.filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
+
+    // Used for Sealed Traits
+    def members = fieldMembersByName.values //typeMembersByName.values ++ fieldMembersByName.values
   }
 
   case class ExtraFieldValue[T](

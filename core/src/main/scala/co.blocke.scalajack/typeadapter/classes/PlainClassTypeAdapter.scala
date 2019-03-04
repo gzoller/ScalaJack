@@ -8,7 +8,6 @@ import ClassHelper._
 
 import scala.collection.immutable.{ListMap, Map}
 import scala.collection.mutable.Builder
-import scala.language.existentials
 import scala.reflect.runtime.universe._
 
 case class PlainClassTypeAdapter[T](
@@ -21,6 +20,9 @@ case class PlainClassTypeAdapter[T](
   collectionName: Option[String],
   isScala: Boolean,
   )(implicit context: Context, tt: TypeTag[T]) extends ClassLikeTypeAdapter[T] {
+
+  override def dbKeys: List[ClassFieldMember[T, Any]] =
+    (fieldMembersByName.values.toList ++ nonConstructorFields.values.toList).filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
 
@@ -106,6 +108,25 @@ case class PlainClassTypeAdapter[T](
     }
   }
 
+  // This is a carbon-copy of CaseClassTypeAdapter.write *EXCEPT* we need to also write out the nonConstructorFields too.
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+    val extras = scala.collection.mutable.ListBuffer.empty[(String, ExtraFieldValue[_])]
+    val typeMembersWithRealTypes = typeMembersByName.map {
+      case (typeMemberName, tm) =>
+        val tType = tm.typeSignature.toString
+        val tmWithActualType = fieldMembersByName.values.collectFirst {
+          case f if f.declaredValueType.toString == tType =>
+            val realValue = f.valueIn(t)
+            val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
+            tm.copy(runtimeConcreteType = Some(realType))
+        }.get // must find one!
+      val typeMemberValue = writer.jackFlavor.typeValueModifier match {
+        case Some(fn) => fn.unapply(tmWithActualType.runtimeConcreteType.get)
+        case None     => tmWithActualType.runtimeConcreteType.get.toString
+      }
+        extras.append((typeMemberName, ExtraFieldValue(typeMemberValue, writer.jackFlavor.stringTypeAdapter)))
+        (tm.typeSignature.toString, tmWithActualType)
+    }
+    writer.writeObject(t, ClassHelper.applyConcreteTypeMembersToFields(typeMembersWithRealTypes, typeMembersByName, fieldMembersByName ++ nonConstructorFields), out, extras.toList)
   }
 }
