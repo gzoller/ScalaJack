@@ -5,6 +5,12 @@ import org.scalatest.{ FunSpec, Matchers }
 
 case class Bogus(num: Int, unneeded: Option[Boolean], t: Option[(Int, Boolean)] = Some((5, true)))
 
+trait TypeTrait {
+  val thing: String
+}
+case class AThing(thing: String) extends TypeTrait
+case class WithType[+T](a: T)
+
 class PlugHoles() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -94,11 +100,26 @@ class PlugHoles() extends FunSpec with Matchers {
   describe("TypeAdapters") {
     it("Any") {
       val js = """[1,2,3]"""
-      assertResult(List(1, 2, 3)) { sj.read[Any](js) }
+      assertResult(List(1, 2, 3)) {
+        sj.read[Any](js)
+      }
       val js2 = """{"_hint":"co.blocke.scalajack.json.misc.SimpleHasDefaults","name":"Fred"}"""
-      assertResult(SimpleHasDefaults("Fred", 5)) { sj.read[Any](js2) }
+      assertResult(SimpleHasDefaults("Fred", 5)) {
+        sj.read[Any](js2)
+      }
       val js3 = """{"name":"Fred"}"""
-      assertResult(Map("name" -> "Fred")) { sj.read[Any](js3) }
+      assertResult(Map("name" -> "Fred")) {
+        sj.read[Any](js3)
+      }
+      val js4 = """true"""
+      val inst = sj.read[Any](js4)
+      (inst == true) should be(true)
+      sj.render[Map[Any, Int]](Map(Map("a" -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
+      println(sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)))
+      sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
+      sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be("""{"{\"[1,2,3]\":3}":5}""")
+      val x = sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) // should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
+      sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{"{\"\":3}":}""")
     }
     it("Tuples") {
       val jsNull = "null"
@@ -127,7 +148,7 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Case class defaults and Option") {
       val js = """{"num":5}"""
       val inst = sj.read[Bogus](js)
-      println(inst)
+      inst should be(Bogus(5, None, Some((5, true))))
     }
     it("Traits") {
       val js = "15"

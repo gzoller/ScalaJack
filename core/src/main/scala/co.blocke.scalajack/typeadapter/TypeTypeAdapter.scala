@@ -32,7 +32,7 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Type = reader.readString(path) match {
     case s: String => typeNameToType(path, s, reader)
-    case null      => null
+    // No others should be possible
   }
 
   def write[WIRE](t: Type, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
