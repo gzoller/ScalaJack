@@ -93,8 +93,15 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
   // when the CanBuildFromTypeAdapters are constructed.  Otherwise we'd just have Any, which is unhelpful.
   private def buildMapTA[Key, Value, To >: Null <: scala.collection.GenMapLike[Key, Value, To]](companionInstance: Any, method: MethodSymbol, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) = {
     val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, (Key, Value), To]]
-    val keyIsOptional = keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] || (keyTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
-    val valueIsOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] || (valueTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && valueTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
+    // Note: We include Any here because Any *could* be an Option, so we must include it as a possibility
+    val keyIsOptional =
+      keyTypeAdapter.isInstanceOf[model.TypeAdapter[Any]] ||
+        keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
+        (keyTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
+    val valueIsOptional =
+      valueTypeAdapter.isInstanceOf[model.TypeAdapter[Any]] ||
+        valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
+        (valueTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && valueTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
 
     CanBuildMapTypeAdapter(
       canBuildFrom,
@@ -124,13 +131,13 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
   def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val filterKey = {
-      if (keyIsOptional)
+      if (keyIsOptional && t != null)
         t.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => k == None }
       else
         t
     }
     val filterValue = {
-      if (valueIsOptional)
+      if (valueIsOptional && t != null)
         filterKey.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => v == None }
       else
         filterKey

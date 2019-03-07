@@ -115,11 +115,10 @@ class PlugHoles() extends FunSpec with Matchers {
       val inst = sj.read[Any](js4)
       (inst == true) should be(true)
       sj.render[Map[Any, Int]](Map(Map("a" -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
-      println(sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)))
       sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
       sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be("""{"{\"[1,2,3]\":3}":5}""")
-      val x = sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) // should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
-      sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{"{\"\":3}":}""")
+      sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
+      sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{}""")
     }
     it("Tuples") {
       val jsNull = "null"
