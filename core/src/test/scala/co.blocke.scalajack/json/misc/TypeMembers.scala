@@ -17,9 +17,14 @@ case class InsideHobby(desc: String) extends Hobby
 case class Envelope[T <: Body](id: String, body: T) {
   type Giraffe = T
 }
-case class BigEnvelope[T <: Body, H <: Hobby](id: String, body: T, hobby: H) {
+
+// Type member X should be ignored!  Only used internally
+case class BigEnvelope[T <: Body, H <: Hobby, X](id: String, body: T, hobby: H) {
   type Giraffe = T
   type Hippo = H
+  type IgnoreMe = X
+
+  val x: IgnoreMe = null.asInstanceOf[IgnoreMe]
 }
 
 case class Bigger(foo: Int, env: Envelope[FancyBody])
@@ -71,11 +76,11 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
     }
     it("Handles mutliple externalized types (bonus: with modifier)") {
       val sjm = ScalaJack().withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
-      val value: BigEnvelope[Body, Hobby] = BigEnvelope("DEF", FancyBody("BOO"), InsideHobby("stamps"))
-      val js = sjm.render[BigEnvelope[Body, Hobby]](value)
+      val value: BigEnvelope[Body, Hobby, Int] = BigEnvelope("DEF", FancyBody("BOO"), InsideHobby("stamps"))
+      val js = sjm.render[BigEnvelope[Body, Hobby, Int]](value)
       assertResult("""{"Hippo":"InsideHobby","Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"},"hobby":{"desc":"stamps"}}""") { js }
       assertResult(value) {
-        sjm.read[BigEnvelope[Body, Hobby]](js)
+        sjm.read[BigEnvelope[Body, Hobby, Int]](js)
       }
     }
     it("In case we need to use TypeTags vs a type [T] for read") {

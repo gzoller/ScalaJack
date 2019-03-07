@@ -268,7 +268,9 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         !classSymbol.isJava
       )(context, tt)
     } else {
+      // $COVERAGE-OFF$Can't really test this.  It is not supposed to ever happen.  What can you parse that isn't some kind of class?
       next.typeAdapterOf[T]
+      // $COVERAGE-ON$
     }
   }
 

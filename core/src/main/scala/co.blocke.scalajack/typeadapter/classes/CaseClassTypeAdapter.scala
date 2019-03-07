@@ -44,10 +44,8 @@ case class CaseClassTypeAdapter[T](
           for (p <- 0 to fieldArray.size - 1) {
             if (!objectFieldResult.fieldSet(p)) {
               fieldArray(p).defaultValue.map(default => objectFieldResult.objectArgs(p) = default).orElse(
-                if (fieldArray(p).isOptional)
-                  None
-                else
-                  throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(), List(className, fieldArray(p).name)))
+                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(), List(className, fieldArray(p).name))
+              )
             }
           }
         }

@@ -68,6 +68,19 @@ class WrapTrait[T <: TraitBase]() {
 
 class Fail4(val a: Int, b: Int)
 
+// --
+
+class OptConst(val a: Option[Int]) {
+  var b: Option[Int] = Some(3)
+}
+
+class UnneededType[T]() {
+  type item = T
+
+  val m: T = null.asInstanceOf[item]
+  var a: Int = 5
+}
+
 //------------------------------------------------------
 case class VCDouble(vc: Double) extends AnyVal
 class PlayerMix() {

@@ -124,5 +124,14 @@ class PlugHoles() extends FunSpec with Matchers {
                   |--^""".stripMargin
       the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[Bogus]("{}") should have message msg
     }
+    it("Case class defaults and Option") {
+      val js = """{"num":5}"""
+      val inst = sj.read[Bogus](js)
+      println(inst)
+    }
+    it("Traits") {
+      val js = "15"
+      the[model.ReadUnexpectedError] thrownBy sj.read[Pet](js) should have message """[$]: Expected start of an object but read token Number"""
+    }
   }
 }
