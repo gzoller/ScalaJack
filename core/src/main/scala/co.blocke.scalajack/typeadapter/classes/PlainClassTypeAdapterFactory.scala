@@ -31,6 +31,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
       // For Java classes
       val maybeClass = currentMirror.runtimeClass(typeOf[Maybe].typeSymbol.asClass)
+      val mapNameClass = currentMirror.runtimeClass(typeOf[MapName].typeSymbol.asClass)
 
       // Exctract Collection name annotation if present
       val collectionAnnotation = ClassHelper.getAnnotationValue[Collection, String](classSymbol)
@@ -93,7 +94,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               optionalMapName.getOrElse(memberName),
               memberType,
               memberTypeAdapter,
-              memberType /* FIXME */ ,
+              memberType,
               accessorMethod,
               derivedValueClassConstructorMirror,
               ClassHelper.extractDefaultConstructorParamValueMethod(clazz, index + 1),
@@ -107,34 +108,42 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
       def reflectScalaGetterSetterFields(startingIndex: Int): List[ClassFieldMember[T, Any]] = {
         var index = startingIndex
+
+        def ignoreSymbol(syms: List[Symbol], fieldName: String): Boolean =
+          syms.foldRight(false) { case (f, acc) => acc || ClassHelper.annotationExists[Ignore](f) }
+
         val setters = tpe.members.filter(p => p.isPublic && p.isMethod && p.name.toString.endsWith("_$eq"))
         val getters = setters.map { s =>
           val simpleName = s.name.toString.stripSuffix("_$eq")
-          tpe.members.find(f => f.name.toString == simpleName).getOrElse(throw new Exception("Boom--can't find getter for setter " + simpleName))
-        }
-        val getterSetter = getters.zip(setters)
-        val setterWithIgnoreAnnotation = getterSetter.map {
-          case (getter, setter) =>
-            val foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == getter.name.toString.trim).headOption
-            (setter, foundPrivateVar.map(ClassHelper.annotationExists[Ignore](_)).getOrElse(false) ||
-              ClassHelper.annotationExists[Ignore](getter) ||
-              ClassHelper.annotationExists[Ignore](setter))
-        }
-        setterWithIgnoreAnnotation.collect {
-          case (s, ignore) if !ignore && s.owner != typeOf[SJCapture].typeSymbol =>
-            index += 1
-            bakeScalaPlainFieldMember(s, index - 1)
+          tpe.members.find(f => f.name.toString == simpleName).getOrElse(throw new java.lang.IllegalStateException("Can't find corresponding getter for setter " + simpleName))
         }.toList
+
+        // Find @Ignore (handling inheritance)
+        val getterSetter = getters.zip(setters)
+        val getterSetterWithIgnoreAnnotation = getterSetter.map {
+          case (getter, setter) =>
+            (getter, setter, tt.tpe.baseClasses.map { f =>
+              val privateVar = f.typeSignature.members.find(z => z.isPrivate && !z.isMethod && z.name.toString.trim == getter.name.toString.trim)
+              val privateIgnore = privateVar.map(ClassHelper.annotationExists[Ignore](_)).getOrElse(false)
+
+              val inheritSetters = f.typeSignature.members.filter(_.name.toString == setter.name.toString).toList
+              val inheritGetters = f.typeSignature.members.filter(_.name.toString == getter.name.toString).toList
+              privateIgnore || ignoreSymbol(inheritSetters, getter.name.toString) || ignoreSymbol(inheritGetters, getter.name.toString)
+            }.foldRight(false) { case (v, acc) => acc || v })
+        }
+
+        getterSetterWithIgnoreAnnotation.collect {
+          case (g, s, ignore) if !ignore && s.owner != typeOf[SJCapture].typeSymbol =>
+            index += 1
+            bakeScalaPlainFieldMember(g, s, index - 1)
+        }
       }
 
-      def bakeScalaPlainFieldMember(setterMethod: Symbol, index: Int): ClassFieldMember[T, Any] = {
-        val simpleName = setterMethod.name.toString.stripSuffix("_$eq")
+      def bakeScalaPlainFieldMember(getterMethod: Symbol, setterMethod: Symbol, index: Int): ClassFieldMember[T, Any] = {
+        val simpleName = getterMethod.name.toString
 
-        // p is the actual member.  Find it from the given setterMethod by stripping the suffix.
-        val p = tpe.members.find(f => f.name.toString == simpleName).getOrElse(throw new Exception("Boom--can't find getter for setter " + simpleName))
-
-        val memberType = p.asMethod.returnType
-        val declaredMemberType = tpe.typeSymbol.asType.toType.member(p.name).asMethod.returnType
+        val memberType = getterMethod.asMethod.returnType
+        val declaredMemberType = tpe.typeSymbol.asType.toType.member(getterMethod.name).asMethod.returnType
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 
         val (derivedValueClassConstructorMirror2, memberClass) =
@@ -154,16 +163,29 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
             (None, None)
           }
 
-        // Exctract DBKey and MapName annotations if present (Note: Here the annotation is not on the getter/setter but the private backing variable!)
-        val foundPrivateVar = tpe.members.filter(z => z.isPrivate && !z.isMethod && z.name.toString.trim == p.name.toString.trim).headOption
-        val dbkeyAnno = foundPrivateVar.flatMap(ClassHelper.getAnnotationValue[DBKey, Int](_, Some(0)))
-
-        val mapNameAnno = foundPrivateVar.flatMap(ClassHelper.getAnnotationValue[MapName, String](_))
-
-        val isMaybe =
-          foundPrivateVar.map(ClassHelper.annotationExists[Maybe](_)).getOrElse(false) ||
-            ClassHelper.annotationExists[Maybe](p) ||
-            ClassHelper.annotationExists[Maybe](setterMethod)
+        // This finds field (and inherited) annotations
+        var dbkeyAnno: Option[Int] = None
+        var mapNameAnno: Option[String] = None
+        var isMaybe: Boolean = false
+        tt.tpe.baseClasses.foreach { f =>
+          val privateVar = f.typeSignature.members.find(z => z.isPrivate && !z.isMethod && z.name.toString.trim == getterMethod.name.toString.trim)
+          val db = privateVar.flatMap(ClassHelper.getAnnotationValue[DBKey, Int](_, Some(0)))
+            .orElse(ClassHelper.getAnnotationValue[DBKey, Int](getterMethod, Some(0)))
+            .orElse(ClassHelper.getAnnotationValue[DBKey, Int](setterMethod, Some(0)))
+          val mapName = privateVar.flatMap(ClassHelper.getAnnotationValue[MapName, String](_))
+            .orElse(ClassHelper.getAnnotationValue[MapName, String](getterMethod))
+            .orElse(ClassHelper.getAnnotationValue[MapName, String](setterMethod))
+          val maybe =
+            privateVar.map(ClassHelper.annotationExists[Maybe](_)).getOrElse(false) ||
+              ClassHelper.annotationExists[Maybe](getterMethod) ||
+              ClassHelper.annotationExists[Maybe](setterMethod)
+          if (db.isDefined)
+            dbkeyAnno = db
+          if (mapName.isDefined)
+            mapNameAnno = mapName
+          if (maybe)
+            isMaybe = true
+        }
 
         ClassFieldMember[T, Any](
           index,
@@ -171,7 +193,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           memberType,
           memberTypeAdapter,
           declaredMemberType,
-          Reflection.methodToJava(p.asMethod),
+          Reflection.methodToJava(getterMethod.asMethod),
           derivedValueClassConstructorMirror2,
           None, // defaultValueMirror not needed
           memberClass,
@@ -199,9 +221,13 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined ||
                 Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined
 
+            val mapNameAnno =
+              Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[MapName].name) orElse
+                Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[MapName].name)
+
             ClassFieldMember[T, Any](
               index - 1,
-              propertyDescriptor.getName,
+              mapNameAnno.getOrElse(propertyDescriptor.getName),
               memberType,
               memberTypeAdapter,
               declaredMemberType,
@@ -210,7 +236,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               None, // defaultValueMirror not needed
               None,
               None,
-              None,
+              mapNameAnno, // mapName
               None,
               Some(propertyDescriptor.getWriteMethod),
               isMaybe

@@ -1,5 +1,4 @@
 package co.blocke.scalajack
-package model
 
 //import scala.collection.mutable.Map
 
@@ -8,4 +7,4 @@ trait SJCapture {
 }
 
 // Java classes should inherit this!
-class SJCaptureWrapper extends SJCapture
+class SJCaptureJava extends SJCapture

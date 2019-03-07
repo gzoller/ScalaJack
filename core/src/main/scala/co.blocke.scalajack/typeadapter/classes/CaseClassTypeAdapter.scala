@@ -60,22 +60,28 @@ case class CaseClassTypeAdapter[T](
 
   def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val extras = scala.collection.mutable.ListBuffer.empty[(String, ExtraFieldValue[_])]
+
     val typeMembersWithRealTypes = typeMembersByName.map {
       case (typeMemberName, tm) =>
         val tType = tm.typeSignature.toString
-        val tmWithActualType = fieldMembersByName.values.collectFirst {
+        fieldMembersByName.values.collectFirst {
           case f if f.declaredValueType.toString == tType =>
             val realValue = f.valueIn(t)
             val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
             tm.copy(runtimeConcreteType = Some(realType))
-        }.get // must find one!
-        val typeMemberValue = writer.jackFlavor.typeValueModifier match {
-          case Some(fn) => fn.unapply(tmWithActualType.runtimeConcreteType.get)
-          case None     => tmWithActualType.runtimeConcreteType.get.toString
+        } match {
+          case Some(tmWithActualType) =>
+            val typeMemberValue = writer.jackFlavor.typeValueModifier match {
+              case Some(fn) => fn.unapply(tmWithActualType.runtimeConcreteType.get)
+              case None     => tmWithActualType.runtimeConcreteType.get.toString
+            }
+            extras.append((typeMemberName, ExtraFieldValue(typeMemberValue, writer.jackFlavor.stringTypeAdapter)))
+            (tm.typeSignature.toString, tmWithActualType)
+          case None =>
+            // Internal type member usage--uninteresting from a construction perspective, so skip it (nulls to be filtered below)
+            (tm.typeSignature.toString, null)
         }
-        extras.append((typeMemberName, ExtraFieldValue(typeMemberValue, writer.jackFlavor.stringTypeAdapter)))
-        (tm.typeSignature.toString, tmWithActualType)
-    }
+    }.filter(_._2 != null)
     writer.writeObject(t, ClassHelper.applyConcreteTypeMembersToFields(typeMembersWithRealTypes, typeMembersByName, fieldMembersByName), out, extras.toList)
   }
 

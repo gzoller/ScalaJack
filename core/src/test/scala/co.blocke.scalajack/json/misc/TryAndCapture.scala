@@ -5,7 +5,6 @@ package misc
 import org.scalatest.{ FunSpec, Matchers }
 
 import scala.util._
-import model._
 import JsonMatchers._
 
 case class Embed(stuff: List[String], num: Int)
