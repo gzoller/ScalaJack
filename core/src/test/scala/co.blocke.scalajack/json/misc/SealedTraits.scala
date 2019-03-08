@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import co.blocke.scalajack.model.ReadInvalidError
+import org.scalatest.{ FunSpec, Matchers }
 
 // Unambiguous member names
 sealed trait ContactPoint
@@ -24,7 +25,9 @@ sealed trait Stay
 case class VillaStay(name: String) extends Stay
 case class RanchStay(name: String) extends Stay
 
-class SealedTraits extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+case class NotSealed()
+
+class SealedTraits extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
@@ -61,6 +64,27 @@ class SealedTraits extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val js = sj2.render(s)
       assertResult("""{"stay_kind":"co.blocke.scalajack.json.misc.VillaStay","name":"Hacienda"}""") { js }
       assertResult(s) { sj2.read[Stay](js) }
+    }
+    it("Handles null") {
+      val js = """null"""
+      val inst = sj.read[ContactPoint](js)
+      inst should be(null)
+      sj.render[ContactPoint](inst) should be(js)
+    }
+    it("Handle not a sealed trait") {
+      val js = """{"d":3,"color":"Red"}"""
+      val msg =
+        """[$]: No sub-classes of co.blocke.scalajack.json.misc.ContactPoint match field names Set(d, color)
+          |{"d":3,"color":"Red"}
+          |---------------------^""".stripMargin
+      the[ReadInvalidError] thrownBy sj.read[ContactPoint](js) should have message msg
+    }
+    it("Invalid ambiguous trait") {
+      val msg = """[$]: co.blocke.scalajack.json.misc.NotSealed isn't a subclass of sealed trait co.blocke.scalajack.json.misc.Vehicle
+                  |.misc.NotSealed","numberOfWheels":3,"color":"Red"}
+                  |--------------------------------------------------^""".stripMargin
+      val js = """{"_hint":"co.blocke.scalajack.json.misc.NotSealed","numberOfWheels":3,"color":"Red"}"""
+      the[ReadInvalidError] thrownBy sj.read[Vehicle](js) should have message msg
     }
   }
 

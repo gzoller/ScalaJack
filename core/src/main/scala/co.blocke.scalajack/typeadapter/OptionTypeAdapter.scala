@@ -27,14 +27,8 @@ import scala.collection.mutable.Builder
 object OptionTypeAdapterFactory extends TypeAdapterFactory {
   def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[Option[_]]) {
-      tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs match {
-        case Nil => // for None
-          OptionTypeAdapter(context.typeAdapterOf[String]).asInstanceOf[TypeAdapter[T]]
-        case elementType :: Nil =>
-          OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
-      }
-      //      val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
-      //      OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
+      val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
+      OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
     } else
       next.typeAdapterOf[T]
 }

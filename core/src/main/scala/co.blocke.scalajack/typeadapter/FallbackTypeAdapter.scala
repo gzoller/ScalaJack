@@ -7,6 +7,7 @@ import util.Path
 import scala.collection.mutable.Builder
 import scala.util.{ Failure, Success, Try }
 
+//case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapter[A]], orElseTypeAdapter: TypeAdapter[B]) extends TypeAdapter[A] {
 case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapter[A]], orElseTypeAdapter: TypeAdapter[B]) extends TypeAdapter[A] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): A = {
@@ -24,6 +25,5 @@ case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapt
     }
   }
 
-  def write[WIRE](t: A, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
-    attemptedTypeAdapter.getOrElse(orElseTypeAdapter).write(t.asInstanceOf[B], writer, out, isMapKey)
+  def write[WIRE](t: A, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {}
 }

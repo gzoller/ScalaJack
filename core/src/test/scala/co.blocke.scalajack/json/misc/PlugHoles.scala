@@ -130,6 +130,8 @@ class PlugHoles() extends FunSpec with Matchers {
       assertResult(Bogus(11, None, Some((5, true)))) {
         sj.read[Bogus](js)
       }
+      //      val inst: Option[_] = None
+      //      sj.render(inst)
     }
     it("Extra chars in JSON") {
       val js = """[1,2,3]]"""
@@ -152,6 +154,10 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Traits") {
       val js = "15"
       the[model.ReadUnexpectedError] thrownBy sj.read[Pet](js) should have message """[$]: Expected start of an object but read token Number"""
+    }
+    it("Type") {
+      val t = sj.read[Type]("\"scala.collection.immutable.List\"")
+      sj.render(t) should be("\"scala.collection.immutable.List\"")
     }
   }
 }
