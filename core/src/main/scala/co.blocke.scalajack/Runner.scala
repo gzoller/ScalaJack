@@ -1,23 +1,16 @@
 package co.blocke.scalajack
 
-import model._
-import typeadapter._
+// $COVERAGE-OFF$This file is for debugging only!
 
-//case class Fact(fall: TypeAdapter[_]) extends TypeAdapterFactory.FromClassSymbol {
-//
-//  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
-//    if (classSymbol.name.toString == "String") {
-//      (fall).asInstanceOf[TypeAdapter[T]]
-//    } else
-//      next.typeAdapterOf[T]
-//  }
-//}
+import util._
 
 object Runner extends App {
 
   val sj = ScalaJack()
 
-  //  val falling = new FallbackTypeAdapter(Some(sj.context.typeAdapterOf[String]).asInstanceOf[Option[co.blocke.scalajack.model.TypeAdapter[Any]]], sj.context.typeAdapterOf[Int])
-  //  val sj2 = ScalaJack().withAdapters(Fact(falling))
-  //  sj2.render[String](25)
+  val p = Path.Unknown \ "{something" \ "{else}" \ "[blather]" \ "[hmm" \ 3 \ "one.two"
+  println(p)
+  println(p + "next")
 }
+// $COVERAGE-ON$
+

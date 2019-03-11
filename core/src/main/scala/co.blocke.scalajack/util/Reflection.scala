@@ -30,6 +30,7 @@ object Reflection {
   def methodToJava(methodSymbol: scala.reflect.runtime.universe.MethodSymbol): java.lang.reflect.Method =
     mirror.methodToJava(methodSymbol.asInstanceOf[scala.reflect.internal.Symbols#MethodSymbol])
 
+  // $COVERAGE-OFF$Unused right now--may be part of future functionality
   def inferTypeOf[T](value: T)(implicit compileTimeTypeTag: TypeTag[T]): Type = {
     value match {
       case null =>
@@ -50,6 +51,7 @@ object Reflection {
         valueType
     }
   }
+  // $COVERAGE-ON$
 
   // Here's the deep magic... This associates the child's "unpopulated" symbols (Z, X, P) with the populated (known types)
   // in the parent.  It is looking for a specific association, e.g. Z, and attempts to find it.

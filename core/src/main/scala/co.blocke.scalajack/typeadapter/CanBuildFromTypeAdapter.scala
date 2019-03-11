@@ -95,13 +95,13 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
     val canBuildFrom = reflect(companionInstance).reflectMethod(method).apply().asInstanceOf[CanBuildFrom[_, (Key, Value), To]]
     // Note: We include Any here because Any *could* be an Option, so we must include it as a possibility
     val keyIsOptional =
-      keyTypeAdapter.isInstanceOf[model.TypeAdapter[Any]] ||
-        keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
-        (keyTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
+      keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
+        (keyTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) ||
+        keyTypeAdapter.isInstanceOf[AnyTypeAdapter]
     val valueIsOptional =
-      valueTypeAdapter.isInstanceOf[model.TypeAdapter[Any]] ||
-        valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
-        (valueTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && valueTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]])
+      valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] ||
+        (valueTypeAdapter.isInstanceOf[StringWrapTypeAdapter[_]] && valueTypeAdapter.asInstanceOf[StringWrapTypeAdapter[_]].wrappedTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]) ||
+        valueTypeAdapter.isInstanceOf[AnyTypeAdapter]
 
     CanBuildMapTypeAdapter(
       canBuildFrom,

@@ -41,5 +41,10 @@ class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       binary should equal("\"VGhpcyBpcyBhIHRlc3Q=\"")
       sj.read[Array[Byte]](binary) should equal(bytes)
     }
+    it("Paths render properly") {
+      val p = Path.Unknown \ "{something" \ "{else}" \ "[blather]" \ "[hmm" \ 3 \ "one.two"
+      p.toString should be("""???.{something...}.{else}.[blather].[hmm...][3]."one.two"""")
+      (p + "next").toString shouldBe ("""???.{something...}.{else}.[blather].[hmm...][3]."one.two".next""")
+    }
   }
 }

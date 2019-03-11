@@ -52,6 +52,10 @@ class PlugHoles() extends FunSpec with Matchers {
                   |-----^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[String]](js) should have message msg
     }
+    it("ScalaJack") {
+      val sj = ScalaJack.apply(json.JsonFlavorMaker)
+      sj.read[Int]("15") should be(15)
+    }
   }
   it("JsonWriter") {
     val thing: List[BigInt] = List(BigInt(1), null, BigInt(2))
@@ -119,6 +123,7 @@ class PlugHoles() extends FunSpec with Matchers {
       sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be("""{"{\"[1,2,3]\":3}":5}""")
       sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
       sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{}""")
+      sj.render[Map[Int, Any]](Map(1 -> Some(3), 2 -> None)) should be("""{"1":3}""")
     }
     it("Tuples") {
       val jsNull = "null"

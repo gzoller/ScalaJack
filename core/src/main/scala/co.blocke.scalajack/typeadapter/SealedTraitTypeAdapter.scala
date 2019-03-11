@@ -88,7 +88,9 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
           }
       }
     } else {
+      // $COVERAGE-OFF$This should be impossible--can't trigger it.  Should always be a class of some kind arrive at this adapter.
       next.typeAdapterOf[T]
+      // $COVERAGE-ON$
     }
 }
 
@@ -133,7 +135,9 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
             throw new ReadInvalidError(path, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames\n" + reader.showError(), List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
 
           case _ =>
+            // $COVERAGE-OFF$Should be impossible--here for safety.  Something to trigger this would be ambiguous and would then be detected as a WrappedSealedTraitTypeAdapter, not here.
             throw new ReadInvalidError(path, s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames\n" + reader.showError(), List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
+          // $COVERAGE-ON$
         }
     }
   }

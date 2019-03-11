@@ -17,17 +17,23 @@ object BigDecimalExtractor {
   def unapply(s: String): Option[BigDecimal] = Try(BigDecimal(s)).toOption
 }
 
-object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
-
+object AnyTypeAdapterFactory extends TypeAdapterFactory {
   var jackFlavor: JackFlavor[_] = null
+
+  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+    if (tt.tpe =:= typeOf[Any])
+      AnyTypeAdapter(jackFlavor).asInstanceOf[TypeAdapter[T]]
+    else
+      next.typeAdapterOf[T]
+  }
+}
+
+case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
 
   private lazy val classMapTypeAdapter: TypeAdapter[Map[String, Any]] = jackFlavor.context.typeAdapterOf[Map[String, Any]]
   private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
   private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
-
-  //  @inline def isNumberChar(char: Char): Boolean =
-  //    ('0' <= char && char <= '9') || (char == '-') || (char == '.') || (char == 'e') || (char == 'E') || (char == '-') || (char == '+')
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
@@ -75,8 +81,7 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
       // Tease out Lists/Maps
       val inferredClassName = value.getClass.getName match {
         case "scala.collection.immutable.$colon$colon" => "scala.collection.immutable.List"
-        case s if s.startsWith("scala.collection.immutable.Map") => "scala.collection.immutable.Map"
-        case s => s
+        case s                                         => s
       }
       val rawValueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(inferredClassName)).asInstanceOf[TypeAdapter[X]]
       rawValueTA match {
@@ -95,22 +100,32 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
       }
     } catch {
       case _: java.util.NoSuchElementException =>
+        // $COVERAGE-OFF$Should be impossible (is anything not matchable to Any?).  Left here as a safety
         throw new IllegalStateException("Unable to discern type adapter for value " + value)
+      // $COVERAGE-ON$
     }
   }
 
   // WARNING: JSON output broken for Option[...] where value is None -- especially bad for Map keys!
-  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     if (isMapKey && writer.jackFlavor.stringifyMapKeys)
       t match {
         // Null not needed: null Map keys are inherently invalid in SJ
         // case null => writer.writeNull(out)
-        case enum: Enumeration#Value         => writer.writeString(enum.toString, out)
-        case _: Map[_, _]                    => (new StringWrapTypeAdapter(mapAnyTypeAdapter)).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
-        case _: GenTraversableOnce[_]        => (new StringWrapTypeAdapter(listAnyTypeAdapter)).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
-        case opt: Option[_] if opt.isDefined => unpack(t.asInstanceOf[Option[_]].get, writer, out, isMapKey)
-        case opt: Option[_] if opt.isEmpty   => unpack(None, writer, out, isMapKey)
-        case v                               => unpack(v, writer, out, isMapKey)
+        case enum: Enumeration#Value =>
+          writer.writeString(enum.toString, out)
+        case _: Map[_, _] =>
+          (new StringWrapTypeAdapter(mapAnyTypeAdapter)).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
+        case _: GenTraversableOnce[_] =>
+          (new StringWrapTypeAdapter(listAnyTypeAdapter)).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
+        case opt: Option[_] if opt.isDefined =>
+          unpack(t.asInstanceOf[Option[_]].get, writer, out, isMapKey)
+        // $COVERAGE-OFF$Should be impossible (Nones filtered by CanBuildFromTypeAdapter).  Code left in as a safety
+        case opt: Option[_] if opt.isEmpty =>
+          unpack(None, writer, out, isMapKey)
+        // $COVERAGE-ON$
+        case v =>
+          unpack(v, writer, out, isMapKey)
       }
     else
       t match {
@@ -121,4 +136,5 @@ object AnyTypeAdapterFactory extends TypeAdapter.=:=[Any] {
         case _: Option[_]             => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
         case v                        => unpack(v, writer, out, isMapKey)
       }
+  }
 }

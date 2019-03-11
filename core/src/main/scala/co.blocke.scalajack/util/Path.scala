@@ -33,8 +33,9 @@ object Path {
           s"""$parent.$s"""
         else
           s"""$parent.$s...]"""
-      case _ if name.contains('.') => s"""$parent."$name""""
-      case _                       => s"$parent.$name"
+      case _ if name.contains('.') =>
+        s"""$parent."$name""""
+      case _ => s"$parent.$name"
     }
   }
 

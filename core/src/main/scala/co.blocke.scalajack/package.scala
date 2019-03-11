@@ -4,6 +4,8 @@ import scalajack.util.TypeTagHacks
 import reflect.runtime.universe._
 import reflect.ClassTag
 
+// NOTE: Some items here are commented out because they don't seem to be used.
+
 package object scalajack {
 
   type MemberName = String
@@ -40,15 +42,15 @@ package object scalajack {
   // format: OFF
   @inline final def appliedType(tycon: Type, args: Type*): Type        = scala.reflect.runtime.universe.appliedType(tycon, args: _*)
   @inline final def appliedType(tycon: Type, args: List[Type]): Type   = scala.reflect.runtime.universe.appliedType(tycon, args)
-  @inline final def classSymbol(rtcls: RuntimeClass): ClassSymbol      = scala.reflect.runtime.currentMirror.classSymbol(rtcls)
+//  @inline final def classSymbol(rtcls: RuntimeClass): ClassSymbol      = scala.reflect.runtime.currentMirror.classSymbol(rtcls)
   @inline final def reflect[T: ClassTag](obj: T): InstanceMirror       = scala.reflect.runtime.currentMirror.reflect[T](obj)
   @inline final def reflectClass(cls: ClassSymbol): ClassMirror        = scala.reflect.runtime.currentMirror.reflectClass(cls)
   @inline final def reflectModule(mod: ModuleSymbol): ModuleMirror     = scala.reflect.runtime.currentMirror.reflectModule(mod)
   //  @inline final def runtimeClass(sym: ClassSymbol): java.lang.Class[_] = scala.reflect.runtime.currentMirror.runtimeClass(sym)
   @inline final def runtimeClass(tpe: Type): java.lang.Class[_]        = scala.reflect.runtime.currentMirror.runtimeClass(tpe)
-  @inline final def runtimeClassOf[T: TypeTag]: java.lang.Class[T]     = scala.reflect.runtime.currentMirror.runtimeClass(implicitly[TypeTag[T]].tpe).asInstanceOf[java.lang.Class[T]]
+//  @inline final def runtimeClassOf[T: TypeTag]: java.lang.Class[T]     = scala.reflect.runtime.currentMirror.runtimeClass(implicitly[TypeTag[T]].tpe).asInstanceOf[java.lang.Class[T]]
   @inline final def staticClass(fullName: String): ClassSymbol         = scala.reflect.runtime.currentMirror.staticClass(fullName)
-  @inline final def symbolOf[T: WeakTypeTag]: TypeSymbol               = scala.reflect.runtime.universe.symbolOf[T]
+//  @inline final def symbolOf[T: WeakTypeTag]: TypeSymbol               = scala.reflect.runtime.universe.symbolOf[T]
   @inline final def typeOf[T: TypeTag]: Type                           = scala.reflect.runtime.universe.typeOf[T]
   // format: ON
 
@@ -60,9 +62,11 @@ package object scalajack {
     ClassTag[T](typeTag[T].mirror.runtimeClass(typeTag[T].tpe))
   }
 
+  /*
   // Type Extractors
   object SingleType {
     def apply(tpe: Type, sym: Symbol): Type =
       scala.reflect.runtime.universe.internal.singleType(tpe, sym).typeSymbol.asType.toType
   }
+  */
 }
