@@ -1,2 +1,2 @@
-sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f1 -t1 -wi 3 -i 5"
+sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f1 -t1 -wi 3 -i 7"
 #sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f1 -t1 -wi 5 -i 10"

@@ -8,6 +8,19 @@ import scala.concurrent.Future
 //
 //import scala.util.Try
 
+// Partial Parse classes
+trait Thing {
+  val name: String
+}
+case class HardThing(name: String, weight: Int) extends Thing
+case class SoftThing(name: String, isFluffy: Boolean) extends Thing
+
+case class Message[T <: Thing](id: Int, payload: T) {
+  type kind = T
+}
+case class MessageShell(kind: String, id: Int) extends SJCapture
+//---------
+
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
   val jsonString = """[{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"},
@@ -127,6 +140,9 @@ class BaseBenchmarksState {
   )
   val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
   */
+
+  val mixedMsgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render(Message(i, HardThing("foo", 3))) else sj6.render(Message(i, SoftThing("floof", true))))
+  val msgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render[Thing](HardThing("foo", 3)) else sj6.render[Thing](SoftThing("floof", true)))
 }
 
 @State(Scope.Thread)
@@ -175,6 +191,7 @@ class BaseBenchmarks {
   }
   */
 
+  /* -- Main Benchmark series (these 2) --
   @Benchmark
   def readSeries5(state: BaseBenchmarksState): Any = {
     state.sj5.read[List[Person]](state.jsonString)
@@ -183,6 +200,22 @@ class BaseBenchmarks {
   @Benchmark
   def readSeries6(state: BaseBenchmarksState): Any = {
     state.sj6.read[List[Person]](state.jsonString)
+  }
+  */
+
+  @Benchmark
+  def fullParse(state: BaseBenchmarksState): Any = {
+    state.msgs.foreach(state.sj6.read[Thing](_))
+  }
+
+  @Benchmark
+  def partialParse(state: BaseBenchmarksState): Any = {
+    state.mixedMsgs.foreach { m =>
+      state.sj6.read[MessageShell](m).kind match {
+        case "co.blocke.scalajack.benchmarks.HardThing" => state.sj6.read[Message[HardThing]](m)
+        case _ => // ignore
+      }
+    }
   }
 
   /*
