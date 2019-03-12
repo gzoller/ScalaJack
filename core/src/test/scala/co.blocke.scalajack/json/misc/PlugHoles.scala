@@ -56,6 +56,45 @@ class PlugHoles() extends FunSpec with Matchers {
       val sj = ScalaJack.apply(json.JsonFlavorMaker)
       sj.read[Int]("15") should be(15)
     }
+    it("End of TA chain") {
+      the[IllegalArgumentException] thrownBy model.DefaultTypeAdapterFactory.typeAdapterOf[Any](null)(sj.context, TypeTags.of(typeOf[Any])) should have message """Unable to find a type adapter for Any"""
+    }
+    it("Map reading (json)") {
+      val js = """{"a":5"""
+      val msg =
+        """[$]: Expected comma here.
+          |{"a":5
+          |------^""".stripMargin
+      the[model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](js) should have message msg
+      val js2 = """{"a""""
+      val msg2 =
+        """[$.a]: Expected a colon here
+          |{"a"
+          |----^""".stripMargin
+      the[model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](js2) should have message msg2
+    }
+    it("Object reading (json)") {
+      val js = """{5:5}"""
+      val msg =
+        """[$]: Expected a JSON string here
+          |{5:5}
+          |-^""".stripMargin
+      the[model.ReadUnexpectedError] thrownBy sj.read[Bogus](js) should have message msg
+    }
+    it("Tuple reading (json)") {
+      val js = """[12"""
+      val msg =
+        """[$]: Expected comma here.
+          |[12
+          |---^""".stripMargin
+      the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)](js) should have message msg
+      sj.read[(Int, Int)]("null") should be(null)
+      val msg2 =
+        """[$]: Expected an Tuple (Array) but parsed Number
+          |123
+          |^""".stripMargin
+      the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)]("123") should have message msg2
+    }
   }
   it("JsonWriter") {
     val thing: List[BigInt] = List(BigInt(1), null, BigInt(2))

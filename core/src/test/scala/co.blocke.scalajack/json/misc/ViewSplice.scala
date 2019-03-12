@@ -31,6 +31,11 @@ class ViewSplice() extends FunSpec with Matchers {
       val y: Master = sj.spliceInto(x.copy(name = "Fred", big = 2L), master)
       y should equal(master.copy(name = "Fred", big = 2L))
     }
+    it("Must enforce spliceInto target is a case class") {
+      val master = Master("Greg", List("a", "b"), List(Encapsulated("x", false), Encapsulated("y", true)), Encapsulated("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
+      val x = sj.view[View1](master)
+      the[ViewException] thrownBy sj.spliceInto(x.copy(name = "Fred", big = 2L), "some non-case-class") should have message """Output of spliceInto() must be a case class.  java.lang.String is not a case class."""
+    }
     it("Must spliceInto with empty collection from view") {
       val master = Master("Greg", List("a", "b"), List(Encapsulated("x", false), Encapsulated("y", true)), Encapsulated("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
       val x = Empty("Greg", List.empty[String])

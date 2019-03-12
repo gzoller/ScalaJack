@@ -107,8 +107,6 @@ trait JsonReader extends Reader[String] {
           builder += elementTypeAdapter.read(path \ i, this)
           i += 1
         }
-        if (tokens.get(p).tokenType != EndArray)
-          throw new ReadUnexpectedError(path, s"Unterminated JSON array\n" + showError())
         builder.result
       case Null =>
         null.asInstanceOf[To]
@@ -136,13 +134,11 @@ trait JsonReader extends Reader[String] {
           if (key == null)
             throw new ReadInvalidError(path, "Map keys cannot be null\n" + showError(), List.empty[String])
           if (tokens.get(p).tokenType != TokenType.Colon)
-            throw new ReadUnexpectedError(path \ key.toString, s"Expected a colon here", List("Colon"))
+            throw new ReadUnexpectedError(path \ key.toString, s"Expected a colon here\n" + showError(), List("Colon"))
           p += 1
           val value = valueTypeAdapter.read(path \ key.toString, this)
           builder += key -> value
         }
-        if (tokens.get(p).tokenType != EndObject)
-          throw new ReadUnexpectedError(path, s"Unterminated JSON object\n" + showError())
         builder.result
       case Null =>
         null.asInstanceOf[To]
@@ -286,8 +282,6 @@ trait JsonReader extends Reader[String] {
               this.jackFlavor.anyTypeAdapter.read(path \ key, this)
           }
         }
-        if (tokens.get(p).tokenType != EndObject)
-          throw new ReadUnexpectedError(path, s"Unterminated JSON object\n" + showError())
         ObjectFieldResult(fieldCount == fields.size, args, flags, Option(captured))
       case Null =>
         null

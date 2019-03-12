@@ -198,6 +198,7 @@ object TypeAdapterFactory {
             val elementType1 :: elementType2 :: Nil = baseType.typeArgs
             create[E1, E2, TT](next)(context, tt.asInstanceOf[TypeTag[TT]], TypeTags.of[X[E1, E2]](baseType), TypeTags.of[E1](elementType1), TypeTags.of[E2](elementType2)).asInstanceOf[TypeAdapter[T]]
         }
+
     }
   }
 }
