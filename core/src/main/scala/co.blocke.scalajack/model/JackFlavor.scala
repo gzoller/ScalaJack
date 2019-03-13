@@ -3,10 +3,15 @@ package model
 
 import typeadapter._
 import util.Path
+import scala.util.Try
 
 trait FlavorMaker {
   type WIRE
   def make(): JackFlavor[WIRE]
+}
+
+case class Mapper[WIRE, T](jackFlavor: JackFlavor[WIRE], fn: (T) => Unit)(implicit tt: TypeTag[T]) {
+  def trigger(wire: WIRE) = fn(jackFlavor.read(wire)(tt))
 }
 
 trait JackFlavor[WIRE] extends ViewSplice {
@@ -20,9 +25,31 @@ trait JackFlavor[WIRE] extends ViewSplice {
       throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError())
     v
   }
+  private def _read[T](p: Transceiver[WIRE])(implicit tt: TypeTag[T]): T = {
+    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    if (!p.isDone())
+      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError())
+    v
+  }
   //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
+
+  def filter[T](hintLabel: String = "")(implicit tt: TypeTag[T]): PartialFunction[Transceiver[WIRE], Option[T]] = {
+    case p: Transceiver[WIRE] if hintLabel.length == 0 =>
+      p.reset()
+      Try(_read(p)(tt)).toOption
+    case p: Transceiver[WIRE] if (hintLabel.length > 0) && {
+      p.reset()
+      val result = p.lookAheadForTypeHint(hintLabel, (s: String) => typeTypeAdapter.read(Path.Root, p)).exists { foundType =>
+        (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
+      }
+      p.rollbackToSave()
+      result
+    } =>
+      Some(_read(p)(tt))
+    case _ => None
+  }
 
   val defaultHint: String = "_hint"
   val stringifyMapKeys: Boolean = false

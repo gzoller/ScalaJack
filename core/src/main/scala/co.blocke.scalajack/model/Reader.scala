@@ -20,6 +20,7 @@ trait Reader[WIRE] {
 
   def savePos()
   def rollbackToSave()
+  def reset()
   def peek(): TokenType.Value
   def lastTokenText(): String
   def skip()

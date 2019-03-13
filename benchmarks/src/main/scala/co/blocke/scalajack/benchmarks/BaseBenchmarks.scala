@@ -9,16 +9,14 @@ import scala.concurrent.Future
 //import scala.util.Try
 
 // Partial Parse classes
-trait Thing {
-  val name: String
-}
-case class HardThing(name: String, weight: Int) extends Thing
-case class SoftThing(name: String, isFluffy: Boolean) extends Thing
-
-case class Message[T <: Thing](id: Int, payload: T) {
+trait Comm
+case class Event(happening: Int) extends Comm
+trait Command extends Comm { val goDo: String }
+case class SimpleCommand(goDo: String, public: Boolean) extends Command
+case class CommMessage[T <: Comm](id: Int, payload: T) {
   type kind = T
 }
-case class MessageShell(kind: String, id: Int) extends SJCapture
+case class CommWrapper(kind: Type)
 //---------
 
 @State(Scope.Benchmark)
@@ -141,8 +139,11 @@ class BaseBenchmarksState {
   val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
   */
 
-  val mixedMsgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render(Message(i, HardThing("foo", 3))) else sj6.render(Message(i, SoftThing("floof", true))))
-  val msgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render[Thing](HardThing("foo", 3)) else sj6.render[Thing](SoftThing("floof", true)))
+  val mixedMsgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render(CommMessage(1, SimpleCommand("doit", true).asInstanceOf[Command])) else sj6.render(CommMessage(2, Event(99))))
+  val filter = sj6.filter[CommMessage[Command]]("kind")
+  val cmdType = typeOf[Command]
+  val evtType = typeOf[Event]
+
 }
 
 @State(Scope.Thread)
@@ -203,17 +204,24 @@ class BaseBenchmarks {
   }
   */
 
-  @Benchmark
-  def fullParse(state: BaseBenchmarksState): Any = {
-    state.msgs.foreach(state.sj6.read[Thing](_))
-  }
 
   @Benchmark
   def partialParse(state: BaseBenchmarksState): Any = {
-    state.mixedMsgs.foreach { m =>
-      state.sj6.read[MessageShell](m).kind match {
-        case "co.blocke.scalajack.benchmarks.HardThing" => state.sj6.read[Message[HardThing]](m)
-        case _ => // ignore
+    state.mixedMsgs.foreach { js =>
+      val p = state.sj6.parse(js)
+      if (state.filter.isDefinedAt(p))
+        state.filter(p)
+    }
+  }
+
+  @Benchmark
+  def parseWrapper(state: BaseBenchmarksState): Any = {
+    state.mixedMsgs.foreach { js =>
+      val t = state.sj6.read[CommWrapper](js).kind
+      t match {
+        case _ if t == state.cmdType =>
+        case _ if t == state.evtType =>
+        case _                       =>
       }
     }
   }

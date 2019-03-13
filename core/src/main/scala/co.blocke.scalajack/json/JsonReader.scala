@@ -24,8 +24,8 @@ trait JsonReader extends Reader[String] {
   lazy val tokens = tokenizer.tokenize(json).asInstanceOf[ArrayList[JsonToken]] //ArrayBuffer[JsonToken]]
 
   def savePos() = saved = p
-
   def rollbackToSave() = p = saved
+  def reset() = p = 0
 
   def peek(): TokenType = tokens.get(p).tokenType
 

@@ -64,15 +64,26 @@ case class CaseClassTypeAdapter[T](
         val tType = tm.typeSignature.toString
         fieldMembersByName.values.collectFirst {
           case f if f.declaredValueType.toString == tType =>
-            val realValue = f.valueIn(t)
-            val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
-            tm.copy(runtimeConcreteType = Some(realType))
+            // If the T in the type member is a trait, print the trait name for the type member and allow the values
+            // (e.g. payload) to go ahead and print concrete type hint as usual.  (Allows filtering on the trait rather than value's type.)
+            // i.e. The rendered output will have 2 hints: an externalized one (the trait) and the internal one (the concrete value type).
+            //
+            // If the T is a concrete type then only render the externalized type and bypass the internal one.
+            if (tm.baseType.typeSymbol.asClass.isTrait) {
+              tm.copy(runtimeConcreteType = Some(tm.baseType))
+            } else {
+              val realValue = f.valueIn(t)
+              val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
+              tm.copy(runtimeConcreteType = Some(realType))
+            }
         } match {
           case Some(tmWithActualType) =>
+            val rawTypeValueBeforeMod = tmWithActualType.runtimeConcreteType.get
             val typeMemberValue = writer.jackFlavor.typeValueModifier match {
-              case Some(fn) => fn.unapply(tmWithActualType.runtimeConcreteType.get)
-              case None     => tmWithActualType.runtimeConcreteType.get.toString
+              case Some(fn) => fn.unapply(rawTypeValueBeforeMod)
+              case None     => rawTypeValueBeforeMod.toString
             }
+
             extras.append((typeMemberName, ExtraFieldValue(typeMemberValue, writer.jackFlavor.stringTypeAdapter)))
             (tm.typeSignature.toString, tmWithActualType)
           case None =>
