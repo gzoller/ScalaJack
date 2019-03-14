@@ -10,10 +10,6 @@ trait FlavorMaker {
   def make(): JackFlavor[WIRE]
 }
 
-case class Mapper[WIRE, T](jackFlavor: JackFlavor[WIRE], fn: (T) => Unit)(implicit tt: TypeTag[T]) {
-  def trigger(wire: WIRE) = fn(jackFlavor.read(wire)(tt))
-}
-
 trait JackFlavor[WIRE] extends ViewSplice {
 
   def parse(wire: WIRE): Transceiver[WIRE]
@@ -41,7 +37,7 @@ trait JackFlavor[WIRE] extends ViewSplice {
       Try(_read(p)(tt)).toOption
     case p: Transceiver[WIRE] if (hintLabel.length > 0) && {
       p.reset()
-      val result = p.lookAheadForTypeHint(hintLabel, (s: String) => typeTypeAdapter.read(Path.Root, p)).exists { foundType =>
+      val result = p.lookAheadForTypeHint(Path.Root, tt.tpe.toString, hintLabel, (s: String) => typeTypeAdapter.read(Path.Root, p)).exists { foundType =>
         (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
       }
       p.rollbackToSave()

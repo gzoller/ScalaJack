@@ -13,8 +13,8 @@ trait HintValueModifier extends BijectiveFunction[String, Type]
  * using passed-in transformation functions.  The appropriate Bijective is created under the covers.
  */
 case class ClassNameHintModifier(hintToClassname: (String) => String, classNameToHint: (String) => String) extends HintValueModifier {
-  def apply(rawHint: String) = fullNameToType.apply(hintToClassname(rawHint))
-  def unapply(hintFieldType: Type) = classNameToHint(fullNameToType.unapply(hintFieldType))
+  def apply(rawHint: String) = fullNameToType.apply(hintToClassname(rawHint)) // May explode
+  def unapply(hintFieldType: Type) = classNameToHint(fullNameToType.unapply(hintFieldType)) // May explode
 }
 
 /**
@@ -24,6 +24,8 @@ case class ClassNameHintModifier(hintToClassname: (String) => String, classNameT
  */
 case class StringMatchHintModifier(hintToType: Map[String, Type]) extends HintValueModifier {
   val typeToHint = hintToType.map(_.swap)
-  def apply(rawHint: String) = hintToType.getOrElse(rawHint, throw new IllegalStateException("No Type mapping given for hint " + rawHint))
-  def unapply(hintFieldType: Type) = typeToHint.getOrElse(hintFieldType, throw new IllegalStateException("No hint value mapping given for Type " + hintFieldType.typeSymbol.fullName))
+  def apply(rawHint: String) = hintToType(rawHint) // May explode
+  def unapply(hintFieldType: Type) = typeToHint(hintFieldType) // May explode
+  //  def apply(rawHint: String) = hintToType.getOrElse(rawHint, throw new IllegalStateException("No Type mapping given for hint " + rawHint))
+  //  def unapply(hintFieldType: Type) = typeToHint.getOrElse(hintFieldType, throw new IllegalStateException("No hint value mapping given for Type " + hintFieldType.typeSymbol.fullName))
 }

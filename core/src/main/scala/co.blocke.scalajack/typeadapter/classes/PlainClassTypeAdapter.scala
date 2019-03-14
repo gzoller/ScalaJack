@@ -30,7 +30,7 @@ case class PlainClassTypeAdapter[T](
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
         (tm.typeSignature.toString, tm.copy(runtimeConcreteType = {
-          val lookAhead = reader.lookAheadForTypeHint(name, (s: String) => {
+          val lookAhead = reader.lookAheadForTypeHint(path, className, name, (s: String) => {
             reader.jackFlavor.typeValueModifier match {
               case Some(fn) => fn.apply(s) // apply type value modifier if there is one
               case None     => reader.jackFlavor.typeTypeAdapter.read(path, reader)
@@ -64,7 +64,7 @@ case class PlainClassTypeAdapter[T](
                 None
               // Any other missing
               case ((_, false), index) =>
-                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(index).name}\n" + reader.showError(), List(className, fieldArray(index).name))
+                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(index).name}\n" + reader.showError(-1), List(className, fieldArray(index).name))
               // Anything else... as-read
               case ((result, true), index) =>
                 result
@@ -88,7 +88,7 @@ case class PlainClassTypeAdapter[T](
                 (field, None)
               // Any other missing (but not @Maybe)
               case (field, (_, false)) if !field.isMaybe =>
-                throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(), List(className, field.name))
+                throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(-1), List(className, field.name))
               // Anything else... as-read
               case (field, (arg, true)) =>
                 (field, arg)

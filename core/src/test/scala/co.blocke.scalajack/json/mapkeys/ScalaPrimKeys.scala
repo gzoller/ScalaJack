@@ -126,7 +126,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"true":false,"123":true}}"""
         val msg = """[$.m.(map key)]: Expected a Boolean but parsed Number
                     |123
-                    |^""".stripMargin
+                    |--^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js) should have message msg
       }
       it("Bad Byte Key") {
@@ -161,14 +161,14 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
         val msg = """[$.m.(map key)]: Failed to create Double value from parsed text 90.12.3
                     |90.12.3
-                    |^""".stripMargin
+                    |------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
         val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.0
                     |12.0
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInt](js) should have message msg
       }
       it("Bad Long Key") {

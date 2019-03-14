@@ -24,11 +24,11 @@ trait Reader[WIRE] {
   def peek(): TokenType.Value
   def lastTokenText(): String
   def skip()
-  def lookAheadForTypeHint(fieldName: String, typeMaterializer: String => Type): Option[Type]
+  def lookAheadForTypeHint(path: Path, traitName: String, fieldName: String, typeMaterializer: String => Type): Option[Type]
 
   def isDone(): Boolean
 
-  def showError(): String
+  def showError(ptrAdjust: Int = 0): String
 
   def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To
   def readBigInt(path: Path): BigInt

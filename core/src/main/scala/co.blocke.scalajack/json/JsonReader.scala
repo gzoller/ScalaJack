@@ -5,7 +5,7 @@ import model._
 import model.TokenType._
 import util.Path
 
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.generic.CanBuildFrom
 import java.util.ArrayList
@@ -40,8 +40,10 @@ trait JsonReader extends Reader[String] {
   //  def show(): String = "Tokens: " + tokens.size + "  P: " + p
 
   // WARNING: Presumes we're in a JSON object!
-  def lookAheadForTypeHint(fieldName: String, typeMaterializer: String => Type): Option[Type] = {
+  def lookAheadForTypeHint(path: Path, traitName: String, fieldName: String, typeMaterializer: String => Type): Option[Type] = {
     savePos()
+    println(s"($p): " + json)
+    println("Looking for: " + fieldName)
     var objStack = 0
     var arrayStack = 0
     p += 1
@@ -59,7 +61,13 @@ trait JsonReader extends Reader[String] {
               case TokenType.String =>
                 val jt2 = tokens.get(p)
                 val hintString = json.substring(jt2.begin, jt2.end)
-                found = Try(typeMaterializer(hintString)).toOption
+                found = Try(typeMaterializer(hintString)) match {
+                  case Success(x)                   => Some(x)
+                  case Failure(x: ReadMissingError) => throw x // From TypeTypeAdapter--means bad class name in hint value
+                  case Failure(_)                   => None // Something else--Let caller sort it out.
+                }
+                if (found.isEmpty)
+                  throw new ReadInvalidError(path \ fieldName, s"Couldn't materialize class for trait $traitName using hint $hintString\n" + this.showError())
               case _ => p -= 1 // do nothing
             }
           } else if (tokens.get(p + 2).tokenType == TokenType.String)
@@ -74,8 +82,8 @@ trait JsonReader extends Reader[String] {
           arrayStack -= 1
         case TokenType.EndObject =>
           if (objStack == 0) {
-            p -= 1
             done = true
+            //            p -= 1
           } else
             objStack -= 1
         case _ =>
@@ -84,6 +92,9 @@ trait JsonReader extends Reader[String] {
     }
     if (found.isDefined)
       rollbackToSave()
+    else
+      p -= 1
+    println("Look done: " + found)
     found
   }
 
@@ -163,11 +174,11 @@ trait JsonReader extends Reader[String] {
   def readDecimal(path: Path): BigDecimal = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case Number => Try(BigDecimal(json.substring(jt.begin, jt.end))) match {
+      case Number => Try(BigDecimal(json.substring(jt.begin, jt.end + 1))) match {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
+          s"Failed to create BigDecimal value from parsed text ${json.substring(jt.begin, jt.end + 1)}\n" + showError(),
           List.empty[String], u)
       }
       case Null => null
@@ -181,11 +192,11 @@ trait JsonReader extends Reader[String] {
   def readBigInt(path: Path): BigInt = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case Number => Try(BigInt(json.substring(jt.begin, jt.end))) match {
+      case Number => Try(BigInt(json.substring(jt.begin, jt.end + 1))) match {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
+          s"Failed to create BigInt value from parsed text ${json.substring(jt.begin, jt.end + 1)}\n" + showError(),
           List.empty[String], u)
       }
       case Null => null
@@ -199,11 +210,11 @@ trait JsonReader extends Reader[String] {
   def readDouble(path: Path): Double = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case Number => Try(json.substring(jt.begin, jt.end).toDouble) match {
+      case Number => Try(json.substring(jt.begin, jt.end + 1).toDouble) match {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
+          s"Failed to create Double value from parsed text ${json.substring(jt.begin, jt.end + 1)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
@@ -216,11 +227,11 @@ trait JsonReader extends Reader[String] {
   def readInt(path: Path): Int = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case Number => Try(json.substring(jt.begin, jt.end).toInt) match {
+      case Number => Try(json.substring(jt.begin, jt.end + 1).toInt) match {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
+          s"Failed to create Int value from parsed text ${json.substring(jt.begin, jt.end + 1)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
@@ -233,11 +244,11 @@ trait JsonReader extends Reader[String] {
   def readLong(path: Path): Long = {
     val jt = tokens.get(p)
     val value = jt.tokenType match {
-      case Number => Try(json.substring(jt.begin, jt.end).toLong) match {
+      case Number => Try(json.substring(jt.begin, jt.end + 1).toLong) match {
         case Success(u) => u
         case Failure(u) => throw new ReadMalformedError(
           path,
-          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end)}\n" + showError(),
+          s"Failed to create Long value from parsed text ${json.substring(jt.begin, jt.end + 1)}\n" + showError(),
           List.empty[String], u)
       }
       case _ =>
@@ -403,21 +414,41 @@ trait JsonReader extends Reader[String] {
     value
   }
 
-  override def showError(): String = {
-    if (p >= tokens.size)
-      p = tokens.size - 1
-    val charPos = tokens.get(p).begin
-    val startPosOffset = if (charPos - 50 < 0) charPos else 50
-    val startPos = charPos - startPosOffset
-    val endPos = if (charPos + 50 > json.length) json.length else charPos + 50
-    val buf = new StringBuffer()
-    buf.append(json.subSequence(startPos, endPos).toString + "\n")
-    val line = json.subSequence(startPos, startPos + startPosOffset).toString.map(_ match {
-      case '\n' => '\n'
-      case _    => '-'
-    }).mkString + "^"
-    buf.append(line)
-    // buf.append("-" * startPosOffset + "^")
-    buf.toString
+  var count = 0
+
+  override def showError(ptrAdjust: Int = 0): String = {
+    println("CURRENT: " + tokens.get(p))
+    println(json)
+    (0 to 60).map(i => if (i % 10 == 0) print("|") else print("-"))
+    println("")
+
+    val ptr = p + ptrAdjust
+    //    println("CURRENT-1: " + tokens.get(ptr - 1))
+    val ptrPos = tokens.get(ptr).end
+    //    val pre = if (ptrPos - 50 < 0) ptrPos - 50 else ptrPos
+    val (predash, prepre) = if (ptrPos > 50) (50, ptrPos - 50) else (ptrPos, 0)
+    val post = if (ptrPos + 50 > json.length) json.length else ptrPos + 50
+
+    // Filter \n
+    var i = ptrPos
+    println("ptrPos: " + ptrPos)
+    println("prepre: " + prepre)
+    while (i >= prepre && json(i) != '\n')
+      i -= 1
+    val pre = if (i > prepre && json(i) == '\n') i + 1 else prepre
+    val dash = predash - (pre - prepre)
+
+    //    println(json)
+    //    println(tokens.toArray.map(_.toString).mkString("\n"))
+    println(json.subSequence(pre, post).toString)
+    println("-" * dash)
+    //    println("Token: " + tokens.get(ptr - 1) + "  " + tokens.get(ptr))
+    println("ptrPos: " + ptrPos)
+    println("Pre: " + pre)
+    println("Chop: " + (pre - prepre))
+    println("Dash: " + dash)
+    println("Post: " + post)
+    json.subSequence(pre, post).toString + "\n" + ("-" * dash + "^")
   }
+
 }

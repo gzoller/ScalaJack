@@ -38,7 +38,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
     reader.peek() match {
       case BeginObject => // Could be Class/Trait or Map
-        reader.lookAheadForTypeHint(reader.jackFlavor.defaultHint, (s: String) => this.jackFlavor.typeTypeAdapter.read(path, reader)) match {
+        reader.lookAheadForTypeHint(path, "Any", reader.jackFlavor.defaultHint, (s: String) => this.jackFlavor.typeTypeAdapter.read(path, reader)) match {
           case Some(concreteType) => // type hint found... this is a Class/Trait
             reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
 

@@ -27,7 +27,7 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
       staticClass(typeName).toType
     } catch {
       case e: ScalaReflectionException =>
-        throw new ReadMissingError(path, s"""Unable to find class named "$typeName"\n""" + reader.showError(), List(typeName))
+        throw new ReadMissingError(path, s"""Unable to find class named "$typeName"\n""" + reader.showError(-1), List(typeName))
     }
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): Type = reader.readString(path) match {

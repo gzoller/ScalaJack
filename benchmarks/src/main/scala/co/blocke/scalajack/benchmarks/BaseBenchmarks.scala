@@ -204,7 +204,6 @@ class BaseBenchmarks {
   }
   */
 
-
   @Benchmark
   def partialParse(state: BaseBenchmarksState): Any = {
     state.mixedMsgs.foreach { js =>

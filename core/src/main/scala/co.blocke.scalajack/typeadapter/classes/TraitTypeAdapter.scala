@@ -5,6 +5,7 @@ package classes
 import model._
 import util._
 
+import scala.util.Try
 import scala.collection.mutable
 import scala.collection.mutable.Builder
 import scala.reflect.runtime.currentMirror
@@ -42,16 +43,17 @@ case class TraitTypeAdapter[T](
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     val hintLabel = getHintLabel(reader) // Apply any hint label modifiers
+    println(">>> Trait: " + tt.tpe)
     reader.peek() match {
       case TokenType.Null =>
         reader.skip()
         null.asInstanceOf[T]
       case TokenType.BeginObject =>
         val concreteType =
-          reader.lookAheadForTypeHint(hintLabel, (hintString: String) =>
+          reader.lookAheadForTypeHint(path, traitName, hintLabel, (hintString: String) =>
             hintModFn.map(th => th.apply(hintString))
               .getOrElse(reader.jackFlavor.typeTypeAdapter.read(path, reader))
-          ).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't materialize class for trait $traitName hint $hintLabel\n" + reader.showError()))
+          ).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName\n" + reader.showError()))
         val populatedConcreteType = populateConcreteType(concreteType)
         context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
       case t =>
@@ -68,7 +70,9 @@ case class TraitTypeAdapter[T](
       val populatedConcreteType = populateConcreteType(concreteType)
       context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
         case cc: CaseClassTypeAdapter[T] =>
-          val hintValue = hintModFn.map(_.unapply(populatedConcreteType)).getOrElse(t.getClass.getName)
+          val hintValue = hintModFn.map(h => Try(h.unapply(populatedConcreteType)).getOrElse(
+            throw new IllegalStateException(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}")
+          )).getOrElse(t.getClass.getName)
           writer.writeObject(t, cc.fieldMembersByName, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
       }
     }

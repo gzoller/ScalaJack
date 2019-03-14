@@ -53,7 +53,7 @@ case class JsonTokenizer() extends Tokenizer[String] {
           val mark = i
           while (i < max && isNumberChar(chars(i)))
             i += 1
-          tokenspace.add(JsonToken(Number, mark, i))
+          tokenspace.add(JsonToken(Number, mark, i - 1))
         case 'n' =>
           if (source.length >= i + 4 && source.substring(i, i + 4) == "null") {
             tokenspace.add(JsonToken(Null, i, i))
