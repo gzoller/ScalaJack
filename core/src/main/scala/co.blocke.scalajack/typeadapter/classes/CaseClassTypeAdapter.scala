@@ -22,20 +22,29 @@ case class CaseClassTypeAdapter[T](
   protected def handleDBKeys(fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+    reader.savePos()
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
         (tm.typeSignature.toString, tm.copy(runtimeConcreteType = {
-          val lookAhead = reader.lookAheadForTypeHint(path, className, name, (s: String) => {
-            reader.jackFlavor.typeValueModifier match {
-              case Some(fn) => fn.apply(s) // apply type value modifier if there is one
-              case None     => reader.jackFlavor.typeTypeAdapter.read(path, reader)
-            }
+          // 1. Look Ahead for type hint
+          // 2. Modify it if needed
+          // 3. Marshal it into a Type
+          Some(reader.lookAheadForField(name) match {
+            case Some(hintValue) =>
+              reader.jackFlavor.typeValueModifier match {
+                case Some(fn) => // apply type value modifier if there is one (may explode!)
+                  try {
+                    fn.apply(hintValue)
+                  } catch {
+                    case _: Throwable => throw new ReadInvalidError(path, "Failed to apply type modifier to type member hint ${tm.typeSignature.toString}\n" + reader.showError())
+                  }
+                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
+              }
+            case None => throw new ReadMissingError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)\n" + reader.showError())
           })
-          if (lookAhead.isEmpty)
-            reader.rollbackToSave()
-          lookAhead
         }))
     }
+    reader.rollbackToSave()
     reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
       case null => null.asInstanceOf[T]
       case objectFieldResult: ObjectFieldResult =>
@@ -44,7 +53,7 @@ case class CaseClassTypeAdapter[T](
           for (p <- 0 to fieldArray.size - 1) {
             if (!objectFieldResult.fieldSet(p)) {
               fieldArray(p).defaultValue.map(default => objectFieldResult.objectArgs(p) = default).orElse(
-                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(-1), List(className, fieldArray(p).name))
+                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(), List(className, fieldArray(p).name))
               )
             }
           }
@@ -95,7 +104,7 @@ case class CaseClassTypeAdapter[T](
   }
 
   // Used by AnyTypeAdapter to insert type hint (not normally needed) into output so object
-  // may be reconsituted on read
+  // may be reconstituted on read
   def writeWithHint[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
     val hintValue = t.getClass.getName
     val hintLabel = writer.jackFlavor.getHintLabelFor(tt.tpe)

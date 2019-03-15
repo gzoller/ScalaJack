@@ -169,7 +169,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
         val js = """100.25"""
         val msg = """[$]: Failed to create Int value from parsed text 100.25
                     |100.25
-                    |^""".stripMargin
+                    |-----^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[VCShort](js) should have message msg
       }
     }

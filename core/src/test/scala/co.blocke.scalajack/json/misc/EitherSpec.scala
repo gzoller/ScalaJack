@@ -106,7 +106,7 @@ class EitherSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val js = "25"
         val msg = """[$]: Failed to read either side of Either
                     |25
-                    |^""".stripMargin
+                    |-^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[Either[String, Boolean]](js) should have message msg
       }
     }

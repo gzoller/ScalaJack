@@ -88,59 +88,59 @@ class TimePrim() extends FunSpec with Matchers {
         val js = """{"d1":"PT0S","d2":21,"d3":null}"""
         val msg = """[$.d2]: Expected a String but parsed Number
                     |{"d1":"PT0S","d2":21,"d3":null}
-                    |------------------^""".stripMargin
+                    |-------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleDuration](js) should have message msg
         val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}"""
         val msg2 = """[$.d2]: Failed to parse Duration from input 'bogus'
                     |{"d1":"PT0S","d2":"bogus","d3":null}
-                    |-------------------------^""".stripMargin
+                    |-----------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleDuration](js2) should have message msg2
       }
       it("Instant must break") {
         val js = """{"i1":"1970-01-01T00:00:00Z","i2":false,"i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}"""
         val msg = """[$.i2]: Expected a String but parsed False
-                    |{"i1":"1970-01-01T00:00:00Z","i2":false,"i3":"-1000000000-01-01T00:00:00Z","i4":"200
-                    |----------------------------------^""".stripMargin
+                    |{"i1":"1970-01-01T00:00:00Z","i2":false,"i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12
+                    |--------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleInstant](js) should have message msg
         val js2 = """{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}"""
         val msg2 = """[$.i2]: Failed to parse Instant from input 'bogus'
-                    |{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-
-                    |-----------------------------------------^""".stripMargin
+                    |{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-1
+                    |---------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInstant](js2) should have message msg2
       }
       it("LocalDateTime must break") {
         val js = """{"d1":-1,"d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d4":null}"""
         val msg = """[$.d1]: Expected a String but parsed Number
-                    |{"d1":-1,"d2":"-999999999-01-01T00:00:00","d3":"2007-12-
-                    |------^""".stripMargin
+                    |{"d1":-1,"d2":"-999999999-01-01T00:00:00","d3":"2007-12-0
+                    |-------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
         val js2 = """{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d1":null}"""
         val msg2 = """[$.d1]: Failed to parse LocalDateTime from input 'bogus'
-                    |{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007-12-03
-                    |-------------^""".stripMargin
+                    |{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007-12-
+                    |-----------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalDateTime](js2) should have message msg2
       }
       it("LocalDate must break") {
         val js = """{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":null}"""
         val msg = """[$.d1]: Expected a String but parsed Number
-                    |{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":
-                    |------^""".stripMargin
+                    |{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":n
+                    |-------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleLocalDate](js) should have message msg
         val js2 = """{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03","d4":null}"""
         val msg2 = """[$.d1]: Failed to parse LocalDate from input 'bogus'
-                    |{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03","d4":nu
-                    |-------------^""".stripMargin
+                    |{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03","d4":
+                    |-----------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalDate](js2) should have message msg2
       }
       it("LocalTime must break") {
         val js = """{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":false,"d6":null}"""
         val msg = """[$.d5]: Expected a String but parsed False
-                    |":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":false,"d6":null}
+                    |0:00:00","d3":"00:00:00","d4":"12:00:00","d5":false,"d6":null}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleLocalTime](js) should have message msg
         val js2 = """{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}"""
         val msg2 = """[$.d5]: Failed to parse LocalTime from input 'Bogus'
-                    |0:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}
+                    |:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalTime](js2) should have message msg2
       }
@@ -152,7 +152,7 @@ class TimePrim() extends FunSpec with Matchers {
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
         val js2 = """{"o1":"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}"""
         val msg2 = """[$.o2]: Failed to parse OffsetDateTime from input '-999999999-01T00:00:00+18:00'
-                    |9999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}
+                    |999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetDateTime](js2) should have message msg2
       }
@@ -160,11 +160,11 @@ class TimePrim() extends FunSpec with Matchers {
         val js = """{"o1":"23:59:59.999999999-18:00","o2":false,"o3":"10:15:30+01:00","o4":null}"""
         val msg = """[$.o2]: Expected a String but parsed False
                     |{"o1":"23:59:59.999999999-18:00","o2":false,"o3":"10:15:30+01:00","o4":null}
-                    |--------------------------------------^""".stripMargin
+                    |------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleOffsetTime](js) should have message msg
         val js2 = """{"o1":"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null}"""
         val msg2 = """[$.o2]: Failed to parse OffsetTime from input '00:00:00:00+18:00'
-                    |23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null}
+                    |:"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetTime](js2) should have message msg2
       }
@@ -177,19 +177,19 @@ class TimePrim() extends FunSpec with Matchers {
         val js2 = """{"p1":"P0D","p2":"bogus","p3":null}"""
         val msg2 = """[$.p2]: Failed to parse Period from input 'bogus'
                     |{"p1":"P0D","p2":"bogus","p3":null}
-                    |------------------------^""".stripMargin
+                    |----------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SamplePeriod](js2) should have message msg2
       }
       it("ZonedDateTime must break") {
         val js = """{"o1":true,"o2":null}"""
         val msg = """[$.o1]: Expected a String but parsed True
                     |{"o1":true,"o2":null}
-                    |------^""".stripMargin
+                    |---------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleZonedDateTime](js) should have message msg
         val js2 = """{"o1":"2007-12-03T10:15:30+01:00 Earth","o2":null}"""
         val msg2 = """[$.o1]: Failed to parse ZonedDateTime from input '2007-12-03T10:15:30+01:00 Earth'
                     |{"o1":"2007-12-03T10:15:30+01:00 Earth","o2":null}
-                    |---------------------------------------^""".stripMargin
+                    |-------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleZonedDateTime](js2) should have message msg2
       }
     }

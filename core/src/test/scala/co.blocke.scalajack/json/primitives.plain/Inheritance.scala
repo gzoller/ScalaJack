@@ -56,21 +56,21 @@ class Inheritance() extends FunSpec with Matchers {
       it("Must catch missing/required var") {
         val js = """{"extra":"bar","foo":25,"dontForget":12,"uno":"something","quatro":12.34}"""
         val msg = """[$]: Class InheritSimpleChild missing field foobar
-                    |,"dontForget":12,"uno":"something","quatro":12.34}
+                    |5,"dontForget":12,"uno":"something","quatro":12.34}
                     |--------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }
       it("Must catch missing/required constructor field") {
         val js = """{"extra":"bar","foo":25,"dontForget":12,"quatro":12.34,"foobar":99}"""
         val msg = """[$]: Class InheritSimpleChild missing field uno
-                        |oo":25,"dontForget":12,"quatro":12.34,"foobar":99}
+                        |foo":25,"dontForget":12,"quatro":12.34,"foobar":99}
                         |--------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }
       it("Must catch missing/required getter/setter field") {
         val js = """{"extra":"bar","foo":25,"uno":"something","quatro":12.34,"foobar":99}"""
         val msg = """[$]: Class InheritSimpleChild missing field dontForget
-                    |":25,"uno":"something","quatro":12.34,"foobar":99}
+                    |o":25,"uno":"something","quatro":12.34,"foobar":99}
                     |--------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }

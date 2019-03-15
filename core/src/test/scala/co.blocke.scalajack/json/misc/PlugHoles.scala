@@ -48,8 +48,8 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Long json error") {
       val js = """["a""In the dark night when the wolves roam wild did the little rabbit dispair of life itself."]"""
       val msg = """[$[1]]: Expected comma here.
-                  |["a""In the dark night when the wolves roam wild did th
-                  |-----^""".stripMargin
+                  | wild did the little rabbit dispair of life itself."]
+                  |--------------------------------------------------^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[String]](js) should have message msg
     }
     it("ScalaJack") {
@@ -91,8 +91,8 @@ class PlugHoles() extends FunSpec with Matchers {
       sj.read[(Int, Int)]("null") should be(null)
       val msg2 =
         """[$]: Expected an Tuple (Array) but parsed Number
-          |123
-          |^""".stripMargin
+                |123
+                |--^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)]("123") should have message msg2
     }
   }
@@ -116,26 +116,26 @@ class PlugHoles() extends FunSpec with Matchers {
     val jsNotAnArray = """"Fred""""
     val msg = """[$]: Expected an Array but parsed String
                 |"Fred"
-                |-^""".stripMargin
+                |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[Int]](jsNotAnArray) should have message msg
     assertResult(null) { sj.read[Map[String, Int]](jsNull) }
     val msg2 = """[$]: Expected a Map but parsed String
                 |"Fred"
-                |-^""".stripMargin
+                |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](jsNotAnArray) should have message msg2
     val badNumber = "12.34.56"
     val msg3 = """[$]: Failed to create BigDecimal value from parsed text 12.34.56
                 |12.34.56
-                |^""".stripMargin
+                |-------^""".stripMargin
     the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[BigDecimal](badNumber) should have message msg3
     val msg4 = """[$]: Failed to create BigInt value from parsed text 12.34.56
                 |12.34.56
-                |^""".stripMargin
+                |-------^""".stripMargin
     the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[BigInt](badNumber) should have message msg4
     assertResult(null) { sj.read[Bogus](jsNull) }
     val msg5 = """[$]: Expected an Object (map with String keys) but parsed String
                 |"Fred"
-                |-^""".stripMargin
+                |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Bogus](jsNotAnArray) should have message msg5
     val strSlash = "\"This\\\\that\""
     assertResult("""This\that""") { sj.read[String](strSlash) }
@@ -187,7 +187,7 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Classes") {
       val msg = """[$]: Class Bogus missing field num
                   |{}
-                  |--^""".stripMargin
+                  |-^""".stripMargin
       the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[Bogus]("{}") should have message msg
     }
     it("Case class defaults and Option") {

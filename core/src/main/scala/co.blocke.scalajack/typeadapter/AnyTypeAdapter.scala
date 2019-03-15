@@ -8,7 +8,7 @@ import typeadapter.classes.CaseClassTypeAdapter
 
 import scala.collection.mutable.{ Builder, StringBuilder }
 import scala.collection.GenTraversableOnce
-import scala.util.Try
+import scala.util.{ Try, Success }
 
 object BigIntExtractor {
   def unapply(s: String): Option[BigInt] = Try(BigInt(s)).toOption
@@ -35,16 +35,29 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
   private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = {
+  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = _read(path, reader)
+
+  def _read[WIRE](path: Path, reader: Transceiver[WIRE], isSJCapture: Boolean = false): Any = {
     reader.peek() match {
       case BeginObject => // Could be Class/Trait or Map
-        reader.lookAheadForTypeHint(path, "Any", reader.jackFlavor.defaultHint, (s: String) => this.jackFlavor.typeTypeAdapter.read(path, reader)) match {
-          case Some(concreteType) => // type hint found... this is a Class/Trait
-            reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
-
-          case None => // no hint found... treat as a Map
-            reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
-            reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+        reader.savePos()
+        if (isSJCapture)
+          reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+        else {
+          reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
+            case Some(z) =>
+              Try(reader.jackFlavor.typeTypeAdapter.read(path, reader)) match {
+                case Success(concreteType) =>
+                  reader.rollbackToSave()
+                  reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
+                case x => // Hint found, but failed to read type...Treat as map
+                  reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+                  reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+              }
+            case None => // no hint found... treat as a Map
+              reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+              reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+          }
         }
       case BeginArray =>
         reader.readArray(path, Vector.canBuildFrom[Any], this).toList

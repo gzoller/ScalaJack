@@ -134,79 +134,79 @@ class ScalaPrim() extends FunSpec with Matchers {
       it("BigDecimal must break") {
         val js = """{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.1499999999999999944488848768742172978818416595458984375","bd6":null}"""
         val msg = """[$.bd5]: Expected a Number (Decimal) but parsed String
-                    |"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.149999999999999994448884876874217297881841659545
+                    |999999999999944488848768742172978818416595458984375","bd6":null}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBigDecimal](js) should have message msg
       }
       it("BigInt must break") {
         val js = """{"bi1":"-90182736451928374653345","bi2":90182736451928374653345,"bi3":0,"bi4":null}"""
         val msg = """[$.bi1]: Expected a BigInt but parsed String
-                    |{"bi1":"-90182736451928374653345","bi2":901827364519283746
-                    |--------^""".stripMargin
+                    |{"bi1":"-90182736451928374653345","bi2":90182736451928374653345,"bi3":0,"bi4":nul
+                    |-------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBigInt](js) should have message msg
       }
       it("Boolean must break") {
         val js = """{"bool1":true,"bool2":"false"}"""
         val msg = """[$.bool2]: Expected a Boolean but parsed String
                     |{"bool1":true,"bool2":"false"}
-                    |-----------------------^""".stripMargin
+                    |---------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js) should have message msg
         val js2 = """{"bool1":true,"bool2":123}"""
         val msg2 = """[$.bool2]: Expected a Boolean but parsed Number
                     |{"bool1":true,"bool2":123}
-                    |----------------------^""".stripMargin
+                    |------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js2) should have message msg2
         val js3 = """{"bool1":true,"bool2":null}"""
         val msg3 = """[$.bool2]: Expected a Boolean but parsed Null
                     |{"bool1":true,"bool2":null}
-                    |----------------------^""".stripMargin
+                    |-------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js3) should have message msg3
       }
       it("Byte must break") {
         val js = """{"b1":true,"b2":-128,"b3":0,"b4":64}"""
         val msg = """[$.b1]: Expected an Int but parsed True
                     |{"b1":true,"b2":-128,"b3":0,"b4":64}
-                    |------^""".stripMargin
+                    |---------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleByte](js) should have message msg
         val js2 = """{"b1":12,"b2":-128,"b3":0,"b4":null}"""
         val msg2 = """[$.b4]: Expected an Int but parsed Null
                     |{"b1":12,"b2":-128,"b3":0,"b4":null}
-                    |-------------------------------^""".stripMargin
+                    |----------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleByte](js2) should have message msg2
       }
       it("Char must break") {
         val js = """{"c1":null,"c2":"Y","c3":"Z"}"""
         val msg = """[$.c1]: A Char typed value cannot be null
                     |{"c1":null,"c2":"Y","c3":"Z"}
-                    |----------^""".stripMargin
+                    |---------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleChar](js) should have message msg
         val js2 = """{"c1":"","c2":"Y","c3":"Z"}"""
         val msg2 = """[$.c1]: Tried to read a Char but empty string found
                     |{"c1":"","c2":"Y","c3":"Z"}
-                    |--------^""".stripMargin
+                    |------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleChar](js2) should have message msg2
       }
       it("Double must break") {
         val js = """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
         val msg = """[$.d1]: Failed to create Double value from parsed text 1.79769313486E23157E308
-                    |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E3
-                    |------^""".stripMargin
+                    |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.
+                    |----------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Enumeration must break") {
         val js = """{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}"""
         val msg = """[$.e2]: No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for Bogus
                     |{"e1":"Small","e2":"Bogus","e3":"Large","e4":null,"e5":"Medium"}
-                    |--------------------------^""".stripMargin
+                    |------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleEnum](js) should have message msg
         val js2 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}"""
         val msg2 = """[$.e5]: No value found in enumeration co.blocke.scalajack.json.test.primitives.Size$ for 9
-                    |Small","e2":"Medium","e3":"Large","e4":null,"e5":9}
+                    |"Small","e2":"Medium","e3":"Large","e4":null,"e5":9}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleEnum](js2) should have message msg2
         val js3 = """{"e1":"Small","e2":"Medium","e3":"Large","e4":null,"e5":false}"""
         val msg3 = """[$.e5]: Expected value token of type String or Int, not False when reading Enumeration value.
-                    |l","e2":"Medium","e3":"Large","e4":null,"e5":false}
+                    |ll","e2":"Medium","e3":"Large","e4":null,"e5":false}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleEnum](js3) should have message msg3
       }
@@ -214,7 +214,7 @@ class ScalaPrim() extends FunSpec with Matchers {
         val js = """{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}"""
         val msg = """[$.f2]: Expected a Double but parsed String
                     |{"f1":3.4028235E38,"f2":"-3.4028235E38","f3":0.0,"f4":-123.4567}
-                    |-------------------------^""".stripMargin
+                    |-------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Int must break") {
@@ -226,18 +226,18 @@ class ScalaPrim() extends FunSpec with Matchers {
         val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}"""
         val msg2 = """[$.i3]: Failed to create Int value from parsed text 2.3
                     |{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}
-                    |---------------------------------------^""".stripMargin
+                    |-----------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInt](js2) should have message msg2
       }
       it("Long must break") {
         val js = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":true,"l4":123}"""
         val msg = """[$.l3]: Expected a Long but parsed True
-                    |223372036854775807,"l2":-9223372036854775808,"l3":true,"l4":123}
+                    |372036854775807,"l2":-9223372036854775808,"l3":true,"l4":123}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleLong](js) should have message msg
         val js2 = """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}"""
         val msg2 = """[$.l3]: Failed to create Long value from parsed text 0.3
-                    |223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}
+                    |3372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLong](js2) should have message msg2
       }
@@ -245,26 +245,26 @@ class ScalaPrim() extends FunSpec with Matchers {
         val js = """{"s1":32767,"s2":true,"s3":0,"s4":123}"""
         val msg = """[$.s2]: Expected an Int but parsed True
                     |{"s1":32767,"s2":true,"s3":0,"s4":123}
-                    |-----------------^""".stripMargin
+                    |--------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleShort](js) should have message msg
         val js2 = """{"s1":32767,"s2":3.4,"s3":0,"s4":123}"""
         val msg2 = """[$.s2]: Failed to create Int value from parsed text 3.4
                     |{"s1":32767,"s2":3.4,"s3":0,"s4":123}
-                    |-----------------^""".stripMargin
+                    |-------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleShort](js2) should have message msg2
       }
       it("String must break") {
         val js = """{"s1":"something","s2":-19,"s3":null}"""
         val msg = """[$.s2]: Expected a String but parsed Number
                     |{"s1":"something","s2":-19,"s3":null}
-                    |-----------------------^""".stripMargin
+                    |-------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleString](js) should have message msg
       }
       it("UUID must break") {
         val js = """{"u1":"bogus","u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}"""
         val msg = """[$.u1]: Failed to create UUID value from parsed text bogus
                     |{"u1":"bogus","u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}
-                    |-------------^""".stripMargin
+                    |-----------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleUUID](js) should have message msg
       }
       it("Can't find TypeAdapter for given type") {

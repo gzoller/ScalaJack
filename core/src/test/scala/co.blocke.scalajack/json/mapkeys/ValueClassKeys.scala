@@ -220,19 +220,18 @@ class ValueClassKeys() extends FunSpec with Matchers {
       }
     }
     describe("--- Negative Primitive Tests ---") {
-      /*
       it("Bad BigDecimal Key") {
         val js = """{"m":{"true":56.78}}"""
         val msg = """[$.m.(map key)]: Expected a Number (Decimal) but parsed True
                     |true
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCBigDecimal](js) should have message msg
       }
       it("Bad BigInt Key") {
         val js = """{"m":{"12.5":56}}"""
         val msg = """[$.m.(map key)]: Failed to create BigInt value from parsed text 12.5
                     |12.5
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleVCBigInt](js) should have message msg
       }
       it("Bad Boolean Key") {
@@ -246,21 +245,21 @@ class ValueClassKeys() extends FunSpec with Matchers {
         val js = """{"m":{"null":"A"}}"""
         val msg = """[$.m.(map key)]: A Char typed value cannot be null
                     |null
-                    |----^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleVCChar](js) should have message msg
       }
       it("Bad Double Key") {
         val js = """{"m":{"false":56.78}}"""
         val msg = """[$.m.(map key)]: Expected a Double but parsed False
                     |false
-                    |^""".stripMargin
+                    |----^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"\"Bogus\"":"Meat"}}"""
         val msg = """[$.m.(map key)]: No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Food$ for Bogus
                     |"Bogus"
-                    |-------^""".stripMargin
+                    |-----^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleVCEnumeration](js) should have message msg
       }
       it("Bad Float Key") {
@@ -274,47 +273,44 @@ class ValueClassKeys() extends FunSpec with Matchers {
         val js = """{"m":{"12.5":56}}"""
         val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.5
                     |12.5
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleVCInt](js) should have message msg
       }
       it("Bad Long Key") {
         val js = """{"m":{"12.5":56}}"""
         val msg = """[$.m.(map key)]: Failed to create Long value from parsed text 12.5
                     |12.5
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleVCLong](js) should have message msg
       }
       it("Bad Short Key") {
         val js = """{"m":{"12.5":56}}"""
         val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.5
                     |12.5
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleVCShort](js) should have message msg
       }
       it("Bad String Key") {
         val js = """{"m":{"true":"B"}}"""
         val msg = """[$.m.(map key)]: Expected a String but parsed True
                     |true
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCString](js) should have message msg
       }
-      */
       it("Bad UUID Key") {
         val js = """{"m":{"\"bogus\"":"54cab778-7b9e-4b07-9d37-87b97a011e55"}}"""
         val msg = """[$.m.(map key)]: Failed to create UUID value from parsed text bogus
                     |"bogus"
-                    |-------^""".stripMargin
-        sj.read[SampleVCUUID](js)
+                    |-----^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleVCUUID](js) should have message msg
       }
     }
-    /*
     describe("--- Negative Collection Tests ---") {
       it("Bad List Key") {
         val js = """{"m":{"[1,2,\"a\"]":[4,5,6]}}"""
         val msg = """[$.m.(map key)[2]]: Expected an Int but parsed String
                     |[1,2,"a"]
-                    |-------^""".stripMargin
+                    |------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCList](js) should have message msg
       }
       it("Bad Map Key") {
@@ -343,7 +339,7 @@ class ValueClassKeys() extends FunSpec with Matchers {
       it("Bad Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
         val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-                    |hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74
+                    |_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":7
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleVCTrait](js) should have message msg
       }
@@ -357,7 +353,7 @@ class ValueClassKeys() extends FunSpec with Matchers {
       it("Bad Parameterized Trait Key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ZThing\",\"a\":5,\"b\":\"wow\"}":{"_hint":"co.blocke.scalajack.test.mapkeys.AThing","a":6,"b":"zoom"}}}"""
         val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.ZThing"
-                    |int":"co.blocke.scalajack.json.test.mapkeys.ZThing","a":5,"b":"wow"}
+                    |hint":"co.blocke.scalajack.json.test.mapkeys.ZThing","a":5,"b":"wow"}
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SampleVCParamTrait[Int, String]](js) should have message msg
       }
@@ -365,7 +361,7 @@ class ValueClassKeys() extends FunSpec with Matchers {
         val js = """{"m":{"true":"there"}}"""
         val msg = """[$.m.(map key)]: Expected a String but parsed True
                     |true
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCOption](js) should have message msg
       }
       it("Bad Nested Collection Key") {
@@ -376,6 +372,5 @@ class ValueClassKeys() extends FunSpec with Matchers {
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleVCNested](js) should have message msg
       }
     }
-    */
   }
 }

@@ -23,7 +23,11 @@ class Misc() extends FunSpec with Matchers {
     }
     it("Fails if no hint for type member") {
       val js = """{"rose":{"thing":5,"other":6}}"""
-      the[IllegalStateException] thrownBy sj.read[WrapTrait[TraitBase]](js) should have message """Can't find type value (e.g. unknown class) for hint rose"""
+      val msg =
+        """[$]: Class WrapTrait missing type hint for type member T (looking for flower)
+          |{"rose":{"thing":5,"other":6}}
+          |----------------------------^""".stripMargin
+      the[model.ReadMissingError] thrownBy sj.read[WrapTrait[TraitBase]](js) should have message msg
     }
     it("Must accept missing default constructor values") {
       val js = """{"foobar":3, "quatro":4, "dontForget":1}"""

@@ -2,39 +2,36 @@ package co.blocke.scalajack
 
 // $COVERAGE-OFF$This file is for debugging only!
 
-import util._
-import model._
-import scala.util.Try
+trait Body
+case class FancyBody(message: String) extends Body
+case class DefaultBody(message: String = "Unknown body") extends Body
+case class AnyBody(stuff: Any) extends Body
 
-trait Address { val postalCode: String }
-case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
-trait Demographic { val address: Address }
-object Food extends Enumeration {
-  val Seeds, Meat, Pellets, Veggies = Value
+trait Hobby
+case class InsideHobby(desc: String) extends Hobby
+
+case class Envelope[T <: Body](id: String, body: T) {
+  type Giraffe = T
 }
-trait Pet {
-  val name: String
-  val food: Food.Value
+
+// Type member X should be ignored!  Only used internally
+case class BigEnvelope[T <: Body, H <: Hobby, X](id: String, body: T, hobby: List[H]) {
+  type Giraffe = T
+  type Hippo = H
+  type IgnoreMe = X
+
+  val x: IgnoreMe = null.asInstanceOf[IgnoreMe]
 }
-case class SamplePet(m: Map[Pet, Pet])
 
 object Runner extends App {
 
-  //  val sj = ScalaJack()
+  val sj = ScalaJack()
 
-  val t1 = Try {
-    val strMatchHintMod = StringMatchHintModifier(Map("US" -> typeOf[USAddress]))
-    val sj = ScalaJack().withHintModifiers((typeOf[Address], strMatchHintMod))
-    val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"Bogus","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-    sj.read[Demographic](js)
-  }
+  val value: BigEnvelope[Body, Hobby, Int] = BigEnvelope("DEF", FancyBody("BOO"), List(InsideHobby("stamps")))
+  val js = sj.render[BigEnvelope[Body, Hobby, Int]](value)
+  println(js)
+  println(sj.read[BigEnvelope[Body, Hobby, Int]](js))
 
-  //----------------
-
-  val t2 = Try {
-    val js2 = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
-    ScalaJack().read[SamplePet](js2)
-  }
 }
 // $COVERAGE-ON$
 

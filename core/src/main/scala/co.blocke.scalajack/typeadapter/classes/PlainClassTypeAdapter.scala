@@ -27,20 +27,29 @@ case class PlainClassTypeAdapter[T](
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
 
     // Any externalized trait hints? (as type members)
+    reader.savePos()
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
         (tm.typeSignature.toString, tm.copy(runtimeConcreteType = {
-          val lookAhead = reader.lookAheadForTypeHint(path, className, name, (s: String) => {
-            reader.jackFlavor.typeValueModifier match {
-              case Some(fn) => fn.apply(s) // apply type value modifier if there is one
-              case None     => reader.jackFlavor.typeTypeAdapter.read(path, reader)
-            }
+          // 1. Look Ahead for type hint
+          // 2. Modify it if needed
+          // 3. Marshal it into a Type
+          Some(reader.lookAheadForField(name) match {
+            case Some(hintValue) =>
+              reader.jackFlavor.typeValueModifier match {
+                case Some(fn) => // apply type value modifier if there is one (may explode!)
+                  try {
+                    fn.apply(hintValue)
+                  } catch {
+                    case _: Throwable => throw new ReadInvalidError(path, "Failed to apply type modifier to type member hint ${tm.typeSignature.toString}\n" + reader.showError())
+                  }
+                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
+              }
+            case None => throw new ReadMissingError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)\n" + reader.showError())
           })
-          if (lookAhead.isEmpty)
-            reader.rollbackToSave()
-          lookAhead
         }))
     }
+    reader.rollbackToSave()
 
     // Apply any concrete type member definitions to placeholder types 'T'->MyThing
     val both = ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName ++ nonConstructorFields)
@@ -64,7 +73,7 @@ case class PlainClassTypeAdapter[T](
                 None
               // Any other missing
               case ((_, false), index) =>
-                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(index).name}\n" + reader.showError(-1), List(className, fieldArray(index).name))
+                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(index).name}\n" + reader.showError(), List(className, fieldArray(index).name))
               // Anything else... as-read
               case ((result, true), index) =>
                 result
@@ -88,7 +97,7 @@ case class PlainClassTypeAdapter[T](
                 (field, None)
               // Any other missing (but not @Maybe)
               case (field, (_, false)) if !field.isMaybe =>
-                throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(-1), List(className, field.name))
+                throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(), List(className, field.name))
               // Anything else... as-read
               case (field, (arg, true)) =>
                 (field, arg)

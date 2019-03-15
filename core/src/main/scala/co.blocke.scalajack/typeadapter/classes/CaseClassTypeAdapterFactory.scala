@@ -24,10 +24,6 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
       val tm = tt.tpe.members.filter(_.isType).toList
       val classTypeParamMap = tt.tpe.typeSymbol.asClass.typeParams.zip(tt.tpe.typeArgs).toMap
-      val typeMembers = tm collect {
-        case m if !m.typeSignature.typeSymbol.isClass => // Ignore any user-set type declarations that aren't class parameters, e.g. type Foo = Int
-          ClassHelper.TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
-      }
 
       val params1 = constructorSymbol.typeSignatureIn(tt.tpe).paramLists.flatten
       val params2 = constructorSymbol.typeSignatureIn(tt.tpe.typeSymbol.asType.toType).paramLists.flatten
@@ -81,6 +77,13 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       }
       val orderdFieldMembers = ListMap(fieldMembers: _*)
 
+      // All type members found for class.  (Some may be removed if not used for constructor)
+      val justDeclaredFieldTypes = orderdFieldMembers.map(_._2.declaredValueType).toList
+      val typeMembers = tm collect {
+        case m if typeIsUsed(m.typeSignature, justDeclaredFieldTypes) =>
+          ClassHelper.TypeMember[T](m.name.decodedName.toString, m.typeSignature, classTypeParamMap(m.typeSignature.typeSymbol))
+      }
+
       // Exctract Collection name annotation if present
       val collectionAnnotation = ClassHelper.getAnnotationValue[Collection, String](classSymbol)
 
@@ -95,4 +98,10 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       next.typeAdapterOf[T]
     }
 
+  private def typeIsUsed(typeParam: Type, fields: List[Type]): Boolean = {
+    // Simple use (first-level)
+    fields.exists(_ == typeParam) ||
+      // Used as a parameter of a field member
+      fields.foldRight(false) { case (f, acc) => acc || typeIsUsed(typeParam, f.typeArgs) }
+  }
 }

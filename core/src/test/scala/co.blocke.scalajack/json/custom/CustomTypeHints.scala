@@ -49,7 +49,6 @@ class CustomTypeHints() extends FunSpec with Matchers {
       }
     }
     describe("--- Negative Tests ---") {
-      /*
       it("Use unspecified type hint") {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"bogus":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}"""
@@ -58,7 +57,6 @@ class CustomTypeHints() extends FunSpec with Matchers {
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[Address](js) should have message msg
       }
-      */
       it("Ignore type-specific type hint (e.g. use default) when a specific hint is specified") {
         val sj = ScalaJack().withDefaultHint("which")
         val js = """{"which":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.test.custom.USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
@@ -80,8 +78,8 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val prependHintMod = ClassNameHintModifier((hint: String) => "co.blocke.scalajack.test.bogus." + hint, (cname: String) => cname.split('.').last)
         val sj = ScalaJack().withHintModifiers((typeOf[Address], prependHintMod))
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"USAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-        val msg = """[$.address._hint]: Couldn't materialize class for trait co.blocke.scalajack.json.test.custom.Address using hint USAddress
-                    |emographic","age":50,"address":{"_hint":"USAddress","street":"123 Main","city":"New York","state":"N
+        val msg = """[$.address]: Failed to apply type modifier to type member hint USAddress
+                    |Demographic","age":50,"address":{"_hint":"USAddress","street":"123 Main","city":"New York","state":"
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[Demographic](js) should have message msg
       }
@@ -89,8 +87,8 @@ class CustomTypeHints() extends FunSpec with Matchers {
         val strMatchHintMod = StringMatchHintModifier(Map("US" -> typeOf[USAddress]))
         val sj = ScalaJack().withHintModifiers((typeOf[Address], strMatchHintMod))
         val js = """{"_hint":"co.blocke.scalajack.json.test.custom.USDemographic","age":50,"address":{"_hint":"Bogus","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-        val msg = """[$.address._hint]: Couldn't materialize class for trait co.blocke.scalajack.json.test.custom.Address using hint Bogus
-                    |.USDemographic","age":50,"address":{"_hint":"Bogus","street":"123 Main","city":"New York","state":"N
+        val msg = """[$.address]: Failed to apply type modifier to type member hint Bogus
+                    |m.USDemographic","age":50,"address":{"_hint":"Bogus","street":"123 Main","city":"New York","state":"
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[Demographic](js) should have message msg
       }

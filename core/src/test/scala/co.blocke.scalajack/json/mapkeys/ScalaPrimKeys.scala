@@ -140,21 +140,21 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{null:"A","z":"Z"}}"""
         val msg = """[$.m.(map key)]: A Char typed value cannot be null
                     |{"m":{null:"A","z":"Z"}}
-                    |----------^""".stripMargin
+                    |---------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleChar](js) should have message msg
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
         val msg = """[$.m.(map key)]: Expected a Double but parsed True
                     |true
-                    |^""".stripMargin
+                    |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
         val msg = """[$.m.(map key)]: No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Size$ for Bogus
                     |{"m":{"Small":"Large","Bogus":"Medium"}}
-                    |-----------------------------^""".stripMargin
+                    |---------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleEnumeration](js) should have message msg
       }
       it("Bad Float Key") {

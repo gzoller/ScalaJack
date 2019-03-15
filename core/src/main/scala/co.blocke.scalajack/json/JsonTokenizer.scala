@@ -27,7 +27,7 @@ case class JsonTokenizer() extends Tokenizer[String] {
               i += 1
             i += 1
           }
-          tokenspace.add(JsonToken(String, mark, i))
+          tokenspace.add(JsonToken(String, mark, i - 1))
           i += 1
         case c if c.isWhitespace =>
           i += 1
@@ -56,19 +56,19 @@ case class JsonTokenizer() extends Tokenizer[String] {
           tokenspace.add(JsonToken(Number, mark, i - 1))
         case 'n' =>
           if (source.length >= i + 4 && source.substring(i, i + 4) == "null") {
-            tokenspace.add(JsonToken(Null, i, i))
+            tokenspace.add(JsonToken(Null, i, i + 3))
             i += 4
           } else
             throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'n' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))
         case 't' =>
           if (source.length >= i + 4 && source.substring(i, i + 4) == "true") {
-            tokenspace.add(JsonToken(True, i, i))
+            tokenspace.add(JsonToken(True, i, i + 3))
             i += 4
           } else
             throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 't' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))
         case 'f' =>
           if (source.length >= i + 5 && source.substring(i, i + 5) == "false") {
-            tokenspace.add(JsonToken(False, i, i))
+            tokenspace.add(JsonToken(False, i, i + 4))
             i += 5
           } else
             throw new ReadUnexpectedError(Path.Tokenizing, s"Unexpected character 'f' at position $i\n" + showError(i, source), List(chars(i).toString, i.toString))

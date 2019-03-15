@@ -54,7 +54,7 @@ class DefaultValues extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val js = """{"age":null}"""
       val msg = """[$]: Class DefaultOpt missing field name
                   |{"age":null}
-                  |------------^""".stripMargin
+                  |-----------^""".stripMargin
       the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[DefaultOpt](js) should have message msg
     }
   }

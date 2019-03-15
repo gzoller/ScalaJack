@@ -3,7 +3,7 @@ package model
 
 import typeadapter._
 import util.Path
-import scala.util.Try
+import scala.util.{ Try, Success }
 
 trait FlavorMaker {
   type WIRE
@@ -18,13 +18,13 @@ trait JackFlavor[WIRE] extends ViewSplice {
     val p = parse(wire)
     val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
     if (!p.isDone())
-      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError())
+      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
     v
   }
   private def _read[T](p: Transceiver[WIRE])(implicit tt: TypeTag[T]): T = {
     val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
     if (!p.isDone())
-      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError())
+      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
     v
   }
   //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
@@ -37,12 +37,29 @@ trait JackFlavor[WIRE] extends ViewSplice {
       Try(_read(p)(tt)).toOption
     case p: Transceiver[WIRE] if (hintLabel.length > 0) && {
       p.reset()
-      val result = p.lookAheadForTypeHint(Path.Root, tt.tpe.toString, hintLabel, (s: String) => typeTypeAdapter.read(Path.Root, p)).exists { foundType =>
-        (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
+
+      val result = p.lookAheadForField(hintLabel) match {
+        case Some(hintValue) =>
+          p.jackFlavor.typeValueModifier match {
+            case Some(fn) => // apply type value modifier if there is one (may explode!)
+              try {
+                val foundType = fn.apply(hintValue)
+                (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
+              } catch {
+                case _: Throwable => false // attempt to modify failed somehow
+              }
+            case None => Try(p.jackFlavor.typeTypeAdapter.read(Path.Root, p)) match {
+              case Success(foundType) =>
+                (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
+              case _ => false
+            }
+          }
+        case None => false
       }
       p.rollbackToSave()
       result
     } =>
+      p.reset()
       Some(_read(p)(tt))
     case _ => None
   }

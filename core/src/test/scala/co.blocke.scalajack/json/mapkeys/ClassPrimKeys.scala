@@ -175,7 +175,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       it("Bad trait json (hint to unknown class) as map key") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.Bogus\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fido","food":"Meat","numLegs":3}}}"""
         val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-                    |hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74
+                    |_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":7
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
@@ -196,7 +196,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
       it("Bad trait json (hint to unknown classs) for member trait") {
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.CompoundPet\",\"name\":\"Legion\",\"food\":\"Pellets\",\"pet\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":3}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74.33}}}"""
         val msg = """[$.m.CompoundPet(Legion,Pellets,DogPet(Fido,Meat,3))]: Unable to find class named "co.blocke.scalajack.json.test.mapkeys.Bogus"
-                    |hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":74
+                    |_hint":"co.blocke.scalajack.json.test.mapkeys.Bogus","name":"Flipper","food":"Veggies","waterTemp":7
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj.read[SamplePet](js) should have message msg
       }
@@ -204,7 +204,7 @@ class ClassPrimKeys() extends FunSpec with Matchers {
         val js = """{"m":{"{\"lookup\":{\"a\":true,\"b\":2},\"favs\":[\"one\",\"two\"]}":{"lookup":{"x":9,"y":10},"favs":["aye","you"]}}}"""
         val msg = """[$.m.(map key).lookup.a]: Expected an Int but parsed True
                     |{"lookup":{"a":true,"b":2},"favs":["one","two"]}
-                    |---------------^""".stripMargin
+                    |------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SamplePolyClass](js) should have message msg
       }
       it("Bad custom hint value for map key trait (sort instead of kind") {
@@ -225,8 +225,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.test.mapkeys.Bogus\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsLava\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
         val msg = """[$.m.(map key)]: Unable to find class named "co.blocke.scalajack.test.mapkeys.Bogus"
-                    |{"_hint":"co.blocke.scalajack.test.mapkeys.Bogus","address":"123 Main","pet":{"kind":"BreathsLava"
-                    |------------------------------------------------^""".stripMargin
+                    |{"_hint":"co.blocke.scalajack.test.mapkeys.Bogus","address":"123 Main","pet":{"kind":"BreathsLava
+                    |-----------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMissingError] thrownBy sj2.read[SampleShiny](js) should have message msg
       }
       it("Bad custom hint value for Map key member's trait") {
@@ -235,8 +235,8 @@ class ClassPrimKeys() extends FunSpec with Matchers {
           .withHints((typeOf[Pet] -> "kind"))
           .withHintModifiers((typeOf[Pet] -> petHintMod))
         val js = """{"m":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder\",\"address\":\"123 Main\",\"pet\":{\"kind\":\"BreathsLava\",\"name\":\"Flipper\",\"food\":\"Veggies\",\"waterTemp\":74.33}}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.ShinyPetHolder","address":"210 North","pet":{"kind":"BreathsAir","name":"Fido","food":"Meat","numLegs":3}}}}"""
-        val msg = """[$.m.(map key).pet.kind]: Couldn't materialize class for trait co.blocke.scalajack.json.test.mapkeys.Pet using hint BreathsLava
-                    |r","address":"123 Main","pet":{"kind":"BreathsLava","name":"Flipper","food":"Veggies","waterTemp":74
+        val msg = """[$.m.(map key).pet]: Failed to apply type modifier to type member hint BreathsLava
+                    |er","address":"123 Main","pet":{"kind":"BreathsLava","name":"Flipper","food":"Veggies","waterTemp":7
                     |--------------------------------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj2.read[SampleShiny](js) should have message msg
       }

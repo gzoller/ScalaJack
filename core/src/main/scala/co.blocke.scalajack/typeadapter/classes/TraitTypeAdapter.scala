@@ -43,17 +43,28 @@ case class TraitTypeAdapter[T](
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     val hintLabel = getHintLabel(reader) // Apply any hint label modifiers
-    println(">>> Trait: " + tt.tpe)
     reader.peek() match {
       case TokenType.Null =>
         reader.skip()
         null.asInstanceOf[T]
       case TokenType.BeginObject =>
+        reader.savePos()
         val concreteType =
-          reader.lookAheadForTypeHint(path, traitName, hintLabel, (hintString: String) =>
-            hintModFn.map(th => th.apply(hintString))
-              .getOrElse(reader.jackFlavor.typeTypeAdapter.read(path, reader))
-          ).getOrElse(throw new ReadInvalidError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName\n" + reader.showError()))
+          reader.lookAheadForField(hintLabel) match {
+            case Some(hintValue) =>
+              hintModFn match {
+                case Some(fn) => // apply type value modifier if there is one (may explode!)
+                  try {
+                    fn.apply(hintValue)
+                  } catch {
+                    case _: Throwable => throw new ReadInvalidError(path, s"Failed to apply type modifier to type member hint $hintValue\n" + reader.showError(1))
+                  }
+                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
+              }
+            case None => throw new ReadInvalidError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName\n" + reader.showError(1))
+          }
+        reader.rollbackToSave()
+
         val populatedConcreteType = populateConcreteType(concreteType)
         context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
       case t =>

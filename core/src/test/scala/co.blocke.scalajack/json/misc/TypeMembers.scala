@@ -48,9 +48,16 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         (x, num)
       }
     }
-    it("Write") {
-      val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+    it("Write -- Concrete T value") {
+      val value: Envelope[FancyBody] = Envelope("DEF", FancyBody("BOO"))
       val expected = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"DEF","body":{"message":"BOO"}}"""
+      assertResult(expected) {
+        sj.render[Envelope[FancyBody]](value)
+      }
+    }
+    it("Write -- Trait T value") {
+      val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+      val expected = """{"Giraffe":"co.blocke.scalajack.json.misc.Body","id":"DEF","body":{"_hint":"co.blocke.scalajack.json.misc.FancyBody","message":"BOO"}}"""
       assertResult(expected) {
         sj.render[Envelope[Body]](value)
       }
@@ -67,7 +74,7 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val sjm = ScalaJack().withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
       val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
       val js = sjm.render[Envelope[Body]](value)
-      assertResult("""{"Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"}}""") {
+      assertResult("""{"Giraffe":"Body","id":"DEF","body":{"_hint":"co.blocke.scalajack.json.misc.FancyBody","message":"BOO"}}""") {
         js
       }
       assertResult(value) {
@@ -78,7 +85,7 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       val sjm = ScalaJack().withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
       val value: BigEnvelope[Body, Hobby, Int] = BigEnvelope("DEF", FancyBody("BOO"), InsideHobby("stamps"))
       val js = sjm.render[BigEnvelope[Body, Hobby, Int]](value)
-      assertResult("""{"Hippo":"InsideHobby","Giraffe":"FancyBody","id":"DEF","body":{"message":"BOO"},"hobby":{"desc":"stamps"}}""") { js }
+      assertResult("""{"Hippo":"Hobby","Giraffe":"Body","id":"DEF","body":{"_hint":"co.blocke.scalajack.json.misc.FancyBody","message":"BOO"},"hobby":{"_hint":"co.blocke.scalajack.json.misc.InsideHobby","desc":"stamps"}}""") { js }
       assertResult(value) {
         sjm.read[BigEnvelope[Body, Hobby, Int]](js)
       }
@@ -91,8 +98,8 @@ class TypeMembers extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       }
     }
     it("Works with ParseOrElse") {
-      val js = """{"Giraffe":"co.blocke.scalajack.json.misc.UnknownBody","id":"DEF","body":{"message":"BOO"}}"""
-      val expected: Envelope[Body] = Envelope("DEF", DefaultBody("BOO"))
+      val js = """{"Giraffe":"co.blocke.scalajack.json.misc.FancyBody","id":"DEF","body":{"bogus":"BOO"}}"""
+      val expected: Envelope[Body] = Envelope("DEF", DefaultBody("Unknown body"))
       assertResult(expected) {
         sj2.read[Envelope[Body]](js)
       }

@@ -24,7 +24,7 @@ trait Reader[WIRE] {
   def peek(): TokenType.Value
   def lastTokenText(): String
   def skip()
-  def lookAheadForTypeHint(path: Path, traitName: String, fieldName: String, typeMaterializer: String => Type): Option[Type]
+  def lookAheadForField(fieldName: String): Option[String]
 
   def isDone(): Boolean
 

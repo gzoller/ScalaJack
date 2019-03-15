@@ -39,7 +39,7 @@ class TryAndCapture() extends FunSpec with Matchers {
         val obj = sj.read[Boom](js)
         val msg = """[$.other]: Expected an Object (map with String keys) but parsed Number
                     |{"name":"Greg","other":  -12.45  ,"num":2}
-                    |-------------------------^""".stripMargin
+                    |------------------------------^""".stripMargin
         assertResult(msg) { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult("""{"name":"Greg","other":-12.45}""") { sj.render(obj) }
       }
