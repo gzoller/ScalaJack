@@ -7,7 +7,6 @@ import util.Path
 import scala.collection.mutable.Builder
 import scala.util.{ Failure, Success, Try }
 
-//case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapter[A]], orElseTypeAdapter: TypeAdapter[B]) extends TypeAdapter[A] {
 case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapter[A]], orElseTypeAdapter: TypeAdapter[B]) extends TypeAdapter[A] {
 
   def read[WIRE](path: Path, reader: Transceiver[WIRE]): A = {
@@ -15,7 +14,8 @@ case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapt
     attemptedTypeAdapter match {
       case Some(ata) =>
         Try(ata.read(path, reader)) match {
-          case Success(a) => a
+          case Success(a) =>
+            a
           case Failure(_) =>
             reader.rollbackToSave()
             orElseTypeAdapter.read(path, reader)

@@ -11,6 +11,10 @@ trait TypeTrait {
 case class AThing(thing: String) extends TypeTrait
 case class WithType[+T](a: T)
 
+case class Falling[T](id: T) {
+  type foo = T
+}
+
 class PlugHoles() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -163,6 +167,11 @@ class PlugHoles() extends FunSpec with Matchers {
       sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
       sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{}""")
       sj.render[Map[Int, Any]](Map(1 -> Some(3), 2 -> None)) should be("""{"1":3}""")
+    }
+    it("Fallback") {
+      val sjf = ScalaJack().parseOrElse(typeOf[Falling[Int]] -> typeOf[String])
+      assertResult(true) { sjf.read[Falling[Int]]("""{"foo":"scala.Int", "id":5}""") == Falling(5) }
+      sjf.read[Falling[Int]]("\"wow\"") should be("wow")
     }
     it("Tuples") {
       val jsNull = "null"

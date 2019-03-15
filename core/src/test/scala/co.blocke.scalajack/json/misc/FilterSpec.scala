@@ -63,5 +63,30 @@ class FilterSpec extends FunSpec with Matchers {
       val x = filterEvt(p).orElse(filterInt(p))
       x should be(None)
     }
+    it("Flag extra Json") {
+      val p = sj.parse(jsCmd + "}")
+      val msg =
+        """[$]: Extra input after read.
+          |.misc.SimpleCommand","goDo":"doit","public":true}}}
+          |--------------------------------------------------^""".stripMargin
+      the[model.ReadInvalidError] thrownBy sj.filter[CommMessage[Command]]("kind").apply(p) should have message msg
+    }
+    it("Filter with type modifier (successful mod)") {
+      val sjx = ScalaJack().withTypeValueModifier(model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
+      val p = sjx.parse("""{"kind":"Command","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}""")
+      val x = sjx.filter[CommMessage[Command]]("kind").apply(p)
+      x should be(Some(CommMessage(1, SimpleCommand("doit", true).asInstanceOf[Command])))
+    }
+    it("Filter with type modifier (failed mod)") {
+      val sjx = ScalaJack().withTypeValueModifier(model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
+      val p = sjx.parse("""{"kind":"Nothing","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}""")
+      val x = sjx.filter[CommMessage[Command]]("kind").apply(p)
+      x should be(None)
+    }
+    it("Filter when hit exists but we can't successfully marshal the type from it") {
+      val p = sj.parse("""{"kind":"co.blocke.scalajack.json.misc.Bogus","id":1,"payload":{"goDo":"doit","public":true}}""")
+      val x = sj.filter[CommMessage[SimpleCommand]]("kind").apply(p)
+      x should be(None)
+    }
   }
 }
