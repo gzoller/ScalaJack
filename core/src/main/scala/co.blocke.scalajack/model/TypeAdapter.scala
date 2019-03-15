@@ -44,8 +44,9 @@ trait TypeAdapter[T] {
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
 
-  def as[U <: TypeAdapter[_]: ClassTag]: U =
+  def as[U <: TypeAdapter[_]: ClassTag]: U = {
     maybeAs[U].getOrElse(throw new RuntimeException(s"$self is not an instance of ${implicitly[ClassTag[U]].runtimeClass}"))
+  }
 
   def maybeAs[U <: TypeAdapter[_]: ClassTag]: Option[U] = {
     val runtimeClass = implicitly[ClassTag[U]].runtimeClass
