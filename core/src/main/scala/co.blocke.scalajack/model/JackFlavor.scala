@@ -10,27 +10,28 @@ trait FlavorMaker {
   def make(): JackFlavor[WIRE]
 }
 
-trait JackFlavor[WIRE] extends ViewSplice {
+trait JackFlavor[WIRE] { //extends ViewSplice {
 
-  def parse(wire: WIRE): Transceiver[WIRE]
+  def parse(wire: WIRE): Reader[WIRE]
 
   def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
     val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
-    if (!p.isDone())
-      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
+    if (p.hasNext && p.head.tokenType != TokenType.End)
+      throw new ReadInvalidError(p.showError(Path.Root, "Extra input after read"))
     v
   }
-  private def _read[T](p: Transceiver[WIRE])(implicit tt: TypeTag[T]): T = {
-    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
-    if (!p.isDone())
-      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
-    v
-  }
+  //  private def _read[T](p: Transceiver[WIRE])(implicit tt: TypeTag[T]): T = {
+  //    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+  //    if (!p.isDone())
+  //      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
+  //    v
+  //  }
   //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
 
+  /*
   def filter[T](hintLabel: String = "")(implicit tt: TypeTag[T]): PartialFunction[Transceiver[WIRE], Option[T]] = {
     case p: Transceiver[WIRE] if hintLabel.length == 0 =>
       p.reset()
@@ -63,6 +64,7 @@ trait JackFlavor[WIRE] extends ViewSplice {
       Some(_read(p)(tt))
     case _ => None
   }
+  */
 
   val defaultHint: String = "_hint"
   val stringifyMapKeys: Boolean = false
@@ -74,10 +76,6 @@ trait JackFlavor[WIRE] extends ViewSplice {
   val permissivesOk: Boolean = false
   val enumsAsInt: Boolean = false
 
-  /*
-    val typeModifier: Option[HintModifier]
-    def withTypeModifier(tm: HintModifier): ScalaJackLike[IR, WIRE]
-    */
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[WIRE]
   def withDefaultHint(hint: String): JackFlavor[WIRE]
   def withHints(h: (Type, String)*): JackFlavor[WIRE]
@@ -91,7 +89,7 @@ trait JackFlavor[WIRE] extends ViewSplice {
 
   // These is so pervasively handy, let's just pre-stage it for easy access
   lazy val stringTypeAdapter = context.typeAdapterOf[String]
-  lazy val typeTypeAdapter = context.typeAdapterOf[Type]
+  lazy val typeTypeAdapter = context.typeAdapterOf[Type].asInstanceOf[TypeTypeAdapter]
   lazy val anyTypeAdapter = context.typeAdapterOf[Any]
 
   // Look up any custom hint label for given type, and if none then use default
@@ -105,7 +103,6 @@ trait JackFlavor[WIRE] extends ViewSplice {
   //  val nativeTypeAdapter: TypeAdapter[N]
 
   protected def bakeContext(): Context = {
-
     val intermediateContext = Context((customAdapters ::: Context.StandardFactories) :+ CanBuildFromTypeAdapterFactory(enumsAsInt))
 
     val permissives = if (permissivesOk)
@@ -159,3 +156,4 @@ trait JackFlavor[WIRE] extends ViewSplice {
     ctx
   }
 }
+

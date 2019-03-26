@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package classes
 
-import co.blocke.scalajack.model.ClassHelper.ExtraFieldValue
+import model.ClassHelper.{ ExtraFieldValue, TypeMember }
 import util.Path
 import model._
 
@@ -21,51 +21,44 @@ case class CaseClassTypeAdapter[T](
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys(fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
-    reader.savePos()
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
-        (tm.typeSignature.toString, tm.copy(runtimeConcreteType = {
+        (tm.typeSignature.toString, tm.copy(runtimeConcreteType =
           // 1. Look Ahead for type hint
           // 2. Modify it if needed
           // 3. Marshal it into a Type
-          Some(reader.lookAheadForField(name) match {
-            case Some(hintValue) =>
-              reader.jackFlavor.typeValueModifier match {
-                case Some(fn) => // apply type value modifier if there is one (may explode!)
-                  try {
-                    fn.apply(hintValue)
-                  } catch {
-                    case _: Throwable => throw new ReadInvalidError(path, "Failed to apply type modifier to type member hint ${tm.typeSignature.toString}\n" + reader.showError())
-                  }
-                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
-              }
-            case None => throw new ReadMissingError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)\n" + reader.showError())
-          })
-        }))
-    }
-    reader.rollbackToSave()
-    reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
-      case null => null.asInstanceOf[T]
-      case objectFieldResult: ObjectFieldResult =>
-        if (!objectFieldResult.allThere) {
-          val fieldArray = fieldMembersByName.values.toArray
-          for (p <- 0 to fieldArray.size - 1) {
-            if (!objectFieldResult.fieldSet(p)) {
-              fieldArray(p).defaultValue.map(default => objectFieldResult.objectArgs(p) = default).orElse(
-                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(p).name}\n" + reader.showError(), List(className, fieldArray(p).name))
-              )
-            }
+          reader.scanForType(path, name, reader.jackFlavor.typeValueModifier).orElse {
+            // Consume object as map to basically skip over it to place error pointer correctly and end of object
+            reader.skipObject(path)
+            reader.back
+            throw new ReadMissingError(reader.showError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)"))
           }
-        }
-        val asBuilt = constructorMirror.apply(objectFieldResult.objectArgs: _*).asInstanceOf[T]
+        ))
+    }
+    reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
+      case fieldsRead: ObjectFieldsRead if (fieldsRead.allThere) =>
+        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs: _*).asInstanceOf[T]
         if (isSJCapture)
-          asBuilt.asInstanceOf[SJCapture].captured = objectFieldResult.captured.get
+          asBuilt.asInstanceOf[SJCapture].captured = fieldsRead.captured
         asBuilt
+      case fieldsRead: ObjectFieldsRead => // if missing something...
+        val fieldArray = fieldMembersByName.values.toArray
+        for (p <- 0 to fieldArray.size - 1)
+          if (!fieldsRead.fieldSet(p))
+            fieldArray(p).defaultValue.map(default => fieldsRead.objectArgs(p) = default).orElse {
+              reader.back
+              throw new ReadMissingError(reader.showError(path, s"Class $className missing field ${fieldArray(p).name}"))
+            }
+        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs: _*).asInstanceOf[T]
+        if (isSJCapture)
+          asBuilt.asInstanceOf[SJCapture].captured = fieldsRead.captured
+        asBuilt
+      case null => null.asInstanceOf[T]
     }
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     val extras = scala.collection.mutable.ListBuffer.empty[(String, ExtraFieldValue[_])]
 
     val typeMembersWithRealTypes = typeMembersByName.map {
@@ -105,7 +98,7 @@ case class CaseClassTypeAdapter[T](
 
   // Used by AnyTypeAdapter to insert type hint (not normally needed) into output so object
   // may be reconstituted on read
-  def writeWithHint[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def writeWithHint[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     val hintValue = t.getClass.getName
     val hintLabel = writer.jackFlavor.getHintLabelFor(tt.tpe)
     val extra = List((hintLabel, ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter)))

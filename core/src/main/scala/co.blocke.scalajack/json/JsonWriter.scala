@@ -8,75 +8,75 @@ import scala.collection.{ GenIterable, GenMap }
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.Builder
 
-trait JsonWriter extends Writer[String] {
+case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
 
-  this: JsonTransciever =>
+  @inline def addString(s: String, out: Builder[String, String]): Unit = out += s //s.toCharArray.foreach(c => out += c)
 
-  @inline def addString(s: String, out: Builder[Any, String]): Unit = s.toCharArray.map(c => out += c)
-
-  def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[Any, String]): Unit = t match {
+  def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case a =>
-      out += '['
+      out += "["
       val iter = a.iterator
       while (iter.hasNext) {
         elemTypeAdapter.write(iter.next, this, out, false)
         if (iter.hasNext)
-          out += ','
+          out += ","
       }
-      out += ']'
+      out += "]"
   }
 
-  def writeBigInt(t: BigInt, out: Builder[Any, String]): Unit = t match {
+  def writeBigInt(t: BigInt, out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case s    => addString(s.toString, out)
   }
 
-  def writeBoolean(t: Boolean, out: Builder[Any, String]): Unit =
+  def writeBoolean(t: Boolean, out: Builder[String, String]): Unit =
     addString(t.toString, out)
 
-  def writeDecimal(t: BigDecimal, out: Builder[Any, String]): Unit = t match {
+  def writeDecimal(t: BigDecimal, out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case s    => addString(s.toString, out)
   }
 
-  def writeDouble(t: Double, out: Builder[Any, String]): Unit =
+  def writeDouble(t: Double, out: Builder[String, String]): Unit =
     addString(t.toString, out)
 
-  def writeInt(t: Int, out: Builder[Any, String]): Unit =
+  def writeInt(t: Int, out: Builder[String, String]): Unit =
     addString(t.toString, out)
 
-  def writeLong(t: Long, out: Builder[Any, String]): Unit =
+  def writeLong(t: Long, out: Builder[String, String]): Unit =
     addString(t.toString, out)
 
   def writeMap[Key, Value, To](
       t:                GenMap[Key, Value],
       keyTypeAdapter:   TypeAdapter[Key],
       valueTypeAdapter: TypeAdapter[Value],
-      out:              Builder[Any, String])(implicit keyTT: TypeTag[Key]): Unit = t match {
+      out:              Builder[String, String])(implicit keyTT: TypeTag[Key]): Unit = t match {
     case null => addString("null", out)
-    case a =>
-      out += '{'
-      val iter = a.iterator
-      while (iter.hasNext) {
-        val kv = iter.next
-        if (kv._1 == null)
-          throw new IllegalStateException("Map keys cannot be null.")
-        keyTypeAdapter.write(kv._1, this, out, true)
-        out += ':'
-        valueTypeAdapter.write(kv._2, this, out, false)
-        if (iter.hasNext)
-          out += ','
+    case daMap =>
+      out += "{"
+      var first = true
+      daMap.foreach {
+        case (key, value) =>
+          if (first)
+            first = false
+          else
+            out += ","
+          if (key == null)
+            throw new SJError("Map keys cannot be null.")
+          keyTypeAdapter.write(key, this, out, true)
+          out += ":"
+          valueTypeAdapter.write(value, this, out, false)
       }
-      out += '}'
+      out += "}"
   }
 
-  def writeRawString(t: String, out: Builder[Any, String]): Unit = addString(t, out)
+  def writeRawString(t: String, out: Builder[String, String]): Unit = addString(t, out)
 
-  def writeString(t: String, out: Builder[Any, String]): Unit = t match {
+  def writeString(t: String, out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case _: String =>
-      out += '"'
+      out += "\""
       var i = 0
       val length = t.length
       val chars = t.toCharArray
@@ -84,87 +84,69 @@ trait JsonWriter extends Writer[String] {
       while (i < length) {
         chars(i) match {
           case '"'  => addString("""\"""", out)
-          case ' '  => addString(" ", out)
           case '\\' => addString("""\\""", out)
-          case '/'  => addString("""\/""", out)
           case '\b' => addString("""\b""", out)
           case '\f' => addString("""\f""", out)
           case '\n' => addString("""\n""", out)
           case '\r' => addString("""\r""", out)
           case '\t' => addString("""\t""", out)
-          case ch if ch <= 32 || ch >= 128 =>
+          case ch if ch < 32 || ch >= 128 =>
             addString("""\""" + "u" + "%04x".format(ch.toInt), out)
-          case c => out += c
+          case c => out += c.toString
         }
 
         i += 1
       }
-      out += '"'
+      out += "\""
   }
 
-  def writeNull(out: Builder[Any, String]): Unit = addString("null", out)
+  def writeNull(out: Builder[String, String]): Unit = addString("null", out)
+
+  @inline private def writeFields(isFirst: Boolean, fields: List[(String, Any, TypeAdapter[Any])], out: Builder[String, String]): Boolean = {
+    var first = isFirst
+    for ((label, value, valueTypeAdapter) <- fields)
+      if (value != None) {
+        if (first)
+          first = false
+        else
+          out += ","
+        writeString(label, out)
+        out += ":"
+        valueTypeAdapter.write(value, this, out, false)
+      }
+    first
+  }
 
   def writeObject[T](
       t:            T,
       fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          Builder[Any, String],
+      out:          Builder[String, String],
       extras:       List[(String, ExtraFieldValue[_])]): Unit = {
     if (t == null) {
       addString("null", out)
     } else {
-      out += '{'
-      var first = true
-      for ((label, extraVal) <- extras) {
-        if (first)
-          first = false
-        else
-          out += ','
-        writeString(label, out)
-        out += ':'
-        extraVal.write(this, out)
-      }
-      for ((memberName, member) <- fieldMembers) {
-        val memberValue = member.valueIn(t)
-        if (memberValue != None) {
-          if (first)
-            first = false
-          else
-            out += ','
-          writeString(memberName, out)
-          out += ':'
-          member.valueTypeAdapter.write(memberValue, this, out, false)
-        }
-      }
-
+      out += "{"
+      val wasFirst = writeFields(true, extras.map(e => (e._1, e._2.value, e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])), out)
+      val wasFirst2 = writeFields(wasFirst, fieldMembers.map(f => (f._1, f._2.valueIn(t), f._2.valueTypeAdapter)).toList, out)
       t match {
         case sjc: SJCapture =>
-          sjc.captured.foreach {
-            case (memberName, capturedValue) =>
-              if (first)
-                first = false
-              else
-                out += ','
-              writeString(memberName, out)
-              out += ':'
-              this.jackFlavor.anyTypeAdapter.write(capturedValue, this, out, false)
-          }
+          writeFields(wasFirst2, sjc.captured.map(c => (c._1, c._2, jackFlavor.anyTypeAdapter)).toList, out)
         case _ =>
       }
-
-      out += '}'
+      out += "}"
     }
   }
 
-  def writeTuple(writeFns: List[(Transceiver[String], Builder[Any, String]) => Unit], out: Builder[Any, String]): Unit = {
-    out += '['
+  def writeTuple(writeFns: List[(Writer[String], Builder[String, String]) => Unit], out: Builder[String, String]): Unit = {
+    out += "["
     var first = true
     writeFns.map { f =>
-      if (!first)
-        out += ','
-      else
+      if (first)
         first = false
+      else
+        out += ","
       f(this, out)
     }
-    out += ']'
+    out += "]"
   }
 }

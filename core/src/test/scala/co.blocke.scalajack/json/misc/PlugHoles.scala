@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json.misc
 
 import org.scalatest.{ FunSpec, Matchers }
+import util.TypeTags
 
 case class Bogus(num: Int, unneeded: Option[Boolean], t: Option[(Int, Boolean)] = Some((5, true)))
 
@@ -51,9 +52,9 @@ class PlugHoles() extends FunSpec with Matchers {
     }
     it("Long json error") {
       val js = """["a""In the dark night when the wolves roam wild did the little rabbit dispair of life itself."]"""
-      val msg = """[$[1]]: Expected comma here.
-                  | wild did the little rabbit dispair of life itself."]
-                  |--------------------------------------------------^""".stripMargin
+      val msg = """[$[1]]: Expected Comma here but found String
+                  |...wild did the little rabbit dispair of life itself."]
+                  |----------------------------------------------------^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[String]](js) should have message msg
     }
     it("ScalaJack") {
@@ -61,18 +62,18 @@ class PlugHoles() extends FunSpec with Matchers {
       sj.read[Int]("15") should be(15)
     }
     it("End of TA chain") {
-      the[IllegalArgumentException] thrownBy model.DefaultTypeAdapterFactory.typeAdapterOf[Any](null)(sj.context, TypeTags.of(typeOf[Any])) should have message """Unable to find a type adapter for Any"""
+      the[IllegalArgumentException] thrownBy model.DefaultTypeAdapterFactory.typeAdapterOf[Any](null)(sj.context, TypeTags.of(typeOf[Any])) should have message """Unable to find a type adapter for Any (may be abstract or a dependency of an abstract class)"""
     }
     it("Map reading (json)") {
       val js = """{"a":5"""
       val msg =
-        """[$]: Expected comma here.
+        """[$]: Expected Comma here but found End
           |{"a":5
           |------^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](js) should have message msg
       val js2 = """{"a""""
       val msg2 =
-        """[$.a]: Expected a colon here
+        """[$.a]: Expected Colon here but found End
           |{"a"
           |----^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](js2) should have message msg2
@@ -80,7 +81,7 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Object reading (json)") {
       val js = """{5:5}"""
       val msg =
-        """[$]: Expected a JSON string here
+        """[$]: Expected String here but found Number
           |{5:5}
           |-^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[Bogus](js) should have message msg
@@ -88,13 +89,13 @@ class PlugHoles() extends FunSpec with Matchers {
     it("Tuple reading (json)") {
       val js = """[12"""
       val msg =
-        """[$]: Expected comma here.
+        """[$]: Expected Comma here but found End
           |[12
           |---^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)](js) should have message msg
       sj.read[(Int, Int)]("null") should be(null)
       val msg2 =
-        """[$]: Expected an Tuple (Array) but parsed Number
+        """[$]: Expected BeginArray here but found Number
                 |123
                 |--^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)]("123") should have message msg2
@@ -118,26 +119,26 @@ class PlugHoles() extends FunSpec with Matchers {
     val jsNull = "null"
     assertResult(null) { sj.read[List[Int]](jsNull) }
     val jsNotAnArray = """"Fred""""
-    val msg = """[$]: Expected an Array but parsed String
+    val msg = """[$]: Expected BeginArray here but found String
                 |"Fred"
                 |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[Int]](jsNotAnArray) should have message msg
     assertResult(null) { sj.read[Map[String, Int]](jsNull) }
-    val msg2 = """[$]: Expected a Map but parsed String
+    val msg2 = """[$]: Expected BeginObject here but found String
                 |"Fred"
                 |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, Int]](jsNotAnArray) should have message msg2
     val badNumber = "12.34.56"
-    val msg3 = """[$]: Failed to create BigDecimal value from parsed text 12.34.56
+    val msg3 = """[$]: Unable to read value (e.g. bad number format)
                 |12.34.56
                 |-------^""".stripMargin
     the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[BigDecimal](badNumber) should have message msg3
-    val msg4 = """[$]: Failed to create BigInt value from parsed text 12.34.56
+    val msg4 = """[$]: Unable to read value (e.g. bad number format)
                 |12.34.56
                 |-------^""".stripMargin
     the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[BigInt](badNumber) should have message msg4
     assertResult(null) { sj.read[Bogus](jsNull) }
-    val msg5 = """[$]: Expected an Object (map with String keys) but parsed String
+    val msg5 = """[$]: Expected BeginObject here but found String
                 |"Fred"
                 |----^""".stripMargin
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Bogus](jsNotAnArray) should have message msg5
@@ -188,7 +189,7 @@ class PlugHoles() extends FunSpec with Matchers {
     }
     it("Extra chars in JSON") {
       val js = """[1,2,3]]"""
-      val msg = """[$]: Extra input after read.
+      val msg = """[$]: Extra input after read
                   |[1,2,3]]
                   |-------^""".stripMargin
       the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[List[Int]](js) should have message msg
@@ -206,7 +207,10 @@ class PlugHoles() extends FunSpec with Matchers {
     }
     it("Traits") {
       val js = "15"
-      the[model.ReadUnexpectedError] thrownBy sj.read[Pet](js) should have message """[$]: Expected start of an object but read token Number"""
+      the[model.ReadUnexpectedError] thrownBy sj.read[Pet](js) should have message
+        """[$]: Expected start of an object but read token Number
+          |15
+          |-^""".stripMargin
     }
     it("Type") {
       val t = sj.read[Type]("\"scala.collection.immutable.List\"")

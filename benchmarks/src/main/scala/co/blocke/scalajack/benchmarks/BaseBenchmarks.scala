@@ -86,6 +86,10 @@ class BaseBenchmarksState {
   //  val sj6X = sj6.forType[Double]
   //  val sj6X = sj6.forType[List[Person]] //[List[List[Int]]]
 
+  //--------------- Scan Race
+  val raceString = """[12345,54321,-4768,672,-983456,2547]"""
+  val sj2 = co.blocke.scalajack2.ScalaJack()
+
   /*
   //--------------- Series X ScalaJack Setup
   val h_intTypeAdapter = IntTypeAdapter(IntJsonSerializer())
@@ -204,6 +208,7 @@ class BaseBenchmarks {
   }
   */
 
+  /*
   @Benchmark
   def partialParse(state: BaseBenchmarksState): Any = {
     state.mixedMsgs.foreach { js =>
@@ -222,6 +227,31 @@ class BaseBenchmarks {
         case _ if t == state.evtType =>
         case _                       =>
       }
+    }
+  }
+  */
+
+  @Benchmark
+  def scan5(state: BaseBenchmarksState): Any = {
+    (1 to 1000).foreach { _ =>
+      val inst = state.sj5.read[List[Int]](state.raceString)
+      state.sj5.render(inst)
+    }
+  }
+
+  @Benchmark
+  def scan6(state: BaseBenchmarksState): Any = {
+    (1 to 1000).foreach { _ =>
+      val inst = state.sj6.read[List[Int]](state.raceString)
+      state.sj6.render(inst)
+    }
+  }
+
+  @Benchmark
+  def scanX(state: BaseBenchmarksState): Any = {
+    (1 to 1000).foreach { _ =>
+      val inst = state.sj2.read[List[Int]](state.raceString)
+      state.sj2.render(inst)
     }
   }
 

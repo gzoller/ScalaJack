@@ -89,6 +89,8 @@ lazy val core_macros = project.in(file("core_macros"))
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
     */
 
+
+/*
 lazy val scalajack = project.in(file("core"))
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
@@ -100,7 +102,21 @@ lazy val scalajack = project.in(file("core"))
       test("org.json4s" %% "json4s-core" % "3.6.2") ++
       test("org.json4s" %% "json4s-native" % "3.6.2")
   )//.dependsOn(core_macros)
+  */
 
+lazy val scalajack = project.in(file("core"))
+  .settings(basicSettings: _*)
+  .settings(pubSettings: _*)
+  .settings(libraryDependencies ++=
+    Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+      Seq("org.apache.commons" % "commons-text" % "1.6") ++
+      Seq("commons-codec" % "commons-codec" % "1.11") ++
+      test(scalatest) ++
+      test("org.json4s" %% "json4s-core" % "3.6.2") ++
+      test("org.json4s" %% "json4s-native" % "3.6.2")
+  )
+
+/*
 lazy val scalajack_benchmarks = project.in(file("benchmarks"))
   .enablePlugins(JmhPlugin)
   .settings(basicSettings: _*)
@@ -114,4 +130,5 @@ lazy val scalajack_benchmarks = project.in(file("benchmarks"))
         "net.liftweb" %% "lift-json" % "3.3.0",
         "io.spray" %% "spray-json" % "1.3.2"
       )
-  ).dependsOn( scalajack )
+  ).dependsOn( scalajack, scalajack )
+*/

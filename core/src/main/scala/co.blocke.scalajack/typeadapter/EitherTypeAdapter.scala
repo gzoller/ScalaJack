@@ -35,29 +35,29 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Either[L, R] = {
-    reader.savePos()
-    reader.peek() match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Either[L, R] = {
+    val savedReader = reader.copy
+    reader.head.tokenType match {
       case TokenType.Null =>
-        reader.skip()
+        reader.next
         null
       case v =>
         Try(rightTypeAdapter.read(path, reader)) match {
           case Success(rightValue) =>
             Right(rightValue.asInstanceOf[R])
           case Failure(_) => // Right parse failed... try left
-            reader.rollbackToSave()
+            reader.syncPositionTo(savedReader)
             Try(leftTypeAdapter.read(path, reader)) match {
               case Success(leftValue) =>
                 Left(leftValue.asInstanceOf[L])
               case Failure(x) =>
-                throw new ReadMalformedError(path, s"Failed to read either side of Either\n" + reader.showError(1), List.empty[String], x)
+                throw new ReadMalformedError(reader.showError(path, s"Failed to read either side of Either"))
             }
         }
     }
   }
 
-  def write[WIRE](t: Either[L, R], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: Either[L, R], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null     => writer.writeNull(out)
       case Left(v)  => leftTypeAdapter.write(v, writer, out, isMapKey)

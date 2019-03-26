@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.mapkeys
+package json.mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -12,9 +12,9 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       it("With Any Key") {
         val inst = AnyShell(Map(List(1, 2, 3) -> List("a", "b", "c"), DogPet("Fido", Food.Meat, 4) -> DogPet("Fifi", Food.Meat, 4), Size.Small -> "ok", 123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
         val js = sj.render(inst)
-        assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}""") { js }
+        assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}""") { js }
         val read = sj.read[AnyShell](js)
-        assertResult("""List((16,scala.math.BigInt), (293845,scala.math.BigInt), (123.456,scala.math.BigDecimal), (List(1, 2, 3),scala.collection.immutable.$colon$colon), (Small,java.lang.String), (Fred,java.lang.String), (false,java.lang.Boolean), (DogPet(Fido,Meat,4),co.blocke.scalajack.json.test.mapkeys.DogPet))""") {
+        assertResult("""List((16,scala.math.BigInt), (293845,scala.math.BigInt), (123.456,scala.math.BigDecimal), (List(1, 2, 3),scala.collection.immutable.$colon$colon), (Small,java.lang.String), (Fred,java.lang.String), (false,java.lang.Boolean), (DogPet(Fido,Meat,4),co.blocke.scalajack.json.mapkeys.DogPet))""") {
           read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
         }
       }
@@ -124,7 +124,7 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Boolean Key") {
         val js = """{"m":{"true":false,"123":true}}"""
-        val msg = """[$.m.(map key)]: Expected a Boolean but parsed Number
+        val msg = """[$.m.(map key)]: Expected Boolean here but found Number
                     |123
                     |--^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleBoolean](js) should have message msg
@@ -145,28 +145,28 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       }
       it("Bad Double Key") {
         val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-        val msg = """[$.m.(map key)]: Expected a Double but parsed True
+        val msg = """[$.m.(map key)]: Expected Number here but found Boolean
                     |true
                     |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleDouble](js) should have message msg
       }
       it("Bad Enumeration Key") {
         val js = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg = """[$.m.(map key)]: No value found in enumeration co.blocke.scalajack.json.test.mapkeys.Size$ for Bogus
+        val msg = """[$.m.(map key)]: No value found in enumeration co.blocke.scalajack.json.mapkeys.Size$ for Bogus
                     |{"m":{"Small":"Large","Bogus":"Medium"}}
                     |---------------------------^""".stripMargin
         the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[SampleEnumeration](js) should have message msg
       }
       it("Bad Float Key") {
         val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-        val msg = """[$.m.(map key)]: Failed to create Double value from parsed text 90.12.3
+        val msg = """[$.m.(map key)]: Unable to read value (e.g. bad number format)
                     |90.12.3
                     |------^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleFloat](js) should have message msg
       }
       it("Bad Int Key") {
         val js = """{"m":{"12.0":56,"90":34}}"""
-        val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.0
+        val msg = """[$.m.(map key)]: Unable to read value (e.g. bad number format)
                     |12.0
                     |---^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInt](js) should have message msg

@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.parameters
+package json.parameters
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 

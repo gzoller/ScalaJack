@@ -12,11 +12,11 @@ import scala.collection.mutable.Builder
 
 object JavaBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with JavaBigDecimalTypeAdapter
 trait JavaBigDecimalTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigDecimal = reader.readDecimal(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): BigDecimal = reader.readDecimal(path) match {
     case null => null
     case bd   => bd.bigDecimal
   }
-  def write[WIRE](t: BigDecimal, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: BigDecimal, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeDecimal(t, out)
   }
@@ -24,11 +24,11 @@ trait JavaBigDecimalTypeAdapter {
 
 object JavaBigIntegerTypeAdapterFactory extends TypeAdapter.=:=[BigInteger] with JavaBigIntegerTypeAdapter
 trait JavaBigIntegerTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): BigInteger = reader.readBigInt(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): BigInteger = reader.readBigInt(path) match {
     case null => null
     case bi   => bi.bigInteger
   }
-  def write[WIRE](t: BigInteger, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: BigInteger, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeBigInt(t, out)
   }
@@ -36,15 +36,15 @@ trait JavaBigIntegerTypeAdapter {
 
 object JavaBooleanTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Boolean] with JavaBooleanTypeAdapter
 trait JavaBooleanTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Boolean =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Boolean =
     Try(reader.readBoolean(path)) match {
       case Success(b) => b
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Booleans are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Boolean, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Boolean, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeBoolean(t, out)
   }
@@ -52,16 +52,16 @@ trait JavaBooleanTypeAdapter {
 
 object JavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Byte] with JavaByteTypeAdapter
 trait JavaByteTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Byte =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Byte =
     Try(reader.readInt(path).toByte) match {
       case Success(b) => b
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Bytes are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
 
-  def write[WIRE](t: java.lang.Byte, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Byte, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeInt(t.toByte, out)
   }
@@ -69,13 +69,15 @@ trait JavaByteTypeAdapter {
 
 object JavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Character] with JavaCharacterTypeAdapter with Stringish
 trait JavaCharacterTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Character =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Character =
     reader.readString(path) match {
       case null         => null
       case c if c != "" => c.toCharArray()(0)
-      case _            => throw new ReadInvalidError(path, "Tried to read a Character but empty string found\n" + reader.showError(), List("Empty String"))
+      case _ =>
+        reader.back
+        throw new ReadInvalidError(reader.showError(path, "Tried to read a Character but empty string found"))
     }
-  def write[WIRE](t: java.lang.Character, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Character, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString(t.toString, out)
   }
@@ -83,15 +85,15 @@ trait JavaCharacterTypeAdapter {
 
 object JavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] with JavaDoubleTypeAdapter
 trait JavaDoubleTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Double =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Double =
     Try(reader.readDouble(path)) match {
       case Success(d) => d
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Double are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Double, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Double, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeDouble(t, out)
   }
@@ -99,15 +101,15 @@ trait JavaDoubleTypeAdapter {
 
 object JavaFloatTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Float] with JavaFloatTypeAdapter
 trait JavaFloatTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Float =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Float =
     Try(reader.readDouble(path)) match {
       case Success(d) => d.floatValue()
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Floats are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Float, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Float, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeDouble(util.FixFloat.capFloat(t), out)
   }
@@ -115,15 +117,15 @@ trait JavaFloatTypeAdapter {
 
 object JavaIntTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Integer] with JavaIntTypeAdapter
 trait JavaIntTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Integer =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Integer =
     Try(reader.readInt(path)) match {
       case Success(d) => d
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Integers are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Integer, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Integer, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeInt(t, out)
   }
@@ -131,15 +133,15 @@ trait JavaIntTypeAdapter {
 
 object JavaLongTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Long] with JavaLongTypeAdapter
 trait JavaLongTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Long =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Long =
     Try(reader.readLong(path)) match {
       case Success(d) => d
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Longs are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Long, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Long, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeLong(t, out)
   }
@@ -147,7 +149,7 @@ trait JavaLongTypeAdapter {
 
 object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] with JavaNumberTypeAdapter
 trait JavaNumberTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Number =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Number =
     reader.readDecimal(path) match {
       case null                                       => null
       case d: scala.BigDecimal if (d.isValidByte)     => d.toByteExact
@@ -158,7 +160,7 @@ trait JavaNumberTypeAdapter {
       case d: scala.BigDecimal if (d.isDecimalDouble) => d.toDouble
       case d: scala.BigDecimal                        => d.bigDecimal
     }
-  def write[WIRE](t: java.lang.Number, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Number, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null                                      => writer.writeNull(out)
     case t if t.isInstanceOf[java.lang.Integer]    => writer.writeInt(t.intValue, out)
     case t if t.isInstanceOf[java.lang.Long]       => writer.writeLong(t.longValue, out)
@@ -173,15 +175,15 @@ trait JavaNumberTypeAdapter {
 
 object JavaShortTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Short] with JavaShortTypeAdapter
 trait JavaShortTypeAdapter {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): java.lang.Short =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Short =
     Try(reader.readInt(path)) match {
       case Success(d) => d.shortValue()
-      case Failure(x: ReadUnexpectedError) if x.related == List("Null") =>
-        reader.skip()
+      case Failure(x: ReadUnexpectedError) if x.nullFound =>
+        reader.next
         null // Shorts are nullable in Java, but not Scala
       case Failure(x) => throw (x)
     }
-  def write[WIRE](t: java.lang.Short, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: java.lang.Short, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeInt(t.intValue, out)
   }

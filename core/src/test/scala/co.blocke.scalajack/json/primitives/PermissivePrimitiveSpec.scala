@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.primitives
+package json.primitives
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -11,7 +11,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
 
   val sj = ScalaJack().allowPermissivePrimitives()
 
-  describe("----------------------------\n:  Permissive Primitives Tests  :\n----------------------------") {
+  describe("---------------------------------\n:  Permissive Primitives Tests  :\n---------------------------------") {
     it("Boolean must work") {
       assertResult(Holder(true)) { sj.read[Holder[Boolean]]("""{"value":true}""") }
       assertResult(Holder(true)) { sj.read[Holder[Boolean]]("""{"value":"true"}""") }
@@ -22,7 +22,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Boolean.FALSE)) { sj.read[Holder[java.lang.Boolean]]("""{"value":false}""") }
       assertResult(Holder(java.lang.Boolean.FALSE)) { sj.read[Holder[java.lang.Boolean]]("""{"value":"false"}""") }
       assertResult(Holder[java.lang.Boolean](null)) { sj.read[Holder[java.lang.Boolean]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Boolean but parsed End
+      val msg = """[$.value]: Expected Boolean here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Boolean]]("""{"value":""}""") should have message msg
@@ -38,7 +38,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Byte.valueOf(42.toByte))) { sj.read[Holder[java.lang.Byte]]("""{"value":42}""") }
       assertResult(Holder(java.lang.Byte.valueOf(42.toByte))) { sj.read[Holder[java.lang.Byte]]("""{"value":"42"}""") }
       assertResult(Holder[java.lang.Byte](null)) { sj.read[Holder[java.lang.Byte]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected an Int but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Byte]]("""{"value":""}""") should have message msg
@@ -52,7 +52,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Double.valueOf(42.5))) { sj.read[Holder[java.lang.Double]]("""{"value":42.5}""") }
       assertResult(Holder(java.lang.Double.valueOf(42.5))) { sj.read[Holder[java.lang.Double]]("""{"value":"42.5"}""") }
       assertResult(Holder[java.lang.Double](null)) { sj.read[Holder[java.lang.Double]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Double but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Double]]("""{"value":""}""") should have message msg
@@ -66,7 +66,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Float.valueOf(42.5.toFloat))) { sj.read[Holder[java.lang.Float]]("""{"value":42.5}""") }
       assertResult(Holder(java.lang.Float.valueOf(42.5.toFloat))) { sj.read[Holder[java.lang.Float]]("""{"value":"42.5"}""") }
       assertResult(Holder[java.lang.Float](null)) { sj.read[Holder[java.lang.Float]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Double but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Float]]("""{"value":""}""") should have message msg
@@ -80,7 +80,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Integer.valueOf(42))) { sj.read[Holder[java.lang.Integer]]("""{"value":42}""") }
       assertResult(Holder(java.lang.Integer.valueOf(42))) { sj.read[Holder[java.lang.Integer]]("""{"value":"42"}""") }
       assertResult(Holder[java.lang.Integer](null)) { sj.read[Holder[java.lang.Integer]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected an Int but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Integer]]("""{"value":""}""") should have message msg
@@ -94,7 +94,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Long.valueOf(42.toLong))) { sj.read[Holder[java.lang.Long]]("""{"value":42}""") }
       assertResult(Holder(java.lang.Long.valueOf(42.toLong))) { sj.read[Holder[java.lang.Long]]("""{"value":"42"}""") }
       assertResult(Holder[java.lang.Long](null)) { sj.read[Holder[java.lang.Long]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Long but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Long]]("""{"value":""}""") should have message msg
@@ -108,7 +108,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Short.valueOf(42.toShort))) { sj.read[Holder[java.lang.Short]]("""{"value":42}""") }
       assertResult(Holder(java.lang.Short.valueOf(42.toShort))) { sj.read[Holder[java.lang.Short]]("""{"value":"42"}""") }
       assertResult(Holder[java.lang.Short](null)) { sj.read[Holder[java.lang.Short]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected an Int but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Short]]("""{"value":""}""") should have message msg
@@ -120,7 +120,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(BigInt(42))) { sj.read[Holder[BigInt]]("""{"value":42}""") }
       assertResult(Holder(BigInt(42))) { sj.read[Holder[BigInt]]("""{"value":"42"}""") }
       assertResult(Holder[BigInt](null)) { sj.read[Holder[BigInt]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a BigInt but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[BigInt]]("""{"value":""}""") should have message msg
@@ -131,7 +131,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.math.BigInteger.valueOf(42))) { sj.read[Holder[java.math.BigInteger]]("""{"value":42}""") }
       assertResult(Holder(java.math.BigInteger.valueOf(42))) { sj.read[Holder[java.math.BigInteger]]("""{"value":"42"}""") }
       assertResult(Holder[java.math.BigInteger](null)) { sj.read[Holder[java.math.BigInteger]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a BigInt but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.math.BigInteger]]("""{"value":""}""") should have message msg
@@ -142,7 +142,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(BigDecimal("12.34"))) { sj.read[Holder[BigDecimal]]("""{"value":12.34}""") }
       assertResult(Holder(BigDecimal("12.34"))) { sj.read[Holder[BigDecimal]]("""{"value":"12.34"}""") }
       assertResult(Holder[BigDecimal](null)) { sj.read[Holder[BigDecimal]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Number (Decimal) but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[BigDecimal]]("""{"value":""}""") should have message msg
@@ -153,7 +153,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(new java.math.BigDecimal("12.34"))) { sj.read[Holder[java.math.BigDecimal]]("""{"value":12.34}""") }
       assertResult(Holder(new java.math.BigDecimal("12.34"))) { sj.read[Holder[java.math.BigDecimal]]("""{"value":"12.34"}""") }
       assertResult(Holder[java.math.BigDecimal](null)) { sj.read[Holder[java.math.BigDecimal]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Number (Decimal) but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.math.BigDecimal]]("""{"value":""}""") should have message msg
@@ -164,7 +164,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
       assertResult(Holder(java.lang.Double.valueOf(42.5).asInstanceOf[Number])) { sj.read[Holder[java.lang.Number]]("""{"value":42.5}""") }
       assertResult(Holder(java.lang.Double.valueOf(42.5).asInstanceOf[Number])) { sj.read[Holder[java.lang.Number]]("""{"value":"42.5"}""") }
       assertResult(Holder[java.lang.Number](null)) { sj.read[Holder[java.lang.Number]]("""{"value":null}""") }
-      val msg = """[$.value]: Expected a Number (Decimal) but parsed End
+      val msg = """[$.value]: Expected Number here but found End
                   |
                   |^""".stripMargin
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Holder[java.lang.Number]]("""{"value":""}""") should have message msg

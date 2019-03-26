@@ -6,41 +6,46 @@ import util.Path
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.{ ListMap, Map }
 
-case class ObjectFieldResult(
-    allThere:   Boolean, // True if all fields found (Ok to create object)
-    objectArgs: Array[Any], // Ordered arguments matching object constructor
-    fieldSet:   Array[Boolean], // Bit map of fields set in case any missing
-    captured:   Option[Map[String, Any]] = None // Captured fields if SJCapture
-)
+trait Transceiver[WIRE] {
+  val jackFlavor: JackFlavor[WIRE]
+}
 
-trait Reader[WIRE] {
+trait Reader[WIRE] extends collection.BufferedIterator[ParseToken[WIRE]] with Transceiver[WIRE] {
 
-  // Used for sub-parsing, e.g. Stringified Map keys or secondLookParsing
-  def cloneWithSource(source: WIRE): Transceiver[WIRE]
+  // Use this to "save" current state into a copy in case you need to revert
+  def copy: Reader[WIRE]
+  def syncPositionTo(reader: Reader[WIRE]) // "merge" state with given reader
 
-  def savePos()
-  def rollbackToSave()
-  def reset()
-  def peek(): TokenType.Value
-  def lastTokenText(): String
-  def skip()
-  def lookAheadForField(fieldName: String): Option[String]
+  // Pre-scan input looking for given hint label.  Should not change the parser's state (pointer)
+  def scanForHint(hintLabel: String): Option[String]
+  def scanForType(path: Path, hintLabel: String, hintModFn: Option[HintValueModifier]): Option[Type]
 
-  def isDone(): Boolean
+  // BufferedIterator controls
+  def hasNext: Boolean
+  def head: ParseToken[WIRE]
+  def next: ParseToken[WIRE] // skip over next token
+  def back: ParseToken[WIRE]
+  def abort() // Set pointer to end of input to force-stop any processing
 
-  def showError(ptrAdjust: Int = 0): String
+  // Print a clip from the input and a grapical pointer to the problem for clarity
+  def showError(path: Path, msg: String): String
 
-  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To
+  // Read Primitives
   def readBigInt(path: Path): BigInt
   def readBoolean(path: Path): Boolean
   def readDecimal(path: Path): BigDecimal
   def readDouble(path: Path): Double
   def readInt(path: Path): Int
   def readLong(path: Path): Long
-  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
-  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldResult //(Boolean, Array[Any], Array[Boolean])
   def readString(path: Path): String
-  def readTuple(path: Path, readFns: List[(Path, Transceiver[WIRE]) => Any]): List[Any]
 
+  // Read Basic Collections
+  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To
+  def readMap[Key, Value, To](path: Path, canBuildFrom: CanBuildFrom[_, (Key, Value), To], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
+  def readTuple(path: Path, readFns: List[(Path, Reader[WIRE]) => Any]): List[Any]
+
+  // Read fields we know to be object fields
+  def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldsRead //(Boolean, Array[Any], Array[Boolean])
+  def skipObject(path: Path)
 }
 

@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.mapkeys
+package json.mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Short => JShort }
@@ -194,7 +194,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("With ZonedDateTime Key") {
           val inst = SampleZonedDateTime(Map(ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]") -> null))
           val js = sj.render(inst)
-          assertResult("""{"m":{"2007-12-03T10:15:30+01:00[Europe\/Paris]":null}}""") { js }
+          assertResult("""{"m":{"2007-12-03T10:15:30+01:00[Europe/Paris]":null}}""") { js }
           assertResult(inst) {
             sj.read[SampleZonedDateTime](js)
           }
@@ -219,7 +219,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("Bad Boolean Key") {
           val js = """{"m":{"true":false,"123":true}}"""
-          val msg = """[$.m.(map key)]: Expected a Boolean but parsed Number
+          val msg = """[$.m.(map key)]: Expected Boolean here but found Number
                       |123
                       |--^""".stripMargin
           the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJBoolean](js) should have message msg
@@ -240,21 +240,21 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         }
         it("Bad Double Key") {
           val js = """{"m":{"12.34":56.78,"true":34.56}}"""
-          val msg = """[$.m.(map key)]: Expected a Double but parsed True
+          val msg = """[$.m.(map key)]: Expected Number here but found Boolean
                       |true
                       |---^""".stripMargin
           the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJDouble](js) should have message msg
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-          val msg = """[$.m.(map key)]: Failed to create Double value from parsed text 90.12.3
+          val msg = """[$.m.(map key)]: Unable to read value (e.g. bad number format)
                       |90.12.3
                       |------^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleJFloat](js) should have message msg
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.0":56,"90":34}}"""
-          val msg = """[$.m.(map key)]: Failed to create Int value from parsed text 12.0
+          val msg = """[$.m.(map key)]: Unable to read value (e.g. bad number format)
                       |12.0
                       |---^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleJInteger](js) should have message msg
@@ -285,15 +285,15 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("Bad Instant Key") {
           val js = """{"m":{"1970-01-01T00:00:00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}"""
           val msg = """[$.m.(map key)]: Failed to parse Instant from input 'bogus'
-                      |00Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
-                      |--------------------------------------------------^""".stripMargin
+                      |...0Z":"+1000000000-12-31T23:59:59.999999999Z","bogus":"2007-12-03T10:15:30Z"}}
+                      |----------------------------------------------------^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleInstant](js) should have message msg
         }
         it("Bad LocalDateTime Key") {
           val js = """{"m":{"+999999999-12-31T23:59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}"""
           val msg = """[$.m.(map key)]: Failed to parse LocalDateTime from input 'bogus'
-                      |59:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
-                      |--------------------------------------------------^""".stripMargin
+                      |...9:59.999999999":"-999999999-01-01T00:00:00","bogus":null}}
+                      |----------------------------------------------------^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleLocalDateTime](js) should have message msg
         }
         it("Bad LocalDate Key") {
@@ -313,13 +313,13 @@ class JavaPrimKeys() extends FunSpec with Matchers {
         it("Bad OffsetDateTime Key") {
           val js = """{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:15:30+01:00":null}}"""
           val msg = """[$.m.(map key)]: Failed to parse OffsetDateTime from input 'false'
-                      |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T1
+                      |{"m":{"false":"-999999999-01-01T00:00:00+18:00","2007-12-03T10:15:30+01:00":n...
                       |-----------^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetDateTime](js) should have message msg
         }
         it("Bad OffsetTime Key") {
           val js = """{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}"""
-          val msg = """[$.m.(map key)]: Failed to parse OffsetTime from input '2007-12-03T10:15:30+01:00[Europe/Bogus]'
+          val msg = """[$.m.(map key)]: Unable to read value (e.g. bad number format)
                       |{"m":{"2007-12-03T10:15:30+01:00[Europe\/Bogus]":null}}
                       |----------------------------------------------^""".stripMargin
           the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[SampleOffsetTime](js) should have message msg

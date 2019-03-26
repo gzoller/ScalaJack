@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.collections
+package json.collections
 
 case class Player(name: String, age: Int)
 

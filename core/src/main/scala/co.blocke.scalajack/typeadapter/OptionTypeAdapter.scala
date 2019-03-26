@@ -39,22 +39,22 @@ case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E], nullIsNone: Bo
 
   def valueIsStringish(): Boolean = valueTypeAdapter.isInstanceOf[Stringish]
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Option[E] =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Option[E] =
     // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
     // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
     // these cases.
-    reader.peek() match {
+    reader.head.tokenType match {
       case TokenType.Null if nullIsNone =>
-        reader.skip()
+        reader.next()
         None
       case TokenType.Null =>
-        reader.skip()
+        reader.next()
         null
       case _ =>
         Some(valueTypeAdapter.read(path, reader))
     }
 
-  def write[WIRE](t: Option[E], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: Option[E], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null               => writer.writeNull(out)
       case Some(e)            => valueTypeAdapter.write(e, writer, out, isMapKey)

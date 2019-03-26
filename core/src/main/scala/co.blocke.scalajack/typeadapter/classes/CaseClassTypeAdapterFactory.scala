@@ -72,6 +72,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           memberClass,
           optionalDbKeyIndex,
           optionalMapName,
+          tt.tpe,
           None,
           None))
       }
@@ -98,7 +99,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       next.typeAdapterOf[T]
     }
 
-  private def typeIsUsed(typeParam: Type, fields: List[Type]): Boolean = {
+  @inline private def typeIsUsed(typeParam: Type, fields: List[Type]): Boolean = {
     // Simple use (first-level)
     fields.exists(_ == typeParam) ||
       // Used as a parameter of a field member

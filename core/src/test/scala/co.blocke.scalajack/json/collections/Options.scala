@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.collections
+package json.collections
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -107,7 +107,7 @@ class Options() extends FunSpec with Matchers {
     it("Option of Trait") {
       val inst: Option[Person] = Some(SomeClass("Mike", 2))
       val js = sj.render(inst)
-      assertResult("""{"_hint":"co.blocke.scalajack.json.test.collections.SomeClass","name":"Mike","age":2}""") { js }
+      assertResult("""{"_hint":"co.blocke.scalajack.json.collections.SomeClass","name":"Mike","age":2}""") { js }
       assertResult(inst) {
         sj.read[Option[Person]](js)
       }
@@ -119,7 +119,7 @@ class Options() extends FunSpec with Matchers {
 
       val inst3: Map[Option[Person], Int] = Map(None -> 2, Some(SomeClass("Mike", 2)) -> 1)
       val js3 = sj.render(inst3)
-      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.json.test.collections.SomeClass\",\"name\":\"Mike\",\"age\":2}":1}""") { js3 }
+      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.json.collections.SomeClass\",\"name\":\"Mike\",\"age\":2}":1}""") { js3 }
       assertResult(Map(Some(SomeClass("Mike", 2)) -> 1)) {
         sj.read[Map[Option[Person], Int]](js3)
       }
@@ -146,7 +146,7 @@ class Options() extends FunSpec with Matchers {
     it("Option of Parameterized Trait") {
       val inst: Option[Thing[String, Int]] = Some(AThing("wow", 5))
       val js = sj.render(inst)
-      assertResult("""{"_hint":"co.blocke.scalajack.json.test.collections.AThing","a":"wow","b":5}""") { js }
+      assertResult("""{"_hint":"co.blocke.scalajack.json.collections.AThing","a":"wow","b":5}""") { js }
       assertResult(inst) {
         sj.read[Option[Thing[String, Int]]](js)
       }
@@ -157,7 +157,7 @@ class Options() extends FunSpec with Matchers {
 
       val inst3: Map[Option[Thing[String, Int]], Int] = Map(None -> 2, Some(AThing("wow", 5)) -> 1)
       val js3 = sj.render(inst3)
-      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.json.test.collections.AThing\",\"a\":\"wow\",\"b\":5}":1}""") { js3 }
+      assertResult("""{"{\"_hint\":\"co.blocke.scalajack.json.collections.AThing\",\"a\":\"wow\",\"b\":5}":1}""") { js3 }
       assertResult(Map(Some(AThing("wow", 5)) -> 1)) {
         sj.read[Map[Option[Thing[String, Int]], Int]](js3)
       }

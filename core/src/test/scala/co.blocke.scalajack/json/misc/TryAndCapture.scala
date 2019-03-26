@@ -5,7 +5,7 @@ package misc
 import org.scalatest.{ FunSpec, Matchers }
 
 import scala.util._
-import JsonMatchers._
+import JsonMatcher._
 
 case class Embed(stuff: List[String], num: Int)
 case class Boom(
@@ -28,7 +28,7 @@ class TryAndCapture() extends FunSpec with Matchers {
       it("Try failure") {
         val js = """{"name":"Greg","other":[1,2,3]}"""
         val obj = sj.read[Boom](js)
-        val msg = """[$.other]: Expected an Object (map with String keys) but parsed BeginArray
+        val msg = """[$.other]: Expected BeginObject here but found BeginArray
                     |{"name":"Greg","other":[1,2,3]}
                     |-----------------------^""".stripMargin
         assertResult(msg) { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
@@ -37,7 +37,7 @@ class TryAndCapture() extends FunSpec with Matchers {
       it("Try failure 2") {
         val js = """{"name":"Greg","other":  -12.45  ,"num":2}"""
         val obj = sj.read[Boom](js)
-        val msg = """[$.other]: Expected an Object (map with String keys) but parsed Number
+        val msg = """[$.other]: Expected BeginObject here but found Number
                     |{"name":"Greg","other":  -12.45  ,"num":2}
                     |------------------------------^""".stripMargin
         assertResult(msg) { obj.other.asInstanceOf[Failure[_]].exception.getMessage }

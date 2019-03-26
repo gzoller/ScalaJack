@@ -3,10 +3,11 @@ package model
 
 import java.lang.reflect.Method
 
-import typeadapter.{ FallbackTypeAdapter, OptionTypeAdapter }
+//import util.Path
+import typeadapter.{FallbackTypeAdapter, OptionTypeAdapter}
 
-import scala.collection.immutable.{ ListMap, Map }
-import scala.collection.mutable.Builder
+import scala.collection.immutable.{ListMap, Map}
+//import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 
@@ -35,15 +36,16 @@ object ClassHelper {
       outerClass:                         Option[java.lang.Class[_]],
       dbKeyIndex:                         Option[Int],
       fieldMapName:                       Option[String],
+      ownerType:                          Type,
 
-      // These 4 are only for Plain Classes -- unused for Case Classes
+      // These 3 are only for Plain Classes -- unused for Case Classes
       valueSetterMethodSymbol: Option[MethodSymbol], // for Scala
       valueSetterMethod:       Option[Method], // for Java
       isMaybe: Boolean = false
-  )(implicit ot:TypeTag[Owner]) extends Member[Owner] {
+  ) extends Member[Owner] {
     type Value = T
 
-    val defaultValue: Option[T] = defaultValueMethod.map(_.invoke(ot.tpe.typeSymbol.asClass).asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
+    val defaultValue: Option[T] = defaultValueMethod.map(_.invoke(ownerType.typeSymbol.asClass).asInstanceOf[T]).orElse( valueTypeAdapter.defaultValue )
 
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -108,11 +110,13 @@ object ClassHelper {
     def members = fieldMembersByName.values //typeMembersByName.values ++ fieldMembersByName.values
   }
 
-  case class ExtraFieldValue[T](
-      value:            T,
-      valueTypeAdapter: TypeAdapter[T]) {
-    def write[WIRE](writer: Transceiver[WIRE], out: Builder[Any, WIRE]) = valueTypeAdapter.write(value, writer, out, false)
-  }
+  // Field values (w/TypeAdatper) that are "extra"--i.e. not part of a class but we want to read/render them along
+  // with normal class fields.  For example: type member fields.
+  case class ExtraFieldValue[T](value: T, valueTypeAdapter: TypeAdapter[T])
+//    extends TypeAdapter[T] {
+//    def read[WIRE](path: Path, reader: Reader[WIRE]): T = ??? // Intentionally undefined--should never be called!
+//    def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = valueTypeAdapter.write(value, writer, out, isMapKey)
+//  }
 
   // OK, so all this hokem is to figure out what to do for embedded type member (i.e. externalized type hint feature).
   // *If* there are interesting type members for this class, find fields in the class with types matching the type class and substitute the

@@ -38,8 +38,8 @@ trait TypeAdapter[T] {
 
   self =>
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit
 
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
@@ -67,3 +67,4 @@ trait Stringish {
 trait ArrayTypeAdapter[T, E] extends TypeAdapter[T] {
   val elementTypeAdapter: TypeAdapter[E]
 }
+

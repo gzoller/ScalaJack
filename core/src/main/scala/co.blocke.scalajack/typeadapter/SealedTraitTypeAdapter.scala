@@ -95,16 +95,18 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] with Stringish {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
       val objInstance = clazz.getField("MODULE$").get(null).asInstanceOf[T]
       objInstance
-    case x => throw new ReadUnexpectedError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}\n" + reader.showError(), List(typeOf[T].toString, x))
+    case x =>
+      reader.back
+      throw new ReadUnexpectedError(reader.showError(path, s"Expected a valid subclass of ${typeOf[T]} but got ${x}"))
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeString(null, out)
       case _    => writer.writeString(t.toString, out)
@@ -119,8 +121,8 @@ trait SealedImplementation[T] {
 
 class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
-    reader.savePos()
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+    val savedReader = reader.copy
     reader.readMap(path, Map.canBuildFrom[String, Any], reader.jackFlavor.stringTypeAdapter, reader.jackFlavor.anyTypeAdapter) match {
       case null =>
         null.asInstanceOf[T]
@@ -128,21 +130,23 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
         val allFieldNames = fields.map(_._1).toSet
         implementations.filter(implementation => implementation.fieldNames.subsetOf(allFieldNames)) match {
           case setOfOne if setOfOne.size == 1 =>
-            reader.rollbackToSave()
+            reader.syncPositionTo(savedReader)
             setOfOne.head.typeAdapter.read(path, reader)
 
           case emptySet if emptySet.isEmpty =>
-            throw new ReadInvalidError(path, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames\n" + reader.showError(), List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
+            reader.back
+            throw new ReadInvalidError(reader.showError(path, s"No sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames"))
 
           case _ =>
             // $COVERAGE-OFF$Should be impossible--here for safety.  Something to trigger this would be ambiguous and would then be detected as a WrappedSealedTraitTypeAdapter, not here.
-            throw new ReadInvalidError(path, s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames\n" + reader.showError(), List(tt.tpe.typeSymbol.fullName, allFieldNames.mkString("[", ",", "]")))
+            reader.back
+            throw new ReadInvalidError(reader.showError(path, s"Multiple sub-classes of ${tt.tpe.typeSymbol.fullName} match field names $allFieldNames"))
           // $COVERAGE-ON$
         }
     }
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null =>
         writer.writeString(null, out)
@@ -161,13 +165,15 @@ class WrappedSealedTraitTypeAdapter[T](
     implementations:    immutable.Set[SealedImplementation[T]]
 )(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     val inst = wrappedTypeAdapter.read(path, reader)
     if (implementations.exists(_.isInstance(inst)))
       inst
-    else
-      throw new ReadInvalidError(path, s"${inst.getClass.getName} isn't a subclass of sealed trait ${tt.tpe.typeSymbol.fullName}\n" + reader.showError(), List(tt.tpe.typeSymbol.fullName))
+    else {
+      reader.back
+      throw new ReadInvalidError(reader.showError(path, s"${inst.getClass.getName} isn't a subclass of sealed trait ${tt.tpe.typeSymbol.fullName}"))
+    }
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = wrappedTypeAdapter.write(t, writer, out, isMapKey)
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = wrappedTypeAdapter.write(t, writer, out, isMapKey)
 }

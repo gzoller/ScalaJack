@@ -24,39 +24,30 @@ case class PlainClassTypeAdapter[T](
   override def dbKeys: List[ClassFieldMember[T, Any]] =
     (fieldMembersByName.values.toList ++ nonConstructorFields.values.toList).filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
 
     // Any externalized trait hints? (as type members)
-    reader.savePos()
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
         (tm.typeSignature.toString, tm.copy(runtimeConcreteType = {
           // 1. Look Ahead for type hint
           // 2. Modify it if needed
           // 3. Marshal it into a Type
-          Some(reader.lookAheadForField(name) match {
-            case Some(hintValue) =>
-              reader.jackFlavor.typeValueModifier match {
-                case Some(fn) => // apply type value modifier if there is one (may explode!)
-                  try {
-                    fn.apply(hintValue)
-                  } catch {
-                    case _: Throwable => throw new ReadInvalidError(path, "Failed to apply type modifier to type member hint ${tm.typeSignature.toString}\n" + reader.showError())
-                  }
-                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
-              }
-            case None => throw new ReadMissingError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)\n" + reader.showError())
-          })
+          reader.scanForType(path, name, reader.jackFlavor.typeValueModifier).orElse{
+            // Consume object as map to basically skip over it to place error pointer correctly and end of object
+            reader.skipObject(path)
+            reader.back
+            throw new ReadMissingError(reader.showError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)"))
+          }
         }))
     }
-    reader.rollbackToSave()
 
     // Apply any concrete type member definitions to placeholder types 'T'->MyThing
     val both = ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName ++ nonConstructorFields)
 
     reader.readObjectFields[T](path, isSJCapture, both) match {
       case null => null.asInstanceOf[T]
-      case objectFieldResult: ObjectFieldResult =>
+      case objectFieldResult: ObjectFieldsRead =>
 
         val finalConstructorArgList =
           if (!objectFieldResult.allThere) {
@@ -73,7 +64,8 @@ case class PlainClassTypeAdapter[T](
                 None
               // Any other missing
               case ((_, false), index) =>
-                throw new ReadMissingError(path, s"Class $className missing field ${fieldArray(index).name}\n" + reader.showError(), List(className, fieldArray(index).name))
+                reader.back
+                throw new ReadMissingError(reader.showError(path, s"Class $className missing field ${fieldArray(index).name}"))
               // Anything else... as-read
               case ((result, true), index) =>
                 result
@@ -97,7 +89,8 @@ case class PlainClassTypeAdapter[T](
                 (field, None)
               // Any other missing (but not @Maybe)
               case (field, (_, false)) if !field.isMaybe =>
-                throw new ReadMissingError(path, s"Class $className missing field ${field.name}\n" + reader.showError(), List(className, field.name))
+                reader.back
+                throw new ReadMissingError(reader.showError(path,s"Class $className missing field ${field.name}"))
               // Anything else... as-read
               case (field, (arg, true)) =>
                 (field, arg)
@@ -111,14 +104,14 @@ case class PlainClassTypeAdapter[T](
         }
 
         if (isSJCapture)
-          asBuilt.asInstanceOf[SJCapture].captured = objectFieldResult.captured.get
+          asBuilt.asInstanceOf[SJCapture].captured = objectFieldResult.captured
 
         asBuilt
     }
   }
 
   // This is a carbon-copy of CaseClassTypeAdapter.write *EXCEPT* we need to also write out the nonConstructorFields too.
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     val extras = scala.collection.mutable.ListBuffer.empty[(String, ExtraFieldValue[_])]
     val typeMembersWithRealTypes = typeMembersByName.map {
       case (typeMemberName, tm) =>

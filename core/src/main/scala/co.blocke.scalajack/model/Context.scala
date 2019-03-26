@@ -3,7 +3,6 @@ package model
 
 import typeadapter._
 /*
-import typeadapters.forclasses._
 import typeadapter.javatime._
 import typeadapter.javaprimitives._
 import typeadapter.javacollections._
@@ -11,8 +10,7 @@ import typeadapter.javacollections._
 
 import java.util.concurrent.ConcurrentHashMap
 
-import co.blocke.scalajack._
-import co.blocke.scalajack.util.TypeTags
+import util.TypeTags
 
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
@@ -70,7 +68,8 @@ object Context {
     OffsetTimeTypeAdapterFactory,
     PeriodTypeAdapterFactory,
     ZonedDateTimeTypeAdapterFactory,
-    classes.PlainClassTypeAdapterFactory)
+    classes.PlainClassTypeAdapterFactory
+  )
 }
 
 case class Context(factories: List[TypeAdapterFactory] = Nil) {
@@ -132,3 +131,4 @@ case class Context(factories: List[TypeAdapterFactory] = Nil) {
   def typeAdapterOf[T](implicit valueTypeTag: TypeTag[T]): TypeAdapter[T] =
     typeAdapter(valueTypeTag.tpe).asInstanceOf[TypeAdapter[T]]
 }
+

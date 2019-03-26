@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.collections
+package json.collections
 
 import org.scalatest.{ FunSpec, Matchers }
 
@@ -27,7 +27,7 @@ class AnyColl() extends FunSpec with Matchers {
     it("First-Level List works (Class)") {
       val inst: Any = List(Player("Mike", 34), Player("Sarah", 29))
       val js = sj.render(inst)
-      assertResult("""[{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Mike","age":34},{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Sarah","age":29}]""") { js }
+      assertResult("""[{"_hint":"co.blocke.scalajack.json.collections.Player","name":"Mike","age":34},{"_hint":"co.blocke.scalajack.json.collections.Player","name":"Sarah","age":29}]""") { js }
       assertResult(List(Player("Mike", 34), Player("Sarah", 29))) {
         sj.read[List[Any]](js)
       }
@@ -49,19 +49,19 @@ class AnyColl() extends FunSpec with Matchers {
       }
     }
     it("First-Level Map works (Class)") {
-      val js = """{"_hint":"co.blocke.scalajack.json.test.collections.Player","name":"Mike","age":34}"""
+      val js = """{"_hint":"co.blocke.scalajack.json.collections.Player","name":"Mike","age":34}"""
       assertResult(Player("Mike", 34)) {
         sj.read[Any](js)
       }
     }
     it("Second-Level Map works (Class keys) (Class)") {
-      val js = """{"{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Mike\",\"age\":34}":15, "{\"name\":\"Mike\",\"age\":34}":16}"""
+      val js = """{"{\"_hint\":\"co.blocke.scalajack.json.collections.Player\",\"name\":\"Mike\",\"age\":34}":15, "{\"name\":\"Mike\",\"age\":34}":16}"""
       assertResult(Map(Player("Mike", 34) -> 15, Map("name" -> "Mike", "age" -> 34) -> 16)) {
         sj.read[Any](js)
       }
     }
     it("Second-Level Map (List keys) works (Class)") {
-      val js = """{"[{\"_hint\":\"co.blocke.scalajack.json.test.collections.Player\",\"name\":\"Mike\",\"age\":34},{\"name\":\"Mike\",\"age\":34}]":15}"""
+      val js = """{"[{\"_hint\":\"co.blocke.scalajack.json.collections.Player\",\"name\":\"Mike\",\"age\":34},{\"name\":\"Mike\",\"age\":34}]":15}"""
       assertResult(Map(List(Player("Mike", 34), Map("name" -> "Mike", "age" -> 34)) -> 15)) {
         sj.read[Any](js)
       }

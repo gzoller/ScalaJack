@@ -26,7 +26,7 @@ class Misc() extends FunSpec with Matchers {
       val msg =
         """[$]: Class WrapTrait missing type hint for type member T (looking for flower)
           |{"rose":{"thing":5,"other":6}}
-          |----------------------------^""".stripMargin
+          |-----------------------------^""".stripMargin
       the[model.ReadMissingError] thrownBy sj.read[WrapTrait[TraitBase]](js) should have message msg
     }
     it("Must accept missing default constructor values") {

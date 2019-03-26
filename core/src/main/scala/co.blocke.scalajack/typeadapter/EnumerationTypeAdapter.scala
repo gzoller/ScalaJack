@@ -22,34 +22,34 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
     } else {
       next.typeAdapterOf[T]
     }
-
 }
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): E#Value =
-    reader.peek match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): E#Value =
+    reader.head.tokenType match {
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}\n" + reader.showError(), List(enum.getClass.getName, reader.lastTokenText))
+            reader.back
+            throw new ReadInvalidError(reader.showError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.head.textValue}"))
         }
       case TokenType.Number =>
         Try(enum(reader.readInt(path))) match {
           case Success(u) => u
           case Failure(u) =>
-            throw new ReadInvalidError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.lastTokenText}\n" + reader.showError(), List(enum.getClass.getName, reader.lastTokenText))
+            reader.back
+            throw new ReadInvalidError(reader.showError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.head.textValue}"))
         }
       case TokenType.Null =>
-        reader.skip()
+        reader.next
         null
       case actual =>
-        reader.skip()
-        throw new ReadUnexpectedError(path, s"Expected value token of type String or Int, not $actual when reading Enumeration value.\n" + reader.showError(), List(actual.toString))
+        throw new ReadUnexpectedError(reader.showError(path, s"Expected String or Int, not $actual when reading Enumeration value"))
     }
 
-  def write[WIRE](t: E#Value, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: E#Value, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null                                => writer.writeNull(out)
       case v if (writer.jackFlavor.enumsAsInt) => writer.writeInt(v.id, out)

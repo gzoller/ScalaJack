@@ -6,7 +6,7 @@ import org.json4s.native.JsonMethods._
 import util.Path
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
-object JsonMatchers {
+object JsonMatcher {
 
   implicit def parseJValue(string: String): JValue = parse(string)
 

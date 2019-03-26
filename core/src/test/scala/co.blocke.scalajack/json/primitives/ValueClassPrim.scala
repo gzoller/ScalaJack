@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.primitives
+package json.primitives
 
 import org.scalatest.{ FunSpec, Matchers }
 import java.util.UUID
@@ -167,7 +167,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
     describe("--- Negative Tests ---") {
       it("Wrong JSON for wrapped type") {
         val js = """100.25"""
-        val msg = """[$]: Failed to create Int value from parsed text 100.25
+        val msg = """[$]: Unable to read value (e.g. bad number format)
                     |100.25
                     |-----^""".stripMargin
         the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[VCShort](js) should have message msg

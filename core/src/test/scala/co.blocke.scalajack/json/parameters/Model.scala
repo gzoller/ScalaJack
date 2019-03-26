@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.parameters
+package json.parameters
 
 //--- Basic Parameterized Case Class
 case class Foo1[A](x: A, b: Int)

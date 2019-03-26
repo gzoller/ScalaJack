@@ -27,19 +27,19 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
 
 case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Try[T] = {
-    reader.savePos()
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Try[T] = {
+    val savedReader = reader.copy
     Try { valueTypeAdapter.read(path, reader) } match {
       case self @ Success(_) =>
         self
 
       case Failure(cause) =>
-        reader.rollbackToSave()
+        reader.syncPositionTo(savedReader)
         Failure(new ValueBackedException(reader.jackFlavor.anyTypeAdapter.read(path, reader), cause))
     }
   }
 
-  def write[WIRE](t: Try[T], writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: Try[T], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case Success(v)                       => valueTypeAdapter.write(v, writer, out, isMapKey)
       case Failure(e: ValueBackedException) => writer.jackFlavor.anyTypeAdapter.write(e.value, writer, out, isMapKey)

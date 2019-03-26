@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.primitives
+package json.primitives
 
 import java.util.UUID
 import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Number => JNumber, Short => JShort }

@@ -16,6 +16,6 @@ object TypeParameterTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 case class TypeParameterTypeAdapter[T]() extends TypeAdapter[T] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = reader.jackFlavor.anyTypeAdapter.read(path, reader).asInstanceOf[T]
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = writer.jackFlavor.anyTypeAdapter.write(t, writer, out, isMapKey)
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = reader.jackFlavor.anyTypeAdapter.read(path, reader).asInstanceOf[T]
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = writer.jackFlavor.anyTypeAdapter.write(t, writer, out, isMapKey)
 }

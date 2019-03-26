@@ -81,8 +81,8 @@ class SealedTraits extends FunSpec with Matchers {
     }
     it("Invalid ambiguous trait") {
       val msg = """[$]: co.blocke.scalajack.json.misc.NotSealed isn't a subclass of sealed trait co.blocke.scalajack.json.misc.Vehicle
-                  |n.misc.NotSealed","numberOfWheels":3,"color":"Red"}
-                  |--------------------------------------------------^""".stripMargin
+                  |....misc.NotSealed","numberOfWheels":3,"color":"Red"}
+                  |----------------------------------------------------^""".stripMargin
       val js = """{"_hint":"co.blocke.scalajack.json.misc.NotSealed","numberOfWheels":3,"color":"Red"}"""
       the[ReadInvalidError] thrownBy sj.read[Vehicle](js) should have message msg
     }

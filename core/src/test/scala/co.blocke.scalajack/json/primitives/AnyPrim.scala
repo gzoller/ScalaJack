@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.primitives
+package json.primitives
 
 import org.scalatest.{ FunSpec, Matchers }
 

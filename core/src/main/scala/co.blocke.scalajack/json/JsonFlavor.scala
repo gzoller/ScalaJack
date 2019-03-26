@@ -1,9 +1,10 @@
 package co.blocke.scalajack
 package json
 
-import model.{ JackFlavor, _ }
+import model._
+import util.StringBuilder
 
-import scala.collection.mutable.Builder
+import java.util.ArrayList
 
 object JsonFlavorMaker extends FlavorMaker {
   type WIRE = String
@@ -37,19 +38,14 @@ case class JsonFlavor(
   protected override def bakeContext(): Context =
     new Context(JsonCanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
 
-  def parse(wire: String): Transceiver[String] = JsonTransciever(wire, context, stringTypeAdapter, this)
+  private val writer = JsonWriter(this)
+
+  def parse(wire: String): Reader[String] = JsonReader(this, wire, JsonTokenizer().tokenize(wire).asInstanceOf[ArrayList[JsonToken]]) //JsonTransciever(wire, context, stringTypeAdapter, this)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
-    val sb = new StringBuilder().asInstanceOf[Builder[Any, String]]
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, JsonTransciever("", context, stringTypeAdapter, this), sb, false)
+    val sb = StringBuilder()
+    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
     sb.result()
   }
 }
 
-case class JsonTransciever(
-    json:              String,
-    context:           Context,
-    stringTypeAdapter: TypeAdapter[String],
-    jackFlavor:        JackFlavor[String]) extends Transceiver[String] with JsonReader with JsonWriter {
-  val tokenizer: Tokenizer[String] = JsonTokenizer()
-}

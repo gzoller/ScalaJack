@@ -2,11 +2,11 @@ package co.blocke.scalajack
 package typeadapter
 
 import model._
-import util.Path
+import util.{ Path, StringBuilder }
 import model.TokenType._
 import typeadapter.classes.CaseClassTypeAdapter
 
-import scala.collection.mutable.{ Builder, StringBuilder }
+import scala.collection.mutable.Builder
 import scala.collection.GenTraversableOnce
 import scala.util.{ Try, Success }
 
@@ -35,27 +35,29 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
   private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any = _read(path, reader)
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Any = _read(path, reader)
 
-  def _read[WIRE](path: Path, reader: Transceiver[WIRE], isSJCapture: Boolean = false): Any = {
-    reader.peek() match {
+  def _read[WIRE](path: Path, reader: Reader[WIRE], isSJCapture: Boolean = false): Any = {
+    reader.head.tokenType match {
       case BeginObject => // Could be Class/Trait or Map
-        reader.savePos()
         if (isSJCapture)
           reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
         else {
-          reader.lookAheadForField(reader.jackFlavor.defaultHint) match {
-            case Some(z) =>
-              Try(reader.jackFlavor.typeTypeAdapter.read(path, reader)) match {
+          val savedReader = reader.copy
+          reader.scanForHint(reader.jackFlavor.defaultHint) match {
+            case Some(typeName) =>
+              Try(reader.jackFlavor.typeTypeAdapter.typeNameToType(path, typeName, reader)) match {
                 case Success(concreteType) =>
-                  reader.rollbackToSave()
-                  reader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
-                case x => // Hint found, but failed to read type...Treat as map
-                  reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+                  // Successfully found/read the type hint, now go back read the actual thing with the right type adapter
+                  savedReader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
+                case _ => // Hint found, but failed to read type...Treat as map
+                  // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+                  reader.syncPositionTo(savedReader)
                   reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
               }
             case None => // no hint found... treat as a Map
-              reader.rollbackToSave() // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+              // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
+              reader.syncPositionTo(savedReader)
               reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
           }
         }
@@ -75,21 +77,21 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
           case BigIntExtractor(s)     => s
           case BigDecimalExtractor(s) => s
           case s if s.startsWith("{") && s.endsWith("}") => // WARNING:  JSON-specific!
-            this.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))
+            this.read(path, reader.jackFlavor.parse(s.asInstanceOf[WIRE]))
           case s if s.startsWith("[") && s.endsWith("]") => // WARNING:  JSON-specific!
-            listAnyTypeAdapter.read(path, reader.cloneWithSource(s.asInstanceOf[WIRE]))
+            listAnyTypeAdapter.read(path, reader.jackFlavor.parse(s.asInstanceOf[WIRE]))
           case s => s
         }
-      case True | False =>
+      case Boolean =>
         reader.readBoolean(path)
       case Null =>
-        reader.skip()
+        reader.next
         null
     }
   }
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
-  private def unpack[X, WIRE](value: X, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean) = {
+  private def unpack[X, WIRE](value: X, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean) = {
     try {
       // Tease out Lists/Maps
       val inferredClassName = value.getClass.getName match {
@@ -98,11 +100,11 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
       }
       val rawValueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(inferredClassName)).asInstanceOf[TypeAdapter[X]]
       rawValueTA match {
-        case cc: CaseClassTypeAdapter[X] if isMapKey && writer.jackFlavor.stringifyMapKeys =>
+        case _: CaseClassTypeAdapter[X] if isMapKey && writer.jackFlavor.stringifyMapKeys =>
           val stringBuilder = new StringBuilder()
           rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, stringBuilder.asInstanceOf[Builder[Any, WIRE]], false)
           writer.writeString(stringBuilder.result, out)
-        case cc: CaseClassTypeAdapter[X] =>
+        case _: CaseClassTypeAdapter[X] =>
           rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, out, isMapKey)
         case _: Stringish =>
           rawValueTA.write(value, writer, out, isMapKey)
@@ -120,7 +122,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
   }
 
   // WARNING: JSON output broken for Option[...] where value is None -- especially bad for Map keys!
-  def write[WIRE](t: Any, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: Any, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     if (isMapKey && writer.jackFlavor.stringifyMapKeys)
       t match {
         // Null not needed: null Map keys are inherently invalid in SJ

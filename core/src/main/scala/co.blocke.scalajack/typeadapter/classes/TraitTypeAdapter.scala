@@ -5,6 +5,7 @@ package classes
 import model._
 import util._
 
+import scala.collection.immutable.Map
 import scala.util.Try
 import scala.collection.mutable
 import scala.collection.mutable.Builder
@@ -40,39 +41,30 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     val hintLabel = getHintLabel(reader) // Apply any hint label modifiers
-    reader.peek() match {
+    reader.head.tokenType match {
       case TokenType.Null =>
-        reader.skip()
+        reader.next
         null.asInstanceOf[T]
       case TokenType.BeginObject =>
-        reader.savePos()
         val concreteType =
-          reader.lookAheadForField(hintLabel) match {
-            case Some(hintValue) =>
-              hintModFn match {
-                case Some(fn) => // apply type value modifier if there is one (may explode!)
-                  try {
-                    fn.apply(hintValue)
-                  } catch {
-                    case _: Throwable => throw new ReadInvalidError(path, s"Failed to apply type modifier to type member hint $hintValue\n" + reader.showError(1))
-                  }
-                case None => reader.jackFlavor.typeTypeAdapter.read(path, reader)
-              }
-            case None => throw new ReadInvalidError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName\n" + reader.showError(1))
+          reader.scanForType(path, hintLabel, hintModFn).getOrElse {
+            // Consume object as map to basically skip over it to place error pointer correctly and end of object
+            reader.skipObject(path)
+            reader.back
+            throw new ReadInvalidError(reader.showError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName"))
           }
-        reader.rollbackToSave()
 
         val populatedConcreteType = populateConcreteType(concreteType)
         context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]
       case t =>
-        throw new ReadUnexpectedError(path, "Expected start of an object but read token " + t, List.empty[String])
+        throw new ReadUnexpectedError(reader.showError(path, "Expected start of an object but read token " + t))
     }
   }
 
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     val hintModFn = writer.jackFlavor.hintValueModifiers.get(tt.tpe)
     if (t == null)
       writer.writeNull(out)
@@ -82,7 +74,7 @@ case class TraitTypeAdapter[T](
       context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
         case cc: CaseClassTypeAdapter[T] =>
           val hintValue = hintModFn.map(h => Try(h.unapply(populatedConcreteType)).getOrElse(
-            throw new IllegalStateException(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}")
+            throw new SJError(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}")
           )).getOrElse(t.getClass.getName)
           writer.writeObject(t, cc.fieldMembersByName, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
       }

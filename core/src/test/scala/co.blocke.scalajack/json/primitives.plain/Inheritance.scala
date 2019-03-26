@@ -56,22 +56,24 @@ class Inheritance() extends FunSpec with Matchers {
       it("Must catch missing/required var") {
         val js = """{"extra":"bar","foo":25,"dontForget":12,"uno":"something","quatro":12.34}"""
         val msg = """[$]: Class InheritSimpleChild missing field foobar
-                    |5,"dontForget":12,"uno":"something","quatro":12.34}
-                    |--------------------------------------------------^""".stripMargin
+                    |...,"dontForget":12,"uno":"something","quatro":12.34}
+                    |----------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }
-      it("Must catch missing/required constructor field") {
-        val js = """{"extra":"bar","foo":25,"dontForget":12,"quatro":12.34,"foobar":99}"""
+      it("Must catch missing/required constructor field (with newline)") {
+        val js =
+          """{"extra":"bar","foo":25,"dontForget":12,"quatro"
+            |:12.34,"foobar":99}""".stripMargin
         val msg = """[$]: Class InheritSimpleChild missing field uno
-                        |foo":25,"dontForget":12,"quatro":12.34,"foobar":99}
-                        |--------------------------------------------------^""".stripMargin
+                        |...o":25,"dontForget":12,"quatro"~:12.34,"foobar":99}
+                        |----------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }
       it("Must catch missing/required getter/setter field") {
         val js = """{"extra":"bar","foo":25,"uno":"something","quatro":12.34,"foobar":99}"""
         val msg = """[$]: Class InheritSimpleChild missing field dontForget
-                    |o":25,"uno":"something","quatro":12.34,"foobar":99}
-                    |--------------------------------------------------^""".stripMargin
+                    |...":25,"uno":"something","quatro":12.34,"foobar":99}
+                    |----------------------------------------------------^""".stripMargin
         the[ReadMissingError] thrownBy sj.read[InheritSimpleChild](js) should have message msg
       }
       it("Must fail non-val constructor field") {

@@ -5,7 +5,7 @@ package primitives.plain
 import org.scalatest.{ FunSpec, Matchers }
 
 import scala.util._
-import JsonMatchers._
+import JsonMatcher._
 
 class TryAndCapture() extends FunSpec with Matchers {
 
@@ -24,7 +24,7 @@ class TryAndCapture() extends FunSpec with Matchers {
       it("Try failure") {
         val js = """{"name":"Greg","other":[1,2,3]}"""
         val obj = sj.read[Boom](js)
-        assertResult("""[$.other]: Expected an Object (map with String keys) but parsed BeginArray
+        assertResult("""[$.other]: Expected BeginObject here but found BeginArray
           |{"name":"Greg","other":[1,2,3]}
           |-----------------------^""".stripMargin) { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult("""{"other":[1,2,3],"name":"Greg"}""") { sj.render(obj) }
@@ -32,7 +32,7 @@ class TryAndCapture() extends FunSpec with Matchers {
       it("Try failure 2") {
         val js = """{"name":"Greg","other":  -12.45  ,"num":2}"""
         val obj = sj.read[Boom](js)
-        assertResult("""[$.other]: Expected an Object (map with String keys) but parsed Number
+        assertResult("""[$.other]: Expected BeginObject here but found Number
         |{"name":"Greg","other":  -12.45  ,"num":2}
         |------------------------------^""".stripMargin) { obj.other.asInstanceOf[Failure[_]].exception.getMessage }
         assertResult("""{"other":-12.45,"name":"Greg"}""") { sj.render(obj) }

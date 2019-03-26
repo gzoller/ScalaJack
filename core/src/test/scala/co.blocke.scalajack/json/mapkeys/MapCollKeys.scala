@@ -1,7 +1,8 @@
 package co.blocke.scalajack
-package json.test.mapkeys
+package json.mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
+import model.SJError
 
 class MapCollKeys() extends FunSpec with Matchers {
 
@@ -73,7 +74,7 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2: Map[Pet, Pet] = Map(FishPet("Flipper", Food.Meat, 87.3) -> DogPet("Fido", Food.Meat, 4))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{"{\"{\\\"{\\\\\\\"_hint\\\\\\\":\\\\\\\"co.blocke.scalajack.json.test.mapkeys.DogPet\\\\\\\",\\\\\\\"name\\\\\\\":\\\\\\\"Fido\\\\\\\",\\\\\\\"food\\\\\\\":\\\\\\\"Meat\\\\\\\",\\\\\\\"numLegs\\\\\\\":4}\\\":{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}}\":{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}}":{"{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":87.3}}}}""") { js }
+      assertResult("""{"{\"{\\\"{\\\\\\\"_hint\\\\\\\":\\\\\\\"co.blocke.scalajack.json.mapkeys.DogPet\\\\\\\",\\\\\\\"name\\\\\\\":\\\\\\\"Fido\\\\\\\",\\\\\\\"food\\\\\\\":\\\\\\\"Meat\\\\\\\",\\\\\\\"numLegs\\\\\\\":4}\\\":{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}}\":{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}}":{"{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.FishPet\\\",\\\"name\\\":\\\"Flipper\\\",\\\"food\\\":\\\"Meat\\\",\\\"waterTemp\\\":87.3}\":{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}}":{"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.mapkeys.FishPet","name":"Flipper","food":"Meat","waterTemp":87.3}}}}""") { js }
       assertResult(inst) {
         sj.read[Map[Map[Map[Pet, Pet], Map[Pet, Pet]], Map[Map[Pet, Pet], Map[Pet, Pet]]]](js)
       }
@@ -103,7 +104,7 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2: Map[Thing[String, Int], Thing[String, Int]] = Map(AThing("four", 4) -> AThing("three", 3))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val js = sj.render(inst)
-      assertResult("""{"{\"{\\\"{\\\\\\\"_hint\\\\\\\":\\\\\\\"co.blocke.scalajack.json.test.mapkeys.AThing\\\\\\\",\\\\\\\"a\\\\\\\":\\\\\\\"one\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\":{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.AThing\\\",\\\"a\\\":\\\"two\\\",\\\"b\\\":2}}\":{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"three\",\"b\":3}}}":{"{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.test.mapkeys.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"three\",\"b\":3}}":{"{\"_hint\":\"co.blocke.scalajack.json.test.mapkeys.AThing\",\"a\":\"one\",\"b\":1}":{"_hint":"co.blocke.scalajack.json.test.mapkeys.AThing","a":"two","b":2}}}}""") { js }
+      assertResult("""{"{\"{\\\"{\\\\\\\"_hint\\\\\\\":\\\\\\\"co.blocke.scalajack.json.mapkeys.AThing\\\\\\\",\\\\\\\"a\\\\\\\":\\\\\\\"one\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\":{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.AThing\\\",\\\"a\\\":\\\"two\\\",\\\"b\\\":2}}\":{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.json.mapkeys.AThing\",\"a\":\"three\",\"b\":3}}}":{"{\"{\\\"_hint\\\":\\\"co.blocke.scalajack.json.mapkeys.AThing\\\",\\\"a\\\":\\\"four\\\",\\\"b\\\":4}\":{\"_hint\":\"co.blocke.scalajack.json.mapkeys.AThing\",\"a\":\"three\",\"b\":3}}":{"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.AThing\",\"a\":\"one\",\"b\":1}":{"_hint":"co.blocke.scalajack.json.mapkeys.AThing","a":"two","b":2}}}}""") { js }
       assertResult(true) {
         sj.read[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]](js).isInstanceOf[Map[Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]], Map[Map[Thing[String, Int], Thing[String, Int]], Map[Thing[String, Int], Thing[String, Int]]]]]
       }
@@ -125,7 +126,7 @@ class MapCollKeys() extends FunSpec with Matchers {
       val m2 = m0 + (bad -> Some(99))
       val inst = Map(Map(m1 -> m2) -> Map(m2 -> m1))
       val msg = "Map keys cannot be null."
-      the[java.lang.IllegalStateException] thrownBy sj.render(inst) should have message msg
+      the[SJError] thrownBy sj.render(inst) should have message msg
     }
     it("Map of ValueClass as key") {
       val m1: Map[VCChar, VCChar] = Map(VCChar('Z') -> VCChar('z'))

@@ -128,8 +128,10 @@ case class CanBuildMapTypeAdapter[Key, Value, To >: Null <: GenMapLike[Key, Valu
     keyTypeAdapter:   TypeAdapter[Key],
     valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): To =
+    reader.readMap[Key, Value, To](path, canBuildFrom, keyTypeAdapter, valueTypeAdapter)
+
+  def write[WIRE](t: To, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     val filterKey = {
       if (keyIsOptional && t != null)
         t.asInstanceOf[GenMap[Key, Value]].filterNot { case (k, v) => k == None }
@@ -150,10 +152,13 @@ case class CanBuildFromTypeAdapter[Elem, To >: Null <: GenTraversableOnce[Elem]]
     canBuildFrom:       CanBuildFrom[_, Elem, To],
     elemIsOptional:     Boolean,
     elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter)
-  def write[WIRE](t: To, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+
+  def read[WIRE](path: Path, reader: Reader[WIRE]): To = reader.readArray[Elem, To](path, canBuildFrom, elementTypeAdapter)
+
+  def write[WIRE](t: To, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     if (elemIsOptional)
       writer.writeArray(t.asInstanceOf[GenIterable[Elem]].filterNot(_ == None), elementTypeAdapter, out)
     else
       writer.writeArray(t.asInstanceOf[GenIterable[Elem]], elementTypeAdapter, out)
 }
+

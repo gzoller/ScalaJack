@@ -1,24 +1,24 @@
 package co.blocke.scalajack
-package json.test.custom
+package json.custom
 
 object MyTypes {
   type Phone = String
 }
 import MyTypes._
 import util.Path
-import model.{ Stringish, Transceiver, TypeAdapter }
+import model._
 
 import scala.collection.mutable.Builder
 
 // Override just Phone
 object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Phone =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =
     reader.readString(path) match {
       case s: String => s.replaceAll("-", "")
       case null      => null
     }
 
-  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
   }
@@ -26,13 +26,13 @@ object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
 
 // Override Phone...and its parents (String)!
 object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] with Stringish {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): Phone =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =
     reader.readString(path) match {
       case s: String => s.replaceAll("-", "")
       case null      => null
     }
 
-  def write[WIRE](t: Phone, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
   }

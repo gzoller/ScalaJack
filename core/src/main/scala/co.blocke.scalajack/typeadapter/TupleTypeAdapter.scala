@@ -21,10 +21,10 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
     def valueIn(tuple: Any): F = valueAccessorMethod.invoke(tuple).asInstanceOf[F]
 
-    def read[WIRE](path: Path, reader: Transceiver[WIRE]): Any =
+    def read[WIRE](path: Path, reader: Reader[WIRE]): Any =
       valueTypeAdapter.read(path, reader)
 
-    def write[WIRE, T](tuple: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+    def write[WIRE, T](tuple: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
       valueTypeAdapter.write(valueIn(tuple), writer, out, isMapKey)
   }
 
@@ -63,24 +63,24 @@ case class TupleTypeAdapter[T >: Null](
     fields:            List[TupleField[_]],
     constructorMirror: MethodMirror) extends TypeAdapter[T] {
 
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T =
-    reader.peek match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T =
+    reader.head.tokenType match {
       case TokenType.Null =>
-        reader.skip()
+        reader.next
         null
       case _ =>
-        val readFns = fields.map(field => (p: Path, r: Transceiver[WIRE]) => field.read(p, r))
+        val readFns = fields.map(field => (p: Path, r: Reader[WIRE]) => field.read(p, r))
         constructorMirror.apply(reader.readTuple(path, readFns): _*).asInstanceOf[T]
     }
 
   // Create functions that know how to self-write each field.  The actual writing of each element
   // is done in TupleField where the specific field type F is known.
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     if (t == null)
       writer.writeNull(out)
     else
       writer.writeTuple(
-        fields.map(field => (w: Transceiver[WIRE], builder: Builder[Any, WIRE]) => field.write(t, w, builder, isMapKey)),
+        fields.map(field => (w: Writer[WIRE], builder: Builder[WIRE, WIRE]) => field.write(t, w, builder, isMapKey)),
         out
       )
 }

@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json.test.custom
+package json.custom
 
 import org.scalatest.{ FunSpec, Matchers }
 

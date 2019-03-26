@@ -50,8 +50,8 @@ object Factory6 extends TypeAdapterFactory.=:=.withOneTypeParam[Set] {
 }
 
 trait EmptyTypeAdapter[T] extends TypeAdapter[T] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): T = null.asInstanceOf[T]
-  def write[WIRE](t: T, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit = {}
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = null.asInstanceOf[T]
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {}
 }
 
 class TA1[T]() extends EmptyTypeAdapter[T]

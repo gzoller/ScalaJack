@@ -6,23 +6,23 @@ import scala.collection.mutable.Builder
 import scala.collection.immutable.ListMap
 import ClassHelper.ExtraFieldValue
 
-trait Writer[WIRE] {
+trait Writer[WIRE] extends Transceiver[WIRE] {
 
-  def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[Any, WIRE]): Unit
-  def writeBigInt(t: BigInt, out: Builder[Any, WIRE]): Unit
-  def writeBoolean(t: Boolean, out: Builder[Any, WIRE]): Unit
-  def writeDecimal(t: BigDecimal, out: Builder[Any, WIRE]): Unit
-  def writeDouble(t: Double, out: Builder[Any, WIRE]): Unit
-  def writeInt(t: Int, out: Builder[Any, WIRE]): Unit
-  def writeLong(t: Long, out: Builder[Any, WIRE]): Unit
-  def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[Any, WIRE])(implicit keyTT: TypeTag[Key]): Unit
-  def writeNull(out: Builder[Any, WIRE]): Unit
+  def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[WIRE, WIRE]): Unit
+  def writeBigInt(t: BigInt, out: Builder[WIRE, WIRE]): Unit
+  def writeBoolean(t: Boolean, out: Builder[WIRE, WIRE]): Unit
+  def writeDecimal(t: BigDecimal, out: Builder[WIRE, WIRE]): Unit
+  def writeDouble(t: Double, out: Builder[WIRE, WIRE]): Unit
+  def writeInt(t: Int, out: Builder[WIRE, WIRE]): Unit
+  def writeLong(t: Long, out: Builder[WIRE, WIRE]): Unit
+  def writeMap[Key, Value, To](t: GenMap[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[WIRE, WIRE])(implicit keyTT: TypeTag[Key]): Unit
+  def writeNull(out: Builder[WIRE, WIRE]): Unit
   def writeObject[T](
       t:            T,
       fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          Builder[Any, WIRE],
+      out:          Builder[WIRE, WIRE],
       extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit
-  def writeRawString(t: String, out: Builder[Any, WIRE]): Unit
-  def writeString(t: String, out: Builder[Any, WIRE]): Unit
-  def writeTuple(writeFns: List[(Transceiver[WIRE], Builder[Any, WIRE]) => Unit], out: Builder[Any, WIRE]): Unit
+  def writeRawString(t: String, out: Builder[WIRE, WIRE]): Unit
+  def writeString(t: String, out: Builder[WIRE, WIRE]): Unit
+  def writeTuple(writeFns: List[(Writer[WIRE], Builder[WIRE, WIRE]) => Unit], out: Builder[WIRE, WIRE]): Unit
 }

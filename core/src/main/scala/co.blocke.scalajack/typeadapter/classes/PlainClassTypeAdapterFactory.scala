@@ -101,6 +101,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               memberClass,
               optionalDbKeyIndex,
               optionalMapName,
+              tt.tpe,
               None,
               None)
         })
@@ -199,6 +200,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           memberClass,
           dbkeyAnno,
           mapNameAnno,
+          tt.tpe,
           Some(setterMethod.asMethod),
           None,
           isMaybe
@@ -237,6 +239,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               None,
               None,
               mapNameAnno, // mapName
+              tt.tpe,
               None,
               Some(propertyDescriptor.getWriteMethod),
               isMaybe

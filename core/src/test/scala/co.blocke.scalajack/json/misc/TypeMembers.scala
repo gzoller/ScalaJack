@@ -3,6 +3,7 @@ package json.misc
 
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
 import model._
+import util.TypeTags
 
 import scala.reflect.runtime.universe.typeOf
 

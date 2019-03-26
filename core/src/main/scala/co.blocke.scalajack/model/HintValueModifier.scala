@@ -26,6 +26,4 @@ case class StringMatchHintModifier(hintToType: Map[String, Type]) extends HintVa
   val typeToHint = hintToType.map(_.swap)
   def apply(rawHint: String) = hintToType(rawHint) // May explode
   def unapply(hintFieldType: Type) = typeToHint(hintFieldType) // May explode
-  //  def apply(rawHint: String) = hintToType.getOrElse(rawHint, throw new IllegalStateException("No Type mapping given for hint " + rawHint))
-  //  def unapply(hintFieldType: Type) = typeToHint.getOrElse(hintFieldType, throw new IllegalStateException("No hint value mapping given for Type " + hintFieldType.typeSymbol.fullName))
 }

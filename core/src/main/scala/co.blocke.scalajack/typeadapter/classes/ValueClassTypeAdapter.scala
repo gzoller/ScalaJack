@@ -39,36 +39,8 @@ case class ValueClassAdapter[DerivedValueClass, Value](
     sourceTypeAdapter: TypeAdapter[Value],
     unwrap:            DerivedValueClass => Value,
     derive:            Value => DerivedValueClass) extends TypeAdapter[DerivedValueClass] {
-  def read[WIRE](path: Path, reader: Transceiver[WIRE]): DerivedValueClass =
+  def read[WIRE](path: Path, reader: Reader[WIRE]): DerivedValueClass =
     derive(sourceTypeAdapter.read(path, reader))
-  def write[WIRE](t: DerivedValueClass, writer: Transceiver[WIRE], out: Builder[Any, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: DerivedValueClass, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     sourceTypeAdapter.write(unwrap(t), writer, out, isMapKey)
 }
-/*
-                                                               override val irTransceiver: IRTransceiver[DerivedValueClass]) extends TypeAdapter[DerivedValueClass]
-
-class ValueClassIRTransceiver[Derived, Source](
-                                                       sourceTransceiver: IRTransceiver[Source],
-                                                       unwrap:            Derived => Source,
-                                                       derive:            Source => Derived)(implicit derivedTypeTag: TypeTag[Derived], sourceTypeTag: TypeTag[Source]) extends IRTransceiver[Derived] {
-
-  private val derivedType: Type = derivedTypeTag.tpe
-  private val sourceType: Type = sourceTypeTag.tpe
-  override def toString: String = s"DerivedValueClassIRTransceiver[${derivedTypeTag.tpe}, ${sourceTypeTag.tpe}]"
-
-  override def read[IR, WIRE](path: Path, ir: IR)(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): ReadResult[Derived] =
-    sourceTransceiver.read(path, ir) map {
-      case TypeTagged(source) =>
-        val derived = derive(source)
-        TypeTagged(derived, derivedType)
-    }
-
-  override def write[IR, WIRE](tagged: TypeTagged[Derived])(implicit ops: Ops[IR, WIRE], guidance: SerializationGuidance): WriteResult[IR] =
-    tagged match {
-      case TypeTagged(derived) =>
-        val source = unwrap(derived)
-        sourceTransceiver.write(TypeTagged(source, sourceType))
-    }
-
-}
-*/ 
