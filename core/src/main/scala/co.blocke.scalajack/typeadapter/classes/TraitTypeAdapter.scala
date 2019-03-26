@@ -5,7 +5,6 @@ package classes
 import model._
 import util._
 
-import scala.collection.immutable.Map
 import scala.util.Try
 import scala.collection.mutable
 import scala.collection.mutable.Builder

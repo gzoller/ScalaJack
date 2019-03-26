@@ -25,10 +25,8 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
       out += "]"
   }
 
-  def writeBigInt(t: BigInt, out: Builder[String, String]): Unit = t match {
-    case null => addString("null", out)
-    case s    => addString(s.toString, out)
-  }
+  def writeBigInt(t: BigInt, out: Builder[String, String]): Unit =
+    addString(t.toString, out)
 
   def writeBoolean(t: Boolean, out: Builder[String, String]): Unit =
     addString(t.toString, out)

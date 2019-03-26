@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package typeadapter
 package classes
 
-import model.ClassHelper.{ ExtraFieldValue, TypeMember }
+import model.ClassHelper.ExtraFieldValue
 import util.Path
 import model._
 

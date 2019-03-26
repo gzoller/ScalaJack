@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package model
 
-import util.Path
-
 // related is for testing mainly--avoids the need for string comparison of msg, which may vary with Scala version
 class SJError(msg: String) extends Exception(msg)
 

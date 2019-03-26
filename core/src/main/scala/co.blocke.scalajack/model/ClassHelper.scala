@@ -3,11 +3,9 @@ package model
 
 import java.lang.reflect.Method
 
-//import util.Path
 import typeadapter.{FallbackTypeAdapter, OptionTypeAdapter}
 
 import scala.collection.immutable.{ListMap, Map}
-//import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 

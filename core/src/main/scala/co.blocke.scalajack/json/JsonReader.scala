@@ -15,30 +15,24 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
   private var pos = initialPos
 
   @inline private def expect[T](t: TokenType.Value, path: Path, fn: (ParseToken[String]) => T, isNullable: Boolean = false): T =
-    if (hasNext) {
-      next match {
-        case tok if tok.tokenType == t =>
-          Try(fn(tok)).getOrElse {
-            back
-            throw new ReadMalformedError(showError(path, s"Unable to read value (e.g. bad number format)"))
-          }
-        case tok if tok.tokenType == TokenType.Null && isNullable =>
-          null.asInstanceOf[T]
-        case tok =>
+    next match {
+      case tok if tok.tokenType == t =>
+        Try(fn(tok)).getOrElse {
           back
-          throw new ReadUnexpectedError(showError(path, "Expected " + t + s" here but found " + tok.tokenType), tok.tokenType == TokenType.Null)
-      }
-    } else
-      throw new ReadUnexpectedError(showError(path, "Premature end of input.  Expected " + t + " here"))
+          throw new ReadMalformedError(showError(path, s"Unable to read value (e.g. bad number format)"))
+        }
+      case tok if tok.tokenType == TokenType.Null && isNullable =>
+        null.asInstanceOf[T]
+      case tok =>
+        back
+        throw new ReadUnexpectedError(showError(path, "Expected " + t + s" here but found " + tok.tokenType), tok.tokenType == TokenType.Null)
+    }
 
   @inline private def assertExists[T](t: TokenType.Value, path: Path): Unit =
-    if (hasNext) {
-      if (head.tokenType == t)
-        next
-      else
-        throw new ReadUnexpectedError(showError(path, s"Expected $t here but found ${head.tokenType}"))
-    } else
-      throw new ReadUnexpectedError(showError(path, "Premature end of input.  Expected " + t + " here"))
+    if (head.tokenType == t)
+      next
+    else
+      throw new ReadUnexpectedError(showError(path, s"Expected $t here but found ${head.tokenType}"))
 
   def copy: Reader[String] = JsonReader(jackFlavor, json, tokens, pos)
   def syncPositionTo(reader: Reader[String]) = this.pos = reader.asInstanceOf[JsonReader].pos
@@ -57,7 +51,6 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
       pos
     tokens.get(pos)
   }
-  def abort() = pos = tokens.size
 
   /**
    * Nondestructive (doesn't change pointer position) lookahead for a named field (presumes an object)
@@ -220,9 +213,8 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
 
   def showError(path: Path, msg: String): String = {
     val errPtr = pos match {
-      case p if p >= tokens.size && tokens.size <= 1 => 0
-      case p if p >= tokens.size                     => tokens.get(p - 1).end + 1
-      case p                                         => tokens.get(p).end
+      case p if p >= tokens.size => tokens.get(p - 1).end + 1
+      case p                     => tokens.get(p).end
     }
     val (clip, dashes) = errPtr match {
       case ep if ep <= 50 && json.length < 80      => (json, ep)

@@ -4,7 +4,7 @@ package model
 import util.Path
 
 import scala.collection.generic.CanBuildFrom
-import scala.collection.immutable.{ ListMap, Map }
+import scala.collection.immutable.ListMap
 
 trait Transceiver[WIRE] {
   val jackFlavor: JackFlavor[WIRE]
@@ -25,7 +25,6 @@ trait Reader[WIRE] extends collection.BufferedIterator[ParseToken[WIRE]] with Tr
   def head: ParseToken[WIRE]
   def next: ParseToken[WIRE] // skip over next token
   def back: ParseToken[WIRE]
-  def abort() // Set pointer to end of input to force-stop any processing
 
   // Print a clip from the input and a grapical pointer to the problem for clarity
   def showError(path: Path, msg: String): String

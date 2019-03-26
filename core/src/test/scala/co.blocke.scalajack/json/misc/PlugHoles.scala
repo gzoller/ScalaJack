@@ -99,6 +99,7 @@ class PlugHoles() extends FunSpec with Matchers {
                 |123
                 |--^""".stripMargin
       the[model.ReadUnexpectedError] thrownBy sj.read[(Int, Int)]("123") should have message msg2
+      sj.read[(Int, Int)]("null") should be(null)
     }
   }
   it("JsonWriter") {
@@ -144,6 +145,12 @@ class PlugHoles() extends FunSpec with Matchers {
     the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Bogus](jsNotAnArray) should have message msg5
     val strSlash = "\"This\\\\that\""
     assertResult("""This\that""") { sj.read[String](strSlash) }
+    val js = """{"_hint":33,"thing":"hah"}"""
+    val msg6 =
+      """[$._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.json.misc.TypeTrait
+        |{"_hint":33,"thing":"hah"}
+        |-------------------------^""".stripMargin
+    the[co.blocke.scalajack.model.ReadInvalidError] thrownBy sj.read[TypeTrait](js) should have message msg6
   }
   describe("TypeAdapters") {
     it("Any") {

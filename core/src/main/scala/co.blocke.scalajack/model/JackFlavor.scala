@@ -3,7 +3,6 @@ package model
 
 import typeadapter._
 import util.Path
-import scala.util.{ Try, Success }
 
 trait FlavorMaker {
   type WIRE
@@ -95,9 +94,6 @@ trait JackFlavor[WIRE] { //extends ViewSplice {
   // Look up any custom hint label for given type, and if none then use default
   def getHintLabelFor(tpe: Type) =
     hintMap.get(tpe).getOrElse(defaultHint)
-
-  //  def getHintValueForType(traitType: Type, origValue: String): Type =
-  //    hintValueModifiers.get(traitType).map(_.apply(origValue)).getOrElse(???)
 
   //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
   //  val nativeTypeAdapter: TypeAdapter[N]
