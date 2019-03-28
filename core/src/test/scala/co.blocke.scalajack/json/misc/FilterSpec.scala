@@ -67,8 +67,8 @@ class FilterSpec extends FunSpec with Matchers {
       val p = sj.parse(jsCmd + "}")
       val msg =
         """[$]: Extra input after read.
-          |.misc.SimpleCommand","goDo":"doit","public":true}}}
-          |--------------------------------------------------^""".stripMargin
+          |...misc.SimpleCommand","goDo":"doit","public":true}}}
+          |----------------------------------------------------^""".stripMargin
       the[model.ReadInvalidError] thrownBy sj.filter[CommMessage[Command]]("kind").apply(p) should have message msg
     }
     it("Filter with type modifier (successful mod)") {

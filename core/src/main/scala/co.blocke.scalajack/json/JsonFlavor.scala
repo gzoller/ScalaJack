@@ -21,9 +21,6 @@ case class JsonFlavor(
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
     override val enumsAsInt:         Boolean                      = false) extends JackFlavor[String] {
 
-  //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, String] = JsonFlavor[N2]()
-  //  val nativeTypeAdapter: TypeAdapter[N] = context.typeAdapterOf[N]
-
   override val stringifyMapKeys: Boolean = true
 
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = this.copy(customAdapters = this.customAdapters ++ ta.toList)

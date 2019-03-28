@@ -9,7 +9,7 @@ trait FlavorMaker {
   def make(): JackFlavor[WIRE]
 }
 
-trait JackFlavor[WIRE] { //extends ViewSplice {
+trait JackFlavor[WIRE] extends ViewSplice with Filter[WIRE] {
 
   def parse(wire: WIRE): Reader[WIRE]
 
@@ -20,50 +20,8 @@ trait JackFlavor[WIRE] { //extends ViewSplice {
       throw new ReadInvalidError(p.showError(Path.Root, "Extra input after read"))
     v
   }
-  //  private def _read[T](p: Transceiver[WIRE])(implicit tt: TypeTag[T]): T = {
-  //    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
-  //    if (!p.isDone())
-  //      throw new ReadInvalidError(Path.Root, "Extra input after read.\n" + p.showError(1))
-  //    v
-  //  }
-  //  def fastRead(wire: WIRE): N = nativeTypeAdapter.read(Path.Root, parse(wire), false)
 
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
-
-  /*
-  def filter[T](hintLabel: String = "")(implicit tt: TypeTag[T]): PartialFunction[Transceiver[WIRE], Option[T]] = {
-    case p: Transceiver[WIRE] if hintLabel.length == 0 =>
-      p.reset()
-      Try(_read(p)(tt)).toOption
-    case p: Transceiver[WIRE] if (hintLabel.length > 0) && {
-      p.reset()
-
-      val result = p.lookAheadForField(hintLabel) match {
-        case Some(hintValue) =>
-          p.jackFlavor.typeValueModifier match {
-            case Some(fn) => // apply type value modifier if there is one (may explode!)
-              try {
-                val foundType = fn.apply(hintValue)
-                (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
-              } catch {
-                case _: Throwable => false // attempt to modify failed somehow
-              }
-            case None => Try(p.jackFlavor.typeTypeAdapter.read(Path.Root, p)) match {
-              case Success(foundType) =>
-                (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
-              case _ => false
-            }
-          }
-        case None => false
-      }
-      p.rollbackToSave()
-      result
-    } =>
-      p.reset()
-      Some(_read(p)(tt))
-    case _ => None
-  }
-  */
 
   val defaultHint: String = "_hint"
   val stringifyMapKeys: Boolean = false
@@ -94,9 +52,6 @@ trait JackFlavor[WIRE] { //extends ViewSplice {
   // Look up any custom hint label for given type, and if none then use default
   def getHintLabelFor(tpe: Type) =
     hintMap.get(tpe).getOrElse(defaultHint)
-
-  //  def forType[N2](implicit tt: TypeTag[N2]): JackFlavor[N2, WIRE]
-  //  val nativeTypeAdapter: TypeAdapter[N]
 
   protected def bakeContext(): Context = {
     val intermediateContext = Context((customAdapters ::: Context.StandardFactories) :+ CanBuildFromTypeAdapterFactory(enumsAsInt))
