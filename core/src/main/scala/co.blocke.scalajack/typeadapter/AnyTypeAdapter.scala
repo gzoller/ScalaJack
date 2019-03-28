@@ -2,7 +2,8 @@ package co.blocke.scalajack
 package typeadapter
 
 import model._
-import util.{ Path, StringBuilder }
+import util.Path
+import compat.StringBuilder
 import model.TokenType._
 import typeadapter.classes.CaseClassTypeAdapter
 
@@ -40,7 +41,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
     reader.head.tokenType match {
       case BeginObject => // Could be Class/Trait or Map
         if (isSJCapture)
-          reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+          reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
         else {
           val savedReader = reader.copy
           reader.scanForHint(reader.jackFlavor.defaultHint) match {
@@ -52,16 +53,16 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
                 case _ => // Hint found, but failed to read type...Treat as map
                   // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
                   reader.syncPositionTo(savedReader)
-                  reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+                  reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
               }
             case None => // no hint found... treat as a Map
               // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
               reader.syncPositionTo(savedReader)
-              reader.readMap(path, Map.canBuildFrom[Any, Any], this, this)
+              reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
           }
         }
       case BeginArray =>
-        reader.readArray(path, Vector.canBuildFrom[Any], this).toList
+        reader.readArray(path, listAnyTypeAdapter.asInstanceOf[CanBuildFromTypeAdapter[Any, List[Any]]].builderFactory, this)
       case Number =>
         reader.readDecimal(path) match {
           case i if i.isValidInt      => i.toIntExact

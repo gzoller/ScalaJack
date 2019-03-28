@@ -38,7 +38,7 @@ case class CaseClassTypeAdapter[T](
     }
     reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
       case fieldsRead: ObjectFieldsRead if (fieldsRead.allThere) =>
-        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs.toIndexedSeq: _*).asInstanceOf[T]
         if (isSJCapture)
           asBuilt.asInstanceOf[SJCapture].captured = fieldsRead.captured
         asBuilt
@@ -50,7 +50,7 @@ case class CaseClassTypeAdapter[T](
               reader.back
               throw new ReadMissingError(reader.showError(path, s"Class $className missing field ${fieldArray(p).name}"))
             }
-        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(fieldsRead.objectArgs.toIndexedSeq: _*).asInstanceOf[T]
         if (isSJCapture)
           asBuilt.asInstanceOf[SJCapture].captured = fieldsRead.captured
         asBuilt

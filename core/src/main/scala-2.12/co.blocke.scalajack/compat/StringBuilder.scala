@@ -1,4 +1,4 @@
-package co.blocke.scalajack.util
+package co.blocke.scalajack.compat
 
 import scala.collection.mutable.Builder
 

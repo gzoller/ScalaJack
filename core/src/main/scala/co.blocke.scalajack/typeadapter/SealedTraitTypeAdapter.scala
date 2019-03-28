@@ -83,8 +83,10 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
             }.toSet
             if (someSubclassesAreAmbiguous)
               new WrappedSealedTraitTypeAdapter(next.typeAdapterOf[T], impls)
-            else
-              new SealedTraitTypeAdapter[T](impls)
+            else {
+              val builderFactory = context.typeAdapterOf[Map[String, Any]].asInstanceOf[CanBuildMapTypeAdapter[String, Any, Map[String, Any]]].builderFactory
+              new SealedTraitTypeAdapter[T](impls, builderFactory)
+            }
           }
       }
     } else {
@@ -119,11 +121,11 @@ trait SealedImplementation[T] {
   def isInstance(tagged: T): Boolean
 }
 
-class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
+class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]], builderFactory: MethodMirror)(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     val savedReader = reader.copy
-    reader.readMap(path, Map.canBuildFrom[String, Any], reader.jackFlavor.stringTypeAdapter, reader.jackFlavor.anyTypeAdapter) match {
+    reader.readMap[String, Any, Map[String, Any]](path, builderFactory, reader.jackFlavor.stringTypeAdapter, reader.jackFlavor.anyTypeAdapter) match {
       case null =>
         null.asInstanceOf[T]
       case fields: Map[String, Any] =>

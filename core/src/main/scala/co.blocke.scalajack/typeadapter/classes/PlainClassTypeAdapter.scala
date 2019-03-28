@@ -74,7 +74,7 @@ case class PlainClassTypeAdapter[T](
             objectFieldResult.objectArgs.take(fieldMembersByName.size)
 
         // Call constructor with constructor args (may be 0)
-        val asBuilt = constructorMirror.apply(finalConstructorArgList: _*).asInstanceOf[T]
+        val asBuilt = constructorMirror.apply(finalConstructorArgList.toIndexedSeq: _*).asInstanceOf[T]
 
         // Populate non-constructor fields (getters/setters, vars)
         val fieldsAndArgs =

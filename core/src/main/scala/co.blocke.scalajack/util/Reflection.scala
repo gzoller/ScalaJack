@@ -21,8 +21,6 @@ import scala.reflect.runtime.currentMirror
  */
 object Reflection {
 
-  import scala.language.reflectiveCalls
-
   val mirror = currentMirror.asInstanceOf[{
     def methodToJava(sym: scala.reflect.internal.Symbols#MethodSymbol): java.lang.reflect.Method
   }]

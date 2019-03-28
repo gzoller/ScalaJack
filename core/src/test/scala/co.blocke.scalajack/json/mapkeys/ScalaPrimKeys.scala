@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json.mapkeys
 
 import org.scalatest.{ FunSpec, Matchers }
+import json.JsonMatcher._
 
 class ScalaPrimKeys() extends FunSpec with Matchers {
 
@@ -12,11 +13,15 @@ class ScalaPrimKeys() extends FunSpec with Matchers {
       it("With Any Key") {
         val inst = AnyShell(Map(List(1, 2, 3) -> List("a", "b", "c"), DogPet("Fido", Food.Meat, 4) -> DogPet("Fifi", Food.Meat, 4), Size.Small -> "ok", 123.456 -> true, 293845 -> "Greg", false -> "16", "Fred" -> "Wilma", 16.toByte -> null))
         val js = sj.render(inst)
-        assertResult("""{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}""") { js }
-        val read = sj.read[AnyShell](js)
-        assertResult("""List((16,scala.math.BigInt), (293845,scala.math.BigInt), (123.456,scala.math.BigDecimal), (List(1, 2, 3),scala.collection.immutable.$colon$colon), (Small,java.lang.String), (Fred,java.lang.String), (false,java.lang.Boolean), (DogPet(Fido,Meat,4),co.blocke.scalajack.json.mapkeys.DogPet))""") {
-          read.m.keySet.map(z => (z, z.getClass.getName)).toList.sortWith((a, b) => a._2 > b._2).toString
-        }
+        parseJValue(js) should matchJson(parseJValue("""{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}"""))
+        val read = sj.read[AnyShell](js).m.keySet.map(z => (z, z.getClass.getName))
+        read.contains((16, "scala.math.BigInt")) should be(true)
+        read.contains((293845, "scala.math.BigInt")) should be(true)
+        read.contains((123.456, "scala.math.BigDecimal")) should be(true)
+        read.contains(("Small", "java.lang.String")) should be(true)
+        read.contains(("Fred", "java.lang.String")) should be(true)
+        read.contains((false, "java.lang.Boolean")) should be(true)
+        read.contains((DogPet("Fido", Food.Meat, 4), "co.blocke.scalajack.json.mapkeys.DogPet")) should be(true)
       }
       it("With BigDecimal Key") {
         val inst = SampleBigDecimal(Map(BigDecimal(123.456) -> BigDecimal(1), BigDecimal(789.123) -> BigDecimal(2)))

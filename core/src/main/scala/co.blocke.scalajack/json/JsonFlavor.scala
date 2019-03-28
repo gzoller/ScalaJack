@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json
 
 import model._
-import util.StringBuilder
+import compat.StringBuilder
 
 import java.util.ArrayList
 

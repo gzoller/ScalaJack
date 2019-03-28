@@ -4,15 +4,20 @@ package json
 import java.util.ArrayList
 
 import model._
-import util.{ Path, StringBuilder }
+import typeadapter.CanBuildMapTypeAdapter
+import util.Path
+import compat.StringBuilder
 
-import scala.collection.generic.CanBuildFrom
 import scala.util.Try
 import scala.collection.immutable.{ ListMap, Map }
+import scala.collection.mutable.Builder
 
 case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: ArrayList[JsonToken], initialPos: Int = 0) extends Reader[String] {
 
   private var pos = initialPos
+
+  // For skipping objects
+  private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
 
   @inline private def expect[T](t: TokenType.Value, path: Path, fn: (ParseToken[String]) => T, isNullable: Boolean = false): T =
     next match {
@@ -35,7 +40,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
       throw new ReadUnexpectedError(showError(path, s"Expected $t here but found ${head.tokenType}"))
 
   def copy: Reader[String] = JsonReader(jackFlavor, json, tokens, pos)
-  def syncPositionTo(reader: Reader[String]) = this.pos = reader.asInstanceOf[JsonReader].pos
+  def syncPositionTo(reader: Reader[String]): Unit = this.pos = reader.asInstanceOf[JsonReader].pos
 
   def hasNext: Boolean = pos < tokens.size
   def head: ParseToken[String] = tokens.get(pos)
@@ -114,10 +119,10 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
   def readLong(path: Path): Long = expect(TokenType.Number, path, (pt: ParseToken[String]) => pt.textValue.toLong)
   def readString(path: Path): String = expect(TokenType.String, path, _readString, true)
 
-  def readArray[Elem, To](path: Path, canBuildFrom: CanBuildFrom[_, Elem, To], elementTypeAdapter: TypeAdapter[Elem]): To =
+  def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To =
     expect(TokenType.BeginArray, path, (pt: ParseToken[String]) => "", true) match {
       case "" =>
-        val builder = canBuildFrom()
+        val builder = builderFactory().asInstanceOf[Builder[Elem, To]]
         var first = true
         var i = 0
         while (head.tokenType != TokenType.EndArray) {
@@ -133,10 +138,10 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
       case null => null.asInstanceOf[To]
     }
 
-  def readMap[MapKey, MapValue, To](path: Path, canBuildFrom: CanBuildFrom[_, (MapKey, MapValue), To], keyTypeAdapter: TypeAdapter[MapKey], valueTypeAdapter: TypeAdapter[MapValue]): To =
-    expect(TokenType.BeginObject, path, (pt: ParseToken[String]) => "", true) match {
+  def readMap[Key, Value, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To =
+    expect(TokenType.BeginObject, path, (_) => "", true) match {
       case "" =>
-        val builder = canBuildFrom()
+        val builder = builderFactory().asInstanceOf[Builder[(Key, Value), To]]
         var first = true
         while (head.tokenType != TokenType.EndObject) {
           if (first)
@@ -189,9 +194,9 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
     }
 
   // Skip object by reading it as a Map and ignoring the result
-  def skipObject(path: Path) =
+  def skipObject(path: Path): Unit =
     if (head.tokenType == TokenType.BeginObject)
-      readMap[String, Any, Map[String, Any]](path, Map.canBuildFrom[String, Any], jackFlavor.stringTypeAdapter, jackFlavor.anyTypeAdapter)
+      readMap[String, Any, Map[String, Any]](path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, jackFlavor.stringTypeAdapter, jackFlavor.anyTypeAdapter)
 
   def readTuple(path: Path, readFns: List[(Path, Reader[String]) => Any]): List[Any] =
     expect(TokenType.BeginArray, path, (pt: ParseToken[String]) => "", true) match {

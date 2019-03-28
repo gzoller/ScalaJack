@@ -1,0 +1,18 @@
+package co.blocke.scalajack
+
+object RunMe extends App {
+
+  val sj = ScalaJack()
+
+  def say(s: String*) = {
+    s.foreach(println(_))
+  }
+
+  say("a", "b", "c")
+
+  val z = List("x", "y", "z")
+  say(z: _*)
+
+  val x = List("One", "Two", "Three")
+  say(x.toIndexedSeq: _*)
+}

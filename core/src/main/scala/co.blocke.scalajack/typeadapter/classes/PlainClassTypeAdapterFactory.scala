@@ -9,7 +9,6 @@ import java.beans.{ Introspector, PropertyDescriptor }
 import ClassHelper._
 
 import scala.collection.immutable.{ List, ListMap }
-import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
 

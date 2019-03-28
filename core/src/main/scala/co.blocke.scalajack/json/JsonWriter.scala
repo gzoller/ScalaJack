@@ -4,15 +4,15 @@ package json
 import model._
 import ClassHelper.ExtraFieldValue
 
-import scala.collection.{ GenIterable, GenMap }
 import scala.collection.immutable.ListMap
+import scala.collection.Map
 import scala.collection.mutable.Builder
 
 case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
 
   @inline def addString(s: String, out: Builder[String, String]): Unit = out += s //s.toCharArray.foreach(c => out += c)
 
-  def writeArray[Elem](t: GenIterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[String, String]): Unit = t match {
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case a =>
       out += "["
@@ -46,7 +46,7 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
     addString(t.toString, out)
 
   def writeMap[Key, Value, To](
-      t:                GenMap[Key, Value],
+      t:                Map[Key, Value],
       keyTypeAdapter:   TypeAdapter[Key],
       valueTypeAdapter: TypeAdapter[Value],
       out:              Builder[String, String])(implicit keyTT: TypeTag[Key]): Unit = t match {

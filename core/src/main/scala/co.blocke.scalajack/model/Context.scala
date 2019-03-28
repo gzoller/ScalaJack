@@ -2,18 +2,11 @@ package co.blocke.scalajack
 package model
 
 import typeadapter._
-/*
-import typeadapter.javatime._
-import typeadapter.javaprimitives._
-import typeadapter.javacollections._
-*/
-
 import java.util.concurrent.ConcurrentHashMap
-
-import util.TypeTags
-
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
+
+import util.TypeTags
 
 object Context {
 

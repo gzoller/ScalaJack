@@ -7,7 +7,6 @@ import util.Reflection
 
 import scala.collection.immutable.ListMap
 import scala.reflect.runtime.universe._
-import scala.language.existentials
 import scala.reflect.runtime.currentMirror
 
 object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {

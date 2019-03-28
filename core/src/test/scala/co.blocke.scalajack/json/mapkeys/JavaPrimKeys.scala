@@ -6,6 +6,8 @@ import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Doubl
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
 
+import co.blocke.scalajack.json.JsonMatcher.{ matchJson, parseJValue }
+
 class JavaPrimKeys() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
@@ -108,7 +110,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
             JDouble.valueOf("1.7E-308") -> JDouble.valueOf("1.7E308")
           ))
           val js = sj.render(inst)
-          assertResult("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}""") { js }
+          parseJValue(js) should matchJson(parseJValue("""{"m":{"0":9923372036854755810,"-2147483648":2147483647,"-9223372036854775808":9223372036854755807,"-128":127,"3.4E-38":3.4E38,"-32768":32767,"1.8E+308":0.0,"1.7E-308":1.7E308}}"""))
           val read = sj.read[SampleJNumber](js)
           //          val sb = new StringBuffer()
           //          read.m.map {
