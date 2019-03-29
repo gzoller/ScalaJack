@@ -9,7 +9,7 @@ trait FlavorMaker {
   def make(): JackFlavor[WIRE]
 }
 
-trait JackFlavor[WIRE] extends ViewSplice with Filter[WIRE] {
+trait JackFlavor[WIRE] extends ViewSplice with Filterable[WIRE] {
 
   def parse(wire: WIRE): Reader[WIRE]
 
