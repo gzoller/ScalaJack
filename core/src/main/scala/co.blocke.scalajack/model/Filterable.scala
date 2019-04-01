@@ -50,7 +50,7 @@ trait Filterable[WIRE] {
         }
         result
       } =>
-        Some(_read(reader)(tt))
+        Try(_read(reader)(tt)).toOption
 
       case _ => None
     }
