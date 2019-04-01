@@ -55,7 +55,7 @@ object CaseClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         val optionalDbKeyIndex = ClassHelper.getAnnotationValue[DBKey, Int](member, Some(0))
 
         // Extract MapName annotation if present
-        val optionalMapName = ClassHelper.getAnnotationValue[MapName, String](member)
+        val optionalMapName = ClassHelper.getAnnotationValue[Change, String](member)
 
         val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
 

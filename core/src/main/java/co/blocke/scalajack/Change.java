@@ -4,6 +4,6 @@ import java.lang.annotation.*;
 
 @Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MapName {
-	String name();
+public @interface Change {
+    String name();
 }

@@ -3,10 +3,10 @@ package json.primitives.plain
 
 import scala.util._
 
-class InheritSimpleBase(@DBKey(index = 50)@MapName(name = "bogus") val one:String= "blather") {
+class InheritSimpleBase(@DBKey(index = 50)@Change(name = "bogus") val one:String= "blather") {
   // Public data member
-  @DBKey(index = 1) @MapName(name = "foobar") var two: Int = 5
-  @Maybe var three: Boolean = true
+  @DBKey(index = 1) @Change(name = "foobar") var two: Int = 5
+  @Optional var three: Boolean = true
 
   // Private var or val
   val notOne: Int = 2
@@ -16,8 +16,8 @@ class InheritSimpleBase(@DBKey(index = 50)@MapName(name = "bogus") val one:Strin
 
   // Scala-style getter/setter
   private var _four: Double = 0.1
-  @DBKey(index = 2) @Maybe def four: Double = _four
-  @MapName(name = "quatro") def four_=(a: Double) = _four = a
+  @DBKey(index = 2) @Optional def four: Double = _four
+  @Change(name = "quatro") def four_=(a: Double) = _four = a
 
   private var _dontForget: Int = 9
   def dontForget: Int = _dontForget
@@ -28,7 +28,7 @@ class InheritSimpleBase(@DBKey(index = 50)@MapName(name = "bogus") val one:Strin
   def unused_=(a: Double) = _unused = a
 }
 
-class InheritSimpleChild(val extra: String, @DBKey @MapName(name = "uno") override val one: String) extends InheritSimpleBase(one) {
+class InheritSimpleChild(val extra: String, @DBKey @Change(name = "uno") override val one: String) extends InheritSimpleBase(one) {
   @DBKey(index = 99) var foo: Int = 39
   @Ignore var bogus: String = ""
 
@@ -91,7 +91,7 @@ class PlayerMix() {
   @Ignore var bogus: String = ""
 
   private var _age: VCDouble = VCDouble(0.0)
-  @Maybe def age: VCDouble = _age // getter/setter member
+  @Optional def age: VCDouble = _age // getter/setter member
   def age_=(a: VCDouble) = _age = a
 }
 

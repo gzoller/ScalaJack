@@ -28,7 +28,7 @@ class Inheritance() extends FunSpec with Matchers {
         val js = sj.render(inst)
         js should be("""{"extra":"thing1","uno":"thing2","foo":39,"dontForget":9,"quatro":0.1,"three":true,"foobar":5}""")
       }
-      it("Maybe annotation must be inherited properly") {
+      it("Optional annotation must be inherited properly") {
         val js = """{"extra":"bar","foo":25,"uno":"something","dontForget":12,"quatro":12.34,"foobar":99}"""
         val inst = sj.read[InheritSimpleChild](js)
         inst.one should be("something")
@@ -90,7 +90,7 @@ class Inheritance() extends FunSpec with Matchers {
         simple.getBogus() should be(-1)
         sj.render(simple) should be(js)
       }
-      it("Maybe annotation must be inherited properly") {
+      it("Optional annotation must be inherited properly") {
         val js = """{"dos":1}"""
         val simple = sj.read[JavaSimpleChild](js)
         simple.getTwo() should be(1)

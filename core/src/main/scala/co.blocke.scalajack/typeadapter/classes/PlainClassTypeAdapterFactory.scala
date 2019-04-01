@@ -29,8 +29,8 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       val clazz = currentMirror.runtimeClass(classSymbol)
 
       // For Java classes
-      val maybeClass = currentMirror.runtimeClass(typeOf[Maybe].typeSymbol.asClass)
-      val mapNameClass = currentMirror.runtimeClass(typeOf[MapName].typeSymbol.asClass)
+      val maybeClass = currentMirror.runtimeClass(typeOf[Optional].typeSymbol.asClass)
+      val mapNameClass = currentMirror.runtimeClass(typeOf[Change].typeSymbol.asClass)
 
       // Exctract Collection name annotation if present
       val collectionAnnotation = ClassHelper.getAnnotationValue[Collection, String](classSymbol)
@@ -85,7 +85,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
             val optionalDbKeyIndex = ClassHelper.getAnnotationValue[DBKey, Int](member, Some(0))
 
             // Extract MapName annotation if present
-            val optionalMapName = ClassHelper.getAnnotationValue[MapName, String](member)
+            val optionalMapName = ClassHelper.getAnnotationValue[Change, String](member)
 
             val memberTypeAdapter = context.typeAdapter(memberType).asInstanceOf[TypeAdapter[Any]]
             ClassFieldMember[T, Any](
@@ -166,25 +166,25 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         // This finds field (and inherited) annotations
         var dbkeyAnno: Option[Int] = None
         var mapNameAnno: Option[String] = None
-        var isMaybe: Boolean = false
+        var hasOptionalAnnotation: Boolean = false
         tt.tpe.baseClasses.foreach { f =>
           val privateVar = f.typeSignature.members.find(z => z.isPrivate && !z.isMethod && z.name.toString.trim == getterMethod.name.toString.trim)
           val db = privateVar.flatMap(ClassHelper.getAnnotationValue[DBKey, Int](_, Some(0)))
             .orElse(ClassHelper.getAnnotationValue[DBKey, Int](getterMethod, Some(0)))
             .orElse(ClassHelper.getAnnotationValue[DBKey, Int](setterMethod, Some(0)))
-          val mapName = privateVar.flatMap(ClassHelper.getAnnotationValue[MapName, String](_))
-            .orElse(ClassHelper.getAnnotationValue[MapName, String](getterMethod))
-            .orElse(ClassHelper.getAnnotationValue[MapName, String](setterMethod))
+          val mapName = privateVar.flatMap(ClassHelper.getAnnotationValue[Change, String](_))
+            .orElse(ClassHelper.getAnnotationValue[Change, String](getterMethod))
+            .orElse(ClassHelper.getAnnotationValue[Change, String](setterMethod))
           val maybe =
-            privateVar.map(ClassHelper.annotationExists[Maybe](_)).getOrElse(false) ||
-              ClassHelper.annotationExists[Maybe](getterMethod) ||
-              ClassHelper.annotationExists[Maybe](setterMethod)
+            privateVar.map(ClassHelper.annotationExists[Optional](_)).getOrElse(false) ||
+              ClassHelper.annotationExists[Optional](getterMethod) ||
+              ClassHelper.annotationExists[Optional](setterMethod)
           if (db.isDefined)
             dbkeyAnno = db
           if (mapName.isDefined)
             mapNameAnno = mapName
           if (maybe)
-            isMaybe = true
+            hasOptionalAnnotation = true
         }
 
         ClassFieldMember[T, Any](
@@ -202,7 +202,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           tt.tpe,
           Some(setterMethod.asMethod),
           None,
-          isMaybe
+          hasOptionalAnnotation
         )
       }
 
@@ -217,14 +217,14 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
             val declaredMemberType = tpe.typeSymbol.asType.toType.member(TermName(propertyDescriptor.getReadMethod.getName)).asMethod.returnType
             index += 1
 
-            // Extract Maybe annotation if present... For var: on private shadow member.  For getter/setter it could be on either...check both.
-            val isMaybe =
+            // Extract Optional annotation if present... For var: on private shadow member.  For getter/setter it could be on either...check both.
+            val hasOptionalAnnotation =
               Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined ||
                 Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == maybeClass)).isDefined
 
             val mapNameAnno =
-              Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[MapName].name) orElse
-                Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[MapName].name)
+              Option(propertyDescriptor.getReadMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[Change].name) orElse
+                Option(propertyDescriptor.getWriteMethod).flatMap(_.getDeclaredAnnotations.find(_.annotationType() == mapNameClass)).map(_.asInstanceOf[Change].name)
 
             ClassFieldMember[T, Any](
               index - 1,
@@ -241,7 +241,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               tt.tpe,
               None,
               Some(propertyDescriptor.getWriteMethod),
-              isMaybe
+              hasOptionalAnnotation
             )
         }
       }

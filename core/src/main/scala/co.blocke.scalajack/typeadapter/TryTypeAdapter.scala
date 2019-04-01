@@ -8,7 +8,7 @@ import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-class ValueBackedException(val value: Any, val throwable: Throwable) extends Exception(throwable.getMessage())
+class ValueBackedException(val value: Any, val throwable: Throwable) extends SJError(throwable.getMessage())
 
 object TryTypeAdapterFactory extends TypeAdapterFactory {
 

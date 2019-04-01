@@ -10,7 +10,7 @@ trait Filterable[WIRE] {
 
   case class Filter[T](filter: PartialFunction[Reader[WIRE], Option[T]]) {
     def unapply(reader: model.Reader[WIRE]): Option[T] = {
-      reader.reset
+      reader.reset()
       filter.apply(reader)
     }
   }

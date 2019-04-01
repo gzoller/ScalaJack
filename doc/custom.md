@@ -1,60 +1,99 @@
 ## Custom Type Adapters
 
-ScalaJack does  a great job of reading and rendering data types, but sometimes you just need something custom.  Let's use an example.  Imagine you have a phone number of type String that you want formatted like a US phone number (XXX-XXX-XXXX) but stored as a simple String (no dashes).
+ScalaJack does  a great job of reading and rendering stock data types, but sometimes you just need something custom.  Let's use an example.  Imagine you have a phone number of type String that you want formatted like a US phone number (XXX-XXX-XXXX) but stored as a simple String (no dashes).
 
-To do this ScalaJack allows you to create a custom type adapter and link it into its own chain of adapters.
+To do this ScalaJack allows you to create a custom type adapter and link it into its own chain of adapters.  Let's walk through the process step-by-step.
+
+### Step 1: Create a Type
 
 ```scala
 object MyTypes {
   type Phone = String
 }
 import MyTypes._
-
-object PhoneAdapter extends BasicTypeAdapter[Phone] {
-  override def read(reader: Reader): Phone = {
-    reader.peek match {
-      case TokenType.String =>
-        val raw = reader.readString()
-        raw.replaceAll("-", "").asInstanceOf[Phone]
-      // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
-      case TokenType.Null =>
-        reader.readNull()
-    }
-  }
-
-  override def write(value: Phone, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
-      // writer.writeString(value.replaceAll("-", ""))
-    }
-}
 ```
 
-There are a few things going on here.  First we define a type to differentiate Phone from String (unless you want all Strings to be formatted as phone numbers).  You'll see we have to implement a read and write method for our custom adapter.  This is pretty straightforward formatting to/from JSON.  Don't forget to handle null if your base type is nullary, which String is.
+In this case we create a Phone type to differentiate Phone, which is a String, from any other String value.
 
-You can cut 'n paste this example for a lot of simple uses.  Reader and Writer classes are good references.
+### Step 2: Create the TypeAdapter
+There are 3 essential functional pieces to a ScalaJack TypeAdapter.
+1. Something that matches the type we want
+2. Something to read input of that type
+3. Something to output an object of that type
+
+Let's look at a straightforward example then unpack some nuances.
+
+```scala
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {  
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =  
+    reader.readString(path) match {  
+      case s: String => s.replaceAll("-", "")  
+      case null => null  
+  }  
+  
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {  
+    case null => writer.writeNull(out)  
+    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)  
+  }  
+}
+```
+Here you'll see all three essential pieces.  The type matching is accomplished with ```extends TypeAdapter.===[Phone]```.  The read and write functions speak for themselves.  Note the use of WIRE here (not, for example, JSON).  This is because ScalaJack is a general-purpose serializer so we don't presume JSON.  Each "flavor" of ScalaJack (JSON being one flavor) implements the Reader and Writer traits, which define a nice set of primitive operations we can use for our TypeAdapters.
+
+In this example we see that read() strips out all the dashes from the phone numbers, while write() re-inserts them in a US format.
+
+Phone numbers are Strings, so they're nullable, so we handle null for read/write as well.  (Most of your TypeAdapters will also be nullable unless you are wrapping a non-nullable type like Int.)
+
+Also note the "Stringish" mixin in our TypeAdapter.  This tells ScalaJack that your type is String-encoded.  This is an oddment of Map key handling for WIRE formats like JSON.  Map/Object keys in JSON must be Strings, yet Scala imposes no such limitation.  Therefore ScalaJack must wrap some primitive types in String quotes when used as JSON map keys.  String-encoded (Stringish) types, like Phone, require no such special handling so we notate that in the TypeAdapter to avoid double quoting.  For example:
+
+```scala
+sj.render(Map(true -> true, false -> false))
+// renders string-wrapped map keys: {"true":true,"false":false}
+```
+
+### Step 3: Create the PhoneAdapter
+
+```scala
+// Override just Phone
+object PhoneAdapter extends TypeAdapter.===[Phone] {
+  override val irTransceiver: IRTransceiver[Phone] = new PhoneIRTransceiver()
+}
+```
+You can see we specify our IRTransceiver.  One thing that may not be clear is the Typeadapter.===[Phone] notation.  This matches exactly on Phone type, so ScalaJack doesn't confuse other String values with Phone and try to serialize/deserialize them with your custom code.
+
+If what you want is to treat Phone and all subclasses as Phone (with your custom code), then extend TypeAdapter.=:=[Phone] instead. If we did that in this case, every String would be treated as a Phone, with likely dissastrous results.
+
+
+### Step 3: Wire your PhoneAdapter into ScalaJack's list of type adapters
 
 To use your new type adapter, hook it into ScalaJack:
 
 ```scala
 val sj = ScalaJack().withAdapters(PhoneAdapter)
 ```
-
-Now anything you parse with a Phone in it will receive special handling via your custom adapter.
+Now anything you parse with a Phone in it will receive your specified special handling via your custom adapter.
 
 **TIP:** withAdapters() is varargs, so you can pass a chain of adapter: ScalaJack().withAdapters(a,b,c,...)
 
-#### Advanced
-The example above was the trivial case, which is going to be all you need most of the time.  For those rare occasions when more is needed, here are some further details.
+### Nuance: Matching Types
+When creating custom TypeAdapters in ScalaJack you have a number of options when deciding how to match Types.  ScalaJack basically works like this: it looks for a give type (reading or writing) by iterating through a list of TypeAdapterFactories (with Type matchers) until one matches.  *How* types are matched is the question.
 
-ScalaJack's internal processing is devided into 2 stages: a reflection/analyze stage, and a runtime read/write stage.  ScalaJack maintains a chain of TypeAdapterFactory which, given a type, traverses the chain looking for a factory that serves that type.  The factory produces a type-specific TypeAdapter.
+In the Phone example above we used a simple way to create a TypeAdapterFactory using:
+```scala
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish { 
+..
+}
+```
+ScalaJack allows 3 kinds of type comparisons when matching using this method:
 
-There are two general-purpose TypeAdapterFactory implementations: BasicTypeAdapter, and SimpleTypeAdapter.  All primitives use these.  The key difference between the two is how types are matched during ScalaJack's analyze traversal stage.
+```scala
+type Phone = String  
+trait Foo  
+class Bar() extends Foo  
+```
+|Comparator|Meaning
+|-------|-------|
+|A === B|Type A exactly matches another.  Phone === String is false
+|A =:= B|Type A can be implicitly converted to type B.  Phone =:= String is true
+|A <:< B|Type A is a subtype of type B.   Bar <:< Foo is true
 
-BasicTypeAdapter will match only if the type is *exactly* the one given, making it ideal for most customizations.  For example Phone type should only match Phone.  SimpleTypeAdapter uses a different type comparator that matches a type *and all its supertypes*.  So if our custom example above was based on SimpleTypeAdapter and you gave it type Phone, it would match for all Strings too!  Probably not what you intended--but maybe in some cases that *is* what you need.
-
-If you really have special needs, you can always write a full-up TypeAdapter implementation vs using one of the two general-purpose TypeAdapters.  Please refer to the typeadapter package for examples of all kinds of different use cases.
-
-However you create your TypeAdapters, you wire them into ScalaJack the same way as shown above.  Your custom adapters are put in the front of the chain, superseding any of the default adapters, so you can use this process to override out-of-the-box behavior.
+These 3 comparators will likely provide most of your needed type matching, but if you have a really special case you can write your own custom TypeAdapterFactory.  The TypeAdapterFactory class provides a number of matchings by implementing typeAdapterOf[T].  The CaseClassTypeAdapterFactory class in the ScalaJack code is a good example of usage.

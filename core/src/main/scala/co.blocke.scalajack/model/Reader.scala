@@ -24,7 +24,7 @@ trait Reader[WIRE] extends collection.BufferedIterator[ParseToken[WIRE]] with Tr
   def head: ParseToken[WIRE]
   def next: ParseToken[WIRE] // skip over next token
   def back: ParseToken[WIRE]
-  def reset: Unit
+  def reset(): Unit
 
   // Print a clip from the input and a grapical pointer to the problem for clarity
   def showError(path: Path, msg: String): String

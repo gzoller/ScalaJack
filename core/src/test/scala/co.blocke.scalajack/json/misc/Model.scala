@@ -97,11 +97,11 @@ class Plain() {
 }
 
 case class MapFactor(
-    @MapName(name = "foo_bar") fooBar:String,
-    @MapName(name = "a_b") thingy:   Long,
-    count:                           Int)
+    @Change(name = "foo_bar") fooBar:String,
+    @Change(name = "a_b") thingy:   Long,
+    count:                          Int)
 class MapFactorPlain() {
-  @MapName(name = "foo_bar") var fooBar: String = ""
-  @MapName(name = "a_b") var thingy: Long = 0L
+  @Change(name = "foo_bar") var fooBar: String = ""
+  @Change(name = "a_b") var thingy: Long = 0L
   var count: Int = 0
 }

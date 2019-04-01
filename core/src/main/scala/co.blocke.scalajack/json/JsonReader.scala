@@ -56,7 +56,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
       pos
     tokens.get(pos)
   }
-  def reset: Unit = pos = 0
+  def reset(): Unit = pos = 0
 
   /**
    * Nondestructive (doesn't change pointer position) lookahead for a named field (presumes an object)

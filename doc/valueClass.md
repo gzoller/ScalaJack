@@ -16,4 +16,4 @@ println(sj.read[UUID_VC](js))
 
 You can see here that the wrapping/unwrapping of the value class is handled by ScalaJack and from a JSON perspective the value is treated as though it was never wrapped at all.
 
-Note that if you want custom read/render handling for your underlying type, the process for customization is the same as for the naked type; in other words the fact that the type is wrapped in a value class is immaterial to the customized handling.
+Note that if you want custom read/render handling for your underlying type, the process for customization is the same as for the naked type.  In other words the fact that the type is wrapped in a value class is immaterial to the customized handling.

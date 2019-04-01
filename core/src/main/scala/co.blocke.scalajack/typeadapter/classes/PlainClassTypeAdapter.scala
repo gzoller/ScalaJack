@@ -82,13 +82,13 @@ case class PlainClassTypeAdapter[T](
             val nonConstructorArgs = objectFieldResult.objectArgs.takeRight(nonConstructorFields.size)
             val nonConstructorIsSet = objectFieldResult.fieldSet.takeRight(nonConstructorFields.size)
 
-            // Exclude any @Maybe fields and remove corresponding field elements from list
+            // Exclude any @Optional fields and remove corresponding field elements from list
             nonConstructorFields.values.zip(nonConstructorArgs.zip(nonConstructorIsSet)).collect{
               // Missing but optional
-              case (field, (_, false)) if field.isOptional && !field.isMaybe =>
+              case (field, (_, false)) if field.isOptional && !field.hasOptionalAnnotation =>
                 (field, None)
-              // Any other missing (but not @Maybe)
-              case (field, (_, false)) if !field.isMaybe =>
+              // Any other missing (but not @Optional)
+              case (field, (_, false)) if !field.hasOptionalAnnotation =>
                 reader.back
                 throw new ReadMissingError(reader.showError(path,s"Class $className missing field ${field.name}"))
               // Anything else... as-read

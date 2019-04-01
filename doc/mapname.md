@@ -1,15 +1,15 @@
-## Map Field Names
+## Change Field Names
 
 If you are using ScalaJack with 3rd party JSON or Mongo documents, you may be in a situation where you don't own or control the names of the fields.  You may wish the field names of your classes to be different than the names in the 3rd party format.
 
-For this, ScalaJack provides the @MapName annotation.  Marking a field with @MapName in your case class allows you to map its name to a different target name in JSON or Mongo.
+ScalaJack provides the @Change annotation.  Marking a field with @Change in your case class allows you to map its name to a different target name in JSON or Mongo.
 
 ```scala
 case class MapFactor(
-  @MapName(name = "foo_bar") fooBar:String,
-  @MapName(name = "a_b") thingy:   Long,
+  @Change(name = "foo_bar") fooBar:String,
+  @Change(name = "a_b") thingy:   Long,
   count:                           Int,
-  @MapName(name = "big_mac") bigMac:String
+  @Change(name = "big_mac") bigMac:String
 )
 ```
 
@@ -25,11 +25,11 @@ This works in Mongo too, including mixing it up with the @DBKey annotation:
 
 ```scala
 case class MapFactorId2(
-  @DBKey @MapName(name = "foo_bar") fooBar:String,
-  @DBKey @MapName(name = "a_b") thingy:  Long,
+  @DBKey @Change(name = "foo_bar") fooBar:String,
+  @DBKey @Change(name = "a_b") thingy:  Long,
   @DBKey hey:                            Int,
   count:                                 Int,
-  @MapName(name = "big_mac") bigMac:     String
+  @Change(name = "big_mac") bigMac:     String
 )
 ```
 
@@ -39,4 +39,4 @@ A serialized instance of this class might look like this:
 { "_id" : { "foo_bar" : "wonder", "a_b" : { "$numberLong" : "25" }, "hey" : 1 }, "count" : 3, "big_mac" : "hungry" }
 ```
 
-Again you can see the @MapName annotated fields had their name re-mapped to the specified values.
+Again you can see the @Change annotated fields had their name re-mapped to the specified values.
