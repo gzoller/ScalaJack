@@ -31,7 +31,7 @@ object RunMe extends App {
   val filter3 = sj.filter[CommMessage[Command]]("kind")
   val filter4 = sj.filter[CommMessage[Event]]("kind")
 
-  val js2 = """{"kind":"co.blocke.scalajack.Command","id":3,"payload":{"_hint":"co.blocke.scalajack.Bogus","goDo":"do","public":true}}"""
+  val js2 = """{"kind":"co.blocke.scalajack.Command","id":3,"payload":{"_hint":"co.blocke.scalajack.SimpleCommand","goDo":"do","public":true}}"""
   sj.parse(js2) match {
     case filter1(x) => println(x)
     case filter2(x) => println("Int: " + x)
