@@ -25,10 +25,11 @@ import scala.collection.mutable.Builder
  */
 
 object OptionTypeAdapterFactory extends TypeAdapterFactory {
+  var nullIsNone = false // for Delimited flavor
   def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[Option[_]]) {
       val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
-      OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
+      OptionTypeAdapter(context.typeAdapter(elementType), nullIsNone).asInstanceOf[TypeAdapter[T]]
     } else
       next.typeAdapterOf[T]
 }

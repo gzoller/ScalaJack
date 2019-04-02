@@ -58,7 +58,7 @@ class PlugHoles() extends FunSpec with Matchers {
       the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[List[String]](js) should have message msg
     }
     it("ScalaJack") {
-      val sj = ScalaJack.apply(json.JsonFlavorMaker)
+      val sj = ScalaJack.apply(json.JsonFlavor)
       sj.read[Int]("15") should be(15)
     }
     it("End of TA chain") {

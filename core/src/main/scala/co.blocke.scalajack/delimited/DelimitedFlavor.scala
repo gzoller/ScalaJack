@@ -1,17 +1,20 @@
 package co.blocke.scalajack
-package json
+package delimited
 
 import model._
 import compat.StringBuilder
+import json.JsonToken
+import typeadapter.{ OptionTypeAdapterFactory, CanBuildFromTypeAdapterFactory }
 
 import java.util.ArrayList
+import java.lang.{ UnsupportedOperationException => UOE }
 
-object JsonFlavor extends FlavorMaker {
+object DelimitedFlavor extends FlavorMaker {
   type WIRE = String
-  def make(): JackFlavor[String] = new JsonFlavorImpl()
+  def make(): JackFlavor[String] = new DelimitedFlavorImpl()
 }
 
-case class JsonFlavorImpl(
+case class DelimitedFlavorImpl(
     override val defaultHint:        String                       = "_hint",
     override val permissivesOk:      Boolean                      = false,
     override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
@@ -21,23 +24,23 @@ case class JsonFlavorImpl(
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
     override val enumsAsInt:         Boolean                      = false) extends JackFlavor[String] {
 
-  override val stringifyMapKeys: Boolean = true
-
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
-  def withDefaultHint(hint: String): JackFlavor[String] = this.copy(defaultHint = hint)
-  def withHints(h: (Type, String)*): JackFlavor[String] = this.copy(hintMap = this.hintMap ++ h)
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] = this.copy(typeValueModifier = Some(tm))
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
+  def withDefaultHint(hint: String): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
+  def withHints(h: (Type, String)*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def parseOrElse(poe: (Type, Type)*): JackFlavor[String] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def allowPermissivePrimitives(): JackFlavor[String] = this.copy(permissivesOk = true)
   def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
-  protected override def bakeContext(): Context =
-    new Context(JsonCanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
+  protected override def bakeContext(): Context = {
+    OptionTypeAdapterFactory.nullIsNone = true
+    new Context(CanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
+  }
 
-  private val writer = JsonWriter(this)
+  private val writer = null.asInstanceOf[Writer[String]] //DelimitedWriter(this)
 
-  def parse(wire: String): Reader[String] = JsonReader(this, wire, JsonTokenizer().tokenize(wire).asInstanceOf[ArrayList[JsonToken]]) //JsonTransciever(wire, context, stringTypeAdapter, this)
+  def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(',').tokenize(wire).asInstanceOf[ArrayList[JsonToken]])
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()

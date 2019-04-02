@@ -4,8 +4,7 @@ import model._
 import json._
 
 object ScalaJack {
-
-  def apply() = JsonFlavorMaker.make()
+  def apply() = JsonFlavor.make()
   def apply(maker: FlavorMaker) = maker.make()
 }
 
