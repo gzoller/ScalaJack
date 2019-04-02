@@ -11,6 +11,7 @@ import co.blocke.scalajack.typeadapter.classes
 import co.blocke.scalajack.typeadapter.classes.PlainClassTypeAdapter
 
 import scala.collection.mutable.Builder
+import scala.util.{ Try, Success, Failure }
 import scala.collection.immutable.{ ListMap, Map }
 
 case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, tokens: ArrayList[JsonToken], initialPos: Int = 0) extends Reader[String] {
@@ -79,7 +80,10 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
         // Ugly hackery to trap null here--if we let it go, many non-nullable fields will explode on read,
         // and here we're trying to utilize default values if they are provided by the class
         if (currentField.isDefined) {
-          currentField.get.defaultValue.getOrElse(throw new ReadInvalidError("Null or mising fields must either be optional or provide default vales for delimited input")).toString
+          currentField.get.defaultValue.getOrElse {
+            back
+            throw new ReadInvalidError(showError(path, "Null or mising fields must either be optional or provide default vales for delimited input"))
+          }.toString
         } else
           null
     }
@@ -117,15 +121,30 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
     var captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
     val args = fields.values.map { fieldMember =>
       currentField = Some(fieldMember)
-      val value = if (fieldMember.valueTypeAdapter.isInstanceOf[classes.CaseClassTypeAdapter[_]] || fieldMember.valueTypeAdapter.isInstanceOf[PlainClassTypeAdapter[_]]) {
-        val subReader = jackFlavor.parse(readString(path))
-        fieldMember.valueTypeAdapter.read(path, subReader)
+      val tryValue = if (fieldMember.valueTypeAdapter.isInstanceOf[classes.CaseClassTypeAdapter[_]] || fieldMember.valueTypeAdapter.isInstanceOf[PlainClassTypeAdapter[_]]) {
+        if (head.tokenType == TokenType.Null) {
+          next
+          Success(null)
+        } else {
+          val subReader = jackFlavor.parse(readString(path))
+          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, subReader))
+        }
       } else
-        fieldMember.valueTypeAdapter.read(path, this)
+        Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, this))
       currentField = None
+      val value = tryValue match {
+        case Success(v) => v
+        case Failure(x) =>
+          back
+          throw new ReadMalformedError(showError(path \ fieldCount, x.getMessage()))
+      }
+      fieldCount += 1
       value match {
         case null =>
-          fieldMember.defaultValue.getOrElse(throw new Exception("BOOM!"))
+          fieldMember.defaultValue.getOrElse {
+            back
+            throw new ReadInvalidError(showError(path, "Null or mising fields must either be optional or provide default vales for delimited input"))
+          }
         case None if fieldMember.defaultValue.isDefined =>
           fieldMember.defaultValue.get
         case _ => value
