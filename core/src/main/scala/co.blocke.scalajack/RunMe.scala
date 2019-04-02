@@ -3,19 +3,20 @@ package co.blocke.scalajack
 import delimited._
 import json._
 
-case class Person(name: String, age: Int, isOk: Option[Boolean])
+case class Foo(id: String, count: Int)
+case class Person(name: String, age: Int, stuff: Foo)
 
 object RunMe extends App {
 
-  val sj = ScalaJack(DelimitedFlavor)
+  val sj = ScalaJack(DelimitedFlavor.apply('|'))
 
-  // Nested List
-  val csv = """Greg,52,"""
-  println(csv)
+  val p = Person("Greg", 52, Foo("Hey", 5))
+  val csv = sj.render(p)
+  println("1> " + csv)
   val z = sj.read[Person](csv)
-  println(z)
+  println("2> " + z)
 
-  // TODO: WIP -- Optional fields
+  println("3> " + sj.render(z))
 
   /*
   val delim = ','

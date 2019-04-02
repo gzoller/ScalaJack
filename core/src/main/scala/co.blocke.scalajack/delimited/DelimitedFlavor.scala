@@ -13,6 +13,10 @@ object DelimitedFlavor extends FlavorMaker {
   type WIRE = String
   def make(): JackFlavor[String] = new DelimitedFlavorImpl()
 }
+case class DelimitedFlavor(delim: Char) extends FlavorMaker {
+  type WIRE = String
+  def make(): JackFlavor[String] = new DelimitedFlavorImpl(delimiter = delim)
+}
 
 case class DelimitedFlavorImpl(
     override val defaultHint:        String                       = "_hint",
@@ -22,7 +26,8 @@ case class DelimitedFlavorImpl(
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
     override val typeValueModifier:  Option[HintValueModifier]    = None,
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false) extends JackFlavor[String] {
+    override val enumsAsInt:         Boolean                      = false,
+    delimiter:                       Char                         = ',') extends JackFlavor[String] {
 
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def withDefaultHint(hint: String): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
@@ -38,9 +43,9 @@ case class DelimitedFlavorImpl(
     new Context(CanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
   }
 
-  private val writer = null.asInstanceOf[Writer[String]] //DelimitedWriter(this)
+  private val writer = DelimitedWriter(delimiter, this)
 
-  def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(',').tokenize(wire).asInstanceOf[ArrayList[JsonToken]])
+  def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(delimiter).tokenize(wire).asInstanceOf[ArrayList[JsonToken]])
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()
