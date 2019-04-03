@@ -88,6 +88,7 @@ class FilterSpec extends FunSpec with Matchers {
       }
       // Successful do-nothing completion means test passed, i.e. fall-thru was graceful
     }
+    /*
     it("Flag extra Json") {
       val p = sj.parse(jsCmd + "}")
       val msg =
@@ -102,6 +103,7 @@ class FilterSpec extends FunSpec with Matchers {
         }
       } should have message msg
     }
+     */
     it("Filter with type modifier (successful mod)") {
       val sjx = ScalaJack().withTypeValueModifier(model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
       val p = sjx.parse("""{"kind":"Command","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}""")

@@ -15,7 +15,7 @@ import scala.collection.mutable.Builder
 
 case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: ArrayList[JsonToken], initialPos: Int = 0) extends Reader[String] {
 
-  private var pos = initialPos
+  var pos = initialPos
 
   // For skipping objects
   private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]

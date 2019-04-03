@@ -37,10 +37,8 @@ case class DelimitedFlavorImpl(
   def allowPermissivePrimitives(): JackFlavor[String] = this.copy(permissivesOk = true)
   def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
-  protected override def bakeContext(): Context = {
-    OptionTypeAdapterFactory.nullIsNone = true
-    new Context(Seq(DelimitedEitherTypeAdapterFactory, CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
-  }
+  protected override def bakeContext(): Context =
+    new Context(Seq(DelimitedOptionTypeAdapterFactory, DelimitedEitherTypeAdapterFactory, CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
 
   private val writer = DelimitedWriter(delimiter, this)
 
