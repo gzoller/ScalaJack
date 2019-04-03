@@ -7,6 +7,7 @@ import model._
 import typeadapter.CanBuildMapTypeAdapter
 import util.Path
 import compat.StringBuilder
+import typeadapter.TupleTypeAdapterFactory
 
 import scala.util.Try
 import scala.collection.immutable.{ ListMap, Map }
@@ -199,7 +200,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
     if (head.tokenType == TokenType.BeginObject)
       readMap[String, Any, Map[String, Any]](path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, jackFlavor.stringTypeAdapter, jackFlavor.anyTypeAdapter)
 
-  def readTuple(path: Path, readFns: List[(Path, Reader[String]) => Any]): List[Any] =
+  def readTuple(path: Path, readFns: List[TupleTypeAdapterFactory.TupleField[_]]): List[Any] =
     expect(TokenType.BeginArray, path, (pt: ParseToken[String]) => "", true) match {
       case "" =>
         var fnPos = -1
@@ -210,7 +211,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
           else
             assertExists(TokenType.Comma, path)
           fnPos += 1
-          fn(path \ fnPos, this)
+          fn.read(path \ fnPos, this)
         }
         assertExists(TokenType.EndArray, path)
         tup

@@ -3,7 +3,6 @@ package delimited
 
 import java.util.ArrayList
 
-import co.blocke.scalajack.json.JsonToken
 import co.blocke.scalajack.model.ParseToken
 import co.blocke.scalajack.model.TokenType._
 
@@ -22,19 +21,20 @@ case class DelimitedTokenizer(delimChar: Char) {
         case '"' if !inQuotes =>
           inQuotes = true
           if (i == 0 || (i > 0 && chars(i - 1) != '"'))
-            start = i + 1 // skip quote char
+            start = i
           i += 1
+        case '"' if (i < chars.length - 1 && chars(i + 1) == '"') =>
+          i += 2
         case '"' =>
           inQuotes = false
           i += 1
         case `delimChar` if !inQuotes =>
-          var end = i - 1
-          if (i - 1 >= 0 && chars(end) == '"')
-            end -= 1 // don't include quotes
-          if (end < start)
-            tokenspace.add(JsonToken(source, Null, start, start))
+          if (i == start)
+            tokenspace.add(DelimitedToken(source, Null, start, start))
+          else if (chars(start) == '"')
+            tokenspace.add(DelimitedToken(source, QuotedString, start, i - 1))
           else
-            tokenspace.add(JsonToken(source, String, start, end))
+            tokenspace.add(DelimitedToken(source, String, start, i - 1))
           i += 1
           start = i
         case _ =>
@@ -42,17 +42,14 @@ case class DelimitedTokenizer(delimChar: Char) {
       }
     }
     if (i != 0) {
-      var end = i - 1
-      if (i - 1 >= 0 && chars(end) == '"')
-        end -= 1 // don't include quotes
-      if (end < start)
-        tokenspace.add(JsonToken(source, Null, start, start))
+      if (i == start)
+        tokenspace.add(DelimitedToken(source, Null, start, start))
+      else if (chars(start) == '"')
+        tokenspace.add(DelimitedToken(source, QuotedString, start, i - 1))
       else
-        tokenspace.add(JsonToken(source, String, start, end))
+        tokenspace.add(DelimitedToken(source, String, start, i - 1))
     }
-    tokenspace.add(JsonToken(source, End, i, i))
+    tokenspace.add(DelimitedToken(source, End, i, i))
     tokenspace
-
-    // end < start means empty field
   }
 }

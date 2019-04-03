@@ -8,7 +8,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("---------------------------------\n:  ValueClass Primitives Tests  :\n---------------------------------") {
+  describe("---------------------------------\n:  ValueClass DelimSpec Tests  :\n---------------------------------") {
     describe("+++ Positive Tests +++") {
       it("Value class of BigDecimal") {
         val inst = VCBigDecimal(BigDecimal(12.34))

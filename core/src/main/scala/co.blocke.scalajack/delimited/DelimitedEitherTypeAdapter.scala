@@ -1,6 +1,7 @@
 package co.blocke.scalajack
-package typeadapter
+package delimited
 
+import compat.StringBuilder
 import util.Path
 import model._
 
@@ -9,7 +10,7 @@ import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object EitherTypeAdapterFactory extends TypeAdapterFactory {
+object DelimitedEitherTypeAdapterFactory extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     tt.tpe.baseType(typeOf[Either[_, _]].typeSymbol) match {
@@ -25,12 +26,12 @@ object EitherTypeAdapterFactory extends TypeAdapterFactory {
 
         val leftTypeAdapter = context.typeAdapter(leftType)
         val rightTypeAdapter = context.typeAdapter(rightType)
-        EitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
+        DelimitedEitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
     }
 
 }
 
-case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
+case class DelimitedEitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
 
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
@@ -42,12 +43,12 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
         reader.next
         null
       case _ =>
-        Try(rightTypeAdapter.read(path, reader)) match {
+        tryRead(path, reader, rightTypeAdapter) match {
           case Success(rightValue) =>
             Right(rightValue.asInstanceOf[R])
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
-            Try(leftTypeAdapter.read(path, reader)) match {
+            tryRead(path, reader, leftTypeAdapter) match {
               case Success(leftValue) =>
                 Left(leftValue.asInstanceOf[L])
               case Failure(x) =>
@@ -58,10 +59,26 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
     }
   }
 
+  private def tryRead[WIRE](path: Path, reader: Reader[WIRE], ta: TypeAdapter[_]): Try[_] =
+    reader.head match {
+      case token if token.tokenType == TokenType.QuotedString && (ta.isInstanceOf[Collectionish] || ta.isInstanceOf[Classish]) =>
+        Try(ta.read(path, reader.jackFlavor.parse(reader.readString(path).asInstanceOf[WIRE])))
+      case _ =>
+        Try(ta.read(path, reader))
+    }
+
   def write[WIRE](t: Either[L, R], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null     => writer.writeNull(out)
-      case Left(v)  => leftTypeAdapter.write(v, writer, out, isMapKey)
-      case Right(v) => rightTypeAdapter.write(v, writer, out, isMapKey)
+      case Left(v)  => tryWrite(v, writer, out, isMapKey, leftTypeAdapter)
+      case Right(v) => tryWrite(v, writer, out, isMapKey, rightTypeAdapter)
     }
+
+  private def tryWrite[WIRE, K](t: K, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean, ta: TypeAdapter[K]): Unit =
+    if (ta.isInstanceOf[Classish]) {
+      val sb = new StringBuilder().asInstanceOf[Builder[Any, Any]]
+      ta.write(t, writer.asInstanceOf[Writer[Any]], sb, false)
+      writer.writeString(sb.result().asInstanceOf[String], out) // wrap output in quotes/escape
+    } else
+      ta.write(t, writer, out, isMapKey)
 }

@@ -10,7 +10,7 @@ class ScalaPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("----------------------------\n:  Scala Primitives Tests  :\n----------------------------") {
+  describe("----------------------------\n:  Scala DelimSpec Tests  :\n----------------------------") {
     describe("+++ Positive Tests +++") {
       it("BigDecimal must work") {
         val inst = SampleBigDecimal(BigDecimal(123L), BigDecimal(1.23), BigDecimal(0), BigDecimal("123.456"), BigDecimal("0.1499999999999999944488848768742172978818416595458984375"), null)

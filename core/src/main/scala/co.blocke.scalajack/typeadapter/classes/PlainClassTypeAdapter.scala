@@ -19,7 +19,7 @@ case class PlainClassTypeAdapter[T](
   isSJCapture: Boolean,
   collectionName: Option[String],
   isScala: Boolean,
-  )(implicit context: Context, tt: TypeTag[T]) extends ClassLikeTypeAdapter[T] {
+  )(implicit context: Context, tt: TypeTag[T]) extends ClassLikeTypeAdapter[T] with Classish {
 
   override def dbKeys: List[ClassFieldMember[T, Any]] =
     (fieldMembersByName.values.toList ++ nonConstructorFields.values.toList).filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)

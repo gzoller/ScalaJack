@@ -7,7 +7,7 @@ class ValueClassPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("-----------------------------------------\n:  ValueClass Primitives Tests (Plain)  :\n-----------------------------------------") {
+  describe("-----------------------------------------\n:  ValueClass DelimSpec Tests (Plain)  :\n-----------------------------------------") {
     it("Value class of Double") {
       val p1 = new PlayerMix()
       p1.name = "Mike"

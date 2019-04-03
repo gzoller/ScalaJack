@@ -30,3 +30,5 @@ object TestUtil {
           s"val msg = $msg.stripMargin\nthe[${t.getClass.getName}] thrownBy $fnStr should have message msg\n")
     }
 }
+
+object SpotTest extends org.scalatest.Tag("SpotTest")

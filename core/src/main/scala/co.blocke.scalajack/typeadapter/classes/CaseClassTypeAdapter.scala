@@ -16,7 +16,7 @@ case class CaseClassTypeAdapter[T](
     fieldMembersByName: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
     constructorMirror:  MethodMirror,
     isSJCapture:        Boolean,
-    collectionName:     Option[String])(implicit context: Context, tt: TypeTag[T]) extends ClassHelper.ClassLikeTypeAdapter[T] {
+    collectionName:     Option[String])(implicit context: Context, tt: TypeTag[T]) extends ClassHelper.ClassLikeTypeAdapter[T] with Classish {
 
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys(fieldValues: Map[String, Any]): Map[String, Any] = fieldValues

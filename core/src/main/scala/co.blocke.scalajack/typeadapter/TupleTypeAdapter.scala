@@ -61,7 +61,7 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
 case class TupleTypeAdapter[T >: Null](
     fields:            List[TupleField[_]],
-    constructorMirror: MethodMirror) extends TypeAdapter[T] {
+    constructorMirror: MethodMirror) extends TypeAdapter[T] with Collectionish {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): T =
     reader.head.tokenType match {
@@ -69,8 +69,7 @@ case class TupleTypeAdapter[T >: Null](
         reader.next
         null
       case _ =>
-        val readFns = fields.map(field => (p: Path, r: Reader[WIRE]) => field.read(p, r))
-        constructorMirror.apply(reader.readTuple(path, readFns): _*).asInstanceOf[T]
+        constructorMirror.apply(reader.readTuple(path, fields): _*).asInstanceOf[T]
     }
 
   // Create functions that know how to self-write each field.  The actual writing of each element

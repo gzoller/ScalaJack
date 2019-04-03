@@ -2,22 +2,19 @@ package co.blocke.scalajack
 package delimited
 
 import model._
-import json.JsonToken
 import util.Path
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }
 
-import co.blocke.scalajack.typeadapter.classes
-import co.blocke.scalajack.typeadapter.classes.PlainClassTypeAdapter
+import typeadapter.TupleTypeAdapterFactory
 
 import scala.collection.mutable.Builder
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 import scala.collection.immutable.{ ListMap, Map }
 
-case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, tokens: ArrayList[JsonToken], initialPos: Int = 0) extends Reader[String] {
+case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, tokens: ArrayList[DelimitedToken], initialPos: Int = 0) extends Reader[String] {
 
   private var pos = initialPos
-  private var currentField: Option[ClassHelper.ClassFieldMember[_, Any]] = None
 
   // Use this to "save" current state into a copy in case you need to revert
   def copy: Reader[String] = DelimitedReader(jackFlavor, delimited, tokens, pos)
@@ -68,49 +65,51 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
   def readLong(path: Path): Long = readString(path).toLong
   def readString(path: Path): String = {
     tokens.get(pos) match {
-      case token if token.tokenType != TokenType.Null =>
-        val result = if (token.end < token.begin)
-          ""
-        else
-          token.textValue.replaceAll("\"\"", "\"")
+      case token if token.tokenType == TokenType.Null =>
         next
-        result
-      case _ =>
+        null
+      case token =>
         next
-        // Ugly hackery to trap null here--if we let it go, many non-nullable fields will explode on read,
-        // and here we're trying to utilize default values if they are provided by the class
-        if (currentField.isDefined) {
-          currentField.get.defaultValue.getOrElse {
-            back
-            throw new ReadInvalidError(showError(path, "Null or mising fields must either be optional or provide default vales for delimited input"))
-          }.toString
-        } else
-          null
+        token.textValue
     }
   }
 
   // Read Basic Collections
-  def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To = {
-    val builder = builderFactory().asInstanceOf[Builder[Elem, To]]
-    val subReader = jackFlavor.parse(readString(path))
-    var i = 0
-    while (subReader.head.tokenType != TokenType.End) {
-      builder += elementTypeAdapter.read(path \ i, subReader)
-      i += 1
+  def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To =
+    if (head.tokenType == TokenType.Null) {
+      next
+      null.asInstanceOf[To]
+    } else {
+      val builder = builderFactory().asInstanceOf[Builder[Elem, To]]
+      var i = 0
+      while (head.tokenType != TokenType.End) {
+        val tryValue = if (head.tokenType == TokenType.QuotedString && (elementTypeAdapter.isInstanceOf[Collectionish] || elementTypeAdapter.isInstanceOf[Classish]))
+          Try(elementTypeAdapter.read(path \ i, jackFlavor.parse(readString(path))))
+        else
+          Try(elementTypeAdapter.read(path \ i, this))
+        tryValue match {
+          case Success(x) => builder += x
+          case Failure(x) =>
+            back
+            throw new ReadMalformedError(showError(path, x.getMessage()))
+        }
+        i += 1
+      }
+      builder.result
     }
-    next // consume the end array token
-    builder.result
-  }
 
   def readMap[Key, Value, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To =
     throw new UOE("Map serialization not available for Delimited encoding")
 
-  def readTuple(path: Path, readFns: List[(Path, Reader[String]) => Any]): List[Any] = {
-    val subReader = jackFlavor.parse(readString(path))
+  def readTuple(path: Path, readFns: List[TupleTypeAdapterFactory.TupleField[_]]): List[Any] = {
     var fnPos = 0
     val tup = readFns.map { fn =>
       fnPos += 1
-      fn(path \ fnPos, subReader)
+      if (head.tokenType == TokenType.QuotedString && (fn.valueTypeAdapter.isInstanceOf[Collectionish] || fn.valueTypeAdapter.isInstanceOf[Classish])) {
+        fn.read(path \ fnPos, jackFlavor.parse(readString(path)))
+      } else {
+        fn.read(path \ fnPos, this)
+      }
     }
     tup
   }
@@ -118,22 +117,21 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
   // Read fields we know to be object fields (must be in constructor order for Delimited!)
   def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldsRead = {
     var fieldCount = 0
-    var captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
+    val captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
     val args = fields.values.map { fieldMember =>
-      currentField = Some(fieldMember)
-      val tryValue = if (fieldMember.valueTypeAdapter.isInstanceOf[classes.CaseClassTypeAdapter[_]] || fieldMember.valueTypeAdapter.isInstanceOf[PlainClassTypeAdapter[_]]) {
-        if (head.tokenType == TokenType.Null) {
+      val tryValue = head match {
+        case tok if tok.tokenType == TokenType.Null =>
           next
           Success(null)
-        } else {
-          val subReader = jackFlavor.parse(readString(path))
-          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, subReader))
-        }
-      } else
-        Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, this))
-      currentField = None
+        case tok if (tok.tokenType == TokenType.QuotedString && (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])) =>
+          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, jackFlavor.parse(readString(path))))
+        case _ =>
+          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, this))
+      }
       val value = tryValue match {
         case Success(v) => v
+        case Failure(x) if (x.isInstanceOf[SJError]) =>
+          throw x
         case Failure(x) =>
           back
           throw new ReadMalformedError(showError(path \ fieldCount, x.getMessage()))
@@ -151,7 +149,7 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
       }
     }.toArray
     val flags = Array.fill(fields.size)(true)
-    ObjectFieldsRead(fieldCount == fields.size, args, flags, captured)
+    ObjectFieldsRead(true, args, flags, captured)
   }
 
   def skipObject(path: Path): Unit = {} // noop for Delimited

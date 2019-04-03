@@ -64,7 +64,8 @@ trait Stringish {
   this: TypeAdapter[_] =>
 }
 
-trait ArrayTypeAdapter[T, E] extends TypeAdapter[T] {
-  val elementTypeAdapter: TypeAdapter[E]
-}
+// Marker trait for collections
+trait Collectionish
 
+// Marker trait for classes
+trait Classish

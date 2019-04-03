@@ -9,7 +9,7 @@ class JavaPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("---------------------------\n:  Java Primitives Tests  :\n---------------------------") {
+  describe("---------------------------\n:  Java DelimSpec Tests  :\n---------------------------") {
     describe("+++ Positive Tests +++") {
       it("BigDecimal must work") {
         val inst = SampleJBigDecimal(JBigDecimal.ZERO, JBigDecimal.ONE, JBigDecimal.TEN, new JBigDecimal("0.1499999999999999944488848768742172978818416595458984375"), null)

@@ -14,7 +14,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
 
   describe("----------------------------------\n:  Java Primitive Map Key Tests  :\n----------------------------------") {
     describe("+++ Positive Tests +++") {
-      describe("Simple Primitives:") {
+      describe("Simple DelimSpec:") {
         it("With BigDecimal Key") {
           val inst = SampleJBigDecimal(Map(new JBigDecimal("123.456") -> new JBigDecimal("1"), new JBigDecimal("789.123") -> new JBigDecimal("2")))
           val js = sj.render(inst)
@@ -128,7 +128,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           }
         }
       }
-      describe("Time Primitives:") {
+      describe("Time DelimSpec:") {
         it("With Duration Key") {
           val inst = SampleDuration(Map(Duration.ZERO -> Duration.parse("P2DT3H4M")))
           val js = sj.render(inst)
@@ -204,7 +204,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
       }
     }
     describe("--- Negative Tests ---") {
-      describe("Simple Primitives:") {
+      describe("Simple DelimSpec:") {
         it("Bad BigDecimal Key") {
           val js = """{"m":{"fred":1,"789.123":2}}"""
           val msg = """[<tokenizing>]: Unexpected character 'f' at position 0
@@ -276,7 +276,7 @@ class JavaPrimKeys() extends FunSpec with Matchers {
           the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[SampleJNumber](js) should have message msg
         }
       }
-      describe("Time Primitives:") {
+      describe("Time DelimSpec:") {
         it("Bad Duration Key") {
           val js = """{"m":{"PT0SXXX":"PT51H4M"}}"""
           val msg = """[$.m.(map key)]: Failed to parse Duration from input 'PT0SXXX'

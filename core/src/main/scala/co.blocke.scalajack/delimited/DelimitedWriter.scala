@@ -2,10 +2,8 @@ package co.blocke.scalajack
 package delimited
 
 import compat.StringBuilder
-import typeadapter._
-import co.blocke.scalajack.model.ClassHelper.ExtraFieldValue
-import co.blocke.scalajack.model.{ ClassHelper, JackFlavor, SJError, TypeAdapter, Writer }
-import co.blocke.scalajack.typeadapter.classes.PlainClassTypeAdapter
+import model._
+import ClassHelper.ExtraFieldValue
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
@@ -49,12 +47,14 @@ case class DelimitedWriter(delimiter: Char, jackFlavor: JackFlavor[String]) exte
           first = false
         else
           out += delimiter.toString
-        if (f.valueTypeAdapter.isInstanceOf[classes.CaseClassTypeAdapter[_]] || f.valueTypeAdapter.isInstanceOf[PlainClassTypeAdapter[_]]) {
-          val sb = new StringBuilder()
-          f.valueTypeAdapter.write(f.valueIn(t), this, sb, false)
-          writeString(sb.result(), out)
-        } else
-          f.valueTypeAdapter.write(f.valueIn(t), this, out, false)
+        f.valueTypeAdapter match {
+          case ta if ta.isInstanceOf[Classish] =>
+            val sb = new StringBuilder()
+            ta.write(f.valueIn(t), this, sb, false)
+            writeString(sb.result(), out)
+          case ta =>
+            ta.write(f.valueIn(t), this, out, false)
+        }
       }
     }
 
@@ -71,12 +71,14 @@ case class DelimitedWriter(delimiter: Char, jackFlavor: JackFlavor[String]) exte
 
   def writeTuple(writeFns: List[(Writer[String], Builder[String, String]) => Unit], out: Builder[String, String]): Unit = {
     var first = true
+    val sb = new StringBuilder()
     writeFns.map { f =>
       if (first)
         first = false
       else
-        out += delimiter.toString
-      f(this, out)
+        sb += delimiter.toString
+      f(this, sb)
     }
+    writeString(sb.result(), out)
   }
 }

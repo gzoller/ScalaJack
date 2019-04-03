@@ -24,7 +24,7 @@ object TraitTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
 case class TraitTypeAdapter[T](
     traitName:       String,
-    polymorphicType: Type)(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] {
+    polymorphicType: Type)(implicit tt: TypeTag[T], context: Context) extends TypeAdapter[T] with Classish {
 
   private val populatedConcreteTypeCache = new mutable.WeakHashMap[Type, Type]
   private var hintLabel: Option[String] = None

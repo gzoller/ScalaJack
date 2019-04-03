@@ -3,7 +3,6 @@ package delimited
 
 import model._
 import compat.StringBuilder
-import json.JsonToken
 import typeadapter.{ OptionTypeAdapterFactory, CanBuildFromTypeAdapterFactory }
 
 import java.util.ArrayList
@@ -40,12 +39,12 @@ case class DelimitedFlavorImpl(
 
   protected override def bakeContext(): Context = {
     OptionTypeAdapterFactory.nullIsNone = true
-    new Context(CanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
+    new Context(Seq(DelimitedEitherTypeAdapterFactory, CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
   }
 
   private val writer = DelimitedWriter(delimiter, this)
 
-  def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(delimiter).tokenize(wire).asInstanceOf[ArrayList[JsonToken]])
+  def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(delimiter).tokenize(wire).asInstanceOf[ArrayList[DelimitedToken]])
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()

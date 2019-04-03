@@ -4,6 +4,7 @@ package model
 import util.Path
 
 import scala.collection.immutable.ListMap
+import typeadapter.TupleTypeAdapterFactory
 
 trait Transceiver[WIRE] {
   val jackFlavor: JackFlavor[WIRE]
@@ -41,7 +42,7 @@ trait Reader[WIRE] extends collection.BufferedIterator[ParseToken[WIRE]] with Tr
   // Read Basic Collections
   def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To
   def readMap[Key, Value, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To
-  def readTuple(path: Path, readFns: List[(Path, Reader[WIRE]) => Any]): List[Any]
+  def readTuple(path: Path, readFns: List[TupleTypeAdapterFactory.TupleField[_]]): List[Any]
 
   // Read fields we know to be object fields
   def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldsRead //(Boolean, Array[Any], Array[Boolean])

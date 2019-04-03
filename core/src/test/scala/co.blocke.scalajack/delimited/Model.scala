@@ -19,3 +19,15 @@ case class Nested(
     in:    Inside,
     other: Inside = Inside(99, "dunno")
 )
+
+case class ThreeStrings(a: String, b: String, c: String)
+
+case class WithList[T](id: Int, someList: List[T])
+
+case class HasOption(one: Option[Int], two: Option[Int] = Some(5))
+
+case class HasTuples(one: (String, Int), two: (Boolean, Int) = (true, 1))
+
+case class HasEither(one: Int, two: Either[Int, Inside])
+case class HasEither2(one: Int, two: Either[Int, Inside] = Right(Inside(1, "ok")))
+case class HasEither3(one: Int, two: Either[String, Inside])
