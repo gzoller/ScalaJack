@@ -10,6 +10,7 @@ import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
+// $COVERAGE-OFF$Exactly the same as EnumerationTypeAdapterFactory--don't need to test twice!
 object DelimitedEitherTypeAdapterFactory extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -28,8 +29,8 @@ object DelimitedEitherTypeAdapterFactory extends TypeAdapterFactory {
         val rightTypeAdapter = context.typeAdapter(rightType)
         DelimitedEitherTypeAdapter(leftTypeAdapter, rightTypeAdapter, leftType, rightType).asInstanceOf[TypeAdapter[T]]
     }
-
 }
+// $COVERAGE-ON$
 
 case class DelimitedEitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAdapter: TypeAdapter[R], leftType: Type, rightType: Type) extends TypeAdapter[Either[L, R]] {
 
@@ -38,23 +39,17 @@ case class DelimitedEitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rig
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): Either[L, R] = {
     val savedReader = reader.copy
-    reader.head.tokenType match {
-      case TokenType.Null =>
-        reader.next
-        null
-      case _ =>
-        tryRead(path, reader, rightTypeAdapter) match {
-          case Success(rightValue) =>
-            Right(rightValue.asInstanceOf[R])
-          case Failure(_) => // Right parse failed... try left
-            reader.syncPositionTo(savedReader)
-            tryRead(path, reader, leftTypeAdapter) match {
-              case Success(leftValue) =>
-                Left(leftValue.asInstanceOf[L])
-              case Failure(x) =>
-                reader.back
-                throw new ReadMalformedError(reader.showError(path, s"Failed to read either side of Either"))
-            }
+    tryRead(path, reader, rightTypeAdapter) match {
+      case Success(rightValue) =>
+        Right(rightValue.asInstanceOf[R])
+      case Failure(_) => // Right parse failed... try left
+        reader.syncPositionTo(savedReader)
+        tryRead(path, reader, leftTypeAdapter) match {
+          case Success(leftValue) =>
+            Left(leftValue.asInstanceOf[L])
+          case Failure(x) =>
+            reader.back
+            throw new ReadMalformedError(reader.showError(path, s"Failed to read either side of Either"))
         }
     }
   }

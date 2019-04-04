@@ -3,9 +3,9 @@ package delimited
 
 import model._
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.{ FunSpec, Matchers, PrivateMethodTester }
 
-class DelimSpec extends FunSpec with Matchers {
+class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
 
   val sj = ScalaJack(DelimitedFlavor)
 
@@ -40,6 +40,17 @@ class DelimSpec extends FunSpec with Matchers {
         val d = sjx.render(i)
         d should equal("5|foo")
         sjx.read[Inside](d) should be(i)
+
+        val all = AllPrim(5, 25L, 123.45, 12.3F, 'x', "Hey", true, BigInt(12345678), BigDecimal(0.123458867))
+        val delim = sj.render(all)
+        val r = sj.parse(delim)
+        val rPos = PrivateMethod[Int]('pos)
+        r.next
+        r.next
+        r invokePrivate rPos() should be(2)
+        r.hasNext should be(true)
+        r.reset()
+        r invokePrivate rPos() should be(0)
       }
       it("SalaJack configurations (DelimitedFlavor)") {
         an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withAdapters()
@@ -247,6 +258,13 @@ class DelimSpec extends FunSpec with Matchers {
         val delim = "15,"
         val i = sj.read[HasEither2](delim)
         i should be(HasEither2(15, Right(Inside(1, "ok"))))
+      }
+      it("Can't parse either side of Either") {
+        val msg =
+          """[$[1]]: Failed to read either side of Either
+            |3,true
+            |^""".stripMargin
+        the[ReadMalformedError] thrownBy sj.read[Shirt2]("3,true") should have message msg
       }
       it("Either with embedded quote in string value") {
         val s = HasEither3(1, Left("a\"b"))

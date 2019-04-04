@@ -75,28 +75,24 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
   }
 
   // Read Basic Collections
-  def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To =
-    if (head.tokenType == TokenType.Null) {
-      next
-      null.asInstanceOf[To]
-    } else {
-      val builder = builderFactory().asInstanceOf[Builder[Elem, To]]
-      var i = 0
-      while (head.tokenType != TokenType.End) {
-        val tryValue = if (head.tokenType == TokenType.QuotedString && (elementTypeAdapter.isInstanceOf[Collectionish] || elementTypeAdapter.isInstanceOf[Classish]))
-          Try(elementTypeAdapter.read(path \ i, jackFlavor.parse(readString(path))))
-        else
-          Try(elementTypeAdapter.read(path \ i, this))
-        tryValue match {
-          case Success(x) => builder += x
-          case Failure(x) =>
-            back
-            throw new ReadMalformedError(showError(path, x.getMessage()))
-        }
-        i += 1
+  def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To = {
+    val builder = builderFactory().asInstanceOf[Builder[Elem, To]]
+    var i = 0
+    while (head.tokenType != TokenType.End) {
+      val tryValue = if (head.tokenType == TokenType.QuotedString && (elementTypeAdapter.isInstanceOf[Collectionish] || elementTypeAdapter.isInstanceOf[Classish]))
+        Try(elementTypeAdapter.read(path \ i, jackFlavor.parse(readString(path))))
+      else
+        Try(elementTypeAdapter.read(path \ i, this))
+      tryValue match {
+        case Success(x) => builder += x
+        case Failure(x) =>
+          back
+          throw new ReadMalformedError(showError(path, x.getMessage()))
       }
-      builder.result
+      i += 1
     }
+    builder.result
+  }
 
   def readMap[Key, Value, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To =
     throw new UOE("Map serialization not available for Delimited encoding")

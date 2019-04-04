@@ -38,3 +38,4 @@ object Size extends Enumeration {
   val Small, Medium, Large = Value
 }
 case class Shirt(id: Int, size: Size.Value)
+case class Shirt2(id: Int, size: Either[Size.Value, Int])
