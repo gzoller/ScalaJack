@@ -19,8 +19,10 @@ case class FallbackTypeAdapter[A, B <: A](attemptedTypeAdapter: Option[TypeAdapt
             reader.syncPositionTo(savedReader)
             orElseTypeAdapter.read(path, reader)
         }
+      // $COVERAGE-OFF$Doesn't ever get called... theoretically not possible but left here for safety (see ClassHelper.applyConcreteTypeMembersToFields)
       case None =>
         orElseTypeAdapter.read(path, reader)
+      // $COVERAGE-ON$
     }
   }
 

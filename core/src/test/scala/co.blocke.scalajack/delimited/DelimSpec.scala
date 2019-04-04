@@ -18,6 +18,12 @@ class DelimSpec extends FunSpec with Matchers {
         val inst = sj.read[AllPrim](delim)
         inst should equal(all)
       }
+      it("Map fails") {
+        the[SJError] thrownBy sj.render(Map("a" -> 1)) should have message "Map-typed data is not supported for delimited output"
+      }
+      it("Empty input") {
+        sj.render("") should equal("")
+      }
       it("Unnecessary quotes on fields work") { // "a",b,"c"
         val delim = "\"a\",b,\"c\""
         val inst = sj.read[ThreeStrings](delim)

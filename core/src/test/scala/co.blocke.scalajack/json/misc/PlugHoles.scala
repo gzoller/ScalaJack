@@ -28,6 +28,20 @@ class PlugHoles() extends FunSpec with Matchers {
       assertResult(Map("name" -> "Fred", "age" -> 12)) {
         sj.read[Map[String, Any]](js)
       }
+
+      val js2 = """{"thing":"blather on about some stupid subject that no one really cares about"n}"""
+      val msg =
+        """[<tokenizing>]: Unexpected character 'n' at position 78
+          |ome stupid subject that no one really cares about"n}
+          |--------------------------------------------------^""".stripMargin
+      the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, String]](js2) should have message msg
+
+      val js3 = """{"thing":"blather"n}"""
+      val msg2 =
+        """[<tokenizing>]: Unexpected character 'n' at position 18
+          |{"thing":"blather"n}
+          |------------------^""".stripMargin
+      the[co.blocke.scalajack.model.ReadUnexpectedError] thrownBy sj.read[Map[String, String]](js3) should have message msg2
     }
     it("String must break") {
       val js = """{"s1":something,"s2":-19,"s3":null}"""
@@ -60,6 +74,12 @@ class PlugHoles() extends FunSpec with Matchers {
     it("ScalaJack") {
       val sj = ScalaJack.apply(json.JsonFlavor)
       sj.read[Int]("15") should be(15)
+    }
+    it("StringBuilder") {
+      val s = new compat.StringBuilder()
+      s += "Greg"
+      s.clear()
+      s.result() should be("")
     }
     it("End of TA chain") {
       the[IllegalArgumentException] thrownBy model.DefaultTypeAdapterFactory.typeAdapterOf[Any](null)(sj.context, TypeTags.of(typeOf[Any])) should have message """Unable to find a type adapter for Any (may be abstract or a dependency of an abstract class)"""
@@ -166,7 +186,7 @@ class PlugHoles() extends FunSpec with Matchers {
       assertResult(Map("name" -> "Fred")) {
         sj.read[Any](js3)
       }
-      val js4 = """true"""
+      val js4 = "\"true\""
       val inst = sj.read[Any](js4)
       (inst == true) should be(true)
       sj.render[Map[Any, Int]](Map(Map("a" -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
@@ -175,6 +195,8 @@ class PlugHoles() extends FunSpec with Matchers {
       sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
       sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{}""")
       sj.render[Map[Int, Any]](Map(1 -> Some(3), 2 -> None)) should be("""{"1":3}""")
+
+      sj.read[Any]("""{"_hint":"bogus","a":3,"b":2}""") should be(Map("_hint" -> "bogus", "a" -> 3, "b" -> 2))
     }
     it("Fallback") {
       val sjf = ScalaJack().parseOrElse(typeOf[Falling[Int]] -> typeOf[String])
@@ -193,6 +215,13 @@ class PlugHoles() extends FunSpec with Matchers {
       }
       //      val inst: Option[_] = None
       //      sj.render(inst)
+    }
+    it("Map") {
+      val m: Map[Int, Any] = sj.read[Map[Int, Any]]("""{"1":"5"}""")
+      m should be(Map(1 -> 5))
+
+      val m2: Map[Any, Any] = Map(1 -> 3)
+      sj.render(m2) should equal("""{"1":3}""")
     }
     it("Extra chars in JSON") {
       val js = """[1,2,3]]"""

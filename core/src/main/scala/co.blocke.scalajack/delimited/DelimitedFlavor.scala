@@ -3,7 +3,7 @@ package delimited
 
 import model._
 import compat.StringBuilder
-import typeadapter.{ OptionTypeAdapterFactory, CanBuildFromTypeAdapterFactory }
+import typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }

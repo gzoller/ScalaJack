@@ -15,7 +15,7 @@ import scala.collection.mutable.Builder
 
 case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: ArrayList[JsonToken], initialPos: Int = 0) extends Reader[String] {
 
-  var pos = initialPos
+  private var pos = initialPos
 
   // For skipping objects
   private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
@@ -215,12 +215,13 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
         }
         assertExists(TokenType.EndArray, path)
         tup
-      case null => null
     }
 
   def showError(path: Path, msg: String): String = {
     val errPtr = pos match {
+      // $COVERAGE-OFF$Should never Happen (tm) -- can't think of how to provoke this in a test case
       case p if p >= tokens.size => tokens.get(p - 1).end + 1
+      // $COVERAGE-ON$
       case p                     => tokens.get(p).end
     }
     val (clip, dashes) = errPtr match {
