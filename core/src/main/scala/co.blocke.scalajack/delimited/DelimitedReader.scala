@@ -118,38 +118,44 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
   def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldsRead = {
     var fieldCount = 0
     val captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
-    val args = fields.values.map { fieldMember =>
-      val tryValue = head match {
-        case tok if tok.tokenType == TokenType.Null =>
-          next
-          Success(null)
-        case tok if (tok.tokenType == TokenType.QuotedString && (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])) =>
-          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, jackFlavor.parse(readString(path))))
-        case _ =>
-          Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, this))
-      }
-      val value = tryValue match {
-        case Success(v) => v
-        case Failure(x) if (x.isInstanceOf[SJError]) =>
-          throw x
-        case Failure(x) =>
-          back
-          throw new ReadMalformedError(showError(path \ fieldCount, x.getMessage()))
-      }
-      fieldCount += 1
-      value match {
-        case null =>
-          fieldMember.defaultValue.getOrElse {
+    if (head.tokenType == TokenType.End)
+      null
+    else {
+      val args = fields.values.map { fieldMember =>
+        val tryValue = head match {
+          case tok if tok.tokenType == TokenType.Null =>
+            next
+            Success(null)
+          case tok if (tok.tokenType == TokenType.QuotedString && (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])) =>
+            Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, jackFlavor.parse(readString(path))))
+          case _ =>
+            Try(fieldMember.valueTypeAdapter.read(path \ fieldCount, this))
+        }
+        val value = tryValue match {
+          case Success(v) => v
+          case Failure(x) if (x.isInstanceOf[SJError]) =>
+            throw x
+          case Failure(x) =>
             back
-            throw new ReadInvalidError(showError(path, "Null or mising fields must either be optional or provide default vales for delimited input"))
-          }
-        case None if fieldMember.defaultValue.isDefined =>
-          fieldMember.defaultValue.get
-        case _ => value
-      }
-    }.toArray
-    val flags = Array.fill(fields.size)(true)
-    ObjectFieldsRead(true, args, flags, captured)
+            throw new ReadMalformedError(showError(path \ fieldCount, x.getMessage()))
+        }
+        fieldCount += 1
+        value match {
+          case null =>
+            fieldMember.defaultValue.getOrElse {
+              if (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])
+                null
+              else {
+                back
+                throw new ReadInvalidError(showError(path, "Null or missing fields must either be optional or provide default vales for delimited input"))
+              }
+            }
+          case _ => value
+        }
+      }.toArray
+      val flags = Array.fill(fields.size)(true)
+      ObjectFieldsRead(true, args, flags, captured)
+    }
   }
 
   def skipObject(path: Path): Unit = {} // noop for Delimited

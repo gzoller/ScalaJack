@@ -18,8 +18,59 @@ class DelimSpec extends FunSpec with Matchers {
         val inst = sj.read[AllPrim](delim)
         inst should equal(all)
       }
-      it("Map fails") {
+      it("Loose Change") {
         the[SJError] thrownBy sj.render(Map("a" -> 1)) should have message "Map-typed data is not supported for delimited output"
+        val bi = BigInt(123)
+        sj.render(bi) should be("123")
+
+        val reader = sj.parse("abc")
+        reader.scanForHint("foo") should be(None)
+        reader.scanForType(util.Path.Root, "foo", None) should be(None)
+
+        val t = reader.head
+        reader.back
+        reader.head should equal(t)
+        reader.skipObject(util.Path.Root)
+        reader.head should equal(t)
+
+        the[UnsupportedOperationException] thrownBy sj.read[Map[String, Int]]("foo") should have message "Map serialization not available for Delimited encoding"
+
+        val sjx = ScalaJack(DelimitedFlavor('|'))
+        val i = Inside(5, "foo")
+        val d = sjx.render(i)
+        d should equal("5|foo")
+        sjx.read[Inside](d) should be(i)
+      }
+      it("SalaJack configurations (DelimitedFlavor)") {
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withAdapters()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withDefaultHint(null)
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withHintModifiers()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withHints()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withTypeValueModifier(null)
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).allowPermissivePrimitives()
+        val sjx = ScalaJack(DelimitedFlavor).parseOrElse(typeOf[ThreeStrings] -> typeOf[DefaultThree])
+        sjx.read[ThreeStrings]("a;sdlfj") should be(DefaultThree())
+      }
+      it("Enum support") {
+        val sjy = ScalaJack(DelimitedFlavor).enumsAsInts()
+        val i = Shirt(1, Size.Small)
+        val d = sjy.render(i)
+        d should equal("1,0")
+        sjy.read[Shirt](d) should be(i)
+
+        val sjz = ScalaJack(DelimitedFlavor)
+        val d2 = sjz.render(i)
+        d2 should equal("1,Small")
+        sjz.read[Shirt](d2) should be(i)
+
+        val d3 = "1,\"Small\""
+        sjz.read[Shirt](d3) should be(i)
+
+        val d4 = "1,0"
+        sjz.read[Shirt](d4) should be(i)
+
+        val d5 = "1,\"0\""
+        sjz.read[Shirt](d5) should be(i)
       }
       it("Empty input") {
         sj.render("") should equal("")
@@ -51,18 +102,14 @@ class DelimSpec extends FunSpec with Matchers {
         val inst = sj.read[Nested](delim)
         inst should equal(n)
       }
-      it("Null class field value w/no default") {
+      it("Null class field value (nullable) w/no default") {
         val delim = """item,,"2,Two""""
-        val msg =
-          """[$]: Null or mising fields must either be optional or provide default vales for delimited input
-            |item,,"2,Two"
-            |-----^""".stripMargin
-        the[ReadInvalidError] thrownBy sj.read[Nested](delim) should have message msg
+        sj.read[Nested](delim) should be(Nested("item", null, Inside(2, "Two")))
       }
       it("Null primitive class field") {
         val delim = ""","1,One","2,Two""""
         val msg =
-          """[$]: Null or mising fields must either be optional or provide default vales for delimited input
+          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
           |,"1,One","2,Two"
           |^""".stripMargin
         the[ReadInvalidError] thrownBy sj.read[Nested](delim) should have message msg
@@ -84,6 +131,9 @@ class DelimSpec extends FunSpec with Matchers {
         val delim = sj.render(s)
         delim should equal("""5,"a,,c"""")
         sj.read[WithList[String]](delim) should be(s)
+      }
+      it("Empty List") {
+        sj.read[WithList[Int]]("5,") should be(WithList(5, null))
       }
       it("Non-nullables") {
         val delim = """5,"1,,3""""
@@ -128,6 +178,10 @@ class DelimSpec extends FunSpec with Matchers {
         delim should equal("\"a,3\",\"false,9\"")
         sj.read[HasTuples](delim) should be(s)
       }
+      it("Tuple with class value") {
+        val delim = "\"thing,\"\"1,foo\"\"\""
+        sj.read[HasTuples2](delim) should be(HasTuples2(("thing", Inside(1, "foo"))))
+      }
       it("Tuple with escaped quote in value") {
         val s = HasTuples(("a\"b", 3), (false, 9))
         val delim = sj.render(s)
@@ -140,11 +194,7 @@ class DelimSpec extends FunSpec with Matchers {
       }
       it("Missing optional case class field w/o default") {
         val delim = ",\"false,9\""
-        val msg =
-          """[$]: Null or mising fields must either be optional or provide default vales for delimited input
-        |,"false,9"
-        |^""".stripMargin
-        the[ReadInvalidError] thrownBy sj.read[HasTuples](delim) should have message msg
+        sj.read[HasTuples](delim) should be(HasTuples(null, (false, 9)))
       }
     }
     //case class HasEither(one:Int, two:Either[Int,Inside])
@@ -163,7 +213,7 @@ class DelimSpec extends FunSpec with Matchers {
       it("Either missing a value (no default)") {
         val delim = ",\"99,foo\""
         val msg =
-          """[$]: Null or mising fields must either be optional or provide default vales for delimited input
+          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
             |,"99,foo"
             |^""".stripMargin
         the[ReadInvalidError] thrownBy sj.read[HasEither](delim) should have message msg

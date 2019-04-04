@@ -9,7 +9,7 @@ class Skipping extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 
-  describe("-----------------------------\n:  Skipping  :\n-----------------------------") {
+  describe("--------------\n:  Skipping  :\n--------------") {
 
     val examples = Map(
       "string" -> """"haha"""",

@@ -8,7 +8,7 @@ class MapNameSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 
-  describe("----------------------\n:  Change Name Tests  :\n----------------------") {
+  describe("-----------------------\n:  Change Name Tests  :\n-----------------------") {
     it("Mapping name for case class fields works") {
       val js = """{"foo_bar":"thing","a_b":123,"count":2}"""
       val r = sj.read[MapFactor](js)

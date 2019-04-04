@@ -31,7 +31,7 @@ class SealedTraits extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("-----------------------------\n:  Sealed Trait Tests  :\n-----------------------------") {
+  describe("------------------------\n:  Sealed Trait Tests  :\n------------------------") {
     it("Read - unambiguous") {
       assertResult(EmailAddress("foo@bar.com")) {
         sj.read[ContactPoint]("""{"emailAddress":"foo@bar.com"}""")

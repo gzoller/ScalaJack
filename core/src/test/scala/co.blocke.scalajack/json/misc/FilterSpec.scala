@@ -44,6 +44,15 @@ class FilterSpec extends FunSpec with Matchers {
       }
       z should be(CommMessage(1, SimpleCommand("doit", true)))
     }
+    it("Must fall through if type member hint is unknown") {
+      val js = """{"kind":"co.blocke.scalajack.vEvent","id":1,"payload":{"happening":5}}"""
+      val filter = sj.filter[CommMessage[Event]]("kind")
+      val z = sj.parse(js) match {
+        case filter(x) => 1
+        case _         => 2
+      }
+      z should be(2)
+    }
     it("Must filter trait wrapped classes") {
       val p = sj.parse(jsCmd)
       val filter = sj.filter[CommMessage[Command]]("kind")

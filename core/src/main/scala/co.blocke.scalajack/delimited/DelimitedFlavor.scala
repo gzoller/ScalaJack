@@ -4,9 +4,10 @@ package delimited
 import model._
 import compat.StringBuilder
 import typeadapter.CanBuildFromTypeAdapterFactory
-
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }
+
+import util.Path
 
 object DelimitedFlavor extends FlavorMaker {
   type WIRE = String
@@ -34,15 +35,24 @@ case class DelimitedFlavorImpl(
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def parseOrElse(poe: (Type, Type)*): JackFlavor[String] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def allowPermissivePrimitives(): JackFlavor[String] = this.copy(permissivesOk = true)
+  def allowPermissivePrimitives(): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
   protected override def bakeContext(): Context =
-    new Context(Seq(DelimitedOptionTypeAdapterFactory, DelimitedEitherTypeAdapterFactory, CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
+    new Context(Seq(
+      DelimitedOptionTypeAdapterFactory,
+      DelimitedEitherTypeAdapterFactory,
+      DelimitedEnumerationTypeAdapterFactory,
+      CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
 
   private val writer = DelimitedWriter(delimiter, this)
 
   def parse(wire: String): Reader[String] = DelimitedReader(this, wire, DelimitedTokenizer(delimiter).tokenize(wire).asInstanceOf[ArrayList[DelimitedToken]])
+
+  override def read[T](wire: String)(implicit tt: TypeTag[T]): T = {
+    val p = parse(wire)
+    context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+  }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()

@@ -7,7 +7,7 @@ class AnyPrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("--------------------------\n:  Any DelimSpec Tests  :\n--------------------------") {
+  describe("-------------------------\n:  Any DelimSpec Tests  :\n-------------------------") {
     describe("+++ Positive Tests +++") {
       it("null works") {
         val shell = AnyShell(null)
