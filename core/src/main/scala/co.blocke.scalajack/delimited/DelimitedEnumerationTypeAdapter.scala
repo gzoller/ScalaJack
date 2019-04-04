@@ -8,6 +8,7 @@ import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag }
 import scala.util.{ Failure, Success, Try }
 
+// $COVERAGE-OFF$Exactly the same as EnumerationTypeAdapterFactory--don't need to test twice!
 object DelimitedEnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
   override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
@@ -23,6 +24,7 @@ object DelimitedEnumerationTypeAdapterFactory extends TypeAdapterFactory.FromCla
       next.typeAdapterOf[T]
     }
 }
+// $COVERAGE-ON$
 
 case class DelimitedEnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
@@ -40,16 +42,15 @@ case class DelimitedEnumerationTypeAdapter[E <: Enumeration](enum: E) extends Ty
             reader.back
             throw new ReadInvalidError(reader.showError(path, s"No value found in enumeration ${enum.getClass.getName} for ${reader.head.textValue}"))
         }
-      case TokenType.Null =>
-        reader.next
-        null
     }
 
+  // $COVERAGE-OFF$Exactly the same as EnumerationTypeAdapterFactory--don't need to test twice!
   def write[WIRE](t: E#Value, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null                                => writer.writeNull(out)
       case v if (writer.jackFlavor.enumsAsInt) => writer.writeInt(v.id, out)
       case v                                   => writer.writeString(v.toString, out)
     }
+  // $COVERAGE-ON$
 }
 

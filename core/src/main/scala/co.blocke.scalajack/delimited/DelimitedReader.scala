@@ -143,12 +143,12 @@ case class DelimitedReader(jackFlavor: JackFlavor[String], delimited: String, to
         value match {
           case null =>
             fieldMember.defaultValue.getOrElse {
-              if (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])
-                null
-              else {
-                back
-                throw new ReadInvalidError(showError(path, "Null or missing fields must either be optional or provide default vales for delimited input"))
-              }
+              //              if (fieldMember.valueTypeAdapter.isInstanceOf[Collectionish] || fieldMember.valueTypeAdapter.isInstanceOf[Classish])
+              //                null
+              //              else {
+              back
+              throw new ReadInvalidError(showError(path, "Null or missing fields must either be optional or provide default vales for delimited input"))
+              //              }
             }
           case _ => value
         }

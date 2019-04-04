@@ -19,7 +19,7 @@ trait BigIntTypeAdapter {
   def read[WIRE](path: Path, reader: Reader[WIRE]): BigInt = reader.readBigInt(path)
   def write[WIRE](t: BigInt, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
     case null => writer.writeNull(out)
-    case _    => writer.writeRawString(t.toString, out)
+    case _    => writer.writeBigInt(t, out)
   }
 }
 

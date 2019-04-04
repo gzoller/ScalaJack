@@ -71,6 +71,13 @@ class DelimSpec extends FunSpec with Matchers {
 
         val d5 = "1,\"0\""
         sjz.read[Shirt](d5) should be(i)
+
+        val d6 = "1,Huge"
+        val msg =
+          """[$[1]]: No value found in enumeration co.blocke.scalajack.delimited.Size$ for Huge
+            |1,Huge
+            |-----^""".stripMargin
+        the[ReadInvalidError] thrownBy sjz.read[Shirt](d6) should have message msg
       }
       it("Empty input") {
         sj.render("") should equal("")
@@ -104,7 +111,12 @@ class DelimSpec extends FunSpec with Matchers {
       }
       it("Null class field value (nullable) w/no default") {
         val delim = """item,,"2,Two""""
-        sj.read[Nested](delim) should be(Nested("item", null, Inside(2, "Two")))
+        val msg =
+          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
+            |item,,"2,Two"
+            |-----^""".stripMargin
+        the[ReadInvalidError] thrownBy sj.read[Nested](delim) should have message msg
+
       }
       it("Null primitive class field") {
         val delim = ""","1,One","2,Two""""
@@ -132,8 +144,17 @@ class DelimSpec extends FunSpec with Matchers {
         delim should equal("""5,"a,,c"""")
         sj.read[WithList[String]](delim) should be(s)
       }
+      it("Null list") {
+        val s = WithList[Int](5, null)
+        val delim = sj.render[WithList[Int]](s)
+        delim should equal("5,")
+      }
       it("Empty List") {
-        sj.read[WithList[Int]]("5,") should be(WithList(5, null))
+        val msg =
+          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
+            |5,
+            |--^""".stripMargin
+        the[ReadInvalidError] thrownBy sj.read[WithList[Int]]("5,") should have message msg
       }
       it("Non-nullables") {
         val delim = """5,"1,,3""""
@@ -194,7 +215,11 @@ class DelimSpec extends FunSpec with Matchers {
       }
       it("Missing optional case class field w/o default") {
         val delim = ",\"false,9\""
-        sj.read[HasTuples](delim) should be(HasTuples(null, (false, 9)))
+        val msg =
+          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
+            |,"false,9"
+            |^""".stripMargin
+        the[ReadInvalidError] thrownBy sj.read[HasTuples](delim) should have message msg
       }
     }
     //case class HasEither(one:Int, two:Either[Int,Inside])
