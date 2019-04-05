@@ -7,7 +7,7 @@ import model._
 object PermissiveBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with BigDecimalTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): BigDecimal =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -15,7 +15,7 @@ object PermissiveBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal
 object PermissiveBigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] with BigIntTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): BigInt =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -23,7 +23,7 @@ object PermissiveBigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] with B
 object PermissiveBooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with BooleanTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Boolean =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -31,7 +31,7 @@ object PermissiveBooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with
 object PermissiveByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Byte =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -39,7 +39,7 @@ object PermissiveByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteT
 object PermissiveDoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] with DoubleTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Double =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -47,7 +47,7 @@ object PermissiveDoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] with D
 object PermissiveFloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with FloatTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Float =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -55,7 +55,7 @@ object PermissiveFloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with Flo
 object PermissiveIntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Int =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -63,7 +63,7 @@ object PermissiveIntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntType
 object PermissiveLongTypeAdapterFactory extends TypeAdapter.=:=[Long] with LongTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Long =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }
@@ -71,7 +71,7 @@ object PermissiveLongTypeAdapterFactory extends TypeAdapter.=:=[Long] with LongT
 object PermissiveShortTypeAdapterFactory extends TypeAdapter.=:=[Short] with ShortTypeAdapter {
   override def read[WIRE](path: Path, reader: Reader[WIRE]): Short =
     if (reader.head.tokenType == TokenType.String)
-      (new StringWrapTypeAdapter(this)).read(path, reader)
+      reader.jackFlavor.stringWrapTypeAdapterFactory(this).read(path, reader)
     else
       super.read(path, reader)
 }

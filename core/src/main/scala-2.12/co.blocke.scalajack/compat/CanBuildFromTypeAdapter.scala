@@ -7,14 +7,7 @@ import util.{ Path, Reflection }
 import scala.collection.mutable.Builder
 import scala.collection._
 
-case class CanBuildFromTypeAdapterFactory(override val enumsAsInt: Boolean) extends CanBuildFromTypeAdapterFactoryPrototype {
-  val stringifyMapKeys = false // Json stringifies, other wire formats might not
-}
-
-trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
-
-  val stringifyMapKeys: Boolean
-  val enumsAsInt: Boolean
+case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt: Boolean, stringifyMapKeys: Boolean = false) extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
@@ -72,7 +65,7 @@ trait CanBuildFromTypeAdapterFactoryPrototype extends TypeAdapterFactory {
             || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
             keyTypeAdapter
           else
-            new StringWrapTypeAdapter(keyTypeAdapter)
+            jackFlavor.stringWrapTypeAdapterFactory(keyTypeAdapter)
 
         val finalValueTypeAdapter = if (elementTypeAfterSubstitution.typeArgs(1) <:< typeOf[Option[_]])
           valueTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].convertNullToNone()

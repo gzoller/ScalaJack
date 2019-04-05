@@ -22,7 +22,6 @@ trait Writer[WIRE] extends Transceiver[WIRE] {
       fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
       out:          Builder[WIRE, WIRE],
       extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit
-  def writeRawString(t: String, out: Builder[WIRE, WIRE]): Unit
   def writeString(t: String, out: Builder[WIRE, WIRE]): Unit
   def writeTuple(writeFns: List[(Writer[WIRE], Builder[WIRE, WIRE]) => Unit], out: Builder[WIRE, WIRE]): Unit
 }

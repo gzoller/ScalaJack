@@ -109,7 +109,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
         case _: Stringish =>
           rawValueTA.write(value, writer, out, isMapKey)
         case _ if isMapKey && writer.jackFlavor.stringifyMapKeys =>
-          (new StringWrapTypeAdapter(rawValueTA)).write(value, writer, out, isMapKey)
+          writer.jackFlavor.stringWrapTypeAdapterFactory(rawValueTA).write(value, writer, out, isMapKey)
         case _ =>
           rawValueTA.write(value, writer, out, isMapKey)
       }
@@ -130,9 +130,9 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
         case enum: Enumeration#Value =>
           writer.writeString(enum.toString, out)
         case _: Map[_, _] =>
-          (new StringWrapTypeAdapter(mapAnyTypeAdapter)).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
+          writer.jackFlavor.stringWrapTypeAdapterFactory(mapAnyTypeAdapter).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
         case _: GenTraversableOnce[_] =>
-          (new StringWrapTypeAdapter(listAnyTypeAdapter)).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
+          writer.jackFlavor.stringWrapTypeAdapterFactory(listAnyTypeAdapter).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
         case opt: Option[_] if opt.isDefined =>
           unpack(t.asInstanceOf[Option[_]].get, writer, out, isMapKey)
         // $COVERAGE-OFF$Should be impossible (Nones filtered by CanBuildFromTypeAdapter).  Code left in as a safety

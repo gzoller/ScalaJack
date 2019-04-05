@@ -3,6 +3,7 @@ package json
 
 import model._
 import compat.StringBuilder
+import typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
 
@@ -23,6 +24,8 @@ case class JsonFlavorImpl(
 
   override val stringifyMapKeys: Boolean = true
 
+  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new JsonStringWrapTypeAdapter(wrappedTypeAdapter)
+
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withDefaultHint(hint: String): JackFlavor[String] = this.copy(defaultHint = hint)
   def withHints(h: (Type, String)*): JackFlavor[String] = this.copy(hintMap = this.hintMap ++ h)
@@ -33,7 +36,7 @@ case class JsonFlavorImpl(
   def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
   protected override def bakeContext(): Context =
-    new Context(JsonCanBuildFromTypeAdapterFactory(enumsAsInt) +: super.bakeContext().factories)
+    new Context(CanBuildFromTypeAdapterFactory(this, enumsAsInt, true) +: super.bakeContext().factories)
 
   private val writer = JsonWriter(this)
 

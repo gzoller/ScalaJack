@@ -58,7 +58,6 @@ case class DelimitedWriter(delimiter: Char, jackFlavor: JackFlavor[String]) exte
       }
     }
 
-  def writeRawString(t: String, out: Builder[String, String]): Unit = out += t.replaceAll("\"", "\"\"")
   def writeString(t: String, out: Builder[String, String]): Unit =
     if (t != null) {
       val t0 = t.replaceAll("\"", "\"\"")
@@ -72,7 +71,7 @@ case class DelimitedWriter(delimiter: Char, jackFlavor: JackFlavor[String]) exte
   def writeTuple(writeFns: List[(Writer[String], Builder[String, String]) => Unit], out: Builder[String, String]): Unit = {
     var first = true
     val sb = new StringBuilder()
-    writeFns.map { f =>
+    writeFns.foreach { f =>
       if (first)
         first = false
       else

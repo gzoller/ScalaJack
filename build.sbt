@@ -8,7 +8,7 @@ import scoverage.ScoverageKeys._
 def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
-val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.4.2"
+val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.6.0"
 val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.7"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
 val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.417"
@@ -31,11 +31,13 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-M5")
+
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
   organization                := "co.blocke",
   startYear                   := Some(2015),
-  crossScalaVersions          := Seq("2.12.8","2.13.0-M5"),
+//  crossScalaVersions          := Seq("2.12.8","2.13.0-M5"),
   publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
   scalaVersion                := "2.12.7",
 //  scalaVersion                := "2.13.0-M5",
@@ -57,7 +59,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
-  .aggregate(scalajack)//, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_mongo)//, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -79,7 +81,7 @@ lazy val core_macros = project.in(file("core_macros"))
 
 
 lazy val scalajack = project.in(file("core"))
-  .settings(basicSettings: _*)
+  .settings(basicSettings ++ crossVersions: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
@@ -89,6 +91,14 @@ lazy val scalajack = project.in(file("core"))
       test("org.json4s" %% "json4s-core" % "3.6.2") ++
       test("org.json4s" %% "json4s-native" % "3.6.2")
   )
+
+lazy val scalajack_mongo = project.in(file("mongo"))
+  .settings(basicSettings: _*)
+  .settings(pubSettings: _*)
+  .settings(libraryDependencies ++=
+    compile( mongo_scala ) ++
+      test( scalatest, slf4j_simple )
+  ).dependsOn( scalajack )
 
 /*
 lazy val scalajack_benchmarks = project.in(file("benchmarks"))

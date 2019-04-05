@@ -3,10 +3,10 @@ package delimited
 
 import model._
 import compat.StringBuilder
-import typeadapter.CanBuildFromTypeAdapterFactory
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }
 
+import co.blocke.scalajack.json.JsonStringWrapTypeAdapter
 import util.Path
 
 object DelimitedFlavor extends FlavorMaker {
@@ -29,6 +29,10 @@ case class DelimitedFlavorImpl(
     override val enumsAsInt:         Boolean                      = false,
     delimiter:                       Char                         = ',') extends JackFlavor[String] {
 
+  // $COVERAGE-OFF$Never used for delimited format -- no maps supported so no map keys or string wrapping
+  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new JsonStringWrapTypeAdapter(wrappedTypeAdapter)
+  // $COVERAGE-ON$
+
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def withDefaultHint(hint: String): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
   def withHints(h: (Type, String)*): JackFlavor[String] = throw new UOE("Not available for CSV encoding")
@@ -42,8 +46,7 @@ case class DelimitedFlavorImpl(
     new Context(Seq(
       DelimitedOptionTypeAdapterFactory,
       DelimitedEitherTypeAdapterFactory,
-      DelimitedEnumerationTypeAdapterFactory,
-      CanBuildFromTypeAdapterFactory(enumsAsInt)) ++: super.bakeContext().factories)
+      DelimitedEnumerationTypeAdapterFactory) ++: super.bakeContext().factories)
 
   private val writer = DelimitedWriter(delimiter, this)
 

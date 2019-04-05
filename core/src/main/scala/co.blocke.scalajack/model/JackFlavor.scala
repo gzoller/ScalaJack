@@ -53,8 +53,10 @@ trait JackFlavor[WIRE] extends ViewSplice with Filterable[WIRE] {
   def getHintLabelFor(tpe: Type) =
     hintMap.get(tpe).getOrElse(defaultHint)
 
+  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T]
+
   protected def bakeContext(): Context = {
-    val intermediateContext = Context((customAdapters ::: Context.StandardFactories) :+ CanBuildFromTypeAdapterFactory(enumsAsInt))
+    val intermediateContext = Context((customAdapters :+ CanBuildFromTypeAdapterFactory(this, enumsAsInt)) ::: Context.StandardFactories)
 
     val permissives = if (permissivesOk)
       List(

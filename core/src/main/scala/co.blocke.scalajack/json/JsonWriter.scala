@@ -69,8 +69,6 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
       out += "}"
   }
 
-  def writeRawString(t: String, out: Builder[String, String]): Unit = addString(t, out)
-
   def writeString(t: String, out: Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case _: String =>
@@ -138,7 +136,7 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
   def writeTuple(writeFns: List[(Writer[String], Builder[String, String]) => Unit], out: Builder[String, String]): Unit = {
     out += "["
     var first = true
-    writeFns.map { f =>
+    writeFns.foreach { f =>
       if (first)
         first = false
       else

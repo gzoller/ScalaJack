@@ -1,14 +1,5 @@
 package co.blocke.scalajack
 
-object Size extends Enumeration {
-  val Small, Medium, Large = Value
-}
-case class Shirt(id: Int, size: Either[Size.Value, Int])
-
 object RunMe extends App {
 
-  val sjx = ScalaJack()
-  val sj = ScalaJack(delimited.DelimitedFlavor).enumsAsInts()
-
-  println(sj.read[Shirt]("3,true"))
 }

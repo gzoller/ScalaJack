@@ -3,10 +3,10 @@ package delimited
 
 import java.util.ArrayList
 
-import co.blocke.scalajack.model.ParseToken
-import co.blocke.scalajack.model.TokenType._
+import model.{ ParseToken, Tokenizer }
+import model.TokenType._
 
-case class DelimitedTokenizer(delimChar: Char) {
+case class DelimitedTokenizer(delimChar: Char) extends Tokenizer[String] {
 
   def tokenize(source: String): ArrayList[ParseToken[String]] = {
     val chars = source.toCharArray
