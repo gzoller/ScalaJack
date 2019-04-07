@@ -4,7 +4,7 @@ package mongo
 import model._
 import util.Path
 import TokenDetail._
-import typeadapter.{ CanBuildMapTypeAdapter, TupleTypeAdapterFactory }
+import co.blocke.scalajack.typeadapter.{ AnyTypeAdapter, CanBuildMapTypeAdapter, TupleTypeAdapterFactory }
 
 import org.bson.BsonValue
 import org.mongodb.scala.bson._
@@ -27,7 +27,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
 
   /**
    * Nondestructive (doesn't change pointer position) lookahead for a named field (presumes an object)
-   * @param hintLabel Name of field to search for
+   * @param label Name of field to search for
    * @return value of the found field
    */
   private def _scanForString(label: String): (Option[String], Int) = {
@@ -110,7 +110,6 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
         null.asInstanceOf[T]
       case tok =>
         back
-        println("Oops: " + tok.tokenType + " needed " + t)
         throw new ReadUnexpectedError(showError(path, "Expected " + t + s" here but found " + tok.tokenType), tok.tokenType == TokenType.Null)
     }
 
@@ -131,6 +130,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
 
   // Mongo-specific
   def readObjectId(path: Path): ObjectId = expect(TokenType.String, Some(TokenDetail.ObjectId), path, (bt: BsonToken) => bt.input.asObjectId().getValue, false)
+  def readDateTime(path: Path): Long = expect(TokenType.Number, Some(TokenDetail.DateTime), path, (bt: BsonToken) => bt.input.asInt64().getValue, false)
 
   // Read Basic Collections
   def readArray[Elem, To](path: Path, builderFactory: MethodMirror, elementTypeAdapter: TypeAdapter[Elem]): To =
@@ -184,18 +184,35 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
         var captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
         val args = new Array[Any](fields.size)
         val flags = new Array[Boolean](fields.size)
-        while (head.tokenType != TokenType.EndObject) {
-          val fieldName = expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false)
+        val dbkeys = fields.filter(_._2.dbKeyIndex.isDefined)
+        val ID_FIELD = jackFlavor.asInstanceOf[MongoFlavor].ID_FIELD
+
+        def readOneField(fieldName: String): Unit =
           fields.get(fieldName) match {
             case Some(oneField) =>
               args(oneField.index) = oneField.valueTypeAdapter.read(path \ fieldName, this)
               flags(oneField.index) = true
               fieldCount += 1
             case _ if isSJCapture =>
-              captured = captured.+((fieldName, jackFlavor.anyTypeAdapter.asInstanceOf[typeadapter.AnyTypeAdapter]._read(path \ fieldName, this, true)))
+              captured = captured.+((fieldName, jackFlavor.anyTypeAdapter.asInstanceOf[AnyTypeAdapter]._read(path \ fieldName, this, true)))
             case _ =>
               // Skip over field not in class if we're not capturing
               jackFlavor.anyTypeAdapter.read(path \ fieldName, this)
+          }
+
+        while (head.tokenType != TokenType.EndObject) {
+          val fieldName = expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false)
+          fieldName match {
+            case ID_FIELD if dbkeys.size == 1 => readOneField(dbkeys.head._2.name)
+            case ID_FIELD if dbkeys.size > 1 => // read embedded _id object
+              expect(TokenType.BeginObject, None, path, (_) => "", true) match {
+                case "" =>
+                  while (head.tokenType != TokenType.EndObject)
+                    readOneField(expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false))
+                  next // consume EndObject
+                case null => null
+              }
+            case _ => readOneField(fieldName)
           }
         }
         next // consume EndObject

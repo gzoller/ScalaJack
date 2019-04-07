@@ -77,13 +77,32 @@ case class MongoWriter(jackFlavor: JackFlavor[BsonValue]) extends Writer[BsonVal
       t:            T,
       fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
       out:          Builder[BsonValue, BsonValue],
-      extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit = {
+      extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
     if (t == null) {
       out += BsonNull()
     } else {
       val doc = BsonDocument()
+      val ID_FIELD = jackFlavor.asInstanceOf[MongoFlavor].ID_FIELD
       writeFields(extras.map(e => (e._1, e._2.value, e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])), doc)
-      writeFields(fieldMembers.map(f => (f._1, f._2.valueIn(t), f._2.valueTypeAdapter)).toList, doc)
+
+      // Logic to handle _id (@DBKey)
+      val (dbkeys, theRest) = fieldMembers.partition(_._2.dbKeyIndex.isDefined)
+      if (dbkeys.size == 0) // no @DBKey fields
+        writeFields(fieldMembers.map(f => (f._1, f._2.valueIn(t), f._2.valueTypeAdapter)).toList, doc)
+      else {
+        if (dbkeys.size == 1) {
+          val toWrite = List((ID_FIELD, fieldMembers(dbkeys.head._1).valueIn(t), fieldMembers(dbkeys.head._1).valueTypeAdapter))
+          writeFields(toWrite, doc)
+        } else {
+          val idDoc = new BsonDocument()
+          val toWrite = dbkeys.map(e => (e._1, e._2.valueIn(t), e._2.valueTypeAdapter)).toList
+          writeFields(toWrite, idDoc)
+          doc.append(ID_FIELD, idDoc)
+        }
+        val toWrite = theRest.map(e => (e._1, e._2.valueIn(t), e._2.valueTypeAdapter)).toList
+        writeFields(toWrite, doc)
+      }
+
       t match {
         case sjc: SJCapture =>
           writeFields(sjc.captured.map(c => (c._1, c._2, jackFlavor.anyTypeAdapter)).toList, doc)
@@ -91,5 +110,5 @@ case class MongoWriter(jackFlavor: JackFlavor[BsonValue]) extends Writer[BsonVal
       }
       out += doc
     }
-  }
+
 }

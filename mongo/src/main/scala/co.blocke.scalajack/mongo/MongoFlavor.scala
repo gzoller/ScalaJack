@@ -2,7 +2,8 @@ package co.blocke.scalajack
 package mongo
 
 import model._
-import typeadapter.CanBuildFromTypeAdapterFactory
+import co.blocke.scalajack.typeadapter.CanBuildFromTypeAdapterFactory
+import typeadapter.CaseClassTypeAdapterFactory
 
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }
@@ -28,6 +29,8 @@ case class MongoFlavor(
 
   override val stringifyMapKeys: Boolean = true
 
+  final val ID_FIELD = "_id"
+
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
   def withDefaultHint(hint: String): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
   def withHints(h: (Type, String)*): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
@@ -37,10 +40,16 @@ case class MongoFlavor(
   def allowPermissivePrimitives(): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
   def enumsAsInts(): JackFlavor[BsonValue] = this.copy(enumsAsInt = true)
 
-  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new MongoStringWrapTypeAdapter(wrappedTypeAdapter)
+  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new StringWrapTypeAdapter(wrappedTypeAdapter)
 
   protected override def bakeContext(): Context =
-    new Context(Seq(CanBuildFromTypeAdapterFactory(this, enumsAsInt, true), ObjectIdTypeAdapterFactory) ++: super.bakeContext().factories)
+    new Context(
+      Seq(
+        CanBuildFromTypeAdapterFactory(this, enumsAsInt, true),
+        ObjectIdTypeAdapterFactory,
+        ZonedDateTimeTypeAdapterFactory,
+        OffsetDateTimeTypeAdapterFactory
+      ) ++: super.bakeContext().factories)
 
   private val writer = MongoWriter(this)
 

@@ -4,15 +4,14 @@ package mongo
 import model._
 import util.Path
 import org.mongodb.scala.bson._
-import typeadapter.StringWrapTypeAdapter
 
 import scala.collection.mutable.Builder
 
 // A TypeAdapter for a type T, which is wrapped in a String, a.k.a. "stringified".
 // This is used for JSON Map keys, which must be strings.
-class MongoStringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] with Stringish with StringWrapTypeAdapter[T] {
+class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] with Stringish {
 
-  def read[BsonValue](path: Path, reader: Reader[BsonValue]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     // 1. Read String  (BsonValue --> String)
     val wrappedValueString = reader.readString(path)
 
@@ -32,8 +31,8 @@ class MongoStringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) exte
     }
   }
 
-  def write[BsonValue](t: T, writer: Writer[BsonValue], out: Builder[BsonValue, BsonValue], isMapKey: Boolean): Unit = {
-    val keyValBuilder = new BsonBuilder().asInstanceOf[Builder[Any, BsonValue]]
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
+    val keyValBuilder = new BsonBuilder().asInstanceOf[Builder[Any, WIRE]]
     wrappedTypeAdapter.write(t, writer, keyValBuilder, isMapKey)
     val result = keyValBuilder.result() match {
       case r: BsonBoolean    => r.asBoolean().getValue().toString
