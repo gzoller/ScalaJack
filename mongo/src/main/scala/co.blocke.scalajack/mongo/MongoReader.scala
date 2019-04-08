@@ -114,7 +114,9 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
         null.asInstanceOf[T]
       case tok =>
         back
-        throw new ReadUnexpectedError(showError(path, "Expected " + t + s" here but found " + tok.tokenType), tok.tokenType == TokenType.Null)
+        val withMsg = if (tok.tokenType == t && detail.isDefined) " of kind " + detail.get else ""
+        val butWithMsg = if (tok.tokenType == t && detail.isDefined) " of kind " + tok.detail else ""
+        throw new ReadUnexpectedError(showError(path, "Expected " + t + s"$withMsg here but found " + tok.tokenType + s"$butWithMsg"), tok.tokenType == TokenType.Null)
     }
 
   @inline private def assertExists[T](t: TokenType.Value, path: Path): Unit =
@@ -123,10 +125,18 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
     else
       throw new ReadUnexpectedError(showError(path, s"Expected $t here but found ${head.tokenType}"))
 
+  private def unpackDecimal(bt: BsonToken): BigDecimal = bt match {
+    case b if b.input.isDecimal128 => b.input.asDecimal128.getValue.bigDecimalValue
+    case b if b.input.isInt32      => scala.math.BigDecimal(b.input.asInt32.getValue)
+    case b if b.input.isInt64      => scala.math.BigDecimal(b.input.asInt64.getValue)
+    case b if b.input.isDouble     => scala.math.BigDecimal(b.input.asDouble.getValue)
+    case b if b.input.isNumber     => scala.math.BigDecimal(b.input.asNumber.decimal128Value.bigDecimalValue)
+  }
+
   // Read Primitives
   def readBigInt(path: Path): BigInt = throw new ReadInvalidError(showError(path, "BigInt data type unsupported by MongoDB.  Consider using Long or BigDecimal."))
   def readBoolean(path: Path): Boolean = expect(TokenType.Boolean, None, path, (bt: BsonToken) => bt.input.asBoolean.getValue, false)
-  def readDecimal(path: Path): BigDecimal = expect(TokenType.Number, Some(TokenDetail.BigDecimal), path, (bt: BsonToken) => bt.input.asDecimal128.getValue.bigDecimalValue, true)
+  def readDecimal(path: Path): BigDecimal = expect(TokenType.Number, None, path, unpackDecimal, true)
   def readDouble(path: Path): Double = expect(TokenType.Number, Some(TokenDetail.Double), path, (bt: BsonToken) => bt.input.asDouble.getValue, false)
   def readInt(path: Path): Int = expect(TokenType.Number, Some(TokenDetail.Int32), path, (bt: BsonToken) => bt.input.asInt32.getValue, false)
   def readLong(path: Path): Long = expect(TokenType.Number, Some(TokenDetail.Int64), path, (bt: BsonToken) => bt.input.asInt64.getValue, false)

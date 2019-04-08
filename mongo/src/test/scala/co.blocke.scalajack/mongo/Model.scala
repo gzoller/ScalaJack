@@ -3,7 +3,11 @@ package mongo
 
 import java.time._
 
+import model.{ Reader, Stringish, TypeAdapter, Writer }
+import util.Path
+
 import org.mongodb.scala.bson.ObjectId
+import scala.collection.mutable.Builder
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -144,22 +148,7 @@ case class Animal(name: String, legs: Int)
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
 case class ValSupport(name: String, wrap: Wrapper, more: Boolean)
-/*
-object Wrapper extends ExtJson {
-	override def toJson( obj:Any ) : String = "{\"num\":"+obj.asInstanceOf[Int]+",\"hey\":\"you\"}"
-	override def fromJson( valueType:Field, jp:JsonEmitter, ext:Boolean, hint:String ) : Any = {
-		jp.nextToken // consume '{'
-		jp.getCurrentName // consume 'num' label
-		jp.nextToken // scan to value
-		val v = jp.getValueAsInt // consume 'num' value
-		while( jp.getCurrentToken != JsonToken.END_OBJECT ) {
-			jp.nextToken
-		}
-		jp.nextToken // consume '}'
-		v
-	}
-}
-*/
+
 case class ListValSupport(name: String, wrap: List[Wrapper], more: Boolean)
 case class OptValSupport(name: String, wrap: Option[Wrapper])
 case class MapValSupport(name: String, wrap: Map[String, Wrapper])
@@ -241,28 +230,18 @@ object MyTypes {
 }
 import MyTypes._
 
-/*
-object PhoneAdapter extends BasicTypeAdapter[Phone] {
-  override def read(reader: Reader): Phone = {
-    reader.peek match {
-      case TokenType.String =>
-        val raw = reader.readString()
-        raw.replaceAll("-", "").asInstanceOf[Phone]
-      // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
-      case TokenType.Null =>
-        reader.readNull()
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =
+    reader.readString(path) match {
+      case s: String => s.replaceAll("-", "")
+      case null      => null
     }
-  }
 
-  override def write(value: Phone, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
-      // writer.writeString(value.replaceAll("-", ""))
-    }
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
+  }
 }
-*/
 
 case class Person(@DBKey name: String, phone: Phone)
 
