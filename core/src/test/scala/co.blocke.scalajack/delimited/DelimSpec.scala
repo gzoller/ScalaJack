@@ -7,7 +7,7 @@ import org.scalatest.{ FunSpec, Matchers, PrivateMethodTester }
 
 class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
 
-  val sj = ScalaJack(DelimitedFlavor)
+  val sj = ScalaJack(DelimitedFlavor())
 
   describe("---------------------\n:  Delimited Tests  :\n---------------------") {
     describe("DelimSpec") {
@@ -53,23 +53,23 @@ class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
         r invokePrivate rPos() should be(0)
       }
       it("SalaJack configurations (DelimitedFlavor)") {
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withAdapters()
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withDefaultHint(null)
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withHintModifiers()
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withHints()
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).withTypeValueModifier(null)
-        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor).allowPermissivePrimitives()
-        val sjx = ScalaJack(DelimitedFlavor).parseOrElse(typeOf[ThreeStrings] -> typeOf[DefaultThree])
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).withAdapters()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).withDefaultHint(null)
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).withHintModifiers()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).withHints()
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).withTypeValueModifier(null)
+        an[UnsupportedOperationException] should be thrownBy ScalaJack(DelimitedFlavor()).allowPermissivePrimitives()
+        val sjx = ScalaJack(DelimitedFlavor()).parseOrElse(typeOf[ThreeStrings] -> typeOf[DefaultThree])
         sjx.read[ThreeStrings]("a;sdlfj") should be(DefaultThree())
       }
       it("Enum support") {
-        val sjy = ScalaJack(DelimitedFlavor).enumsAsInts()
+        val sjy = ScalaJack(DelimitedFlavor()).enumsAsInts()
         val i = Shirt(1, Size.Small)
         val d = sjy.render(i)
         d should equal("1,0")
         sjy.read[Shirt](d) should be(i)
 
-        val sjz = ScalaJack(DelimitedFlavor)
+        val sjz = ScalaJack(DelimitedFlavor())
         val d2 = sjz.render(i)
         d2 should equal("1,Small")
         sjz.read[Shirt](d2) should be(i)

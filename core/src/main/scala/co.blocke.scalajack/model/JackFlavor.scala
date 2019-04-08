@@ -4,11 +4,6 @@ package model
 import typeadapter._
 import util.Path
 
-trait FlavorMaker {
-  type WIRE
-  def make(): JackFlavor[WIRE]
-}
-
 trait JackFlavor[WIRE] extends ViewSplice with Filterable[WIRE] {
 
   def parse(wire: WIRE): Reader[WIRE]

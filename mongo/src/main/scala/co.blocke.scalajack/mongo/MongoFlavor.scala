@@ -3,18 +3,12 @@ package mongo
 
 import model._
 import co.blocke.scalajack.typeadapter.CanBuildFromTypeAdapterFactory
-import typeadapter.CaseClassTypeAdapterFactory
 
 import java.util.ArrayList
 import java.lang.{ UnsupportedOperationException => UOE }
 
 import org.mongodb.scala.bson._
 import util.Path
-
-object MongoFlavor extends FlavorMaker {
-  type WIRE = BsonValue
-  def make(): JackFlavor[BsonValue] = new MongoFlavor()
-}
 
 case class MongoFlavor(
     override val defaultHint:        String                       = "_hint",

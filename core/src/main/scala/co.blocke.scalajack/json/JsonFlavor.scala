@@ -7,12 +7,7 @@ import typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
 
-object JsonFlavor extends FlavorMaker {
-  type WIRE = String
-  def make(): JackFlavor[String] = new JsonFlavorImpl()
-}
-
-case class JsonFlavorImpl(
+case class JsonFlavor(
     override val defaultHint:        String                       = "_hint",
     override val permissivesOk:      Boolean                      = false,
     override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],

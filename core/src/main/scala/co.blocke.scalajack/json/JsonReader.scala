@@ -61,7 +61,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
 
   /**
    * Nondestructive (doesn't change pointer position) lookahead for a named field (presumes an object)
-   * @param hintLabel Name of field to search for
+   * @param label Name of field to search for
    * @return value of the found field
    */
   private def _scanForString(label: String): (Option[String], Int) = {

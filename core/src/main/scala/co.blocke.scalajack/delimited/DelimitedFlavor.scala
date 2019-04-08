@@ -9,16 +9,8 @@ import java.lang.{ UnsupportedOperationException => UOE }
 import co.blocke.scalajack.json.JsonStringWrapTypeAdapter
 import util.Path
 
-object DelimitedFlavor extends FlavorMaker {
-  type WIRE = String
-  def make(): JackFlavor[String] = new DelimitedFlavorImpl()
-}
-case class DelimitedFlavor(delim: Char) extends FlavorMaker {
-  type WIRE = String
-  def make(): JackFlavor[String] = new DelimitedFlavorImpl(delimiter = delim)
-}
-
-case class DelimitedFlavorImpl(
+case class DelimitedFlavor(
+    delimiter:                       Char                         = ',',
     override val defaultHint:        String                       = "_hint",
     override val permissivesOk:      Boolean                      = false,
     override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
@@ -26,8 +18,8 @@ case class DelimitedFlavorImpl(
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
     override val typeValueModifier:  Option[HintValueModifier]    = None,
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false,
-    delimiter:                       Char                         = ',') extends JackFlavor[String] {
+    override val enumsAsInt:         Boolean                      = false
+) extends JackFlavor[String] {
 
   // $COVERAGE-OFF$Never used for delimited format -- no maps supported so no map keys or string wrapping
   def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new JsonStringWrapTypeAdapter(wrappedTypeAdapter)
