@@ -401,6 +401,14 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val b = mongoScalaJack.read[WithDefaults](dbo)
         b should equal(wd)
       }
+      it("SJCapture should work") {
+        val s = PersonCapture(new ObjectId(), "Fred", 52, Map(5 -> 1, 6 -> 2))
+        val m = mongoScalaJack.render(s)
+        m.asDocument.append("extra", BsonString("hey"))
+        val readIn = mongoScalaJack.read[PersonCapture](m)
+        readIn should be(s)
+        mongoScalaJack.render(readIn).asDocument.toJson.endsWith(""""stuff": {"5": 1, "6": 2}, "extra": "hey"}""") should be(true)
+      }
     }
     describe("Basic Parameterized Case Class") {
       it("Simple parameters - Foo[A](x:A) where A -> simple type") {

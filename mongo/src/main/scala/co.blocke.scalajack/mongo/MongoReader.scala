@@ -130,11 +130,15 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
     case b if b.input.isInt32      => scala.math.BigDecimal(b.input.asInt32.getValue)
     case b if b.input.isInt64      => scala.math.BigDecimal(b.input.asInt64.getValue)
     case b if b.input.isDouble     => scala.math.BigDecimal(b.input.asDouble.getValue)
+    // $COVERAGE-OFF$Numbers caught first by numeric types, so *shouldn't* be possible--haven't been able to trigger it
     case b if b.input.isNumber     => scala.math.BigDecimal(b.input.asNumber.decimal128Value.bigDecimalValue)
+    // $COVERAGE-ON$
   }
 
   // Read Primitives
+  // $COVERAGE-OFF$Can't happen--Mongo has no BigInt data type so nothing can possibly call readBigInt.  Eror left here for future safety
   def readBigInt(path: Path): BigInt = throw new ReadInvalidError(showError(path, "BigInt data type unsupported by MongoDB.  Consider using Long or BigDecimal."))
+  // $COVERAGE-ON$
   def readBoolean(path: Path): Boolean = expect(TokenType.Boolean, None, path, (bt: BsonToken) => bt.input.asBoolean.getValue, false)
   def readDecimal(path: Path): BigDecimal = expect(TokenType.Number, None, path, unpackDecimal, true)
   def readDouble(path: Path): Double = expect(TokenType.Number, Some(TokenDetail.Double), path, (bt: BsonToken) => bt.input.asDouble.getValue, false)

@@ -266,3 +266,6 @@ case class MapFactorId2(
     count:                                Int,
     @Change(name = "big_mac") bigMac:     String
 )
+
+case class PersonCapture(id: ObjectId, name: String, age: Int, stuff: Map[Int, Int]) extends SJCapture
+case class Tuple(t: (String, Int))

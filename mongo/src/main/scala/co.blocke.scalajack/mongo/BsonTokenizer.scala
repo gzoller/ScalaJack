@@ -48,8 +48,10 @@ case class BsonTokenizer() extends Tokenizer[BsonValue] {
           tokenspace.add(BsonToken(v, TokenType.Number, TokenDetail.Int64))
         case v if v.isNull =>
           tokenspace.add(BsonToken(null, TokenType.Null))
+        // $COVERAGE-OFF$Numbers caught first by numeric types, so *shouldn't* be possible--haven't been able to trigger it
         case v if v.isNumber =>
           tokenspace.add(BsonToken(v, TokenType.Number, TokenDetail.Number))
+        // $COVERAGE-ON$
         case v if v.isObjectId =>
           tokenspace.add(BsonToken(v, TokenType.String, TokenDetail.ObjectId))
         case v if v.isString =>

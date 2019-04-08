@@ -7,6 +7,9 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 import org.mongodb.scala.bson._
 
+case class MyNumbers(d: BigDecimal, n: Number)
+case class NumberBoom(x: BigInt)
+
 class LooseChange extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
@@ -58,6 +61,42 @@ class LooseChange extends FunSpec {
       val dbo = sjM.render(mfp)
       dbo.asDocument.toJson should be("""{"_id": {"foo_bar": "wonder", "a_b": {"$numberLong": "25"}, "hey": 1}, "count": 3, "big_mac": "hungry"}""")
       sjM.read[MapFactorId2](dbo) should be(mfp)
+    }
+    it("Number, Decimal, and BigInt handling") {
+      val my = MyNumbers(BigDecimal(123.45), 15)
+      val d = sjM.render(my)
+      d.asDocument.toJson should be("""{"d": {"$numberDecimal": "123.45"}, "n": 15}""")
+      sjM.read[MyNumbers](d) should be(my)
+
+      val boom = NumberBoom(BigInt(5))
+      the[SJError] thrownBy sjM.render(boom) should have message "BigInt is currently an unsupported datatype for MongoDB serialization"
+    }
+    it("Skip Object (read)") {
+      val c = Carry("carry me", Wrap("my name", true, "info"))
+      val reader = sjM.parse(sjM.render(c))
+      reader.next // skip BeginObject
+      reader.next // skip name label
+      reader.next // skip name value
+      reader.next // skip wrap label
+      reader.skipObject(util.Path.Root)
+      reader.head.tokenType should be(TokenType.EndObject)
+      reader.next
+      reader.head.tokenType should be(TokenType.End)
+    }
+    it("Nulls") {
+      val prim = PrimitiveLists(null, null, null, null, null)
+      sjM.read[PrimitiveLists](sjM.render(prim)) should be(prim)
+
+      val os = OneSub2("foo", false, null)
+      the[ReadMissingError] thrownBy sjM.read[PrimitiveLists](sjM.render(os)) should have message "[$]: Class PrimitiveLists missing field ints"
+
+      val os2 = OneSub2("foo", false, Map(null.asInstanceOf[String] -> 5))
+      the[SJError] thrownBy sjM.render(os2) should have message "Map keys cannot be null."
+    }
+    it("Overrun tuple") {
+      //case class Tupple( t: (String,Int))
+      val d = BsonDocument("t" -> BsonArray(BsonString("foo"), BsonInt32(5), BsonBoolean(true)))
+      the[ReadUnexpectedError] thrownBy sjM.read[Tuple](d) should have message "[$.t]: Expected EndArray here but found Boolean"
     }
   }
 }
