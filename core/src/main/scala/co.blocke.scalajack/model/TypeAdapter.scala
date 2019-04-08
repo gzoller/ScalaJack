@@ -24,11 +24,13 @@ import scala.collection.mutable.Builder
  */
 object TypeAdapter {
 
-  abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with TypeAdapter[X] {
+  abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with ScalarTypeAdapter[X] {
+    val scalarType = ttFactory.tpe
     override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
   }
 
-  abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with TypeAdapter[X] {
+  abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with ScalarTypeAdapter[X] {
+    val scalarType = ttFactory.tpe
     override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
   }
 
@@ -57,6 +59,10 @@ trait TypeAdapter[T] {
         None
     }
   }
+}
+
+trait ScalarTypeAdapter[T] extends TypeAdapter[T] {
+  val scalarType: Type
 }
 
 // Marker trait for anything that boils down to String, e.g. Char, UUID, etc.

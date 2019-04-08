@@ -3,6 +3,8 @@ package mongo
 
 import java.time._
 
+import org.mongodb.scala.bson.ObjectId
+
 object Num extends Enumeration {
   val A, B, C = Value
 }
@@ -92,12 +94,10 @@ case class Six(
     two:         Two
 )
 
-/*
 case class Seven(
-                  @DBKey _id: co.blocke.scalajack.ObjectId,
-                  two:        Two
-                )
- */
+    @DBKey _id: ObjectId,
+    two:        Two
+)
 
 case class Numy(
     age: Int,
@@ -129,17 +129,17 @@ trait Soup[A] {
 }
 
 case class Wow1(a: String, b: Int) extends Pop {
-  def go { println("--1--") }
+  def go() { println("--1--") }
 }
 case class Wow2(x: String, y: Int) extends Pop {
-  def go { println("--2--") }
+  def go() { println("--2--") }
 }
-case class Cruton[U](i: Int, val sweet: U) extends Soup[U]
-case class Toast[D](g: Int, val yum: D) extends Tart[D]
-case class Bun[R](g: Int, val yum: R) extends Tart[R]
+case class Cruton[U](i: Int, sweet: U) extends Soup[U]
+case class Toast[D](g: Int, yum: D) extends Tart[D]
+case class Bun[R](g: Int, yum: R) extends Tart[R]
 case class Breakfast[K](y: Boolean, bread: Tart[K])
 
-case class Animal(val name: String, val legs: Int)
+case class Animal(name: String, legs: Int)
 
 // Value class support w/custom rendering
 class Wrapper(val underlying: Int) extends AnyVal
@@ -165,22 +165,22 @@ case class OptValSupport(name: String, wrap: Option[Wrapper])
 case class MapValSupport(name: String, wrap: Map[String, Wrapper])
 
 // Test Lists
-case class ListList(val name: String, val stuff: List[List[Animal]])
-case class ListListList(val name: String, val stuff: List[List[List[Animal]]])
-case class ListOpt(val name: String, val stuff: List[Option[Animal]])
-case class ListMap(val name: String, val stuff: List[Map[String, Animal]])
+case class ListList(name: String, stuff: List[List[Animal]])
+case class ListListList(name: String, stuff: List[List[List[Animal]]])
+case class ListOpt(name: String, stuff: List[Option[Animal]])
+case class ListMap(name: String, stuff: List[Map[String, Animal]])
 
 // Test nested Options+Variants w/other collections
-case class OpOp(val name: String, val opts: Option[Option[Animal]])
-case class OpList(val name: String, val opList: Option[List[Animal]])
-case class OpListList(val name: String, val opListList: Option[List[List[Animal]]])
-case class OpMap(val name: String, val opMap: Option[Map[String, Animal]])
+case class OpOp(name: String, opts: Option[Option[Animal]])
+case class OpList(name: String, opList: Option[List[Animal]])
+case class OpListList(name: String, opListList: Option[List[List[Animal]]])
+case class OpMap(name: String, opMap: Option[Map[String, Animal]])
 
 // Test nested Maps+Variants w/other collections
-case class MapList(val name: String, val mapList: Map[String, List[Animal]])
-case class MapListList(val name: String, val mapList: Map[String, List[List[Animal]]])
-case class MapOpt(val name: String, val mapOpt: Map[String, Option[Animal]])
-case class MapMap(val name: String, val mapmap: Map[String, Map[String, Animal]])
+case class MapList(name: String, mapList: Map[String, List[Animal]])
+case class MapListList(name: String, mapList: Map[String, List[List[Animal]]])
+case class MapOpt(name: String, mapOpt: Map[String, Option[Animal]])
+case class MapMap(name: String, mapmap: Map[String, Map[String, Animal]])
 
 case class Foo(
     name:  String,

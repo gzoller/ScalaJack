@@ -6,41 +6,13 @@ import java.time._
 
 case class Person(id: ObjectId, name: String, age: Int, stuff: Map[Int, Int], t: ZonedDateTime) extends SJCapture
 
-//---------------------------------------------
-trait FlavMaker {
-  type W
-  def make(): Flav[W]
-}
-case class StringFlavMaker() extends FlavMaker {
-  type W = String
-  def make(): Flav[String] = StringFlav()
-}
-trait Flav[W] {
-  def write(s: String): W
-}
-case class StringFlav() extends Flav[String] {
-  def write(s: String): String = "worked"
-}
-object Maker {
-  def apply(maker: FlavMaker): Flav[maker.W] = maker.make()
-}
-//---------------------------------------------
-
 object RunMongo extends App {
 
   implicit def BsonDocument2Document(x: BsonValue) = new Document(x.asInstanceOf[BsonDocument])
 
-  //  def resolve[T, W](t: T)(implicit tt: TypeTag[T]): W = {
-  //    println(tt.tpe)
-  //    null.asInstanceOf[W]
-  //  }
-  //
-  //  val greg = Maker(StringFlavMaker())
-  //  val zoller = resolve(greg.write("ppp"))
-  //  println(zoller)
+  val sj = ScalaJack(MongoFlavor())
 
-  val sj = ScalaJack(delimited.DelimitedFlavor(';'))
-
+  /* -- Good SJCapture example for Mongo
   val s = Person(new ObjectId(), "Greg", 52, Map(5 -> 1, 6 -> 2), ZonedDateTime.now())
   val m = sj.render(s)
   m.asDocument.append("extra", BsonString("hey"))
@@ -53,4 +25,17 @@ object RunMongo extends App {
 
   println("With extra:")
   println(sj.render(readIn))
+   */
+
+  //        out += BsonDateTime(t.toInstant.toEpochMilli).asInstanceOf[WIRE]
+  // ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneId.systemDefault)
+
+  val dt = java.time.ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
+  //  println(dt)
+  println("UTC: " + dt)
+  val md = new BsonDateTime(dt.toInstant.toEpochMilli)
+  println(md)
+  println("---------------")
+  val z = ZonedDateTime.ofInstant(Instant.ofEpochMilli(md.getValue), ZoneId.of("UTC"))
+  println("UTC: " + z)
 }

@@ -48,13 +48,14 @@ case class TraitTypeAdapter[T](
         reader.next
         null.asInstanceOf[T]
       case TokenType.BeginObject =>
-        val concreteType =
+        val concreteType = {
           reader.scanForType(path, hintLabel, hintModFn).getOrElse {
             // Consume object as map to basically skip over it to place error pointer correctly and end of object
             reader.skipObject(path)
             reader.back
             throw new ReadInvalidError(reader.showError(path \ hintLabel, s"Couldn't find expected type hint '$hintLabel' for trait $traitName"))
           }
+        }
 
         val populatedConcreteType = populateConcreteType(concreteType)
         context.typeAdapter(populatedConcreteType).read(path, reader).asInstanceOf[T]

@@ -10,11 +10,18 @@ import java.time._
 
 object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
 
-  def read[BsonValue](path: Path, reader: Reader[BsonValue]): ZonedDateTime = {
-    val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
-    ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneId.systemDefault)
-  }
+  def read[WIRE](path: Path, reader: Reader[WIRE]): ZonedDateTime =
+    reader.head.input match {
+      case BsonNull => null
+      case _ =>
+        val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneId.of("UTC"))
+    }
 
-  def write[BsonValue](t: ZonedDateTime, writer: Writer[BsonValue], out: Builder[BsonValue, BsonValue], isMapKey: Boolean): Unit =
-    out += BsonDateTime(t.toInstant.toEpochMilli).asInstanceOf[BsonValue]
+  def write[WIRE](t: ZonedDateTime, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+    t match {
+      case null => out += BsonNull().asInstanceOf[WIRE]
+      case _ =>
+        out += BsonDateTime(t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli).asInstanceOf[WIRE]
+    }
 }

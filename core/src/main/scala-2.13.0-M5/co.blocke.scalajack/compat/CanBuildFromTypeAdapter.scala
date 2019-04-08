@@ -117,11 +117,11 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
 }
 
 case class CanBuildMapTypeAdapter[Key, Value, To <: Map[Key, Value]]( //) >: Null <: GenMapLike[Key, Value, To]](
-    builderFactory:   MethodMirror, // Builds a Builder[(Key, Value), To] when applied
-    keyIsOptional:    Boolean,
-    valueIsOptional:  Boolean,
-    keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] with Collectionish {
+                                                                      builderFactory:   MethodMirror, // Builds a Builder[(Key, Value), To] when applied
+                                                                      keyIsOptional:    Boolean,
+                                                                      valueIsOptional:  Boolean,
+                                                                      keyTypeAdapter:   TypeAdapter[Key],
+                                                                      valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] with Collectionish {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): To =
     reader.readMap[Key, Value, To](path, builderFactory, keyTypeAdapter, valueTypeAdapter)
@@ -144,9 +144,9 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: Map[Key, Value]]( //) >: Nul
 }
 
 case class CanBuildFromTypeAdapter[Elem, To](
-    builderFactory:     MethodMirror, // Builds a Builder[Elem, To] when applied
-    elemIsOptional:     Boolean,
-    elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] with Collectionish {
+                                              builderFactory:     MethodMirror, // Builds a Builder[Elem, To] when applied
+                                              elemIsOptional:     Boolean,
+                                              elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] with Collectionish {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): To =
     reader.readArray[Elem, To](path, builderFactory, elementTypeAdapter)
@@ -157,4 +157,3 @@ case class CanBuildFromTypeAdapter[Elem, To](
     else
       writer.writeArray(t.asInstanceOf[Iterable[Elem]], elementTypeAdapter, out)
 }
-

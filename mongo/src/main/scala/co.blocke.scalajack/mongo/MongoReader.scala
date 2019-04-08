@@ -34,12 +34,14 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
     var level = 0 // we only care about looking for hints at level 1 (presume first token is '{')
     var p = pos
     var found: Option[String] = None
+    //    if (head.tokenType == TokenType.BeginObject)
+    //      p += 1 // Skip initial BeginObject if present
     while (p < tokens.size && found.isEmpty) {
       tokens.get(p) match {
         case tok if tok.tokenType == TokenType.String && level == 1 =>
-          val value = tok.textValue
-          p += 2
-          if (value == label) {
+          val labelValue = tok.textValue
+          p += 1
+          if (labelValue == label) {
             if (tokens.get(p).tokenType == TokenType.String) {
               found = Some(tokens.get(p).textValue)
             } else
@@ -57,6 +59,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
   }
 
   def scanForHint(hintLabel: String): Option[String] = _scanForString(hintLabel)._1
+
   def scanForType(path: Path, hintLabel: String, hintModFn: Option[HintValueModifier]): Option[Type] = {
     val (found, p) = _scanForString(hintLabel)
     found match {
@@ -97,7 +100,8 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
   def reset(): Unit = pos = 0
 
   // Print a clip from the input and a grapical pointer to the problem for clarity
-  def showError(path: Path, msg: String): String = "Boom!"
+  def showError(path: Path, msg: String): String =
+    "[" + path.toString + "]: " + msg
 
   @inline private def expect[T](t: TokenType.Value, detail: Option[TokenDetail], path: Path, fn: BsonToken => T, isNullable: Boolean = false): T =
     next.asInstanceOf[BsonToken] match {
@@ -129,7 +133,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
   def readString(path: Path): String = expect(TokenType.String, None, path, (bt: BsonToken) => bt.input.asString.getValue, false)
 
   // Mongo-specific
-  def readObjectId(path: Path): ObjectId = expect(TokenType.String, Some(TokenDetail.ObjectId), path, (bt: BsonToken) => bt.input.asObjectId().getValue, false)
+  def readObjectId(path: Path): ObjectId = expect(TokenType.String, Some(TokenDetail.ObjectId), path, (bt: BsonToken) => bt.input.asObjectId().getValue, true)
   def readDateTime(path: Path): Long = expect(TokenType.Number, Some(TokenDetail.DateTime), path, (bt: BsonToken) => bt.input.asInt64().getValue, false)
 
   // Read Basic Collections
@@ -200,21 +204,27 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
               jackFlavor.anyTypeAdapter.read(path \ fieldName, this)
           }
 
+        var foundID = false
         while (head.tokenType != TokenType.EndObject) {
           val fieldName = expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false)
           fieldName match {
-            case ID_FIELD if dbkeys.size == 1 => readOneField(dbkeys.head._2.name)
+            case ID_FIELD if dbkeys.size == 1 =>
+              readOneField(dbkeys.head._2.name)
+              foundID = true
             case ID_FIELD if dbkeys.size > 1 => // read embedded _id object
               expect(TokenType.BeginObject, None, path, (_) => "", true) match {
                 case "" =>
                   while (head.tokenType != TokenType.EndObject)
                     readOneField(expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false))
                   next // consume EndObject
+                  foundID = true
                 case null => null
               }
             case _ => readOneField(fieldName)
           }
         }
+        if (!foundID && dbkeys.size > 0)
+          throw new ReadMissingError(showError(path, "Missing key field " + ID_FIELD))
         next // consume EndObject
         ObjectFieldsRead(fieldCount == fields.size, args, flags, captured)
       case null => null

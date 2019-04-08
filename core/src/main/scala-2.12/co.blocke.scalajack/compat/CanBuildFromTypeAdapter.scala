@@ -157,4 +157,3 @@ case class CanBuildFromTypeAdapter[Elem, To](
     else
       writer.writeArray(t.asInstanceOf[Iterable[Elem]], elementTypeAdapter, out)
 }
-

@@ -5,7 +5,6 @@ import model._
 import co.blocke.scalajack.typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
-import java.lang.{ UnsupportedOperationException => UOE }
 
 import org.mongodb.scala.bson._
 import util.Path
@@ -25,13 +24,13 @@ case class MongoFlavor(
 
   final val ID_FIELD = "_id"
 
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
-  def withDefaultHint(hint: String): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
-  def withHints(h: (Type, String)*): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[BsonValue] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
+  def withDefaultHint(hint: String): JackFlavor[BsonValue] = this.copy(defaultHint = hint)
+  def withHints(h: (Type, String)*): JackFlavor[BsonValue] = this.copy(hintMap = this.hintMap ++ h)
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[BsonValue] = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[BsonValue] = this.copy(typeValueModifier = Some(tm))
   def parseOrElse(poe: (Type, Type)*): JackFlavor[BsonValue] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def allowPermissivePrimitives(): JackFlavor[BsonValue] = throw new UOE("Not available for MongoDB encoding")
+  def allowPermissivePrimitives(): JackFlavor[BsonValue] = this.copy(permissivesOk = true)
   def enumsAsInts(): JackFlavor[BsonValue] = this.copy(enumsAsInt = true)
 
   def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new StringWrapTypeAdapter(wrappedTypeAdapter)
