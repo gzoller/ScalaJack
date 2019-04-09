@@ -17,17 +17,20 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends T
 
     if (wrappedTypeAdapter.isInstanceOf[ScalarTypeAdapter[_]])
       wrappedTypeAdapter.asInstanceOf[ScalarTypeAdapter[_]].scalarType match {
+        case t if t == typeOf[Byte]       => wrappedValueString.toByte.asInstanceOf[T]
+        case t if t == typeOf[Char]       => wrappedValueString(0).asInstanceOf[T]
         case t if t == typeOf[Int]        => wrappedValueString.toInt.asInstanceOf[T]
         case t if t == typeOf[Long]       => wrappedValueString.toLong.asInstanceOf[T]
         case t if t == typeOf[Double]     => wrappedValueString.toDouble.asInstanceOf[T]
         case t if t == typeOf[Float]      => wrappedValueString.toFloat.asInstanceOf[T]
         case t if t == typeOf[Short]      => wrappedValueString.toShort.asInstanceOf[T]
-        case t if t == typeOf[BigInt]     => BigInt(wrappedValueString).asInstanceOf[T]
         case t if t == typeOf[BigDecimal] => BigDecimal(wrappedValueString).asInstanceOf[T]
         case t if t == typeOf[Boolean]    => wrappedValueString.toBoolean.asInstanceOf[T]
+        // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
         case _ =>
           reader.back
           throw new ReadInvalidError(reader.showError(path, "Only Scala scalar values are supported as BSON Map keys"))
+        // $COVERAGE-ON$
       }
     else {
       reader.back
@@ -44,7 +47,7 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends T
       case r: BsonInt64      => r.asInt64().getValue().toString
       case r: BsonDecimal128 => r.asDecimal128().getValue().toString
       case r: BsonDouble     => r.asDouble().getValue().toString
-      case r: BsonString     => r.asString().getValue()
+      case r: BsonNumber     => r.asDecimal128().getValue().toString
       case r                 => throw new SJError("BSON type " + r.getClass.getName + " is not supported as a Map key")
     }
     writer.writeString(result, out)
