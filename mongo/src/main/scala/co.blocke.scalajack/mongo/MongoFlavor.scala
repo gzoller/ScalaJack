@@ -6,8 +6,8 @@ import co.blocke.scalajack.typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
 
-import org.mongodb.scala.bson._
-import util.Path
+import org.bson._
+import co.blocke.scalajack.util.Path
 
 case class MongoFlavor(
     override val defaultHint:        String                       = "_hint",

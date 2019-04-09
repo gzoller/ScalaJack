@@ -6,8 +6,8 @@ import util.Path
 import TokenDetail._
 import co.blocke.scalajack.typeadapter.{ AnyTypeAdapter, CanBuildMapTypeAdapter, TupleTypeAdapterFactory }
 
-import org.bson.BsonValue
-import org.mongodb.scala.bson._
+import org.bson._
+import org.bson.types.ObjectId
 import java.util.ArrayList
 
 import scala.collection.immutable.{ ListMap, Map }

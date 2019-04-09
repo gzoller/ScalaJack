@@ -3,7 +3,8 @@ package mongo
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
-import org.mongodb.scala.bson._
+import org.bson._
+import scala.collection.JavaConverters._
 
 case class TT2(name: String, rec: Map[String, List[(String, Int, Boolean)]])
 
@@ -11,7 +12,24 @@ class TupleSpec extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {
-    val a = BsonDocument("name" -> "Larry", "rec" -> BsonDocument("foo" -> BsonArray(BsonArray("a", 1, true)), "hey" -> BsonArray(BsonArray("x", 8, false), BsonArray("r", 3, true))))
+    val a = new BsonDocument(List(
+      new BsonElement("name", new BsonString("Larry")),
+      new BsonElement("rec", new BsonDocument(List(
+        new BsonElement("foo", new BsonArray(List(
+          new BsonArray(List(
+            new BsonString("a"), new BsonInt32(1), new BsonBoolean(true)
+          ).asJava)
+        ).asJava)),
+        new BsonElement("hey", new BsonArray(List(
+          new BsonArray(List(
+            new BsonString("x"), new BsonInt32(8), new BsonBoolean(false),
+          ).asJava),
+          new BsonArray(List(
+            new BsonString("r"), new BsonInt32(3), new BsonBoolean(true)
+          ).asJava)
+        ).asJava))
+      ).asJava))
+    ).asJava)
   }
 
   object ScalaMaster {

@@ -6,7 +6,7 @@ import java.time._
 import model.{ Reader, Stringish, TypeAdapter, Writer }
 import util.Path
 
-import org.mongodb.scala.bson.ObjectId
+import org.bson.types.ObjectId
 import scala.collection.mutable.Builder
 
 object Num extends Enumeration {

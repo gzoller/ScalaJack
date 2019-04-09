@@ -5,14 +5,19 @@ import util.Path
 import model._
 
 import scala.collection.mutable.Builder
-import org.mongodb.scala.bson._
+import org.bson._
 import java.time._
 
 object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): OffsetDateTime =
     reader.head.input match {
-      case BsonNull => null
+      case null =>
+        reader.next
+        null
+      case i if i.asInstanceOf[BsonValue].isNull() =>
+        reader.next
+        null
       case _ =>
         val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
         OffsetDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneOffset.UTC)
@@ -20,8 +25,8 @@ object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] 
 
   def write[WIRE](t: OffsetDateTime, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case null => out += BsonNull().asInstanceOf[WIRE]
+      case null => out += new BsonNull().asInstanceOf[WIRE]
       case _ =>
-        out += BsonDateTime(t.toInstant.toEpochMilli).asInstanceOf[WIRE]
+        out += new BsonDateTime(t.toInstant.toEpochMilli).asInstanceOf[WIRE]
     }
 }

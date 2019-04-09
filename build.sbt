@@ -9,6 +9,7 @@ def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
 val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.6.0"
+val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.1"
 val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.7"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
 val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.417"
@@ -96,7 +97,7 @@ lazy val scalajack_mongo = project.in(file("mongo"))
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
-    compile( mongo_scala ) ++
+    compile( mongo_java ) ++
       test( scalatest, slf4j_simple )
   ).dependsOn( scalajack )
 

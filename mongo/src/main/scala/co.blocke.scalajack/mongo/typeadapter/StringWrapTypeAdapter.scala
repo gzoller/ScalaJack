@@ -3,7 +3,7 @@ package mongo
 
 import model._
 import util.Path
-import org.mongodb.scala.bson._
+import org.bson._
 
 import scala.collection.mutable.Builder
 

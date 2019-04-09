@@ -6,17 +6,11 @@ import model._
 import java.time._
 import java.util.UUID
 
-import org.mongodb.scala.bson._
+import org.bson._
+import org.bson.types.ObjectId
 import org.scalatest.Matchers._
 import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
-
-/*
-import typeadapter._
-import co.blocke.scalajack.json.JsonFlavor
-import co.blocke.scalajack.mongo._
-import scala.reflect.runtime.universe.typeOf
-import scala.util._
- */
+import scala.collection.JavaConverters._
 
 class WrappedOffsetDateTime(val offsetDateTime: OffsetDateTime) extends AnyVal
 
@@ -68,9 +62,9 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         b should equal(inst)
       }
       it("Permissives work") {
-        val bd = BsonDocument()
-        bd.append("name", BsonString("Fido"))
-        bd.append("legs", BsonString("3"))
+        val bd = new BsonDocument()
+        bd.append("name", new BsonString("Fido"))
+        bd.append("legs", new BsonString("3"))
         val wPerm = mongoScalaJack.allowPermissivePrimitives()
         wPerm.read[Animal](bd) should be(Animal("Fido", 3))
       }
@@ -353,13 +347,23 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         mongoScalaJack.read[Five](dbo) should equal(five)
       }
       it("DBKey Annotation (_id field generation) - single key -- Missing Non-Key Field") {
-        val dbo = BsonDocument("_id" -> BsonString("Fred"), "two" -> BsonDocument("bar" -> BsonBoolean(true)))
+        val dbo = new BsonDocument(List(
+          new BsonElement("_id", new BsonString("Fred")),
+          new BsonElement("two", new BsonDocument(List(
+            new BsonElement("bar", new BsonBoolean(true))
+          ).asJava))
+        ).asJava)
         dbo.toJson should equal("""{"_id": "Fred", "two": {"bar": true}}""")
         val msg = """[$.two]: Class Two missing field foo""".stripMargin
         the[ReadMissingError] thrownBy mongoScalaJack.read[Five](dbo) should have message msg
       }
       it("DBKey Annotation (_id field generation) - single key -- Missing Key Field") {
-        val dbo = BsonDocument("two" -> BsonDocument("foo" -> BsonString("blah"), "bar" -> BsonBoolean(true)))
+        val dbo = new BsonDocument(List(
+          new BsonElement("two", new BsonDocument(List(
+            new BsonElement("foo", new BsonString("blah")),
+            new BsonElement("bar", new BsonBoolean(true))
+          ).asJava))
+        ).asJava)
         dbo.toJson should equal("""{"two": {"foo": "blah", "bar": true}}""")
         val msg = """[$]: Missing key field _id"""
         the[ReadMissingError] thrownBy mongoScalaJack.read[Five](dbo) should have message msg
@@ -383,6 +387,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("ObjectId support (null) -- Mongo") {
         val seven = Seven(null, Two("blah", true))
         val dbo = mongoScalaJack.render(seven)
+        //{"_id": null, "two": {"foo": "blah", "bar": true}}
         mongoScalaJack.read[Seven](dbo) should equal(seven)
       }
     }
@@ -404,7 +409,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("SJCapture should work") {
         val s = PersonCapture(new ObjectId(), "Fred", 52, Map(5 -> 1, 6 -> 2))
         val m = mongoScalaJack.render(s)
-        m.asDocument.append("extra", BsonString("hey"))
+        m.asDocument.append("extra", new BsonString("hey"))
         val readIn = mongoScalaJack.read[PersonCapture](m)
         readIn should be(s)
         mongoScalaJack.render(readIn).asDocument.toJson.endsWith(""""stuff": {"5": 1, "6": 2}, "extra": "hey"}""") should be(true)
