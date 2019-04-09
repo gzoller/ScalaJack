@@ -82,6 +82,18 @@ class LooseChange extends FunSpec {
       reader.head.tokenType should be(TokenType.EndObject)
       reader.next
       reader.head.tokenType should be(TokenType.End)
+      reader.next
+      reader.hasNext should be(false)
+
+      reader.reset()
+      reader.next
+      reader.skipObject(util.Path.Root)
+      reader.hasNext should be(true)
+      reader.head.tokenType should be(TokenType.String)
+
+      reader.reset()
+      reader.back
+      reader.head.tokenType should be(TokenType.BeginObject)
     }
     it("Nulls") {
       val prim = PrimitiveLists(null, null, null, null, null)
@@ -92,11 +104,22 @@ class LooseChange extends FunSpec {
 
       val os2 = OneSub2("foo", false, Map(null.asInstanceOf[String] -> 5))
       the[SJError] thrownBy sjM.render(os2) should have message "Map keys cannot be null."
+
+      val out = null
+      sjM.render[OneSub2](out).isNull should be(true)
+
+      //case class BagMap[Y](i: Int, items: Map[String, Y])
+      val mapDoc = BsonDocument("i" -> BsonInt32(5), "items" -> BsonNull())
+      sjM.read[BagMap[Int]](mapDoc) should be(BagMap(5, null))
     }
     it("Overrun tuple") {
       //case class Tupple( t: (String,Int))
       val d = BsonDocument("t" -> BsonArray(BsonString("foo"), BsonInt32(5), BsonBoolean(true)))
       the[ReadUnexpectedError] thrownBy sjM.read[Tuple](d) should have message "[$.t]: Expected EndArray here but found Boolean"
+    }
+    it("Bad expected values") {
+      val d = BsonDocument("name" -> BsonString("Fred"), "big" -> BsonNumber(123.45))
+      the[ReadUnexpectedError] thrownBy sjM.read[OneSub1](d) should have message "[$.big]: Expected Number of kind Int64 here but found Number of kind Double"
     }
   }
 }

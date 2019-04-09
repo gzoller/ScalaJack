@@ -107,8 +107,10 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
     next.asInstanceOf[BsonToken] match {
       case tok if tok.tokenType == t && (detail.isEmpty || detail.get == tok.detail) =>
         Try(fn(tok)).getOrElse {
+          // $COVERAGE-OFF$Means Scala can't handle a number format the Mongo can.  Don't know of any such example, but it is possible, so...
           back
           throw new ReadMalformedError(showError(path, s"Unable to read value (e.g. bad number format)"))
+          // $COVERAGE-ON$
         }
       case tok if tok.tokenType == TokenType.Null && isNullable =>
         null.asInstanceOf[T]
@@ -171,15 +173,18 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
         val builder = builderFactory().asInstanceOf[Builder[(Key, Value), To]]
         while (head.tokenType != TokenType.EndObject) {
           keyTypeAdapter.read(path \ Path.MapKey, this) match {
+            // $COVERAGE-OFF$Should be possible to call this
             case null =>
               throw new ReadInvalidError(showError(path, "Map keys cannot be null"))
+            // $COVERAGE-ON$
             case key =>
               builder += key -> valueTypeAdapter.read(path \ key.toString, this)
           }
         }
         next // consume EndObject
         builder.result
-      case null => null.asInstanceOf[To]
+      case null =>
+        null.asInstanceOf[To]
     }
 
   def readTuple(path: Path, readFns: List[TupleTypeAdapterFactory.TupleField[_]]): List[Any] =
@@ -232,7 +237,6 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
                     readOneField(expect(TokenType.String, None, path, (bt: BsonToken) => bt.textValue, false))
                   next // consume EndObject
                   foundID = true
-                case null => null
               }
             case _ => readOneField(fieldName)
           }
@@ -241,7 +245,8 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
           throw new ReadMissingError(showError(path, "Missing key field " + ID_FIELD))
         next // consume EndObject
         ObjectFieldsRead(fieldCount == fields.size, args, flags, captured)
-      case null => null
+      case null =>
+        null
     }
 
   def skipObject(path: Path): Unit =

@@ -78,9 +78,9 @@ case class MongoWriter(jackFlavor: JackFlavor[BsonValue]) extends Writer[BsonVal
       fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
       out:          Builder[BsonValue, BsonValue],
       extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
-    if (t == null) {
+    if (t == null)
       out += BsonNull()
-    } else {
+    else {
       val doc = BsonDocument()
       val ID_FIELD = jackFlavor.asInstanceOf[MongoFlavor].ID_FIELD
       writeFields(extras.map(e => (e._1, e._2.value, e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])), doc)
