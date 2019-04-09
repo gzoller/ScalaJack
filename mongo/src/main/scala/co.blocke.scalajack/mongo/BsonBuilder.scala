@@ -14,5 +14,5 @@ case class BsonBuilder() extends Builder[BsonValue, BsonValue] {
 
   def clear(): Unit = internalValue = None
 
-  def result(): BsonValue = internalValue.getOrElse(throw new Exception("Boom"))
+  def result(): BsonValue = internalValue.getOrElse(throw new model.SJError("No value set for internal mongo builder"))
 }

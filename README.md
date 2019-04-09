@@ -92,7 +92,9 @@ We've got to give our users at least a few new toys, so we've added a filter fea
 
 There have also been improvements to Delimited/CSV handling.  Before, ScalaJack could not handle List in CSV format.  Now it can (for simple Lists), along with Either and Enumeration.
 
-One feature was removed: non-canonical JSON support.  If you loved this feature, I understand, but its benefits just weren't worth the benefit of continued maintenacne.
+MongoDB support has been strengthened, with some of the limitations of earlier versions removed.  Type hint modifiers (for type members) are now supported.  Support for scalar non-String keys (Int, Boolean, etc) work now too.  Try and SJCapture features are now supported for Mongo as well as JSON.
+
+One feature was removed: non-canonical JSON support.  If you loved this feature, I understand, but its benefits just weren't worth the benefit of continued maintenance.
 
 We hope you'll enjoy using the latest ScalaJack!
 

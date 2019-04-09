@@ -3,10 +3,10 @@ package mongo
 
 import model._
 import co.blocke.scalajack.util.Path
-
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 import org.bson._
+
 import scala.collection.JavaConverters._
 
 case class MyNumbers(d: BigDecimal, n: Number)
@@ -178,6 +178,19 @@ class LooseChange extends FunSpec {
         new BsonElement("items", new BsonNull())
       ).asJava)
       sjM.read[BagMap[Int]](mapDoc) should be(BagMap(5, null))
+
+      sjM.read[OneSub2](null) should be(null)
+
+      //case class Times( offset: OffsetDateTime, zoned: ZonedDateTime )
+      val times = Times(null, null)
+      val d = sjM.render(times)
+      d.asDocument().toJson should be("""{"offset": null, "zoned": null}""")
+      sjM.read[Times](d) should be(times)
+      val d2 = new BsonDocument(List(
+        new BsonElement("offset", new BsonNull()),
+        new BsonElement("zoned", new BsonNull())
+      ).asJava)
+      sjM.read[Times](d2) should be(times)
     }
     it("Overrun tuple") {
       //case class Tupple( t: (String,Int))
@@ -194,6 +207,35 @@ class LooseChange extends FunSpec {
         new BsonElement("big", new BsonDouble(123.45))
       ).asJava)
       the[ReadUnexpectedError] thrownBy sjM.read[OneSub1](d) should have message "[$.big]: Expected Number of kind Int64 here but found Number of kind Double"
+    }
+    it("Non-hint hint-labeled field") {
+      val d = new BsonDocument(List(
+        new BsonElement("num", new BsonInt32(3)),
+        new BsonElement("s", new BsonDocument(List(
+          new BsonElement("_hint", new BsonInt32(45)),
+          new BsonElement("size", new BsonInt32(34))
+        ).asJava))
+      ).asJava)
+      the[ReadInvalidError] thrownBy sjM.read[StrangeWrapper](d) should have message "[$.s._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.mongo.Strange"
+    }
+    it("Can't find trait hint") {
+      val d = new BsonDocument(List(
+        new BsonElement("num", new BsonInt32(3)),
+        new BsonElement("s", new BsonDocument(List(
+          new BsonElement("size", new BsonInt32(34))
+        ).asJava))
+      ).asJava)
+      the[ReadInvalidError] thrownBy sjM.read[StrangeWrapper](d) should have message "[$.s._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.mongo.Strange"
+    }
+    it("Enums as ints work") {
+      val sj = ScalaJack(MongoFlavor()).enumsAsInts()
+      val n = Numy(5, Num.B)
+      val d = sj.render(n)
+      d.asDocument.toJson should be("""{"age": 5, "num": 1}""")
+      sj.read[Numy](d) should be(n)
+    }
+    it("Failure due to empty BsonBuilder") {
+      the[SJError] thrownBy BsonBuilder().result() should have message "No value set for internal mongo builder"
     }
   }
 }

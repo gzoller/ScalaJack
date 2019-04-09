@@ -224,6 +224,24 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         db.asDocument.toJson should equal("""{"s": "Surprise", "w": {"name": "Yellow", "data": {"_hint": "Wow2", "x": "three", "y": 4}, "stuff": "Done"}}""")
         scalaJack.read[Carry[Pop]](db) should equal(w)
       }
+      it("Hint modifier fails") {
+        val w = Carry[Pop]("Surprise", Wrap("Yellow", Wow2("three", 4), "Done"))
+        val scalaJack = mongoScalaJack.withHintModifiers(
+          typeOf[Pop] -> ClassNameHintModifier(
+            hint => throw new Exception("Boom"), // intentional hint mod failure
+            fullName => fullName.split('.').last
+          )
+        )
+        val db = scalaJack.render(w)
+        the[ReadInvalidError] thrownBy scalaJack.read[Carry[Pop]](db) should have message "[$.w.data]: Failed to apply type modifier to type member hint Wow2"
+      }
+      it("Type modifier works") {
+        val scalaJack = ScalaJack(MongoFlavor()).withTypeValueModifier(ClassNameHintModifier((hint: String) => "co.blocke.scalajack.mongo." + hint, (cname: String) => cname.split('.').last))
+        val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+        val d = scalaJack.render[Envelope[Body]](value)
+        d.asDocument.toJson should be("""{"Giraffe": "Body", "id": "DEF", "body": {"_hint": "co.blocke.scalajack.mongo.FancyBody", "message": "BOO"}}""")
+        scalaJack.read[Envelope[Body]](d) should be(value)
+      }
       it("Parameter is List of trait") {
         val w = Carry[List[Pop]]("Surprise", Wrap("Yellow", List(Wow1("four", 4), Wow2("three", 3)), "Done"))
         val db = mongoScalaJack.render(w)
@@ -405,14 +423,6 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         dbo.asDocument.toJson should equal("""{"name": "Greg", "age": 49, "hasStuff": true, "pet": {"_hint": "co.blocke.scalajack.mongo.NicePet", "kind": {"_hint": "co.blocke.scalajack.mongo.Dog", "name": "Fido"}, "food": "bones"}}""")
         val b = mongoScalaJack.read[WithDefaults](dbo)
         b should equal(wd)
-      }
-      it("SJCapture should work") {
-        val s = PersonCapture(new ObjectId(), "Fred", 52, Map(5 -> 1, 6 -> 2))
-        val m = mongoScalaJack.render(s)
-        m.asDocument.append("extra", new BsonString("hey"))
-        val readIn = mongoScalaJack.read[PersonCapture](m)
-        readIn should be(s)
-        mongoScalaJack.render(readIn).asDocument.toJson.endsWith(""""stuff": {"5": 1, "6": 2}, "extra": "hey"}""") should be(true)
       }
     }
     describe("Basic Parameterized Case Class") {

@@ -15,9 +15,11 @@ object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
       case null =>
         reader.next
         null
+      // $COVERAGE-OFF$Doesn't seem to be reachable -- naked nulls passed from Bson, but just in case...
       case i if i.asInstanceOf[BsonValue].isNull() =>
         reader.next
         null
+      // $COVERAGE-ON$
       case _ =>
         val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
         ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneId.of("UTC"))
@@ -25,7 +27,8 @@ object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
 
   def write[WIRE](t: ZonedDateTime, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case null => out += new BsonNull().asInstanceOf[WIRE]
+      case null =>
+        out += new BsonNull().asInstanceOf[WIRE]
       case _ =>
         out += new BsonDateTime(t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli).asInstanceOf[WIRE]
     }

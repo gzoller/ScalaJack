@@ -15,9 +15,11 @@ object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] 
       case null =>
         reader.next
         null
+      // $COVERAGE-OFF$Doesn't seem to be reachable -- naked nulls passed from Bson, but just in case...
       case i if i.asInstanceOf[BsonValue].isNull() =>
         reader.next
         null
+      // $COVERAGE-ON$
       case _ =>
         val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
         OffsetDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneOffset.UTC)

@@ -17,6 +17,8 @@ case class BsonTokenizer() extends Tokenizer[BsonValue] {
 
     def consumeValue(value: BsonValue): Unit =
       value match {
+        case null =>
+          tokenspace.add(BsonToken(new BsonNull(), TokenType.Null))
         case v if v.isArray =>
           tokenspace.add(BsonToken(new BsonString("array"), TokenType.BeginArray))
           for (v <- v.asArray().toArray) {

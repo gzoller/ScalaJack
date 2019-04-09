@@ -5,9 +5,10 @@ import java.time._
 
 import model.{ Reader, Stringish, TypeAdapter, Writer }
 import util.Path
-
 import org.bson.types.ObjectId
+
 import scala.collection.mutable.Builder
+import scala.util.Try
 
 object Num extends Enumeration {
   val A, B, C = Value
@@ -269,3 +270,20 @@ case class MapFactorId2(
 
 case class PersonCapture(id: ObjectId, name: String, age: Int, stuff: Map[Int, Int]) extends SJCapture
 case class Tuple(t: (String, Int))
+
+trait Strange
+case class StrangeWrapper(num: Int, s: Strange)
+case class StrangeHint(_hint: Int, size: Int) extends Strange
+
+trait Body
+case class FancyBody(message: String) extends Body
+case class Envelope[T <: Body](id: String, body: T) {
+  type Giraffe = T
+}
+
+case class Times(offset: OffsetDateTime, zoned: ZonedDateTime)
+
+case class Embed(stuff: List[String], num: Int)
+case class Boom(
+    name:  String,
+    other: Try[Embed])
