@@ -8,11 +8,10 @@ import scoverage.ScoverageKeys._
 def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
-val mongo_scala     = "org.mongodb.scala"       %% "mongo-scala-driver"   % "2.6.0"
 val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.1"
 val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.7"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
-val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.417"
+val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.534"
 
 def scalacOptionsVersion(scalaVersion: String) = {
   val xver =  CrossVersion.partialVersion(scalaVersion) match {
@@ -60,7 +59,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
-  .aggregate(scalajack, scalajack_mongo)//, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo)//, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -94,11 +93,20 @@ lazy val scalajack = project.in(file("core"))
   )
 
 lazy val scalajack_mongo = project.in(file("mongo"))
-  .settings(basicSettings: _*)
+  .settings(basicSettings ++ crossVersions: _*)
   .settings(pubSettings: _*)
   .settings(libraryDependencies ++=
     compile( mongo_java ) ++
       test( scalatest, slf4j_simple )
+  ).dependsOn( scalajack )
+
+
+lazy val scalajack_dynamo = project.in(file("dynamodb"))
+  .settings(basicSettings ++ crossVersions: _*)
+  .settings(pubSettings: _*)
+  .settings(libraryDependencies ++=
+    compile( dynamo ) ++
+      test( scalatest )
   ).dependsOn( scalajack )
 
 /*
