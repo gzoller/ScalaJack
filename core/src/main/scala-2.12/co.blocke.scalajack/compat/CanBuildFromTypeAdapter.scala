@@ -58,7 +58,7 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
 
         // Wrap Map keys in a StringWrapTypeAdapter?
         val finalKeyTypeAdapter =
-          if (!stringifyMapKeys
+          if (!jackFlavor.stringifyMapKeys
             || keyTypeAdapter.isInstanceOf[Stringish]
             || keyType <:< typeOf[Enumeration#Value] && !enumsAsInt
             || keyType =:= typeOf[Any]
