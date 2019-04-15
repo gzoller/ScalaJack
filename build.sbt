@@ -88,8 +88,8 @@ lazy val scalajack = project.in(file("core"))
       Seq("org.apache.commons" % "commons-text" % "1.6") ++
       Seq("commons-codec" % "commons-codec" % "1.11") ++
       test(scalatest) ++
-      test("org.json4s" %% "json4s-core" % "3.6.2") ++
-      test("org.json4s" %% "json4s-native" % "3.6.2")
+      test("org.json4s" %% "json4s-core" % "3.6.5") ++
+      test("org.json4s" %% "json4s-native" % "3.6.5")
   )
 
 lazy val scalajack_mongo = project.in(file("mongo"))
