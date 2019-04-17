@@ -65,7 +65,8 @@ case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) ext
 
   def write[WIRE](t: Union2[A, B], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     t match {
-      case null => writer.writeNull(out)
+      case null =>
+        writer.writeNull(out)
       case _ => t._unpack match {
         case (v, pos) if pos == 0 =>
           aTa.write(v.asInstanceOf[A], writer, out, isMapKey)
@@ -108,7 +109,8 @@ case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], 
 
   def write[WIRE](t: Union3[A, B, C], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     t match {
-      case null => writer.writeNull(out)
+      case null =>
+        writer.writeNull(out)
       case _ => t._unpack match {
         case (v, pos) if pos == 0 =>
           aTa.write(v.asInstanceOf[A], writer, out, isMapKey)
@@ -159,7 +161,8 @@ case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B
 
   def write[WIRE](t: Union4[A, B, C, D], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
-      case null => writer.writeNull(out)
+      case null =>
+        writer.writeNull(out)
       case _ => t._unpack match {
         case (v, pos) if pos == 0 =>
           aTa.write(v.asInstanceOf[A], writer, out, isMapKey)

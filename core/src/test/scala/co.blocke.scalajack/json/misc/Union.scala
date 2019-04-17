@@ -34,9 +34,10 @@ class Union extends FunSpec with Matchers {
       i2.one.unpack should be(List(1, 2, 3))
       i2.one._unpack should be((List(1, 2, 3), 1))
 
-      val mk2_3: Multi2 = null
-      sj.render(mk2_3) should be("null")
-      sj.read[Multi2]("null") should be(null)
+      val mk2_3: Multi2 = Multi2(null)
+      val jsx = sj.render(mk2_3)
+      jsx should be("""{"one":null}""")
+      sj.read[Multi2](jsx) should be(mk2_3)
 
       val js3 = """{"one":true}"""
       val msg =
@@ -46,9 +47,10 @@ class Union extends FunSpec with Matchers {
       the[ReadMalformedError] thrownBy sj.read[Multi2](js3) should have message msg
     }
     it("Union3") {
-      val mk3_0: Multi3 = null
-      sj.render(mk3_0) should be("null")
-      sj.read[Multi3]("null") should be(null)
+      val mk3_0 = Multi3(null)
+      val jsx = sj.render(mk3_0)
+      jsx should be("""{"one":null}""")
+      sj.read[Multi3](jsx) should be(mk3_0)
 
       val mk3 = Multi3(Union3(Some(List("a", "b", "c")), None, None))
       val js = sj.render(mk3)
@@ -82,9 +84,10 @@ class Union extends FunSpec with Matchers {
       the[ReadMalformedError] thrownBy sj.read[Multi3](js9) should have message msg
     }
     it("Union4") {
-      val mk4_0: Multi3 = null
-      sj.render(mk4_0) should be("null")
-      sj.read[Multi3]("null") should be(null)
+      val mk4_0 = Multi4(null)
+      val jsx = sj.render(mk4_0)
+      jsx should be("""{"one":null}""")
+      sj.read[Multi4](jsx) should be(mk4_0)
 
       val mk4 = Multi4(Union4(Some(List("a", "b", "c")), None, None, None))
       val js = sj.render(mk4)

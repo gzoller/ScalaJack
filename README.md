@@ -62,6 +62,7 @@ Couldn't be simpler!
 * [Externalized Type Hints](doc/externalTypes.md)
 * [View/SpliceInto](doc/viewSplice.md)
 * [Filter *(new)*](doc/filter.md)
+* [Union type *(new)*](doc/union.md)
 * [ScalaJack Configuration](doc/config.md)
 
 Non-JSON Formats:
