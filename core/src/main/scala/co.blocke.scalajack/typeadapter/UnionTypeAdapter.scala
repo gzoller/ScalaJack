@@ -8,29 +8,29 @@ import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object MultiKindTypeAdapterFactory extends TypeAdapterFactory {
+object UnionTypeAdapterFactory extends TypeAdapterFactory {
 
-  private val multiKindType = typeOf[_MultiKind].typeSymbol
+  private val unionType = typeOf[_Union].typeSymbol
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
     val compType = tt.tpe.dealias
-    compType.baseType(multiKindType) match {
+    compType.baseType(unionType) match {
       case NoType =>
         next.typeAdapterOf[T]
 
       case _ if compType.typeArgs.size == 2 =>
-        MultiKind2TypeAdapter(
+        Union2TypeAdapter(
           context.typeAdapter(compType.typeArgs(0)),
           context.typeAdapter(compType.typeArgs(1))).asInstanceOf[TypeAdapter[T]]
 
       case _ if compType.typeArgs.size == 3 =>
-        MultiKind3TypeAdapter(
+        Union3TypeAdapter(
           context.typeAdapter(compType.typeArgs(0)),
           context.typeAdapter(compType.typeArgs(1)),
           context.typeAdapter(compType.typeArgs(2))).asInstanceOf[TypeAdapter[T]]
 
       case _ if compType.typeArgs.size == 4 =>
-        MultiKind4TypeAdapter(
+        Union4TypeAdapter(
           context.typeAdapter(compType.typeArgs(0)),
           context.typeAdapter(compType.typeArgs(1)),
           context.typeAdapter(compType.typeArgs(2)),
@@ -39,7 +39,7 @@ object MultiKindTypeAdapterFactory extends TypeAdapterFactory {
   }
 }
 
-case class MultiKind2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) extends TypeAdapter[MultiKind2[A, B]] {
+case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) extends TypeAdapter[MultiKind2[A, B]] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind2[A, B] = {
     val savedReader = reader.copy
@@ -76,7 +76,7 @@ case class MultiKind2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B])
   }
 }
 
-case class MultiKind3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C]) extends TypeAdapter[MultiKind3[A, B, C]] {
+case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C]) extends TypeAdapter[MultiKind3[A, B, C]] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind3[A, B, C] = {
     val savedReader = reader.copy
@@ -121,7 +121,7 @@ case class MultiKind3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[
   }
 }
 
-case class MultiKind4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C], dTa: TypeAdapter[D]) extends TypeAdapter[MultiKind4[A, B, C, D]] {
+case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C], dTa: TypeAdapter[D]) extends TypeAdapter[MultiKind4[A, B, C, D]] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind4[A, B, C, D] = {
     val savedReader = reader.copy

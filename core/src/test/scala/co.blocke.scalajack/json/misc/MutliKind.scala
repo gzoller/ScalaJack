@@ -4,7 +4,7 @@ package misc
 
 import model._
 
-import co.blocke.scalajack.typeadapter.MultiKindTypeAdapterFactory
+import co.blocke.scalajack.typeadapter.UnionTypeAdapterFactory
 import org.scalatest.{ FunSpec, Matchers }
 
 case class Person(name: String, age: Int)
@@ -14,7 +14,7 @@ case class Multi4(one: MultiKind4[List[String], List[Int], Boolean, Person])
 
 class MultiKind extends FunSpec with Matchers {
 
-  val sj = ScalaJack().withAdapters(MultiKindTypeAdapterFactory)
+  val sj = ScalaJack().withAdapters(UnionTypeAdapterFactory)
 
   describe("---------------------\n:  MultiKind Tests  :\n---------------------") {
     it("MultiKind2") {

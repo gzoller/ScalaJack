@@ -29,7 +29,7 @@ object Context {
     TryTypeAdapterFactory,
     TupleTypeAdapterFactory,
     EitherTypeAdapterFactory,
-    MultiKindTypeAdapterFactory,
+    UnionTypeAdapterFactory,
     EnumerationTypeAdapterFactory, // Either must precede SealedTraitTypeAdapter
 
     // WARNING: These two must precede CaseClassTypeAdapter in this list or all
