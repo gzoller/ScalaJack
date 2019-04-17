@@ -39,9 +39,9 @@ object UnionTypeAdapterFactory extends TypeAdapterFactory {
   }
 }
 
-case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) extends TypeAdapter[MultiKind2[A, B]] {
+case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) extends TypeAdapter[Union2[A, B]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind2[A, B] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Union2[A, B] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
@@ -50,20 +50,20 @@ case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) ext
       case _ =>
         Try(aTa.read(path, reader)) match {
           case Success(aValue) =>
-            MultiKind2(Some(aValue), None)
+            Union2(Some(aValue), None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
             Try(bTa.read(path, reader)) match {
               case Success(bValue) =>
-                MultiKind2(None, Some(bValue))
+                Union2(None, Some(bValue))
               case Failure(x) =>
-                throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a MultiKind value"))
+                throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a Union value"))
             }
         }
     }
   }
 
-  def write[WIRE](t: MultiKind2[A, B], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: Union2[A, B], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     t match {
       case null => writer.writeNull(out)
       case _ => t._unpack match {
@@ -76,9 +76,9 @@ case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) ext
   }
 }
 
-case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C]) extends TypeAdapter[MultiKind3[A, B, C]] {
+case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C]) extends TypeAdapter[Union3[A, B, C]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind3[A, B, C] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Union3[A, B, C] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
@@ -87,26 +87,26 @@ case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], 
       case _ =>
         Try(aTa.read(path, reader)) match {
           case Success(aValue) =>
-            MultiKind3(Some(aValue), None, None)
+            Union3(Some(aValue), None, None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
             Try(bTa.read(path, reader)) match {
               case Success(bValue) =>
-                MultiKind3(None, Some(bValue), None)
+                Union3(None, Some(bValue), None)
               case Failure(_) =>
                 reader.syncPositionTo(savedReader)
                 Try(cTa.read(path, reader)) match {
                   case Success(cValue) =>
-                    MultiKind3(None, None, Some(cValue))
+                    Union3(None, None, Some(cValue))
                   case Failure(_) =>
-                    throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a MultiKind value"))
+                    throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a Union value"))
                 }
             }
         }
     }
   }
 
-  def write[WIRE](t: MultiKind3[A, B, C], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
+  def write[WIRE](t: Union3[A, B, C], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
     t match {
       case null => writer.writeNull(out)
       case _ => t._unpack match {
@@ -121,9 +121,9 @@ case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], 
   }
 }
 
-case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C], dTa: TypeAdapter[D]) extends TypeAdapter[MultiKind4[A, B, C, D]] {
+case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C], dTa: TypeAdapter[D]) extends TypeAdapter[Union4[A, B, C, D]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): MultiKind4[A, B, C, D] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Union4[A, B, C, D] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
@@ -132,24 +132,24 @@ case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B
       case _ =>
         Try(aTa.read(path, reader)) match {
           case Success(aValue) =>
-            MultiKind4(Some(aValue), None, None, None)
+            Union4(Some(aValue), None, None, None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
             Try(bTa.read(path, reader)) match {
               case Success(bValue) =>
-                MultiKind4(None, Some(bValue), None, None)
+                Union4(None, Some(bValue), None, None)
               case Failure(_) =>
                 reader.syncPositionTo(savedReader)
                 Try(cTa.read(path, reader)) match {
                   case Success(cValue) =>
-                    MultiKind4(None, None, Some(cValue), None)
+                    Union4(None, None, Some(cValue), None)
                   case Failure(_) =>
                     reader.syncPositionTo(savedReader)
                     Try(dTa.read(path, reader)) match {
                       case Success(dValue) =>
-                        MultiKind4(None, None, None, Some(dValue))
+                        Union4(None, None, None, Some(dValue))
                       case Failure(_) =>
-                        throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a MultiKind value"))
+                        throw new ReadMalformedError(reader.showError(path, s"Failed to read any kind of a Union value"))
                     }
                 }
             }
@@ -157,7 +157,7 @@ case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B
     }
   }
 
-  def write[WIRE](t: MultiKind4[A, B, C, D], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](t: Union4[A, B, C, D], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
     t match {
       case null => writer.writeNull(out)
       case _ => t._unpack match {
