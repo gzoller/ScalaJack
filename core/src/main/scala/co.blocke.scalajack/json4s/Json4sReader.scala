@@ -68,7 +68,7 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
       tokens.get(p) match {
         case tok if tok.tokenType == TokenType.String && level == 1 =>
           val value = tok.textValue
-          p += 2
+          p += 1
           if (value == label) {
             if (tokens.get(p).tokenType == TokenType.String) {
               found = Some(tokens.get(p).textValue)
@@ -111,7 +111,12 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
 
   def readBigInt(path: Path): BigInt = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JInt].values, true)
   def readBoolean(path: Path): Boolean = expect(TokenType.Boolean, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JBool].value)
-  def readDecimal(path: Path): BigDecimal = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JDecimal].num, true)
+  def readDecimal(path: Path): BigDecimal = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input match {
+    case v: JInt     => BigDecimal(v.num)
+    case v: JDecimal => v.num
+    case v: JLong    => BigDecimal(v.num)
+    case v: JDouble  => BigDecimal(v.num)
+  }, true)
   def readDouble(path: Path): Double = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JDouble].num)
   def readInt(path: Path): Int = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JInt].values.intValue())
   def readLong(path: Path): Long = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JLong].values.longValue())
@@ -149,7 +154,7 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
     }
 
   def readObjectFields[T](path: Path, isSJCapture: Boolean, fields: ListMap[String, ClassHelper.ClassFieldMember[T, Any]]): ObjectFieldsRead =
-    expect(TokenType.BeginObject, path, (pt: ParseToken[JValue]) => "", true) match {
+    expect(TokenType.BeginObject, path, (pt: ParseToken[JValue]) => "", isNullable = true) match {
       case "" =>
         var fieldCount = 0
         var captured = Map.empty[String, Any] // a place to cache SJCapture'd fields
@@ -162,7 +167,7 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
               args(oneField.index) = oneField.valueTypeAdapter.read(path \ fieldName, this)
               flags(oneField.index) = true
               fieldCount += 1
-            case _ if (isSJCapture) =>
+            case _ if isSJCapture =>
               captured = captured.+((fieldName, jackFlavor.anyTypeAdapter.asInstanceOf[typeadapter.AnyTypeAdapter]._read(path \ fieldName, this, true)))
             case _ =>
               // Skip over field not in class if we're not capturing

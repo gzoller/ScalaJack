@@ -8,7 +8,7 @@ class TimePrim() extends FunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  describe("--------------------------\n:  Time DelimSpec Tests  :\n--------------------------") {
+  describe("--------------------------\n:  Time Primitive Tests  :\n--------------------------") {
     describe("+++ Positive Tests +++") {
       it("Duration must work") {
         val inst = SampleDuration(Duration.ZERO, Duration.parse("P2DT3H4M"), null)

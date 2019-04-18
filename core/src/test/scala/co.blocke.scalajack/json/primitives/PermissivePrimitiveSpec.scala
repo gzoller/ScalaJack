@@ -11,7 +11,7 @@ class PermissivePrimitiveSpec() extends FunSpec with Matchers {
 
   val sj = ScalaJack().allowPermissivePrimitives()
 
-  describe("--------------------------------\n:  Permissive DelimSpec Tests  :\n--------------------------------") {
+  describe("--------------------------------\n:  Permissive Primitive Tests  :\n--------------------------------") {
     it("Boolean must work") {
       assertResult(Holder(true)) { sj.read[Holder[Boolean]]("""{"value":true}""") }
       assertResult(Holder(true)) { sj.read[Holder[Boolean]]("""{"value":"true"}""") }

@@ -21,6 +21,7 @@ case class Json4sFlavor(
 
   override val stringifyMapKeys: Boolean = true
 
+  // $COVERAGE-OFF$Identical to JsonFlavor code==no need to double-test
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[JValue] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
   def withDefaultHint(hint: String): JackFlavor[JValue] = this.copy(defaultHint = hint)
   def withHints(h: (Type, String)*): JackFlavor[JValue] = this.copy(hintMap = this.hintMap ++ h)
@@ -29,6 +30,7 @@ case class Json4sFlavor(
   def parseOrElse(poe: (Type, Type)*): JackFlavor[JValue] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
   def allowPermissivePrimitives(): JackFlavor[JValue] = this.copy(permissivesOk = true)
   def enumsAsInts(): JackFlavor[JValue] = this.copy(enumsAsInt = true)
+  // $COVERAGE-ON$
 
   def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new StringWrapTypeAdapter(wrappedTypeAdapter)
 

@@ -16,9 +16,7 @@ case class JValueTokenizer() extends Tokenizer[JValue] {
           tokenspace.add(JValueToken(JNull, TokenType.Null))
         case v: JArray =>
           tokenspace.add(JValueToken(JString("array"), TokenType.BeginArray))
-          v.values.foreach(arrVal =>
-            consumeValue(arrVal.asInstanceOf[JValue])
-          )
+          v.children.foreach(consumeValue(_))
           tokenspace.add(JValueToken(JString("array"), TokenType.EndArray))
 
         case v: JBool =>
