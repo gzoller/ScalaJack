@@ -10,7 +10,7 @@ import org.json4s._
 class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] with Stringish {
 
   def read[WIRE](path: Path, reader: model.Reader[WIRE]): T = {
-    // 1. Read String  (BsonValue --> String)
+    // 1. Read String  (JValue --> String)
     val wrappedValueString = reader.readString(path)
 
     wrappedTypeAdapter.asInstanceOf[ScalarTypeAdapter[_]].scalarType match {
@@ -41,7 +41,9 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends T
       case r: JDouble  => r.values.toString
       case r: JInt     => r.values.toString
       case r: JLong    => r.values.toString
-      case r           => throw new SJError("BSON type " + r.getClass.getName + " is not supported as a Map key")
+      // $COVERAGE-OFF$All scalar/wrapped JValues supported as of this writing.  Here just in case someone invents a new one.
+      case r           => throw new SJError("Json4s type " + r.getClass.getName + " is not supported as a Map key")
+      // $COVERAGE-ON$
     }
     writer.writeString(result, out)
   }

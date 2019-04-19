@@ -81,7 +81,7 @@ class ScalaPrim() extends FunSpec with Matchers {
         }
       }
       it("Map of string-wrapped primitives work") {
-        val inst = WrappedMaps(Map(3.toByte -> 2), Map(1 -> 2), Map(5L -> 7), Map(1.2 -> 3), Map(1.2F -> 3), Map(2.toShort -> 9), Map(BigInt(5) -> 6), Map(BigDecimal(4.9) -> 8), Map(true -> 1))
+        val inst = WrappedMaps(Map(3.toByte -> 2), Map(1 -> 2), Map(5L -> 7), Map(1.2 -> 3), Map(1.2F -> 3), Map(2.toShort -> 9), Map(BigInt(5) -> 6), Map(BigDecimal(4.9) -> 8), Map(true -> 1), Map('c' -> 1))
         val js4s = sj.render(inst)
         val expected = JObject(List(
           "a" -> JObject(List("3" -> JInt(2))),
@@ -92,7 +92,8 @@ class ScalaPrim() extends FunSpec with Matchers {
           "f" -> JObject(List("2" -> JInt(9))),
           "g" -> JObject(List("5" -> JInt(6))),
           "h" -> JObject(List("4.9" -> JInt(8))),
-          "i" -> JObject(List("true" -> JInt(1)))
+          "i" -> JObject(List("true" -> JInt(1))),
+          "j" -> JObject(List("c" -> JInt(1)))
         ))
         assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(expected) }
         assertResult(inst) {

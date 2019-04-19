@@ -26,6 +26,7 @@ case class SampleString(s1: String, s2: String, s3: String)
 case class SampleUUID(u1: UUID, u2: UUID)
 
 case class Player(name: String, age: Int)
+case class PlayerCapture(name: String, age: Int) extends SJCapture
 
 case class OptionBigInt(o: Option[BigInt])
 case class OptionClass(name: String, age: Option[Int])
@@ -35,4 +36,4 @@ case class SomeClass(name: String, age: Int) extends Person
 trait Thing[A, B] { val a: A; val b: B }
 case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
 
-case class WrappedMaps(a: Map[Byte, Int], b: Map[Int, Int], c: Map[Long, Int], d: Map[Double, Int], e: Map[Float, Int], f: Map[Short, Int], g: Map[BigInt, Int], h: Map[BigDecimal, Int], i: Map[Boolean, Int])
+case class WrappedMaps(a: Map[Byte, Int], b: Map[Int, Int], c: Map[Long, Int], d: Map[Double, Int], e: Map[Float, Int], f: Map[Short, Int], g: Map[BigInt, Int], h: Map[BigDecimal, Int], i: Map[Boolean, Int], j: Map[Char, Int])

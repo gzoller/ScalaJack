@@ -38,6 +38,14 @@ class Json4sSpec extends FunSpec with Matchers {
         sj.read[String](js4s)
       }
     }
+    it("Null objects work") {
+      val inst: Player = null
+      val js4s = sj.render(inst)
+      assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(JNull) }
+      assertResult(inst) {
+        sj.read[String](js4s)
+      }
+    }
     it("Tuples work") {
       val inst = List(("Fred", 34), ("Sally", 29))
       val js4s = sj.render(inst)
@@ -47,6 +55,24 @@ class Json4sSpec extends FunSpec with Matchers {
         sj.read[List[(String, Int)]](js4s)
       }
     }
-    // TODO: Test embeddit objects to be sure Maps/Objects arent flattened by ++!
+    it("Bad JValueBuilder access") {
+      val b = JValueBuilder()
+      the[model.SJError] thrownBy b.result() should have message "No value set for internal json4s builder"
+    }
+    it("SJCapture works") {
+      val js4s = JObject(List("name" -> JString("Harry"), "age" -> JInt(43), "foo" -> JBool(true), "bar" -> JInt(3)))
+      val inst = sj.read[PlayerCapture](js4s)
+      assertResult(PlayerCapture("Harry", 43)) { inst }
+      assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(js4s) }
+    }
+    it("Trait support") {
+      val inst: Thing[Int, String] = AThing(5, "foo")
+      val js4s = sj.render(inst)
+      val expected = JObject(List("_hint" -> JString("co.blocke.scalajack.json4s.AThing"), "a" -> JInt(5), "b" -> JString("foo")))
+      assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(expected) }
+      assertResult(inst) {
+        sj.read[Thing[Int, String]](js4s)
+      }
+    }
   }
 }
