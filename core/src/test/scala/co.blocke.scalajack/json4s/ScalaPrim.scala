@@ -33,18 +33,6 @@ class ScalaPrim() extends FunSpec with Matchers {
           sj.read[SampleBigInt](js4s)
         }
       }
-      /*
-      it("Binary must work") {
-        val inst = SampleBinary(null, hexStringToByteArray("e04fd020ea3a6910a2d808002b30309d"))
-        val js = sj.render(inst)
-        assertResult("""{"b1":null,"b2":"4E/QIOo6aRCi2AgAKzAwnQ=="}""") { js }
-        val inst2 = sj.read[SampleBinary](js)
-        assertResult(null) { inst2.b1 }
-        assertResult(true) {
-          inst.b2.toList == inst2.b2.toList
-        }
-      }
-      */
       it("Boolean must work (not nullable)") {
         val inst = SampleBoolean(true, false)
         val js4s = sj.render(inst)
@@ -54,24 +42,6 @@ class ScalaPrim() extends FunSpec with Matchers {
           sj.read[SampleBoolean](js4s)
         }
       }
-      /*
-      it("Byte must work (not nullable)") {
-        val inst = SampleByte(Byte.MaxValue, Byte.MinValue, 0, 64)
-        val js = sj.render(inst)
-        assertResult("""{"b1":127,"b2":-128,"b3":0,"b4":64}""") { js }
-        assertResult(inst) {
-          sj.read[SampleByte](js)
-        }
-      }
-      it("Char must work (not nullable)") {
-        val inst = SampleChar(Char.MaxValue, 'Z', '\u20A0')
-        val js = sj.render(inst)
-        assertResult("""{"c1":"\""" + """uffff","c2":"Z","c3":"\""" + """u20a0"}""") { js }
-        assertResult(inst) {
-          sj.read[SampleChar](js)
-        }
-      }
-      */
       it("Double must work (not nullable)") {
         val inst = SampleDouble(Double.MaxValue, Double.MinValue, 0.0, -123.4567)
         val js4s = sj.render(inst)
@@ -110,36 +80,28 @@ class ScalaPrim() extends FunSpec with Matchers {
           sj.read[SampleLong](js4s)
         }
       }
-      /*
-      it("Short must work (not nullable)") {
-        val inst = SampleShort(Short.MaxValue, Short.MinValue, 0, 123)
-        val js = sj.render(inst)
-        assertResult("""{"s1":32767,"s2":-32768,"s3":0,"s4":123}""") { js }
+      it("Map of string-wrapped primitives work") {
+        val inst = WrappedMaps(Map(3.toByte -> 2), Map(1 -> 2), Map(5L -> 7), Map(1.2 -> 3), Map(1.2F -> 3), Map(2.toShort -> 9), Map(BigInt(5) -> 6), Map(BigDecimal(4.9) -> 8), Map(true -> 1))
+        val js4s = sj.render(inst)
+        val expected = JObject(List(
+          "a" -> JObject(List("3" -> JInt(2))),
+          "b" -> JObject(List("1" -> JInt(2))),
+          "c" -> JObject(List("5" -> JInt(7))),
+          "d" -> JObject(List("1.2" -> JInt(3))),
+          "e" -> JObject(List("1.2" -> JInt(3))),
+          "f" -> JObject(List("2" -> JInt(9))),
+          "g" -> JObject(List("5" -> JInt(6))),
+          "h" -> JObject(List("4.9" -> JInt(8))),
+          "i" -> JObject(List("true" -> JInt(1)))
+        ))
+        assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(expected) }
         assertResult(inst) {
-          sj.read[SampleShort](js)
+          sj.read[WrappedMaps](js4s)
         }
       }
-      it("String must work") {
-        val inst = SampleString("something\b\n\f\r\t☆", "", null)
-        val js = sj.render(inst)
-        // The weird '+' here is to break up the unicode so it won't be interpreted and wreck the test.
-        assertResult("""{"s1":"something\b\n\f\r\t\""" + """u2606","s2":"","s3":null}""") { js }
-        assertResult(inst) {
-          sj.read[SampleString](js)
-        }
-      }
-      it("UUID must work") {
-        val inst = SampleUUID(null, UUID.fromString("580afe0d-81c0-458f-9e09-4486c7af0fe9"))
-        val js = sj.render(inst)
-        assertResult("""{"u1":null,"u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}""") { js }
-        assertResult(inst) {
-          sj.read[SampleUUID](js)
-        }
-      }
-       */
     }
     /*
-    describe("--- Negative Tests ---") {
+  describe("--- Negative Tests ---") {
       it("BigDecimal must break") {
         val js = """{"bd1":123,"bd2":1.23,"bd3":0,"bd4":123.456,"bd5":"0.1499999999999999944488848768742172978818416595458984375","bd6":null}"""
         val msg = """[$.bd5]: Expected Number here but found String
@@ -281,7 +243,7 @@ class ScalaPrim() extends FunSpec with Matchers {
         val msg = "Unable to find a type adapter for InputStream (may be abstract or a dependency of an abstract class)"
         the[java.lang.IllegalArgumentException] thrownBy sj.read[java.lang.Process](js) should have message msg
       }
-    }
+      }
  */
   }
 }

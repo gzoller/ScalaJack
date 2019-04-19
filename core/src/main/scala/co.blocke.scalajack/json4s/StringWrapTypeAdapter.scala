@@ -13,26 +13,22 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends T
     // 1. Read String  (BsonValue --> String)
     val wrappedValueString = reader.readString(path)
 
-    if (wrappedTypeAdapter.isInstanceOf[ScalarTypeAdapter[_]])
-      wrappedTypeAdapter.asInstanceOf[ScalarTypeAdapter[_]].scalarType match {
-        case t if t == typeOf[Byte]       => wrappedValueString.toByte.asInstanceOf[T]
-        case t if t == typeOf[Char]       => wrappedValueString(0).asInstanceOf[T]
-        case t if t == typeOf[Int]        => wrappedValueString.toInt.asInstanceOf[T]
-        case t if t == typeOf[Long]       => wrappedValueString.toLong.asInstanceOf[T]
-        case t if t == typeOf[Double]     => wrappedValueString.toDouble.asInstanceOf[T]
-        case t if t == typeOf[Float]      => wrappedValueString.toFloat.asInstanceOf[T]
-        case t if t == typeOf[Short]      => wrappedValueString.toShort.asInstanceOf[T]
-        case t if t == typeOf[BigDecimal] => BigDecimal(wrappedValueString).asInstanceOf[T]
-        case t if t == typeOf[Boolean]    => wrappedValueString.toBoolean.asInstanceOf[T]
-        // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
-        case _ =>
-          reader.back
-          throw new ReadInvalidError(reader.showError(path, "Only Scala scalar values are supported as JValue Map keys"))
-        // $COVERAGE-ON$
-      }
-    else {
-      reader.back
-      throw new ReadInvalidError(reader.showError(path, "Only scalar values are supported as JValue Map keys"))
+    wrappedTypeAdapter.asInstanceOf[ScalarTypeAdapter[_]].scalarType match {
+      case t if t == typeOf[Byte]       => wrappedValueString.toByte.asInstanceOf[T]
+      case t if t == typeOf[Char]       => wrappedValueString(0).asInstanceOf[T]
+      case t if t == typeOf[Int]        => wrappedValueString.toInt.asInstanceOf[T]
+      case t if t == typeOf[Long]       => wrappedValueString.toLong.asInstanceOf[T]
+      case t if t == typeOf[Double]     => wrappedValueString.toDouble.asInstanceOf[T]
+      case t if t == typeOf[Float]      => wrappedValueString.toFloat.asInstanceOf[T]
+      case t if t == typeOf[Short]      => wrappedValueString.toShort.asInstanceOf[T]
+      case t if t == typeOf[BigInt]     => BigInt(wrappedValueString).asInstanceOf[T]
+      case t if t == typeOf[BigDecimal] => BigDecimal(wrappedValueString).asInstanceOf[T]
+      case t if t == typeOf[Boolean]    => wrappedValueString.toBoolean.asInstanceOf[T]
+      // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
+      case _ =>
+        reader.back
+        throw new ReadInvalidError(reader.showError(path, "Only Scala scalar values are supported as JValue Map keys"))
+      // $COVERAGE-ON$
     }
   }
 

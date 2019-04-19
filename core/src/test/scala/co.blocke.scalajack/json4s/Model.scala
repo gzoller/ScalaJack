@@ -35,3 +35,4 @@ case class SomeClass(name: String, age: Int) extends Person
 trait Thing[A, B] { val a: A; val b: B }
 case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
 
+case class WrappedMaps(a: Map[Byte, Int], b: Map[Int, Int], c: Map[Long, Int], d: Map[Double, Int], e: Map[Float, Int], f: Map[Short, Int], g: Map[BigInt, Int], h: Map[BigDecimal, Int], i: Map[Boolean, Int])

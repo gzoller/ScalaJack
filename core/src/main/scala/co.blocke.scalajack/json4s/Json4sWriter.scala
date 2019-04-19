@@ -19,7 +19,7 @@ case class Json4sWriter(jackFlavor: JackFlavor[JValue]) extends Writer[JValue] {
       a.iterator.foreach { item =>
         outBuf.clear()
         elemTypeAdapter.write(item, this, outBuf, false)
-        arr = (arr ++ outBuf.result).asInstanceOf[JArray]
+        arr = JArray(arr.arr :+ outBuf.result)
       }
       out += arr
   }
@@ -102,7 +102,7 @@ case class Json4sWriter(jackFlavor: JackFlavor[JValue]) extends Writer[JValue] {
     writeFns.foreach { f =>
       outBuf.clear()
       f(this, outBuf)
-      arr = (arr ++ outBuf.result).asInstanceOf[JArray]
+      arr = JArray(arr.arr :+ outBuf.result)
     }
     out += arr
   }
