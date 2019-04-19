@@ -37,3 +37,9 @@ trait Thing[A, B] { val a: A; val b: B }
 case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
 
 case class WrappedMaps(a: Map[Byte, Int], b: Map[Int, Int], c: Map[Long, Int], d: Map[Double, Int], e: Map[Float, Int], f: Map[Short, Int], g: Map[BigInt, Int], h: Map[BigDecimal, Int], i: Map[Boolean, Int], j: Map[Char, Int])
+
+trait Address { val postalCode: String }
+case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
+case class DefaultAddress(postalCode: String) extends Address
+trait Demographic { val address: Address }
+case class USDemographic(age: Int, address: Address) extends Demographic
