@@ -124,7 +124,7 @@ class Json4sSpec extends FunSpec with Matchers {
       }
     }
     it("Broken hint mod (no class)") {
-      val prependHintMod = model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json4s." + hint, (cname: String) => cname.split('.').last)
+      val prependHintMod = model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.bogus." + hint, (cname: String) => cname.split('.').last)
       val sjx = sj.withHintModifiers((typeOf[Address], prependHintMod))
       val js4s = JObject(List(
         "_hint" -> JString("co.blocke.scalajack.json4s.USDemographic"),
@@ -137,7 +137,23 @@ class Json4sSpec extends FunSpec with Matchers {
           "postalCode" -> JString("39822")
         ))
       ))
-      the [model.ReadMissingError] thrownBy sj.read[Demographic](js4s) should have message "[$.address]: Unable to find class named \"BogusAddress\""
+      the[model.ReadInvalidError] thrownBy sjx.read[Demographic](js4s) should have message "[$.address]: Failed to apply type modifier to type member hint BogusAddress"
+    }
+    it("Null object value") {
+      val inst = USDemographic(25, null)
+      val js4s = sj.render(inst)
+      assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(JObject(List("age" -> JInt(25), "address" -> JNull))) }
+      assertResult(inst) {
+        sj.read[USDemographic](js4s)
+      }
+    }
+    it("No type hint in trait") {
+      val js4s = JObject(List("a" -> JInt(5), "b" -> JString("foo")))
+      the[model.ReadInvalidError] thrownBy sj.read[Thing[Int, String]](js4s) should have message "[$._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.json4s.Thing"
+    }
+    it("Any type that looks like trait but unknown hint") {
+      val js4s = JObject(List("_hint" -> JInt(4), "name" -> JString("Fred"), "age" -> JInt(55)))
+      assertResult(Map("_hint" -> 4, "name" -> "Fred", "age" -> 55)) { sj.read[Any](js4s) }
     }
   }
 }

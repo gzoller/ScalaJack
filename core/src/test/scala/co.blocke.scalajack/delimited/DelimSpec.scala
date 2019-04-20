@@ -245,6 +245,12 @@ class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
         val delim2 = sj.render(s2)
         delim2 should equal("2,\"99,foo\"")
         sj.read[HasEither](delim2) should be(s2)
+
+        val s3 = HasEither(2, Right(null))
+        sj.render(s3) should equal("2,")
+      }
+      it("Null object") {
+        sj.render[HasEither](null) should equal("")
       }
       it("Either missing a value (no default)") {
         val delim = ",\"99,foo\""
