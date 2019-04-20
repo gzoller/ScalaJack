@@ -30,12 +30,12 @@ object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
       case null =>
         out += new BsonNull().asInstanceOf[WIRE]
       case _ =>
-        println("--------------------------------- Zoned Time Test")
-        println("Raw ZonedDateTime: "+t)
-        println("Shifted to utc: "+t.withZoneSameInstant(ZoneId.of("UTC")))
-        println("To Instant: "+t.withZoneSameInstant(ZoneId.of("UTC")).toInstant)
-        println("Final (epocmilli): "+t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli)
-        println("---------------------------------")
+        //        println("--------------------------------- Zoned Time Test")
+        //        println("Raw ZonedDateTime: " + t)
+        //        println("Shifted to utc: " + t.withZoneSameInstant(ZoneId.of("UTC")))
+        //        println("To Instant: " + t.withZoneSameInstant(ZoneId.of("UTC")).toInstant)
+        //        println("Final (epocmilli): " + t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli)
+        //        println("---------------------------------")
         out += new BsonDateTime(t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli).asInstanceOf[WIRE]
     }
 }

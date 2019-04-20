@@ -55,9 +55,9 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         b should equal(thing)
       }
       it("ZonedDateTime must work") {
-        val inst = SampleZonedDateTime(ZonedDateTime.parse("2007-12-03T10:15:30+01:00[UTC]"), ZonedDateTime.parse("2007-12-03T10:15:30+01:00[UTC]"))
+        val inst = SampleZonedDateTime(ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]"), ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]"))
         val dbo = mongoScalaJack.render(inst)
-        dbo.asDocument.toJson should equal("""{"o1": {"$date": 1196673330000}, "o2": {"$date": 1196673330000}}""")
+        dbo.asDocument.toJson should equal("""{"o1": {"$date": 1196676930000}, "o2": {"$date": 1196676930000}}""")
         val b = mongoScalaJack.read[SampleZonedDateTime](dbo)
         b should equal(inst)
       }

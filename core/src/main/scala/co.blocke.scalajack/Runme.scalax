@@ -1,0 +1,9 @@
+package co.blocke.scalajack
+
+import java.time._
+
+object Runme extends App {
+
+  val z = ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]").withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli
+  println(z)
+}
