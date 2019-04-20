@@ -50,12 +50,11 @@ object Analyzer {
   }
 
   private[series4] def know(
-    t:               Type,
-    t_alias:         Type,
-    relativeToTrait: Option[TraitType]            = None,
-    isParamType:     Boolean                      = false,
-    preResolved:     LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType]
-  ): AType = this.synchronized {
+      t:               Type,
+      t_alias:         Type,
+      relativeToTrait: Option[TraitType]            = None,
+      isParamType:     Boolean                      = false,
+      preResolved:     LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType]): AType = this.synchronized {
     // NOTE: Had to add synchronized here because we're adding an "empty" case class type into readyToEat first,
     // then building case class method field lists as we go.  THis is to support self-referencing.
     // If other threads see a not-yet-complete in readyToEat it will blow up.  This sync ensures we wait
@@ -117,15 +116,14 @@ object Analyzer {
                     if (p.typeSignature.toString == cc.name)
                       Some(cc)
                     else
-                      Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias, p.typeSignature, None, false, argMap)))
-                  )
+                      Some(argMap.getOrElse(p.typeSignature.toString, know(p.typeSignature.dealias, p.typeSignature, None, false, argMap))))
                 /*
 										Some(argMap.getOrElse(p.typeSignature.toString, {
 											know(p.typeSignature.dealias,p.typeSignature,None,false,argMap) match {
 												case pr:PrimType if(p.typeSignature.dealias.toString != p.typeSignature.toString) => pr.copy(alias = Some(p.typeSignature.toString))
 												case pr => pr
 											}
-											} )) 
+											} ))
 									})
 											*/
                 val defaultVal = {
@@ -155,8 +153,7 @@ object Analyzer {
             }
             EnumType(
               sym.fullName,
-              Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration]
-            )
+              Class.forName(erasedEnumClassName).getField(scala.reflect.NameTransformer.MODULE_INSTANCE_NAME).get(null).asInstanceOf[Enumeration])
 
           case sym if (sym.asClass.isDerivedValueClass) =>
             val vField = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head
@@ -177,8 +174,7 @@ object Analyzer {
             val valSjType = args match {
               case pa if (pa.isEmpty) => know(
                 sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias,
-                sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
-              ) // No type params on VC
+                sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info) // No type params on VC
               case pa =>
                 val vTerm = sym.asClass.primaryConstructor.typeSignature.paramLists.head.head.asTerm.info.resultType // Don't ask...its magic.
                 val g = sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
@@ -187,8 +183,7 @@ object Analyzer {
                 else
                   argMap.getOrElse(vTerm.toString, know(
                     sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info.dealias,
-                    sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info
-                  ))
+                    sym.asClass.primaryConstructor.asMethod.paramLists.head.head.info))
             }
             ValueClassType(sym.fullName, valSjType, vField.name.toString, isParamType, custom)
 

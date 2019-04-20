@@ -1,9 +1,12 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ Mirror, Type, TypeTag, typeOf }
+import util.Path
+import model._
 
-object TypeTypeAdapter extends TypeAdapterFactory {
+import scala.collection.mutable.Builder
+
+object TypeTypeAdapterFactory extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
     if (tt.tpe =:= typeOf[Type]) {
@@ -15,34 +18,24 @@ object TypeTypeAdapter extends TypeAdapterFactory {
 
 }
 
+trait HintModifier
+
 case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = None) extends TypeAdapter[Type] {
 
-  override def read(reader: Reader): Type =
-    reader.peek match {
-      case TokenType.String =>
-        typeModifier.map(mod => mod.apply(reader.readString())).getOrElse {
-          val fullName = reader.readString()
-          try {
-            mirror.staticClass(fullName).toType
-          } catch {
-            case e: ScalaReflectionException =>
-              throw new ClassNotFoundException(s"""Unable to find class named "$fullName"\n""" + reader.showError(), e)
-          }
-        }
-
-      case TokenType.Null =>
-        // $COVERAGE-OFF$Safety check--not used
-        reader.readNull()
-      // $COVERAGE-ON$
+  def typeNameToType[WIRE](path: Path, typeName: String, reader: Reader[WIRE]): Type =
+    try {
+      staticClass(typeName).toType
+    } catch {
+      case e: ScalaReflectionException =>
+        throw new ReadMissingError(reader.showError(path, s"""Unable to find class named "$typeName""""))
     }
 
-  override def write(value: Type, writer: Writer): Unit =
-    if (value == null) {
-      // $COVERAGE-OFF$Safety check--not used
-      writer.writeNull()
-      // $COVERAGE-ON$
-    } else {
-      writer.writeString(typeModifier.map(mod => mod.unapply(value)).getOrElse(value.typeSymbol.fullName))
-    }
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Type = reader.readString(path) match {
+    case s: String =>
+      typeNameToType(path, s, reader)
+    // No others should be possible
+  }
 
+  def write[WIRE](t: Type, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+    writer.writeString(t.typeSymbol.fullName, out)
 }

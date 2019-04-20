@@ -1,33 +1,31 @@
 package co.blocke.scalajack
 package typeadapter
 
+import model._
+import util.{ Path, Reflection }
 import java.lang.reflect.Method
-
-import co.blocke.scalajack.typeadapter.TupleTypeAdapter.Field
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, TypeTag }
+import TupleTypeAdapterFactory.TupleField
 
-object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
+import scala.collection.mutable.Builder
 
-  case class Field[T](
+object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
+
+  case class TupleField[F](
       index:                     Int,
-      valueTypeAdapter:          TypeAdapter[T],
+      valueTypeAdapter:          TypeAdapter[F],
       valueAccessorMethodSymbol: MethodSymbol,
       valueAccessorMethod:       Method) {
 
-    def valueIn(tuple: Any): T = {
-      valueAccessorMethod.invoke(tuple).asInstanceOf[T]
-    }
+    def valueIn(tuple: Any): F = valueAccessorMethod.invoke(tuple).asInstanceOf[F]
 
-    def read(reader: Reader): Any = {
-      valueTypeAdapter.read(reader)
-    }
+    def read[WIRE](path: Path, reader: Reader[WIRE]): Any =
+      valueTypeAdapter.read(path, reader)
 
-    def write(fieldValue: Any, writer: Writer): Unit = {
-      valueTypeAdapter.asInstanceOf[TypeAdapter[Any]].write(fieldValue, writer)
-    }
-
+    def write[WIRE, T](tuple: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+      valueTypeAdapter.write(valueIn(tuple), writer, out, isMapKey)
   }
 
   val tupleFullName = """scala.Tuple(\d+)""".r
@@ -41,12 +39,13 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
         val fields = for (i <- 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
           val fieldTypeAdapter = context.typeAdapter(fieldType) match {
-            case vta: OptionTypeAdapter[_] => vta.noneAsNull
-            case vta                       => vta
+            case opt: OptionTypeAdapter[_] => opt.convertNullToNone()
+            case ta                        => ta
           }
+
           val valueAccessorMethodSymbol = tt.tpe.member(TermName(s"_${i + 1}")).asMethod
           val valueAccessorMethod = Reflection.methodToJava(valueAccessorMethodSymbol)
-          Field(i, fieldTypeAdapter, valueAccessorMethodSymbol, valueAccessorMethod)
+          TupleField(i, fieldTypeAdapter, valueAccessorMethodSymbol, valueAccessorMethod)
         }
 
         val classMirror = currentMirror.reflectClass(classSymbol)
@@ -61,41 +60,26 @@ object TupleTypeAdapter extends TypeAdapterFactory.FromClassSymbol {
 }
 
 case class TupleTypeAdapter[T >: Null](
-    fields:            List[Field[_]],
-    constructorMirror: MethodMirror) extends TypeAdapter[T] {
+    fields:            List[TupleField[_]],
+    constructorMirror: MethodMirror) extends TypeAdapter[T] with Collectionish {
 
-  override def read(reader: Reader): T =
-    reader.peek match {
-      case TokenType.BeginArray =>
-        val fieldValues = new Array[Any](fields.length)
-
-        reader.beginArray()
-
-        for (field <- fields) {
-          val fieldValue = field.read(reader)
-          fieldValues(field.index) = fieldValue
-        }
-
-        reader.endArray()
-
-        constructorMirror.apply(fieldValues: _*).asInstanceOf[T]
-
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T =
+    reader.head.tokenType match {
       case TokenType.Null =>
-        reader.readNull()
+        reader.next
+        null
+      case _ =>
+        constructorMirror.apply(reader.readTuple(path, fields): _*).asInstanceOf[T]
     }
 
-  override def write(tuple: T, writer: Writer): Unit =
-    if (tuple == null) {
-      writer.writeNull()
-    } else {
-      writer.beginArray()
-
-      for (field <- fields) {
-        val fieldValue = field.valueIn(tuple)
-        field.write(fieldValue, writer)
-      }
-
-      writer.endArray()
-    }
-
+  // Create functions that know how to self-write each field.  The actual writing of each element
+  // is done in TupleField where the specific field type F is known.
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+    if (t == null)
+      writer.writeNull(out)
+    else
+      writer.writeTuple(
+        fields.map(field => (w: Writer[WIRE], builder: Builder[WIRE, WIRE]) => field.write(t, w, builder, isMapKey)),
+        out
+      )
 }

@@ -3,8 +3,8 @@ package json
 
 //
 // Be careful about renumbering things in here!  The tokenizing logic uses binary
-// shifts (1 or 2 bits) to convert a "standard" token to either one that's an 
-// element in a list (<<1) or one that's an object key (<<2).  While the JSON 
+// shifts (1 or 2 bits) to convert a "standard" token to either one that's an
+// element in a list (<<1) or one that's an object key (<<2).  While the JSON
 // spec recognizes only Strings as object keys, ScalaJack's "sloppy" mode permits
 // non-String keys.
 //

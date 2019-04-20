@@ -1,33 +1,28 @@
 package co.blocke.scalajack
 package typeadapter
 
+import util.Path
+import model._
 import java.util.UUID
-import scala.util.{ Try, Success, Failure }
 
-object UUIDTypeAdapter extends SimpleTypeAdapter[UUID] {
+import scala.collection.mutable.Builder
+import scala.util.{ Failure, Success, Try }
 
-  override def read(reader: Reader): UUID =
-    reader.peek match {
-      case TokenType.String =>
-        Try(UUID.fromString(reader.readString())) match {
+object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] with Stringish {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): UUID = {
+    reader.readString(path) match {
+      case null => null
+      case s: String =>
+        Try(UUID.fromString(s)) match {
           case Success(u) => u
-          case Failure(u) => throw new java.lang.IllegalArgumentException(u.getMessage + "\n" + reader.showError())
+          case Failure(u) =>
+            reader.back
+            throw new ReadMalformedError(reader.showError(path, s"Failed to create UUID value from parsed text ${s}"))
         }
-
-      case TokenType.Null =>
-        reader.readNull()
-
-      case actual => {
-        reader.read()
-        throw new IllegalStateException(s"Expected value token of type String, not $actual when reading UUID value.\n" + reader.showError())
-      }
     }
-
-  override def write(value: UUID, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString(value.toString)
-    }
-
+  }
+  def write[WIRE](t: UUID, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString(t.toString, out)
+  }
 }

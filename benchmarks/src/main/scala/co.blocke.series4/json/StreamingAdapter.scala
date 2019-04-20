@@ -98,7 +98,7 @@ case class StreamingAdapter(in: InputStreamReader, BLOCK_SIZE: Int = 262144)(imp
   // 	if( z.isDefined ) {
   // 		val elements = z.get.position.slice(0,z.get.count)
   // 		print(" "*(prefix.length+1))
-  // 		(0 to content.length).foreach( i => if(elements.contains(i)) print("+") else print("-")) 
+  // 		(0 to content.length).foreach( i => if(elements.contains(i)) print("+") else print("-"))
   // 		println("")
   // 	}
   // }
