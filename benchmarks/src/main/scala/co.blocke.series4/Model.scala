@@ -19,7 +19,7 @@ case class CCType(
     members:    LinkedHashMap[String, (AType, Option[Any])], // Map[memberName -> (MemberType,Optional Default Value)]
     paramMap:   LinkedHashMap[String, AType]                = LinkedHashMap.empty[String, AType],
     superTrait: Option[TraitType]                           = None,
-    collAnno:   Option[String]                              = None // db collumn annotation 
+    collAnno:   Option[String]                              = None // db collumn annotation
 ) extends AType {
   private val constructor = Class.forName(name).getConstructors()(0)
   private lazy val defaults = members.collect {
@@ -57,9 +57,8 @@ trait ValueClassCustom extends Any {
   def render: PartialFunction[(KindMarker, _), Any] // [(JackFlavor[S],ValueClassInstance), S]
 }
 case class VCCustomMethods(
-  read:   PartialFunction[(KindMarker, _), Any],
-  render: PartialFunction[(KindMarker, _), Any]
-)
+    read:   PartialFunction[(KindMarker, _), Any],
+    render: PartialFunction[(KindMarker, _), Any])
 
 trait KindMarker
 
@@ -67,8 +66,7 @@ case class TraitType(
     name:     String,
     members:  LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType],
     paramMap: LinkedHashMap[String, AType] = LinkedHashMap.empty[String, AType],
-    default:  Option[Any]                  = None
-) extends AType {
+    default:  Option[Any]                  = None) extends AType {
   def dup = this.copy()
 }
 

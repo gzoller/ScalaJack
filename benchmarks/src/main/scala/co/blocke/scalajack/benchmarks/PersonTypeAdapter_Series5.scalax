@@ -1,0 +1,46 @@
+package co.blocke.scalajack.benchmarks
+
+import co.blocke.series5._
+import scala.language.{ existentials, reflectiveCalls }
+import scala.reflect.runtime.universe.{ ClassSymbol, TypeTag, typeOf }
+
+object PersonTypeAdapter_Series5 extends TypeAdapterFactory.FromClassSymbol {
+
+  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: co.blocke.series5.TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): co.blocke.series5.TypeAdapter[T] =
+    if (tt.tpe == typeOf[Person]) {
+      PersonTypeAdapter_Series5(context.typeAdapterOf[String], context.typeAdapterOf[Long]).asInstanceOf[TypeAdapter[T]]
+    } else {
+      next.typeAdapterOf[T]
+    }
+
+}
+
+case class PersonTypeAdapter_Series5(stringTA: co.blocke.series5.TypeAdapter[String], longTA: co.blocke.series5.TypeAdapter[Long]) extends co.blocke.series5.TypeAdapter[Person] {
+
+  override def read(reader: Reader): Person = {
+    reader.beginObject()
+
+    var id: Long = 0L
+    var firstName: String = ""
+    var lastName: String = ""
+    var email: String = ""
+    var gender: String = ""
+    var ipAddress: String = ""
+
+    while (reader.hasMoreMembers) {
+      stringTA.read(reader) match {
+        case "id"         => id = longTA.read(reader) //reader.readLong
+        case "first_name" => firstName = stringTA.read(reader) //reader.readString
+        case "last_name"  => lastName = stringTA.read(reader) //reader.readString
+        case "email"      => email = stringTA.read(reader) //reader.readString
+        case "gender"     => gender = stringTA.read(reader) //reader.readString
+        case "ip_address" => ipAddress = stringTA.read(reader) //reader.readString
+      }
+    }
+    reader.endObject()
+    Person(id, firstName, lastName, email, gender, ipAddress)
+  }
+
+  override def write(value: Person, writer: Writer): Unit = {}
+
+}

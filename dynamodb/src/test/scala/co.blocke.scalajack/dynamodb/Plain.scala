@@ -1,6 +1,5 @@
 package co.blocke.scalajack
 package dynamodb
-package test
 
 import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
 

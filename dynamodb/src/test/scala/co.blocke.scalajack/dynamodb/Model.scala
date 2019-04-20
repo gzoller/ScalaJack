@@ -1,34 +1,28 @@
 package co.blocke.scalajack
 package dynamodb
-package test
-
-import typeadapter.BasicTypeAdapter
 
 object MyTypes {
   type Phone = String
 }
 import MyTypes._
 
-// Override just Phone
-object PhoneAdapter extends BasicTypeAdapter[Phone] {
-  override def read(reader: Reader): Phone = {
-    reader.peek match {
-      case TokenType.String =>
-        val raw = reader.readString()
-        raw.replaceAll("-", "").asInstanceOf[Phone]
-      // "%s-%s-%s".format(raw.substring(0, 3), raw.substring(3, 6), raw.substring(6)).asInstanceOf[Phone]
-      case TokenType.Null =>
-        reader.readNull()
-    }
-  }
+import model.{ Reader, Stringish, TypeAdapter, Writer }
+import util.Path
 
-  override def write(value: Phone, writer: Writer): Unit =
-    if (value == null) {
-      writer.writeNull()
-    } else {
-      writer.writeString("%s-%s-%s".format(value.substring(0, 3), value.substring(3, 6), value.substring(6)))
-      // writer.writeString(value.replaceAll("-", ""))
+import scala.collection.mutable.Builder
+
+// Override just Phone
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =
+    reader.readString(path) match {
+      case s: String => s.replaceAll("-", "")
+      case null      => null
     }
+
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
+    case null => writer.writeNull(out)
+    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
+  }
 }
 
 trait Human { val name: String; val age: Int }

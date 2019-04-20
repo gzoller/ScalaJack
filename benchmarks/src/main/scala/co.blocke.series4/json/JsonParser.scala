@@ -67,10 +67,8 @@ case class JsonParser(sjTName: String, idx: JsonIndex, vctx: VisitorContext) {
             val text = Unicode.unescape_perl_string(idx.getToken(i))
             sj.alias.flatMap(alias => vctx.customHandlers.get(alias).map(_.read.applyOrElse(
               (JsonKind(), text),
-              (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}", 0)
-            ))).getOrElse(
-              PrimitiveTypes.primTypes(sj.primCode)(text)
-            )
+              (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}", 0)))).getOrElse(
+              PrimitiveTypes.primTypes(sj.primCode)(text))
           case JStrue | JStrueInList | JStrueObjKey    => true
           case JSfalse | JSfalseInList | JSfalseObjKey => false
           case JSnull | JSnullInList                   => null
@@ -172,8 +170,7 @@ case class JsonParser(sjTName: String, idx: JsonIndex, vctx: VisitorContext) {
         val handler = vctx.customHandlers.getOrElse(sj.name, throw new JsonParseException(s"No custom read/render handler (CustomReadRender) provided for class ${sj.name}", 0))
         val java = handler.read.applyOrElse(
           (JsonKind(), idx.getToken(i)),
-          (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}", 0)
-        )
+          (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${sj.name}", 0))
         i += 1
         java
     }
@@ -182,8 +179,7 @@ case class JsonParser(sjTName: String, idx: JsonIndex, vctx: VisitorContext) {
       vc.custom.map {
         _.read.applyOrElse(
           (JsonKind(), _parse(PrimType("String")).asInstanceOf[String]),
-          (k: (KindMarker, _)) => _parse(vc.vcType)
-        )
+          (k: (KindMarker, _)) => _parse(vc.vcType))
       }.orElse(Some(_parse(vc.vcType))).get.asInstanceOf[AnyRef]
     def parseValueClass(vc: ValueClassType, primitive: AnyRef) = Class.forName(vc.name).getConstructors()(0).newInstance(primitive)
 

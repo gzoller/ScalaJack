@@ -1,43 +1,46 @@
 package co.blocke.scalajack
 package json
 
-import scala.reflect.runtime.universe.{ Type, TypeTag }
+import model._
+import compat.StringBuilder
+import typeadapter.CanBuildFromTypeAdapterFactory
+
+import java.util.ArrayList
 
 case class JsonFlavor(
-    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-    hintMap:        Map[Type, String]        = Map.empty[Type, String],
-    hintModifiers:  Map[Type, HintModifier]  = Map.empty[Type, HintModifier],
-    typeModifier:   Option[HintModifier]     = None,
-    parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type],
-    defaultHint:    String                   = "_hint",
-    isCanonical:    Boolean                  = true) extends ScalaJackLike[String] {
+    override val defaultHint:        String                       = "_hint",
+    override val permissivesOk:      Boolean                      = false,
+    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
+    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
+    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
+    override val typeValueModifier:  Option[HintValueModifier]    = None,
+    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
+    override val enumsAsInt:         Boolean                      = false) extends JackFlavor[String] {
 
-  def withAdapters(ta: TypeAdapterFactory*) = this.copy(customAdapters = this.customAdapters ++ ta.toList)
-  def withHints(h: (Type, String)*) = this.copy(hintMap = this.hintMap ++ h)
-  def withHintModifiers(hm: (Type, HintModifier)*) = this.copy(hintModifiers = this.hintModifiers ++ hm)
-  def withDefaultHint(hint: String) = this.copy(defaultHint = hint)
-  def withTypeModifier(tm: HintModifier) = this.copy(typeModifier = Some(tm))
-  def parseOrElse(poe: (Type, Type)*) = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def isCanonical(canonical: Boolean) = this.copy(isCanonical = canonical)
+  override val stringifyMapKeys: Boolean = true
 
-  override val context: Context = {
-    val ctx = bakeContext()
-    if (isCanonical)
-      ctx.copy(factories = JsonCanBuildFromTypeAdapter :: ctx.factories)
-    else
-      ctx
-  }
+  def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new JsonStringWrapTypeAdapter(wrappedTypeAdapter)
 
-  def read[T](json: String)(implicit valueTypeTag: TypeTag[T]): T = {
-    val tokenizer = new Tokenizer(isCanonical)
-    val source = json.toCharArray
-    val reader = tokenizer.tokenize(source, 0, source.length)
-    context.typeAdapterOf[T].read(reader)
-  }
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] = this.copy(customAdapters = this.customAdapters ++ ta.toList)
+  def withDefaultHint(hint: String): JackFlavor[String] = this.copy(defaultHint = hint)
+  def withHints(h: (Type, String)*): JackFlavor[String] = this.copy(hintMap = this.hintMap ++ h)
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] = this.copy(typeValueModifier = Some(tm))
+  def parseOrElse(poe: (Type, Type)*): JackFlavor[String] = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
+  def allowPermissivePrimitives(): JackFlavor[String] = this.copy(permissivesOk = true)
+  def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
-  def render[T](value: T)(implicit valueTypeTag: TypeTag[T]): String = {
-    val writer = new StringJsonWriter(isCanonical)
-    context.typeAdapterOf[T].write(value, writer)
-    writer.jsonString
+  protected override def bakeContext(): Context =
+    new Context(CanBuildFromTypeAdapterFactory(this, enumsAsInt) +: super.bakeContext().factories)
+
+  private val writer = JsonWriter(this)
+
+  def parse(wire: String): Reader[String] = JsonReader(this, wire, JsonTokenizer().tokenize(wire).asInstanceOf[ArrayList[JsonToken]]) //JsonTransciever(wire, context, stringTypeAdapter, this)
+
+  def render[T](t: T)(implicit tt: TypeTag[T]): String = {
+    val sb = StringBuilder()
+    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
+    sb.result()
   }
 }
+

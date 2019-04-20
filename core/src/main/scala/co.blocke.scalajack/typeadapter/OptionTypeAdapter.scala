@@ -1,123 +1,66 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
+import util.Path
+import model._
 
-object OptionTypeAdapter extends TypeAdapterFactory {
+import scala.collection.mutable.Builder
 
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Option[_]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
+/*
+ O, the exquisite pain of mapping Option (None) to something in JSON!
+ Our assumptions (which may be different from earlier versions of ScalaJack:
 
-      case asOption =>
-        val valueType :: Nil = asOption.typeArgs
-        val valueTypeAdapter = context.typeAdapter(valueType)
-        OptionTypeAdapter(valueTypeAdapter).asInstanceOf[TypeAdapter[T]]
-    }
+   * Normal: None is just missing.  Doesn't read or write anything at all.  Classic example is a class field value--it's
+     just "missing" from the JSON and understood to be None.
 
+   * Map key fields: Element is dropped from Map, like List element behavior
+
+   * Map value fields:  Element is dropped from Map, like List element behavior
+
+   * List elements:  Normal, i.e. read/write nothing.  None elements just disappear.  NOTE this does mean that a read/render
+     cycle may not yield the same object, which is generally breaking a ScalaJack core behavior goal
+
+   * Tuple elements: Place needs to be preserved in a Tuple, so None becomes JSON null.  Really hate this option, but JSON
+     doesn't leave many choices here.
+ */
+
+object OptionTypeAdapterFactory extends TypeAdapterFactory {
+  def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+    if (tt.tpe <:< typeOf[Option[_]]) {
+      val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
+      OptionTypeAdapter(context.typeAdapter(elementType)).asInstanceOf[TypeAdapter[T]]
+    } else
+      next.typeAdapterOf[T]
 }
 
-// We need 3 types of Option adapters here:
-//   1: The "normal" one writes nothing for None.  This is used most places: Class members, list items, Map values
-//   2: "Empty" one writes "" for None.  This is used for Map keys that are None
-//   3: "Null" one converts None into null.  This is used mainly for Tuple members
-//
+case class OptionTypeAdapter[E](valueTypeAdapter: TypeAdapter[E], nullIsNone: Boolean = false)(implicit tt: TypeTag[E]) extends TypeAdapter[Option[E]] {
 
-case class OptionTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
+  override def defaultValue: Option[Option[E]] = Some(None)
 
-  override def defaultValue: Option[Option[T]] = Some(None)
+  def valueIsStringish(): Boolean = valueTypeAdapter.isInstanceOf[Stringish]
 
-  override def read(reader: Reader): Option[T] =
-    reader.peek match {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): Option[E] =
+    // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
+    // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
+    // these cases.
+    reader.head.tokenType match {
+      case TokenType.Null if nullIsNone =>
+        reader.next()
+        None
       case TokenType.Null =>
-        reader.read()
-        None
-      case v => Some(valueTypeAdapter.read(reader))
+        reader.next()
+        null
+      case _ =>
+        Some(valueTypeAdapter.read(path, reader))
     }
 
-  override def write(optionalValue: Option[T], writer: Writer): Unit =
-    optionalValue match {
-      case null =>
-        writer.writeNull()
-
-      case Some(value) =>
-        valueTypeAdapter.write(value, writer)
-
-      case None =>
-        writer.writeNothing()
+  def write[WIRE](t: Option[E], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+    t match {
+      case null               => writer.writeNull(out)
+      case Some(e)            => valueTypeAdapter.write(e, writer, out, isMapKey)
+      case None if nullIsNone => writer.writeNull(out)
+      case None               =>
     }
 
-  // Must be called by parent of the Option when appropriate to get the null-writing version.
-  def noneAsNull: TypeAdapter[Option[T]] = OptionTypeAdapterNull(valueTypeAdapter)
-  def noneAsEmptyString: TypeAdapter[Option[T]] = OptionTypeAdapterEmpty(valueTypeAdapter)
-
-}
-
-case class OptionTypeAdapterNull[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
-
-  override def read(reader: Reader): Option[T] =
-    reader.peek match {
-      case TokenType.Null =>
-        reader.read()
-        None
-      case v => Some(valueTypeAdapter.read(reader))
-    }
-
-  override def write(optionalValue: Option[T], writer: Writer): Unit =
-    optionalValue match {
-      case null =>
-        writer.writeNull()
-
-      case Some(value) =>
-        valueTypeAdapter.write(value, writer)
-
-      case None =>
-        writer.writeNull()
-    }
-
-}
-
-// This is for noncanonical map keys, which can be None --> rendered as ""
-// Reads have to reverse-engineer the "" into a None
-case class OptionTypeAdapterEmpty[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Option[T]] {
-
-  // Special logic for TokenType.String.  A map key of value None for any value type (Int, ...) will be "".
-  // So we must test for String and infer None if value is "".  Note that means there's no real way to
-  // infer Some("") as this will always devolve into None.  Have to make a compromose somewhere.
-  private def read(reader: Reader, testStringForNull: Boolean): Option[T] = {
-    reader.peek match {
-      case TokenType.Null | TokenType.End =>
-        reader.read()
-        None
-      case TokenType.String if (testStringForNull) =>
-        val savedPos = reader.position
-        if (reader.readString() == "")
-          None
-        else {
-          reader.position = savedPos
-          read(reader, false)
-        }
-      case v =>
-        valueTypeAdapter.read(reader) match {
-          case res => Some(res)
-        }
-    }
-  }
-
-  override def read(reader: Reader): Option[T] =
-    read(reader, true)
-
-  override def write(optionalValue: Option[T], writer: Writer): Unit =
-    optionalValue match {
-      case null =>
-        writer.writeNull()
-
-      case Some(value) =>
-        valueTypeAdapter.write(value, writer)
-
-      case None =>
-        writer.writeString("")
-    }
-
+  def convertNullToNone() = this.copy(nullIsNone = true)
 }

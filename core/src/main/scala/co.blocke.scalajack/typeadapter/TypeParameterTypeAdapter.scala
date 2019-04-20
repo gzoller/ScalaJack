@@ -1,25 +1,21 @@
 package co.blocke.scalajack
 package typeadapter
 
-import scala.reflect.runtime.universe.TypeTag
+import util.Path
+import model._
 
-object TypeParameterTypeAdapter extends TypeAdapterFactory {
+import scala.collection.mutable.Builder
+
+object TypeParameterTypeAdapterFactory extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe.typeSymbol.isParameter) {
-      TypeParameterTypeAdapter(context.typeAdapterOf[Any])
-    } else {
+    if (tt.tpe.typeSymbol.isParameter)
+      TypeParameterTypeAdapter[T]()
+    else
       next.typeAdapterOf[T]
-    }
-
 }
 
-case class TypeParameterTypeAdapter[T](anyTypeAdapter: TypeAdapter[Any]) extends TypeAdapter[T] {
-
-  override def read(reader: Reader): T =
-    anyTypeAdapter.read(reader).asInstanceOf[T]
-
-  override def write(value: T, writer: Writer): Unit =
-    anyTypeAdapter.write(value, writer)
-
+case class TypeParameterTypeAdapter[T]() extends TypeAdapter[T] {
+  def read[WIRE](path: Path, reader: Reader[WIRE]): T = reader.jackFlavor.anyTypeAdapter.read(path, reader).asInstanceOf[T]
+  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = writer.jackFlavor.anyTypeAdapter.write(t, writer, out, isMapKey)
 }

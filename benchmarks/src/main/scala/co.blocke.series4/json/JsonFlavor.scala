@@ -42,11 +42,10 @@ trait JsonJackFlavor extends JackFlavor[String] {
     }
 
     private def _render[T](
-      graph:    AType,
-      instance: T,
-      buf:      StringBuilder,
-      typeArgs: List[Type]    = List.empty[Type]
-    )(implicit tt: TypeTag[T], vc: VisitorContext): Boolean = {
+        graph:    AType,
+        instance: T,
+        buf:      StringBuilder,
+        typeArgs: List[Type]    = List.empty[Type])(implicit tt: TypeTag[T], vc: VisitorContext): Boolean = {
       graph match {
         case _ if (instance == null) =>
           buf.append("null")
@@ -79,8 +78,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
         case g: PrimType =>
           buf.append(g.alias.flatMap(alias => vc.customHandlers.get(alias).map(_.render.applyOrElse(
             (JsonKind(), instance),
-            (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${g.name}", 0)
-          ))).getOrElse(
+            (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON read code provided in CustomReadRender handler for class ${g.name}", 0)))).getOrElse(
             g.name match {
               case "String" | "java.lang.String" | "scala.Char" | "scala.Enumeration.Value" | "java.util.UUID" if (instance != null) =>
                 val cleaned = clean(instance.toString)
@@ -88,8 +86,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
               case "org.joda.time.DateTime" => instance.asInstanceOf[DateTime].getMillis.asInstanceOf[Long]
               case "scala.Any"              => explodeAny(instance)
               case x                        => instance
-            }
-          ))
+            }))
           true
         case g: CollType =>
           g.name match {
@@ -205,7 +202,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                 case 9 =>
@@ -222,7 +219,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -241,7 +238,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -262,7 +259,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -285,7 +282,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -310,7 +307,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -337,7 +334,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -366,7 +363,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -397,7 +394,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -430,7 +427,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -465,7 +462,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -502,7 +499,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -541,7 +538,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -582,7 +579,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -625,7 +622,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
                   buf.append(",")
                   _render(g.colTypes(5), iv._6, buf, tt.tpe.typeArgs)
                   buf.append(",")
-                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  => 
+                  _render(g.colTypes(6), iv._7, buf, tt.tpe.typeArgs) // case 9  =>
                   buf.append(",")
                   _render(g.colTypes(7), iv._8, buf, tt.tpe.typeArgs)
                   buf.append(",")
@@ -694,8 +691,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
           g.custom.map {
             _.render.applyOrElse(
               (JsonKind(), renderVal),
-              (k: (KindMarker, _)) => _render(g.vcType, renderVal, buf, tt.tpe.typeArgs)
-            )
+              (k: (KindMarker, _)) => _render(g.vcType, renderVal, buf, tt.tpe.typeArgs))
           } match {
             case Some(x) =>
               buf.append(x)
@@ -706,8 +702,7 @@ trait JsonJackFlavor extends JackFlavor[String] {
           val handler = vc.customHandlers.getOrElse(sj.name, throw new JsonParseException(s"No custom read/render handler (CustomReadRender) provided for class ${sj.name}", 0))
           buf.append(handler.render.applyOrElse(
             (JsonKind(), instance),
-            (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON render code provided in CustomReadRender handler for class ${sj.name}", 0)
-          ).toString)
+            (k: (KindMarker, _)) => throw new JsonParseException(s"No JSON render code provided in CustomReadRender handler for class ${sj.name}", 0)).toString)
           true
         case g: EnumType =>
           buf.append(s""""${instance.toString}"""") //"

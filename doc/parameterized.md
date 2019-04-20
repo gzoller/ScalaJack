@@ -1,6 +1,6 @@
 ## Parameterized Classes
 
-ScalaJack is able to handle parameterized classes and traits:
+ScalaJack is able to handle parameterized classes and traits seamlessly:
 
 ```scala
 package com.me
@@ -12,7 +12,7 @@ println(sj.render[Vehicle[Person]](Car(Person("Fred",25))))
 // {"_hint":"com.me.Car","transported":{"name":"Fred","age":25}}
 ```
 
-Cool, eh?  Ok...let's make it interesting!
+Ok, now let's make it interesting..
 
 ```scala
 package com.me
@@ -40,4 +40,4 @@ val js = sj.render(inst)
 
 val orig = sj.read[Person[Artist[Int, Hobby[Double, Char]], Vehicle[_ <: VehicleClass]]](js)
 ```
-Clearly this is a contrived (and forced) example, but it does show that complex nesting relationships between parameterized types work just fine, even when we threw in some traits and an Enumeration for good measure.
+Clearly this is a contrived (and forced) example, but it does show that complex nesting relationships between parameterized types work just fine, even when we threw in some traits and an Enumeration for good measure.  Remember that you always have control of ScalaJack's reading and rendering.  You can force a more general trait (will generate type hints) or use a specific concrete class (won't need type hints).
