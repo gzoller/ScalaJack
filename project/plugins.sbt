@@ -1,5 +1,5 @@
 resolvers += Resolver.url("co.blocke ivy resolver", url("http://dl.bintray.com/blocke/releases/"))(Resolver.ivyStylePatterns)
-addSbtPlugin("co.blocke" % "gitflow-packager" % "0.1.6")
+addSbtPlugin("co.blocke" % "gitflow-packager" % "0.1.7")
 addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.4")
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
