@@ -4,6 +4,7 @@ package json4s
 import model._
 import model.Writer
 import ClassHelper.ExtraFieldValue
+import co.blocke.scalajack.compat.JValueBuilder
 
 import scala.collection.immutable.ListMap
 import scala.collection.Map

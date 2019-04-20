@@ -69,6 +69,7 @@ Non-JSON Formats:
 * [MongoDB](doc/mongo.md)
 * [Delimited (e.g. CSV) *(improved)*](doc/csv.md)
 * [DynamoDB](doc/dynamo.md)
+* [Json4s *(new)*](doc/json4s.md)
 
 ## Benchmarks
 

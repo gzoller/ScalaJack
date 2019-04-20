@@ -4,6 +4,7 @@ package mongo
 import model._
 import util.Path
 import org.bson._
+import compat.BsonBuilder
 
 import scala.collection.mutable.Builder
 

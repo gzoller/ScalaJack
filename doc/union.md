@@ -12,7 +12,7 @@ The solution is the ScalaJack Union type, which is a caveman-primitive implement
 Looks like this:
 
 ```scala
-import co.blocke.scalajac.Union3
+import co.blocke.scalajack.Union3
 case class Multi3(one: Union3[List[String], List[Int], Boolean])
 val m3 = Multi3(Union3(None,Some(List(1,2,3)),None))
 ```

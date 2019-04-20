@@ -1,8 +1,8 @@
 package co.blocke.scalajack
-package mongo
+package compat
 
-import org.bson.BsonValue
 import scala.collection.mutable.Builder
+import org.bson.BsonValue
 
 case class BsonBuilder() extends Builder[BsonValue, BsonValue] {
   private var internalValue: Option[BsonValue] = None

@@ -116,9 +116,12 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
     case v: JDecimal => v.num
     case v: JLong    => BigDecimal(v.num)
     case v: JDouble  => BigDecimal(v.num)
+    // $COVERAGE-OFF$Can't happen--here to silence compiler warnings of match incompleness
+    case _           => null
+    // $COVERAGE-ON$
   }, true)
   def readDouble(path: Path): Double = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JDouble].num)
-  def readInt(path: Path): Int = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JInt].values.intValue())
+  def readInt(path: Path): Int = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JInt].values.intValue)
   def readLong(path: Path): Long = expect(TokenType.Number, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JLong].values.longValue())
   def readString(path: Path): String = expect(TokenType.String, path, (pt: ParseToken[JValue]) => pt.input.asInstanceOf[JString].s, true)
 

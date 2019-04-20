@@ -7,7 +7,7 @@ import util.{ Path, Reflection }
 import scala.collection.mutable.Builder
 import scala.collection._
 
-case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt: Boolean, stringifyMapKeys: Boolean = false) extends TypeAdapterFactory {
+case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt: Boolean) extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {

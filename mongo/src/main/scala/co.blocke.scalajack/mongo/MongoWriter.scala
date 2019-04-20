@@ -3,6 +3,7 @@ package mongo
 
 import model._
 import ClassHelper.ExtraFieldValue
+import compat.BsonBuilder
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap

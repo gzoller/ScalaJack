@@ -1,4 +1,0 @@
-package co.blocke.scalajack
-
-object RunMe extends App {
-}

@@ -103,7 +103,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
   def showError(path: Path, msg: String): String =
     "[" + path.toString + "]: " + msg
 
-  @inline private def expect[T](t: TokenType.Value, detail: Option[TokenDetail], path: Path, fn: BsonToken => T, isNullable: Boolean = false): T =
+  @inline private def expect[T](t: TokenType.Value, detail: Option[TokenDetail], path: Path, fn: BsonToken => T, isNullable: Boolean): T =
     next.asInstanceOf[BsonToken] match {
       case tok if tok.tokenType == t && (detail.isEmpty || detail.get == tok.detail) =>
         Try(fn(tok)).getOrElse {
@@ -167,10 +167,10 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
       case null => null.asInstanceOf[To]
     }
 
-  def readMap[Key, Value, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value]): To =
+  def readMap[MapKey, MapValue, To](path: Path, builderFactory: MethodMirror, keyTypeAdapter: TypeAdapter[MapKey], valueTypeAdapter: TypeAdapter[MapValue]): To =
     expect(TokenType.BeginObject, None, path, (_) => "", true) match {
       case "" =>
-        val builder = builderFactory().asInstanceOf[Builder[(Key, Value), To]]
+        val builder = builderFactory().asInstanceOf[Builder[(MapKey, MapValue), To]]
         while (head.tokenType != TokenType.EndObject) {
           keyTypeAdapter.read(path \ Path.MapKey, this) match {
             // $COVERAGE-OFF$Should be possible to call this

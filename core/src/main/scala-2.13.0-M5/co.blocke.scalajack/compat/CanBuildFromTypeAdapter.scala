@@ -7,7 +7,7 @@ import util.{ Path, Reflection }
 import scala.collection.mutable.Builder
 import scala.collection._
 
-case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt: Boolean, stringifyMapKeys: Boolean = false) extends TypeAdapterFactory {
+case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt: Boolean) extends TypeAdapterFactory {
 
   override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[IterableOnce[_]]) {
@@ -59,7 +59,7 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
 
         // Wrap Map keys in a StringWrapTypeAdapter?
         val finalKeyTypeAdapter =
-          if (!stringifyMapKeys
+          if (!jackFlavor.stringifyMapKeys
             || keyTypeAdapter.isInstanceOf[Stringish]
             || keyType <:< typeOf[Enumeration#Value] && !enumsAsInt
             || keyType =:= typeOf[Any]
@@ -117,11 +117,11 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
 }
 
 case class CanBuildMapTypeAdapter[Key, Value, To <: Map[Key, Value]]( //) >: Null <: GenMapLike[Key, Value, To]](
-                                                                      builderFactory:   MethodMirror, // Builds a Builder[(Key, Value), To] when applied
-                                                                      keyIsOptional:    Boolean,
-                                                                      valueIsOptional:  Boolean,
-                                                                      keyTypeAdapter:   TypeAdapter[Key],
-                                                                      valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] with Collectionish {
+    builderFactory:   MethodMirror, // Builds a Builder[(Key, Value), To] when applied
+    keyIsOptional:    Boolean,
+    valueIsOptional:  Boolean,
+    keyTypeAdapter:   TypeAdapter[Key],
+    valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] with Collectionish {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): To =
     reader.readMap[Key, Value, To](path, builderFactory, keyTypeAdapter, valueTypeAdapter)
@@ -144,9 +144,9 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: Map[Key, Value]]( //) >: Nul
 }
 
 case class CanBuildFromTypeAdapter[Elem, To](
-                                              builderFactory:     MethodMirror, // Builds a Builder[Elem, To] when applied
-                                              elemIsOptional:     Boolean,
-                                              elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] with Collectionish {
+    builderFactory:     MethodMirror, // Builds a Builder[Elem, To] when applied
+    elemIsOptional:     Boolean,
+    elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] with Collectionish {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): To =
     reader.readArray[Elem, To](path, builderFactory, elementTypeAdapter)

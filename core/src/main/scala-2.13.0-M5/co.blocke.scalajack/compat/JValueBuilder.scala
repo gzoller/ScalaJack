@@ -1,13 +1,13 @@
-package co.blocke.scalajack
-package json4s
+package co.blocke.scalajack.compat
 
+import co.blocke.scalajack.model
 import org.json4s.JValue
 import scala.collection.mutable.Builder
 
 case class JValueBuilder() extends Builder[JValue, JValue] {
   private var internalValue: Option[JValue] = None
 
-  def +=(elem: JValue): this.type = {
+  def addOne(elem: JValue): this.type = {
     internalValue = Some(elem)
     this
   }

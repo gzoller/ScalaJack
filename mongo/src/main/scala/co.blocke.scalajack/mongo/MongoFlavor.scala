@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package mongo
 
 import model._
+import compat.BsonBuilder
 import co.blocke.scalajack.typeadapter.CanBuildFromTypeAdapterFactory
 
 import java.util.ArrayList
@@ -38,7 +39,7 @@ case class MongoFlavor(
   protected override def bakeContext(): Context =
     new Context(
       Seq(
-        CanBuildFromTypeAdapterFactory(this, enumsAsInt, true),
+        CanBuildFromTypeAdapterFactory(this, enumsAsInt),
         ObjectIdTypeAdapterFactory,
         ZonedDateTimeTypeAdapterFactory,
         OffsetDateTimeTypeAdapterFactory

@@ -2,9 +2,9 @@ package co.blocke.scalajack
 package json4s
 
 import model._
-
 import java.util.ArrayList
 
+import co.blocke.scalajack.compat.JValueBuilder
 import org.json4s._
 import co.blocke.scalajack.util.Path
 

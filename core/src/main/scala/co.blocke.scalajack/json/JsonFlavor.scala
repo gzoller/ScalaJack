@@ -31,7 +31,7 @@ case class JsonFlavor(
   def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
 
   protected override def bakeContext(): Context =
-    new Context(CanBuildFromTypeAdapterFactory(this, enumsAsInt, true) +: super.bakeContext().factories)
+    new Context(CanBuildFromTypeAdapterFactory(this, enumsAsInt) +: super.bakeContext().factories)
 
   private val writer = JsonWriter(this)
 

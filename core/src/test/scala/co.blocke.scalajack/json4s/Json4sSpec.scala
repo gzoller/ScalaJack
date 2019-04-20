@@ -1,8 +1,9 @@
 package co.blocke.scalajack
 package json4s
 
+import co.blocke.scalajack.compat.JValueBuilder
 import org.json4s._
-import org.json4s.{ Diff, JDecimal, JNothing, JObject }
+import org.json4s.{ Diff, JNothing, JObject }
 import org.scalatest.{ FunSpec, Matchers }
 
 class Json4sSpec extends FunSpec with Matchers {

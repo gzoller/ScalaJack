@@ -6,6 +6,7 @@ import co.blocke.scalajack.util.Path
 import org.scalatest.FunSpec
 import org.scalatest.Matchers._
 import org.bson._
+import compat.BsonBuilder
 
 import scala.collection.JavaConverters._
 

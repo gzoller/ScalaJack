@@ -134,10 +134,10 @@ trait Soup[A] {
 }
 
 case class Wow1(a: String, b: Int) extends Pop {
-  def go() { println("--1--") }
+  def go(): Unit = println("--1--")
 }
 case class Wow2(x: String, y: Int) extends Pop {
-  def go() { println("--2--") }
+  def go(): Unit = println("--2--")
 }
 case class Cruton[U](i: Int, sweet: U) extends Soup[U]
 case class Toast[D](g: Int, yum: D) extends Tart[D]
