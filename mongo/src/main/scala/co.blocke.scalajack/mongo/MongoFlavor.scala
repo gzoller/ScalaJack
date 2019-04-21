@@ -42,8 +42,7 @@ case class MongoFlavor(
         CanBuildFromTypeAdapterFactory(this, enumsAsInt),
         ObjectIdTypeAdapterFactory,
         ZonedDateTimeTypeAdapterFactory,
-        OffsetDateTimeTypeAdapterFactory
-      ) ++: super.bakeContext().factories)
+        OffsetDateTimeTypeAdapterFactory) ++: super.bakeContext().factories)
 
   private val writer = MongoWriter(this)
 

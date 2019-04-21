@@ -90,8 +90,7 @@ class ScalaPrim() extends FunSpec with Matchers {
           "g" -> JObject(List("5" -> JInt(6))),
           "h" -> JObject(List("4.9" -> JInt(8))),
           "i" -> JObject(List("true" -> JInt(1))),
-          "j" -> JObject(List("c" -> JInt(1)))
-        ))
+          "j" -> JObject(List("c" -> JInt(1)))))
         assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(expected) }
         assertResult(inst) {
           sj.read[WrappedMaps](js4s)

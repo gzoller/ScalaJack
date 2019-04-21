@@ -47,8 +47,7 @@ class MapKeys extends FunSpec with Matchers {
         """{"m": {"5.1": 2}}""",
         """{"m": {"5": 2}}""",
         """{"m": {"true": 2}}""",
-        """{"m": {"c": 2}}"""
-      ))
+        """{"m": {"c": 2}}"""))
 
       sj.read[IntKey](docs(0)) should be(a)
       sj.read[LongKey](docs(1)) should be(b)

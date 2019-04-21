@@ -33,8 +33,7 @@ case class CaseClassTypeAdapter[T](
             reader.skipObject(path)
             reader.back
             throw new ReadMissingError(reader.showError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)"))
-          }
-        ))
+          }))
     }
     reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
       case fieldsRead: ObjectFieldsRead if (fieldsRead.allThere) =>

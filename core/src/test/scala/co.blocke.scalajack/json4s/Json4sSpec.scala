@@ -116,9 +116,7 @@ class Json4sSpec extends FunSpec with Matchers {
           "street" -> JString("123 Main"),
           "city" -> JString("New York"),
           "state" -> JString("NY"),
-          "postalCode" -> JString("39822")
-        ))
-      ))
+          "postalCode" -> JString("39822")))))
       assertResult(Diff(JNothing, JNothing, JNothing)) { js4s.diff(expected) }
       assertResult(inst) {
         sjx.read[Demographic](js4s)
@@ -135,9 +133,7 @@ class Json4sSpec extends FunSpec with Matchers {
           "street" -> JString("123 Main"),
           "city" -> JString("New York"),
           "state" -> JString("NY"),
-          "postalCode" -> JString("39822")
-        ))
-      ))
+          "postalCode" -> JString("39822")))))
       the[model.ReadInvalidError] thrownBy sjx.read[Demographic](js4s) should have message "[$.address]: Failed to apply type modifier to type member hint BogusAddress"
     }
     it("Null object value") {

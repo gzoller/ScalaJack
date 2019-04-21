@@ -8,8 +8,7 @@ import scala.collection.JavaConverters._
 
 case class Something(
     name:  String,
-    stuff: Map[String, Any]
-)
+    stuff: Map[String, Any])
 
 class AnySpec extends FunSpec {
   val sjM = ScalaJack(MongoFlavor())
@@ -19,9 +18,7 @@ class AnySpec extends FunSpec {
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonBoolean(true))
-      ).asJava))
-    ).asJava)
+        new BsonElement("b", new BsonBoolean(true))).asJava))).asJava)
 
     val b = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
@@ -30,10 +27,7 @@ class AnySpec extends FunSpec {
         new BsonElement("b", new BsonArray(List(
           new BsonInt32(4),
           new BsonInt32(5),
-          new BsonInt32(6)
-        ).asJava))
-      ).asJava))
-    ).asJava)
+          new BsonInt32(6)).asJava))).asJava))).asJava)
 
     val c = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
@@ -42,15 +36,10 @@ class AnySpec extends FunSpec {
         new BsonElement("b", new BsonArray(List(
           new BsonDocument(List(
             new BsonElement("x", new BsonString("Fido")),
-            new BsonElement("y", new BsonBoolean(false))
-          ).asJava),
+            new BsonElement("y", new BsonBoolean(false))).asJava),
           new BsonDocument(List(
             new BsonElement("x", new BsonString("Cat")),
-            new BsonElement("y", new BsonBoolean(true))
-          ).asJava)
-        ).asJava))
-      ).asJava))
-    ).asJava)
+            new BsonElement("y", new BsonBoolean(true))).asJava)).asJava))).asJava))).asJava)
 
     val e = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
@@ -59,26 +48,19 @@ class AnySpec extends FunSpec {
         new BsonElement("b", new BsonArray(List(
           new BsonString("foo"),
           new BsonNull(),
-          new BsonString("bar")
-        ).asJava))
-      ).asJava))
-    ).asJava)
+          new BsonString("bar")).asJava))).asJava))).asJava)
 
     val f = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonDouble(1.23))
-      ).asJava)
-      )).asJava)
+        new BsonElement("b", new BsonDouble(1.23))).asJava))).asJava)
 
     val g = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonInt64(25L))
-      ).asJava))
-    ).asJava)
+        new BsonElement("b", new BsonInt64(25L))).asJava))).asJava)
   }
 
   object ScalaMaster {

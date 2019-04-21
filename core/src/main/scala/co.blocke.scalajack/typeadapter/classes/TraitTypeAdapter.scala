@@ -74,8 +74,7 @@ case class TraitTypeAdapter[T](
       context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
         case cc: CaseClassTypeAdapter[T] =>
           val hintValue = hintModFn.map(h => Try(h.unapply(populatedConcreteType)).getOrElse(
-            throw new SJError(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}")
-          )).getOrElse(t.getClass.getName)
+            throw new SJError(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}"))).getOrElse(t.getClass.getName)
           writer.writeObject(t, cc.fieldMembersByName, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
       }
     }

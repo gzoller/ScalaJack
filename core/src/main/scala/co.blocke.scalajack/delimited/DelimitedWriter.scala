@@ -36,10 +36,10 @@ case class DelimitedWriter(delimiter: Char, jackFlavor: JackFlavor[String]) exte
   def writeNull(out: Builder[String, String]): Unit = {} // write empty field
 
   def writeObject[T](
-      t:            T,
-      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          Builder[String, String],
-      extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
+    t:            T,
+    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+    out:          Builder[String, String],
+    extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
     if (t != null) {
       var first = true
       fieldMembers.values.foreach { f =>

@@ -73,8 +73,7 @@ trait JackFlavor[WIRE] extends ViewSplice with Filterable[WIRE] {
         PermissiveJavaIntTypeAdapterFactory,
         PermissiveJavaLongTypeAdapterFactory,
         PermissiveJavaNumberTypeAdapterFactory,
-        PermissiveJavaShortTypeAdapterFactory
-      )
+        PermissiveJavaShortTypeAdapterFactory)
     else
       List.empty[TypeAdapterFactory]
 
