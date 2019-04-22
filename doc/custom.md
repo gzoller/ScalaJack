@@ -25,7 +25,7 @@ Let's look at a straightforward example then unpack some nuances.
 
 ```scala
 object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {  
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =  
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Phone =
     reader.readString(path) match {  
       case s: String => s.replaceAll("-", "")  
       case null => null  

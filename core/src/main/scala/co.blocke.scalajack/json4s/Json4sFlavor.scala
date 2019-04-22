@@ -40,11 +40,11 @@ case class Json4sFlavor(
 
   override def read[T](wire: JValue)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
-    context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    context.typeAdapter(tt.tpe.dealias).read(Path.Root, p).asInstanceOf[T]
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JValue = {
-    val typeAdapter = context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]]
+    val typeAdapter = context.typeAdapter(tt.tpe.dealias).asInstanceOf[TypeAdapter[T]]
     val builder = JValueBuilder()
     typeAdapter.write(t, writer, builder, false)
     builder.result()

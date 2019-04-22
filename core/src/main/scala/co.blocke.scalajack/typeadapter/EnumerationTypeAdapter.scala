@@ -26,7 +26,7 @@ object EnumerationTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol 
 
 case class EnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): E#Value =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): E#Value =
     reader.head.tokenType match {
       case TokenType.String =>
         Try(enum.withName(reader.readString(path))) match {

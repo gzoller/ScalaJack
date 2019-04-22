@@ -37,14 +37,14 @@ case class DelimitedEitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rig
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Either[L, R] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Either[L, R] = {
     val savedReader = reader.copy
-    tryRead(path, reader, rightTypeAdapter) match {
+    tryRead(path, reader, rightTypeAdapter, isMapKey) match {
       case Success(rightValue) =>
         Right(rightValue.asInstanceOf[R])
       case Failure(_) => // Right parse failed... try left
         reader.syncPositionTo(savedReader)
-        tryRead(path, reader, leftTypeAdapter) match {
+        tryRead(path, reader, leftTypeAdapter, isMapKey) match {
           case Success(leftValue) =>
             Left(leftValue.asInstanceOf[L])
           case Failure(x) =>
@@ -54,12 +54,12 @@ case class DelimitedEitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rig
     }
   }
 
-  private def tryRead[WIRE](path: Path, reader: Reader[WIRE], ta: TypeAdapter[_]): Try[_] =
+  private def tryRead[WIRE](path: Path, reader: Reader[WIRE], ta: TypeAdapter[_], isMapKey: Boolean): Try[_] =
     reader.head match {
       case token if token.tokenType == TokenType.QuotedString && (ta.isInstanceOf[Collectionish] || ta.isInstanceOf[Classish]) =>
-        Try(ta.read(path, reader.jackFlavor.parse(reader.readString(path).asInstanceOf[WIRE])))
+        Try(ta.read(path, reader.jackFlavor.parse(reader.readString(path).asInstanceOf[WIRE]), isMapKey))
       case _ =>
-        Try(ta.read(path, reader))
+        Try(ta.read(path, reader, isMapKey))
     }
 
   def write[WIRE](t: Either[L, R], writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =

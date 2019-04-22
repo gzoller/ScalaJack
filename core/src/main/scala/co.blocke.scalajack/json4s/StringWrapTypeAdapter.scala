@@ -10,7 +10,7 @@ import org.json4s._
 // This is used for JSON Map keys, which must be strings.
 class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T]) extends TypeAdapter[T] with Stringish {
 
-  def read[WIRE](path: Path, reader: model.Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: model.Reader[WIRE], isMapKey: Boolean): T = {
     // 1. Read String  (JValue --> String)
     val wrappedValueString = reader.readString(path)
 

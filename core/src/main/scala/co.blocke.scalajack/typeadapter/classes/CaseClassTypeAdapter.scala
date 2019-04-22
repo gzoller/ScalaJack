@@ -21,7 +21,7 @@ case class CaseClassTypeAdapter[T](
   // Hook for subclasses (e.g. Mongo) do to anything needed to handle the db key field(s) as given by the @DBKey annotation
   protected def handleDBKeys(fieldValues: Map[String, Any]): Map[String, Any] = fieldValues
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
     val concreteTypes = typeMembersByName.map {
       case (name, tm) =>
         (tm.typeSignature.toString, tm.copy(runtimeConcreteType =
@@ -33,8 +33,7 @@ case class CaseClassTypeAdapter[T](
             reader.skipObject(path)
             reader.back
             throw new ReadMissingError(reader.showError(path, s"Class $className missing type hint for type member ${tm.typeSignature.toString} (looking for $name)"))
-          }
-        ))
+          }))
     }
     reader.readObjectFields[T](path, isSJCapture, ClassHelper.applyConcreteTypeMembersToFields(concreteTypes, typeMembersByName, fieldMembersByName)) match {
       case fieldsRead: ObjectFieldsRead if (fieldsRead.allThere) =>

@@ -35,11 +35,11 @@ case class JsonFlavor(
 
   private val writer = JsonWriter(this)
 
-  def parse(wire: String): Reader[String] = JsonReader(this, wire, JsonTokenizer().tokenize(wire).asInstanceOf[ArrayList[JsonToken]]) //JsonTransciever(wire, context, stringTypeAdapter, this)
+  def parse(wire: String): Reader[String] = JsonReader(this, wire, JsonTokenizer().tokenize(wire).asInstanceOf[ArrayList[JsonToken]])
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
+    context.typeAdapter(tt.tpe.dealias).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
     sb.result()
   }
 }

@@ -12,7 +12,7 @@ import scala.collection.mutable.Builder
 
 object JavaBigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with JavaBigDecimalTypeAdapter
 trait JavaBigDecimalTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): BigDecimal = reader.readDecimal(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): BigDecimal = reader.readDecimal(path) match {
     case null => null
     case bd   => bd.bigDecimal
   }
@@ -24,7 +24,7 @@ trait JavaBigDecimalTypeAdapter {
 
 object JavaBigIntegerTypeAdapterFactory extends TypeAdapter.=:=[BigInteger] with JavaBigIntegerTypeAdapter
 trait JavaBigIntegerTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): BigInteger = reader.readBigInt(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): BigInteger = reader.readBigInt(path) match {
     case null => null
     case bi   => bi.bigInteger
   }
@@ -36,7 +36,7 @@ trait JavaBigIntegerTypeAdapter {
 
 object JavaBooleanTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Boolean] with JavaBooleanTypeAdapter
 trait JavaBooleanTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Boolean =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Boolean =
     Try(reader.readBoolean(path)) match {
       case Success(b) => b
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -52,7 +52,7 @@ trait JavaBooleanTypeAdapter {
 
 object JavaByteTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Byte] with JavaByteTypeAdapter
 trait JavaByteTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Byte =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Byte =
     Try(reader.readInt(path).toByte) match {
       case Success(b) => b
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -69,7 +69,7 @@ trait JavaByteTypeAdapter {
 
 object JavaCharacterTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Character] with JavaCharacterTypeAdapter with Stringish
 trait JavaCharacterTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Character =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Character =
     reader.readString(path) match {
       case null         => null
       case c if c != "" => c.toCharArray()(0)
@@ -85,7 +85,7 @@ trait JavaCharacterTypeAdapter {
 
 object JavaDoubleTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Double] with JavaDoubleTypeAdapter
 trait JavaDoubleTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Double =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Double =
     Try(reader.readDouble(path)) match {
       case Success(d) => d
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -101,7 +101,7 @@ trait JavaDoubleTypeAdapter {
 
 object JavaFloatTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Float] with JavaFloatTypeAdapter
 trait JavaFloatTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Float =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Float =
     Try(reader.readDouble(path)) match {
       case Success(d) => d.floatValue()
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -117,7 +117,7 @@ trait JavaFloatTypeAdapter {
 
 object JavaIntTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Integer] with JavaIntTypeAdapter
 trait JavaIntTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Integer =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Integer =
     Try(reader.readInt(path)) match {
       case Success(d) => d
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -133,7 +133,7 @@ trait JavaIntTypeAdapter {
 
 object JavaLongTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Long] with JavaLongTypeAdapter
 trait JavaLongTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Long =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Long =
     Try(reader.readLong(path)) match {
       case Success(d) => d
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
@@ -149,7 +149,7 @@ trait JavaLongTypeAdapter {
 
 object JavaNumberTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Number] with JavaNumberTypeAdapter
 trait JavaNumberTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Number =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Number =
     reader.readDecimal(path) match {
       case null                                       => null
       case d: scala.BigDecimal if (d.isValidByte)     => d.toByteExact
@@ -175,7 +175,7 @@ trait JavaNumberTypeAdapter {
 
 object JavaShortTypeAdapterFactory extends TypeAdapter.=:=[java.lang.Short] with JavaShortTypeAdapter
 trait JavaShortTypeAdapter {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): java.lang.Short =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): java.lang.Short =
     Try(reader.readInt(path)) match {
       case Success(d) => d.shortValue()
       case Failure(x: ReadUnexpectedError) if x.nullFound =>
