@@ -217,9 +217,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val scalaJack = mongoScalaJack.withHintModifiers(
           typeOf[Pop] -> ClassNameHintModifier(
             hint => s"co.blocke.scalajack.mongo.$hint",
-            fullName => fullName.split('.').last
-          )
-        )
+            fullName => fullName.split('.').last))
         val db = scalaJack.render(w)
         db.asDocument.toJson should equal("""{"s": "Surprise", "w": {"name": "Yellow", "data": {"_hint": "Wow2", "x": "three", "y": 4}, "stuff": "Done"}}""")
         scalaJack.read[Carry[Pop]](db) should equal(w)
@@ -229,9 +227,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val scalaJack = mongoScalaJack.withHintModifiers(
           typeOf[Pop] -> ClassNameHintModifier(
             hint => throw new Exception("Boom"), // intentional hint mod failure
-            fullName => fullName.split('.').last
-          )
-        )
+            fullName => fullName.split('.').last))
         val db = scalaJack.render(w)
         the[ReadInvalidError] thrownBy scalaJack.read[Carry[Pop]](db) should have message "[$.w.data]: Failed to apply type modifier to type member hint Wow2"
       }
@@ -368,9 +364,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val dbo = new BsonDocument(List(
           new BsonElement("_id", new BsonString("Fred")),
           new BsonElement("two", new BsonDocument(List(
-            new BsonElement("bar", new BsonBoolean(true))
-          ).asJava))
-        ).asJava)
+            new BsonElement("bar", new BsonBoolean(true))).asJava))).asJava)
         dbo.toJson should equal("""{"_id": "Fred", "two": {"bar": true}}""")
         val msg = """[$.two]: Class Two missing field foo""".stripMargin
         the[ReadMissingError] thrownBy mongoScalaJack.read[Five](dbo) should have message msg
@@ -379,9 +373,7 @@ class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
         val dbo = new BsonDocument(List(
           new BsonElement("two", new BsonDocument(List(
             new BsonElement("foo", new BsonString("blah")),
-            new BsonElement("bar", new BsonBoolean(true))
-          ).asJava))
-        ).asJava)
+            new BsonElement("bar", new BsonBoolean(true))).asJava))).asJava)
         dbo.toJson should equal("""{"two": {"foo": "blah", "bar": true}}""")
         val msg = """[$]: Missing key field _id"""
         the[ReadMissingError] thrownBy mongoScalaJack.read[Five](dbo) should have message msg

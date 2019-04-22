@@ -41,10 +41,10 @@ case class Json4sWriter(jackFlavor: JackFlavor[JValue]) extends Writer[JValue] {
   def writeLong(t: Long, out: collection.mutable.Builder[JValue, JValue]): Unit = out += JLong(t)
 
   def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
-      valueTypeAdapter: TypeAdapter[Value],
-      out:              collection.mutable.Builder[JValue, JValue])(implicit keyTT: TypeTag[Key]): Unit = t match {
+    t:                Map[Key, Value],
+    keyTypeAdapter:   TypeAdapter[Key],
+    valueTypeAdapter: TypeAdapter[Value],
+    out:              collection.mutable.Builder[JValue, JValue])(implicit keyTT: TypeTag[Key]): Unit = t match {
     case null => out += JNull
     case daMap =>
       val outBuf = JValueBuilder()
@@ -80,10 +80,10 @@ case class Json4sWriter(jackFlavor: JackFlavor[JValue]) extends Writer[JValue] {
   }
 
   def writeObject[T](
-      t:            T,
-      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          collection.mutable.Builder[JValue, JValue],
-      extras:       List[(String, ExtraFieldValue[_])]): Unit =
+    t:            T,
+    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+    out:          collection.mutable.Builder[JValue, JValue],
+    extras:       List[(String, ExtraFieldValue[_])]): Unit =
     t match {
       case null => out += JNull
       case _ =>

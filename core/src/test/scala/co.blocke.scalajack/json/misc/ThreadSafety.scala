@@ -7,8 +7,7 @@ import scala.util.Try
 
 case class Foo(
     name:  String,
-    stuff: List[String]
-)
+    stuff: List[String])
 
 class ThreadSafety extends FunSpec with Matchers {
 
@@ -29,8 +28,7 @@ class ThreadSafety extends FunSpec with Matchers {
         Future(doit()),
         Future(doit()),
         Future(doit()),
-        Future(doit())
-      )
+        Future(doit()))
       val res = Await.result(Future.sequence(z), 3 seconds).reduce((a, b) => a && b)
       res should be(true)
     }

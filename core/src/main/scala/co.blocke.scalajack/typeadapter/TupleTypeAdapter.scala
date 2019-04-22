@@ -80,6 +80,5 @@ case class TupleTypeAdapter[T >: Null](
     else
       writer.writeTuple(
         fields.map(field => (w: Writer[WIRE], builder: Builder[WIRE, WIRE]) => field.write(t, w, builder, isMapKey)),
-        out
-      )
+        out)
 }

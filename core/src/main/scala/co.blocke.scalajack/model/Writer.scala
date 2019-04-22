@@ -18,10 +18,10 @@ trait Writer[WIRE] extends Transceiver[WIRE] {
   def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: Builder[WIRE, WIRE])(implicit keyTT: TypeTag[Key]): Unit
   def writeNull(out: Builder[WIRE, WIRE]): Unit
   def writeObject[T](
-      t:            T,
-      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:          Builder[WIRE, WIRE],
-      extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit
+    t:            T,
+    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+    out:          Builder[WIRE, WIRE],
+    extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit
   def writeString(t: String, out: Builder[WIRE, WIRE]): Unit
   def writeTuple(writeFns: List[(Writer[WIRE], Builder[WIRE, WIRE]) => Unit], out: Builder[WIRE, WIRE]): Unit
 }
