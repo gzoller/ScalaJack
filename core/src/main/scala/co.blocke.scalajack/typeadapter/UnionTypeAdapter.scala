@@ -41,19 +41,19 @@ object UnionTypeAdapterFactory extends TypeAdapterFactory {
 
 case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) extends TypeAdapter[Union2[A, B]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Union2[A, B] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Union2[A, B] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
         reader.next
         null
       case _ =>
-        Try(aTa.read(path, reader)) match {
+        Try(aTa.read(path, reader, isMapKey)) match {
           case Success(aValue) =>
             Union2(Some(aValue), None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
-            Try(bTa.read(path, reader)) match {
+            Try(bTa.read(path, reader, isMapKey)) match {
               case Success(bValue) =>
                 Union2(None, Some(bValue))
               case Failure(x) =>
@@ -79,24 +79,24 @@ case class Union2TypeAdapter[A, B](aTa: TypeAdapter[A], bTa: TypeAdapter[B]) ext
 
 case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C]) extends TypeAdapter[Union3[A, B, C]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Union3[A, B, C] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Union3[A, B, C] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
         reader.next
         null
       case _ =>
-        Try(aTa.read(path, reader)) match {
+        Try(aTa.read(path, reader, isMapKey)) match {
           case Success(aValue) =>
             Union3(Some(aValue), None, None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
-            Try(bTa.read(path, reader)) match {
+            Try(bTa.read(path, reader, isMapKey)) match {
               case Success(bValue) =>
                 Union3(None, Some(bValue), None)
               case Failure(_) =>
                 reader.syncPositionTo(savedReader)
-                Try(cTa.read(path, reader)) match {
+                Try(cTa.read(path, reader, isMapKey)) match {
                   case Success(cValue) =>
                     Union3(None, None, Some(cValue))
                   case Failure(_) =>
@@ -125,29 +125,29 @@ case class Union3TypeAdapter[A, B, C](aTa: TypeAdapter[A], bTa: TypeAdapter[B], 
 
 case class Union4TypeAdapter[A, B, C, D](aTa: TypeAdapter[A], bTa: TypeAdapter[B], cTa: TypeAdapter[C], dTa: TypeAdapter[D]) extends TypeAdapter[Union4[A, B, C, D]] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Union4[A, B, C, D] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Union4[A, B, C, D] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
         reader.next
         null
       case _ =>
-        Try(aTa.read(path, reader)) match {
+        Try(aTa.read(path, reader, isMapKey)) match {
           case Success(aValue) =>
             Union4(Some(aValue), None, None, None)
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
-            Try(bTa.read(path, reader)) match {
+            Try(bTa.read(path, reader, isMapKey)) match {
               case Success(bValue) =>
                 Union4(None, Some(bValue), None, None)
               case Failure(_) =>
                 reader.syncPositionTo(savedReader)
-                Try(cTa.read(path, reader)) match {
+                Try(cTa.read(path, reader, isMapKey)) match {
                   case Success(cValue) =>
                     Union4(None, None, Some(cValue), None)
                   case Failure(_) =>
                     reader.syncPositionTo(savedReader)
-                    Try(dTa.read(path, reader)) match {
+                    Try(dTa.read(path, reader, isMapKey)) match {
                       case Success(dValue) =>
                         Union4(None, None, None, Some(dValue))
                       case Failure(_) =>

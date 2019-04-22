@@ -15,8 +15,7 @@ class Custom extends FunSpec {
       val sj = ScalaJack(MongoFlavor()).withAdapters(PhoneAdapter)
       val dbo = new BsonDocument(List(
         new BsonElement("_id", new BsonString("Fred")),
-        new BsonElement("phone", new BsonString("123-456-7890"))
-      ).asJava)
+        new BsonElement("phone", new BsonString("123-456-7890"))).asJava)
       dbo.toJson should equal("""{"_id": "Fred", "phone": "123-456-7890"}""")
       sj.read[Person](dbo) should equal(Person("Fred", "1234567890"))
     }
@@ -30,9 +29,7 @@ class Custom extends FunSpec {
           new BsonElement("street", new BsonString("123 Main")),
           new BsonElement("city", new BsonString("New York")),
           new BsonElement("state", new BsonString("NY")),
-          new BsonElement("postalCode", new BsonString("39822"))
-        ).asJava))
-      ).asJava)
+          new BsonElement("postalCode", new BsonString("39822"))).asJava))).asJava)
       dbo.toJson should equal("""{"demo": "co.blocke.scalajack.mongo.USDemographic", "_id": "34", "address": {"addr_kind": "co.blocke.scalajack.mongo.USAddress", "street": "123 Main", "city": "New York", "state": "NY", "postalCode": "39822"}}""")
       sj.read[Demographic](dbo) should equal(USDemographic("34", USAddress("123 Main", "New York", "NY", "39822")))
     }
@@ -49,9 +46,7 @@ class Custom extends FunSpec {
           new BsonElement("street", new BsonString("123 Main")),
           new BsonElement("city", new BsonString("New York")),
           new BsonElement("state", new BsonString("NY")),
-          new BsonElement("postalCode", new BsonString("39822"))
-        ).asJava))
-      ).asJava)
+          new BsonElement("postalCode", new BsonString("39822"))).asJava))).asJava)
       dbo.toJson should equal("""{"kind": "co.blocke.scalajack.mongo.USDemographic", "_id": "34", "address": {"kind": "co.blocke.scalajack.mongo.USAddress", "street": "123 Main", "city": "New York", "state": "NY", "postalCode": "39822"}}""")
       sj.read[Demographic](dbo) should equal(USDemographic("34", USAddress("123 Main", "New York", "NY", "39822")))
     }
@@ -65,9 +60,7 @@ class Custom extends FunSpec {
           new BsonElement("street", new BsonString("123 Main")),
           new BsonElement("city", new BsonString("New York")),
           new BsonElement("state", new BsonString("NY")),
-          new BsonElement("postalCode", new BsonString("39822"))
-        ).asJava))
-      ).asJava)
+          new BsonElement("postalCode", new BsonString("39822"))).asJava))).asJava)
       dbo.toJson should equal("""{"_hint": "co.blocke.scalajack.mongo.USDemographic", "_id": "34", "address": {"_hint": "co.blocke.scalajack.mongo.UnknownAddress", "street": "123 Main", "city": "New York", "state": "NY", "postalCode": "39822"}}""")
       sj.read[Demographic](dbo) should equal(USDemographic("34", DefaultAddress("39822")))
     }

@@ -10,15 +10,13 @@ case class AllPrim(
     s:  String,
     b:  Boolean,
     bi: BigInt,
-    bd: BigDecimal
-)
+    bd: BigDecimal)
 
 case class Inside(id: Int, desc: String)
 case class Nested(
     thing: String,
     in:    Inside,
-    other: Inside = Inside(99, "dunno")
-)
+    other: Inside = Inside(99, "dunno"))
 
 case class ThreeStrings(a: String, b: String, c: String)
 case class DefaultThree()

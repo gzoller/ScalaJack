@@ -35,19 +35,19 @@ case class EitherTypeAdapter[L, R](leftTypeAdapter: TypeAdapter[L], rightTypeAda
   val leftClass = currentMirror.runtimeClass(leftType)
   val rightClass = currentMirror.runtimeClass(rightType)
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Either[L, R] = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Either[L, R] = {
     val savedReader = reader.copy
     reader.head.tokenType match {
       case TokenType.Null =>
         reader.next
         null
       case _ =>
-        Try(rightTypeAdapter.read(path, reader)) match {
+        Try(rightTypeAdapter.read(path, reader, isMapKey)) match {
           case Success(rightValue) =>
             Right(rightValue.asInstanceOf[R])
           case Failure(_) => // Right parse failed... try left
             reader.syncPositionTo(savedReader)
-            Try(leftTypeAdapter.read(path, reader)) match {
+            Try(leftTypeAdapter.read(path, reader, isMapKey)) match {
               case Success(leftValue) =>
                 Left(leftValue.asInstanceOf[L])
               case Failure(x) =>

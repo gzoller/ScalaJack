@@ -202,8 +202,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
           tt.tpe,
           Some(setterMethod.asMethod),
           None,
-          hasOptionalAnnotation
-        )
+          hasOptionalAnnotation)
       }
 
       def reflectJavaGetterSetterFields: List[ClassFieldMember[T, Any]] = {
@@ -241,8 +240,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
               tt.tpe,
               None,
               Some(propertyDescriptor.getWriteMethod),
-              hasOptionalAnnotation
-            )
+              hasOptionalAnnotation)
         }
       }
 
@@ -267,8 +265,7 @@ object PlainClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         constructorMirror,
         isSJCapture,
         collectionAnnotation,
-        !classSymbol.isJava
-      )(context, tt)
+        !classSymbol.isJava)(context, tt)
     } else {
       // $COVERAGE-OFF$Can't really test this.  It is not supposed to ever happen.  What can you parse that isn't some kind of class?
       next.typeAdapterOf[T]

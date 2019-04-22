@@ -24,7 +24,7 @@ case class PlainClassTypeAdapter[T](
   override def dbKeys: List[ClassFieldMember[T, Any]] =
     (fieldMembersByName.values.toList ++ nonConstructorFields.values.toList).filter(_.dbKeyIndex.isDefined).sortBy(_.dbKeyIndex.get)
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
 
     // Any externalized trait hints? (as type members)
     val concreteTypes = typeMembersByName.map {

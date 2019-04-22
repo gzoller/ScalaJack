@@ -150,7 +150,7 @@ case class JsonReader(jackFlavor: JackFlavor[String], json: String, tokens: Arra
             first = false
           else
             assertExists(TokenType.Comma, path)
-          keyTypeAdapter.read(path \ Path.MapKey, this) match {
+          keyTypeAdapter.read(path \ Path.MapKey, this, true) match {
             case null =>
               throw new ReadInvalidError(showError(path, "Map keys cannot be null"))
             case key =>

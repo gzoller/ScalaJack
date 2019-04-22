@@ -40,7 +40,7 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     val hintLabel = getHintLabel(reader) // Apply any hint label modifiers
     reader.head.tokenType match {
@@ -74,8 +74,7 @@ case class TraitTypeAdapter[T](
       context.typeAdapter(populatedConcreteType).asInstanceOf[TypeAdapter[T]] match {
         case cc: CaseClassTypeAdapter[T] =>
           val hintValue = hintModFn.map(h => Try(h.unapply(populatedConcreteType)).getOrElse(
-            throw new SJError(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}")
-          )).getOrElse(t.getClass.getName)
+            throw new SJError(s"No hint value mapping (in hint modifier) given for Type ${populatedConcreteType.toString}"))).getOrElse(t.getClass.getName)
           writer.writeObject(t, cc.fieldMembersByName, out, List((getHintLabel(writer), ClassHelper.ExtraFieldValue(hintValue, writer.jackFlavor.stringTypeAdapter))))
       }
     }

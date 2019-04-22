@@ -30,7 +30,7 @@ case class TypeTypeAdapter(mirror: Mirror, typeModifier: Option[HintModifier] = 
         throw new ReadMissingError(reader.showError(path, s"""Unable to find class named "$typeName""""))
     }
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Type = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Type = reader.readString(path) match {
     case s: String =>
       typeNameToType(path, s, reader)
     // No others should be possible

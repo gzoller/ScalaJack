@@ -61,7 +61,7 @@ case class DynamoFlavor(
   def createTableRequest[T](provisionedThroughput: ProvisionedThroughput)(implicit tt: TypeTag[T]): CreateTableRequest = {
     val tpe = tt.tpe
 
-    val (optionalTableName, keys) = context.typeAdapter(tpe) match {
+    val (optionalTableName, keys) = context.typeAdapter(tpe.dealias) match {
       case ta if ta.isInstanceOf[CaseClassTypeAdapter[_]] || ta.isInstanceOf[PlainClassTypeAdapter[_]] => (ta.asInstanceOf[ClassHelper.ClassLikeTypeAdapter[_]].collectionName, ta.asInstanceOf[ClassHelper.ClassLikeTypeAdapter[_]].dbKeys)
     }
     val tableName = optionalTableName.getOrElse(

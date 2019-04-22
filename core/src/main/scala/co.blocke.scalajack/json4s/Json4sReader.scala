@@ -144,7 +144,7 @@ case class Json4sReader(jackFlavor: JackFlavor[JValue], json: JValue, tokens: ja
       case "" =>
         val builder = builderFactory().asInstanceOf[Builder[(Key, Value), To]]
         while (head.tokenType != TokenType.EndObject) {
-          keyTypeAdapter.read(path \ Path.MapKey, this) match {
+          keyTypeAdapter.read(path \ Path.MapKey, this, true) match {
             case null =>
               // $COVERAGE-OFF$Shouldn't be possible in JValue.  Left here in case
               throw new ReadInvalidError(showError(path, "Map keys cannot be null"))

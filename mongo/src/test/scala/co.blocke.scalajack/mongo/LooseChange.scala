@@ -21,19 +21,14 @@ class LooseChange extends FunSpec {
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonBoolean(true))
-      ).asJava))
-    ).asJava)
+        new BsonElement("b", new BsonBoolean(true))).asJava))).asJava)
 
     val b = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
         new BsonElement("b", new BsonArray(List(
-          new BsonInt32(4), new BsonInt32(5), new BsonInt32(6)
-        ).asJava))
-      ).asJava))
-    ).asJava)
+          new BsonInt32(4), new BsonInt32(5), new BsonInt32(6)).asJava))).asJava))).asJava)
 
     val c = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
@@ -42,41 +37,29 @@ class LooseChange extends FunSpec {
         new BsonElement("b", new BsonArray(List(
           new BsonDocument(List(
             new BsonElement("x", new BsonString("Fido")),
-            new BsonElement("y", new BsonBoolean(false))
-          ).asJava),
+            new BsonElement("y", new BsonBoolean(false))).asJava),
           new BsonDocument(List(
             new BsonElement("x", new BsonString("Cat")),
-            new BsonElement("y", new BsonBoolean(true))
-          ).asJava)
-        ).asJava))
-      ).asJava))
-    ).asJava)
+            new BsonElement("y", new BsonBoolean(true))).asJava)).asJava))).asJava))).asJava)
 
     val e = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
         new BsonElement("b", new BsonArray(List(
-          new BsonString("foo"), new BsonNull(), new BsonString("bar")
-        ).asJava))
-      ).asJava))
-    ).asJava)
+          new BsonString("foo"), new BsonNull(), new BsonString("bar")).asJava))).asJava))).asJava)
 
     val f = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonDouble(1.23))
-      ).asJava))
-    ).asJava)
+        new BsonElement("b", new BsonDouble(1.23))).asJava))).asJava)
 
     val g = new BsonDocument(List(
       new BsonElement("name", new BsonString("Fred")),
       new BsonElement("stuff", new BsonDocument(List(
         new BsonElement("a", new BsonInt32(1)),
-        new BsonElement("b", new BsonInt64(25L))
-      ).asJava))
-    ).asJava)
+        new BsonElement("b", new BsonInt64(25L))).asJava))).asJava)
   }
 
   object ScalaMaster {
@@ -94,18 +77,14 @@ class LooseChange extends FunSpec {
         new BsonElement("name", new BsonString("Fred")),
         new BsonElement("stuff", new BsonDocument(List(
           new BsonElement("a", new BsonInt32(1)),
-          new BsonElement("b", new BsonInt32(15))
-        ).asJava))
-      ).asJava)
+          new BsonElement("b", new BsonInt32(15))).asJava))).asJava)
       sjM.read[Something](dbo) should be(Something("Fred", Map("a" -> 1, "b" -> 15)))
     }
     it("Should blow up for unsupported BSON type") {
       val dbo = new BsonDocument(List(
         new BsonElement("name", new BsonString("Fred")),
         new BsonElement("stuff", new BsonDocument(List(
-          new BsonElement("a", new BsonJavaScript("code here"))
-        ).asJava))
-      ).asJava)
+          new BsonElement("a", new BsonJavaScript("code here"))).asJava))).asJava)
       the[SJError] thrownBy sjM.read[Something](dbo) should have message """BSON type org.bson.BsonJavaScript is not currently supported in ScalaJack."""
     }
     it("Field name remapping must work") {
@@ -176,8 +155,7 @@ class LooseChange extends FunSpec {
       //case class BagMap[Y](i: Int, items: Map[String, Y])
       val mapDoc = new BsonDocument(List(
         new BsonElement("i", new BsonInt32(5)),
-        new BsonElement("items", new BsonNull())
-      ).asJava)
+        new BsonElement("items", new BsonNull())).asJava)
       sjM.read[BagMap[Int]](mapDoc) should be(BagMap(5, null))
 
       sjM.read[OneSub2](null) should be(null)
@@ -189,24 +167,20 @@ class LooseChange extends FunSpec {
       sjM.read[Times](d) should be(times)
       val d2 = new BsonDocument(List(
         new BsonElement("offset", new BsonNull()),
-        new BsonElement("zoned", new BsonNull())
-      ).asJava)
+        new BsonElement("zoned", new BsonNull())).asJava)
       sjM.read[Times](d2) should be(times)
     }
     it("Overrun tuple") {
       //case class Tupple( t: (String,Int))
       val d = new BsonDocument(List(
         new BsonElement("t", new BsonArray(List(
-          new BsonString("foo"), new BsonInt32(5), new BsonBoolean(true)
-        ).asJava))
-      ).asJava)
+          new BsonString("foo"), new BsonInt32(5), new BsonBoolean(true)).asJava))).asJava)
       the[ReadUnexpectedError] thrownBy sjM.read[Tuple](d) should have message "[$.t]: Expected EndArray here but found Boolean"
     }
     it("Bad expected values") {
       val d = new BsonDocument(List(
         new BsonElement("name", new BsonString("Fred")),
-        new BsonElement("big", new BsonDouble(123.45))
-      ).asJava)
+        new BsonElement("big", new BsonDouble(123.45))).asJava)
       the[ReadUnexpectedError] thrownBy sjM.read[OneSub1](d) should have message "[$.big]: Expected Number of kind Int64 here but found Number of kind Double"
     }
     it("Non-hint hint-labeled field") {
@@ -214,18 +188,14 @@ class LooseChange extends FunSpec {
         new BsonElement("num", new BsonInt32(3)),
         new BsonElement("s", new BsonDocument(List(
           new BsonElement("_hint", new BsonInt32(45)),
-          new BsonElement("size", new BsonInt32(34))
-        ).asJava))
-      ).asJava)
+          new BsonElement("size", new BsonInt32(34))).asJava))).asJava)
       the[ReadInvalidError] thrownBy sjM.read[StrangeWrapper](d) should have message "[$.s._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.mongo.Strange"
     }
     it("Can't find trait hint") {
       val d = new BsonDocument(List(
         new BsonElement("num", new BsonInt32(3)),
         new BsonElement("s", new BsonDocument(List(
-          new BsonElement("size", new BsonInt32(34))
-        ).asJava))
-      ).asJava)
+          new BsonElement("size", new BsonInt32(34))).asJava))).asJava)
       the[ReadInvalidError] thrownBy sjM.read[StrangeWrapper](d) should have message "[$.s._hint]: Couldn't find expected type hint '_hint' for trait co.blocke.scalajack.mongo.Strange"
     }
     it("Enums as ints work") {

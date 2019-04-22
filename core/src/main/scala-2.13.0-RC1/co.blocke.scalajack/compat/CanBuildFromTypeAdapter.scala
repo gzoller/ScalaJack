@@ -123,7 +123,7 @@ case class CanBuildMapTypeAdapter[Key, Value, To <: Map[Key, Value]]( //) >: Nul
     keyTypeAdapter:   TypeAdapter[Key],
     valueTypeAdapter: TypeAdapter[Value])(implicit keyTT: TypeTag[Key]) extends TypeAdapter[To] with Collectionish {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): To =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): To =
     reader.readMap[Key, Value, To](path, builderFactory, keyTypeAdapter, valueTypeAdapter)
 
   def write[WIRE](t: To, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
@@ -148,7 +148,7 @@ case class CanBuildFromTypeAdapter[Elem, To](
     elemIsOptional:     Boolean,
     elementTypeAdapter: TypeAdapter[Elem]) extends TypeAdapter[To] with Collectionish {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): To =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): To =
     reader.readArray[Elem, To](path, builderFactory, elementTypeAdapter)
 
   def write[WIRE](t: To, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =

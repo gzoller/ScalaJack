@@ -62,8 +62,7 @@ object Context {
     OffsetTimeTypeAdapterFactory,
     PeriodTypeAdapterFactory,
     ZonedDateTimeTypeAdapterFactory,
-    classes.PlainClassTypeAdapterFactory
-  )
+    classes.PlainClassTypeAdapterFactory)
 }
 
 case class Context(factories: List[TypeAdapterFactory] = Nil) {

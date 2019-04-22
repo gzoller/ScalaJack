@@ -18,8 +18,7 @@ case class DelimitedFlavor(
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
     override val typeValueModifier:  Option[HintValueModifier]    = None,
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
-) extends JackFlavor[String] {
+    override val enumsAsInt:         Boolean                      = false) extends JackFlavor[String] {
 
   // $COVERAGE-OFF$Never used for delimited format -- no maps supported so no map keys or string wrapping
   def stringWrapTypeAdapterFactory[T](wrappedTypeAdapter: TypeAdapter[T]): TypeAdapter[T] = new JsonStringWrapTypeAdapter(wrappedTypeAdapter)
@@ -46,12 +45,12 @@ case class DelimitedFlavor(
 
   override def read[T](wire: String)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
-    context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    context.typeAdapter(tt.tpe.dealias).read(Path.Root, p).asInstanceOf[T]
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
+    context.typeAdapter(tt.tpe.dealias).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
     sb.result()
   }
 }

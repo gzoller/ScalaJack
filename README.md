@@ -1,7 +1,10 @@
-
 # ScalaJack
 
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT) [ ![bintray](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg) ](https://bintray.com/blocke/releases/scalajack/_latestVersion) [![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack) [![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade) [![Coveralls branch](https://img.shields.io/coveralls/gzoller/ScalaJack/master.svg?maxAge=360)](https://coveralls.io/github/gzoller/ScalaJack)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
+[![bintray](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg)](https://bintray.com/blocke/releases/scalajack/_latestVersion)
+[![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack)
+[![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade)
+[![Coveralls branch](https://img.shields.io/coveralls/gzoller/ScalaJack/master.svg?maxAge=360)](https://coveralls.io/github/gzoller/ScalaJack)
 
 ScalaJack is a very fast, seamless serialization engine for JSON, and other protocols, designed to require the minimum amount of help possible when serializing a class.
 
@@ -11,7 +14,7 @@ Advanced Features:
  - Handles default values for case class fields
  - Rich configuration of trait type hint/value
  - Supports value classes
- - Sealted trait-style enumerations
+ - Sealed trait-style enumerations
  - Extensible to other encodings (JSON, CSV, MongoDB, and DynamoDB are provided by ScalaJack, but you can roll your own too!)
 
 ## Use
@@ -20,15 +23,15 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-   libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.0.0")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.0.1")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-   libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.0.0")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.0.1")
 
 DynamoDB helpers are available here:
 
-   libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.0.0")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.0.1")
 
 ScalaJack is hosted on Bintray/JCenter.  If you're using pre-v0.13.9 of SBT you may need to enable the bintray resolver in your build.sbt with
 
@@ -38,11 +41,13 @@ useJCenter := true
 
 Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
-   import co.blocke.scalajack._
+```scala
+import co.blocke.scalajack._
 
-   val sj = ScalaJack()
-   val js = sj.render( myCaseObj )  // serialization
-   val myObj = sj.read[MyCaseClass](js) // deserialization
+val sj = ScalaJack()
+val js = sj.render( myCaseObj )  // serialization
+val myObj = sj.read[MyCaseClass](js) // deserialization
+```
 
 Couldn't be simpler!
 

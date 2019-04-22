@@ -42,8 +42,7 @@ case class MongoFlavor(
         CanBuildFromTypeAdapterFactory(this, enumsAsInt),
         ObjectIdTypeAdapterFactory,
         ZonedDateTimeTypeAdapterFactory,
-        OffsetDateTimeTypeAdapterFactory
-      ) ++: super.bakeContext().factories)
+        OffsetDateTimeTypeAdapterFactory) ++: super.bakeContext().factories)
 
   private val writer = MongoWriter(this)
 
@@ -51,11 +50,11 @@ case class MongoFlavor(
 
   override def read[T](wire: BsonValue)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
-    context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    context.typeAdapter(tt.tpe.dealias).read(Path.Root, p).asInstanceOf[T]
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): BsonValue = {
-    val typeAdapter = context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]]
+    val typeAdapter = context.typeAdapter(tt.tpe.dealias).asInstanceOf[TypeAdapter[T]]
     val builder = BsonBuilder()
     typeAdapter.write(t, writer, builder, false)
     builder.result()

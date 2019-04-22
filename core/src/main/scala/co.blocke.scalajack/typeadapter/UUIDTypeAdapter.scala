@@ -9,7 +9,7 @@ import scala.collection.mutable.Builder
 import scala.util.{ Failure, Success, Try }
 
 object UUIDTypeAdapterFactory extends TypeAdapter.=:=[UUID] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): UUID = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): UUID = {
     reader.readString(path) match {
       case null => null
       case s: String =>
