@@ -34,8 +34,7 @@ case class Person(
     @DBKey(index = 0) age:Int,
     likes:                List[String],
     stuff:                Misc,
-    foo:                  Option[Boolean] = None
-) extends Human
+    foo:                  Option[Boolean] = None) extends Human
 
 @Collection(name = "people2")
 case class PersonOneKey(
@@ -43,8 +42,7 @@ case class PersonOneKey(
     age:                  Int,
     likes:                List[String],
     stuff:                Misc,
-    foo:                  Option[Boolean] = None
-) extends Human
+    foo:                  Option[Boolean] = None) extends Human
 
 @Collection(name = "bogus")
 case class ErrorNoKey(
@@ -52,16 +50,14 @@ case class ErrorNoKey(
     age:   Int,
     likes: List[String],
     stuff: Misc,
-    foo:   Option[Boolean] = None
-) extends Human
+    foo:   Option[Boolean] = None) extends Human
 
 case class ErrorNoTable(
     @DBKey(index = 0) name:String,
     age:                  Int,
     likes:                List[String],
     stuff:                Misc,
-    foo:                  Option[Boolean] = None
-) extends Human
+    foo:                  Option[Boolean] = None) extends Human
 
 case class PersonWithPhone(name: String, phone: Phone)
 trait Address { val postalCode: String }
@@ -74,8 +70,7 @@ class PersonPlain1(
     @DBKey(index = 0) val age:Int,
     val likes:                List[String],
     val stuff:                Misc,
-    val foo:                  Option[Boolean] = None
-)
+    val foo:                  Option[Boolean] = None)
 
 @Collection(name = "people")
 class PersonPlain2() {

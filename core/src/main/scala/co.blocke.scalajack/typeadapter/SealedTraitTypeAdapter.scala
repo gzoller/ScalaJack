@@ -164,8 +164,7 @@ class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementat
 
 class WrappedSealedTraitTypeAdapter[T](
     wrappedTypeAdapter: TypeAdapter[T], // (probably a TraitTypeAdapter at runtime)
-    implementations:    immutable.Set[SealedImplementation[T]]
-)(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
+    implementations:    immutable.Set[SealedImplementation[T]])(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
     val inst = wrappedTypeAdapter.read(path, reader)
