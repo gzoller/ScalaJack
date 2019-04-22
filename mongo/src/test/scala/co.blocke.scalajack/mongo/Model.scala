@@ -232,7 +232,7 @@ object MyTypes {
 import MyTypes._
 
 object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Phone =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Phone =
     reader.readString(path) match {
       case s: String => s.replaceAll("-", "")
       case null      => null

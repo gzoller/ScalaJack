@@ -28,7 +28,7 @@ object DelimitedEnumerationTypeAdapterFactory extends TypeAdapterFactory.FromCla
 
 case class DelimitedEnumerationTypeAdapter[E <: Enumeration](enum: E) extends TypeAdapter[E#Value] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): E#Value =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): E#Value =
     reader.head.tokenType match {
       case TokenType.String | TokenType.QuotedString =>
         val strVal = reader.readString(path)

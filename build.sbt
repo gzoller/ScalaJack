@@ -43,6 +43,7 @@ lazy val basicSettings = Seq(
   scalaVersion                := "2.13.0-RC1", //2.12.8",
   coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum       := true,
+  parallelExecution in ThisBuild := false,
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(AlignArguments, true)
     .setPreference(AlignParameters, true)
@@ -78,7 +79,6 @@ lazy val core_macros = project.in(file("core_macros"))
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
     */
-
 
 lazy val scalajack = project.in(file("core"))
   .settings(basicSettings ++ crossVersions: _*)

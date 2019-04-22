@@ -97,7 +97,7 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 }
 
 class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T]) extends TypeAdapter[T] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = reader.readString(path) match {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = reader.readString(path) match {
     case null => null.asInstanceOf[T]
     case s: String if subclasses.contains(s) =>
       val clazz = Class.forName(tt.tpe.typeSymbol.asClass.owner.fullName + "." + s + "$")
@@ -123,7 +123,7 @@ trait SealedImplementation[T] {
 
 class SealedTraitTypeAdapter[T](implementations: immutable.Set[SealedImplementation[T]], builderFactory: MethodMirror)(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
     val savedReader = reader.copy
     reader.readMap[String, Any, Map[String, Any]](path, builderFactory, reader.jackFlavor.stringTypeAdapter, reader.jackFlavor.anyTypeAdapter) match {
       case null =>
@@ -167,8 +167,8 @@ class WrappedSealedTraitTypeAdapter[T](
     implementations:    immutable.Set[SealedImplementation[T]]
 )(implicit tt: TypeTag[T]) extends TypeAdapter[T] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
-    val inst = wrappedTypeAdapter.read(path, reader)
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
+    val inst = wrappedTypeAdapter.read(path, reader, isMapKey)
     if (implementations.exists(_.isInstance(inst)))
       inst
     else {

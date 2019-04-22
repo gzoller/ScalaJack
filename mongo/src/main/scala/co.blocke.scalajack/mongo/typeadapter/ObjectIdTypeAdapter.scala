@@ -10,7 +10,7 @@ import org.bson._
 
 object ObjectIdTypeAdapterFactory extends TypeAdapter.===[ObjectId] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): ObjectId =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): ObjectId =
     reader.head.input match {
       case null =>
         reader.next

@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter._
 //}
 
 object DurationTypeAdapterFactory extends TypeAdapter.=:=[Duration] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Duration =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Duration =
     reader.readString(path) match {
       case null => null
       case s => Try(Duration.parse(s)) match {
@@ -35,7 +35,7 @@ object DurationTypeAdapterFactory extends TypeAdapter.=:=[Duration] with Stringi
 }
 
 object InstantTypeAdapterFactory extends TypeAdapter.=:=[Instant] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Instant =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Instant =
     reader.readString(path) match {
       case null => null
       case s => Try(Instant.parse(s)) match {
@@ -54,7 +54,7 @@ object InstantTypeAdapterFactory extends TypeAdapter.=:=[Instant] with Stringish
 }
 
 object LocalDateTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalDateTime] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): LocalDateTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): LocalDateTime =
     reader.readString(path) match {
       case null => null
       case s => Try(LocalDateTime.parse(s, ISO_LOCAL_DATE_TIME)) match {
@@ -73,7 +73,7 @@ object LocalDateTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalDateTime] wi
 }
 
 object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): LocalDate =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): LocalDate =
     reader.readString(path) match {
       case null => null
       case s => Try(LocalDate.parse(s, ISO_LOCAL_DATE)) match {
@@ -92,7 +92,7 @@ object LocalDateTypeAdapterFactory extends TypeAdapter.=:=[LocalDate] with Strin
 }
 
 object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): LocalTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): LocalTime =
     reader.readString(path) match {
       case null => null
       case s => Try(LocalTime.parse(s, ISO_LOCAL_TIME)) match {
@@ -111,7 +111,7 @@ object LocalTimeTypeAdapterFactory extends TypeAdapter.=:=[LocalTime] with Strin
 }
 
 object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): OffsetDateTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): OffsetDateTime =
     reader.readString(path) match {
       case null => null
       case s => Try(OffsetDateTime.parse(s, ISO_OFFSET_DATE_TIME)) match {
@@ -130,7 +130,7 @@ object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] 
 }
 
 object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): OffsetTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): OffsetTime =
     reader.readString(path) match {
       case null => null
       case s => Try(OffsetTime.parse(s, ISO_OFFSET_TIME)) match {
@@ -149,7 +149,7 @@ object OffsetTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetTime] with Str
 }
 
 object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Period =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Period =
     reader.readString(path) match {
       case null => null
       case s => Try(Period.parse(s)) match {
@@ -168,7 +168,7 @@ object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] with Stringish {
 }
 
 object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE]): ZonedDateTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): ZonedDateTime =
     reader.readString(path) match {
       case null => null
       case s => Try(ZonedDateTime.parse(s, ISO_ZONED_DATE_TIME)) match {

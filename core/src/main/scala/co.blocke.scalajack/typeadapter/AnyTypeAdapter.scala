@@ -35,9 +35,9 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
   private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
   private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): Any = _read(path, reader)
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Any = _read(path, reader, isMapKey)
 
-  def _read[WIRE](path: Path, reader: Reader[WIRE], isSJCapture: Boolean = false, isMapKey: Boolean = false): Any = {
+  def _read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean, isSJCapture: Boolean = false): Any = {
     reader.head.tokenType match {
       case BeginObject => // Could be Class/Trait or Map
         if (isSJCapture)
@@ -70,7 +70,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
           case d if d.isDecimalDouble => d.toDouble
           case d                      => d
         }
-      case String =>
+      case String if isMapKey || jackFlavor.permissivesOk =>
         reader.readString(path) match { // course attempt to assign a meaningful type to Any value
           case "true"                 => true
           case "false"                => false
@@ -82,6 +82,8 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
             listAnyTypeAdapter.read(path, reader.jackFlavor.parse(s.asInstanceOf[WIRE]))
           case s => s
         }
+      case String =>
+        reader.readString(path)
       case Boolean =>
         reader.readBoolean(path)
       case Null =>

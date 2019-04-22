@@ -186,9 +186,14 @@ class PlugHoles() extends FunSpec with Matchers {
       assertResult(Map("name" -> "Fred")) {
         sj.read[Any](js3)
       }
-      val js4 = "\"true\""
-      val inst = sj.read[Any](js4)
-      (inst == true) should be(true)
+
+      val js4 = """["5","true","Fred"]"""
+      val sjp = ScalaJack().allowPermissivePrimitives()
+      val inst1 = sjp.read[List[Any]](js4)
+      inst1 should be(List(BigInt(5), true, "Fred"))
+      val inst2 = sj.read[List[Any]](js4)
+      inst2 should be(List("5", "true", "Fred"))
+
       sj.render[Map[Any, Int]](Map(Map("a" -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
       sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
       sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be("""{"{\"[1,2,3]\":3}":5}""")
@@ -217,8 +222,8 @@ class PlugHoles() extends FunSpec with Matchers {
       //      sj.render(inst)
     }
     it("Map") {
-      val m: Map[Int, Any] = sj.read[Map[Int, Any]]("""{"1":"5"}""")
-      m should be(Map(1 -> 5))
+      val m: Map[Any, Any] = sj.read[Map[Any, Any]]("""{"1":"5"}""")
+      m should be(Map(1 -> "5"))
 
       val m2: Map[Any, Any] = Map(1 -> 3)
       sj.render(m2) should equal("""{"1":3}""")

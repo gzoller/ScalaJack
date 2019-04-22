@@ -172,7 +172,7 @@ case class MongoReader(jackFlavor: JackFlavor[BsonValue], bson: BsonValue, token
       case "" =>
         val builder = builderFactory().asInstanceOf[Builder[(MapKey, MapValue), To]]
         while (head.tokenType != TokenType.EndObject) {
-          keyTypeAdapter.read(path \ Path.MapKey, this) match {
+          keyTypeAdapter.read(path \ Path.MapKey, this, true) match {
             // $COVERAGE-OFF$Should be possible to call this
             case null =>
               throw new ReadInvalidError(showError(path, "Map keys cannot be null"))

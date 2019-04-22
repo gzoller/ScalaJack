@@ -10,7 +10,7 @@ import java.time._
 
 object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): ZonedDateTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): ZonedDateTime =
     reader.head.input match {
       case null =>
         reader.next

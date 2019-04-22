@@ -40,7 +40,7 @@ case class TraitTypeAdapter[T](
   // The battle plan here is:  Scan the keys of the object looking for type typeHintField.  Perform any (optional)
   // re-working of the hint value via hintModFn.  Look up the correct concete TypeAdapter based on the now-known type
   // and re-read the object as a case class.
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T = {
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = {
     val hintModFn = reader.jackFlavor.hintValueModifiers.get(tt.tpe)
     val hintLabel = getHintLabel(reader) // Apply any hint label modifiers
     reader.head.tokenType match {

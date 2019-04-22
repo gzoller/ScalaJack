@@ -10,7 +10,7 @@ import java.time._
 
 object OffsetDateTimeTypeAdapterFactory extends TypeAdapter.=:=[OffsetDateTime] {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): OffsetDateTime =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): OffsetDateTime =
     reader.head.input match {
       case null =>
         reader.next

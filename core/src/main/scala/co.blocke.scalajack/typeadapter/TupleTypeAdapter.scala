@@ -63,7 +63,7 @@ case class TupleTypeAdapter[T >: Null](
     fields:            List[TupleField[_]],
     constructorMirror: MethodMirror) extends TypeAdapter[T] with Collectionish {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE]): T =
+  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T =
     reader.head.tokenType match {
       case TokenType.Null =>
         reader.next
