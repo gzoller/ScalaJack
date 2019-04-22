@@ -46,10 +46,10 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
     addString(t.toString, out)
 
   def writeMap[Key, Value, To](
-    t:                Map[Key, Value],
-    keyTypeAdapter:   TypeAdapter[Key],
-    valueTypeAdapter: TypeAdapter[Value],
-    out:              Builder[String, String])(implicit keyTT: TypeTag[Key]): Unit = t match {
+      t:                Map[Key, Value],
+      keyTypeAdapter:   TypeAdapter[Key],
+      valueTypeAdapter: TypeAdapter[Value],
+      out:              Builder[String, String])(implicit keyTT: TypeTag[Key]): Unit = t match {
     case null => addString("null", out)
     case daMap =>
       out += "{"
@@ -114,10 +114,10 @@ case class JsonWriter(jackFlavor: JackFlavor[String]) extends Writer[String] {
   }
 
   def writeObject[T](
-    t:            T,
-    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-    out:          Builder[String, String],
-    extras:       List[(String, ExtraFieldValue[_])]): Unit = {
+      t:            T,
+      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+      out:          Builder[String, String],
+      extras:       List[(String, ExtraFieldValue[_])]): Unit = {
     if (t == null) {
       addString("null", out)
     } else {

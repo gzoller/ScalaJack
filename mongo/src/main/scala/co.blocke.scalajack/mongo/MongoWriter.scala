@@ -76,10 +76,10 @@ case class MongoWriter(jackFlavor: JackFlavor[BsonValue]) extends Writer[BsonVal
   }
 
   def writeObject[T](
-    t:            T,
-    fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
-    out:          Builder[BsonValue, BsonValue],
-    extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
+      t:            T,
+      fieldMembers: ListMap[String, ClassHelper.ClassFieldMember[T, Any]],
+      out:          Builder[BsonValue, BsonValue],
+      extras:       List[(String, ExtraFieldValue[_])]                    = List.empty[(String, ExtraFieldValue[_])]): Unit =
     if (t == null)
       out += new BsonNull()
     else {
