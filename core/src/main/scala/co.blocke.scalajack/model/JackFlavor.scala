@@ -10,7 +10,7 @@ trait JackFlavor[WIRE] extends ViewSplice with Filterable[WIRE] {
 
   def read[T](wire: WIRE)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
-    val v = context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    val v = context.typeAdapter(tt.tpe.dealias).read(Path.Root, p).asInstanceOf[T]
     if (p.hasNext && p.head.tokenType != TokenType.End)
       throw new ReadInvalidError(p.showError(Path.Root, "Extra input after read"))
     v

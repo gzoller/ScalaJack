@@ -8,10 +8,10 @@ import scoverage.ScoverageKeys._
 def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
-val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.1"
-val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.7"
-val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.25"
-val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.534"
+val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.2"
+val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.8-RC2"
+val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.26"
+val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s          = "org.json4s"              %% "json4s-core"          % "3.6.5"
 
 def scalacOptionsVersion(scalaVersion: String) = {
@@ -32,7 +32,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-M5")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-RC1")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
@@ -40,7 +40,7 @@ lazy val basicSettings = Seq(
   startYear                   := Some(2015),
 //  crossScalaVersions          := Seq("2.12.8","2.13.0-M5"),
   publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
-  scalaVersion                := "2.12.8",
+  scalaVersion                := "2.13.0-RC1", //2.12.8",
   coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum       := true,
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
@@ -86,7 +86,7 @@ lazy val scalajack = project.in(file("core"))
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
       Seq("org.apache.commons" % "commons-text" % "1.6") ++
-      Seq("commons-codec" % "commons-codec" % "1.11") ++
+      Seq("commons-codec" % "commons-codec" % "1.12") ++
       Seq(json4s) ++
       test(scalatest) ++
       test("org.json4s" %% "json4s-native" % "3.6.5")

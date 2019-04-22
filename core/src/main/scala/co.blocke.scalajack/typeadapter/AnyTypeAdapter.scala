@@ -37,7 +37,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
 
   def read[WIRE](path: Path, reader: Reader[WIRE]): Any = _read(path, reader)
 
-  def _read[WIRE](path: Path, reader: Reader[WIRE], isSJCapture: Boolean = false): Any = {
+  def _read[WIRE](path: Path, reader: Reader[WIRE], isSJCapture: Boolean = false, isMapKey: Boolean = false): Any = {
     reader.head.tokenType match {
       case BeginObject => // Could be Class/Trait or Map
         if (isSJCapture)

@@ -46,12 +46,12 @@ case class DelimitedFlavor(
 
   override def read[T](wire: String)(implicit tt: TypeTag[T]): T = {
     val p = parse(wire)
-    context.typeAdapter(tt.tpe).read(Path.Root, p).asInstanceOf[T]
+    context.typeAdapter(tt.tpe.dealias).read(Path.Root, p).asInstanceOf[T]
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): String = {
     val sb = StringBuilder()
-    context.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
+    context.typeAdapter(tt.tpe.dealias).asInstanceOf[TypeAdapter[T]].write(t, writer, sb, false)
     sb.result()
   }
 }
