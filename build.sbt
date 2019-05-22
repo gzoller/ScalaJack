@@ -9,7 +9,7 @@ def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
 val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.2"
-val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.8-RC2"
+val scalatest       = "org.scalatest"           %% "scalatest"            % "3.0.8-RC4"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.26"
 val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s          = "org.json4s"              %% "json4s-core"          % "3.6.5"
