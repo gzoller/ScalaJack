@@ -32,7 +32,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-RC1")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-RC2")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
