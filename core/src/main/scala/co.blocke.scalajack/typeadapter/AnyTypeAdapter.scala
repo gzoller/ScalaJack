@@ -133,7 +133,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
           writer.writeString(enum.toString, out)
         case _: Map[_, _] =>
           writer.jackFlavor.stringWrapTypeAdapterFactory(mapAnyTypeAdapter).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
-        case _: GenTraversableOnce[_] =>
+        case _: Seq[_] =>
           writer.jackFlavor.stringWrapTypeAdapterFactory(listAnyTypeAdapter).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
         case opt: Option[_] if opt.isDefined =>
           unpack(t.asInstanceOf[Option[_]].get, writer, out, isMapKey)
@@ -146,12 +146,12 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
       }
     else
       t match {
-        case null                     => writer.writeNull(out)
-        case enum: Enumeration#Value  => writer.writeString(enum.toString, out)
-        case _: Map[_, _]             => mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
-        case _: GenTraversableOnce[_] => listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
-        case _: Option[_]             => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
-        case v                        => unpack(v, writer, out, isMapKey)
+        case null                    => writer.writeNull(out)
+        case enum: Enumeration#Value => writer.writeString(enum.toString, out)
+        case _: Map[_, _]            => mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
+        case _: Seq[_]               => listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
+        case _: Option[_]            => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
+        case v                       => unpack(v, writer, out, isMapKey)
       }
   }
 }

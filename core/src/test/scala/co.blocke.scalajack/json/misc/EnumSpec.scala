@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 //---------- Standard Scala Enums
 object Size extends Enumeration {
@@ -39,7 +40,7 @@ case object GBP extends Currency
 
 case class SampleEnum3(e1: Currency, e2: Currency)
 
-class EnumSpec extends FunSpec with Matchers {
+class EnumSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

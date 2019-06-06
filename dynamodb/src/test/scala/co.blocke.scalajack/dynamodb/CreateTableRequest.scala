@@ -1,11 +1,12 @@
 package co.blocke.scalajack
 package dynamodb
 
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
 
-class CreateTableRequest extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class CreateTableRequest extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack(DynamoFlavor()).asInstanceOf[DynamoFlavor]
 

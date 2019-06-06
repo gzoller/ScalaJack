@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 package json.custom
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import scala.reflect.runtime.universe.typeOf
 
-class ParseOrElse() extends FunSpec with Matchers {
+class ParseOrElse() extends AnyFunSpec with Matchers {
 
   describe("-----------------------\n:  ParseOrElse Tests  :\n-----------------------") {
     it("Provide a default object if the object specified in the type hint is unknown") {

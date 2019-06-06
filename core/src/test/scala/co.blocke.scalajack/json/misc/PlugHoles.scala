@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import util.TypeTags
 
 case class Bogus(num: Int, unneeded: Option[Boolean], t: Option[(Int, Boolean)] = Some((5, true)))
@@ -16,7 +17,7 @@ case class Falling[T](id: T) {
   type foo = T
 }
 
-class PlugHoles() extends FunSpec with Matchers {
+class PlugHoles() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

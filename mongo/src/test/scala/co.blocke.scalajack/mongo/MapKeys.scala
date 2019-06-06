@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package mongo
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers
 import java.util.UUID
 import org.bson.BsonDocument
@@ -19,7 +19,7 @@ case class UUIDKey(m: Map[UUID, Int])
 
 case class WithMap(m: Map[Map[Int, Int], Int])
 
-class MapKeys extends FunSpec with Matchers {
+class MapKeys extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(MongoFlavor())
 

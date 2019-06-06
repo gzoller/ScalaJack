@@ -1,9 +1,10 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
-class ViewSplice() extends FunSpec with Matchers {
+class ViewSplice() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

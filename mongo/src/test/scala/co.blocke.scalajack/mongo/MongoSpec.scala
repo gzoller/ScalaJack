@@ -9,12 +9,13 @@ import java.util.UUID
 import org.bson._
 import org.bson.types.ObjectId
 import org.scalatest.Matchers._
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
+import org.scalatest.funspec.AnyFunSpec
 import scala.collection.JavaConverters._
 
 class WrappedOffsetDateTime(val offsetDateTime: OffsetDateTime) extends AnyVal
 
-class MongoSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class MongoSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val TRUE = true
   val FALSE = false

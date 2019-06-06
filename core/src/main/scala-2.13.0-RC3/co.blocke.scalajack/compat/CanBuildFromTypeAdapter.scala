@@ -23,63 +23,71 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
       val implicitConversions = for (method <- methods if method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[Builder[_, _]]) yield method
 
-      val method = implicitConversions.head
-      val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[Builder[_, _]].typeSymbol)
+      // Ugly here---> There are classes derived from IterableOnce that were *not* part of the old GenTraversableOnce.
+      // Option is an example of this.  These "extra" classes are not really CanBuildFrom's, so they won't have any
+      // discovered implicit conversions.  We need to just skip past the rest of this when we discover these.
+      // Sadly there isn't, so far as I've found, a better way of isolating the old GenTraversableOnce classes.
+      if (implicitConversions.isEmpty)
+        next.typeAdapterOf[T]
+      else { // proceed with normal processing
+        val method = implicitConversions.head
+        val returnTypeAsCanBuildFrom = method.returnType.baseType(typeOf[Builder[_, _]].typeSymbol)
 
-      // typeParam == A
-      //      val typeParams = method.typeParams
-
-      // toType == List[A]
-      val toType = returnTypeAsCanBuildFrom.typeArgs(1)
-      //      val toType = returnTypeAsCanBuildFrom.typeArgs(2)
-
-      val typeParamSubstitutions: List[(Symbol, Type)] = method.typeParams.flatMap { typeParam =>
         // typeParam == A
-        // optionalTypeArg == Some(String)
-        val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
-          haystackBeforeSubstitution = toType,
-          haystackAfterSubstitution  = tt.tpe,
-          needleBeforeSubstitution   = typeParam.asType.toType)
-        optionalTypeArg.map(typeArg => typeParam -> typeArg)
-      }
+        //      val typeParams = method.typeParams
 
-      // elementTypeBeforeSubstitution == A
-      val elementTypeBeforeSubstitution = returnTypeAsCanBuildFrom.typeArgs(0)
+        // toType == List[A]
+        val toType = returnTypeAsCanBuildFrom.typeArgs(1)
+        //      val toType = returnTypeAsCanBuildFrom.typeArgs(2)
 
-      // elementTypeAfterSubstitution == String
-      val elementTypeAfterSubstitution = elementTypeBeforeSubstitution.substituteTypes(typeParamSubstitutions.map(_._1), typeParamSubstitutions.map(_._2))
+        val typeParamSubstitutions: List[(Symbol, Type)] = method.typeParams.flatMap { typeParam =>
+          // typeParam == A
+          // optionalTypeArg == Some(String)
+          val optionalTypeArg = Reflection.solveForNeedleAfterSubstitution(
+            haystackBeforeSubstitution = toType,
+            haystackAfterSubstitution  = tt.tpe,
+            needleBeforeSubstitution   = typeParam.asType.toType)
+          optionalTypeArg.map(typeArg => typeParam -> typeArg)
+        }
 
-      val companionInstance = reflectModule(companionSymbol).instance
+        // elementTypeBeforeSubstitution == A
+        val elementTypeBeforeSubstitution = returnTypeAsCanBuildFrom.typeArgs(0)
 
-      val finalTA = if (tt.tpe <:< typeOf[Map[_, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
-        //    val finalTA = if (IsMap(tt.tpe) && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
-        val keyType = elementTypeAfterSubstitution.typeArgs(0)
-        val keyTypeAdapter = context.typeAdapter(keyType)
-        val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
+        // elementTypeAfterSubstitution == String
+        val elementTypeAfterSubstitution = elementTypeBeforeSubstitution.substituteTypes(typeParamSubstitutions.map(_._1), typeParamSubstitutions.map(_._2))
 
-        // Wrap Map keys in a StringWrapTypeAdapter?
-        val finalKeyTypeAdapter =
-          if (!jackFlavor.stringifyMapKeys
-            || keyTypeAdapter.isInstanceOf[Stringish]
-            || keyType <:< typeOf[Enumeration#Value] && !enumsAsInt
-            || keyType =:= typeOf[Any]
-            || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
-            keyTypeAdapter
+        val companionInstance = reflectModule(companionSymbol).instance
+
+        val finalTA = if (tt.tpe <:< typeOf[Map[_, _]] && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+          //    val finalTA = if (IsMap(tt.tpe) && elementTypeAfterSubstitution <:< typeOf[(_, _)]) {
+          val keyType = elementTypeAfterSubstitution.typeArgs(0)
+          val keyTypeAdapter = context.typeAdapter(keyType)
+          val valueTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution.typeArgs(1))
+
+          // Wrap Map keys in a StringWrapTypeAdapter?
+          val finalKeyTypeAdapter =
+            if (!jackFlavor.stringifyMapKeys
+              || keyTypeAdapter.isInstanceOf[Stringish]
+              || keyType <:< typeOf[Enumeration#Value] && !enumsAsInt
+              || keyType =:= typeOf[Any]
+              || (keyTypeAdapter.isInstanceOf[OptionTypeAdapter[_]] && keyTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].valueIsStringish()))
+              keyTypeAdapter
+            else
+              jackFlavor.stringWrapTypeAdapterFactory(keyTypeAdapter)
+
+          val finalValueTypeAdapter = if (elementTypeAfterSubstitution.typeArgs(1) <:< typeOf[Option[_]])
+            valueTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].convertNullToNone()
           else
-            jackFlavor.stringWrapTypeAdapterFactory(keyTypeAdapter)
+            valueTypeAdapter
 
-        val finalValueTypeAdapter = if (elementTypeAfterSubstitution.typeArgs(1) <:< typeOf[Option[_]])
-          valueTypeAdapter.asInstanceOf[OptionTypeAdapter[_]].convertNullToNone()
-        else
-          valueTypeAdapter
+          buildMapTA(companionInstance, method, finalKeyTypeAdapter, finalValueTypeAdapter)
+        } else {
+          val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution) // This dies for Map!
+          buildListTA(companionInstance, method, elementTypeAdapter)
+        }
 
-        buildMapTA(companionInstance, method, finalKeyTypeAdapter, finalValueTypeAdapter)
-      } else {
-        val elementTypeAdapter = context.typeAdapter(elementTypeAfterSubstitution) // This dies for Map!
-        buildListTA(companionInstance, method, elementTypeAdapter)
+        finalTA.asInstanceOf[TypeAdapter[T]]
       }
-
-      finalTA.asInstanceOf[TypeAdapter[T]]
     } else {
       next.typeAdapterOf[T]
     }

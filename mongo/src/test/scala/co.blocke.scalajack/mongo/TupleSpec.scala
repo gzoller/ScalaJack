@@ -1,14 +1,14 @@
 package co.blocke.scalajack
 package mongo
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 import org.bson._
 import scala.collection.JavaConverters._
 
 case class TT2(name: String, rec: Map[String, List[(String, Int, Boolean)]])
 
-class TupleSpec extends FunSpec {
+class TupleSpec extends AnyFunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {

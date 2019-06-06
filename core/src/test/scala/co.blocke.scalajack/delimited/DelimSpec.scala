@@ -3,9 +3,10 @@ package delimited
 
 import model._
 
-import org.scalatest.{ FunSpec, Matchers, PrivateMethodTester }
+import org.scalatest.{ Matchers, PrivateMethodTester }
+import org.scalatest.funspec.AnyFunSpec
 
-class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
+class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
 
   val sj = ScalaJack(DelimitedFlavor())
 
@@ -44,7 +45,7 @@ class DelimSpec extends FunSpec with Matchers with PrivateMethodTester {
         val all = AllPrim(5, 25L, 123.45, 12.3F, 'x', "Hey", true, BigInt(12345678), BigDecimal(0.123458867))
         val delim = sj.render(all)
         val r = sj.parse(delim)
-        val rPos = PrivateMethod[Int]('pos)
+        val rPos = PrivateMethod[Int](Symbol("pos"))
         r.next
         r.next
         r invokePrivate rPos() should be(2)

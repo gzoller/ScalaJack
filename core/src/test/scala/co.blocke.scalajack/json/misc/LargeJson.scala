@@ -1,13 +1,14 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.io.Source
 
 case class PersonRecord(id: Long, first_name: String, last_name: String, email: String, gender: String, ip_address: String)
 
-class LargeJson extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class LargeJson extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 

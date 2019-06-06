@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package mongo
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 import org.bson._
 import scala.collection.JavaConverters._
@@ -10,7 +10,7 @@ case class Something(
     name:  String,
     stuff: Map[String, Any])
 
-class AnySpec extends FunSpec {
+class AnySpec extends AnyFunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {

@@ -1,12 +1,13 @@
 package co.blocke.scalajack
 package json.mapkeys
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import scala.reflect.runtime.universe.typeOf
 import java.util.UUID
 import model.StringMatchHintModifier
 
-class TupleCollKeys() extends FunSpec with Matchers {
+class TupleCollKeys() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 
