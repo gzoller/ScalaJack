@@ -3,11 +3,12 @@ package json.misc
 
 import util._
 
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 import typeadapter.classes._
 
-class LooseChange extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class LooseChange extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 

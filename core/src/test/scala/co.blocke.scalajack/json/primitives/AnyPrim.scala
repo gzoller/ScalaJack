@@ -1,9 +1,10 @@
 package co.blocke.scalajack
 package json.primitives
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
-class AnyPrim() extends FunSpec with Matchers {
+class AnyPrim() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

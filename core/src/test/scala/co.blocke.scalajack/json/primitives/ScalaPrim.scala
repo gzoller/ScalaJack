@@ -1,12 +1,13 @@
 package co.blocke.scalajack
 package json.primitives
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import scala.math.BigDecimal
 import java.util.UUID
 import TestUtil._
 
-class ScalaPrim() extends FunSpec with Matchers {
+class ScalaPrim() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

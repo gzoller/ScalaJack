@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 
-class MapNameSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class MapNameSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 

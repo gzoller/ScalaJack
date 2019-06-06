@@ -5,14 +5,15 @@ package misc
 import model._
 
 import co.blocke.scalajack.typeadapter.UnionTypeAdapterFactory
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 case class Person(name: String, age: Int)
 case class Multi2(one: Union2[List[String], List[Int]])
 case class Multi3(one: Union3[List[String], List[Int], Boolean])
 case class Multi4(one: Union4[List[String], List[Int], Boolean, Person])
 
-class Union extends FunSpec with Matchers {
+class Union extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack().withAdapters(UnionTypeAdapterFactory)
 

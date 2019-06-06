@@ -1,12 +1,13 @@
 package co.blocke.scalajack
 package json4s
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import scala.math.BigDecimal
 import org.json4s.JsonDSL._
 import org.json4s._
 
-class ScalaPrim() extends FunSpec with Matchers {
+class ScalaPrim() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(Json4sFlavor())
 

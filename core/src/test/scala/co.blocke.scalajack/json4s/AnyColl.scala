@@ -3,11 +3,12 @@ package json4s
 
 import org.json4s._
 import org.json4s.{ Diff, JDecimal, JNothing, JObject }
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.math.BigDecimal
 
-class AnyColl() extends FunSpec with Matchers {
+class AnyColl() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(Json4sFlavor())
 
