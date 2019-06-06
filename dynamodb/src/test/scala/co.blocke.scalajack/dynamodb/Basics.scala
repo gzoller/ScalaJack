@@ -4,11 +4,12 @@ package dynamodb
 import model._
 
 import scala.reflect.runtime.universe.typeOf
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.funspec.AnyFunSpec
 
 import com.amazonaws.services.dynamodbv2.document.Item
 
-class Basics extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class Basics extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack(DynamoFlavor())
 

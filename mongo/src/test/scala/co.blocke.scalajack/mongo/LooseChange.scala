@@ -3,7 +3,7 @@ package mongo
 
 import model._
 import co.blocke.scalajack.util.Path
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 import org.bson._
 import compat.BsonBuilder
@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 case class MyNumbers(d: BigDecimal, n: Number)
 case class NumberBoom(x: BigInt)
 
-class LooseChange extends FunSpec {
+class LooseChange extends AnyFunSpec {
   val sjM = ScalaJack(MongoFlavor())
 
   object MongoMaster {

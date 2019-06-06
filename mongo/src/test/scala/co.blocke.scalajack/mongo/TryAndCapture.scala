@@ -1,14 +1,14 @@
 package co.blocke.scalajack
 package mongo
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers
 import org.bson._
 import org.bson.types.ObjectId
 
 import scala.util.{ Failure, Success }
 
-class TryAndCapture extends FunSpec with Matchers {
+class TryAndCapture extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(MongoFlavor())
 

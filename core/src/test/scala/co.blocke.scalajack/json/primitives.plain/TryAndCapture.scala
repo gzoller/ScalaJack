@@ -2,12 +2,13 @@ package co.blocke.scalajack
 package json
 package primitives.plain
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.util._
 import JsonMatcher._
 
-class TryAndCapture() extends FunSpec with Matchers {
+class TryAndCapture() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

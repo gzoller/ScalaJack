@@ -4,9 +4,10 @@ package json.misc
 import util.Path
 import model._
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
-class Errors extends FunSpec with Matchers {
+class Errors extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
   val js = """{"foo":"bar","other":5}"""

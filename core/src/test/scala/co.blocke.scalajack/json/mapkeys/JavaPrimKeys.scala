@@ -1,14 +1,15 @@
 package co.blocke.scalajack
 package json.mapkeys
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Short => JShort }
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
 
 import co.blocke.scalajack.json.JsonMatcher.{ matchJson, parseJValue }
 
-class JavaPrimKeys() extends FunSpec with Matchers {
+class JavaPrimKeys() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

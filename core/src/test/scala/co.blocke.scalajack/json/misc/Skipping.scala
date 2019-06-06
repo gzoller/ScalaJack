@@ -1,11 +1,12 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, FunSpec, GivenWhenThen }
+import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
+import org.scalatest.funspec.AnyFunSpec
 
 case class EmptyClass()
 
-class Skipping extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class Skipping extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 

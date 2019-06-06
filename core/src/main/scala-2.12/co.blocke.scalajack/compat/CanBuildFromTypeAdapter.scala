@@ -19,6 +19,9 @@ case class CanBuildFromTypeAdapterFactory(jackFlavor: JackFlavor[_], enumsAsInt:
 
       val methods = for (member <- companionType.members if member.isMethod) yield member.asMethod
 
+      //TODO: See what kinds of things are being selected from methods to populate implicitConversions.
+      //TODO: In 2.13 RC3, this isn't working but I need a reference to compare to...
+
       // `implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, List[A]] = ...`
       val implicitConversions = for (method <- methods if method.paramLists.flatten.isEmpty && method.returnType <:< typeOf[Builder[_, _]]) yield method
 

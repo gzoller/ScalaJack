@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 package json.mapkeys
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import java.util.UUID
 
-class ValueClassKeys() extends FunSpec with Matchers {
+class ValueClassKeys() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

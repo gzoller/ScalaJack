@@ -1,9 +1,10 @@
 package co.blocke.scalajack
 package json.parameters
 
-import org.scalatest.{ FunSpec, GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
+import org.scalatest.funspec.AnyFunSpec
 
-class ClassParams extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
+class ClassParams extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
 
   val sj = ScalaJack()
 

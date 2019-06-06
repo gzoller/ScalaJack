@@ -2,7 +2,8 @@ package co.blocke.scalajack
 package json
 package misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.util._
 import JsonMatcher._
@@ -13,7 +14,7 @@ case class Boom(
     other: Try[Embed])
 case class Cap(name: String) extends SJCapture
 
-class TryAndCapture() extends FunSpec with Matchers {
+class TryAndCapture() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

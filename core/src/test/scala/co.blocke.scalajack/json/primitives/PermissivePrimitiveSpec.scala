@@ -1,13 +1,14 @@
 package co.blocke.scalajack
 package json.primitives
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.math.BigDecimal
 
 case class Holder[T](value: T)
 
-class PermissivePrimitiveSpec() extends FunSpec with Matchers {
+class PermissivePrimitiveSpec() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack().allowPermissivePrimitives()
 

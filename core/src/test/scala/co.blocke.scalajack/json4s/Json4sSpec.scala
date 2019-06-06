@@ -4,9 +4,10 @@ package json4s
 import co.blocke.scalajack.compat.JValueBuilder
 import org.json4s._
 import org.json4s.{ Diff, JNothing, JObject }
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
-class Json4sSpec extends FunSpec with Matchers {
+class Json4sSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(Json4sFlavor())
 

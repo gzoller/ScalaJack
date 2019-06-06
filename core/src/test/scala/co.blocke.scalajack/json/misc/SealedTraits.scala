@@ -2,7 +2,8 @@ package co.blocke.scalajack
 package json.misc
 
 import co.blocke.scalajack.model.ReadInvalidError
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 // Unambiguous member names
 sealed trait ContactPoint
@@ -27,7 +28,7 @@ case class RanchStay(name: String) extends Stay
 
 case class NotSealed()
 
-class SealedTraits extends FunSpec with Matchers {
+class SealedTraits extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

@@ -2,14 +2,15 @@ package co.blocke.scalajack
 package json
 package misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import scala.util.Try
 
 case class Foo(
     name:  String,
     stuff: List[String])
 
-class ThreadSafety extends FunSpec with Matchers {
+class ThreadSafety extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 
@@ -18,7 +19,7 @@ class ThreadSafety extends FunSpec with Matchers {
       import scala.concurrent.ExecutionContext.Implicits.global
       import scala.concurrent.duration._
       import scala.concurrent.{ Await, Future }
-      import scala.language.postfixOps
+
       val doit = () =>
         Try {
           val js = sj.render(Foo("Greg", List("a", "b", "c")))

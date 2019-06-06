@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 trait Comm
 case class Event(happening: Int) extends Comm
@@ -11,7 +12,7 @@ case class CommMessage[T <: Comm](id: Int, payload: T) {
   type kind = T
 }
 
-class FilterSpec extends FunSpec with Matchers {
+class FilterSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

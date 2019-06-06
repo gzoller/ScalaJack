@@ -3,7 +3,7 @@ package json.misc
 
 import util.Path
 import model._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Matchers._
 
 import scala.collection.mutable.Builder
@@ -63,7 +63,7 @@ class TA6[T]() extends EmptyTypeAdapter[T]
 class TA7[T]() extends EmptyTypeAdapter[T]
 class TAx[T]() extends EmptyTypeAdapter[T]
 
-class TypeAdapterFactorySpec extends FunSpec {
+class TypeAdapterFactorySpec extends AnyFunSpec {
   type Phone = String
 
   val context = Context()

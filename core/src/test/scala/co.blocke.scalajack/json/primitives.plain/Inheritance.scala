@@ -1,10 +1,11 @@
 package co.blocke.scalajack
 package json.primitives.plain
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import model.ReadMissingError
 
-class Inheritance() extends FunSpec with Matchers {
+class Inheritance() extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

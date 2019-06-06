@@ -1,9 +1,10 @@
 package co.blocke.scalajack
 package json.custom
 
-import org.scalatest.{ FunSpec, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
-class CustomAdapter() extends FunSpec with Matchers {
+class CustomAdapter() extends AnyFunSpec with Matchers {
 
   describe("--------------------------\n:  Custom Adapter Tests  :\n--------------------------") {
     it("Overrides type adapter for specific (given) type") {
