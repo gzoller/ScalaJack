@@ -9,7 +9,7 @@ def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
 val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.2"
-val scalatest       = "org.scalatest"           %% "scalatest"            % "3.1.0-SNAP12"
+val scalatest       = "org.scalatest"           %% "scalatest"            % "3.1.0-SNAP13"
 val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.26"
 val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s          = "org.json4s"              %% "json4s-core"          % "3.6.6"
@@ -32,7 +32,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0-RC3")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
@@ -59,6 +59,7 @@ lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
   .settings(publish := { })
+  .settings(crossScalaVersions := Nil)
   .aggregate(scalajack, scalajack_mongo, scalajack_dynamo)//, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
