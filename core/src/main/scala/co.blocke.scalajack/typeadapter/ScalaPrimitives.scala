@@ -74,7 +74,8 @@ trait DoubleTypeAdapter {
 object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with FloatTypeAdapter
 trait FloatTypeAdapter {
   def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Float = reader.readDouble(path).toFloat
-  def write[WIRE](t: Float, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = writer.writeDouble(util.FixFloat.capFloat(t), out)
+  def write[WIRE](t: Float, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+    writer.writeDouble(util.FixFloat.capFloat(t), out)
 }
 
 object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntTypeAdapter
@@ -99,4 +100,3 @@ object StringTypeAdapterFactory extends TypeAdapter.=:=[String] with Stringish {
   def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): String = reader.readString(path)
   def write[WIRE](t: String, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = writer.writeString(t, out)
 }
-

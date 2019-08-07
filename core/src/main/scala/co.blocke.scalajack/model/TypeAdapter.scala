@@ -43,6 +43,12 @@ trait TypeAdapter[T] {
   def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean = false): T
   def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit
 
+  /*
+  def readValidated[WIRE](path: Path, reader: Reader[WIRE], visitor: SchemaVisitor, isMapKey: Boolean = false): T
+  def writeValidated[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], visitor: SchemaVisitor, isMapKey: Boolean): Unit
+  def getSchema(tpe: Type): Schema
+   */
+
   def defaultValue: Option[T] = None
   def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
 

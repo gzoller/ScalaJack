@@ -5,26 +5,28 @@ import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 import scoverage.ScoverageKeys._
 
-def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
-def test      (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
+def compile(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
+def test(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
-val mongo_java      = "org.mongodb"             % "mongodb-driver-sync"   % "3.10.2"
-val scalatest       = "org.scalatest"           %% "scalatest"            % "3.1.0-SNAP13"
-val slf4j_simple    = "org.slf4j"               % "slf4j-simple"          % "1.7.26"
-val dynamo          = "com.amazonaws"           % "aws-java-sdk-dynamodb" % "1.11.538"
-val json4s          = "org.json4s"              %% "json4s-core"          % "3.6.6"
+val mongo_java = "org.mongodb" % "mongodb-driver-sync" % "3.10.2"
+val scalatest = "org.scalatest" %% "scalatest" % "3.1.0-SNAP13"
+val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.26"
+val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
+val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
+val scalactic = "org.scalactic" %% "scalactic" % "3.0.8"
 
 def scalacOptionsVersion(scalaVersion: String) = {
-  val xver =  CrossVersion.partialVersion(scalaVersion) match {
-         case Some((2, scalaMajor)) if scalaMajor == 11 => Seq("-language:existentials")
-         case _ => Seq("-language:_")
-      }
+  val xver = CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, scalaMajor)) if scalaMajor == 11 =>
+      Seq("-language:existentials")
+    case _ => Seq("-language:_")
+  }
 
   Seq(
-    "-feature", 
-    "-deprecation", 
-    "-Xlint", 
-    "-encoding", 
+    "-feature",
+    "-deprecation",
+    "-Xlint",
+    "-encoding",
     "UTF8",
     "-language:higherKinds",
     "-language:implicitConversions",
@@ -32,16 +34,16 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8","2.13.0")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8", "2.13.0")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
-  organization                := "co.blocke",
-  startYear                   := Some(2015),
-  publishArtifact in (Compile, packageDoc) := false,  // disable scaladoc due to bug handling annotations
-  scalaVersion                := "2.12.8",
-  coverageMinimum             := 92,  // really this should be 96% but mongo isn't quite up to that yet
-  coverageFailOnMinimum       := true,
+  organization := "co.blocke",
+  startYear := Some(2015),
+  publishArtifact in (Compile, packageDoc) := false, // disable scaladoc due to bug handling annotations
+  scalaVersion := "2.12.8",
+  coverageMinimum := 92, // really this should be 96% but mongo isn't quite up to that yet
+  coverageFailOnMinimum := true,
   parallelExecution in ThisBuild := false,
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(AlignArguments, true)
@@ -53,18 +55,20 @@ lazy val basicSettings = Seq(
 )
 
 // configure prompt to show current project
-shellPrompt := { s => Project.extract(s).currentProject.id + " > " }
+shellPrompt := { s =>
+  Project.extract(s).currentProject.id + " > "
+}
 
 lazy val root = (project in file("."))
   .settings(basicSettings: _*)
   .settings(publishArtifact := false)
-  .settings(publish := { })
+  .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo)//, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_schema, scalajack_mongo, scalajack_dynamo) //, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
-val pubSettings = Seq (
+val pubSettings = Seq(
   publishMavenStyle := true,
   bintrayOrganization := Some("blocke"),
   bintrayReleaseOnPublish in ThisBuild := false,
@@ -78,36 +82,60 @@ lazy val core_macros = project.in(file("core_macros"))
   .settings(libraryDependencies ++=
     Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
     Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
-    */
+ */
 
-lazy val scalajack = project.in(file("core"))
+lazy val scalajack = project
+  .in(file("core"))
   .settings(basicSettings ++ crossVersions: _*)
   .settings(pubSettings: _*)
-  .settings(libraryDependencies ++=
-    Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
-      Seq("org.apache.commons" % "commons-text" % "1.6") ++
-      Seq("commons-codec" % "commons-codec" % "1.12") ++
-      Seq(json4s) ++
-      test(scalatest) ++
-      test("org.json4s" %% "json4s-native" % "3.6.6")
+  .settings(
+    libraryDependencies ++=
+      Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
+        Seq("org.apache.commons" % "commons-text" % "1.6") ++
+        Seq("commons-codec" % "commons-codec" % "1.12") ++
+        Seq(json4s, scalactic) ++
+        test(scalatest) ++
+        test("org.json4s" %% "json4s-native" % "3.6.6")
   )
 
-lazy val scalajack_mongo = project.in(file("mongo"))
+val jsonSchemaVersion = settingKey[String](
+  "URI for the version of JsonSchema supported in this SJ version."
+)
+lazy val scalajack_schema = project
+  .in(file("schema"))
   .settings(basicSettings ++ crossVersions: _*)
   .settings(pubSettings: _*)
-  .settings(libraryDependencies ++=
-    compile( mongo_java ) ++
-      test( scalatest, slf4j_simple )
-  ).dependsOn( scalajack )
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    jsonSchemaVersion := "http://json-schema.org/draft-07/schema#",
+    buildInfoKeys := Seq[BuildInfoKey](jsonSchemaVersion),
+    buildInfoPackage := "co.blocke.scalajack",
+    libraryDependencies ++=
+      test(scalatest, slf4j_simple)
+  )
+  .dependsOn(scalajack)
 
-
-lazy val scalajack_dynamo = project.in(file("dynamodb"))
+lazy val scalajack_mongo = project
+  .in(file("mongo"))
   .settings(basicSettings ++ crossVersions: _*)
   .settings(pubSettings: _*)
-  .settings(libraryDependencies ++=
-    compile( dynamo ) ++
-      test( scalatest )
-  ).dependsOn( scalajack )
+  .settings(
+    libraryDependencies ++=
+      compile(mongo_java) ++
+        test(scalatest, slf4j_simple)
+  )
+  .dependsOn(scalajack)
+
+lazy val scalajack_dynamo = project
+  .in(file("dynamodb"))
+  .settings(basicSettings ++ crossVersions: _*)
+  .settings(pubSettings: _*)
+  .settings(
+    libraryDependencies ++=
+      compile(dynamo) ++
+        test(scalatest)
+  )
+  .dependsOn(scalajack)
 
 /*
 lazy val scalajack_benchmarks = project.in(file("benchmarks"))
@@ -124,4 +152,4 @@ lazy val scalajack_benchmarks = project.in(file("benchmarks"))
         "io.spray" %% "spray-json" % "1.3.2"
       )
   ).dependsOn( scalajack )
-*/
+ */

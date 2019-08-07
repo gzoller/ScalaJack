@@ -1,36 +1,52 @@
 package co.blocke.scalajack
 
+case class Person(name: String, age: Int)
+trait Pet {
+  val numLegs: Int
+}
+case class Dog(numLegs: Int) extends Pet
+
 object Runme extends App {
 
   val sj = ScalaJack()
 
-  val master = Master("Greg", List("a", "b"), List(Encapsulated("x", false), Encapsulated("y", true)), Encapsulated("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
-  val x = sj.view[View1](master)
-  println(x)
-  //  val y: Master = sj.spliceInto(x.copy(name = "Fred", big = 2L), master)
-  //  println(y)
+  import schema._
+
+  val s = StringSchema(Some(5), Some(9), Some("^foo"))
+  println(s.validate("foobx"))
+
+  /*
+  val c =
+    ObjectSchema[Person](Some(3), None, None, None, None, None, None, None)(
+      sj.context
+    )
+  val c2 =
+    ObjectSchema[Pet](None, Some(1), None, None, None, None, None, None)(
+      sj.context
+    )
+  val c3 =
+    ObjectSchema[Person](None, None, Some(Array("name")), None, None, None, None, None)(
+      sj.context
+    )
+  println(c.validate(Person("Greg", 53)))
+  println(c2.validate(Dog(4)))
+  println(c3.validate(Person("Greg", 53)))
+   */
+  val c4 =
+    ObjectSchema[Person](None, None, None, None, Some(Map("^n.*" -> StringSchema(Some(3), None, None))), None, None, None)(
+      sj.context
+    )
+  println(c4.validate(Person("Greg", 53)))
 }
 
-object Num extends Enumeration {
-  val A, B, C = Value
-}
-case class Master(
-    name:     String,
-    stuff:    List[String],
-    more:     List[Encapsulated],
-    nest:     Encapsulated,
-    maybe:    Option[String],
-    mymap:    Map[String, Int],
-    flipflop: Boolean,
-    big:      Long,
-    num:      Num.Value,
-    age:      Int) {
-  val foo: String = "yikes!"
-}
-case class Encapsulated(
-    foo: String,
-    bar: Boolean)
-case class View1(
-    name:  String,
-    big:   Long,
-    maybe: Option[String])
+/*
+  maxProperties: Option[Int],
+  minProperties: Option[Int],
+  required: Option[Array[String]],
+  properties: Option[Map[String, Schema[_]]], // Map[fieldName, Schema]
+  patternProperties: Option[Map[String, Schema[_]]], // Map[regex, Schema]
+  additionalProperties: Option[Either[Boolean, Schema[_]]],
+  dependencies: Option[Map[String, Array[String]]], // "credit_card": ["billing_address"] (if credit_card field is present, billing_address is required
+  propertyNames: Option[StringSchema],
+  context: Context
+ */

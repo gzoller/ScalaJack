@@ -1,0 +1,18 @@
+package co.blocke.scalajack
+
+import schema._
+
+@SchemaId(uri = "my_uri_here")
+case class Person(name: String, age: Int)
+
+case class Employer(site: String, isOk: Boolean)
+
+object Runme extends App {
+
+  val sj = ScalaJack(SchemaFlavor()).asInstanceOf[SchemaFlavor]
+  println(sj.schemaFor[Person])
+
+  val e = Employer("Plano", true)
+  println(sj.render(e))
+}
+// A TypeAdapter is created once per type (ideally), so no instance state should be in there!

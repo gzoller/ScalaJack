@@ -16,34 +16,33 @@ object ClassHelper {
   }
 
   case class TypeMember[Owner](
-      name:                MemberName, // name of the type
-      typeSignature:       Type, // signature (i.e. the generic letter 'T', e.g. Foo[T]
-      baseType:            Type, // defined type (likely a trait)
+      name: MemberName, // name of the type
+      typeSignature: Type, // signature (i.e. the generic letter 'T', e.g. Foo[T]
+      baseType: Type, // defined type (likely a trait)
       runtimeConcreteType: Option[Type] = None // inferred concrete type reflecting on actual class (or materialized from input)
   ) extends Member[Owner]
 
   case class ClassFieldMember[Owner, T](
-     index:                              Int,
-     name:                               MemberName,
-     valueType:                          Type,
-     valueTypeAdapter:                   TypeAdapter[T],
-     declaredValueType:                  Type,
-     valueAccessorMethod:                Method,
-     derivedValueClassConstructorMirror: Option[MethodMirror],
-     defaultValueMethod:                 Option[Method], // <-- Need a Java Method here to work with Java classes too!
-     outerClass:                         Option[java.lang.Class[_]],
-     dbKeyIndex:                         Option[Int],
-     fieldMapName:                       Option[String],
-     ownerType:                          Type,
-
-     // These 3 are only for Plain Classes -- unused for Case Classes
-     valueSetterMethodSymbol: Option[MethodSymbol], // for Scala
-     valueSetterMethod:       Option[Method], // for Java
-     hasOptionalAnnotation: Boolean = false
+      index: Int,
+      name: MemberName,
+      valueType: Type,
+      valueTypeAdapter: TypeAdapter[T],
+      declaredValueType: Type,
+      valueAccessorMethod: Method,
+      derivedValueClassConstructorMirror: Option[MethodMirror],
+      defaultValueMethod: Option[Method], // <-- Need a Java Method here to work with Java classes too!
+      outerClass: Option[java.lang.Class[_]],
+      dbKeyIndex: Option[Int],
+      fieldMapName: Option[String],
+      ownerType: Type,
+      // These 3 are only for Plain Classes -- unused for Case Classes
+      valueSetterMethodSymbol: Option[MethodSymbol], // for Scala
+      valueSetterMethod: Option[Method], // for Java
+      hasOptionalAnnotation: Boolean = false
   ) extends Member[Owner] {
     type Value = T
 
-    val defaultValue: Option[T] = defaultValueMethod.map(_.invoke(ownerType.typeSymbol.asClass).asInstanceOf[T]).orElse( valueTypeAdapter.defaultValue )
+    val defaultValue: Option[T] = defaultValueMethod.map(_.invoke(ownerType.typeSymbol.asClass).asInstanceOf[T]).orElse(valueTypeAdapter.defaultValue)
 
     lazy val isOptional = valueTypeAdapter.isInstanceOf[OptionTypeAdapter[_]]
 
@@ -69,8 +68,8 @@ object ClassHelper {
       valueSetterMethodSymbol match {
         case Some(vsms) =>
           scala.reflect.runtime.currentMirror.reflect(instance).reflectMethod(vsms)(value) // Scala
-        case None       =>
-          valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object])  // Java
+        case None =>
+          valueSetterMethod.get.invoke(instance, value.asInstanceOf[Object]) // Java
       }
   }
 
@@ -79,14 +78,18 @@ object ClassHelper {
   // Picks up annotations for class and case class parameters
   def getAnnotationValue[T, U](sym: Symbol, default: Option[U] = None)(implicit tt: TypeTag[T]): Option[U] = {
     val annotation = sym.annotations.find(_.tree.tpe =:= typeOf[T])
-    annotation.flatMap { a =>
-      if (a.tree.children.tail.size == 0)
-        default
-      else
-        a.tree.children.tail.head.collect({
-          case Literal(Constant(value)) => value
-        }).headOption
-    }.asInstanceOf[Option[U]]
+    annotation
+      .flatMap { a =>
+        if (a.tree.children.tail.size == 0)
+          default
+        else
+          a.tree.children.tail.head
+            .collect({
+              case Literal(Constant(value)) => value
+            })
+            .headOption
+      }
+      .asInstanceOf[Option[U]]
   }
 
   @inline def extractDefaultConstructorParamValueMethod(clazz: Class[_], iParam: Int): Option[Method] =
@@ -120,8 +123,8 @@ object ClassHelper {
   // *If* there are interesting type members for this class, find fields in the class with types matching the type class and substitute the
   // actual concrete types (and corresponding type adapters) for the placeholder types, T.
   def applyConcreteTypeMembersToFields[T](
-      concreteTypes: Map[String,TypeMember[_]],
-      typeMembersByName:  Map[String, ClassHelper.TypeMember[T]],
+      concreteTypes: Map[String, TypeMember[_]],
+      typeMembersByName: Map[String, ClassHelper.TypeMember[T]],
       fieldMembersByName: ListMap[String, ClassFieldMember[T, Any]],
   )(implicit context: Context): ListMap[String, ClassHelper.ClassFieldMember[T, Any]] = {
 
@@ -143,10 +146,12 @@ object ClassHelper {
                 case _ =>
                   runtimeTypeAdapter.getOrElse(throw new IllegalStateException("Can't find type value (e.g. unknown class) for hint " + name))
               }
-              field.copy(
-                valueTypeAdapter  = newTypeAdapter,
-                declaredValueType = c.runtimeConcreteType.getOrElse(field.declaredValueType)
-              ).asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
+              field
+                .copy(
+                  valueTypeAdapter = newTypeAdapter,
+                  declaredValueType = c.runtimeConcreteType.getOrElse(field.declaredValueType)
+                )
+                .asInstanceOf[ClassHelper.ClassFieldMember[T, Any]]
             case None =>
               field
           }
