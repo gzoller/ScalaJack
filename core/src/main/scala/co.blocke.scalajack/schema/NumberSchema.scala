@@ -13,7 +13,8 @@ case class NumberSchema(
     exclusiveMinimum: Option[Double])
   extends Schema[Double] {
   def validate(
-      value: Double
+      value:     Double,
+      fieldName: Option[String] = None
   )(implicit tt: TypeTag[Double]): Boolean Or Every[SJError] =
     withGood(
       check(

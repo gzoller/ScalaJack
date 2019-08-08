@@ -10,7 +10,8 @@ case class StringSchema(minLength: Option[Int], maxLength: Option[Int], pattern:
   private val regex = pattern.map(_.r)
 
   def validate(
-      value: String
+      value:     String,
+      fieldName: Option[String] = None
   )(implicit tt: TypeTag[String]): Boolean Or Every[SJError] =
     withGood(
       check(

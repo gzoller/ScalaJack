@@ -5,7 +5,7 @@ import org.scalactic._
 import model._
 
 trait Schema[T] {
-  def validate(value: T)(implicit tt: TypeTag[T]): Boolean Or Every[SJError]
+  def validate(value: T, fieldName: Option[String] = None)(implicit tt: TypeTag[T]): Boolean Or Every[SJError]
 
   protected def check[T](test: Option[T], fn: T => Boolean Or One[SJError]): Boolean Or One[SJError] =
     test.map(t => fn(t)).getOrElse(Good(true))
@@ -13,7 +13,7 @@ trait Schema[T] {
 }
 
 case class EmptySchema() extends Schema[Any] {
-  def validate(value: Any)(
+  def validate(value: Any, fieldName: Option[String] = None)(
       implicit
       tt: TypeTag[Any]
   ): Boolean Or Every[SJError] = Good(true)

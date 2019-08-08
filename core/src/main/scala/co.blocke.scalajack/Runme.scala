@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-case class Person(name: String, age: Int)
+case class Person(name: String, age: Int, isOk: Boolean)
 trait Pet {
   val numLegs: Int
 }
@@ -33,10 +33,18 @@ object Runme extends App {
   println(c3.validate(Person("Greg", 53)))
    */
   val c4 =
-    ObjectSchema[Person](None, None, None, None, Some(Map("^n.*" -> StringSchema(Some(3), None, None))), None, None, None)(
-      sj.context
-    )
-  println(c4.validate(Person("Greg", 53)))
+    ObjectSchema[Person](
+      None,
+      None,
+      None,
+      None,
+      Some(Map("^n.*" -> StringSchema(Some(3), None, None))),
+      Some(Right(IntSchema(None, Some(21), None, None, None))),
+      None,
+      None)(
+        sj.context
+      )
+  println(c4.validate(Person("Greg", 14, true)))
 }
 
 /*
@@ -49,4 +57,19 @@ object Runme extends App {
   dependencies: Option[Map[String, Array[String]]], // "credit_card": ["billing_address"] (if credit_card field is present, billing_address is required
   propertyNames: Option[StringSchema],
   context: Context
+ */
+
+/*
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+      "a": { "type":"string"},
+      "a2": { "type": "integer"}
+    },
+    "patternProperties": {
+      "^b": { "type": "boolean" }
+    },
+    "propertyNames": { "minLength": 1 },
+    "additionalProperties": false
+}
  */
