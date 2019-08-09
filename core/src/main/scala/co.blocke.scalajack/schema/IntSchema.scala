@@ -12,6 +12,9 @@ case class IntSchema(
     minimum:          Option[Long],
     exclusiveMinimum: Option[Long])
   extends Schema[Long] {
+
+  val typeLabel = "integer"
+
   def validate(
       value:     Long,
       fieldName: Option[String] = None
@@ -22,28 +25,28 @@ case class IntSchema(
         multipleOf,
         (m: Long) => {
           if (value % m == 0) Good(true)
-          else Bad(One(new SchemaValidationError(s"$errField Given integer is not a multiple of ${multipleOf.get}.")))
+          else Bad(One(new SchemaValidationError(s"${errField}Given integer is not a multiple of ${multipleOf.get}.")))
         }
       ),
       check(
         maximum,
         (m: Long) => {
           if (value <= m) Good(true)
-          else Bad(One(new SchemaValidationError(s"$errField Given integer exceeded maximum value of ${maximum.get}.")))
+          else Bad(One(new SchemaValidationError(s"${errField}Given integer exceeded maximum value of ${maximum.get}.")))
         }
       ),
       check(
         exclusiveMaximum,
         (m: Long) => {
           if (value < m) Good(true)
-          else Bad(One(new SchemaValidationError(s"$errField Given integer exceeded (exclusive) maximum value of ${exclusiveMaximum.get}.")))
+          else Bad(One(new SchemaValidationError(s"${errField}Given integer exceeded (exclusive) maximum value of ${exclusiveMaximum.get}.")))
         }
       ),
       check(
         minimum,
         (m: Long) => {
           if (value >= m) Good(true)
-          else Bad(One(new SchemaValidationError(s"$errField Given integer was less than required minimum value of ${minimum.get}.")))
+          else Bad(One(new SchemaValidationError(s"${errField}Given integer was less than required minimum value of ${minimum.get}.")))
         }
       ),
       check(
@@ -52,7 +55,8 @@ case class IntSchema(
           if (value > m) Good(true)
           else
             Bad(
-              One(new SchemaValidationError(s"$errField Given integer was less than required (exclusive) minimum value of ${exclusiveMinimum.get}.")))
+              One(
+                new SchemaValidationError(s"${errField}Given integer was less than required (exclusive) minimum value of ${exclusiveMinimum.get}.")))
         }
       )
     ) {

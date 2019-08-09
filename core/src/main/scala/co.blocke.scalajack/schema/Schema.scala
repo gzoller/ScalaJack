@@ -5,6 +5,7 @@ import org.scalactic._
 import model._
 
 trait Schema[T] {
+  val typeLabel: String
   def validate(value: T, fieldName: Option[String] = None)(implicit tt: TypeTag[T]): Boolean Or Every[SJError]
 
   protected def check[T](test: Option[T], fn: T => Boolean Or One[SJError]): Boolean Or One[SJError] =
@@ -13,6 +14,7 @@ trait Schema[T] {
 }
 
 case class EmptySchema() extends Schema[Any] {
+  val typeLabel = "null"
   def validate(value: Any, fieldName: Option[String] = None)(
       implicit
       tt: TypeTag[Any]

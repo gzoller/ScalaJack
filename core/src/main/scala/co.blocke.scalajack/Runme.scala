@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-case class Person(name: String, age: Int, isOk: Boolean)
+case class Person(name: String, age: Int, flag: Option[Int], isOk: Option[Boolean])
 trait Pet {
   val numLegs: Int
 }
@@ -39,12 +39,13 @@ object Runme extends App {
       None,
       None,
       Some(Map("^n.*" -> StringSchema(Some(3), None, None))),
-      Some(Right(IntSchema(None, Some(21), None, None, None))),
       None,
-      None)(
+      Some(Map("flag" -> Array("blather"))),
+      None
+    )(
         sj.context
       )
-  println(c4.validate(Person("Greg", 14, true)))
+  println(c4.validate(Person("Greg", 14, Some(5), Some(true))))
 }
 
 /*

@@ -5,7 +5,6 @@ import org.scalactic._
 import Accumulation._
 import model._
 import typeadapter.classes._
-
 import scala.reflect.runtime.universe._
 import scala.reflect.api
 import scala.reflect.runtime.universe
@@ -22,9 +21,12 @@ case class ObjectSchema[T](
 )(implicit context: Context)
   extends Schema[T] {
 
+  val typeLabel = "object"
+
   val mirror: universe.Mirror = runtimeMirror(getClass.getClassLoader) // whatever mirror you use to obtain the `Type`
 
   def validate(value: T, fieldName: Option[String] = None)(implicit tt: TypeTag[T]): Boolean Or Every[SJError] = {
+    val errField = fieldName.map(fn => s"(field $fn)--").getOrElse("")
     val (patternNames, patternCheck) = patternChecks(value)
     val (propNames, propertyCheck) = propertyChecks(value)
     val simpleSingle = withGood(
@@ -34,12 +36,12 @@ case class ObjectSchema[T](
           context.typeAdapterOf[T] match {
             case ccta: CaseClassTypeAdapter[T] =>
               if (ccta.fieldMembersByName.size <= m) Good(true)
-              else Bad(One(new SchemaValidationError(s"Given object has more than the maximum allowed properties ($m)")))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object has more than the maximum allowed properties ($m)")))
             case pcta: PlainClassTypeAdapter[T] =>
               if (pcta.fieldMembersByName.size <= m) Good(true)
-              else Bad(One(new SchemaValidationError(s"Given object has more than the maximum allowed properties ($m)")))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object has more than the maximum allowed properties ($m)")))
             case x =>
-              Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
+              Bad(One(new SchemaValidationError(s"${errField}Given object is an unsupported kind (e.g. Trait)")))
           }
         }
       ),
@@ -49,12 +51,12 @@ case class ObjectSchema[T](
           context.typeAdapterOf[T] match {
             case ccta: CaseClassTypeAdapter[T] =>
               if (ccta.fieldMembersByName.size >= m) Good(true)
-              else Bad(One(new SchemaValidationError(s"Given object has less than the minimum allowed properties ($m)")))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object has less than the minimum allowed properties ($m)")))
             case pcta: PlainClassTypeAdapter[T] =>
               if (pcta.fieldMembersByName.size >= m) Good(true)
-              else Bad(One(new SchemaValidationError(s"Given object has less than the minimum allowed properties ($m)")))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object has less than the minimum allowed properties ($m)")))
             case x =>
-              Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
+              Bad(One(new SchemaValidationError(s"${errField}Given object is an unsupported kind (e.g. Trait)")))
           }
         }
       ),
@@ -66,21 +68,103 @@ case class ObjectSchema[T](
               val set = getFieldsPresent(value, ccta)
               val diffFields = m.toSet.diff(set).toList
               if (diffFields.isEmpty) Good(true)
-              else Bad(One(new SchemaValidationError("Given object is missing required fields: " + diffFields.mkString(","))))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object is missing required fields: " + diffFields.mkString(","))))
             case pcta: PlainClassTypeAdapter[T] =>
               val set = getFieldsPresent(value, pcta)
               val diffFields = m.toSet.diff(set).toList
               if (diffFields.isEmpty) Good(true)
-              else Bad(One(new SchemaValidationError("Given object is missing required fields: " + diffFields.mkString(","))))
+              else Bad(One(new SchemaValidationError(s"${errField}Given object is missing required fields: " + diffFields.mkString(","))))
             case x =>
-              Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
+              Bad(One(new SchemaValidationError(s"${errField}Given object is an unsupported kind (e.g. Trait)")))
           }
         }
       )
     ) { _ & _ & _ }
 
-    withGood(propertyCheck, patternCheck, additionalChecks(value, patternNames ++ propNames), simpleSingle) { _ & _ & _ & _ }
+    withGood(
+      propertyCheck,
+      patternCheck,
+      additionalChecks(value, patternNames ++ propNames),
+      propNameChecks(value),
+      dependencyChecks(value),
+      simpleSingle) {
+        _ & _ & _ & _ & _ & _
+      }
   }
+
+  private def valueGood(ta: ClassHelper.ClassLikeTypeAdapter[T], fieldName: String, objValue: T, s: Schema[_])(
+      implicit
+      tt: TypeTag[T]): Boolean Or Every[SJError] = {
+    val fieldMember = ta.fieldMembersByName(fieldName)
+    val realValue = fieldMember.valueIn(objValue)
+    val castValue = realValue.asInstanceOf[fieldMember.Value]
+    val realType: Type = runtimeMirror(realValue.getClass.getClassLoader).classSymbol(realValue.getClass).toType
+    try {
+      if (realType == typeOf[Integer]) {
+        val lg: Long = castValue.asInstanceOf[Integer].toLong
+        s.asInstanceOf[Schema[Long]].validate(lg, Some(fieldName))
+      } else if (realType == typeOf[Int]) {
+        val lg: Long = castValue.asInstanceOf[Int].toLong
+        s.asInstanceOf[Schema[Long]].validate(lg, Some(fieldName))
+      } else
+        s.asInstanceOf[Schema[Any]].validate(castValue, Some(fieldName))(backward(realType))
+    } catch {
+      case _: ClassCastException => Bad(One(new SchemaValidationError(s"(field $fieldName)--Wrong type.  Expected ${s.typeLabel}")))
+      case _                     => Bad(One(new SchemaValidationError(s"(field $fieldName)--Some other error occurred")))
+    }
+  }
+
+  private def dependencyChecks(value: T)(implicit tt: TypeTag[T]): Boolean Or Every[SJError] =
+    dependencies
+      .map(dep =>
+        context.typeAdapterOf[T] match {
+          case ta: ClassHelper.ClassLikeTypeAdapter[T] =>
+            dep
+              .map {
+                case (key, needs) =>
+                  val keyRes = fieldIsPresent(ta, key, value)
+                  if (keyRes.isGood) {
+                    needs.map(need => fieldIsPresent(ta, need, value)).toList.combined match {
+                      case Good(_) => Good(true)
+                      case Bad(b)  => Bad(b)
+                    }
+                  } else Good(true) // Don't care about dependencies on a field that's not there!
+              }
+              .toList
+              .combined match {
+                case Good(_) => Good(true)
+                case Bad(b)  => Bad(b)
+              }
+          case _ =>
+            Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
+        })
+      .getOrElse(Good(true))
+
+  private def fieldIsPresent(ta: ClassHelper.ClassLikeTypeAdapter[T], fieldName: String, value: T)(implicit tt: TypeTag[T]): Boolean Or One[SJError] =
+    ta.fieldMembersByName
+      .get(fieldName)
+      .map {
+        _.valueIn(value) match {
+          case Some(_) => Good(true)
+          case None    => Bad(One(new SchemaValidationError(s"Dependency field $fieldName is not set in given object.")))
+          case _       => Good(true)
+        }
+      }
+      .getOrElse(Bad(One(new SchemaValidationError(s"Dependency field $fieldName is not defined in given object."))))
+
+  private def propNameChecks(value: T)(implicit tt: TypeTag[T]): Boolean Or Every[SJError] =
+    propertyNames
+      .map(pname =>
+        context.typeAdapterOf[T] match {
+          case ta: ClassHelper.ClassLikeTypeAdapter[T] =>
+            ta.fieldMembersByName.keySet.map(key => pname.validate(key, Some(key))).toList.combined match {
+              case Good(_) => Good(true)
+              case Bad(b)  => Bad(b)
+            }
+          case _ =>
+            Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
+        })
+      .getOrElse(Good(true))
 
   private def additionalChecks(value: T, names: List[String])(implicit tt: TypeTag[T]): Boolean Or Every[SJError] = {
     val set = (context.typeAdapterOf[T] match {
@@ -100,21 +184,7 @@ case class ObjectSchema[T](
         case Right(s: Schema[_]) =>
           context.typeAdapterOf[T] match {
             case ta: ClassHelper.ClassLikeTypeAdapter[T] =>
-              val res = diffNames.map { name =>
-                val fieldMember = ta.fieldMembersByName(name)
-                val realValue = fieldMember.valueIn(value)
-                val castValue = realValue.asInstanceOf[fieldMember.Value]
-                val realType: Type = runtimeMirror(realValue.getClass.getClassLoader).classSymbol(realValue.getClass).toType
-                if (realType == typeOf[Integer]) {
-                  val lg: Long = castValue.asInstanceOf[Integer].toLong
-                  s.asInstanceOf[Schema[Long]].validate(lg, Some(name))
-                } else if (realType == typeOf[Int]) {
-                  val lg: Long = castValue.asInstanceOf[Int].toLong
-                  s.asInstanceOf[Schema[Long]].validate(lg, Some(name))
-                } else
-                  s.asInstanceOf[Schema[Any]].validate(castValue, Some(name))(backward(realType))
-              }.combined
-              res match {
+              diffNames.map(name => valueGood(ta, name, value, s)).combined match {
                 case Good(_) => Good(true)
                 case Bad(b)  => Bad(b)
               }
@@ -135,18 +205,7 @@ case class ObjectSchema[T](
                 case (f: String, s: Schema[_]) =>
                   if (ccta.fieldMembersByName.contains(f)) {
                     names += f
-                    val fieldMember = ccta.fieldMembersByName(f)
-                    val realValue = fieldMember.valueIn(value)
-                    val castValue = realValue.asInstanceOf[fieldMember.Value]
-                    val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
-                    if (realType == typeOf[Integer]) {
-                      val lg: Long = castValue.asInstanceOf[Integer].toLong
-                      s.asInstanceOf[Schema[Long]].validate(lg)
-                    } else if (realType == typeOf[Int]) {
-                      val lg: Long = castValue.asInstanceOf[Int].toLong
-                      s.asInstanceOf[Schema[Long]].validate(lg)
-                    } else
-                      s.asInstanceOf[Schema[Any]].validate(castValue)(backward(realType))
+                    valueGood(ccta, f, value, s)
                   } else
                     Bad(One(new SchemaValidationError(s"Missing expected field: $f")))
               }
@@ -174,18 +233,7 @@ case class ObjectSchema[T](
                   val matchedKeys = ccta.fieldMembersByName.keySet.filter(k => r.findFirstIn(k).isDefined)
                   matchedKeys.map { key =>
                     names += key
-                    val fieldMember = ccta.fieldMembersByName(key)
-                    val realValue = fieldMember.valueIn(value)
-                    val castValue = realValue.asInstanceOf[fieldMember.Value]
-                    val realType: Type = runtimeMirror(realValue.getClass.getClassLoader()).classSymbol(realValue.getClass).toType
-                    if (realType == typeOf[Integer]) {
-                      val lg: Long = castValue.asInstanceOf[Integer].toLong
-                      s.asInstanceOf[Schema[Long]].validate(lg)
-                    } else if (realType == typeOf[Int]) {
-                      val lg: Long = castValue.asInstanceOf[Int].toLong
-                      s.asInstanceOf[Schema[Long]].validate(lg)
-                    } else
-                      s.asInstanceOf[Schema[Any]].validate(castValue)(backward(realType))
+                    valueGood(ccta, key, value, s)
                   }
               }
               .toList
