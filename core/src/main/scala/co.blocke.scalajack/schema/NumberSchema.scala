@@ -10,7 +10,8 @@ case class NumberSchema(
     maximum:          Option[Double],
     exclusiveMaximum: Option[Double],
     minimum:          Option[Double],
-    exclusiveMinimum: Option[Double])
+    exclusiveMinimum: Option[Double],
+    description:      Option[String] = None)
   extends Schema[Double] {
 
   val typeLabel = "number"

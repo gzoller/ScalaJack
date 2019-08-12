@@ -6,7 +6,8 @@ import Accumulation._
 import model._
 import scala.util.matching.Regex
 
-case class StringSchema(minLength: Option[Int], maxLength: Option[Int], pattern: Option[String] = None) extends Schema[String] {
+case class StringSchema(minLength: Option[Int], maxLength: Option[Int], description: Option[String] = None, pattern: Option[String] = None)
+  extends Schema[String] {
   private val regex = pattern.map(_.r)
 
   val typeLabel = "string"

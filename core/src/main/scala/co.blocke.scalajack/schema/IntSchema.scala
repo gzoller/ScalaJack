@@ -10,7 +10,8 @@ case class IntSchema(
     maximum:          Option[Long],
     exclusiveMaximum: Option[Long],
     minimum:          Option[Long],
-    exclusiveMinimum: Option[Long])
+    exclusiveMinimum: Option[Long],
+    description:      Option[String] = None)
   extends Schema[Long] {
 
   val typeLabel = "integer"

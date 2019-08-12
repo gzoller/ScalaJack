@@ -101,7 +101,7 @@ There have also been improvements to Delimited/CSV handling.  Before, ScalaJack 
 
 MongoDB support has been strengthened, with some of the limitations of earlier versions removed.  Type hint modifiers (for type members) are now supported.  Support for scalar non-String keys (Int, Boolean, etc) work now too.  Try and SJCapture features are now supported for Mongo as well as JSON.
 
-One feature was removed: non-canonical JSON support.  If you loved this feature, I understand, but its benefits just weren't worth the benefit of continued maintenance.
+One feature was removed: non-canonical JSON support.  If you loved this feature, I understand, but its benefits just weren't worth the costs of continued maintenance.
 
 We hope you'll enjoy using the latest ScalaJack!
 
