@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package schema
+package schema2
 
 import org.scalactic._
 import Accumulation._
@@ -13,23 +13,25 @@ case class ObjectSchema[T](
     maxProperties:        Option[Int],
     minProperties:        Option[Int],
     required:             Option[Array[String]],
-    properties:           Option[Map[String, Schema[_]]], // Map[fieldName, Schema]
-    patternProperties:    Option[Map[String, Schema[_]]], // Map[regex, Schema]
-    additionalProperties: Option[Either[Boolean, Schema[_]]],
+    properties:           Option[Map[String, Schema]], // Map[fieldName, Schema]
+    patternProperties:    Option[Map[String, Schema]], // Map[regex, Schema]
+    additionalProperties: Option[Either[Boolean, Schema]],
     dependencies:         Option[Map[String, Array[String]]], // "credit_card": ["billing_address"] (if credit_card field is present, billing_address is required
-    propertyNames:        Option[StringSchema],
+    propertyNames:        Option[Schema], // StringSchema
     description:          Option[String]                     = None
-)(implicit context: Context)
-  extends Schema[T] {
+)(val typeAdapter: TypeAdapter[T])
+  extends BoundSchema[T] {
 
   val typeLabel = "object"
 
-  val mirror: universe.Mirror = runtimeMirror(getClass.getClassLoader) // whatever mirror you use to obtain the `Type`
+  //val mirror: universe.Mirror = runtimeMirror(getClass.getClassLoader) // whatever mirror you use to obtain the `Type`
 
-  def validate(value: T, fieldName: Option[String] = None)(implicit tt: TypeTag[T]): Boolean Or Every[SJError] = {
-    val errField = fieldName.map(fn => s"(field $fn)--").getOrElse("")
+  def validate(value: T, fieldName: Option[String] = None)(implicit tt: TypeTag[T]): Boolean Or Every[SJError] =
+    Good(true)
+  /*{
+    val errField                     = fieldName.map(fn => s"(field $fn)--").getOrElse("")
     val (patternNames, patternCheck) = patternChecks(value)
-    val (propNames, propertyCheck) = propertyChecks(value)
+    val (propNames, propertyCheck)   = propertyChecks(value)
     val simpleSingle = withGood(
       check(
         maxProperties,
@@ -66,12 +68,12 @@ case class ObjectSchema[T](
         (m: Array[String]) => {
           context.typeAdapterOf[T] match {
             case ccta: CaseClassTypeAdapter[T] =>
-              val set = getFieldsPresent(value, ccta)
+              val set        = getFieldsPresent(value, ccta)
               val diffFields = m.toSet.diff(set).toList
               if (diffFields.isEmpty) Good(true)
               else Bad(One(new SchemaValidationError(s"${errField}Given object is missing required fields: " + diffFields.mkString(","))))
             case pcta: PlainClassTypeAdapter[T] =>
-              val set = getFieldsPresent(value, pcta)
+              val set        = getFieldsPresent(value, pcta)
               val diffFields = m.toSet.diff(set).toList
               if (diffFields.isEmpty) Good(true)
               else Bad(One(new SchemaValidationError(s"${errField}Given object is missing required fields: " + diffFields.mkString(","))))
@@ -82,23 +84,22 @@ case class ObjectSchema[T](
       )
     ) { _ & _ & _ }
 
-    withGood(
-      propertyCheck,
-      patternCheck,
-      additionalChecks(value, patternNames ++ propNames),
-      propNameChecks(value),
-      dependencyChecks(value),
-      simpleSingle) {
-        _ & _ & _ & _ & _ & _
-      }
+    withGood(propertyCheck,
+             patternCheck,
+             additionalChecks(value, patternNames ++ propNames),
+             propNameChecks(value),
+             dependencyChecks(value),
+             simpleSingle) {
+      _ & _ & _ & _ & _ & _
+    }
   }
 
   private def valueGood(ta: ClassHelper.ClassLikeTypeAdapter[T], fieldName: String, objValue: T, s: Schema[_])(
       implicit
       tt: TypeTag[T]): Boolean Or Every[SJError] = {
-    val fieldMember = ta.fieldMembersByName(fieldName)
-    val realValue = fieldMember.valueIn(objValue)
-    val castValue = realValue.asInstanceOf[fieldMember.Value]
+    val fieldMember    = ta.fieldMembersByName(fieldName)
+    val realValue      = fieldMember.valueIn(objValue)
+    val castValue      = realValue.asInstanceOf[fieldMember.Value]
     val realType: Type = runtimeMirror(realValue.getClass.getClassLoader).classSymbol(realValue.getClass).toType
     try {
       if (realType == typeOf[Integer]) {
@@ -133,12 +134,12 @@ case class ObjectSchema[T](
               }
               .toList
               .combined match {
-                case Good(_) => Good(true)
-                case Bad(b)  => Bad(b)
-              }
+              case Good(_) => Good(true)
+              case Bad(b)  => Bad(b)
+            }
           case _ =>
             Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
-        })
+      })
       .getOrElse(Good(true))
 
   private def fieldIsPresent(ta: ClassHelper.ClassLikeTypeAdapter[T], fieldName: String, value: T)(implicit tt: TypeTag[T]): Boolean Or One[SJError] =
@@ -164,7 +165,7 @@ case class ObjectSchema[T](
             }
           case _ =>
             Bad(One(new SchemaValidationError("Given object is an unsupported kind (e.g. Trait)")))
-        })
+      })
       .getOrElse(Good(true))
 
   private def additionalChecks(value: T, names: List[String])(implicit tt: TypeTag[T]): Boolean Or Every[SJError] = {
@@ -230,7 +231,7 @@ case class ObjectSchema[T](
             val results: Or[List[Boolean], Every[SJError]] = m
               .map {
                 case (regex: String, s: Schema[_]) =>
-                  val r = regex.r
+                  val r           = regex.r
                   val matchedKeys = ccta.fieldMembersByName.keySet.filter(k => r.findFirstIn(k).isDefined)
                   matchedKeys.map { key =>
                     names += key
@@ -252,19 +253,21 @@ case class ObjectSchema[T](
   // Collect any non-optional fields, or optional fields that have Some() value, in T instance.
   private def getFieldsPresent(inst: T, ccta: CaseClassTypeAdapter[T]): Set[String] =
     ccta.fieldMembersByName.collect {
-      case (fname: String, member: ClassHelper.ClassFieldMember[T, Any]) if (!member.isOptional || member
-        .valueIn(inst)
-        .asInstanceOf[Option[_]]
-        .isDefined) =>
+      case (fname: String, member: ClassHelper.ClassFieldMember[T, Any])
+          if (!member.isOptional || member
+            .valueIn(inst)
+            .asInstanceOf[Option[_]]
+            .isDefined) =>
         fname
     }.toSet
 
   private def getFieldsPresent(inst: T, pcta: PlainClassTypeAdapter[T]): Set[String] =
     (pcta.fieldMembersByName ++ pcta.nonConstructorFields).collect {
-      case (fname: String, member: ClassHelper.ClassFieldMember[T, Any]) if (!member.isOptional || member
-        .valueIn(inst)
-        .asInstanceOf[Option[_]]
-        .isDefined) =>
+      case (fname: String, member: ClassHelper.ClassFieldMember[T, Any])
+          if (!member.isOptional || member
+            .valueIn(inst)
+            .asInstanceOf[Option[_]]
+            .isDefined) =>
         fname
     }.toSet
 
@@ -277,4 +280,5 @@ case class ObjectSchema[T](
           else throw new IllegalArgumentException(s"Type tag defined in $mirror cannot be migrated to other mirrors.")
       }
     )
+ */
 }

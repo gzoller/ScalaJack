@@ -9,6 +9,7 @@ import model._
 import scala.collection.immutable.{ ListMap, Map }
 import scala.collection.mutable.Builder
 import scala.reflect.runtime.universe._
+import schema2._
 
 case class CaseClassTypeAdapter[T](
     className:          String,
