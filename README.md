@@ -23,15 +23,15 @@ ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.0.3")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.0.4")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.0.3")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.0.4")
 
 DynamoDB helpers are available here:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.0.3")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.0.4")
 
 ScalaJack is hosted on Bintray/JCenter.  If you're using pre-v0.13.9 of SBT you may need to enable the bintray resolver in your build.sbt with
 
