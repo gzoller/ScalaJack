@@ -6,6 +6,7 @@ notifications:
   email:
     recipients:
       - info@blocke.com
+dist: trusty
 jdk:
   - oraclejdk8
 script:

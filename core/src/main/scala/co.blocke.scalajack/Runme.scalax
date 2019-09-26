@@ -1,16 +1,27 @@
 package co.blocke.scalajack
 
+case class MapFactor(@Change(name = "foo_bar") fooBar: String,
+                     @Change(name = "a_b") thingy: Long,
+                     count: Int)
+
 object Runme extends App {
 
   val sj = ScalaJack()
 
-  val master = Master("Greg", List("a", "b"), List(Encapsulated("x", false), Encapsulated("y", true)), Encapsulated("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
-  val x = sj.view[View1](master)
-  println(x)
+  println("Scala: " + scala.util.Properties.versionString)
+  println("Java : " + System.getProperty("java.version"))
+
+  val mf = MapFactor("Foo", 123L, 5)
+  println(sj.render(mf))
+
+  //  val master = Master("Greg", List("a", "b"), List(Encapsulated("x", false), Encapsulated("y", true)), Encapsulated("Nest!", true), Some("wow"), Map("hey" -> 17, "you" -> 21), true, 99123986123L, Num.C, 46)
+  //  val x = sj.view[View1](master)
+  //  println(x)
   //  val y: Master = sj.spliceInto(x.copy(name = "Fred", big = 2L), master)
   //  println(y)
 }
 
+/*
 object Num extends Enumeration {
   val A, B, C = Value
 }
@@ -34,3 +45,4 @@ case class View1(
     name:  String,
     big:   Long,
     maybe: Option[String])
+ */
