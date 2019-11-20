@@ -40,7 +40,7 @@ lazy val basicSettings = Seq(
   scalaVersion := "2.12.8",
   coverageMinimum := 92, // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum := true,
-  parallelExecution in ThisBuild := false,
+//  parallelExecution in ThisBuild := false,
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq("-target:jvm-1.8", "-language:_"),
   testOptions in Test += Tests.Argument("-oDF")
@@ -117,16 +117,12 @@ lazy val scalajack_benchmarks = project
 //      compile(mongo_scala) ++
       test(scalatest, slf4j_simple) ++
         List(
-          /*
-          "com.typesafe.play" %% "play-json" % "2.6.7",
-          "org.json4s" %% "json4s-native" % "3.6.2",
-          "net.liftweb" %% "lift-json" % "3.3.0",
-           */
+          "net.liftweb" %% "lift-json" % "3.4.0",
+          "org.json4s" %% "json4s-native" % "3.6.6",
           "co.blocke" %% "scalajack" % "6.0.4",
           "io.circe" %% "circe-core" % "0.11.1",
           "io.circe" %% "circe-generic" % "0.11.1",
           "io.circe" %% "circe-parser" % "0.11.1"
-//          "io.spray" %% "spray-json" % "1.3.2"
-        )
+        ) :+ json4s
   )
   .dependsOn(scalajack)

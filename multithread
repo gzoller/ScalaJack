@@ -1,0 +1,30 @@
+[info] Benchmark                        Mode  Cnt      Score      Error  Units
+[info] BaseBenchmarks.read61Fast       thrpt   15  27729.218 ±  338.955  ops/s
+[info] BaseBenchmarks.readHandwritten  thrpt   15  24041.835 ± 1572.455  ops/s
+[info] BaseBenchmarks.read61           thrpt   15  20232.361 ±  736.766  ops/s
+[info] BaseBenchmarks.readCirce        thrpt   15  19971.288 ±  986.961  ops/s
+[info] BaseBenchmarks.read5            thrpt   15  16349.600 ±  193.090  ops/s
+[info] BaseBenchmarks.read60           thrpt   15  11111.795 ±  127.843  ops/s
+[info] BaseBenchmarks.readLiftJson     thrpt   15   9313.472 ±  639.219  ops/s
+[info] BaseBenchmarks.readJson4s       thrpt   15   3425.144 ±  219.970  ops/s
+
+
+Single thread running...
+sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f 1 -t 1 -wi 5 -i 15"
+
+[info] Benchmark                   Mode  Cnt      Score      Error  Units
+[info] BaseBenchmarks.read5       thrpt   15  10718.840 ± 2197.270  ops/s
+[info] BaseBenchmarks.read60      thrpt   15   8868.732 ±  864.819  ops/s
+[info] BaseBenchmarks.read61      thrpt   15  14955.848 ± 3097.606  ops/s
+[info] BaseBenchmarks.read61Fast  thrpt   15  25575.941 ± 1323.453  ops/s
+[info] BaseBenchmarks.readCirce   thrpt   15  20316.757 ±  194.645  ops/s
+
+Several threads running...
+sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f 4 -t 4 -wi 5 -i 25"
+
+[info] Benchmark                   Mode  Cnt      Score      Error  Units
+[info] BaseBenchmarks.read5       thrpt  100  23343.627 ± 1223.358  ops/s
+[info] BaseBenchmarks.read60      thrpt  100  15243.831 ±  645.406  ops/s
+[info] BaseBenchmarks.read61      thrpt  100  19615.790 ± 1628.766  ops/s
+[info] BaseBenchmarks.read61Fast  thrpt  100  37809.373 ± 1605.161  ops/s
+[info] BaseBenchmarks.readCirce   thrpt  100  25933.548 ± 1703.607  ops/s

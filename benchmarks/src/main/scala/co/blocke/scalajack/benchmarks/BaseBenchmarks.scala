@@ -2,11 +2,16 @@ package co.blocke.scalajack
 package benchmarks
 
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
+
 import scala.reflect.runtime.universe._
 import org.openjdk.jmh.infra.Blackhole
 import model._
-
-import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+import io.circe._
+import io.circe.generic.auto._
+import io.circe.parser._
+import io.circe.syntax._
+import net.liftweb.json.DefaultFormats
+import org.json4s.DefaultFormats
 
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
@@ -253,4 +258,60 @@ class BaseBenchmarks {
     bh.consume(state.sj61fast.read(state.people))
   }
 
+  @Benchmark
+  def readHandwritten(state: BaseBenchmarksState): List[Person] = {
+
+    val charArray: Array[Char] = state.people.toCharArray
+
+    val reader = new Tokenizer().tokenize(charArray, 0, charArray.length)
+
+    val listBuilder = List.canBuildFrom[Person]()
+
+    reader.beginArray()
+
+    while (reader.hasMoreElements) {
+      reader.beginObject()
+
+      var id: Int = 0
+      var firstName: String = ""
+      var lastName: String = ""
+      var email: String = ""
+      var gender: String = ""
+      var ipAddress: String = ""
+
+      while (reader.hasMoreMembers) {
+        reader.readString() match {
+          case "id"         => id = reader.readInt()
+          case "first_name" => firstName = reader.readString()
+          case "last_name"  => lastName = reader.readString()
+          case "email"      => email = reader.readString()
+          case "gender"     => gender = reader.readString()
+          case "ip_address" => ipAddress = reader.readString()
+        }
+      }
+
+      listBuilder += Person(id, firstName, lastName, email, gender, ipAddress)
+
+      reader.endObject()
+    }
+
+    reader.endArray()
+
+    listBuilder.result()
+  }
+
+  @Benchmark
+  def readJson4s(state: BaseBenchmarksState): List[Person] = {
+    import org.json4s.native.Serialization.{ read, write }
+    implicit val formats = org.json4s.DefaultFormats
+    read[List[Person]](state.people)
+  }
+
+  @Benchmark
+  def readLiftJson(state: BaseBenchmarksState): List[Person] = {
+    import net.liftweb.json._
+    implicit val formats = net.liftweb.json.DefaultFormats
+
+    parse(state.people).extract[List[Person]]
+  }
 }
