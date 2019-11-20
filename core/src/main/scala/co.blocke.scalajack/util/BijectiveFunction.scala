@@ -8,8 +8,10 @@ object BijectiveFunction {
 
   object Implicits {
 
-    implicit final class FunctionReverse[A, B](private val apply: A => B) extends AnyVal {
-      @inline def <=>(unapply: B => A): BijectiveFunction[A, B] = BijectiveFunction(apply, unapply)
+    implicit final class FunctionReverse[A, B](private val apply: A => B)
+      extends AnyVal {
+      @inline def <=>(unapply: B => A): BijectiveFunction[A, B] =
+        BijectiveFunction(apply, unapply)
       def ⇄(unapply: B => A): BijectiveFunction[A, B] = <=>(unapply)
     }
 
@@ -23,22 +25,24 @@ trait BijectiveFunction[A, B] extends Function[A, B] {
   def unapply(b: B): A
 
   def inverse: BijectiveFunction[B, A] = InvertedBijectiveFunction(this)
-  def compose[X](f: BijectiveFunction[X, A]): BijectiveFunction[X, B] = ComposedBijectiveFunction(f, this)
-  def andThen[C](g: BijectiveFunction[B, C]): BijectiveFunction[A, C] = ComposedBijectiveFunction(this, g)
+  def compose[X](f: BijectiveFunction[X, A]): BijectiveFunction[X, B] =
+    ComposedBijectiveFunction(f, this)
+  def andThen[C](g: BijectiveFunction[B, C]): BijectiveFunction[A, C] =
+    ComposedBijectiveFunction(this, g)
   // $COVERAGE-OFF$Unused right now--may be part of future functionality
   def memoized: BijectiveFunction[A, B] = MemoizedBijectiveFunction(this)
   // $COVERAGE-ON$
 }
 
-case class BijectiveFunctionPair[A, B](
-    applyFn:   A => B,
-    unapplyFn: B => A) extends BijectiveFunction[A, B] {
+case class BijectiveFunctionPair[A, B](applyFn: A => B, unapplyFn: B => A)
+  extends BijectiveFunction[A, B] {
 
   override def apply(a: A): B = applyFn(a)
   override def unapply(b: B): A = unapplyFn(b)
 }
 
-case class InvertedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends BijectiveFunction[B, A] {
+case class InvertedBijectiveFunction[A, B](f: BijectiveFunction[A, B])
+  extends BijectiveFunction[B, A] {
 
   override def apply(b: B): A = f.unapply(b)
   override def unapply(a: A): B = f.apply(a)
@@ -47,14 +51,16 @@ case class InvertedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends B
 
 case class ComposedBijectiveFunction[A, B, C](
     f: BijectiveFunction[A, B],
-    g: BijectiveFunction[B, C]) extends BijectiveFunction[A, C] {
+    g: BijectiveFunction[B, C])
+  extends BijectiveFunction[A, C] {
 
   override def apply(a: A): C = g.apply(f.apply(a))
   override def unapply(c: C): A = f.unapply(g.unapply(c))
 }
 
 // $COVERAGE-OFF$Unused right now--may be part of future functionality
-case class MemoizedBijectiveFunction[A, B](f: BijectiveFunction[A, B]) extends BijectiveFunction[A, B] {
+case class MemoizedBijectiveFunction[A, B](f: BijectiveFunction[A, B])
+  extends BijectiveFunction[A, B] {
 
   import scala.collection.mutable
 

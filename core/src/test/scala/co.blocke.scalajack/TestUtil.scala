@@ -9,7 +9,10 @@ object TestUtil {
     while ({
       i < len
     }) {
-      data(i / 2) = ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16)).toByte
+      data(i / 2) = ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(
+        s.charAt(i + 1),
+        16
+      )).toByte
 
       i += 2
     }
@@ -26,8 +29,10 @@ object TestUtil {
         if (!t.getMessage.contains("\n"))
           throw t
         val msg = "\"\"\"" + t.getMessage().replace("\n", "\n  |") + "\"\"\""
-        println(label + " >> " + t.getClass.getName + "\n-----------------------\n" +
-          s"val msg = $msg.stripMargin\nthe[${t.getClass.getName}] thrownBy $fnStr should have message msg\n")
+        println(
+          label + " >> " + t.getClass.getName + "\n-----------------------\n" +
+            s"val msg = $msg.stripMargin\nthe[${t.getClass.getName}] thrownBy $fnStr should have message msg\n"
+        )
     }
 }
 

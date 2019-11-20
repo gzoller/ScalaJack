@@ -1,8 +1,5 @@
 import sbt._
 import sbt.Keys._
-//import pl.project13.scala.sbt.JmhPlugin
-import com.typesafe.sbt.SbtScalariform._
-import scalariform.formatter.preferences._
 import scoverage.ScoverageKeys._
 
 def compile(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
@@ -44,12 +41,6 @@ lazy val basicSettings = Seq(
   coverageMinimum := 92, // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum := true,
   parallelExecution in ThisBuild := false,
-  ScalariformKeys.preferences := ScalariformKeys.preferences.value
-    .setPreference(AlignArguments, true)
-    .setPreference(AlignParameters, true)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(DoubleIndentConstructorArguments, true),
-  //scalacOptions := scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq("-target:jvm-1.8", "-language:_"),
   testOptions in Test += Tests.Argument("-oDF")
@@ -65,7 +56,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo) //, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_benchmarks) //, scalajack_mongo, scalajack_dynamo) //, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -77,13 +68,6 @@ val pubSettings = Seq(
   bintrayRepository := "releases",
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
-
-/* Doesn't work!
-lazy val core_macros = project.in(file("core_macros"))
-  .settings(libraryDependencies ++=
-    Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
-    Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
- */
 
 lazy val scalajack = project
   .in(file("core"))
@@ -99,6 +83,7 @@ lazy val scalajack = project
         test("org.json4s" %% "json4s-native" % "3.6.6")
   )
 
+/*
 lazy val scalajack_mongo = project
   .in(file("mongo"))
   .settings(basicSettings ++ crossVersions: _*)
@@ -120,20 +105,28 @@ lazy val scalajack_dynamo = project
         test(scalatest)
   )
   .dependsOn(scalajack)
+ */
 
-/*
-lazy val scalajack_benchmarks = project.in(file("benchmarks"))
+lazy val scalajack_benchmarks = project
+  .in(file("benchmarks"))
   .enablePlugins(JmhPlugin)
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
-  .settings(libraryDependencies ++=
-    compile( mongo_scala ) ++
-      test( scalatest, slf4j_simple ) ++
-      List(
-        "com.typesafe.play" %% "play-json" % "2.6.7",
-        "org.json4s" %% "json4s-native" % "3.6.2",
-        "net.liftweb" %% "lift-json" % "3.3.0",
-        "io.spray" %% "spray-json" % "1.3.2"
-      )
-  ).dependsOn( scalajack )
- */
+  .settings(
+    libraryDependencies ++=
+//      compile(mongo_scala) ++
+      test(scalatest, slf4j_simple) ++
+        List(
+          /*
+          "com.typesafe.play" %% "play-json" % "2.6.7",
+          "org.json4s" %% "json4s-native" % "3.6.2",
+          "net.liftweb" %% "lift-json" % "3.3.0",
+           */
+          "co.blocke" %% "scalajack" % "6.0.4",
+          "io.circe" %% "circe-core" % "0.11.1",
+          "io.circe" %% "circe-generic" % "0.11.1",
+          "io.circe" %% "circe-parser" % "0.11.1"
+//          "io.spray" %% "spray-json" % "1.3.2"
+        )
+  )
+  .dependsOn(scalajack)

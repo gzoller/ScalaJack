@@ -3,7 +3,6 @@ package json
 
 import org.json4s.JsonAST.JValue
 import org.json4s.native.JsonMethods._
-import util.Path
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
 object JsonMatcher {
@@ -13,11 +12,17 @@ object JsonMatcher {
   def matchJson(expected: JValue): Matcher[JValue] = new Matcher[JValue] {
 
     override def apply(actual: JValue): MatchResult = {
-      val diffs = JsonDiff.compare(Path.Root, left = expected, right = actual, leftLabel = "expected", rightLabel = "actual")
-      MatchResult(
-        diffs.isEmpty,
-        s"""JSON did not match:${diffs.map(diff => s"\n  - $diff").mkString("")}""",
-        """JSON matched""")
+      val diffs = JsonDiff.compare(
+        left       = expected,
+        right      = actual,
+        leftLabel  = "expected",
+        rightLabel = "actual"
+      )
+      MatchResult(diffs.isEmpty, s"""JSON did not match:${
+        diffs
+          .map(diff => s"\n  - $diff")
+          .mkString("")
+      }""", """JSON matched""")
     }
 
   }

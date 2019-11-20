@@ -1,9 +1,8 @@
 package co.blocke.scalajack
 
-//import scala.collection.mutable.Map
-
 trait SJCapture {
-  var captured: Map[String, Any] = Map.empty[String, Any]
+  var captured: java.util.HashMap[String, String] =
+    new java.util.HashMap[String, String]()
 }
 
 // Java classes should inherit this!

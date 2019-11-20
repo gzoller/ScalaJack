@@ -2,14 +2,21 @@ package co.blocke.scalajack
 package typeadapter
 
 import model._
-import util.{ Path, Reflection }
+import util.Reflection
 import java.lang.reflect.Method
 
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ ClassSymbol, MethodMirror, MethodSymbol, TermName, TypeTag }
+import scala.reflect.runtime.universe.{
+  ClassSymbol,
+  MethodMirror,
+  MethodSymbol,
+  TermName,
+  TypeTag
+}
 import TupleTypeAdapterFactory.TupleField
 
-import scala.collection.mutable.Builder
+import scala.collection.mutable
+import scala.util.matching.Regex
 
 object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
@@ -19,18 +26,24 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       valueAccessorMethodSymbol: MethodSymbol,
       valueAccessorMethod:       Method) {
 
-    def valueIn(tuple: Any): F = valueAccessorMethod.invoke(tuple).asInstanceOf[F]
+    def valueIn(tuple: Any): F =
+      valueAccessorMethod.invoke(tuple).asInstanceOf[F]
 
-    def read[WIRE](path: Path, reader: Reader[WIRE]): Any =
-      valueTypeAdapter.read(path, reader)
+    def read(parser: Parser): Any = valueTypeAdapter.read(parser)
 
-    def write[WIRE, T](tuple: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
-      valueTypeAdapter.write(valueIn(tuple), writer, out, isMapKey)
+    def write[WIRE, T](
+        tuple:  T,
+        writer: Writer[WIRE],
+        out:    mutable.Builder[WIRE, WIRE]): Unit =
+      valueTypeAdapter.write(valueIn(tuple), writer, out)
   }
 
-  val tupleFullName = """scala.Tuple(\d+)""".r
+  val tupleFullName: Regex = """scala.Tuple(\d+)""".r
 
-  override def typeAdapterOf[T](classSymbol: ClassSymbol, next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] =
+  override def typeAdapterOf[T](
+      classSymbol: ClassSymbol,
+      next:        TypeAdapterFactory
+  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
     classSymbol.fullName match {
       case tupleFullName(numberOfFieldsAsString) =>
         val numberOfFields = numberOfFieldsAsString.toInt
@@ -38,20 +51,30 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
         val fields = for (i <- 0 until numberOfFields) yield {
           val fieldType = fieldTypes(i)
-          val fieldTypeAdapter = context.typeAdapter(fieldType) match {
+          val fieldTypeAdapter = taCache.typeAdapter(fieldType) match {
             case opt: OptionTypeAdapter[_] => opt.convertNullToNone()
             case ta                        => ta
           }
 
-          val valueAccessorMethodSymbol = tt.tpe.member(TermName(s"_${i + 1}")).asMethod
-          val valueAccessorMethod = Reflection.methodToJava(valueAccessorMethodSymbol)
-          TupleField(i, fieldTypeAdapter, valueAccessorMethodSymbol, valueAccessorMethod)
+          val valueAccessorMethodSymbol =
+            tt.tpe.member(TermName(s"_${i + 1}")).asMethod
+          val valueAccessorMethod =
+            Reflection.methodToJava(valueAccessorMethodSymbol)
+          TupleField(
+            i,
+            fieldTypeAdapter,
+            valueAccessorMethodSymbol,
+            valueAccessorMethod
+          )
         }
 
         val classMirror = currentMirror.reflectClass(classSymbol)
-        val constructorMirror = classMirror.reflectConstructor(classSymbol.primaryConstructor.asMethod)
+        val constructorMirror = classMirror.reflectConstructor(
+          classSymbol.primaryConstructor.asMethod
+        )
 
-        TupleTypeAdapter(fields.toList, constructorMirror).asInstanceOf[TypeAdapter[T]]
+        TupleTypeAdapter(fields.toList, constructorMirror)
+          .asInstanceOf[TypeAdapter[T]]
 
       case _ =>
         next.typeAdapterOf[T]
@@ -61,24 +84,31 @@ object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
 
 case class TupleTypeAdapter[T >: Null](
     fields:            List[TupleField[_]],
-    constructorMirror: MethodMirror) extends TypeAdapter[T] with Collectionish {
+    constructorMirror: MethodMirror)
+  extends TypeAdapter[T]
+  with Collectionish {
 
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T =
-    reader.head.tokenType match {
-      case TokenType.Null =>
-        reader.next
-        null
-      case _ =>
-        constructorMirror.apply(reader.readTuple(path, fields): _*).asInstanceOf[T]
-    }
+  def read(parser: Parser): T =
+    if (parser.peekForNull)
+      null
+    else
+      constructorMirror.apply(parser.expectTuple(fields): _*).asInstanceOf[T]
 
   // Create functions that know how to self-write each field.  The actual writing of each element
   // is done in TupleField where the specific field type F is known.
-  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](
+      t:      T,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
     if (t == null)
       writer.writeNull(out)
     else
       writer.writeTuple(
-        fields.map(field => (w: Writer[WIRE], builder: Builder[WIRE, WIRE]) => field.write(t, w, builder, isMapKey)),
-        out)
+        fields.map(
+          field =>
+            (w: Writer[WIRE], builder: mutable.Builder[WIRE, WIRE]) =>
+              field.write(t, w, builder)
+        ),
+        out
+      )
 }

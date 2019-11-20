@@ -1,157 +1,178 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scalajack.compat.StringBuilder
+import util.BijectiveFunctionHelpers
 import model._
-import util.Path
-import compat.StringBuilder
-import model.TokenType._
-import typeadapter.classes.CaseClassTypeAdapter
 
-import scala.collection.mutable.Builder
-import scala.collection.GenTraversableOnce
-import scala.util.{ Try, Success }
-
-object BigIntExtractor {
-  def unapply(s: String): Option[BigInt] = Try(BigInt(s)).toOption
-}
-object BigDecimalExtractor {
-  def unapply(s: String): Option[BigDecimal] = Try(BigDecimal(s)).toOption
-}
+import scala.reflect.runtime.universe._
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object AnyTypeAdapterFactory extends TypeAdapterFactory {
-  var jackFlavor: JackFlavor[_] = null
-
-  override def typeAdapterOf[T](next: TypeAdapterFactory)(implicit context: Context, tt: TypeTag[T]): TypeAdapter[T] = {
+  override def typeAdapterOf[T](
+      next: TypeAdapterFactory
+  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] = {
     if (tt.tpe =:= typeOf[Any])
-      AnyTypeAdapter(jackFlavor).asInstanceOf[TypeAdapter[T]]
+      AnyTypeAdapter(taCache.jackFlavor).asInstanceOf[TypeAdapter[T]]
     else
       next.typeAdapterOf[T]
   }
 }
 
-case class AnyTypeAdapter(jackFlavor: JackFlavor[_]) extends TypeAdapter[Any] {
+case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
+  extends TypeAdapter[Any] {
+  lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] =
+    jackFlavor.taCache.typeAdapterOf[Map[Any, Any]]
+  lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] =
+    jackFlavor.taCache.typeAdapterOf[List[Any]]
+  lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] =
+    jackFlavor.taCache.typeAdapterOf[Option[Any]]
 
-  private lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] = jackFlavor.context.typeAdapterOf[Map[Any, Any]]
-  private lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] = jackFlavor.context.typeAdapterOf[List[Any]]
-  private lazy val optionAnyTypeAdapter: TypeAdapter[Option[Any]] = jackFlavor.context.typeAdapterOf[Option[Any]]
-
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Any = _read(path, reader, isMapKey)
-
-  def _read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean, isSJCapture: Boolean = false): Any = {
-    reader.head.tokenType match {
-      case BeginObject => // Could be Class/Trait or Map
-        if (isSJCapture)
-          reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
-        else {
-          val savedReader = reader.copy
-          reader.scanForHint(reader.jackFlavor.defaultHint) match {
-            case Some(typeName) =>
-              Try(reader.jackFlavor.typeTypeAdapter.typeNameToType(path, typeName, reader)) match {
-                case Success(concreteType) =>
-                  // Successfully found/read the type hint, now go back read the actual thing with the right type adapter
-                  savedReader.jackFlavor.context.typeAdapter(concreteType).read(path, reader)
-                case _ => // Hint found, but failed to read type...Treat as map
-                  // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
-                  reader.syncPositionTo(savedReader)
-                  reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
-              }
-            case None => // no hint found... treat as a Map
-              // lookAheadForTypeHint found nothing so we must reset reader's internal pointer as this is not an error condition
-              reader.syncPositionTo(savedReader)
-              reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
-          }
-        }
-      case BeginArray =>
-        reader.readArray(path, listAnyTypeAdapter.asInstanceOf[CanBuildFromTypeAdapter[Any, List[Any]]].builderFactory, this)
-      case Number =>
-        reader.readDecimal(path) match {
-          case i if i.isValidInt      => i.toIntExact
-          case i if i.isValidLong     => i.toLongExact
-          case d if d.isDecimalDouble => d.toDouble
-          case d                      => d
-        }
-      case String if isMapKey || jackFlavor.permissivesOk =>
-        reader.readString(path) match { // course attempt to assign a meaningful type to Any value
-          case "true"                 => true
-          case "false"                => false
-          case BigIntExtractor(s)     => s
-          case BigDecimalExtractor(s) => s
-          case s if s.startsWith("{") && s.endsWith("}") => // WARNING:  JSON-specific!
-            this.read(path, reader.jackFlavor.parse(s.asInstanceOf[WIRE]))
-          case s if s.startsWith("[") && s.endsWith("]") => // WARNING:  JSON-specific!
-            listAnyTypeAdapter.read(path, reader.jackFlavor.parse(s.asInstanceOf[WIRE]))
-          case s => s
-        }
-      case String =>
-        reader.readString(path)
-      case Boolean =>
-        reader.readBoolean(path)
-      case Null =>
-        reader.next
-        null
-    }
-  }
+  def read(parser: Parser): Any =
+    if (parser.peekForNull)
+      null
+    else if (parser.nextIsString) //  TODO: || jackFlavor.permissivesOk)
+      parser.expectString()
+    else if (parser.nextIsBoolean)
+      parser.expectBoolean()
+    else if (parser.nextIsNumber) {
+      BigDecimal(parser.expectNumber()) match {
+        case i if i.isValidInt      => i.toIntExact
+        case i if i.isValidLong     => i.toLongExact
+        case d if d.isDecimalDouble => d.toDouble
+        case d                      => d
+      }
+    } else if (parser.nextIsArray) {
+      val listBuilder: ListBuffer[Any] = mutable.ListBuffer.empty[Any]
+      parser.expectList(jackFlavor.anyTypeAdapter, listBuilder)
+    } else if (parser.nextIsObject) { // Could be Class/Trait or Map
+      // TODO: Is this needed?
+      //      if (isSJCapture)
+      //        reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
+      val mapBuilder =
+        new mutable.MapBuilder[Any, Any, Map[Any, Any]](Map.empty[Any, Any])
+      val mark = parser.mark()
+      val foundMap = parser.expectMap[Any, Any, Map[Any, Any]](
+        jackFlavor.stringWrapTypeAdapterFactory(this),
+        this,
+        mapBuilder
+      )
+      if (foundMap.contains(jackFlavor.defaultHint)) {
+        parser.revertToMark(mark)
+        val concreteType = BijectiveFunctionHelpers.fullNameToType.apply(
+          foundMap(jackFlavor.defaultHint).toString
+        )
+        jackFlavor.taCache.typeAdapter(concreteType).read(parser)
+      } else
+        foundMap
+    } else // un-guarded string, i.e. map key string value
+      parser.sourceAsString
 
   // Need this little bit of gymnastics here to unpack the X type parameter so we can use it to case the TypeAdapter
-  private def unpack[X, WIRE](value: X, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean) = {
-    try {
-      // Tease out Lists/Maps
-      val inferredClassName = value.getClass.getName match {
-        case "scala.collection.immutable.$colon$colon" => "scala.collection.immutable.List"
-        case s                                         => s
+  private def unpack[X, WIRE](
+      value:  X,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
+    jackFlavor.taCache
+      .typeAdapter(typeFromClassName(value.getClass.getName))
+      .asInstanceOf[TypeAdapter[X]] match {
+        case ta: CaseClassTypeAdapter[X] =>
+          val stringBuilder = StringBuilder()
+          ta.writeWithHint(
+            value,
+            writer,
+            stringBuilder.asInstanceOf[mutable.Builder[Any, WIRE]]
+          )
+          writer.writeRawString(stringBuilder.result(), out)
+        case ta => ta.write(value, writer, out)
       }
-      val rawValueTA = writer.jackFlavor.context.typeAdapter(typeFromClassName(inferredClassName)).asInstanceOf[TypeAdapter[X]]
-      rawValueTA match {
-        case _: CaseClassTypeAdapter[X] if isMapKey && writer.jackFlavor.stringifyMapKeys =>
-          val stringBuilder = new StringBuilder()
-          rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, stringBuilder.asInstanceOf[Builder[Any, WIRE]], false)
-          writer.writeString(stringBuilder.result, out)
-        case _: CaseClassTypeAdapter[X] =>
-          rawValueTA.asInstanceOf[CaseClassTypeAdapter[X]].writeWithHint(value, writer, out, isMapKey)
-        case _: Stringish =>
-          rawValueTA.write(value, writer, out, isMapKey)
-        case _ if isMapKey && writer.jackFlavor.stringifyMapKeys =>
-          writer.jackFlavor.stringWrapTypeAdapterFactory(rawValueTA).write(value, writer, out, isMapKey)
-        case _ =>
-          rawValueTA.write(value, writer, out, isMapKey)
-      }
-    } catch {
-      case _: java.util.NoSuchElementException =>
-        // $COVERAGE-OFF$Should be impossible (is anything not matchable to Any?).  Left here as a safety
-        throw new IllegalStateException("Unable to discern type adapter for value " + value)
-      // $COVERAGE-ON$
+
+  // WARNING: JSON output broken for Option[...] where value is None -- especially bad for Map keys!
+  def write[WIRE](
+      t:      Any,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
+    t match {
+      case null                    => writer.writeNull(out)
+      case enum: Enumeration#Value => writer.writeString(enum.toString, out)
+      case _: Map[_, _] =>
+        mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out)
+      case _: Seq[_] =>
+        listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out)
+      case _: Option[_] =>
+        optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out)
+      case v => unpack(v, writer, out)
     }
+}
+
+// For stringified Map keys, i.e. JSON.  If value is a string, handle normally, else treat as a string wrapper
+case class AnyMapKeyTypeAdapter(
+    jackFlavor: JackFlavor[_],
+    anyTA:      TypeAdapter[Any]
+)(implicit tt: TypeTag[Any])
+  extends TypeAdapter[Any] {
+  lazy val mapAnyTypeAdapter: TypeAdapter[Map[Any, Any]] =
+    jackFlavor.taCache.typeAdapterOf[Map[Any, Any]]
+  lazy val listAnyTypeAdapter: TypeAdapter[List[Any]] =
+    jackFlavor.taCache.typeAdapterOf[List[Any]]
+
+  def read(parser: Parser): Any =
+    parser.expectString() match {
+      case null => null
+      case s    => anyTA.read(parser.subParser(s.asInstanceOf[parser.WIRE]))
+    }
+
+  private def unpack[X, WIRE](
+      value:    X,
+      writer:   Writer[WIRE],
+      out:      mutable.Builder[WIRE, WIRE],
+      isMapKey: Boolean
+  )(implicit tx: TypeTag[X]): Unit = {
+    jackFlavor.taCache
+      .typeAdapter(typeFromClassName(value.getClass.getName))
+      .asInstanceOf[TypeAdapter[X]] match {
+        case ta: Stringish => ta.write(value, writer, out)
+        case ta: CaseClassTypeAdapter[X] =>
+          val stringBuilder = StringBuilder()
+          ta.writeWithHint(
+            value,
+            writer,
+            stringBuilder.asInstanceOf[mutable.Builder[Any, WIRE]]
+          )
+          writer.writeString(stringBuilder.result(), out)
+        case ta =>
+          jackFlavor.stringWrapTypeAdapterFactory(ta).write(value, writer, out)
+      }
   }
 
   // WARNING: JSON output broken for Option[...] where value is None -- especially bad for Map keys!
-  def write[WIRE](t: Any, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = {
-    if (isMapKey && writer.jackFlavor.stringifyMapKeys)
-      t match {
-        // Null not needed: null Map keys are inherently invalid in SJ
-        // case null => writer.writeNull(out)
-        case enum: Enumeration#Value =>
-          writer.writeString(enum.toString, out)
-        case _: Map[_, _] =>
-          writer.jackFlavor.stringWrapTypeAdapterFactory(mapAnyTypeAdapter).write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
-        case _: Seq[_] =>
-          writer.jackFlavor.stringWrapTypeAdapterFactory(listAnyTypeAdapter).write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
-        case opt: Option[_] if opt.isDefined =>
-          unpack(t.asInstanceOf[Option[_]].get, writer, out, isMapKey)
-        // $COVERAGE-OFF$Should be impossible (Nones filtered by CanBuildFromTypeAdapter).  Code left in as a safety
-        case opt: Option[_] if opt.isEmpty =>
-          unpack(None, writer, out, isMapKey)
-        // $COVERAGE-ON$
-        case v =>
-          unpack(v, writer, out, isMapKey)
-      }
-    else
-      t match {
-        case null                    => writer.writeNull(out)
-        case enum: Enumeration#Value => writer.writeString(enum.toString, out)
-        case _: Map[_, _]            => mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out, isMapKey)
-        case _: Seq[_]               => listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out, isMapKey)
-        case _: Option[_]            => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out, isMapKey)
-        case v                       => unpack(v, writer, out, isMapKey)
-      }
-  }
+  def write[WIRE](
+      t:      Any,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
+    t match {
+      // Null not needed: null Map keys are inherently invalid in SJ
+      case enum: Enumeration#Value =>
+        writer.writeString(enum.toString, out)
+      case _: Map[_, _] =>
+        jackFlavor
+          .stringWrapTypeAdapterFactory(mapAnyTypeAdapter)
+          .write(t.asInstanceOf[Map[Any, Any]], writer, out)
+      case _: Seq[_] =>
+        jackFlavor
+          .stringWrapTypeAdapterFactory(listAnyTypeAdapter)
+          .write(t.asInstanceOf[List[Any]], writer, out)
+      case opt: Option[_] if opt.isDefined =>
+        write(t.asInstanceOf[Option[_]].get, writer, out)
+      // $COVERAGE-OFF$Should be impossible (Nones filtered by CanBuildFromTypeAdapter).  Code left in as a safety
+      case opt: Option[_] if opt.isEmpty =>
+        jackFlavor.taCache
+          .typeAdapter(typeOf[Option[Any]])
+          .asInstanceOf[TypeAdapter[Option[Any]]]
+          .write(None, writer, out)
+      // $COVERAGE-ON$
+      case v =>
+        unpack(t, writer, out, isMapKey = true)
+    }
 }
