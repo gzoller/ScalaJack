@@ -39,7 +39,7 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   val taCache: TypeAdapterCache = {
     val intermediateContext = TypeAdapterCache(
       this,
-      customAdapters ::: typeadapter
+      customAdapters ::: co.blocke.scalajack.compat
         .CollectionTypeAdapterFactory(this, enumsAsInt) ::
         TypeAdapterCache.StandardFactories
     )

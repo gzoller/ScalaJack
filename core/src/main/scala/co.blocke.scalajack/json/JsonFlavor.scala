@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json
 
-import co.blocke.scalajack.compat.StringBuilder
+import co.blocke.scalajack.compat
 import model._
 
 import scala.reflect.runtime.universe._
@@ -30,7 +30,7 @@ case class JsonFlavorFor[J](
 
   def read(js: JSON): J = ta.read(json.JsonParser(js, this))
   def render(t: J): JSON = {
-    val sb = StringBuilder()
+    val sb = compat.StringBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -40,7 +40,7 @@ case class JsonFlavorFor[J](
       .asInstanceOf[JackFlavorFor[JSON, U]]
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
-    val sb = StringBuilder()
+    val sb = compat.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -109,7 +109,7 @@ case class JsonFlavor(
     )
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
-    val sb = StringBuilder()
+    val sb = compat.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]

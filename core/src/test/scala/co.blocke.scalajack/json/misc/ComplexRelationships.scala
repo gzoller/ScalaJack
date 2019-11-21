@@ -83,7 +83,11 @@ class ComplexRelationships
         assertResult((classOf[String], classOf[java.lang.Boolean])) {
           val found = sj.read[Pet](js)
           val c: (Any, Any) =
-            found.asInstanceOf[Dog[_]].kind.asInstanceOf[Map[_, _]].head
+            found
+              .asInstanceOf[Dog[_]]
+              .kind
+              .asInstanceOf[scala.collection.mutable.Map[_, _]]
+              .head
           (c._1.getClass, c._2.getClass)
         }
       }

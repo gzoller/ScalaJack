@@ -7,6 +7,7 @@ import scala.collection.immutable
 import scala.collection.mutable
 import scala.util.Try
 import scala.reflect.runtime.universe._
+import co.blocke.scalajack.compat.MapLikeTypeAdapter
 
 object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 
@@ -121,8 +122,10 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
     }
 }
 
-class CaseObjectTypeAdapter[T](subclasses: List[String])(implicit tt: TypeTag[T])
-  extends TypeAdapter[T]
+class CaseObjectTypeAdapter[T](subclasses: List[String])(
+    implicit
+    tt: TypeTag[T]
+) extends TypeAdapter[T]
   with Stringish {
   def read(parser: Parser): T = parser.expectString() match {
     case null => null.asInstanceOf[T]

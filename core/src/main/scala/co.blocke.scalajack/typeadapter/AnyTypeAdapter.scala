@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.compat.StringBuilder
 import util.BijectiveFunctionHelpers
 import model._
 
@@ -32,7 +31,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
   def read(parser: Parser): Any =
     if (parser.peekForNull)
       null
-    else if (parser.nextIsString) //  TODO: || jackFlavor.permissivesOk)
+    else if (parser.nextIsString)
       parser.expectString()
     else if (parser.nextIsBoolean)
       parser.expectBoolean()
@@ -47,13 +46,11 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
       val listBuilder: ListBuffer[Any] = mutable.ListBuffer.empty[Any]
       parser.expectList(jackFlavor.anyTypeAdapter, listBuilder)
     } else if (parser.nextIsObject) { // Could be Class/Trait or Map
-      // TODO: Is this needed?
-      //      if (isSJCapture)
-      //        reader.readMap(path, mapAnyTypeAdapter.asInstanceOf[CanBuildMapTypeAdapter[Any, Any, Map[Any, Any]]].builderFactory, this, this)
-      val mapBuilder =
-        new mutable.MapBuilder[Any, Any, Map[Any, Any]](Map.empty[Any, Any])
+      val mapBuilder = mutable.Map
+        .empty[Any, Any]
+        .asInstanceOf[mutable.Builder[(Any, Any), mutable.Map[Any, Any]]]
       val mark = parser.mark()
-      val foundMap = parser.expectMap[Any, Any, Map[Any, Any]](
+      val foundMap = parser.expectMap[Any, Any, mutable.Map[Any, Any]](
         jackFlavor.stringWrapTypeAdapterFactory(this),
         this,
         mapBuilder
@@ -78,7 +75,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
       .typeAdapter(typeFromClassName(value.getClass.getName))
       .asInstanceOf[TypeAdapter[X]] match {
         case ta: CaseClassTypeAdapter[X] =>
-          val stringBuilder = StringBuilder()
+          val stringBuilder = co.blocke.scalajack.compat.StringBuilder()
           ta.writeWithHint(
             value,
             writer,
@@ -134,7 +131,7 @@ case class AnyMapKeyTypeAdapter(
       .asInstanceOf[TypeAdapter[X]] match {
         case ta: Stringish => ta.write(value, writer, out)
         case ta: CaseClassTypeAdapter[X] =>
-          val stringBuilder = StringBuilder()
+          val stringBuilder = co.blocke.scalajack.compat.StringBuilder()
           ta.writeWithHint(
             value,
             writer,
