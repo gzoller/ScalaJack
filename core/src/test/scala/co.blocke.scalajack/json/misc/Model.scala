@@ -1,8 +1,6 @@
 package co.blocke.scalajack
 package json.misc
 
-import co.blocke.scalajack.{ Collection, DBKey }
-
 object Num extends Enumeration {
   val A, B, C = Value
 }
@@ -56,6 +54,9 @@ object Kind extends Enumeration {
 }
 trait Pet { val name: String }
 case class Dog[A](name: String, kind: A) extends Pet
+case class PetHolder[T <: Pet](payload: T) {
+  type kind = T
+}
 
 case class HasDefaults(
     name: String,

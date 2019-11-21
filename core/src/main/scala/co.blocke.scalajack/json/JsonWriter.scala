@@ -11,7 +11,10 @@ case class JsonWriter() extends Writer[String] {
   @inline def addString(s: String, out: mutable.Builder[String, String]): Unit =
     out += s
 
-  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[String, String]): Unit = t match {
+  def writeArray[Elem](
+      t:               Iterable[Elem],
+      elemTypeAdapter: TypeAdapter[Elem],
+      out:             mutable.Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case a =>
       out += "["
@@ -45,7 +48,11 @@ case class JsonWriter() extends Writer[String] {
   def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
     addString(t.toString, out)
 
-  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](
+      t:                Map[Key, Value],
+      keyTypeAdapter:   TypeAdapter[Key],
+      valueTypeAdapter: TypeAdapter[Value],
+      out:              mutable.Builder[String, String]): Unit =
     t match {
       //  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String])(
       //  implicit
@@ -98,10 +105,7 @@ case class JsonWriter() extends Writer[String] {
     }
 
   def writeRawString(t: String, out: mutable.Builder[String, String]): Unit =
-    t match { // i.e. no quotes for JSON
-      case null      => addString("null", out)
-      case s: String => addString(s, out)
-    }
+    addString(t, out)
 
   def writeNull(out: mutable.Builder[String, String]): Unit =
     addString("null", out)

@@ -53,35 +53,73 @@ class PlugHoles() extends AnyFunSpec with Matchers {
           |------------------^""".stripMargin
         the[ScalaJackError] thrownBy sj.read[Map[String, String]](js3) should have message msg2
       }
-      it("String must break") {
-        pending
-        /*  TODO: This looks ok!
-      val js  = """{"s1":something,"s2":-19,"s3":null}"""
-      val msg = """Expected comma here
-                  |{"s1":something,"s2":-19,"s3":null}
-                  |------^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Map[String, Any]](js) should have message msg
-     */
+      it("Missing end of list bracket") {
+        val js = """[12,5"""
+        val msg =
+          """Expected end of list here
+          |[12,5
+          |-----^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[List[Int]](js) should have message msg
       }
-      it("Bad n char") {
-        pending
-        /* TODO:  Is this the right error?  Do we really expect a comma here... looks ok really
-      val js  = """{"sx":new}"""
-      val msg = """Expected comma here
-                  |{"sx":new}
-                  |------^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Map[String, Any]](js) should have message msg
-     */
+      it("Expected colon in Map") {
+        val js = """{"a",true}"""
+        val msg =
+          """Expected colon here
+          |{"a",true}
+          |----^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[Map[String, Boolean]](js) should have message msg
       }
-      it("Bad t char") {
-        pending
-        /* TODO:  Is this the right error?  Do we really expect a comma here... looks ok really
-      val js  = """{"sx":test}"""
-      val msg = """Expected comma here
-                  |{"sx":test}
-                  |------^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Map[String, Any]](js) should have message msg
-     */
+      it("Missing ending brace in Map") {
+        val js = """{"a":true"""
+        val msg =
+          """Expected end of object here
+          |{"a":true
+          |---------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[Map[String, Boolean]](js) should have message msg
+      }
+      it("Missing ending brace in Object") {
+        val js = """{"name":"Mike","age":35"""
+        val msg =
+          """Expected end of object here
+          |{"name":"Mike","age":35
+          |-----------------------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[Person](js) should have message msg
+      }
+      it("Missing : on hint scan") {
+        val js =
+          """{"name","_hint":"co.blocke.scalajack.json.misc.Dog","notneeded":[[1,2],[3,4]],"kind":15}"""
+        val msg =
+          """Expected ':' here
+          |{"name","_hint":"co.blocke.scalajack.json.misc.Dog","notneeded":[[1,2],[3,4]]...
+          |-------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[Pet](js) should have message msg
+      }
+      it("Unknown character on hint scan") {
+        val js =
+          """{"name":"Fido"Z,"_hint":"co.blocke.scalajack.json.misc.Dog","notneeded":[[1,2],[3,4]],"kind":15}"""
+        val msg =
+          """Unexpected character found
+          |{"name":"Fido"Z,"_hint":"co.blocke.scalajack.json.misc.Dog","notneeded":[[1,2...
+          |--------------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[Pet](js) should have message msg
+      }
+      it("Missing : while resolving type members") {
+        val js =
+          """{"kind""co.blocke.scalajack.json.misc.Dog","payload":{"name":"Fido","kind":15}}"""
+        val msg =
+          """Expected ':' here
+            |{"kind""co.blocke.scalajack.json.misc.Dog","payload":{"name":"Fido","kind":15}}
+            |-------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[PetHolder[Pet]](js) should have message msg
+      }
+      it("Unknown character on type member resolution") {
+        val js =
+          """{"kind":"co.blocke.scalajack.json.misc.Dog"Z,"payload":{"name":"Fido","kind":15}}"""
+        val msg =
+          """Unexpected character found
+          |{"kind":"co.blocke.scalajack.json.misc.Dog"Z,"payload":{"name":"Fido","kind":...
+          |-------------------------------------------^""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[PetHolder[Pet]](js) should have message msg
       }
       it("Long json error") {
         val js =
@@ -106,23 +144,6 @@ class PlugHoles() extends AnyFunSpec with Matchers {
         the[IllegalArgumentException] thrownBy model.DefaultTypeAdapterFactory
           .typeAdapterOf[Any](null)(sj.taCache, TypeTags.of(typeOf[Any])) should have message """Unable to find a type adapter for Any (may be abstract or a dependency of an abstract class)"""
       }
-      it("Map reading (json)") {
-        pending
-        /*
-      val js = """{"a":5"""
-      val msg =
-        """[$]: Expected Comma here but found End
-          |{"a":5
-          |------^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Map[String, Int]](js) should have message msg
-      val js2 = """{"a""""
-      val msg2 =
-        """[$.a]: Expected Colon here but found End
-          |{"a"
-          |----^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Map[String, Int]](js2) should have message msg2
-     */
-      }
       it("Object reading (json)") {
         val js = """{5:5}"""
         val msg =
@@ -130,24 +151,6 @@ class PlugHoles() extends AnyFunSpec with Matchers {
           |{5:5}
           |-^""".stripMargin
         the[ScalaJackError] thrownBy sj.read[Bogus](js) should have message msg
-      }
-      it("Tuple reading (json)") {
-        pending
-        /*
-      val js = """[12"""
-      val msg =
-        """Expected Comma here but found End
-          |[12
-          |---^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[(Int, Int)](js) should have message msg
-      sj.read[(Int, Int)]("null") should be(null)
-      val msg2 =
-        """[$]: Expected BeginArray here but found Number
-          |123
-          |--^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[(Int, Int)]("123") should have message msg2
-      sj.read[(Int, Int)]("null") should be(null)
-     */
       }
     }
   it("JsonWriter") {
@@ -196,13 +199,12 @@ class PlugHoles() extends AnyFunSpec with Matchers {
   }
   describe("TypeAdapters") {
     it("Any") {
-      pending
-      /*
       val js = """[1,2,3]"""
       assertResult(List(1, 2, 3)) {
         sj.read[Any](js)
       }
-      val js2 = """{"_hint":"co.blocke.scalajack.json.misc.SimpleHasDefaults","name":"Fred"}"""
+      val js2 =
+        """{"_hint":"co.blocke.scalajack.json.misc.SimpleHasDefaults","name":"Fred"}"""
       assertResult(SimpleHasDefaults("Fred", 5)) {
         sj.read[Any](js2)
       }
@@ -211,22 +213,33 @@ class PlugHoles() extends AnyFunSpec with Matchers {
         sj.read[Any](js3)
       }
 
-      val js4   = """["5","true","Fred"]"""
-      val sjp   = Sinbad().allowPermissivePrimitives()
+      val js4 = """["5","true","Fred"]"""
+      val sjp = ScalaJack().allowPermissivePrimitives()
       val inst1 = sjp.read[List[Any]](js4)
       inst1 should be(List(BigInt(5), true, "Fred"))
       val inst2 = sj.read[List[Any]](js4)
       inst2 should be(List("5", "true", "Fred"))
 
-      sj.render[Map[Any, Int]](Map(Map("a"                 -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
-      sj.render[Map[Any, Int]](Map(Map(Some("a")           -> 3) -> 5)) should be("""{"{\"a\":3}":5}""")
-      sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be("""{"{\"[1,2,3]\":3}":5}""")
-      sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be("""{"{\"{\\\"1\\\":2}\":3}":5}""")
+      sj.render[Map[Any, Int]](Map(Map("a" -> 3) -> 5)) should be(
+        """{"{\"a\":3}":5}"""
+      )
+      sj.render[Map[Any, Int]](Map(Map(Some("a") -> 3) -> 5)) should be(
+        """{"{\"a\":3}":5}"""
+      )
+      sj.render[Map[Any, Int]](Map(Map(Some(List(1, 2, 3)) -> 3) -> 5)) should be(
+        """{"{\"[1,2,3]\":3}":5}"""
+      )
+      sj.render[Map[Any, Int]](Map(Map(Map(1 -> 2) -> 3) -> 5)) should be(
+        """{"{\"{\\\"1\\\":2}\":3}":5}"""
+      )
       sj.render[Map[Any, Any]](Map(Map(None -> 3) -> None)) should be("""{}""")
-      sj.render[Map[Int, Any]](Map(1 -> Some(3), 2 -> None)) should be("""{"1":3}""")
+      sj.render[Map[Int, Any]](Map(1 -> Some(3), 2 -> None)) should be(
+        """{"1":3}"""
+      )
 
-      sj.read[Any]("""{"_hint":"bogus","a":3,"b":2}""") should be(Map("_hint" -> "bogus", "a" -> 3, "b" -> 2))
-     */
+      sj.read[Any]("""{"_hint":"bogus","a":3,"b":2}""") should be(
+        Map("_hint" -> "bogus", "a" -> 3, "b" -> 2)
+      )
     }
     it("Fallback") {
       val sjf = ScalaJack().parseOrElse(typeOf[Falling[Int]] -> typeOf[String])

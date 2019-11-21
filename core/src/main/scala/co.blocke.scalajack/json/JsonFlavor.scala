@@ -48,6 +48,7 @@ case class JsonFlavorFor[J](
     sb.result()
   }
 
+  // $COVERAGE-OFF$All this is carbon-copy from JsonFlavor, which has test coverage.
   def parse(input: JSON): Parser = JsonParser(input, this)
 
   private val writer = JsonWriter()
@@ -77,6 +78,7 @@ case class JsonFlavorFor[J](
       emptyStringOk:      Boolean        = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] =
     StringWrapTypeAdapter(wrappedTypeAdapter, emptyStringOk)
+  // $COVERAGE-ON$
 }
 
 case class JsonFlavor(

@@ -7,6 +7,7 @@ import model._
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.{ Try, Success }
 
 object AnyTypeAdapterFactory extends TypeAdapterFactory {
   override def typeAdapterOf[T](
@@ -31,6 +32,8 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
   def read(parser: Parser): Any =
     if (parser.peekForNull)
       null
+    else if (parser.nextIsString && jackFlavor.permissivesOk)
+      jackFlavor.stringWrapTypeAdapterFactory(this).read(parser)
     else if (parser.nextIsString)
       parser.expectString()
     else if (parser.nextIsBoolean)
@@ -57,10 +60,14 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
       )
       if (foundMap.contains(jackFlavor.defaultHint)) {
         parser.revertToMark(mark)
-        val concreteType = BijectiveFunctionHelpers.fullNameToType.apply(
-          foundMap(jackFlavor.defaultHint).toString
-        )
-        jackFlavor.taCache.typeAdapter(concreteType).read(parser)
+        Try(
+          BijectiveFunctionHelpers.fullNameToType
+            .apply(foundMap(jackFlavor.defaultHint).toString)
+        ) match {
+            case Success(concreteType) =>
+              jackFlavor.taCache.typeAdapter(concreteType).read(parser)
+            case _ => foundMap
+          }
       } else
         foundMap
     } else // un-guarded string, i.e. map key string value

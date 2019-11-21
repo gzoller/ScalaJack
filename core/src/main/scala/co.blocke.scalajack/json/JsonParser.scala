@@ -144,7 +144,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       builder += elemTypeAdapter.read(this) // Parse next item!
       whitespace()
     }
-    if (jsChars(i) != ']')
+    if (i == max || jsChars(i) != ']')
       throw new ScalaJackError(showError("Expected end of list here"))
     i += 1
     builder.result()
@@ -153,14 +153,14 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
   def expectTuple(
       readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
   ): List[Any] = {
-    if (jsChars(i) != '[')
+    if (i == max || jsChars(i) != '[')
       throw new ScalaJackError(showError("Expected start of tuple here"))
     i += 1
     var first = true
     val result = readFns.map { fn =>
       whitespace()
       if (!first) {
-        if (jsChars(i) != ',')
+        if (i == max || jsChars(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -169,7 +169,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
         first = false
       fn.valueTypeAdapter.read(this)
     }
-    if (jsChars(i) != ']')
+    if (i == max || jsChars(i) != ']')
       throw new ScalaJackError(showError("Expected end of tuple here"))
     i += 1
     result
@@ -187,7 +187,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
     while (i < max && jsChars(i) != '}') {
       whitespace()
       if (!first) {
-        if (jsChars(i) != ',')
+        if (i == max || jsChars(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -198,7 +198,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       if (key == null)
         throw new ScalaJackError(showError("Map keys cannot be null"))
       whitespace()
-      if (jsChars(i) != ':')
+      if (i == max || jsChars(i) != ':')
         throw new ScalaJackError(showError("Expected colon here"))
       i += 1
       whitespace()
@@ -206,7 +206,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       whitespace()
       builder += ((key, value))
     }
-    if (jsChars(i) != '}')
+    if (i == max || jsChars(i) != '}')
       throw new ScalaJackError(showError("Expected end of object here"))
     i += 1
     builder.result()
@@ -222,14 +222,14 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
     val captured =
       if (classBase.isSJCapture) new java.util.HashMap[String, String]()
       else null
-    if (jsChars(i) != '{')
+    if (i == max || jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1
     var first = true
     while (i < max && jsChars(i) != '}') {
       whitespace()
       if (!first) {
-        if (jsChars(i) != ',')
+        if (i == max || jsChars(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -238,7 +238,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
         first = false
       val key = expectString(false)
       whitespace()
-      if (jsChars(i) != ':')
+      if (i == max || jsChars(i) != ':')
         throw new ScalaJackError(showError("Expected colon here"))
       i += 1
       classBase.fieldMembersByName
@@ -256,7 +256,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
         }
       whitespace()
     }
-    if (jsChars(i) != '}')
+    if (i == max || jsChars(i) != '}')
       throw new ScalaJackError(showError("Expected end of object here"))
     i += 1
     (fieldBits, args, captured)
@@ -320,7 +320,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
   def scanForHint(hint: String, converterFn: HintBijective): Type = {
     val mark = i
     whitespace()
-    if (jsChars(i) != '{')
+    if (i == max || jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1 // skip over {
     var done = false
@@ -328,7 +328,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       whitespace()
       val key = expectString()
       whitespace()
-      if (jsChars(i) != ':')
+      if (i == max || jsChars(i) != ':')
         throw new ScalaJackError(showError("Expected ':' here"))
       i += 1 // skip ':'
       if (key == hint) {
@@ -366,7 +366,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
   ): Map[Type, Type] = {
     val mark = i
     whitespace()
-    if (jsChars(i) != '{')
+    if (i == max || jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     val collected = new java.util.HashMap[Type, Type]()
     i += 1 // skip over {
@@ -375,7 +375,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       whitespace()
       val key = expectString()
       whitespace()
-      if (jsChars(i) != ':')
+      if (i == max || jsChars(i) != ':')
         throw new ScalaJackError(showError("Expected ':' here"))
       i += 1 // skip ':'
       if (typeMembersByName.contains(key)) {
@@ -390,6 +390,8 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
       jsChars(i) match {
         case ',' => i += 1 // skip ','
         case '}' => done = true
+        case _ =>
+          throw new ScalaJackError(showError("Unexpected character found"))
       }
     }
     i = mark // go back to parse object
