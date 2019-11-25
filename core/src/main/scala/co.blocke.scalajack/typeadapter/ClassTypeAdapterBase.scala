@@ -9,6 +9,7 @@ import scala.reflect.runtime.universe._
 trait ClassTypeAdapterBase[T] {
   val typeMembersByName: Map[String, ClassHelper.TypeMember[T]]
   val fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]]
+  val orderedFieldNames: List[String]
   val argsTemplate: Array[Any]
   val fieldBitsTemplate: mutable.BitSet
   val isSJCapture: Boolean

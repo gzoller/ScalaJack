@@ -26,6 +26,9 @@ case class PlainClassTypeAdapter[T](
     with ClassTypeAdapterBase[T]
     with Classish {
 
+  val orderedFieldNames
+    : List[String] = List.empty[String] // req for delimited but not used
+
   override def dbKeys: List[ClassFieldMember[T, Any]] =
     fieldMembersByName.values
       .filter(_.dbKeyIndex.isDefined)

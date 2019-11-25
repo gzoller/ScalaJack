@@ -22,9 +22,7 @@ trait Writer[WIRE] {
       t:                Map[Key, Value],
       keyTypeAdapter:   TypeAdapter[Key],
       valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[WIRE, WIRE]): Unit /*(
-      implicit
-      keyTT: TypeTag[Key]): Unit*/
+      out:              mutable.Builder[WIRE, WIRE]): Unit
   def writeNull(out: mutable.Builder[WIRE, WIRE]): Unit
   def writeObject[T](
       t:                  T,

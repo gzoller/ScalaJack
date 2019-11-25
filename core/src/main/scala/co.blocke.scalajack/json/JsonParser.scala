@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 
-case class JsonParser(js: JSON, jackFlavor: JackFlavor[String]) extends Parser {
+case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
   type WIRE = JSON
   val jsChars: Array[Char] = js.toCharArray
