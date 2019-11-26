@@ -12,6 +12,8 @@ package object scalajack {
   type MemberName = String
   type HintBijective = BijectiveFunction[String, Type]
 
+  val DELIM_PREFIX: Char = 2
+
   @inline final def reflect[T: ClassTag](obj: T): InstanceMirror =
     scala.reflect.runtime.currentMirror.reflect[T](obj)
   @inline final def reflectModule(mod: ModuleSymbol): ModuleMirror =

@@ -17,8 +17,6 @@ case class DelimitedParser(
   var i = 0
   val max: Int = dChars.length
 
-  @inline def nullCheck(): Boolean =
-    dChars(i) == 'n' && i + 4 <= max && input.substring(i, i + 4) == "null"
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || char == '.' || char == 'e' || char == 'E' || char == '-' || char == '+'
 
@@ -92,8 +90,14 @@ case class DelimitedParser(
       case "" => null.asInstanceOf[List[Any]]
       case listStr =>
         val subParser = DelimitedParser(delimChar, listStr, jackFlavor)
-        readFns.map { fn =>
-          fn.valueTypeAdapter.read(subParser)
+        readFns.map {
+          _.valueTypeAdapter match {
+            case ccta: typeadapter.CaseClassTypeAdapter[_] =>
+              ccta.read(
+                DelimitedParser(delimChar, subParser.expectString(), jackFlavor)
+              )
+            case ta => ta.read(subParser)
+          }
         }
     }
 
@@ -113,11 +117,13 @@ case class DelimitedParser(
           "Only case classes with non-empty constructors are supported for delimited data."
         )
       )
+    if (i < max && dChars(i) == DELIM_PREFIX) i += 1
     val fieldBits = classBase.fieldBitsTemplate.clone()
-    val args = classBase.orderedFieldNames.map { name =>
+
+    val args = classBase.argsTemplate.clone()
+    classBase.orderedFieldNames.foreach { name =>
       val oneField = classBase.fieldMembersByName(name)
-      fieldBits -= oneField.index
-      oneField.valueTypeAdapter match {
+      val valueRead = oneField.valueTypeAdapter match {
         case ccta: typeadapter.CaseClassTypeAdapter[_] =>
           expectString() match {
             case "" => null
@@ -127,26 +133,36 @@ case class DelimitedParser(
           }
         case ta => ta.read(this)
       }
-    }.toArray
+      valueRead match {
+        case None                                    =>
+        case null if oneField.defaultValue.isDefined =>
+        case _ =>
+          args(oneField.index) = valueRead
+          fieldBits -= oneField.index
+      }
+    }
     (fieldBits, args, new java.util.HashMap[String, String]())
   }
 
   def showError(msg: String): String = {
-    val (clip, dashes) = i match {
-      case ep if ep <= 50 && max < 80 => (input, ep)
-      case ep if ep <= 50             => (input.substring(0, 77) + "...", ep)
+    val (pos, inputStr) = // Account for possible prefix char on input
+      if (max > 0 && dChars(0) == DELIM_PREFIX) (i - 1, input.drop(1))
+      else (i, input)
+    val (clip, dashes) = pos match {
+      case ep if ep <= 50 && max < 80 => (inputStr, ep)
+      case ep if ep <= 50             => (inputStr.substring(0, 77) + "...", ep)
       case ep if ep > 50 && ep + 30 >= max =>
-        ("..." + input.substring(i - 49), 52)
-      case ep => ("..." + input.substring(ep - 49, ep + 27) + "...", 52)
+        ("..." + inputStr.substring(pos - 49), 52)
+      case ep => ("..." + inputStr.substring(ep - 49, ep + 27) + "...", 52)
     }
     msg + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"
   }
 
-  def peekForNull: Boolean =
-    if (nullCheck()) {
-      i += 4
-      true
-    } else false
+  def peekForNull: Boolean = {
+    val isNull = i == max || dChars(i) == delimChar
+    if (i < max && isNull) i += 1
+    isNull
+  }
 
   def resolveTypeMembers(
       typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
@@ -166,7 +182,7 @@ case class DelimitedParser(
   def mark(): Int = i
   def revertToMark(mark: Int): Unit = i = mark
   def nextIsString: Boolean = true
-  def nextIsNumber: Boolean = false
+  def nextIsNumber: Boolean = i < max && isNumberChar(dChars(i))
   def nextIsObject: Boolean = false
   def nextIsArray: Boolean = i < max && dChars(i) == '"'
   def nextIsBoolean: Boolean = false

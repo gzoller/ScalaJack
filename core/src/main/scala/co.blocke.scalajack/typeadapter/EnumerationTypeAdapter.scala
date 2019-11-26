@@ -38,7 +38,19 @@ case class EnumerationTypeAdapter[E <: Enumeration](
   extends TypeAdapter[E#Value] {
 
   def read(parser: Parser): E#Value =
-    if (parser.nextIsString) {
+    if (parser.nextIsNumber) {
+      val en = parser.expectNumber()
+      Try(enum(en.toInt)) match {
+        case Success(u) => u
+        case Failure(u) =>
+          parser.backspace()
+          throw new ScalaJackError(
+            parser.showError(
+              s"No value found in enumeration ${enum.getClass.getName} for $en"
+            )
+          )
+      }
+    } else if (parser.nextIsString) {
       val e = parser.expectString()
       if (e == null)
         null
@@ -53,18 +65,6 @@ case class EnumerationTypeAdapter[E <: Enumeration](
               )
             )
         }
-    } else if (parser.nextIsNumber) {
-      val en = parser.expectNumber()
-      Try(enum(en.toInt)) match {
-        case Success(u) => u
-        case Failure(u) =>
-          parser.backspace()
-          throw new ScalaJackError(
-            parser.showError(
-              s"No value found in enumeration ${enum.getClass.getName} for $en"
-            )
-          )
-      }
     } else
       throw new ScalaJackError(
         parser.showError(s"Expected a Number or String here")

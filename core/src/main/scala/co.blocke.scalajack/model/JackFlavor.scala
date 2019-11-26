@@ -36,7 +36,9 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
   val permissivesOk: Boolean = false
 
-  val taCache: TypeAdapterCache = {
+  lazy val taCache: TypeAdapterCache = bakeCache()
+
+  def bakeCache(): TypeAdapterCache = {
     val intermediateContext = TypeAdapterCache(
       this,
       customAdapters ::: co.blocke.scalajack.compat

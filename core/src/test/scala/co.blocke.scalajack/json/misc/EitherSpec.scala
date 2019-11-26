@@ -14,7 +14,7 @@ case class EitherHolder[L, R](either: Either[L, R])
 case class Chair(numLegs: Int)
 case class Table(numLegs: Int)
 
-class EitherSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
+class EitherSpec extends AnyFunSpec {
 
   val sj = ScalaJack()
 

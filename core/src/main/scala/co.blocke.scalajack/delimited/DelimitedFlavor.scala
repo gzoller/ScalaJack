@@ -1,9 +1,7 @@
 package co.blocke.scalajack
 package delimited
 
-import co.blocke.scalajack.compat
 import model._
-
 import scala.reflect.runtime.universe._
 
 /**
@@ -25,13 +23,24 @@ case class DelimitedFlavorFor[J](
 ) extends JackFlavorFor[DELIMITED, J] {
 
   def read[T](js: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, js, this)
+    val parser = DelimitedParser(
+      delimiter,
+      if (js.isEmpty) js else DELIM_PREFIX + js,
+      this
+    )
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
-  def read(js: DELIMITED): J = ta.read(json.JsonParser(js, this))
+  def read(js: DELIMITED): J =
+    ta.read(
+      DelimitedParser(
+        delimiter,
+        if (js.isEmpty) js else DELIM_PREFIX + js,
+        this
+      )
+    )
   def render(t: J): DELIMITED = {
-    val sb = compat.StringBuilder()
+    val sb = co.blocke.scalajack.compat.StringBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -41,7 +50,7 @@ case class DelimitedFlavorFor[J](
       .asInstanceOf[JackFlavorFor[DELIMITED, U]]
 
   def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = compat.StringBuilder()
+    val sb = co.blocke.scalajack.compat.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -95,7 +104,11 @@ case class DelimitedFlavor(
 ) extends JackFlavor[DELIMITED] {
 
   def read[T](js: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, js, this)
+    val parser = DelimitedParser(
+      delimiter,
+      if (js.isEmpty) js else DELIM_PREFIX + js,
+      this
+    )
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
@@ -114,7 +127,7 @@ case class DelimitedFlavor(
     )
 
   def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = compat.StringBuilder()
+    val sb = co.blocke.scalajack.compat.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -151,4 +164,9 @@ case class DelimitedFlavor(
       emptyStringOk:      Boolean        = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] =
     wrappedTypeAdapter // No-Op for delimited
+
+  override def bakeCache(): TypeAdapterCache = {
+    val dads = super.bakeCache()
+    dads.copy(factories = DelimitedOptionTypeAdapterFactory +: dads.factories)
+  }
 }

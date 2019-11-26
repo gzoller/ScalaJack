@@ -9,10 +9,9 @@ import scala.collection.mutable
 
 case class DelimitedWriter(delimiter: Char) extends Writer[String] {
 
-  def writeArray[Elem](
-      t:               Iterable[Elem],
-      elemTypeAdapter: TypeAdapter[Elem],
-      out:             mutable.Builder[String, String]): Unit =
+  def writeArray[Elem](t: Iterable[Elem],
+                       elemTypeAdapter: TypeAdapter[Elem],
+                       out: mutable.Builder[String, String]): Unit =
     if (t != null) {
       val sb = compat.StringBuilder()
       val iter = t.iterator
@@ -37,11 +36,10 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
   def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
     out += t.toString
 
-  def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
-      valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](t: Map[Key, Value],
+                               keyTypeAdapter: TypeAdapter[Key],
+                               valueTypeAdapter: TypeAdapter[Value],
+                               out: mutable.Builder[String, String]): Unit =
     throw new ScalaJackError(
       "Map-typed data is not supported for delimited output"
     )
@@ -49,11 +47,12 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
   def writeNull(out: mutable.Builder[String, String]): Unit = {} // write empty field
 
   def writeObject[T](
-      t:                  T,
-      orderedFieldNames:  List[String],
-      fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:                mutable.Builder[String, String],
-      extras:             List[(String, ExtraFieldValue[_])]                = List.empty[(String, ExtraFieldValue[_])]
+    t: T,
+    orderedFieldNames: List[String],
+    fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
+    out: mutable.Builder[String, String],
+    extras: List[(String, ExtraFieldValue[_])] =
+      List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
     if (t != null) {
       var first = true
@@ -88,8 +87,8 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
     writeString(t, out)
 
   def writeTuple(
-      writeFns: List[(Writer[String], mutable.Builder[String, String]) => Unit],
-      out:      mutable.Builder[String, String]
+    writeFns: List[(Writer[String], mutable.Builder[String, String]) => Unit],
+    out: mutable.Builder[String, String]
   ): Unit = {
     var first = true
     val sb = compat.StringBuilder()
@@ -101,5 +100,15 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       f(this, sb)
     }
     writeString(sb.result(), out)
+    /*
+            f.valueTypeAdapter match {
+          case ta if ta.isInstanceOf[Classish] =>
+            val sb = compat.StringBuilder()
+            ta.write(f.valueIn(t), this, sb)
+            writeString(sb.result(), out)
+          case ta =>
+            ta.write(f.valueIn(t), this, out)
+        }
+   */
   }
 }
