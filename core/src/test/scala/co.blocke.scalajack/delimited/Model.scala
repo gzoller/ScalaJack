@@ -16,6 +16,7 @@ case class HasOption(one: Option[Int], two: Option[Int] = Some(5))
 
 case class HasTuples(one: (String, Int), two: (Boolean, Int) = (true, 1))
 case class HasTuples2(one: (String, Inside))
+case class HasTuples3(a: (Boolean, Inside))
 
 case class HasEither(one: Int, two: Either[Int, Inside])
 case class HasEitherRev(one: Int, two: Either[Inside, Int])

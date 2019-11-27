@@ -9,10 +9,7 @@ import scala.collection.mutable
 
 case class DelimitedWriter(delimiter: Char) extends Writer[String] {
 
-  def writeArray[Elem](
-      t:               Iterable[Elem],
-      elemTypeAdapter: TypeAdapter[Elem],
-      out:             mutable.Builder[String, String]): Unit =
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[String, String]): Unit =
     if (t != null) {
       val sb = compat.StringBuilder()
       val iter = t.iterator
@@ -37,11 +34,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
   def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
     out += t.toString
 
-  def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
-      valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String]): Unit =
     throw new ScalaJackError(
       "Map-typed data is not supported for delimited output"
     )
@@ -84,8 +77,10 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
           t
       out += toWrite
     }
+  // $COVERAGE-OFF$Never called for delimited output
   def writeRawString(t: String, out: mutable.Builder[String, String]): Unit =
     writeString(t, out)
+  // $COVERAGE-ON$
 
   def writeTuple[T](
       t:        T,
@@ -108,15 +103,5 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       }
     }
     writeString(sb.result(), out)
-    /*
-            f.valueTypeAdapter match {
-          case ta if ta.isInstanceOf[Classish] =>
-            val sb = compat.StringBuilder()
-            ta.write(f.valueIn(t), this, sb)
-            writeString(sb.result(), out)
-          case ta =>
-            ta.write(f.valueIn(t), this, out)
-        }
-   */
   }
 }

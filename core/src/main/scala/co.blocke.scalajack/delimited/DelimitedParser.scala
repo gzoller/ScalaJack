@@ -55,9 +55,6 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
     (tokenList.toList, indexList.toList)
   }
 
-  //  println("Tokens  : " + tokens)
-  //  println("Indexes : " + indexes)
-
   val max: Int = tokens.size
 
   @inline def isNumberChar(char: Char): Boolean =
@@ -83,7 +80,9 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
 
   def expectNumber(): String =
     expectString() match {
+      // $COVERAGE-OFF$Never called--nulls caught in CollectionTypeAdapter before coming here.  Left here as a safety
       case "" => null
+      // $COVERAGE-ON$
       case candidate =>
         candidate.toCharArray.find(c => !isNumberChar(c)) match {
           case None => candidate

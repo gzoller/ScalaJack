@@ -1,19 +1,22 @@
 package co.blocke.scalajack
 
 import delimited._
+
 import scala.reflect.runtime.universe._
 
 case class Inside(id: Int, desc: String)
 case class Nested(thing: String, in: Inside, other: Inside = Inside(99, "dunno"))
 case class HasEither(one: Int, two: Either[Int, Inside])
 case class HasTuples2(one: (String, Inside))
+case class HasEither3(one: Int, two: Either[String, Inside])
 
 object Hello extends App {
 
   val sj = ScalaJack(DelimitedFlavor())
 
-  //  val delim = ""  <-- Null tuple value
-  // val delim = "\"\"" <-- Broken!  Can't tell if "" is empty string or escaped '"'
-  val delim = "\"thing,\""
-  println(sj.read[HasTuples2](delim))
+  val z = sj.forType[HasEither3]
+  val delim = "2,\"99,foo\""
+  val inst = HasEither(2, Right(Inside(99, "foo")))
+  println(z.render(inst))
+  println(z.read[HasEither](delim))
 }
