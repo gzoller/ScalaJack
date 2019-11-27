@@ -104,7 +104,7 @@ case class DelimitedFlavor(
 ) extends JackFlavor[DELIMITED] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DP2(
+    val parser = DelimitedParser(
       delimiter,
       DELIM_PREFIX + input,
       this

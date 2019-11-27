@@ -9,6 +9,7 @@ ScalaJack offers support for delimited serialization (e.g. CSV).  It must be sai
 * Enumerations are supported
 * Traits are **not** supported (where would you put the type hint in CSV format?)
 * You must enclose a field with double-qutoes if it contains double quotes, the delimiter character ('comma), or line breaks.
+* Don't try reading Any types.  In delimited input, everything will be interpreted as a String, so if that's not what you want you'll be disappointed.
 * Double quotes within a string/field must be escaped using double-double quotes, "" (not the more JSON style \")
 ```scala
 val sj = ScalaJack(DelimitedFlavor)  // CSV default

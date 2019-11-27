@@ -73,7 +73,7 @@ Couldn't be simpler!
 
 Non-JSON Formats:
 * [MongoDB](doc/mongo.md)
-* [Delimited (e.g. CSV) *(improved)*](doc/csv.md)
+* [Delimited (e.g. CSV) *(improved)*](doc/delimited.md)
 * [DynamoDB](doc/dynamo.md)
 * [Json4s *(new)*](doc/json4s.md)
 

@@ -194,6 +194,12 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
             HasTuples2(("thing", Inside(1, "foo")))
           )
         }
+        it("Tuple with null value") {
+          val delim = "\"thing,\""
+          sj.read[HasTuples2](delim) should be(
+            HasTuples2(("thing", null))
+          )
+        }
         it("Tuple with escaped quote in value") {
           val s = HasTuples(("a\"b", 3), (false, 9))
           val delim = sj.render(s)
@@ -245,6 +251,24 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           delim should equal("1,\"a\"\"b\"")
           sj.read[HasEither3](delim) should be(s)
         }
+        it("Write a null Either value") {
+          val delim = "5,"
+          val inst = HasEither(5, null)
+          sj.render(inst) should be(delim)
+          sj.read[HasEither](delim) should be(inst)
+        }
+        it("Write a Left Classish value") {
+          val delim = "5,15"
+          val inst = HasEitherRev(5, Right(15))
+          sj.render(inst) should be(delim)
+          sj.read[HasEitherRev](delim) should be(inst)
+        }
+        it("Write a Right non-Classish value") {
+          val delim = "5,\"15,Mike\""
+          val inst = HasEitherRev(5, Left(Inside(15, "Mike")))
+          sj.render(inst) should be(delim)
+          sj.read[HasEitherRev](delim) should be(inst)
+        }
       }
       describe("forType") {
         it("Stock forType behavior") {
@@ -259,55 +283,32 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           sj.read[HasEither]("2,\"99,foo\"") should be(HasEither(2, Right(Inside(99, "foo"))))
         }
       }
+      describe("Plug coverage holes") {
+        it("Non-case classes fail") {
+          val delim = "John,35"
+          val msg = """Only case classes with non-empty constructors are supported for delimited data.
+                    |John,35
+                    |^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[Busted](delim) should have message msg
+        }
+        it("No Map support") {
+          val delim = "John,35"
+          val msg = """No Map support for delimited data.
+                    |John,35
+                    |-----^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[Busted2](delim) should have message msg
+        }
+        it("Invalid Boolean value") {
+          val delim = "John,35"
+          val msg = """Expected a Boolean here
+                    |John,35
+                    |-----^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[Busted3](delim) should have message msg
+        }
+        it("Null List value") {
+          val delim = "John,"
+          sj.read[Busted4](delim) should be(Busted4("John", null))
+        }
+      }
     }
 }
-
-/*
- it("Loose Change") {
-   pending
- the[ScalaJackError] thrownBy sj.render(Map("a" -> 1)) should have message "Map-typed data is not supported for delimited output"
- val bi = BigInt(123)
- sj.render(bi) should be("123")
-
- val reader = sj.parse("abc")
- reader.scanForHint("foo") should be(None)
- reader.scanForType(util.Path.Root, "foo", None) should be(None)
-
- val t = reader.head
- reader.back
- reader.head should equal(t)
- reader.skipObject(util.Path.Root)
- reader.head should equal(t)
-
- the[UnsupportedOperationException] thrownBy sj.read[Map[String, Int]](
-   "foo"
- ) should have message "Map serialization not available for Delimited encoding"
-
- val sjx = ScalaJack(DelimitedFlavor('|'))
- val i = Inside(5, "foo")
- val d = sjx.render(i)
- d should equal("5|foo")
- sjx.read[Inside](d) should be(i)
-
- val all = AllPrim(
-   5,
-   25L,
-   123.45,
-   12.3F,
-   'x',
-   "Hey",
-   true,
-   BigInt(12345678),
-   BigDecimal(0.123458867)
- )
- val delim = sj.render(all)
- val r = sj.parse(delim)
- val rPos = PrivateMethod[Int](Symbol("pos"))
- r.next
- r.next
- r invokePrivate rPos() should be(2)
- r.hasNext should be(true)
- r.reset()
- r invokePrivate rPos() should be(0)
- }
- */
