@@ -1,0 +1,17 @@
+package co.blocke.scalajack
+
+import delimited._
+import scala.reflect.runtime.universe._
+
+case class Inside(id: Int, desc: String)
+case class Nested(thing: String, in: Inside, other: Inside = Inside(99, "dunno"))
+case class HasEither(one: Int, two: Either[Int, Inside])
+
+object Hello extends App {
+
+  val sj = ScalaJack(DelimitedFlavor())
+
+  val delim = "2,\"99,foo\""
+  val inst = Nested("", Inside(1, "One"), Inside(2, "Two"))
+  println(sj.read[HasEither](delim))
+}

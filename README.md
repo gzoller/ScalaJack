@@ -62,7 +62,7 @@ Couldn't be simpler!
 * [Trait Type Hint Customization](doc/typeHint.md)
 * [Custom Type Adapters (custom read/render)](doc/custom.md)
 * [Try and Capture](doc/tryAndCapture.md)
-* [ParseOrElse](doc/parseOrElse.md)
+* [ParseOrElse and Cascading Fallback Parsing](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
 * [Externalized Type Hints](doc/externalTypes.md)
 * [View/SpliceInto](doc/viewSplice.md)

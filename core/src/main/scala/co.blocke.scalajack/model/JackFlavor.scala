@@ -61,8 +61,12 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
           ): TypeAdapter[T] =
             if (typeTag.tpe =:= attemptedType) {
               val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
-              val secondary = fallbackTypeAdapter.asInstanceOf[TypeAdapter[T]]
-              FallbackTypeAdapter[T, T](Some(primary), secondary)
+              FallbackTypeAdapter[T, T](
+                () =>
+                  taCache, // We use an accessor function here because taCache isn't baked at this point!
+                Some(primary),
+                fallbackType
+              )
             } else {
               next.typeAdapterOf[T]
             }

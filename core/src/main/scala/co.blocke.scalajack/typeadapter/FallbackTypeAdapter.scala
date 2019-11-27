@@ -5,10 +5,12 @@ import model._
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
+import scala.reflect.runtime.universe.Type
 
 case class FallbackTypeAdapter[A, B <: A](
+    taCache:              () => TypeAdapterCache,
     attemptedTypeAdapter: Option[TypeAdapter[A]],
-    orElseTypeAdapter:    TypeAdapter[B]
+    orElseType:           Type
 ) extends TypeAdapter[A] {
 
   def read(parser: Parser): A = {
@@ -19,11 +21,11 @@ case class FallbackTypeAdapter[A, B <: A](
           case Success(a) => a
           case Failure(_) =>
             parser.revertToMark(mark)
-            orElseTypeAdapter.read(parser)
+            taCache().typeAdapter(orElseType).read(parser).asInstanceOf[A]
         }
       // $COVERAGE-OFF$Doesn't ever get called... theoretically not possible but left here for safety (see ClassHelper.applyConcreteTypeMembersToFields)
       case None =>
-        orElseTypeAdapter.read(parser)
+        taCache().typeAdapter(orElseType).read(parser).asInstanceOf[A]
       // $COVERAGE-ON$
     }
   }
@@ -35,7 +37,11 @@ case class FallbackTypeAdapter[A, B <: A](
     attemptedTypeAdapter match {
       case Some(ta) => ta.write(t, writer, out)
       // $COVERAGE-OFF$Doesn't ever get called... not tested
-      case _        => orElseTypeAdapter.write(t.asInstanceOf[B], writer, out)
+      case _ =>
+        taCache()
+          .typeAdapter(orElseType)
+          .asInstanceOf[TypeAdapter[A]]
+          .write(t.asInstanceOf[A], writer, out)
       // $COVERAGE-ON$
     }
 }

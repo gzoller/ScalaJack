@@ -147,7 +147,7 @@ case class CollectionTypeAdapterFactory(
 
     val valueIsOptionalOrAny = valueTypeAdapter
       .isInstanceOf[OptionTypeAdapter[_]] ||
-        valueTypeAdapter.isInstanceOf[AnyTypeAdapter]
+      valueTypeAdapter.isInstanceOf[AnyTypeAdapter]
 
     MapLikeTypeAdapter(
       builderFactory,

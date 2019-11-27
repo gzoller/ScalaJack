@@ -19,6 +19,7 @@ case class Nested(
     other: Inside = Inside(99, "dunno"))
 
 case class ThreeStrings(a: String, b: String, c: String)
+case class ThreeInts(a: Int, b: Int, c: Int)
 case class DefaultThree()
 
 case class WithList[T](id: Int, someList: List[T])

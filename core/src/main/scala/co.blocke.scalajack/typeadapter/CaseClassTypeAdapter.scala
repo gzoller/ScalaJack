@@ -22,6 +22,8 @@ case class CaseClassTypeAdapter[T](
   with ClassTypeAdapterBase[T]
   with Classish {
 
+  override val isCaseClass = true;
+
   def read(parser: Parser): T =
     if (parser.peekForNull)
       null.asInstanceOf[T]

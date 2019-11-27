@@ -15,6 +15,8 @@ trait ClassTypeAdapterBase[T] {
   val isSJCapture: Boolean
   val dbCollectionName: Option[String]
 
+  val isCaseClass: Boolean = false
+
   // This one's for read().  Use Parser to marshal type member values into Type objects
   def substituteTypeMemberTypes(
       parser:  Parser,
@@ -49,8 +51,9 @@ trait ClassTypeAdapterBase[T] {
               val newValueTypeAdapter = fm.valueTypeAdapter match {
                 case fallback: FallbackTypeAdapter[_, _] =>
                   FallbackTypeAdapter(
+                    fallback.taCache,
                     Some(actualTypeAdapter.asInstanceOf[TypeAdapter[Any]]),
-                    fallback.orElseTypeAdapter
+                    fallback.orElseType
                   )
                 case _ => actualTypeAdapter
               }

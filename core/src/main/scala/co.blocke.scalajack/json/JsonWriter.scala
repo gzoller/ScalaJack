@@ -5,6 +5,7 @@ import model._
 import scala.collection.mutable
 import ClassHelper.ExtraFieldValue
 import scala.collection.Map
+import typeadapter.TupleTypeAdapterFactory
 
 case class JsonWriter() extends Writer[String] {
 
@@ -54,9 +55,6 @@ case class JsonWriter() extends Writer[String] {
       valueTypeAdapter: TypeAdapter[Value],
       out:              mutable.Builder[String, String]): Unit =
     t match {
-      //  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String])(
-      //  implicit
-      //  keyTT: TypeTag[Key]): Unit = t match {
       case null => addString("null", out)
       case daMap =>
         out += "{"
@@ -181,10 +179,10 @@ case class JsonWriter() extends Writer[String] {
     }
   }
 
-  def writeTuple(
-      writeFns: List[(Writer[String], mutable.Builder[String, String]) => Unit],
-      out:      mutable.Builder[String, String]
-  ): Unit = {
+  def writeTuple[T](
+      t:        T,
+      writeFns: List[TupleTypeAdapterFactory.TupleField[_]],
+      out:      mutable.Builder[String, String]): Unit = {
     out += "["
     var first = true
     writeFns.foreach { f =>
@@ -192,7 +190,7 @@ case class JsonWriter() extends Writer[String] {
         first = false
       else
         out += ","
-      f(this, out)
+      f.write(t, this, out)
     }
     out += "]"
   }

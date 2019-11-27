@@ -33,8 +33,9 @@ trait Writer[WIRE] {
   ): Unit
   def writeString(t: String, out: mutable.Builder[WIRE, WIRE]): Unit
   def writeRawString(t: String, out: mutable.Builder[WIRE, WIRE]): Unit // i.e. no quotes for JSON
-  def writeTuple(
-      writeFns: List[(Writer[WIRE], mutable.Builder[WIRE, WIRE]) => Unit],
+  def writeTuple[T](
+      t:        T,
+      writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
       out:      mutable.Builder[WIRE, WIRE]
   ): Unit
 }

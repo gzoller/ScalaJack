@@ -103,12 +103,5 @@ case class TupleTypeAdapter[T >: Null](
     if (t == null)
       writer.writeNull(out)
     else
-      writer.writeTuple(
-        fields.map(
-          field =>
-            (w: Writer[WIRE], builder: mutable.Builder[WIRE, WIRE]) =>
-              field.write(t, w, builder)
-        ),
-        out
-      )
+      writer.writeTuple(t, fields, out)
 }

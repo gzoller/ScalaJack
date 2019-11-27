@@ -32,56 +32,6 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           val inst = sj.read[AllPrim](delim)
           inst should equal(all)
         }
-        /*
-        it("Loose Change") {
-          pending
-          /*
-        the[ScalaJackError] thrownBy sj.render(Map("a" -> 1)) should have message "Map-typed data is not supported for delimited output"
-        val bi = BigInt(123)
-        sj.render(bi) should be("123")
-
-        val reader = sj.parse("abc")
-        reader.scanForHint("foo") should be(None)
-        reader.scanForType(util.Path.Root, "foo", None) should be(None)
-
-        val t = reader.head
-        reader.back
-        reader.head should equal(t)
-        reader.skipObject(util.Path.Root)
-        reader.head should equal(t)
-
-        the[UnsupportedOperationException] thrownBy sj.read[Map[String, Int]](
-          "foo"
-        ) should have message "Map serialization not available for Delimited encoding"
-
-        val sjx = ScalaJack(DelimitedFlavor('|'))
-        val i = Inside(5, "foo")
-        val d = sjx.render(i)
-        d should equal("5|foo")
-        sjx.read[Inside](d) should be(i)
-
-        val all = AllPrim(
-          5,
-          25L,
-          123.45,
-          12.3F,
-          'x',
-          "Hey",
-          true,
-          BigInt(12345678),
-          BigDecimal(0.123458867)
-        )
-        val delim = sj.render(all)
-        val r = sj.parse(delim)
-        val rPos = PrivateMethod[Int](Symbol("pos"))
-        r.next
-        r.next
-        r invokePrivate rPos() should be(2)
-        r.hasNext should be(true)
-        r.reset()
-        r invokePrivate rPos() should be(0)
-       */
-        }
         it("SalaJack configurations (DelimitedFlavor)") {
           an[ScalaJackError] should be thrownBy ScalaJack(DelimitedFlavor())
             .withAdapters()
@@ -96,10 +46,9 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           an[ScalaJackError] should be thrownBy ScalaJack(DelimitedFlavor())
             .allowPermissivePrimitives()
           val sjx = ScalaJack(DelimitedFlavor())
-            .parseOrElse(typeOf[ThreeStrings] -> typeOf[DefaultThree])
-          sjx.read[ThreeStrings]("a;sdlfj") should be(DefaultThree())
+            .parseOrElse(typeOf[ThreeInts] -> typeOf[DefaultThree])
+          sjx.read[ThreeInts]("a;sdlfj") should be(DefaultThree())
         }
-       */
         it("Enum support") {
           val sjy = ScalaJack(DelimitedFlavor()).enumsAsInts()
           val i = Shirt(1, Size.Small)
@@ -122,7 +71,7 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           val msg =
             """No value found in enumeration co.blocke.scalajack.delimited.Size$ for Huge
             |1,Huge
-            |-----^""".stripMargin
+            |--^""".stripMargin
           the[ScalaJackError] thrownBy sjz.read[Shirt](d6) should have message msg
         }
         it("Empty input") {
@@ -144,7 +93,7 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           val msg =
             """Expected a Number here
             |5,25,123.45,12.3,x,Hey,true,bogus12345678,0.123458867
-            |----------------------------------------^""".stripMargin
+            |----------------------------^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[AllPrim](delim) should have message msg
         }
       }
@@ -240,81 +189,125 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
           sj.read[HasTuples](delim) should be(s)
         }
         it("Tuple with class value") {
-          val delim = "thing,\"1,foo\""
+          val delim = "\"thing,\"\"1,foo\"\"\""
           sj.read[HasTuples2](delim) should be(
             HasTuples2(("thing", Inside(1, "foo")))
           )
         }
-        /*
-      it("Tuple with escaped quote in value") {
-        val s = HasTuples(("a\"b", 3), (false, 9))
-        val delim = sj.render(s)
-        delim should equal("\"\"\"a\"\"\"\"b\"\",3\",\"false,9\"")
-        sj.read[HasTuples](delim) should be(s)
+        it("Tuple with escaped quote in value") {
+          val s = HasTuples(("a\"b", 3), (false, 9))
+          val delim = sj.render(s)
+          delim should equal("\"\"\"a\"\"\"\"b\"\",3\",\"false,9\"")
+          sj.read[HasTuples](delim) should be(s)
+        }
+        it("Missing optional case class field with default") {
+          val delim = "\"a,3\","
+          sj.read[HasTuples](delim) should be(HasTuples(("a", 3), (true, 1)))
+        }
       }
-      it("Missing optional case class field with default") {
-        val delim = "\"a,3\","
-        sj.read[HasTuples](delim) should be(HasTuples(("a", 3), (true, 1)))
-      }
-      it("Missing optional case class field w/o default") {
-        val delim = ",\"false,9\""
-        val msg =
-          """Null or missing fields must either be optional or provide default vales for delimited input
-            |,"false,9"
-            |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[HasTuples](delim) should have message msg
-      }
-
-     */
-      }
-      //case class HasEither(one:Int, two:Either[Int,Inside])
       describe("Either") {
-        /*
-      it("Supports Either parsing") {
-        val s1 = HasEither(1, Left(3))
-        val delim1 = sj.render(s1)
-        delim1 should equal("1,3")
-        sj.read[HasEither](delim1) should be(s1)
+        it("Supports Either parsing") {
+          val s1 = HasEither(1, Left(3))
+          val delim1 = sj.render(s1)
+          delim1 should equal("1,3")
+          sj.read[HasEither](delim1) should be(s1)
 
-        val s2 = HasEither(2, Right(Inside(99, "foo")))
-        val delim2 = sj.render(s2)
-        delim2 should equal("2,\"99,foo\"")
-        sj.read[HasEither](delim2) should be(s2)
+          val s2 = HasEither(2, Right(Inside(99, "foo")))
+          val delim2 = sj.render(s2)
+          delim2 should equal("2,\"99,foo\"")
+          sj.read[HasEither](delim2) should be(s2)
 
-        val s3 = HasEither(2, Right(null))
-        sj.render(s3) should equal("2,")
-      }
-      it("Null object") {
-        sj.render[HasEither](null) should equal("")
-      }
-      it("Either missing a value (no default)") {
-        val delim = ",\"99,foo\""
-        val msg =
-          """[$]: Null or missing fields must either be optional or provide default vales for delimited input
-            |,"99,foo"
-            |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[HasEither](delim) should have message msg
-      }
-      it("Supports Either field value with default specified") {
-        val delim = "15,"
-        val i = sj.read[HasEither2](delim)
-        i should be(HasEither2(15, Right(Inside(1, "ok"))))
-      }
-      it("Can't parse either side of Either") {
-        val msg =
-          """Failed to read either side of Either
+          val s3 = HasEither(2, Right(null))
+          sj.render(s3) should equal("2,")
+        }
+        it("Null object") {
+          sj.render[HasEither](null) should equal("")
+        }
+        it("Either missing a value (no default)") {
+          val delim = ",\"99,foo\""
+          the[java.lang.NumberFormatException] thrownBy sj.read[HasEither](delim) should have message "null"
+        }
+        it("Supports Either field value with default specified") {
+          val delim = "15,"
+          val i = sj.read[HasEither2](delim)
+          i should be(HasEither2(15, Right(Inside(1, "ok"))))
+        }
+        it("Can't parse either side of Either") {
+          val msg =
+            """Failed to read either side of Either
             |3,true
             |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[Shirt2]("3,true") should have message msg
+          the[ScalaJackError] thrownBy sj.read[Shirt2]("3,true") should have message msg
+        }
+        it("Either with embedded quote in string value") {
+          val s = HasEither3(1, Left("a\"b"))
+          val delim = sj.render(s)
+          delim should equal("1,\"a\"\"b\"")
+          sj.read[HasEither3](delim) should be(s)
+        }
       }
-      it("Either with embedded quote in string value") {
-        val s = HasEither3(1, Left("a\"b"))
-        val delim = sj.render(s)
-        delim should equal("1,\"a\"\"b\"")
-        sj.read[HasEither3](delim) should be(s)
-      }
-
-     */
+      describe("forType") {
+        it("Stock forType behavior") {
+          val z = sj.forType[HasEither3]
+          val s = HasEither3(1, Left("a\"b"))
+          val delim = z.render(s)
+          delim should equal("1,\"a\"\"b\"")
+          z.read(delim) should be(s)
+        }
+        it("Can still read non-forType types") {
+          val z = sj.forType[HasEither3]
+          sj.read[HasEither]("2,\"99,foo\"") should be(HasEither(2, Right(Inside(99, "foo"))))
+        }
       }
     }
 }
+
+/*
+ it("Loose Change") {
+   pending
+ the[ScalaJackError] thrownBy sj.render(Map("a" -> 1)) should have message "Map-typed data is not supported for delimited output"
+ val bi = BigInt(123)
+ sj.render(bi) should be("123")
+
+ val reader = sj.parse("abc")
+ reader.scanForHint("foo") should be(None)
+ reader.scanForType(util.Path.Root, "foo", None) should be(None)
+
+ val t = reader.head
+ reader.back
+ reader.head should equal(t)
+ reader.skipObject(util.Path.Root)
+ reader.head should equal(t)
+
+ the[UnsupportedOperationException] thrownBy sj.read[Map[String, Int]](
+   "foo"
+ ) should have message "Map serialization not available for Delimited encoding"
+
+ val sjx = ScalaJack(DelimitedFlavor('|'))
+ val i = Inside(5, "foo")
+ val d = sjx.render(i)
+ d should equal("5|foo")
+ sjx.read[Inside](d) should be(i)
+
+ val all = AllPrim(
+   5,
+   25L,
+   123.45,
+   12.3F,
+   'x',
+   "Hey",
+   true,
+   BigInt(12345678),
+   BigDecimal(0.123458867)
+ )
+ val delim = sj.render(all)
+ val r = sj.parse(delim)
+ val rPos = PrivateMethod[Int](Symbol("pos"))
+ r.next
+ r.next
+ r invokePrivate rPos() should be(2)
+ r.hasNext should be(true)
+ r.reset()
+ r invokePrivate rPos() should be(0)
+ }
+ */

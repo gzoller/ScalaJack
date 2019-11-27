@@ -22,20 +22,20 @@ case class DelimitedFlavorFor[J](
     override val enumsAsInt:         Boolean                      = false
 ) extends JackFlavorFor[DELIMITED, J] {
 
-  def read[T](js: DELIMITED)(implicit tt: TypeTag[T]): T = {
+  def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
     val parser = DelimitedParser(
       delimiter,
-      if (js.isEmpty) js else DELIM_PREFIX + js,
+      DELIM_PREFIX + input,
       this
     )
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
-  def read(js: DELIMITED): J =
+  def read(input: DELIMITED): J =
     ta.read(
       DelimitedParser(
         delimiter,
-        if (js.isEmpty) js else DELIM_PREFIX + js,
+        DELIM_PREFIX + input,
         this
       )
     )
@@ -103,10 +103,10 @@ case class DelimitedFlavor(
     override val enumsAsInt:         Boolean                      = false
 ) extends JackFlavor[DELIMITED] {
 
-  def read[T](js: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(
+  def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
+    val parser = DP2(
       delimiter,
-      if (js.isEmpty) js else DELIM_PREFIX + js,
+      DELIM_PREFIX + input,
       this
     )
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
@@ -167,6 +167,6 @@ case class DelimitedFlavor(
 
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
-    dads.copy(factories = DelimitedOptionTypeAdapterFactory +: dads.factories)
+    dads.copy(factories = List(DelimitedEitherTypeAdapterFactory, DelimitedOptionTypeAdapterFactory) ++ dads.factories)
   }
 }
