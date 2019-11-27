@@ -56,7 +56,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack) //, scalajack_mongo, scalajack_dynamo), scalajack_benchmarks
+  .aggregate(scalajack, scalajack_dynamo) //, scalajack_mongo), scalajack_benchmarks
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -94,6 +94,7 @@ lazy val scalajack_mongo = project
         test(scalatest, slf4j_simple)
   )
   .dependsOn(scalajack)
+ */
 
 lazy val scalajack_dynamo = project
   .in(file("dynamodb"))
@@ -102,10 +103,10 @@ lazy val scalajack_dynamo = project
   .settings(
     libraryDependencies ++=
       compile(dynamo) ++
-        test(scalatest)
+        test(scalatest) ++
+        test("org.json4s" %% "json4s-native" % "3.6.6")
   )
   .dependsOn(scalajack)
- */
 
 lazy val scalajack_benchmarks = project
   .in(file("benchmarks"))

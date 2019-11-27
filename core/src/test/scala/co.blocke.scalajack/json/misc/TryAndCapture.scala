@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json
 package misc
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should._
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.util._
