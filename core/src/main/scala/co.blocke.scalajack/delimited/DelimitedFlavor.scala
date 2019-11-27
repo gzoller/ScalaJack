@@ -5,21 +5,21 @@ import model._
 import scala.reflect.runtime.universe._
 
 /**
- * This class is a cut'n paste copy of DelimitedFlavor with some mods to lock in a type.  There's currently an
- * unfortunate amount of boilerplate copying between this class and DelimitedFlavor, but it facilitates a clean
- * user experience--smooth API for ScalaJack:  val fooSerializer = sj.forType[Foo];  fooSerializer.read(input)
- */
+  * This class is a cut'n paste copy of DelimitedFlavor with some mods to lock in a type.  There's currently an
+  * unfortunate amount of boilerplate copying between this class and DelimitedFlavor, but it facilitates a clean
+  * user experience--smooth API for ScalaJack:  val fooSerializer = sj.forType[Foo];  fooSerializer.read(input)
+  */
 case class DelimitedFlavorFor[J](
-    delimiter:                       Char                         = ',',
-    ta:                              TypeAdapter[J],
-    override val defaultHint:        String                       = "_hint",
-    override val permissivesOk:      Boolean                      = false,
-    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
-    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
+    delimiter: Char = ',',
+    ta: TypeAdapter[J],
+    override val defaultHint: String = "_hint",
+    override val permissivesOk: Boolean = false,
+    override val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    override val hintMap: Map[Type, String] = Map.empty[Type, String],
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
-    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
+    override val typeValueModifier: HintValueModifier = DefaultHintModifier,
+    override val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type],
+    override val enumsAsInt: Boolean = false
 ) extends JackFlavorFor[DELIMITED, J] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
@@ -63,9 +63,9 @@ case class DelimitedFlavorFor[J](
 
   private val writer = DelimitedWriter(delimiter)
 
-  override val stringifyMapKeys: Boolean = true
-  override lazy val anyMapKeyTypeAdapter =
-    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
+//  override val stringifyMapKeys: Boolean = true
+//  override lazy val anyMapKeyTypeAdapter =
+//    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[String] =
     throw new ScalaJackError("Not available for delimited encoding")
@@ -85,22 +85,22 @@ case class DelimitedFlavorFor[J](
 
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
-      emptyStringOk:      Boolean        = true
+      emptyStringOk: Boolean = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] =
     wrappedTypeAdapter // No-Op for delimited
   // $COVERAGE-ON$
 }
 
 case class DelimitedFlavor(
-    delimiter:                       Char                         = ',',
-    override val defaultHint:        String                       = "_hint",
-    override val permissivesOk:      Boolean                      = false,
-    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
-    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
+    delimiter: Char = ',',
+    override val defaultHint: String = "_hint",
+    override val permissivesOk: Boolean = false,
+    override val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    override val hintMap: Map[Type, String] = Map.empty[Type, String],
     override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
-    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
+    override val typeValueModifier: HintValueModifier = DefaultHintModifier,
+    override val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type],
+    override val enumsAsInt: Boolean = false
 ) extends JackFlavor[DELIMITED] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
@@ -139,9 +139,9 @@ case class DelimitedFlavor(
 
   private val writer = DelimitedWriter(delimiter)
 
-  override val stringifyMapKeys: Boolean = true
-  override lazy val anyMapKeyTypeAdapter =
-    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
+//  override val stringifyMapKeys: Boolean = true
+//  override lazy val anyMapKeyTypeAdapter =
+//    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[String] =
     throw new ScalaJackError("Not available for delimited encoding")
@@ -161,7 +161,7 @@ case class DelimitedFlavor(
 
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
-      emptyStringOk:      Boolean        = true
+      emptyStringOk: Boolean = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] =
     wrappedTypeAdapter // No-Op for delimited
 
