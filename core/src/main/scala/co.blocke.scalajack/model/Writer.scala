@@ -1,10 +1,8 @@
 package co.blocke.scalajack
 package model
 
-import scala.reflect.runtime.universe._
 import scala.collection.Map
 import scala.collection.mutable
-import scala.collection.immutable.ListMap
 import ClassHelper.ExtraFieldValue
 
 trait Writer[WIRE] {

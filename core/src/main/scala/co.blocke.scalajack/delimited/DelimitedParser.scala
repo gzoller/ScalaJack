@@ -6,10 +6,14 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
 import typeadapter.ClassTypeAdapterBase
 
-case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFlavor[DELIMITED]) extends Parser {
+case class DelimitedParser(
+    delimChar:  Char,
+    input:      DELIMITED,
+    jackFlavor: JackFlavor[DELIMITED])
+  extends Parser {
   type WIRE = DELIMITED
 
-  var pos: Int = 0
+  private var pos: Int = 0
   private val delimPrefixString = DELIM_PREFIX.toString
 
   val (tokens, indexes) = {
@@ -67,7 +71,9 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
       ret
     } else throw new ScalaJackError(showError("Attempt to read beyond input"))
 
-  def expectList[K, TO](KtypeAdapter: TypeAdapter[K], builder: mutable.Builder[K, TO]): TO =
+  def expectList[K, TO](
+      KtypeAdapter: TypeAdapter[K],
+      builder:      mutable.Builder[K, TO]): TO =
     expectString() match {
       case "" => null.asInstanceOf[TO]
       case listStr =>
@@ -121,7 +127,10 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
         }
     }
 
-  def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K], valueTypeAdapter: TypeAdapter[V], builder: mutable.Builder[(K, V), TO]): TO =
+  def expectMap[K, V, TO](
+      keyTypeAdapter:   TypeAdapter[K],
+      valueTypeAdapter: TypeAdapter[V],
+      builder:          mutable.Builder[(K, V), TO]): TO =
     throw new ScalaJackError(showError("No Map support for delimited data.")) // No map support in delimited format
 
   def expectObject(
@@ -174,7 +183,8 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
 
   def peekForNull: Boolean = {
     val isNull = pos == max || tokens(pos) == "" || (tokens(pos) == delimPrefixString && pos == max - 1)
-    if (pos < max && isNull || pos < max && tokens(pos) == delimPrefixString) pos += 1
+    if (pos < max && isNull || pos < max && tokens(pos) == delimPrefixString)
+      pos += 1
     isNull
   }
 
@@ -209,5 +219,6 @@ case class DelimitedParser(delimChar: Char, input: DELIMITED, jackFlavor: JackFl
     pos = save
     isValidNumber
   }
-  def subParser(input: DELIMITED): Parser = DelimitedParser(delimChar, input, jackFlavor)
+  def subParser(input: DELIMITED): Parser =
+    DelimitedParser(delimChar, input, jackFlavor)
 }

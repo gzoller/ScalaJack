@@ -3,11 +3,10 @@ package mongo
 
 import java.time._
 
-import model.{ Reader, Stringish, TypeAdapter, Writer }
-import util.Path
+import model._
 import org.bson.types.ObjectId
 
-import scala.collection.mutable.Builder
+import scala.collection.mutable
 import scala.util.Try
 
 object Num extends Enumeration {
@@ -18,10 +17,7 @@ case class Bar[A, B](a: A, b: B)
 case class Zoo[U](name: String, z: U) //stuff:Bar[U,String])
 case class Hey(age: Int)
 
-case class Wrap[T, U](
-    name:  String,
-    data:  T,
-    stuff: U)
+case class Wrap[T, U](name: String, data: T, stuff: U)
 case class Carry[V](s: String, w: Wrap[V, String])
 case class CarryList[V](li: List[String], w: Wrap[V, String])
 case class CarryOpt[V](li: List[String], w: Wrap[V, String])
@@ -56,45 +52,23 @@ case class One(
   val foo: String = "yikes!"
 }
 
-case class OneSub1(
-    name:  String,
-    big:   Long,
-    maybe: Option[String])
+case class OneSub1(name: String, big: Long, maybe: Option[String])
 
-case class OneSub2(
-    name:     String,
-    flipflop: Boolean,
-    mymap:    Map[String, Int])
+case class OneSub2(name: String, flipflop: Boolean, mymap: Map[String, Int])
 
-case class Two(
-    foo: String,
-    bar: Boolean)
+case class Two(foo: String, bar: Boolean)
 
-case class Three(
-    name: String,
-    two:  Num.Value,
-    pp:   Pop)
+case class Three(name: String, two: Num.Value, pp: Pop)
 
-case class Four(
-    stuff:  List[String],
-    things: Map[String, Int])
+case class Four(stuff: List[String], things: Map[String, Int])
 
-case class Five(
-    @DBKey name: String,
-    two:         Two)
+case class Five(@DBKey name: String, two: Two)
 
-case class Six(
-    @DBKey name: String,
-    @DBKey num:  Int,
-    two:         Two)
+case class Six(@DBKey name: String, @DBKey num: Int, two: Two)
 
-case class Seven(
-    @DBKey _id: ObjectId,
-    two:        Two)
+case class Seven(@DBKey _id: ObjectId, two: Two)
 
-case class Numy(
-    age: Int,
-    num: Num.Value)
+case class Numy(age: Int, num: Num.Value)
 
 case class UuidThing(
     name:  String,
@@ -157,9 +131,7 @@ case class MapListList(name: String, mapList: Map[String, List[List[Animal]]])
 case class MapOpt(name: String, mapOpt: Map[String, Option[Animal]])
 case class MapMap(name: String, mapmap: Map[String, Map[String, Animal]])
 
-case class Foo(
-    name:  String,
-    stuff: List[String])
+case class Foo(name: String, stuff: List[String])
 
 trait PetAnimal {
   val name: String
@@ -203,11 +175,22 @@ case class SomethingSpecial(what: String, when: CustomVC)
 case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
 
 trait Address { val postalCode: String }
-case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
-case class CanadaAddress(street: String, city: String, province: String, postalCode: String) extends Address
+case class USAddress(
+    street:     String,
+    city:       String,
+    state:      String,
+    postalCode: String)
+  extends Address
+case class CanadaAddress(
+    street:     String,
+    city:       String,
+    province:   String,
+    postalCode: String)
+  extends Address
 case class DefaultAddress(postalCode: String) extends Address
 trait Demographic { val address: Address }
-case class USDemographic(@DBKey age: String, address: Address) extends Demographic
+case class USDemographic(@DBKey age: String, address: Address)
+  extends Demographic
 
 object MyTypes {
   type Phone = String
@@ -215,15 +198,22 @@ object MyTypes {
 import MyTypes._
 
 object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Phone =
-    reader.readString(path) match {
-      case s: String => s.replaceAll("-", "")
+  def read(parser: Parser): Phone =
+    parser.expectString() match {
       case null      => null
+      case s: String => s.replaceAll("-", "")
     }
 
-  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {
+  def write[WIRE](
+      t:      Phone,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit = t match {
     case null => writer.writeNull(out)
-    case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)
+    case _ =>
+      writer.writeString(
+        "%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)),
+        out
+      )
   }
 }
 
@@ -248,7 +238,12 @@ case class MapFactorId2(
     count:                                Int,
     @Change(name = "big_mac") bigMac:     String)
 
-case class PersonCapture(id: ObjectId, name: String, age: Int, stuff: Map[Int, Int]) extends SJCapture
+case class PersonCapture(
+    id:    ObjectId,
+    name:  String,
+    age:   Int,
+    stuff: Map[Int, Int])
+  extends SJCapture
 case class Tuple(t: (String, Int))
 
 trait Strange
@@ -264,6 +259,4 @@ case class Envelope[T <: Body](id: String, body: T) {
 case class Times(offset: OffsetDateTime, zoned: ZonedDateTime)
 
 case class Embed(stuff: List[String], num: Int)
-case class Boom(
-    name:  String,
-    other: Try[Embed])
+case class Boom(name: String, other: Try[Embed])

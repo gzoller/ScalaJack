@@ -11,9 +11,10 @@ import scala.collection.JavaConverters._
 case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
   type WIRE = JSON
-  val jsChars: Array[Char] = js.toCharArray
-  var i = 0
-  val max: Int = jsChars.length
+
+  private val jsChars: Array[Char] = js.toCharArray
+  private var i = 0
+  private val max: Int = jsChars.length
 
   @inline def whitespace(): Unit =
     while (i < max && jsChars(i).isWhitespace) i += 1

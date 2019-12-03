@@ -1,31 +1,37 @@
 package co.blocke.scalajack
 package mongo
 
-import util.Path
-import model._
-
-import scala.collection.mutable.Builder
+import scala.collection.mutable
 import org.bson._
 import java.time._
 
-object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
+import scala.util.{ Try, Success, Failure }
+import model._
 
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): ZonedDateTime =
-    reader.head.input match {
-      case null =>
-        reader.next
-        null
-      // $COVERAGE-OFF$Doesn't seem to be reachable -- naked nulls passed from Bson, but just in case...
-      case i if i.asInstanceOf[BsonValue].isNull() =>
-        reader.next
-        null
-      // $COVERAGE-ON$
-      case _ =>
-        val dateTimeLong = reader.asInstanceOf[MongoReader].readDateTime(path)
-        ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTimeLong), ZoneId.of("UTC"))
+object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] {
+
+  def read(parser: Parser): ZonedDateTime =
+    parser.expectNumber() match {
+      case null => null
+      case dateTimeLong =>
+        Try(
+          ZonedDateTime.ofInstant(
+            Instant.ofEpochMilli(dateTimeLong.toLong),
+            ZoneId.of("UTC")
+          )
+        ) match {
+            case Success(d) => d
+            case Failure(u) =>
+              throw new ScalaJackError(
+                s"""Failed to parse OffsetDateTime from input '$dateTimeLong'"""
+              )
+          }
     }
 
-  def write[WIRE](t: ZonedDateTime, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit =
+  def write[WIRE](
+      t:      ZonedDateTime,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null =>
         out += new BsonNull().asInstanceOf[WIRE]
@@ -36,6 +42,8 @@ object ZonedDateTimeTypeAdapterFactory extends TypeAdapter.=:=[ZonedDateTime] {
         //        println("To Instant: " + t.withZoneSameInstant(ZoneId.of("UTC")).toInstant)
         //        println("Final (epocmilli): " + t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli)
         //        println("---------------------------------")
-        out += new BsonDateTime(t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli).asInstanceOf[WIRE]
+        out += new BsonDateTime(
+          t.withZoneSameInstant(ZoneId.of("UTC")).toInstant.toEpochMilli
+        ).asInstanceOf[WIRE]
     }
 }

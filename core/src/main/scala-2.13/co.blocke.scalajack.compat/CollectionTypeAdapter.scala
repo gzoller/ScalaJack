@@ -99,7 +99,7 @@ case class CollectionTypeAdapterFactory(
                 .valueIsStringish()))
               keyTypeAdapter
             else
-              StringWrapTypeAdapter(keyTypeAdapter)
+              jackFlavor.stringWrapTypeAdapterFactory(keyTypeAdapter)
 
           val finalValueTypeAdapter =
             if (elementTypeAfterSubstitution.typeArgs(1) <:< typeOf[Option[_]])
