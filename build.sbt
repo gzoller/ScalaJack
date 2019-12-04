@@ -90,7 +90,8 @@ lazy val scalajack_mongo = project
   .settings(
     libraryDependencies ++=
       compile(mongo_java) ++
-        test(scalatest, slf4j_simple)
+        test(scalatest, slf4j_simple) ++
+        test("org.json4s" %% "json4s-native" % "3.6.6")
   )
   .dependsOn(scalajack)
 

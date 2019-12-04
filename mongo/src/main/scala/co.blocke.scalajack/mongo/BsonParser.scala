@@ -70,12 +70,12 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, String]) =
+  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) =
     if (input.isDocument) {
       val args = classBase.argsTemplate.clone()
       val fieldBits = classBase.fieldBitsTemplate.clone()
       val captured =
-        if (classBase.isSJCapture) new java.util.HashMap[String, String]()
+        if (classBase.isSJCapture) new java.util.HashMap[String, BsonValue]()
         else null
       input.asDocument.entrySet.asScala.foreach {
         case entry if entry.getKey == ID_FIELD && classBase.dbKeys.size == 1 =>
@@ -104,11 +104,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
               )
             }
             .getOrElse {
-              // TODO
-              //            val mark = i
-              //            skipOverElement()
-              //            if (classBase.isSJCapture && key != hintLabel)
-              //              captured.put(key, js.substring(mark, i))
+              if (captured != null)
+                captured.put(entry.getKey, entry.getValue)
             }
       }
       val missing = fieldBits.intersect(classBase.dbKeys.map(_.index).toSet)
@@ -148,13 +145,13 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       case _                   => throw new ScalaJackError(s"Expected number here, not '$input'")
     }
 
-  def peekForNull: Boolean = input.isNull
+  def peekForNull: Boolean = input == null || input.isNull
 
   def scanForHint(hint: String, converterFn: HintBijective): Type =
     if (input.isDocument) {
       val doc = input.asDocument
       Option(doc.get(hint)) match {
-        case Some(hintValue) =>
+        case Some(hintValue) if hintValue.isString =>
           val hintType = try {
             converterFn.apply(hintValue.asString.getValue)
           } catch {
@@ -164,6 +161,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
               )
           }
           hintType
+        case Some(hintValue) =>
+          throw new ScalaJackError(s"Hint value $hint must be a string value")
         case None => throw new ScalaJackError(s"Type hint '$hint' not found")
       }
     } else
@@ -198,7 +197,10 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
   def nextIsArray: Boolean = input.isArray
   def nextIsBoolean: Boolean = input.isBoolean
   def subParser(input: BsonValue): Parser = this
-  def sourceAsString: String = ""
+  def sourceAsString: String =
+    throw new ScalaJackError(
+      s"""BSON type ${input.getClass.getName} is not currently supported in ScalaJack."""
+    )
 
   //--- Mongo Specific ---
   def expectObjectId(): ObjectId =

@@ -827,5 +827,35 @@ class MongoSpec extends AnyFunSpec with Matchers {
             mongoScalaJack.read[Carry[Zoo[Boolean]]](db) should equal(w)
           }
       }
+      describe("forType functionality") {
+        it("Basic forType") {
+          val sj2 = mongoScalaJack.forType[Five]
+          val five = Five("Fred", Two("blah", true))
+          val dbo = sj2.render(five)
+          dbo.asDocument.toJson should equal(
+            """{"_id": "Fred", "two": {"foo": "blah", "bar": true}}"""
+          )
+          sj2.read(dbo) should equal(five)
+        }
+        it("Normal read/render after a forType") {
+          val sj2 = mongoScalaJack.forType[Five]
+          val six = Six("Fred", 12, Two("blah", true))
+          val dbo = sj2.render(six)
+          dbo.asDocument.toJson should equal(
+            """{"_id": {"name": "Fred", "num": 12}, "two": {"foo": "blah", "bar": true}}"""
+          )
+          sj2.read[Six](dbo) should equal(six)
+
+        }
+        it("forType after a forType") {
+          val sj2 = mongoScalaJack.forType[Five].forType[Six]
+          val six = Six("Fred", 12, Two("blah", true))
+          val dbo = sj2.render(six)
+          dbo.asDocument.toJson should equal(
+            """{"_id": {"name": "Fred", "num": 12}, "two": {"foo": "blah", "bar": true}}"""
+          )
+          sj2.read(dbo) should equal(six)
+        }
+      }
     }
 }

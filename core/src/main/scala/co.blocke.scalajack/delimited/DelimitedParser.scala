@@ -136,7 +136,7 @@ case class DelimitedParser(
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, String]) = {
+  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
     if (!classBase.isCaseClass)
       throw new ScalaJackError(
         showError(

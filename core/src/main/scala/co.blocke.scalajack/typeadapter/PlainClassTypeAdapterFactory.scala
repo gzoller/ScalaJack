@@ -6,6 +6,7 @@ import util.Reflection
 import java.beans.{ Introspector, PropertyDescriptor }
 
 import ClassHelper._
+import co.blocke.scalajack.SJCapture
 
 import scala.collection.immutable.{ List, ListMap }
 import scala.collection.mutable

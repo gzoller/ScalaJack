@@ -23,22 +23,12 @@ case class DelimitedFlavorFor[J](
 ) extends JackFlavorFor[DELIMITED, J] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(
-      delimiter,
-      DELIM_PREFIX + input,
-      this
-    )
+    val parser = DelimitedParser(delimiter, DELIM_PREFIX + input, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
   def read(input: DELIMITED): J =
-    ta.read(
-      DelimitedParser(
-        delimiter,
-        DELIM_PREFIX + input,
-        this
-      )
-    )
+    ta.read(DelimitedParser(delimiter, DELIM_PREFIX + input, this))
   def render(t: J): DELIMITED = {
     val sb = co.blocke.scalajack.compat.StringBuilder()
     ta.write(t, writer, sb)
@@ -91,7 +81,12 @@ case class DelimitedFlavorFor[J](
 
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
-    dads.copy(factories = List(DelimitedEitherTypeAdapterFactory, DelimitedOptionTypeAdapterFactory) ++ dads.factories)
+    dads.copy(
+      factories = List(
+        DelimitedEitherTypeAdapterFactory,
+        DelimitedOptionTypeAdapterFactory
+      ) ++ dads.factories
+    )
   }
   // $COVERAGE-ON$
 }
@@ -109,11 +104,7 @@ case class DelimitedFlavor(
 ) extends JackFlavor[DELIMITED] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(
-      delimiter,
-      DELIM_PREFIX + input,
-      this
-    )
+    val parser = DelimitedParser(delimiter, DELIM_PREFIX + input, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
@@ -172,6 +163,11 @@ case class DelimitedFlavor(
 
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
-    dads.copy(factories = List(DelimitedEitherTypeAdapterFactory, DelimitedOptionTypeAdapterFactory) ++ dads.factories)
+    dads.copy(
+      factories = List(
+        DelimitedEitherTypeAdapterFactory,
+        DelimitedOptionTypeAdapterFactory
+      ) ++ dads.factories
+    )
   }
 }

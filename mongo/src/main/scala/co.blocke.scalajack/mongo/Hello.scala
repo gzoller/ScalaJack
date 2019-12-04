@@ -4,16 +4,38 @@ package mongo
 import org.bson._
 import scala.collection.JavaConverters._
 
-case class Person(name: String, age: Int)
-case class Two(foo: String, bar: Boolean)
-case class Five(@DBKey name: String, two: Two)
+import org.bson.types.ObjectId
+case class PersonCapture(
+    id:    ObjectId,
+    name:  String,
+    age:   Int,
+    stuff: Map[Int, Int])
+  extends SJCapture
 
 object Hello extends App {
 
   val sj = ScalaJack(MongoFlavor())
 
-  val five = Five("Fred", Two("blah", true))
-  val dbo = sj.render(five)
-  println(dbo)
-  println(sj.read[Five](dbo))
+  val d = new BsonDocument(
+    List(
+      new BsonElement("num", new BsonInt32(3)),
+      new BsonElement(
+        "s",
+        new BsonDocument(
+          List(
+            new BsonElement("_hint", new BsonInt32(45)),
+            new BsonElement("size", new BsonInt32(34))
+          ).asJava
+        )
+      )
+    ).asJava
+  )
+
+  val s = PersonCapture(new ObjectId(), "Fred", 52, Map(5 -> 1, 6 -> 2))
+  val m = sj.render(s)
+  m.asDocument.append("extra", new BsonString("hey"))
+  println(m)
+  val readIn = sj.read[PersonCapture](m)
+  println(readIn)
+
 }

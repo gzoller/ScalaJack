@@ -1,5 +1,7 @@
 package co.blocke.scalajack;
 
+import co.blocke.scalajack.SJCaptureJava;
+
 public class JavaCap extends SJCaptureJava {
 
   private String name;

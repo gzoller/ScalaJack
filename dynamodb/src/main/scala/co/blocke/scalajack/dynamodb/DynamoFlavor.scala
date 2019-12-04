@@ -3,11 +3,11 @@ package dynamodb
 
 import model._
 import ClassHelper.ClassFieldMember
+import co.blocke.scalajack.SJCapture
 import typeadapter._
+
 import scala.reflect.runtime.universe._
-
 import scala.collection.JavaConverters._
-
 import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.model.{
   AttributeDefinition,

@@ -10,7 +10,8 @@ import scala.collection.mutable
 import org.bson._
 import org.bson.types.Decimal128
 
-case class MongoWriter(mongoFlavor: MongoFlavor) extends Writer[BsonValue] {
+case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
+  extends Writer[BsonValue] {
 
   def writeBigInt(t: BigInt, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     throw new ScalaJackError(
@@ -170,29 +171,10 @@ case class MongoWriter(mongoFlavor: MongoFlavor) extends Writer[BsonValue] {
       t match {
         case sjc: SJCapture =>
           import scala.collection.JavaConverters._
-          writeFields(
-            sjc.captured.asScala.toList.map {
-              case (label, captureValue) =>
-                (
-                  label,
-                  mongoFlavor.anyTypeAdapter
-                  .read(
-                    co.blocke.scalajack.json
-                      .JsonParser(captureValue, ???)
-                  ),
-                    mongoFlavor.anyTypeAdapter
-                )
-            },
-            doc
-          )
-        // TODO
-        //          writeFields(
-        //            // captured = HashMap[String,String]
-        //            sjc.captured
-        //              .map(c => (c._1, c._2, jackFlavor.anyTypeAdapter))
-        //              .toList,
-        //            doc
-        //          )
+          sjc.captured.asScala.foreach {
+            case (label, capturedValue) =>
+              doc.append(label, capturedValue.asInstanceOf[BsonValue])
+          }
         case _ =>
       }
       out += doc

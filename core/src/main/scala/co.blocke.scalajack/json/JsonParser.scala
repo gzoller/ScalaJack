@@ -216,7 +216,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, String]) = {
+  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
     whitespace()
     val args = classBase.argsTemplate.clone()
     val fieldBits = classBase.fieldBitsTemplate.clone()

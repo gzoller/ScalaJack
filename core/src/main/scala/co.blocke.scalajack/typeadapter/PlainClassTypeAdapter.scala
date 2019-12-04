@@ -3,11 +3,12 @@ package typeadapter
 
 import model._
 import ClassHelper._
+import co.blocke.scalajack.SJCapture
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.reflect.runtime.universe._
-import scala.util.{Try, Failure}
+import scala.util.{Failure, Try}
 
 case class PlainClassTypeAdapter[T](
   className: String,

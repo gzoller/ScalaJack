@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package typeadapter
 
-import co.blocke.scalajack.{ Collection, DBKey }
+import co.blocke.scalajack.SJCapture
 import model._
 import util.Reflection
 

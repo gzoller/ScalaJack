@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package json.primitives.plain
 
+import co.blocke.scalajack.SJCapture
+
 import scala.util._
 
 class InheritSimpleBase(

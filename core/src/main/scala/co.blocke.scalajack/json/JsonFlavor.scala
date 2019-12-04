@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json
 
 import model._
+import typeadapter.AnyMapKeyTypeAdapter
 
 import scala.reflect.runtime.universe._
 
@@ -53,7 +54,7 @@ case class JsonFlavorFor[J](
   private val writer = JsonWriter()
 
   override val stringifyMapKeys: Boolean = true
-  override lazy val anyMapKeyTypeAdapter =
+  override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[String] =
@@ -123,7 +124,7 @@ case class JsonFlavor(
   private val writer = JsonWriter() //(this)
 
   override val stringifyMapKeys: Boolean = true
-  override lazy val anyMapKeyTypeAdapter =
+  override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[String] =

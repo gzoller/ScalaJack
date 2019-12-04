@@ -172,6 +172,7 @@ case class JsonWriter() extends Writer[String] {
               writeString(field, out)
               out += ":"
               out += fvalue
+                .asInstanceOf[String] // all json captured things are String
           }
         case _ =>
       }

@@ -4,6 +4,7 @@ package mongo
 import model._
 import org.bson._
 import compat.BsonBuilder
+import typeadapter.AnyTypeAdapter
 
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
@@ -15,35 +16,40 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T])
   with Stringish {
 
   def read(parser: Parser): T = {
-    // 1. Read String  (BsonValue --> String)
-    val wrappedValueString = parser.expectString()
 
     wrappedTypeAdapter match {
       case value: ScalarTypeAdapter[_] =>
-        value.scalarType match {
-          case t if t == typeOf[Byte] =>
-            wrappedValueString.toByte.asInstanceOf[T]
-          case t if t == typeOf[Char] => wrappedValueString(0).asInstanceOf[T]
-          case t if t == typeOf[Int]  => wrappedValueString.toInt.asInstanceOf[T]
-          case t if t == typeOf[Long] =>
-            wrappedValueString.toLong.asInstanceOf[T]
-          case t if t == typeOf[Double] =>
-            wrappedValueString.toDouble.asInstanceOf[T]
-          case t if t == typeOf[Float] =>
-            wrappedValueString.toFloat.asInstanceOf[T]
-          case t if t == typeOf[Short] =>
-            wrappedValueString.toShort.asInstanceOf[T]
-          case t if t == typeOf[BigDecimal] =>
-            BigDecimal(wrappedValueString).asInstanceOf[T]
-          case t if t == typeOf[Boolean] =>
-            wrappedValueString.toBoolean.asInstanceOf[T]
-          // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
-          case _ =>
-            throw new ScalaJackError(
-              "Only Scala scalar values are supported as BSON Map keys"
-            )
-          // $COVERAGE-ON$
-        }
+        val wrappedValueString = parser.expectString()
+        if (wrappedValueString == null)
+          null.asInstanceOf[T]
+        else
+          value.scalarType match {
+            case t if t == typeOf[Byte] =>
+              wrappedValueString.toByte.asInstanceOf[T]
+            case t if t == typeOf[Char] => wrappedValueString(0).asInstanceOf[T]
+            case t if t == typeOf[Int] =>
+              wrappedValueString.toInt.asInstanceOf[T]
+            case t if t == typeOf[Long] =>
+              wrappedValueString.toLong.asInstanceOf[T]
+            case t if t == typeOf[Double] =>
+              wrappedValueString.toDouble.asInstanceOf[T]
+            case t if t == typeOf[Float] =>
+              wrappedValueString.toFloat.asInstanceOf[T]
+            case t if t == typeOf[Short] =>
+              wrappedValueString.toShort.asInstanceOf[T]
+            case t if t == typeOf[BigDecimal] =>
+              BigDecimal(wrappedValueString).asInstanceOf[T]
+            case t if t == typeOf[Boolean] =>
+              wrappedValueString.toBoolean.asInstanceOf[T]
+            // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
+            case _ =>
+              throw new ScalaJackError(
+                "Only Scala scalar values are supported as BSON Map keys"
+              )
+            // $COVERAGE-ON$
+          }
+      case value: AnyTypeAdapter =>
+        value.read(parser).asInstanceOf[T]
       case _ =>
         throw new ScalaJackError(
           "Only scalar values are supported as BSON Map keys"
