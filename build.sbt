@@ -10,6 +10,7 @@ val scalatest = "org.scalatest" %% "scalatest" % "3.1.0-RC3"
 val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.26"
 val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
+val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 
 def scalacOptionsVersion(scalaVersion: String) = {
   val xver = CrossVersion.partialVersion(scalaVersion) match {
@@ -80,7 +81,7 @@ lazy val scalajack = project
         Seq("commons-codec" % "commons-codec" % "1.12") ++
         Seq(json4s) ++
         test(scalatest) ++
-        test("org.json4s" %% "json4s-native" % "3.6.6")
+        test(json4sNative)
   )
 
 lazy val scalajack_mongo = project
@@ -91,7 +92,7 @@ lazy val scalajack_mongo = project
     libraryDependencies ++=
       compile(mongo_java) ++
         test(scalatest, slf4j_simple) ++
-        test("org.json4s" %% "json4s-native" % "3.6.6")
+        test(json4sNative)
   )
   .dependsOn(scalajack)
 
@@ -103,7 +104,7 @@ lazy val scalajack_dynamo = project
     libraryDependencies ++=
       compile(dynamo) ++
         test(scalatest) ++
-        test("org.json4s" %% "json4s-native" % "3.6.6")
+        test(json4sNative)
   )
   .dependsOn(scalajack)
 
@@ -117,7 +118,7 @@ lazy val scalajack_benchmarks = project
       test(scalatest, slf4j_simple) ++
         List(
           "net.liftweb" %% "lift-json" % "3.4.0",
-          "org.json4s" %% "json4s-native" % "3.6.6",
+          json4sNative,
           "co.blocke" %% "scalajack" % "6.0.4",
           "io.circe" %% "circe-core" % "0.12.3",
           "io.circe" %% "circe-generic" % "0.12.3",

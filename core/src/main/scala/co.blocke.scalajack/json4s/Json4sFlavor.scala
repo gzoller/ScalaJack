@@ -1,9 +1,11 @@
 package co.blocke.scalajack
-package json
+package json4s
 
 import model._
 import typeadapter.AnyMapKeyTypeAdapter
+import org.json4s._
 
+import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 /**
@@ -11,35 +13,36 @@ import scala.reflect.runtime.universe._
  * unfortunate amount of boilerplate copying between this class and JsonFlavor, but it facilitates a clean
  * user experience--smooth API for ScalaJack:  val fooSerializer = sj.forType[Foo];  fooSerializer.read(input)
  */
-case class JsonFlavorFor[J](
-    ta:                              TypeAdapter[J],
-    override val defaultHint:        String                       = "_hint",
-    override val permissivesOk:      Boolean                      = false,
-    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
-    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
-    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
-    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
-) extends JackFlavorFor[JSON, J] {
+/*
+case class Json4sFlavorFor[J](
+                             ta:                              TypeAdapter[J],
+                             override val defaultHint:        String                       = "_hint",
+                             override val permissivesOk:      Boolean                      = false,
+                             override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
+                             override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
+                             override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
+                             override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
+                             override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
+                             override val enumsAsInt:         Boolean                      = false
+                           ) extends JackFlavorFor[JValue, J] {
 
-  def read[T](js: JSON)(implicit tt: TypeTag[T]): T = {
+  def read[T](js: JValue)(implicit tt: TypeTag[T]): T = {
     val parser = JsonParser(js, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
-  def read(js: JSON): J = ta.read(json.JsonParser(js, this))
-  def render(t: J): JSON = {
+  def read(js: JValue): J = ta.read(json.JsonParser(js, this))
+  def render(t: J): JValue = {
     val sb = co.blocke.scalajack.compat.StringBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
-  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[JSON, U] =
+  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[JValue, U] =
     this
       .copy(ta = taCache.typeAdapter(tu.tpe.dealias))
-      .asInstanceOf[JackFlavorFor[JSON, U]]
+      .asInstanceOf[JackFlavorFor[JValue, U]]
 
-  def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
+  def render[T](t: T)(implicit tt: TypeTag[T]): JValue = {
     val sb = co.blocke.scalajack.compat.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
@@ -49,7 +52,7 @@ case class JsonFlavorFor[J](
   }
 
   // $COVERAGE-OFF$All this is carbon-copy from JsonFlavor, which has test coverage.
-  def parse(input: JSON): Parser = JsonParser(input, this)
+  def parse(input: JValue): Parser = JsonParser(input, this)
 
   private val writer = JsonWriter()
 
@@ -57,31 +60,32 @@ case class JsonFlavorFor[J](
   override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
-  def allowPermissivePrimitives(): JackFlavor[JSON] =
+  def allowPermissivePrimitives(): JackFlavor[String] =
     this.copy(permissivesOk = true)
-  def enumsAsInts(): JackFlavor[JSON] = this.copy(enumsAsInt = true)
-  def parseOrElse(poe: (Type, Type)*): JackFlavor[JSON] =
+  def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
+  def parseOrElse(poe: (Type, Type)*): JackFlavor[String] =
     this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[JSON] =
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] =
     this.copy(customAdapters = this.customAdapters ++ ta.toList)
-  def withDefaultHint(hint: String): JackFlavor[JSON] =
+  def withDefaultHint(hint: String): JackFlavor[String] =
     this.copy(defaultHint = hint)
-  def withHints(h: (Type, String)*): JackFlavor[JSON] =
+  def withHints(h: (Type, String)*): JackFlavor[String] =
     this.copy(hintMap = this.hintMap ++ h)
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[JSON] =
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] =
     this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[JSON] =
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] =
     this.copy(typeValueModifier = tm)
 
   def stringWrapTypeAdapterFactory[T](
-      wrappedTypeAdapter: TypeAdapter[T],
-      emptyStringOk:      Boolean        = true
-  )(implicit tt: TypeTag[T]): TypeAdapter[T] =
+                                       wrappedTypeAdapter: TypeAdapter[T],
+                                       emptyStringOk:      Boolean        = true
+                                     )(implicit tt: TypeTag[T]): TypeAdapter[T] =
     StringWrapTypeAdapter(wrappedTypeAdapter, emptyStringOk)
   // $COVERAGE-ON$
 }
+ */
 
-case class JsonFlavor(
+case class Json4sFlavor(
     override val defaultHint:        String                       = "_hint",
     override val permissivesOk:      Boolean                      = false,
     override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
@@ -90,15 +94,16 @@ case class JsonFlavor(
     override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
     override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
     override val enumsAsInt:         Boolean                      = false
-) extends JackFlavor[JSON] {
+) extends JackFlavor[JValue] {
 
-  def read[T](js: JSON)(implicit tt: TypeTag[T]): T = {
-    val parser = JsonParser(js, this)
+  def read[T](js: JValue)(implicit tt: TypeTag[T]): T = {
+    val parser = Json4sParser(js, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
-  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[JSON, U] =
-    JsonFlavorFor(
+  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[JValue, U] = ???
+  /*
+    Json4sFlavorFor(
       taCache.typeAdapter(tu.tpe.dealias).asInstanceOf[TypeAdapter[U]],
       defaultHint,
       permissivesOk,
@@ -109,9 +114,10 @@ case class JsonFlavor(
       parseOrElseMap,
       enumsAsInt
     )
+   */
 
-  def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+  def render[T](t: T)(implicit tt: TypeTag[T]): JValue = {
+    val sb = co.blocke.scalajack.compat.JValueBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -119,33 +125,36 @@ case class JsonFlavor(
     sb.result()
   }
 
-  def parse(input: JSON): Parser = JsonParser(input, this)
+  def parse(input: JValue): Parser = Json4sParser(input, this)
 
-  private val writer = JsonWriter() //(this)
+  private val writer = Json4sWriter()
 
   override val stringifyMapKeys: Boolean = true
   override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
-  def allowPermissivePrimitives(): JackFlavor[JSON] =
+  def allowPermissivePrimitives(): JackFlavor[JValue] =
     this.copy(permissivesOk = true)
-  def enumsAsInts(): JackFlavor[JSON] = this.copy(enumsAsInt = true)
-  def parseOrElse(poe: (Type, Type)*): JackFlavor[JSON] =
+  def enumsAsInts(): JackFlavor[JValue] = this.copy(enumsAsInt = true)
+  def parseOrElse(poe: (Type, Type)*): JackFlavor[JValue] =
     this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[JSON] =
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[JValue] =
     this.copy(customAdapters = this.customAdapters ++ ta.toList)
-  def withDefaultHint(hint: String): JackFlavor[JSON] =
+  def withDefaultHint(hint: String): JackFlavor[JValue] =
     this.copy(defaultHint = hint)
-  def withHints(h: (Type, String)*): JackFlavor[JSON] =
+  def withHints(h: (Type, String)*): JackFlavor[JValue] =
     this.copy(hintMap = this.hintMap ++ h)
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[JSON] =
+  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[JValue] =
     this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[JSON] =
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[JValue] =
     this.copy(typeValueModifier = tm)
 
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
       emptyStringOk:      Boolean        = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] =
-    StringWrapTypeAdapter(wrappedTypeAdapter, emptyStringOk)
+    StringWrapTypeAdapter(wrappedTypeAdapter)
+
+  override def getBuilder: mutable.Builder[JValue, JValue] =
+    co.blocke.scalajack.compat.JValueBuilder()
 }

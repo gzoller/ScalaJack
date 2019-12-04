@@ -65,7 +65,9 @@ case class EnumerationTypeAdapter[E <: Enumeration](
               )
             )
         }
-    } else
+    } else if (parser.peekForNull)
+      null
+    else
       throw new ScalaJackError(
         parser.showError(s"Expected a Number or String here")
       )
