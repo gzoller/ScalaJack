@@ -19,9 +19,10 @@ object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] {
         )
     }
 
-  def write[WIRE](t: ZonedDateTime,
-                  writer: Writer[WIRE],
-                  out: mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](
+      t:      ZonedDateTime,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null =>
         out += new BsonNull().asInstanceOf[WIRE]

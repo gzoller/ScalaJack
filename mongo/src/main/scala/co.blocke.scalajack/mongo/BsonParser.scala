@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 
 case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
-    extends Parser {
+  extends Parser {
   type WIRE = BsonValue
 
   def expectString(nullOK: Boolean = true): String =
@@ -22,8 +22,9 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     else
       throw new ScalaJackError(s"Expected string here, not '$input'")
 
-  def expectList[K, TO](KtypeAdapter: TypeAdapter[K],
-                        builder: mutable.Builder[K, TO]): TO =
+  def expectList[K, TO](
+      KtypeAdapter: TypeAdapter[K],
+      builder:      mutable.Builder[K, TO]): TO =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       null.asInstanceOf[TO]
@@ -36,7 +37,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       throw new ScalaJackError(s"Expected list here, not '$input'")
 
   def expectTuple(
-    readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
+      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
   ): List[Any] =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
@@ -50,9 +51,10 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     } else
       throw new ScalaJackError(s"Expected tuple (list) here, not '$input'")
 
-  def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K],
-                          valueTypeAdapter: TypeAdapter[V],
-                          builder: mutable.Builder[(K, V), TO]): TO =
+  def expectMap[K, V, TO](
+      keyTypeAdapter:   TypeAdapter[K],
+      valueTypeAdapter: TypeAdapter[V],
+      builder:          mutable.Builder[(K, V), TO]): TO =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       null.asInstanceOf[TO]
@@ -72,8 +74,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       throw new ScalaJackError(s"Expected document (map) here, not '$input'")
 
   def expectObject(
-    classBase: ClassTypeAdapterBase[_],
-    hintLabel: String
+      classBase: ClassTypeAdapterBase[_],
+      hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
@@ -126,8 +128,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
           throw new ScalaJackError(
             "Missing key (_id) field, or a component of a compound key field: " +
               classBase.dbKeys
-                .collect { case f if missing.contains(f.index) => f.name }
-                .mkString(",")
+              .collect { case f if missing.contains(f.index) => f.name }
+              .mkString(",")
           )
       }
       (fieldBits, args, captured)
@@ -176,8 +178,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
 
   // For embedded type members.  Convert the type member into runtime "actual" type, e.g. T --> Foo
   def resolveTypeMembers(
-    typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-    converterFn: HintBijective
+      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
+      converterFn:       HintBijective
   ): Map[Type, Type] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
     if (input.isDocument) {
       val doc = input.asDocument

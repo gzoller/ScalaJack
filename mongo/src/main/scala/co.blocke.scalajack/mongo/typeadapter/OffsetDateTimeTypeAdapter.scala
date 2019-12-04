@@ -19,9 +19,10 @@ object OffsetDateTimeTypeAdapter extends TypeAdapter.=:=[OffsetDateTime] {
         )
     }
 
-  def write[WIRE](t: OffsetDateTime,
-                  writer: Writer[WIRE],
-                  out: mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](
+      t:      OffsetDateTime,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null => out += new BsonNull().asInstanceOf[WIRE]
       case _ =>
