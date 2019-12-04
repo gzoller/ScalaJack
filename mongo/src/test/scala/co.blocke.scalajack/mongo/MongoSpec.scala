@@ -699,7 +699,6 @@ class MongoSpec extends AnyFunSpec with Matchers {
         it("ObjectId support (null) -- Mongo") {
           val seven = Seven(null, Two("blah", bar = true))
           val dbo = mongoScalaJack.render(seven)
-          //{"_id": null, "two": {"foo": "blah", "bar": true}}
           mongoScalaJack.read[Seven](dbo) should equal(seven)
         }
       }
@@ -718,6 +717,14 @@ class MongoSpec extends AnyFunSpec with Matchers {
           )
           val b = mongoScalaJack.read[WithDefaults](dbo)
           b should equal(wd)
+        }
+        it("Case class as value for Any parameter") {
+          val f = Flexible("foo", Two("bar", bar = true))
+          val d = mongoScalaJack.render(f)
+          d.toString should be(
+            """{"name": "foo", "dunno": {"_hint": "co.blocke.scalajack.mongo.Two", "foo": "bar", "bar": true}}"""
+          )
+          mongoScalaJack.read[Flexible](d) should be(f)
         }
         it(
           "Must handle a case class with default values - defaults not specified"

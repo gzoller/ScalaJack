@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package mongo
 
-import scala.util.{ Try, Success, Failure }
 import model._
 
 import scala.collection.mutable
@@ -20,10 +19,9 @@ object OffsetDateTimeTypeAdapter extends TypeAdapter.=:=[OffsetDateTime] {
         )
     }
 
-  def write[WIRE](
-      t:      OffsetDateTime,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: OffsetDateTime,
+                  writer: Writer[WIRE],
+                  out: mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null => out += new BsonNull().asInstanceOf[WIRE]
       case _ =>

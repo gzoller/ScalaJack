@@ -5,7 +5,6 @@ import scala.collection.mutable
 import org.bson._
 import java.time._
 
-import scala.util.{ Try, Success, Failure }
 import model._
 
 object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] {
@@ -14,24 +13,15 @@ object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] {
     parser.expectNumber() match {
       case null => null
       case dateTimeLong =>
-        Try(
-          ZonedDateTime.ofInstant(
-            Instant.ofEpochMilli(dateTimeLong.toLong),
-            ZoneId.of("UTC")
-          )
-        ) match {
-            case Success(d) => d
-            case Failure(u) =>
-              throw new ScalaJackError(
-                s"""Failed to parse OffsetDateTime from input '$dateTimeLong'"""
-              )
-          }
+        ZonedDateTime.ofInstant(
+          Instant.ofEpochMilli(dateTimeLong.toLong),
+          ZoneId.of("UTC")
+        )
     }
 
-  def write[WIRE](
-      t:      ZonedDateTime,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: ZonedDateTime,
+                  writer: Writer[WIRE],
+                  out: mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null =>
         out += new BsonNull().asInstanceOf[WIRE]
