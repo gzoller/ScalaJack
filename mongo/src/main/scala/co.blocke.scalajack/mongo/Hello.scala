@@ -1,41 +1,19 @@
 package co.blocke.scalajack
 package mongo
 
-import org.bson._
-import scala.collection.JavaConverters._
-
-import org.bson.types.ObjectId
-case class PersonCapture(
-    id:    ObjectId,
-    name:  String,
-    age:   Int,
-    stuff: Map[Int, Int])
-  extends SJCapture
+case class Foo(name: String, something: Any)
+case class Bar(woo: String)
 
 object Hello extends App {
 
   val sj = ScalaJack(MongoFlavor())
 
-  val d = new BsonDocument(
-    List(
-      new BsonElement("num", new BsonInt32(3)),
-      new BsonElement(
-        "s",
-        new BsonDocument(
-          List(
-            new BsonElement("_hint", new BsonInt32(45)),
-            new BsonElement("size", new BsonInt32(34))
-          ).asJava
-        )
-      )
-    ).asJava
-  )
+  //Extra: List((_hint,ExtraFieldValue(co.blocke.scalajack.mongo.Bar,co.blocke.scalajack.typeadapter.StringTypeAdapterFactory$@40844aab)))
+  //Extra: List((_hint,ExtraFieldValue(co.blocke.scalajack.mongo.Bar,co.blocke.scalajack.typeadapter.StringTypeAdapterFactory$@2cc3ad05)))
 
-  val s = PersonCapture(new ObjectId(), "Fred", 52, Map(5 -> 1, 6 -> 2))
-  val m = sj.render(s)
-  m.asDocument.append("extra", new BsonString("hey"))
-  println(m)
-  val readIn = sj.read[PersonCapture](m)
-  println(readIn)
+  val f = Foo("Greg", Bar("hoo"))
+  val d = sj.render(f)
+  println(d)
+  println(sj.read[Foo](d))
 
 }

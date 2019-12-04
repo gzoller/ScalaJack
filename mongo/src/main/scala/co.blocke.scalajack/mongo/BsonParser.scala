@@ -15,23 +15,23 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
   type WIRE = BsonValue
 
   def expectString(nullOK: Boolean = true): String =
-    if (input.isString)
-      input.asString.getValue
-    else if (input.isNull)
+    if (input == null || input.isNull)
       null
+    else if (input.isString)
+      input.asString.getValue
     else
       throw new ScalaJackError(s"Expected string here, not '$input'")
 
   def expectList[K, TO](
       KtypeAdapter: TypeAdapter[K],
       builder:      mutable.Builder[K, TO]): TO =
-    if (input.isArray) {
+    if (input == null || input.isNull)
+      null.asInstanceOf[TO]
+    else if (input.isArray) {
       input.asArray.getValues.asScala
         .foreach(v => builder += KtypeAdapter.read(BsonParser(v, jackFlavor)))
       builder.result()
-    } else if (input.isNull)
-      null.asInstanceOf[TO]
-    else
+    } else
       throw new ScalaJackError(s"Expected list here, not '$input'")
 
   def expectTuple(
@@ -51,7 +51,9 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       keyTypeAdapter:   TypeAdapter[K],
       valueTypeAdapter: TypeAdapter[V],
       builder:          mutable.Builder[(K, V), TO]): TO =
-    if (input.isDocument) {
+    if (input == null || input.isNull)
+      null.asInstanceOf[TO]
+    else if (input.isDocument) {
       input.asDocument.entrySet.asScala.foreach { entry =>
         val mapKey = keyTypeAdapter.read(
           BsonParser(new BsonString(entry.getKey), jackFlavor)
@@ -62,16 +64,16 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
         builder += newElem
       }
       builder.result
-    } else if (input.isNull)
-      null.asInstanceOf[TO]
-    else
+    } else
       throw new ScalaJackError(s"Expected document (map) here, not '$input'")
 
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) =
-    if (input.isDocument) {
+    if (input == null || input.isNull)
+      null
+    else if (input.isDocument) {
       val args = classBase.argsTemplate.clone()
       val fieldBits = classBase.fieldBitsTemplate.clone()
       val captured =
@@ -123,9 +125,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
           )
       }
       (fieldBits, args, captured)
-    } else if (input.isNull)
-      null
-    else
+    } else
       throw new ScalaJackError(s"Expected document (object) here, not '$input'")
 
   def expectBoolean(): Boolean =
@@ -204,10 +204,10 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
 
   //--- Mongo Specific ---
   def expectObjectId(): ObjectId =
-    if (input.isObjectId)
-      input.asObjectId.getValue
-    else if (input.isNull)
+    if (input == null || input.isNull)
       null
+    else if (input.isObjectId)
+      input.asObjectId.getValue
     else
       throw new ScalaJackError(s"Expected ObjectId here, not '$input'")
 

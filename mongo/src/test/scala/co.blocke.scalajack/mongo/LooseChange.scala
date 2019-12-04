@@ -7,6 +7,7 @@ import org.scalatest.Matchers._
 import org.bson._
 import compat.BsonBuilder
 import JsonMatcher._
+import java.time.{ OffsetDateTime, ZonedDateTime }
 
 import scala.collection.JavaConverters._
 
@@ -273,7 +274,6 @@ class LooseChange extends AnyFunSpec {
         val out = null
         sjM.render[OneSub2](out).isNull should be(true)
 
-        //case class BagMap[Y](i: Int, items: Map[String, Y])
         val mapDoc = new BsonDocument(
           List(
             new BsonElement("i", new BsonInt32(5)),
@@ -284,7 +284,6 @@ class LooseChange extends AnyFunSpec {
 
         sjM.read[OneSub2](null) should be(null)
 
-        //case class Times( offset: OffsetDateTime, zoned: ZonedDateTime )
         val times = Times(null, null)
         val d = sjM.render(times)
         d.asDocument().toJson should be("""{"offset": null, "zoned": null}""")
@@ -297,26 +296,19 @@ class LooseChange extends AnyFunSpec {
         )
         sjM.read[Times](d2) should be(times)
       }
-      /*
-      it("Overrun tuple") {
-        //case class Tupple( t: (String,Int))
-        val d = new BsonDocument(
-          List(
-            new BsonElement(
-              "t",
-              new BsonArray(
-                List(
-                  new BsonString("foo"),
-                  new BsonInt32(5),
-                  new BsonBoolean(true)
-                ).asJava
-              )
-            )
-          ).asJava
+      it("Good time values") {
+        val t = Times(
+          OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+          ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]")
         )
-        the[ScalaJackError] thrownBy sjM.read[Tuple](d) should have message "Expected EndArray here but found Boolean"
+        val d = sjM.render(t)
+        val z = OffsetDateTime.parse("2007-12-03T10:15:30+01:00")
+        val t2 = sjM.read[Times](d)
+        // Extra gymnastics because the read/rendered OffsetDateTime, while the same actual instant, isn't the same value so comparison fails
+        t2.offset.atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) == t.offset
+          .atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) should be(true)
+        t2.zoned == t.zoned should be(true)
       }
-     */
       it("Bad expected values") {
         val d = new BsonDocument(
           List(
@@ -367,6 +359,21 @@ class LooseChange extends AnyFunSpec {
       it("Failure due to empty BsonBuilder") {
         the[ScalaJackError] thrownBy BsonBuilder()
           .result() should have message "No value set for internal mongo builder"
+      }
+      it("Parse only") {
+        val d = new BsonDocument(
+          List(
+            new BsonElement("num", new BsonInt32(3)),
+            new BsonElement(
+              "s",
+              new BsonDocument(
+                List(new BsonElement("size", new BsonInt32(34))).asJava
+              )
+            )
+          ).asJava
+        )
+        val p = sjM.parse(d)
+        p.isInstanceOf[BsonParser] should be(true)
       }
     }
 }

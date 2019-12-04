@@ -102,8 +102,8 @@ case class JsonWriter() extends Writer[String] {
         out += "\""
     }
 
-  def writeRawString(t: String, out: mutable.Builder[String, String]): Unit =
-    addString(t, out)
+  def writeRaw(t: Any, out: mutable.Builder[String, String]): Unit =
+    addString(t.asInstanceOf[String], out)
 
   def writeNull(out: mutable.Builder[String, String]): Unit =
     addString("null", out)

@@ -14,18 +14,10 @@ object OffsetDateTimeTypeAdapter extends TypeAdapter.=:=[OffsetDateTime] {
     parser.expectNumber() match {
       case null => null
       case dateTimeLong =>
-        Try(
-          OffsetDateTime.ofInstant(
-            Instant.ofEpochMilli(dateTimeLong.toLong),
-            ZoneOffset.UTC
-          )
-        ) match {
-            case Success(d) => d
-            case Failure(u) =>
-              throw new ScalaJackError(
-                s"""Failed to parse OffsetDateTime from input '$dateTimeLong'"""
-              )
-          }
+        OffsetDateTime.ofInstant(
+          Instant.ofEpochMilli(dateTimeLong.toLong),
+          ZoneOffset.UTC
+        )
     }
 
   def write[WIRE](

@@ -1,7 +1,10 @@
 package co.blocke.scalajack
 package model
 
+import co.blocke.scalajack.compat
 import typeadapter._
+
+import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 /**
@@ -127,4 +130,10 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   def withHints(h: (Type, String)*): JackFlavor[WIRE]
   def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[WIRE]
   def withTypeValueModifier(tm: HintValueModifier): JackFlavor[WIRE]
+
+  // Need WIRE-specific Builder instance.  By default this is StringBuilder.  Mongo will overwrite this.
+  def getBuilder: mutable.Builder[WIRE, WIRE] =
+    co.blocke.scalajack.compat
+      .StringBuilder()
+      .asInstanceOf[mutable.Builder[WIRE, WIRE]]
 }

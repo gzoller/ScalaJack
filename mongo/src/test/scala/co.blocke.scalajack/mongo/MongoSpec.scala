@@ -11,7 +11,6 @@ import scala.reflect.runtime.universe._
 import org.bson._
 import org.bson.types.ObjectId
 import org.scalatest.matchers.should._
-import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
 import org.scalatest.funspec.AnyFunSpec
 import scala.collection.JavaConverters._
 
@@ -35,7 +34,7 @@ class MongoSpec extends AnyFunSpec with Matchers {
     46
   )
 
-  def mongoScalaJack = ScalaJack(MongoFlavor())
+  def mongoScalaJack: JackFlavor[BsonValue] = ScalaJack(MongoFlavor())
 
   //def jsonScalaJack = ScalaJack(JsonFlavor()).withAdapters(MongoOffsetDateTimeTypeAdapter, BsonDateTimeTypeAdapter, BsonObjectIdTypeAdapter)
 

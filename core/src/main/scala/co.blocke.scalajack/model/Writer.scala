@@ -30,7 +30,7 @@ trait Writer[WIRE] {
       extras:             List[(String, ExtraFieldValue[_])]                = List.empty[(String, ExtraFieldValue[_])]
   ): Unit
   def writeString(t: String, out: mutable.Builder[WIRE, WIRE]): Unit
-  def writeRawString(t: String, out: mutable.Builder[WIRE, WIRE]): Unit // i.e. no quotes for JSON
+  def writeRaw(t: Any, out: mutable.Builder[WIRE, WIRE]): Unit // i.e. no quotes for JSON
   def writeTuple[T](
       t:        T,
       writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],

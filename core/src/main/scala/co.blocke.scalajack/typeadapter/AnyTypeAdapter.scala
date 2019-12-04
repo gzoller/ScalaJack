@@ -82,13 +82,10 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
       .typeAdapter(typeFromClassName(value.getClass.getName))
       .asInstanceOf[TypeAdapter[X]] match {
         case ta: CaseClassTypeAdapter[X] =>
-          val stringBuilder = co.blocke.scalajack.compat.StringBuilder()
-          ta.writeWithHint(
-            value,
-            writer,
-            stringBuilder.asInstanceOf[mutable.Builder[Any, WIRE]]
-          )
-          writer.writeRawString(stringBuilder.result(), out)
+          val builder =
+            jackFlavor.getBuilder.asInstanceOf[mutable.Builder[WIRE, WIRE]]
+          ta.writeWithHint(value, writer, builder)
+          writer.writeRaw(builder.result(), out)
         case ta => ta.write(value, writer, out)
       }
 

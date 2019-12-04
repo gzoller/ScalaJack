@@ -35,10 +35,8 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
     out += new BsonNull()
   def writeString(t: String, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     out += new BsonString(t)
-  def writeRawString(
-      t:   String,
-      out: mutable.Builder[BsonValue, BsonValue]): Unit =
-    out += new BsonString(t)
+  def writeRaw(t: Any, out: mutable.Builder[BsonValue, BsonValue]): Unit =
+    out += t.asInstanceOf[BsonValue]
 
   def writeArray[Elem](
       t:               Iterable[Elem],

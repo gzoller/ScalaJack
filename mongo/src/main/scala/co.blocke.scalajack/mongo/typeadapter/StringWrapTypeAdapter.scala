@@ -21,12 +21,13 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T])
       case value: ScalarTypeAdapter[_] =>
         val wrappedValueString = parser.expectString()
         if (wrappedValueString == null)
+          // $COVERAGE-OFF$Should be impossible, but left here as a safety.
           null.asInstanceOf[T]
+        // $COVERAGE-ON$
         else
           value.scalarType match {
             case t if t == typeOf[Byte] =>
               wrappedValueString.toByte.asInstanceOf[T]
-            case t if t == typeOf[Char] => wrappedValueString(0).asInstanceOf[T]
             case t if t == typeOf[Int] =>
               wrappedValueString.toInt.asInstanceOf[T]
             case t if t == typeOf[Long] =>
@@ -41,6 +42,8 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T])
               BigDecimal(wrappedValueString).asInstanceOf[T]
             case t if t == typeOf[Boolean] =>
               wrappedValueString.toBoolean.asInstanceOf[T]
+            case t if t == typeOf[Number] =>
+              wrappedValueString.toDouble.asInstanceOf[T]
             // $COVERAGE-OFF$Currently all scalars in ScalaJack are supported.  Here just in case...
             case _ =>
               throw new ScalaJackError(

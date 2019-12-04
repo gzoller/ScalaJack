@@ -3,9 +3,11 @@ package mongo
 
 import model._
 import typeadapter._
-import scala.language.experimental.macros
 
+import scala.language.experimental.macros
 import org.bson._
+
+import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 case class MongoFlavorFor[J](
@@ -170,4 +172,7 @@ case class MongoFlavor(
       .write(t, writer, sb)
     sb.result()
   }
+
+  override def getBuilder: mutable.Builder[BsonValue, BsonValue] =
+    co.blocke.scalajack.compat.BsonBuilder()
 }
