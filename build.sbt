@@ -1,18 +1,16 @@
 import sbt._
 import sbt.Keys._
-//import pl.project13.scala.sbt.JmhPlugin
-import com.typesafe.sbt.SbtScalariform._
-import scalariform.formatter.preferences._
 import scoverage.ScoverageKeys._
 
 def compile(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
 def test(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
 
 val mongo_java = "org.mongodb" % "mongodb-driver-sync" % "3.10.2"
-val scalatest = "org.scalatest" %% "scalatest" % "3.1.0-SNAP13"
+val scalatest = "org.scalatest" %% "scalatest" % "3.1.0-RC3"
 val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.26"
 val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
+val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 
 def scalacOptionsVersion(scalaVersion: String) = {
   val xver = CrossVersion.partialVersion(scalaVersion) match {
@@ -33,7 +31,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
   ) ++ xver
 }
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8", "2.13.0")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.8", "2.13.1")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
@@ -44,12 +42,6 @@ lazy val basicSettings = Seq(
   coverageMinimum := 92, // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum := true,
   parallelExecution in ThisBuild := false,
-  ScalariformKeys.preferences := ScalariformKeys.preferences.value
-    .setPreference(AlignArguments, true)
-    .setPreference(AlignParameters, true)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(DoubleIndentConstructorArguments, true),
-  //scalacOptions := scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq("-target:jvm-1.8", "-language:_"),
   testOptions in Test += Tests.Argument("-oDF")
@@ -65,7 +57,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo) //, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo) //), scalajack_benchmarks
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
@@ -78,13 +70,6 @@ val pubSettings = Seq(
   bintrayPackageLabels := Seq("scala", "json", "scalajack")
 )
 
-/* Doesn't work!
-lazy val core_macros = project.in(file("core_macros"))
-  .settings(libraryDependencies ++=
-    Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
-    Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value))
- */
-
 lazy val scalajack = project
   .in(file("core"))
   .settings(basicSettings ++ crossVersions: _*)
@@ -96,7 +81,7 @@ lazy val scalajack = project
         Seq("commons-codec" % "commons-codec" % "1.12") ++
         Seq(json4s) ++
         test(scalatest) ++
-        test("org.json4s" %% "json4s-native" % "3.6.6")
+        test(json4sNative)
   )
 
 lazy val scalajack_mongo = project
@@ -106,7 +91,8 @@ lazy val scalajack_mongo = project
   .settings(
     libraryDependencies ++=
       compile(mongo_java) ++
-        test(scalatest, slf4j_simple)
+        test(scalatest, slf4j_simple) ++
+        test(json4sNative)
   )
   .dependsOn(scalajack)
 
@@ -117,23 +103,26 @@ lazy val scalajack_dynamo = project
   .settings(
     libraryDependencies ++=
       compile(dynamo) ++
-        test(scalatest)
+        test(scalatest) ++
+        test(json4sNative)
   )
   .dependsOn(scalajack)
 
-/*
-lazy val scalajack_benchmarks = project.in(file("benchmarks"))
+lazy val scalajack_benchmarks = project
+  .in(file("benchmarks"))
   .enablePlugins(JmhPlugin)
   .settings(basicSettings: _*)
   .settings(pubSettings: _*)
-  .settings(libraryDependencies ++=
-    compile( mongo_scala ) ++
-      test( scalatest, slf4j_simple ) ++
-      List(
-        "com.typesafe.play" %% "play-json" % "2.6.7",
-        "org.json4s" %% "json4s-native" % "3.6.2",
-        "net.liftweb" %% "lift-json" % "3.3.0",
-        "io.spray" %% "spray-json" % "1.3.2"
-      )
-  ).dependsOn( scalajack )
- */
+  .settings(
+    libraryDependencies ++=
+      test(scalatest, slf4j_simple) ++
+        List(
+          "net.liftweb" %% "lift-json" % "3.4.0",
+          json4sNative,
+          "co.blocke" %% "scalajack" % "6.0.4",
+          "io.circe" %% "circe-core" % "0.12.3",
+          "io.circe" %% "circe-generic" % "0.12.3",
+          "io.circe" %% "circe-parser" % "0.12.3"
+        ) :+ json4s
+  )
+  .dependsOn(scalajack)

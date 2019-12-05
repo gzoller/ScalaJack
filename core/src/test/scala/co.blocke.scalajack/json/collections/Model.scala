@@ -10,4 +10,3 @@ trait Person { val name: String }
 case class SomeClass(name: String, age: Int) extends Person
 trait Thing[A, B] { val a: A; val b: B }
 case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
-

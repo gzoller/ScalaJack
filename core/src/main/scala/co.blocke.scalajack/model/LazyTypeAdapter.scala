@@ -1,11 +1,11 @@
 package co.blocke.scalajack
 package model
 
-import util.Path
+import scala.reflect.runtime.universe._
+import scala.collection.mutable
 
-import scala.collection.mutable.Builder
-
-case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T] {
+case class LazyTypeAdapter[T](taCache: TypeAdapterCache, tpe: Type)
+  extends TypeAdapter[T] {
 
   var resolvedTypeAdapter: TypeAdapter[T] = _
 
@@ -14,9 +14,12 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
 
     // $COVERAGE-OFF$Can't really test as this is triggered by race condition, if it can happen at all.
     if (typeAdapter == null) {
-      typeAdapter = context.typeAdapter(tpe).resolved.asInstanceOf[TypeAdapter[T]]
+      typeAdapter =
+        taCache.typeAdapter(tpe).resolved.asInstanceOf[TypeAdapter[T]]
       if (typeAdapter.isInstanceOf[LazyTypeAdapter[_]]) {
-        throw new IllegalStateException(s"Type adapter for $tpe is still being built")
+        throw new IllegalStateException(
+          s"Type adapter for $tpe is still being built"
+        )
       }
       resolvedTypeAdapter = typeAdapter
     }
@@ -25,6 +28,10 @@ case class LazyTypeAdapter[T](context: Context, tpe: Type) extends TypeAdapter[T
     typeAdapter
   }
 
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): T = resolved.read(path, reader)
-  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = resolved.write(t, writer, out, isMapKey)
+  def read(parser: Parser): T = resolved.read(parser)
+  def write[WIRE](
+      t:      T,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
+    resolved.write(t, writer, out)
 }

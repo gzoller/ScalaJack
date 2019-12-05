@@ -14,7 +14,7 @@ case class EitherHolder[L, R](either: Either[L, R])
 case class Chair(numLegs: Int)
 case class Table(numLegs: Int)
 
-class EitherSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
+class EitherSpec extends AnyFunSpec {
 
   val sj = ScalaJack()
 
@@ -83,7 +83,9 @@ class EitherSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("Handles traits - Right") {
         val inst = EitherHolder[String, Pet](Right(Dog("Fido", 13)))
         val js = sj.render(inst)
-        assertResult("""{"either":{"_hint":"co.blocke.scalajack.json.misc.Dog","name":"Fido","kind":13}}""")(js)
+        assertResult(
+          """{"either":{"_hint":"co.blocke.scalajack.json.misc.Dog","name":"Fido","kind":13}}"""
+        )(js)
         assertResult(inst) {
           sj.read[EitherHolder[String, Pet]](js)
         }
@@ -91,7 +93,9 @@ class EitherSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
       it("Handles traits - Left") {
         val inst = EitherHolder[Pet, String](Left(Dog("Fido", 13)))
         val js = sj.render(inst)
-        assertResult("""{"either":{"_hint":"co.blocke.scalajack.json.misc.Dog","name":"Fido","kind":13}}""")(js)
+        assertResult(
+          """{"either":{"_hint":"co.blocke.scalajack.json.misc.Dog","name":"Fido","kind":13}}"""
+        )(js)
         assertResult(inst) {
           sj.read[EitherHolder[Pet, String]](js)
         }
@@ -100,15 +104,19 @@ class EitherSpec extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
     describe("--- Negative Tests ---") {
       it("Same instance Left and Right") {
         val js = "\"foo\""
-        val msg = """Types String and String are not mutually exclusive""".stripMargin
-        the[IllegalArgumentException] thrownBy sj.read[Either[String, String]](js) should have message msg
+        val msg =
+          """Types String and String are not mutually exclusive""".stripMargin
+        the[IllegalArgumentException] thrownBy sj.read[Either[String, String]](
+          js
+        ) should have message msg
       }
       it("Neither value works") {
         val js = "25"
-        val msg = """[$]: Failed to read either side of Either
+        val msg = """Failed to read either side of Either
                     |25
-                    |-^""".stripMargin
-        the[co.blocke.scalajack.model.ReadMalformedError] thrownBy sj.read[Either[String, Boolean]](js) should have message msg
+                    |^""".stripMargin
+        the[ScalaJackError] thrownBy sj
+          .read[Either[String, Boolean]](js) should have message msg
       }
     }
   }

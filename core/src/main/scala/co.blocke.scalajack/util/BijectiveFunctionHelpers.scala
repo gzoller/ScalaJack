@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package util
 
+import scala.reflect.runtime.universe._
+
 object BijectiveFunctionHelpers {
 
   import BijectiveFunction.Implicits._
@@ -19,14 +21,16 @@ object BijectiveFunctionHelpers {
   }
 
   val typeToClassSymbol: BijectiveFunction[Type, ClassSymbol] = typeToSymbol andThen symbolToClassSymbol
-  val classSymbolToType: BijectiveFunction[ClassSymbol, Type] = typeToClassSymbol.inverse
+  val classSymbolToType: BijectiveFunction[ClassSymbol, Type] =
+    typeToClassSymbol.inverse
 
   val fullNameToClassSymbol: BijectiveFunction[String, ClassSymbol] = {
     val apply = (fullName: String) => staticClass(fullName)
     val unapply = (symbol: ClassSymbol) => symbol.fullName
     apply ⇄ unapply
   }
-  val classSymbolToFullName: BijectiveFunction[ClassSymbol, String] = fullNameToClassSymbol.inverse
+  val classSymbolToFullName: BijectiveFunction[ClassSymbol, String] =
+    fullNameToClassSymbol.inverse
 
   val fullNameToType: BijectiveFunction[String, Type] = fullNameToClassSymbol andThen classSymbolToType
   val typeToFullName: BijectiveFunction[Type, String] = fullNameToType.inverse

@@ -18,58 +18,31 @@ case class Master(
     age:      Int) {
   val foo: String = "yikes!"
 }
-case class Encapsulated(
-    foo: String,
-    bar: Boolean)
-case class View1(
-    name:  String,
-    big:   Long,
-    maybe: Option[String])
-case class View2(
-    name:     String,
-    flipflop: Boolean,
-    mymap:    Map[String, Int])
+case class Encapsulated(foo: String, bar: Boolean)
+case class View1(name: String, big: Long, maybe: Option[String])
+case class View2(name: String, flipflop: Boolean, mymap: Map[String, Int])
 
-case class Partial(
-    name:  String,
-    bogus: Int)
+case class Partial(name: String, bogus: Int)
 case class Empty(
     name:  String,
     stuff: List[String] // should be empty in test
 )
 
-case class NoMatch(
-    bogus: Boolean,
-    nah:   Int)
+case class NoMatch(bogus: Boolean, nah: Int)
 
 // --- For Self-Reference tests
 
-case class HooLoo(
-    name: String,
-    more: HooLoo)
+case class HooLoo(name: String, more: HooLoo)
 
-case class HooLoo2[T](
-    name: String,
-    x:    T,
-    more: HooLoo2[Int])
+case class HooLoo2[T](name: String, x: T, more: HooLoo2[Int])
 
-case class HooLoo3[T](
-    name: String,
-    x:    T,
-    more: HooLoo3[T])
+case class HooLoo3[T](name: String, x: T, more: HooLoo3[T])
 
-case class HooLoo4(
-    name: String,
-    more: Option[HooLoo4])
+case class HooLoo4(name: String, more: Option[HooLoo4])
 
-case class HooLoo5(
-    name: String,
-    more: List[HooLoo5])
+case class HooLoo5(name: String, more: List[HooLoo5])
 
-case class HooLoo6[T](
-    name: String,
-    x:    T,
-    more: List[HooLoo6[T]])
+case class HooLoo6[T](name: String, x: T, more: List[HooLoo6[T]])
 
 // --- Complex Relationships
 
@@ -81,8 +54,14 @@ object Kind extends Enumeration {
 }
 trait Pet { val name: String }
 case class Dog[A](name: String, kind: A) extends Pet
+case class PetHolder[T <: Pet](payload: T) {
+  type kind = T
+}
 
-case class HasDefaults(name: String, age: Option[Int], pet: Pet = Dog("Fido", true))
+case class HasDefaults(
+    name: String,
+    age:  Option[Int],
+    pet:  Pet         = Dog("Fido", true))
 case class SimpleHasDefaults(name: String, age: Int = 5)
 
 @Collection(name = "myDefaults")

@@ -16,6 +16,7 @@ case class ByteKey(m: Map[Byte, Int])
 case class BooleanKey(m: Map[Boolean, Int])
 case class CharKey(m: Map[Char, Int])
 case class UUIDKey(m: Map[UUID, Int])
+case class NumberKey(m: Map[java.lang.Number, Int])
 
 case class WithMap(m: Map[Map[Int, Int], Int])
 
@@ -23,7 +24,9 @@ class MapKeys extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack(MongoFlavor())
 
-  describe("------------------------\n:  Map Keys (MongoDB) :\n------------------------") {
+  describe(
+    "------------------------\n:  Map Keys (MongoDB) :\n------------------------"
+  ) {
     it("Renders wrapped non-String scalar Map keys") {
       val short: Short = 5
       val bte: Byte = 5
@@ -36,18 +39,34 @@ class MapKeys extends AnyFunSpec with Matchers {
       val g = ByteKey(Map(bte -> 2))
       val h = BooleanKey(Map(true -> 2))
       val i = CharKey(Map('c' -> 2))
+      val j = NumberKey(Map(5.asInstanceOf[Number] -> 2))
 
-      val docs = List(sj.render(a), sj.render(b), sj.render(c), sj.render(d), sj.render(e), sj.render(f), sj.render(g), sj.render(h), sj.render(i))
-      docs.map(_.asDocument.toJson) should be(List(
-        """{"m": {"5": 2}}""",
-        """{"m": {"5": 2}}""",
-        """{"m": {"5.3": 2}}""",
-        """{"m": {"5.0": 2}}""",
-        """{"m": {"5": 2}}""",
-        """{"m": {"5.1": 2}}""",
-        """{"m": {"5": 2}}""",
-        """{"m": {"true": 2}}""",
-        """{"m": {"c": 2}}"""))
+      val docs = List(
+        sj.render(a),
+        sj.render(b),
+        sj.render(c),
+        sj.render(d),
+        sj.render(e),
+        sj.render(f),
+        sj.render(g),
+        sj.render(h),
+        sj.render(i),
+        sj.render(j),
+      )
+      docs.map(_.asDocument.toJson) should be(
+        List(
+          """{"m": {"5": 2}}""",
+          """{"m": {"5": 2}}""",
+          """{"m": {"5.3": 2}}""",
+          """{"m": {"5.0": 2}}""",
+          """{"m": {"5": 2}}""",
+          """{"m": {"5.1": 2}}""",
+          """{"m": {"5": 2}}""",
+          """{"m": {"true": 2}}""",
+          """{"m": {"c": 2}}""",
+          """{"m": {"5": 2}}"""
+        )
+      )
 
       sj.read[IntKey](docs(0)) should be(a)
       sj.read[LongKey](docs(1)) should be(b)
@@ -58,15 +77,15 @@ class MapKeys extends AnyFunSpec with Matchers {
       sj.read[ByteKey](docs(6)) should be(g)
       sj.read[BooleanKey](docs(7)) should be(h)
       sj.read[CharKey](docs(8)) should be(i)
+      sj.read[NumberKey](docs(9)) should be(j)
     }
     it("Traps attempt to read non-scalar Map key") {
       val d = BsonDocument.parse("""{"m":{"bogus":5}}""")
-      the[model.ReadInvalidError] thrownBy sj.read[WithMap](d) should have message "[$.m.(map key)]: Only scalar values are supported as BSON Map keys"
+      the[ScalaJackError] thrownBy sj.read[WithMap](d) should have message "Only scalar values are supported as BSON Map keys"
     }
     it("Traps attempt to write non-scalar Map key") {
       val m = WithMap(Map(Map(1 -> 2) -> 3))
-      the[model.SJError] thrownBy sj.render(m) should have message "BSON type org.bson.BsonDocument is not supported as a Map key"
+      the[ScalaJackError] thrownBy sj.render(m) should have message "BSON type org.bson.BsonDocument is not supported as a Map key"
     }
   }
 }
-

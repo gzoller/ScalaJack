@@ -2,7 +2,17 @@ package co.blocke.scalajack
 package json.mapkeys
 
 import java.util.UUID
-import java.lang.{ Boolean => JBoolean, Byte => JByte, Character => JChar, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong, Number => JNumber, Short => JShort }
+import java.lang.{
+  Boolean => JBoolean,
+  Byte => JByte,
+  Character => JChar,
+  Double => JDouble,
+  Float => JFloat,
+  Integer => JInteger,
+  Long => JLong,
+  Number => JNumber,
+  Short => JShort
+}
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
 
@@ -68,7 +78,8 @@ trait Pet {
   val name: String
   val food: Food.Value
 }
-case class FishPet(name: String, food: Food.Value, waterTemp: Double) extends Pet
+case class FishPet(name: String, food: Food.Value, waterTemp: Double)
+  extends Pet
 case class DogPet(name: String, food: Food.Value, numLegs: Int) extends Pet
 case class CompoundPet(name: String, food: Food.Value, pet: Pet) extends Pet
 trait PetHolder {
@@ -84,17 +95,31 @@ case class NCKey(nc: Map[Int, Boolean], name: String)
 case class SampleNCKey(m: Map[NCKey, NCKey])
 
 // === Collections - Tuple
-case class SampleTuple(m: Map[Tuple3[Int, String, Char], Tuple2[String, Boolean]])
-case class SampleTupleList(m: Map[Tuple2[List[String], List[Int]], Tuple2[List[String], List[Int]]])
-case class SampleTupleMap(m: Map[Tuple2[Map[String, Int], Map[Int, String]], Tuple2[Map[String, Int], Map[Int, String]]])
-case class SampleTupleTuple(m: Map[Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]], Tuple2[Tuple2[String, Boolean], Tuple2[Int, Double]]])
-case class SampleTupleClass(m: Map[Tuple2[SampleChar, SampleInt], Tuple2[SampleChar, SampleInt]])
-case class SampleTupleTrait(m: Map[Tuple2[Pet, Pet], Tuple2[Pet, Pet]])
-case class SampleTupleAny(m: Map[Tuple2[Any, Any], Tuple2[Any, Any]])
-case class SampleTupleOptional(m: Map[Tuple2[Option[Int], Option[String]], Tuple2[Option[Boolean], Option[Food.Value]]])
-case class SampleTupleVC(m: Map[Tuple2[VCChar, VCChar], Tuple2[VCChar, VCChar]])
-case class SampleTupleComplex(m: Map[(ComplexClass, ComplexClass), (ComplexClass, ComplexClass)])
-case class SampleTuplePolyClass(m: Map[(PolyClass, PolyClass), (PolyClass, PolyClass)])
+case class SampleTuple(m: Map[(Int, String, Char), (String, Boolean)])
+case class SampleTupleList(
+    m: Map[(List[String], List[Int]), (List[String], List[Int])]
+)
+case class SampleTupleMap(
+    m: Map[(Map[String, Int], Map[Int, String]), (Map[String, Int], Map[Int, String])]
+)
+case class SampleTupleTuple(
+    m: Map[((String, Boolean), (Int, Double)), ((String, Boolean), (Int, Double))]
+)
+case class SampleTupleClass(
+    m: Map[(SampleChar, SampleInt), (SampleChar, SampleInt)]
+)
+case class SampleTupleTrait(m: Map[(Pet, Pet), (Pet, Pet)])
+case class SampleTupleAny(m: Map[(Any, Any), (Any, Any)])
+case class SampleTupleOptional(
+    m: Map[(Option[Int], Option[String]), (Option[Boolean], Option[Food.Value])]
+)
+case class SampleTupleVC(m: Map[(VCChar, VCChar), (VCChar, VCChar)])
+case class SampleTupleComplex(
+    m: Map[(ComplexClass, ComplexClass), (ComplexClass, ComplexClass)]
+)
+case class SampleTuplePolyClass(
+    m: Map[(PolyClass, PolyClass), (PolyClass, PolyClass)]
+)
 
 // === Value Classes
 case class VCBigDecimal(vc: BigDecimal) extends AnyVal
@@ -142,7 +167,10 @@ case class VCNested(vc: List[Map[String, String]]) extends AnyVal
 case class SampleVCNested(m: Map[VCNested, VCNested])
 
 case class VCParamClass[A, B](vc: AThing[A, B]) extends AnyVal
-case class SampleVCParamClass[A, B](m: Map[VCParamClass[A, B], VCParamClass[A, B]])
+case class SampleVCParamClass[A, B](
+    m: Map[VCParamClass[A, B], VCParamClass[A, B]]
+)
 case class VCParamTrait[A, B](vc: Thing[A, B]) extends AnyVal
-case class SampleVCParamTrait[A, B](m: Map[VCParamTrait[A, B], VCParamTrait[A, B]])
-
+case class SampleVCParamTrait[A, B](
+    m: Map[VCParamTrait[A, B], VCParamTrait[A, B]]
+)

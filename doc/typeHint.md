@@ -52,7 +52,7 @@ ScalaJack suppies two pre-built HintValueModifiers out of-the-box:  ClassNameHin
 The ClassNameHintModifier re-writes the class name itself.  You pass in 2 functions: the first accepts a simple hint string and your function produces a fully-qualified class name, and the second accepts the fully-qualified class name and produces the simple hint string.
 
 ```scala
-val prependHintMod = ClassNameHintModifier((hint: String) => "com.me." + hint, (cname: String) => cname.split('.').last)
+val prependHintMod = model.ClassNameHintModifier((hint: String) => "com.me." + hint, (cname: String) => cname.split('.').last)
 val sj = ScalaJack().withHintModifiers((typeOf[Foo], prependHintMod))
 val inst:Bar = Two(3, One(2))
 println(sj.render(inst))
@@ -64,7 +64,7 @@ We've first used ClassNameHintModifier to specify 2 functions:  value->classname
 The other provided HintValueModifier is StringMatchHintModifier:
 
 ```scala
-val strMatchHintMod = StringMatchHintModifier(Map("Yes" -> typeOf[One]))
+val strMatchHintMod = model.StringMatchHintModifier(Map("Yes" -> typeOf[One]))
 val sj = ScalaJack().withHintModifiers((typeOf[Foo], strMatchHintMod))
 val inst:Bar = Two(3, One(2))
 println(sj.render(inst))

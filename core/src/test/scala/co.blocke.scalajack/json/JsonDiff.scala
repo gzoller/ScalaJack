@@ -2,18 +2,26 @@ package co.blocke.scalajack
 package json
 
 import org.json4s.JsonAST.{ JNothing, JObject, JValue }
-import util.Path
 
 object JsonDiff {
 
-  def compare(path: Path, left: JValue, right: JValue, leftLabel: String = "left", rightLabel: String = "right"): Seq[JsonDiff] = {
+  def compare(
+      left:       JValue,
+      right:      JValue,
+      leftLabel:  String = "left",
+      rightLabel: String = "right"): Seq[JsonDiff] = {
     (left, right) match {
       case (JObject(leftFields), JObject(rightFields)) =>
-        val allFieldNames = (leftFields.map(_._1) ++ rightFields.map(_._1)).distinct
+        val allFieldNames =
+          (leftFields.map(_._1) ++ rightFields.map(_._1)).distinct
         allFieldNames.sorted flatMap { fieldName =>
-          val leftFieldValue = leftFields.collectFirst({ case (`fieldName`, fieldValue) => fieldValue }).getOrElse(JNothing)
-          val rightFieldValue = rightFields.collectFirst({ case (`fieldName`, fieldValue) => fieldValue }).getOrElse(JNothing)
-          compare(path \ fieldName, leftFieldValue, rightFieldValue, leftLabel, rightLabel)
+          val leftFieldValue = leftFields
+            .collectFirst({ case (`fieldName`, fieldValue) => fieldValue })
+            .getOrElse(JNothing)
+          val rightFieldValue = rightFields
+            .collectFirst({ case (`fieldName`, fieldValue) => fieldValue })
+            .getOrElse(JNothing)
+          compare(leftFieldValue, rightFieldValue, leftLabel, rightLabel)
         }
 
       // ---- Not used/needed at present, and I have questions about the correct behavior here.  Exactly how do you
@@ -30,14 +38,13 @@ object JsonDiff {
         if (left == right) {
           Seq.empty
         } else {
-          val outerPath = path
           val outerLeft = left
           val outerRight = right
           Seq(new JsonDiff {
-            override val path: Path = outerPath
             override val left: JValue = outerLeft
             override val right: JValue = outerRight
-            override def toString: String = s"JsonDiff($path, $leftLabel: $left, $rightLabel: $right)"
+            override def toString: String =
+              s"JsonDiff($leftLabel: $left, $rightLabel: $right)"
           })
         }
     }
@@ -46,8 +53,6 @@ object JsonDiff {
 }
 
 trait JsonDiff {
-  val path: Path
   val left: JValue
   val right: JValue
 }
-

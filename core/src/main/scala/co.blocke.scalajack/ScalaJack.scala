@@ -8,4 +8,6 @@ object ScalaJack {
   def apply[S](kind: JackFlavor[S]): JackFlavor[S] = kind
 }
 
-case class ViewException(msg: String) extends Exception(msg)
+class ScalaJackError(msg: String) extends Exception(msg)
+class ScalaJackValueError(val value: Any, cause: Throwable)
+  extends Exception(cause.getMessage)

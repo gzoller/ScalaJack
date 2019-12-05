@@ -1,9 +1,9 @@
 package co.blocke.scalajack
 package model
 
-import util.Path
+import scala.reflect.runtime.universe._
+import scala.collection.mutable
 import scala.reflect.ClassTag
-import scala.collection.mutable.Builder
 
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
@@ -24,39 +24,49 @@ import scala.collection.mutable.Builder
  */
 object TypeAdapter {
 
-  abstract class ===[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.===[X] with ScalarTypeAdapter[X] {
+  abstract class ===[X](implicit ttFactory: TypeTag[X])
+    extends TypeAdapterFactory.===[X]
+    with ScalarTypeAdapter[X] {
     val scalarType = ttFactory.tpe
-    override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
+    override def create(next: TypeAdapterFactory)(
+        implicit
+        tt: TypeTag[X]
+    ): TypeAdapter[X] = this
   }
 
-  abstract class =:=[X](implicit ttFactory: TypeTag[X]) extends TypeAdapterFactory.=:=[X] with ScalarTypeAdapter[X] {
+  abstract class =:=[X](implicit ttFactory: TypeTag[X])
+    extends TypeAdapterFactory.=:=[X]
+    with ScalarTypeAdapter[X] {
     val scalarType = ttFactory.tpe
-    override def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X] = this
+    override def create(next: TypeAdapterFactory)(
+        implicit
+        tt: TypeTag[X]
+    ): TypeAdapter[X] = this
   }
 
 }
 
 trait TypeAdapter[T] {
-
   self =>
 
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean = false): T
-  def write[WIRE](t: T, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit
-
   def defaultValue: Option[T] = None
-  def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
+  def resolved: TypeAdapter[T] =
+    this // Might be something else during Lazy construction
+  def read(parser: Parser): T
+  def write[WIRE](
+      t:      T,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit
 
   def as[U <: TypeAdapter[_]: ClassTag]: U = {
-    maybeAs[U].getOrElse(throw new RuntimeException(s"$self is not an instance of ${implicitly[ClassTag[U]].runtimeClass}"))
-  }
-
-  def maybeAs[U <: TypeAdapter[_]: ClassTag]: Option[U] = {
     val runtimeClass = implicitly[ClassTag[U]].runtimeClass
     try {
-      Some(runtimeClass.cast(self).asInstanceOf[U])
+      runtimeClass.cast(self).asInstanceOf[U]
     } catch {
       case _: ClassCastException =>
-        None
+        throw new RuntimeException(
+          s"$self is not an instance of ${implicitly[ClassTag[U]].runtimeClass}"
+        )
     }
   }
 }
