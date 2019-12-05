@@ -226,4 +226,24 @@ class Json4sSpec extends AnyFunSpec with Matchers {
       )
     }
   }
+  describe("forType functionality") {
+    it("Basic forType") {
+      val sj2 = sj.forType[Employee]
+      val five = Employee("Fred", "555-555-5555")
+      val dbo = sj2.render(five)
+      dbo.toString should be(
+        "JObject(List((name,JString(Fred)), (phone,JString(555-555-5555))))"
+      )
+      sj2.read(dbo) should equal(five)
+    }
+    it("forType after a forType") {
+      val sj2 = sj.forType[Employee].forType[SomeClass]
+      val six = SomeClass("Fred", 24)
+      val dbo = sj2.render(six)
+      dbo.toString should be(
+        "JObject(List((name,JString(Fred)), (age,JInt(24))))"
+      )
+      sj2.read(dbo) should equal(six)
+    }
+  }
 }
