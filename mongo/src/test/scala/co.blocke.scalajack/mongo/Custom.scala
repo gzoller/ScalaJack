@@ -2,12 +2,12 @@ package co.blocke.scalajack
 package mongo
 
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 import org.bson._
 import scala.reflect.runtime.universe.typeOf
 import scala.collection.JavaConverters._
 
-class Custom extends AnyFunSpec {
+class Custom extends AnyFunSpec with Matchers {
 
   describe(
     "----------------------------\n:  Custom Tests (MongoDB) :\n----------------------------"

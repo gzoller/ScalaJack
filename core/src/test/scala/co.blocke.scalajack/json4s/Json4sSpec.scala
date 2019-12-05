@@ -180,5 +180,36 @@ class Json4sSpec extends AnyFunSpec with Matchers {
         sj.read[Any](js4s)
       }
     }
+    it("Non-scalars can't be map keys for Json4s") {
+      val p = Player("Fred", 1)
+      val m = Map(p -> 3)
+      the[ScalaJackError] thrownBy sj.render(m) should have message "Json4s type org.json4s.JsonAST$JObject is not supported as a Map key"
+      val js4s = JObject(
+        List(
+          "name" -> JString("Harry"),
+          "age" -> JInt(43),
+          "foo" -> JBool(true),
+          "bar" -> JInt(3)
+        )
+      )
+      the[ScalaJackError] thrownBy sj.read[Map[Player, Int]](js4s) should have message "Only scalar values are supported as BSON Map keys"
+    }
+    it("Externalized type hints work (with type modifier!)") {
+      import model._
+      val scalaJack = ScalaJack(Json4sFlavor()).withTypeValueModifier(
+        ClassNameHintModifier(
+          (hint: String) => "co.blocke.scalajack.json4s." + hint,
+          (cname: String) => cname.split('.').last
+        )
+      )
+      val value: Envelope[Body] = Envelope("DEF", FancyBody("BOO"))
+      val d = scalaJack.render[Envelope[Body]](value)
+      assertResult(
+        "JObject(List((Giraffe,JString(Body)), (id,JString(DEF)), (body,JObject(List((_hint,JString(co.blocke.scalajack.json4s.FancyBody)), (message,JString(BOO)))))))"
+      ) {
+          d.toString
+        }
+      scalaJack.read[Envelope[Body]](d) should be(value)
+    }
   }
 }

@@ -24,8 +24,7 @@ case class StringWrapTypeAdapter[T](wrappedTypeAdapter: TypeAdapter[T])
         value.scalarType match {
           case t if t == typeOf[Byte] =>
             wrappedValueString.toByte.asInstanceOf[T]
-          case t if t == typeOf[Char] => wrappedValueString(0).asInstanceOf[T]
-          case t if t == typeOf[Int]  => wrappedValueString.toInt.asInstanceOf[T]
+          case t if t == typeOf[Int] => wrappedValueString.toInt.asInstanceOf[T]
           case t if t == typeOf[Long] =>
             wrappedValueString.toLong.asInstanceOf[T]
           case t if t == typeOf[Double] =>

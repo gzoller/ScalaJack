@@ -134,7 +134,7 @@ case class Json4sFlavor(
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[JValue] =
-    this.copy(permissivesOk = true)
+    throw new ScalaJackError("Permissive primitives not supported for Json4s")
   def enumsAsInts(): JackFlavor[JValue] = this.copy(enumsAsInt = true)
   def parseOrElse(poe: (Type, Type)*): JackFlavor[JValue] =
     this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
