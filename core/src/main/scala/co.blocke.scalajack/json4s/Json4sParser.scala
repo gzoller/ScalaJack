@@ -23,7 +23,9 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
       KtypeAdapter: TypeAdapter[K],
       builder:      mutable.Builder[K, TO]): TO =
     input match {
+      // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       case null | JNull => null.asInstanceOf[TO]
+      // $COVERAGE-ON$
       case JArray(arr) =>
         arr.foreach(
           a => builder += KtypeAdapter.read(subParser(a)).asInstanceOf[K]
@@ -37,7 +39,9 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
       readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
   ): List[Any] =
     input match {
+      // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       case null | JNull => null
+      // $COVERAGE-ON$
       case JArray(arr) =>
         val together = readFns.zip(arr)
         together.map {
@@ -52,7 +56,9 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
       valueTypeAdapter: TypeAdapter[V],
       builder:          mutable.Builder[(K, V), TO]): TO =
     input match {
+      // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       case null | JNull => null.asInstanceOf[TO]
+      // $COVERAGE-ON$
       case JObject(obj) =>
         obj.foreach {
           case (key, objVal) =>

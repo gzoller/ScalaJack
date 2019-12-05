@@ -211,5 +211,19 @@ class Json4sSpec extends AnyFunSpec with Matchers {
         }
       scalaJack.read[Envelope[Body]](d) should be(value)
     }
+    it("Source as string") {
+      val js4s = JObject(
+        List(
+          "name" -> JString("Harry"),
+          "age" -> JInt(43),
+          "foo" -> JBool(true),
+          "bar" -> JInt(3)
+        )
+      )
+      val p = sj.parse(js4s)
+      p.sourceAsString should be(
+        "JObject(List((name,JString(Harry)), (age,JInt(43)), (foo,JBool(true)), (bar,JInt(3))))"
+      )
+    }
   }
 }

@@ -76,8 +76,6 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
         }
     }.toList
 
-    println("Factories: " + parseOrElseFactories)
-
     val permissives =
       if (permissivesOk)
         List(
