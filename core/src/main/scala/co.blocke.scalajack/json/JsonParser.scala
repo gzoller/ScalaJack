@@ -119,7 +119,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         null
       } else
         throw new ScalaJackError(showError("Expected a Number here"))
-    } else if (i == max || " ,}]".contains(jsChars(i)))
+    } else if (i == max || "\t\n ,}]".contains(jsChars(i)))
       js.substring(mark, i)
     else
       throw new ScalaJackError(showError("Expected a Number here"))

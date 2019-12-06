@@ -60,12 +60,12 @@ class StringWrapTypeAdapter[T](val wrappedTypeAdapter: TypeAdapter[T])
     }
   }
 
-  def write[BsonValue](
+  def write[WIRE](
       t:      T,
-      writer: Writer[BsonValue],
-      out:    mutable.Builder[BsonValue, BsonValue]): Unit = {
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit = {
     val keyValBuilder =
-      BsonBuilder().asInstanceOf[mutable.Builder[Any, BsonValue]]
+      BsonBuilder().asInstanceOf[mutable.Builder[Any, WIRE]]
     wrappedTypeAdapter.write(t, writer, keyValBuilder)
     val result = keyValBuilder.result() match {
       case r: BsonBoolean    => r.asBoolean().getValue.toString

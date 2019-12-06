@@ -12,6 +12,7 @@ val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
 val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 
+/*
 def scalacOptionsVersion(scalaVersion: String) = {
   val xver = CrossVersion.partialVersion(scalaVersion) match {
     case Some((2, scalaMajor)) if scalaMajor == 11 =>
@@ -30,20 +31,32 @@ def scalacOptionsVersion(scalaVersion: String) = {
     "-unchecked"
   ) ++ xver
 }
+ */
 
-lazy val crossVersions = crossScalaVersions := Seq("2.12.8", "2.13.1")
+lazy val crossVersions = crossScalaVersions := Seq("2.12.10", "2.13.1")
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
   organization := "co.blocke",
   startYear := Some(2015),
   publishArtifact in (Compile, packageDoc) := false, // disable scaladoc due to bug handling annotations
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.12.10",
   coverageMinimum := 92, // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum := true,
   parallelExecution in ThisBuild := false,
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  scalacOptions ++= Seq("-target:jvm-1.8", "-language:_"),
+//  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+//  scalacOptions ++= Seq("-target:jvm-1.8", "-language:_"),
+  scalacOptions ++= Seq(
+    "-feature",
+    "-deprecation",
+    "-Xlint",
+    "-encoding",
+    "UTF8",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-language:existentials",
+    "-unchecked"
+  ),
   testOptions in Test += Tests.Argument("-oDF")
 )
 
@@ -57,7 +70,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo) //), scalajack_benchmarks
+  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 
