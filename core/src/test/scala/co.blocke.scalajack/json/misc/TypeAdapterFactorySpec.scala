@@ -3,7 +3,7 @@ package json.misc
 
 import model._
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 import scala.reflect.runtime.universe._
 
 import scala.collection.mutable
@@ -104,7 +104,7 @@ class TA6[T]() extends EmptyTypeAdapter[T]
 class TA7[T]() extends EmptyTypeAdapter[T]
 class TAx[T]() extends EmptyTypeAdapter[T]
 
-class TypeAdapterFactorySpec extends AnyFunSpec {
+class TypeAdapterFactorySpec extends AnyFunSpec with Matchers {
   type Phone = String
 
   val context: TypeAdapterCache = TypeAdapterCache(ScalaJack())

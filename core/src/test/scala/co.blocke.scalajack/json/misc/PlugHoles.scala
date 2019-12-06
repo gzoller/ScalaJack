@@ -4,7 +4,7 @@ package json.misc
 import co.blocke.scalajack.compat.StringBuilder
 
 import scala.reflect.runtime.universe._
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import util.TypeTags
 

@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package model
 
 import scala.reflect.runtime.universe._
-import scala.util.{ Try, Success, Failure }
+import scala.util.Try
 
 /**
  * This is a convenience to make a more Scala-like filtering experience, i.e. use extractors so filters

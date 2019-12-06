@@ -2,9 +2,10 @@ package co.blocke.scalajack
 package json
 package misc
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import scala.util.Try
+import scala.language.postfixOps
 
 case class Foo(name: String, stuff: List[String])
 

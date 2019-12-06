@@ -33,10 +33,13 @@ DynamoDB helpers are available here:
 
     libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.1.0")
 
-##NOTICE: It is **strongly** recommend to use either Scala 2.12.10 or 2.13.1 on JDK 13.0.1 or later!
-Scala has done a lot of very recent work to improve compatibility to later JDKs and it's been a bumpy road.  The combination above has been tested.  Earlier
-versions are known to have compabitility issues.  If you use earlier Scala versions or insist on older JVM versions then use JDK 1.8.  Other combinations 
-are not tested as 'working' for ScalaJack.
+>###Scala 2.12.10 or 2.13.1 on JDK 13.0.1 or later is strongly recommended!
+>Scala has done a lot of very recent work to improve compatibility with later JDKs and it's been a bumpy road.  The combination above has been tested.  
+Combinations of earlier versions are known to have compabitility problems.  If you must use earlier Scala or JVM versions then use JDK 1.8.
+
+>###Deprecation of 2.12.x
+>This version of ScalaJack will be the last that supports the 2.12 versions of Scala.  Going forward only 2.13 will be suppoted.  The libraries between 2.12
+and 2.13 are becoming divergent so maintaining them both will be unwieldy.
 
 ScalaJack is hosted on Bintray/JCenter.  If you're using pre-v0.13.9 of SBT you may need to enable the bintray resolver in your build.sbt with
 

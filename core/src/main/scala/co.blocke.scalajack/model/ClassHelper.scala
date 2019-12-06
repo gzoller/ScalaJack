@@ -74,9 +74,9 @@ object ClassHelper {
     }
 
     // For Plain Classes only
-    def valueSet(instance: Owner, value: Value)(implicit
-        tt: TypeTag[Owner],
-                                                ct: ClassTag[Owner]): Unit =
+    def valueSet(
+        instance: Owner,
+        value:    Value)(implicit ct: ClassTag[Owner]): Unit =
       valueSetterMethodSymbol match {
         case Some(vsms) =>
           scala.reflect.runtime.currentMirror

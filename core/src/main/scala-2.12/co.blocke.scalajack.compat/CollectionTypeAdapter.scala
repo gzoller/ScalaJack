@@ -134,7 +134,7 @@ case class CollectionTypeAdapterFactory(
       method:            MethodSymbol,
       keyTypeAdapter:    TypeAdapter[Key],
       valueTypeAdapter:  TypeAdapter[Value]
-  )(implicit keyTT: TypeTag[Key]) = {
+  ) = {
     val builderFactory = reflect(companionInstance).reflectMethod(method)
     // Note: We include Any here because Any *could* be an Option, so we must include it as a possibility
     val keyIsOptionalOrAny =

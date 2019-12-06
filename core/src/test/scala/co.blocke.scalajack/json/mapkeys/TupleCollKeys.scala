@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.mapkeys
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import scala.reflect.runtime.universe.typeOf
 import java.util.UUID

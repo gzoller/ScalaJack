@@ -1,9 +1,8 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 
 case class Parrot(color: String)
 
@@ -14,7 +13,7 @@ case class EitherHolder[L, R](either: Either[L, R])
 case class Chair(numLegs: Int)
 case class Table(numLegs: Int)
 
-class EitherSpec extends AnyFunSpec {
+class EitherSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

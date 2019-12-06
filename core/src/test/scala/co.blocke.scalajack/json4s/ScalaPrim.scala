@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json4s
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import scala.math.BigDecimal
 import org.json4s.JsonDSL._

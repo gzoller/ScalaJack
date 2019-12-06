@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
 import org.scalatest.funspec.AnyFunSpec
 import model._
 import util.TypeTags
@@ -34,7 +33,7 @@ case class BigEnvelope[T <: Body, H <: Hobby, X](
 
 case class Bigger(foo: Int, env: Envelope[FancyBody])
 
-class TypeMembers extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
+class TypeMembers extends AnyFunSpec {
 
   val sj = ScalaJack()
   val sj2 = ScalaJack().parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))

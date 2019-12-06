@@ -55,6 +55,7 @@ lazy val basicSettings = Seq(
     "-language:higherKinds",
     "-language:implicitConversions",
     "-language:existentials",
+    "-language:reflectiveCalls",
     "-unchecked"
   ),
   testOptions in Test += Tests.Argument("-oDF")
@@ -70,7 +71,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo, scalajack_benchmarks)
+  .aggregate(scalajack, scalajack_mongo, scalajack_dynamo) //, scalajack_benchmarks)
 // For gpg might need this too:
 //publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 

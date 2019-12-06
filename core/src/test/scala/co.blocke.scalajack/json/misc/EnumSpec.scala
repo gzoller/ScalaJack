@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 //---------- Standard Scala Enums

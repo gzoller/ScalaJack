@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package model
 
 import scala.reflect.runtime.universe.Type
-import util.BijectiveFunction
 import util.BijectiveFunctionHelpers._
 
 import scala.reflect.runtime.universe
