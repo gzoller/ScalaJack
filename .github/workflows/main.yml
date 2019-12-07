@@ -1,6 +1,6 @@
 name: Gregs Scala CI
 
-on: [push]
+on: ["push", "pull_request"]
 
 jobs:
   build:
@@ -20,3 +20,12 @@ jobs:
       uses: lokkju/github-action-sbt@master
       with:
         commands: '+ test'
+    - name: Coverage report
+      id: sbt
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: clean coverage test coverageReport coverageAggregate
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.COVERALLS_SCALAJACK }}

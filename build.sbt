@@ -12,27 +12,6 @@ val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
 val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 
-/*
-def scalacOptionsVersion(scalaVersion: String) = {
-  val xver = CrossVersion.partialVersion(scalaVersion) match {
-    case Some((2, scalaMajor)) if scalaMajor == 11 =>
-      Seq("-language:existentials")
-    case _ => Seq("-language:_")
-  }
-
-  Seq(
-    "-feature",
-    "-deprecation",
-    "-Xlint",
-    "-encoding",
-    "UTF8",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-unchecked"
-  ) ++ xver
-}
- */
-
 lazy val crossVersions = crossScalaVersions := Seq("2.12.10", "2.13.1")
 
 lazy val basicSettings = Seq(
