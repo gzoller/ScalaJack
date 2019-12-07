@@ -19,4 +19,4 @@ jobs:
       id: sbt
       uses: lokkju/github-action-sbt@master
       with:
-        commands: test
+        commands: '+ test'
