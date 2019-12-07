@@ -224,7 +224,7 @@ trait JavaShortTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Short(parser.expectNumber())
+      java.lang.Short.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Short,
       writer: Writer[WIRE],
