@@ -15,14 +15,14 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: '13.0.1'
-    - name: Run tests and generate coverage report
+    - name: Run tests
       uses: lokkju/github-action-sbt@master
       with:
         commands: '+ test'
-    - name: Run tests and generate coverage report
+    - name: Generate coverage report
       uses: lokkju/github-action-sbt@master
       with:
-        commands: clean coverage test coverageReport coverageAggregate
+        commands: 'clean coverage test coverageReport coverageAggregate'
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
