@@ -18,7 +18,11 @@ jobs:
     - name: Run tests and generate coverage report
       uses: lokkju/github-action-sbt@master
       with:
-        commands: '+ test' clean coverage test coverageReport coverageAggregate
+        commands: '+ test'
+    - name: Run tests and generate coverage report
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: clean coverage test coverageReport coverageAggregate
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
