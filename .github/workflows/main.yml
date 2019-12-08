@@ -20,8 +20,9 @@ jobs:
       with:
         commands: '+ test'
     - name: Generate coverage report
-      uses: agemooij/github-actions-sbt@masterr
-      args: 'clean coverage test coverageReport coverageAggregate'
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: clean coverage test coverageReport coverageAggregate
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
