@@ -2,26 +2,24 @@ package co.blocke.scalajack
 package benchmarks
 
 import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
-import scala.concurrent.Future
-//import scala.reflect.runtime.universe.{ Type, typeOf }
-//import co.blocke.scalajackx.hybrid._
-//
-//import scala.util.Try
 
-// Partial Parse classes
-trait Comm
-case class Event(happening: Int) extends Comm
-trait Command extends Comm { val goDo: String }
-case class SimpleCommand(goDo: String, public: Boolean) extends Command
-case class CommMessage[T <: Comm](id: Int, payload: T) {
-  type kind = T
-}
-case class CommWrapper(kind: Type)
-//---------
+import scala.reflect.runtime.universe._
+import org.openjdk.jmh.infra.Blackhole
+import model._
+import io.circe._
+import io.circe.generic.auto._
+import io.circe.parser._
+import io.circe.syntax._
+import net.liftweb.json.DefaultFormats
+import org.json4s.DefaultFormats
 
 @State(Scope.Benchmark)
 class BaseBenchmarksState {
-  val jsonString = """[{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"},
+
+  val dataString = "\"FooBarBlather\""
+
+  val people: String =
+    """[{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"},
                      {"id":2,"first_name":"Jason","last_name":"Peters","email":"jpeters1@tinypic.com","gender":"Male","ip_address":"152.156.120.235"},
                      {"id":3,"first_name":"Beverly","last_name":"Stevens","email":"bstevens2@ustream.tv","gender":"Female","ip_address":"169.212.150.35"},
                      {"id":4,"first_name":"Theresa","last_name":"Dixon","email":"tdixon3@hp.com","gender":"Female","ip_address":"137.214.192.32"},
@@ -72,241 +70,248 @@ class BaseBenchmarksState {
                      {"id":49,"first_name":"Sandra","last_name":"Murray","email":"smurray1c@princeton.edu","gender":"Female","ip_address":"211.149.35.132"},
                      {"id":50,"first_name":"Alice","last_name":"Davis","email":"adavis1d@ow.ly","gender":"Female","ip_address":"4.124.35.181"}]""".stripMargin
 
-  val jsonPerson = """{"id":1,"first_name":"Kenneth","last_name":"Watson","email":"kwatson0@goo.ne.jp","gender":"Male","ip_address":"50.27.55.219"}"""
+  val usStates: String =
+    """["Alabama","Alaska","American Samoa","Arizona","Arkansas",
+      |    "California","Colorado","Connecticut",
+      |    "Delaware","District Of Columbia",
+      |    "Federated States Of Micronesia","Florida",
+      |    "Georgia","Guam",
+      |    "Hawaii",
+      |    "Idaho","Illinois","Indiana","Iowa",
+      |    "Kansas","Kentucky",
+      |    "Louisiana",
+      |    "Maine","Marshall Islands","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana",
+      |    "Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Northern Mariana Islands",
+      |    "Ohio","Oklahoma","Oregon",
+      |    "Palau","Pennsylvania","Puerto Rico",
+      |    "Rhode Island","South Carolina","South Dakota",
+      |    "Tennessee","Texas",
+      |    "Utah",
+      |    "Vermont","Virgin Islands","Virginia",
+      |    "Washington","West Virginia","Wisconsin","Wyoming"
+      |]""".stripMargin
 
-  val jsList = """[[123,456,789],[394,2983,393],[111,222,333]]"""
+  val usStatesMap: String =
+    """{
+      |    "AL": "Alabama",
+      |    "AK": "Alaska",
+      |    "AS": "American Samoa",
+      |    "AZ": "Arizona",
+      |    "AR": "Arkansas",
+      |    "CA": "California",
+      |    "CO": "Colorado",
+      |    "CT": "Connecticut",
+      |    "DE": "Delaware",
+      |    "DC": "District Of Columbia",
+      |    "FM": "Federated States Of Micronesia",
+      |    "FL": "Florida",
+      |    "GA": "Georgia",
+      |    "GU": "Guam",
+      |    "HI": "Hawaii",
+      |    "ID": "Idaho",
+      |    "IL": "Illinois",
+      |    "IN": "Indiana",
+      |    "IA": "Iowa",
+      |    "KS": "Kansas",
+      |    "KY": "Kentucky",
+      |    "LA": "Louisiana",
+      |    "ME": "Maine",
+      |    "MH": "Marshall Islands",
+      |    "MD": "Maryland",
+      |    "MA": "Massachusetts",
+      |    "MI": "Michigan",
+      |    "MN": "Minnesota",
+      |    "MS": "Mississippi",
+      |    "MO": "Missouri",
+      |    "MT": "Montana",
+      |    "NE": "Nebraska",
+      |    "NV": "Nevada",
+      |    "NH": "New Hampshire",
+      |    "NJ": "New Jersey",
+      |    "NM": "New Mexico",
+      |    "NY": "New York",
+      |    "NC": "North Carolina",
+      |    "ND": "North Dakota",
+      |    "MP": "Northern Mariana Islands",
+      |    "OH": "Ohio",
+      |    "OK": "Oklahoma",
+      |    "OR": "Oregon",
+      |    "PW": "Palau",
+      |    "PA": "Pennsylvania",
+      |    "PR": "Puerto Rico",
+      |    "RI": "Rhode Island",
+      |    "SC": "South Carolina",
+      |    "SD": "South Dakota",
+      |    "TN": "Tennessee",
+      |    "TX": "Texas",
+      |    "UT": "Utah",
+      |    "VT": "Vermont",
+      |    "VI": "Virgin Islands",
+      |    "VA": "Virginia",
+      |    "WA": "Washington",
+      |    "WV": "West Virginia",
+      |    "WI": "Wisconsin",
+      |    "WY": "Wyoming"
+      |}""".stripMargin
 
   //--------------- Series 5
   val series5Tokenizer = new co.blocke.series5.json.Tokenizer()
   val sj5 = co.blocke.series5.ScalaJack()
 
-  //--------------- Series 6
-  val series6Tokenizer = co.blocke.scalajack.json.JsonTokenizer()
-  val sj6 = co.blocke.scalajack.ScalaJack()
-  //  val sj6X = sj6.forType[Double]
-  //  val sj6X = sj6.forType[List[Person]] //[List[List[Int]]]
+  //--------------- Series 6.0
+  val series6Tokenizer = co.blocke.series60.json.JsonTokenizer()
+  val sj6 = co.blocke.series60.ScalaJack()
 
-  //--------------- Scan Race
-  val raceString = """[12345,54321,-4768,672,-983456,2547]"""
-  val sj2 = co.blocke.scalajack2.ScalaJack()
+  //--------------- Series 6.1
+  val sj61 = co.blocke.scalajack.ScalaJack()
 
-  /*
-  //--------------- Series X ScalaJack Setup
-  val h_intTypeAdapter = IntTypeAdapter(IntJsonSerializer())
-  val h_arrayTypeAdapter = ListTypeAdapter[Int](ArrayJsonSerializer(h_intTypeAdapter))
-  val h_arrayTypeAdapter2 = ListTypeAdapter[List[Int]](ArrayJsonSerializer(h_arrayTypeAdapter))
+  //--------------- ScalaJack 6.1 Fast
+  val sj61fast: JackFlavorFor[JSON, List[Person]] = sj61.forType[List[Person]]
 
-  //--------------- Series 6 ScalaJack Setup
-  val series6ScalaJack = ScalaJack()
-
-  //--------------- Series 6.X ScalaJack Setup
-  val series6X = series6ScalaJack.forType[Person] // [List[List[Int]]]
-
-  //--------------- Series 5 ScalaJack Setup
-  val humanHintModSeries5 = new co.blocke.series5.HintModifier {
-    def apply(rawHint: String) = rawHint match {
-      case "Male"   => typeOf[Male]
-      case "Female" => typeOf[Female]
-    }
-    def unapply(hintFieldType: Type) = hintFieldType match {
-      case t if (t == typeOf[Male])   => "Male"
-      case t if (t == typeOf[Female]) => "Female"
-    }
-  }
-
-  implicit val personFormat = {
-    import spray.json._
-    import DefaultJsonProtocol._
-    jsonFormat6(Person)
-  }
-
-  val series5ScalaJack = co.blocke.series5.ScalaJack()
-    //    .withAdapters(PersonTypeAdapter_Series5)
-    .withHints((typeOf[Human] -> "gender"))
-    .withHintModifiers((typeOf[Human] -> humanHintModSeries5))
-
-  //--------------- Series 6.X ScalaJack Setup
-  val series5XScalaJack = series5ScalaJack.asInstanceOf[co.blocke.series5.json.JsonFlavor].forType[Person]
-
-  //--------------- Series 4 ScalaJack Setup
-  val series4vc = co.blocke.series4.VisitorContext(
-    hintMap         = Map("co.blocke.scalajack.benchmarks.Human" -> "gender"),
-    hintValueRead   = Map("co.blocke.scalajack.benchmarks.Human" -> {
-      case "Male"   => new String("co.blocke.scalajack.benchmarks.Male")
-      case "Female" => new String("co.blocke.scalajack.benchmarks.Female")
-    }),
-    hintValueRender = Map("co.blocke.scalajack.benchmarks.Human" -> {
-      case "co.blocke.scalajack.benchmarks.Male"   => new String("Male")
-      case "co.blocke.scalajack.benchmarks.Female" => new String("Female")
-    })
-  )
-  val series4ScalaJack = co.blocke.series4.ScalaJack[String]()
-  */
-
-  val mixedMsgs = (1 to 1000).map(i => if (i % 2 == 0) sj6.render(CommMessage(1, SimpleCommand("doit", true).asInstanceOf[Command])) else sj6.render(CommMessage(2, Event(99))))
-  val filter = sj6.filter[CommMessage[Command]]("kind")
-  val cmdType = typeOf[Command]
-  val evtType = typeOf[Event]
+  // For Circe
+  val jawn = new io.circe.jawn.JawnParser()
 
 }
 
 @State(Scope.Thread)
 class BaseBenchmarks {
 
-  /*ZZZ
-  @Benchmark
-  def tokenizeSeries5(state: BaseBenchmarksState): Any = {
-    state.series5Tokenizer.tokenize(state.jsonString.toCharArray, 0, state.jsonString.length)
-  }
-
-  @Benchmark
-  def tokenizeSeries6(state: BaseBenchmarksState): Any = {
-    state.series6Tokenizer.tokenize(state.jsonString)
-  }
-  */
-
-  /* SIMPLE
-  @Benchmark
-  def simpleSeries5(state: BaseBenchmarksState): Any = {
-    state.sj5.read[Double]("123.456")
-  }
-
-  @Benchmark
-  def simpleSeries6(state: BaseBenchmarksState): Any = {
-    state.sj6.read[Double]("123.456")
-  }
-  */
-
-  /* Medium
-  @Benchmark
-  def readSeries5(state: BaseBenchmarksState): Any = {
-    state.sj5.read[List[List[Int]]](state.jsList)
-  }
-
-  @Benchmark
-  def readSeries6(state: BaseBenchmarksState): Any = {
-    state.sj6.read[List[List[Int]]](state.jsList)
-  }
-  */
-
+  //=======  List of String
   /*
   @Benchmark
-  def readSeries6X(state: BaseBenchmarksState): Any = {
-    state.sj6X.fastRead(state.jsList)
-  }
-  */
-
-  /* -- Main Benchmark series (these 2) --
-  @Benchmark
-  def readSeries5(state: BaseBenchmarksState): Any = {
-    state.sj5.read[List[Person]](state.jsonString)
+  def read5(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj5.read[List[String]](state.usStates))
   }
 
   @Benchmark
-  def readSeries6(state: BaseBenchmarksState): Any = {
-    state.sj6.read[List[Person]](state.jsonString)
+  def read6(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj6.read[List[String]](state.usStates))
   }
-  */
 
+  @Benchmark
+  def readCirce(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(decode[List[String]](state.usStates))
+  }
+
+  @Benchmark
+  def readSinbad(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61.read[List[String]](state.usStates))
+  }
+
+  @Benchmark
+  def readSinbadFast(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61.fastRead(state.usStates, state.sinTA))
+  }
+   */
+
+  //=======  Map of String
   /*
   @Benchmark
-  def partialParse(state: BaseBenchmarksState): Any = {
-    state.mixedMsgs.foreach { js =>
-      val p = state.sj6.parse(js)
-      if (state.filter.isDefinedAt(p))
-        state.filter(p)
-    }
+  def read5(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj5.read[Map[String, String]](state.usStatesMap))
   }
 
   @Benchmark
-  def parseWrapper(state: BaseBenchmarksState): Any = {
-    state.mixedMsgs.foreach { js =>
-      val t = state.sj6.read[CommWrapper](js).kind
-      t match {
-        case _ if t == state.cmdType =>
-        case _ if t == state.evtType =>
-        case _                       =>
+  def read6(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj6.read[Map[String, String]](state.usStatesMap))
+  }
+
+  @Benchmark
+  def readCirce(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(decode[Map[String, String]](state.usStatesMap))
+  }
+
+  @Benchmark
+  def readSinbad(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61.read[Map[String, String]](state.usStatesMap))
+  }
+
+  @Benchmark
+  def readSinbadFast(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61.fastRead(state.usStatesMap, state.sinTAMap))
+  }
+   */
+
+  //=======  List of Object
+  @Benchmark
+  def read5(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj5.read[List[Person]](state.people))
+  }
+
+  @Benchmark
+  def read60(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj6.read[List[Person]](state.people))
+  }
+
+  @Benchmark
+  def readCirce(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(decode[List[Person]](state.people))
+  }
+
+  @Benchmark
+  def read61(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61.read[List[Person]](state.people))
+  }
+
+  @Benchmark
+  def read61Fast(bh: Blackhole, state: BaseBenchmarksState): Any = {
+    bh.consume(state.sj61fast.read(state.people))
+  }
+
+  @Benchmark
+  def readHandwritten(state: BaseBenchmarksState): List[Person] = {
+
+    val charArray: Array[Char] = state.people.toCharArray
+
+    val reader = new Tokenizer().tokenize(charArray, 0, charArray.length)
+
+    val listBuilder = List.canBuildFrom[Person]()
+
+    reader.beginArray()
+
+    while (reader.hasMoreElements) {
+      reader.beginObject()
+
+      var id: Int = 0
+      var firstName: String = ""
+      var lastName: String = ""
+      var email: String = ""
+      var gender: String = ""
+      var ipAddress: String = ""
+
+      while (reader.hasMoreMembers) {
+        reader.readString() match {
+          case "id"         => id = reader.readInt()
+          case "first_name" => firstName = reader.readString()
+          case "last_name"  => lastName = reader.readString()
+          case "email"      => email = reader.readString()
+          case "gender"     => gender = reader.readString()
+          case "ip_address" => ipAddress = reader.readString()
+        }
       }
-    }
-  }
-  */
 
-  @Benchmark
-  def scan5(state: BaseBenchmarksState): Any = {
-    (1 to 1000).foreach { _ =>
-      val inst = state.sj5.read[List[Int]](state.raceString)
-      state.sj5.render(inst)
-    }
-  }
+      listBuilder += Person(id, firstName, lastName, email, gender, ipAddress)
 
-  @Benchmark
-  def scan6(state: BaseBenchmarksState): Any = {
-    (1 to 1000).foreach { _ =>
-      val inst = state.sj6.read[List[Int]](state.raceString)
-      state.sj6.render(inst)
+      reader.endObject()
     }
+
+    reader.endArray()
+
+    listBuilder.result()
   }
 
   @Benchmark
-  def scanX(state: BaseBenchmarksState): Any = {
-    (1 to 1000).foreach { _ =>
-      val inst = state.sj2.read[List[Int]](state.raceString)
-      state.sj2.render(inst)
-    }
+  def readJson4s(state: BaseBenchmarksState): List[Person] = {
+    import org.json4s.native.Serialization.{ read, write }
+    implicit val formats = org.json4s.DefaultFormats
+    read[List[Person]](state.people)
   }
 
-  /*
   @Benchmark
-  def readSeries6X(state: BaseBenchmarksState): Any = {
-  state.sj6X.fastRead(state.jsonString)
+  def readLiftJson(state: BaseBenchmarksState): List[Person] = {
+    import net.liftweb.json._
+    implicit val formats = net.liftweb.json.DefaultFormats
+
+    parse(state.people).extract[List[Person]]
   }
-  */
-
-  //  import play.api.libs.json._
-  //  @Benchmark
-  //  def writePlayJson(state: BaseBenchmarksState): Unit = {
-  //    println(Try { Json.stringify(Json.toJson(state.listOfPersons)) })
-  //  }
-  /*
-//  @Benchmark
-def readPrototype(state: BaseBenchmarksState): List[List[Int]] = {
-val ps = JsonParserState("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-val prim = state.h_arrayTypeAdapter2.serializer.toPrimitives(state.h_arrayTypeAdapter2.serializer.parse(ps))
-state.h_arrayTypeAdapter2.materialize(prim)
-}
-
-@Benchmark
-def readSeries6ScalaJack(state: BaseBenchmarksState): Person = {
-//    state.series6ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-state.series6ScalaJack.read[Person](state.jsonPerson)
-}
-
-@Benchmark
-def readSeries6XScalaJack(state: BaseBenchmarksState): Person = {
-//    state.series6X.fastRead("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-//    state.series6X.fastRead(state.jsonString)
-state.series6X.fastRead(state.jsonPerson)
-}
-
-@Benchmark
-def readSeries5ScalaJack(state: BaseBenchmarksState): Person = {
-//    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-//    state.series5ScalaJack.read[List[Person]](state.jsonString)
-state.series5ScalaJack.read[Person](state.jsonPerson)
-}
-
-@Benchmark
-def readSeries5XScalaJack(state: BaseBenchmarksState): Person = {
-//    state.series5ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]")
-//    state.series5ScalaJack.read[List[Person]](state.jsonString)
-state.series5XScalaJack.fastRead(state.jsonPerson)
-}
-
-//  @Benchmark
-def readSeries4ScalaJack(state: BaseBenchmarksState): List[Person] = {
-//    state.series4ScalaJack.read[List[List[Int]]]("[[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]", state.series4vc)
-state.series4ScalaJack.read[List[Person]](state.jsonString, state.series4vc)
-}
-*/
-
 }

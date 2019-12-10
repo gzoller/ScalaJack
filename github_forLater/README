@@ -1,0 +1,2 @@
+This is an attempt to use github Actions.  There are some unsovled problems with coverage+coveralls,
+so far now revert to Travis/Coveralls.

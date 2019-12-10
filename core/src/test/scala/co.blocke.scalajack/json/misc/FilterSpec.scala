@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 trait Comm
@@ -16,15 +16,18 @@ class FilterSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 
-  val jsCmd = sj.render(CommMessage(1, SimpleCommand("doit", true).asInstanceOf[Command])) // asInstanceOf is important here!
+  val jsCmd: JSON = sj.render(
+    CommMessage(1, SimpleCommand("doit", public = true).asInstanceOf[Command])
+  ) // asInstanceOf is important here!
 
   // {"goDo":"simple","public":false}
-  val jsSimple = sj.render(SimpleCommand("simple", false))
+  val jsSimple: JSON = sj.render(SimpleCommand("simple", public = false))
 
   // {"kind":"co.blocke.scalajack.json.misc.SimpleCommand","id":1,"payload":{"goDo":"doit","public":true}}
-  val jsCmd2 = sj.render(CommMessage(1, SimpleCommand("doit", true)))
+  val jsCmd2: JSON =
+    sj.render(CommMessage(1, SimpleCommand("doit", public = true)))
 
-  val jsEvt = sj.render(CommMessage(2, Event(99)))
+  val jsEvt: JSON = sj.render(CommMessage(2, Event(99)))
 
   describe("------------------\n:  Filter Tests  :\n------------------") {
     it("Must filter simple classes") {
@@ -34,7 +37,7 @@ class FilterSpec extends AnyFunSpec with Matchers {
         case filter(x) => x
         case _         => false
       }
-      z should be(SimpleCommand("simple", false))
+      z should be(SimpleCommand("simple", public = false))
     }
     it("Must filter concrete wrapped classes") {
       val p = sj.parse(jsCmd2)
@@ -43,10 +46,11 @@ class FilterSpec extends AnyFunSpec with Matchers {
         case filter(x) => x
         case _         => false
       }
-      z should be(CommMessage(1, SimpleCommand("doit", true)))
+      z should be(CommMessage(1, SimpleCommand("doit", public = true)))
     }
     it("Must fall through if type member hint is unknown") {
-      val js = """{"kind":"co.blocke.scalajack.vEvent","id":1,"payload":{"happening":5}}"""
+      val js =
+        """{"kind":"co.blocke.scalajack.vEvent","id":1,"payload":{"happening":5}}"""
       val filter = sj.filter[CommMessage[Event]]("kind")
       val z = sj.parse(js) match {
         case filter(x) => 1
@@ -61,7 +65,7 @@ class FilterSpec extends AnyFunSpec with Matchers {
         case filter(x) => x
         case _         => false
       }
-      z should be(CommMessage(1, SimpleCommand("doit", true)))
+      z should be(CommMessage(1, SimpleCommand("doit", public = true)))
     }
     it("Must fall through filter") {
       val p = sj.parse(jsCmd)
@@ -72,7 +76,7 @@ class FilterSpec extends AnyFunSpec with Matchers {
         case filterEvt(x) => x
         case _            => false
       }
-      z should be(CommMessage(1, SimpleCommand("doit", true)))
+      z should be(CommMessage(1, SimpleCommand("doit", public = true)))
     }
     it("Must fall through filter 2") {
       val p = sj.parse("5")
@@ -115,18 +119,34 @@ class FilterSpec extends AnyFunSpec with Matchers {
     }
      */
     it("Filter with type modifier (successful mod)") {
-      val sjx = ScalaJack().withTypeValueModifier(model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
-      val p = sjx.parse("""{"kind":"Command","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}""")
+      val sjx =
+        ScalaJack().withTypeValueModifier(
+          model.ClassNameHintModifier(
+            (hint: String) => "co.blocke.scalajack.json.misc." + hint,
+            (cname: String) => cname.split('.').last
+          )
+        )
+      val p = sjx.parse(
+        """{"kind":"Command","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}"""
+      )
       val filter = sjx.filter[CommMessage[Command]]("kind")
       val z = p match {
         case filter(x) => x
         case _         => false
       }
-      z should be(CommMessage(1, SimpleCommand("doit", true)))
+      z should be(CommMessage(1, SimpleCommand("doit", public = true)))
     }
     it("Filter with type modifier (failed mod)") {
-      val sjx = ScalaJack().withTypeValueModifier(model.ClassNameHintModifier((hint: String) => "co.blocke.scalajack.json.misc." + hint, (cname: String) => cname.split('.').last))
-      val p = sjx.parse("""{"kind":"Nothing","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}""")
+      val sjx =
+        ScalaJack().withTypeValueModifier(
+          model.ClassNameHintModifier(
+            (hint: String) => "co.blocke.scalajack.json.misc." + hint,
+            (cname: String) => cname.split('.').last
+          )
+        )
+      val p = sjx.parse(
+        """{"kind":"Nothing","id":1,"payload":{"_hint":"co.blocke.scalajack.json.misc.SimpleCommand","goDo":"doit","public":true}}"""
+      )
       val filter = sjx.filter[CommMessage[Command]]("kind")
       val z = p match {
         case filter(x) => x
@@ -134,14 +154,18 @@ class FilterSpec extends AnyFunSpec with Matchers {
       }
       z should equal(false)
     }
-    it("Filter when hit exists but we can't successfully marshal the type from it") {
-      val p = sj.parse("""{"kind":"co.blocke.scalajack.json.misc.Bogus","id":1,"payload":{"goDo":"doit","public":true}}""")
-      val filter = sj.filter[CommMessage[SimpleCommand]]("kind")
-      val z = p match {
-        case filter(x) => x
-        case _         => false
+    it(
+      "Filter when hit exists but we can't successfully marshal the type from it"
+    ) {
+        val p = sj.parse(
+          """{"kind":"co.blocke.scalajack.json.misc.Bogus","id":1,"payload":{"goDo":"doit","public":true}}"""
+        )
+        val filter = sj.filter[CommMessage[SimpleCommand]]("kind")
+        val z = p match {
+          case filter(x) => x
+          case _         => false
+        }
+        z should equal(false)
       }
-      z should equal(false)
-    }
   }
 }

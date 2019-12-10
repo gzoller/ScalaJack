@@ -17,21 +17,29 @@ Advanced Features:
  - Sealed trait-style enumerations
  - Extensible to other encodings (JSON, CSV, MongoDB, and DynamoDB are provided by ScalaJack, but you can roll your own too!)
 
+> **Note:** Scala 2.12.10 or 2.13.1 on JDK 13.0.1 or later is strongly recommended!
+>Scala has done a lot of very recent work to improve compatibility with later JDKs and it's been a bumpy road.  The combination above has been tested.  
+Combinations of earlier versions are known to have compabitility problems.  If you must use earlier Scala or JVM versions then use JDK 1.8.
+
+> **Note:** Deprecation of 2.12.x
+>This version of ScalaJack will be the last that supports the 2.12 versions of Scala.  Going forward only 2.13 will be suppoted.  The libraries between 2.12
+and 2.13 are becoming divergent so maintaining them both will be unwieldy.
+
 ## Use
 
 ScalaJack is extremely simple to use.
 
 Include it in your projects by adding the following to your build.sbt:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.0.4")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.1.0")
 
 If you want to use the optional MongoDB serialization support include this as well:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.0.4")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.1.0")
 
 DynamoDB helpers are available here:
 
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.0.4")
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.1.0")
 
 ScalaJack is hosted on Bintray/JCenter.  If you're using pre-v0.13.9 of SBT you may need to enable the bintray resolver in your build.sbt with
 
@@ -62,32 +70,42 @@ Couldn't be simpler!
 * [Trait Type Hint Customization](doc/typeHint.md)
 * [Custom Type Adapters (custom read/render)](doc/custom.md)
 * [Try and Capture](doc/tryAndCapture.md)
-* [ParseOrElse](doc/parseOrElse.md)
+* [ParseOrElse and Cascading Fallback Parsing](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
 * [Externalized Type Hints](doc/externalTypes.md)
 * [View/SpliceInto](doc/viewSplice.md)
 * [Filter *(new)*](doc/filter.md)
 * [Union type *(new)*](doc/union.md)
 * [ScalaJack Configuration](doc/config.md)
+* [Gimme Speed!](doc/speed.md)
 
 Non-JSON Formats:
 * [MongoDB](doc/mongo.md)
-* [Delimited (e.g. CSV) *(improved)*](doc/csv.md)
+* [Delimited (e.g. CSV) *(improved)*](doc/delimited.md)
 * [DynamoDB](doc/dynamo.md)
 * [Json4s *(new)*](doc/json4s.md)
 
 ## Benchmarks
 
- (Older benchmarks--new, more comprehensive ones coming in the future.  For now, expect ScalaJack 6.0 to be pretty close to 5.0, as performance improvements weren't a key goal of this release.)
+I need to start this section with an apology.  After having benchmarks deactivated for some time I finally wired them up and discovered that
+ScalaJack 6.0 series was significantly slower than the 5.x series.  Definitely not desirable!
+
+ScalaJack 6.1 has undergone a significant streamlining and refactoring with beneficial results. Numbers are below.  
+
+*Disclaimer: Benchmarks are very situational.  We didn't hand-pick a senario to favor our product.  It is entirely possible/likely you can find scenarios where your favorite parser beats ScalaJack.*
 
 |Benchmark         |Score      |Error        |Units
 |------------------|----------:|------------:|-----|
-|Hand-written      |28683.250  |± 3505.351   |ops/s
-|**ScalaJack 5.0** |20632.580  |±  306.105   |ops/s
-|Spray             |10314.990  |±  120.898   |ops/s
-|LiftJson          |9313.326   |±  212.206   |ops/s
-|ScalaJack 4.8.3   |6525.699   |±  36.103    |ops/s
-|Json4s            |5840.046   |±  201.42    |ops/s
+|**ScalaJack 6.1 (forType[T])** |27729.218  |±  338.995   |ops/s
+|Hand-written      |24041.835  |± 1752.455   |ops/s
+|**ScalaJack 6.1** |20232.361  |±  736.766   |ops/s
+|Circe             |19971.288  |±  986.961   |ops/s
+|ScalaJack 5.x     |16349.600  |±  193.090   |ops/s
+|ScalaJack 6.0     |11111.795  |±  127.843   |ops/s
+|LiftJson          |9313.472   |±  639.219   |ops/s
+|Json4s            |3425.144   |±  219.970   |ops/s
+
+The key takeaway here is that for our sample test, ScalaJack was very fast, and most critically, ScalaJack 6.1 is a dramatic improvement over 6.0.
 
 ## Series 6
 

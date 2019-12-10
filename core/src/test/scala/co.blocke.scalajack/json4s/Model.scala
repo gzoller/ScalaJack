@@ -2,9 +2,17 @@ package co.blocke.scalajack
 package json4s
 
 import java.util.UUID
+import model._
+import scala.collection.mutable
 
 // === Scala
-case class SampleBigDecimal(bd1: BigDecimal, bd2: BigDecimal, bd3: BigDecimal, bd4: BigDecimal, bd5: BigDecimal, bd6: BigDecimal)
+case class SampleBigDecimal(
+    bd1: BigDecimal,
+    bd2: BigDecimal,
+    bd3: BigDecimal,
+    bd4: BigDecimal,
+    bd5: BigDecimal,
+    bd6: BigDecimal)
 case class SampleBigInt(bi1: BigInt, bi2: BigInt, bi3: BigInt, bi4: BigInt)
 case class SampleBinary(b1: Array[Byte], b2: Array[Byte])
 case class SampleBoolean(bool1: Boolean, bool2: Boolean)
@@ -15,7 +23,12 @@ case class SampleDouble(d1: Double, d2: Double, d3: Double, d4: Double)
 object Size extends Enumeration {
   val Small, Medium, Large = Value
 }
-case class SampleEnum(e1: Size.Value, e2: Size.Value, e3: Size.Value, e4: Size.Value, e5: Size.Value)
+case class SampleEnum(
+    e1: Size.Value,
+    e2: Size.Value,
+    e3: Size.Value,
+    e4: Size.Value,
+    e5: Size.Value)
 
 case class SampleFloat(f1: Float, f2: Float, f3: Float, f4: Float)
 case class SampleInt(i1: Int, i2: Int, i3: Int, i4: Int)
@@ -36,10 +49,58 @@ case class SomeClass(name: String, age: Int) extends Person
 trait Thing[A, B] { val a: A; val b: B }
 case class AThing[Y, X](a: X, b: Y) extends Thing[X, Y]
 
-case class WrappedMaps(a: Map[Byte, Int], b: Map[Int, Int], c: Map[Long, Int], d: Map[Double, Int], e: Map[Float, Int], f: Map[Short, Int], g: Map[BigInt, Int], h: Map[BigDecimal, Int], i: Map[Boolean, Int], j: Map[Char, Int])
+case class WrappedMaps(
+    a: Map[Byte, Int],
+    b: Map[Int, Int],
+    c: Map[Long, Int],
+    d: Map[Double, Int],
+    e: Map[Float, Int],
+    f: Map[Short, Int],
+    g: Map[BigInt, Int],
+    h: Map[BigDecimal, Int],
+    i: Map[Boolean, Int],
+    j: Map[Char, Int])
 
 trait Address { val postalCode: String }
-case class USAddress(street: String, city: String, state: String, postalCode: String) extends Address
+case class USAddress(
+    street:     String,
+    city:       String,
+    state:      String,
+    postalCode: String)
+  extends Address
 case class DefaultAddress(postalCode: String) extends Address
 trait Demographic { val address: Address }
 case class USDemographic(age: Int, address: Address) extends Demographic
+
+trait Body
+case class FancyBody(message: String) extends Body
+case class Envelope[T <: Body](id: String, body: T) {
+  type Giraffe = T
+}
+
+object MyTypes {
+  type Phone = String
+}
+import MyTypes._
+
+object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
+  def read(parser: Parser): Phone =
+    parser.expectString() match {
+      case null      => null
+      case s: String => s.replaceAll("-", "")
+    }
+
+  def write[WIRE](
+      t:      Phone,
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit = t match {
+    case null => writer.writeNull(out)
+    case _ =>
+      writer.writeString(
+        "%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)),
+        out
+      )
+  }
+}
+
+case class Employee(name: String, phone: Phone)

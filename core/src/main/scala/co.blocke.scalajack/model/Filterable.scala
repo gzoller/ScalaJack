@@ -1,57 +1,42 @@
 package co.blocke.scalajack
 package model
 
-import util.Path
-import scala.util.{ Try, Success }
+import scala.reflect.runtime.universe._
+import scala.util.Try
 
+/**
+ * This is a convenience to make a more Scala-like filtering experience, i.e. use extractors so filters
+ * can be used in case statements.  Note this isn't super-efficient as each application of the filter
+ * is an attempted re-parsing of the input, but in the scheme of things you'd likely have to do that
+ * anyway.
+ *
+ * @tparam WIRE
+ */
 trait Filterable[WIRE] {
 
   this: JackFlavor[WIRE] =>
 
-  case class Filter[T](filter: PartialFunction[Reader[WIRE], Option[T]]) {
-    def unapply(reader: model.Reader[WIRE]): Option[T] = {
-      reader.reset()
-      filter.apply(reader)
+  case class Filter[T](ta: TypeAdapter[T], k: String, tpe: Type) {
+    def unapply(parser: Parser): Option[T] = {
+      parser.revertToMark(0)
+      Try {
+        if (k.nonEmpty) {
+          if (parser.scanForHint(k, typeValueModifier) <:< tpe.typeArgs.head)
+            ta.read(parser)
+          else
+            throw new Exception("boom")
+        } else
+          ta.read(parser)
+      }.toOption
     }
   }
 
-  // Like JackFlavor.read, except here we already have parsed input, hence a Reader is available
-  private def _read[T](reader: Reader[WIRE])(implicit tt: TypeTag[T]): T =
-    context.typeAdapter(tt.tpe).read(Path.Root, reader).asInstanceOf[T]
-
-  def filter[T](hintLabel: String = "")(implicit tt: TypeTag[T]): Filter[T] = {
-    val partialFunc: PartialFunction[Reader[WIRE], Option[T]] = {
-
-      case reader: Reader[WIRE] if hintLabel.length == 0 =>
-        Try(_read(reader)(tt)).toOption
-
-      case reader: Reader[WIRE] if (hintLabel.length > 0) && {
-        val result = reader.scanForHint(hintLabel) match {
-          case Some(hintValue) =>
-            reader.jackFlavor.typeValueModifier match {
-              case Some(fn) => // apply type value modifier if there is one (may explode!)
-                try {
-                  val foundType = fn.apply(hintValue)
-                  (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
-                } catch {
-                  case _: Throwable => false // attempt to modify failed somehow
-                }
-              case None => Try(reader.jackFlavor.typeTypeAdapter.typeNameToType(Path.Root, hintValue, reader)) match {
-                case Success(foundType) =>
-                  (tt.tpe.typeArgs.size > 0 && tt.tpe.typeArgs.head == foundType) || foundType.baseClasses.contains(tt.tpe.typeSymbol)
-                case _ =>
-                  false
-              }
-            }
-          case None => false
-        }
-        result
-      } =>
-        Try(_read(reader)(tt)).toOption
-
-      case _ => None
-    }
-    Filter(partialFunc)
-  }
+  def filter[T](
+      typeFieldMemberName: String = ""
+  )(implicit tt: TypeTag[T]): Filter[T] =
+    Filter(
+      taCache.typeAdapter(tt.tpe).asInstanceOf[TypeAdapter[T]],
+      typeFieldMemberName,
+      tt.tpe
+    )
 }
-

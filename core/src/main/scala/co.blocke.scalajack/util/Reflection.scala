@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package util
 
 import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe._
 
 /**
  * This is a pretty sophisticated object that resolves parameterized types, and can handle some
@@ -22,20 +23,29 @@ import scala.reflect.runtime.currentMirror
 object Reflection {
 
   val mirror = currentMirror.asInstanceOf[{
-    def methodToJava(sym: scala.reflect.internal.Symbols#MethodSymbol): java.lang.reflect.Method
+    def methodToJava(
+        sym: scala.reflect.internal.Symbols#MethodSymbol
+    ): java.lang.reflect.Method
   }]
 
-  def methodToJava(methodSymbol: scala.reflect.runtime.universe.MethodSymbol): java.lang.reflect.Method =
-    mirror.methodToJava(methodSymbol.asInstanceOf[scala.reflect.internal.Symbols#MethodSymbol])
+  def methodToJava(
+      methodSymbol: scala.reflect.runtime.universe.MethodSymbol
+  ): java.lang.reflect.Method =
+    mirror.methodToJava(
+      methodSymbol.asInstanceOf[scala.reflect.internal.Symbols#MethodSymbol]
+    )
 
   // $COVERAGE-OFF$Unused right now--may be part of future functionality
-  def inferTypeOf[T](value: T)(implicit compileTimeTypeTag: TypeTag[T]): Type = {
+  def inferTypeOf[T](
+      value: T
+  )(implicit compileTimeTypeTag: TypeTag[T]): Type = {
     value match {
       case null =>
         compileTimeTypeTag.tpe
 
       case nonNull =>
-        val valueType = currentMirror.classSymbol(nonNull.getClass).asType.toType
+        val valueType =
+          currentMirror.classSymbol(nonNull.getClass).asType.toType
 
         /*
         valueType.typeConstructor.typeParams match {
@@ -44,7 +54,7 @@ object Reflection {
           case typeParams =>
           // TODO infer type arguments
         }
-        */
+         */
 
         valueType
     }
@@ -68,7 +78,8 @@ object Reflection {
   def solveForNeedleAfterSubstitution(
       haystackBeforeSubstitution: Type,
       haystackAfterSubstitution:  Type,
-      needleBeforeSubstitution:   Type): Option[Type] = {
+      needleBeforeSubstitution:   Type
+  ): Option[Type] = {
     // println("Solve: " + haystackBeforeSubstitution + " --> " + haystackAfterSubstitution + " :: " + needleBeforeSubstitution)
     if (needleBeforeSubstitution == haystackBeforeSubstitution) {
       Some(haystackAfterSubstitution)
@@ -76,14 +87,20 @@ object Reflection {
       val needlesAfterSubstitution =
         for {
           (typeArgBeforeSubstitution, typeArgAfterSubstitution) <- haystackBeforeSubstitution.typeArgs zip haystackAfterSubstitution.typeArgs
-          needleAfterSubstitution <- solveForNeedleAfterSubstitution(typeArgBeforeSubstitution, typeArgAfterSubstitution, needleBeforeSubstitution)
+          needleAfterSubstitution <- solveForNeedleAfterSubstitution(
+            typeArgBeforeSubstitution,
+            typeArgAfterSubstitution,
+            needleBeforeSubstitution
+          )
         } yield needleAfterSubstitution
 
       needlesAfterSubstitution.toSet.headOption
     }
   }
 
-  def populateChildTypeArgs(parentType: Type, childTypeBeforeSubstitution: Type): Type = {
+  def populateChildTypeArgs(
+      parentType:                  Type,
+      childTypeBeforeSubstitution: Type): Type = {
     if (childTypeBeforeSubstitution.typeSymbol.isParameter) {
       parentType
     } else {
@@ -93,8 +110,13 @@ object Reflection {
       val childTypeConstructor = childTypeBeforeSubstitution.typeConstructor
       val childTypeParams = childTypeConstructor.typeParams
 
-      val childAsParentTypeBeforeSubstitution = appliedType(childTypeConstructor, childTypeConstructor.typeParams.map(_.asType.toType)).baseType(parentType.typeSymbol)
-      val childAsParentTypeArgsBeforeSubstitution = childAsParentTypeBeforeSubstitution.typeArgs
+      val childAsParentTypeBeforeSubstitution =
+        appliedType(
+          childTypeConstructor,
+          childTypeConstructor.typeParams.map(_.asType.toType)
+        ).baseType(parentType.typeSymbol)
+      val childAsParentTypeArgsBeforeSubstitution =
+        childAsParentTypeBeforeSubstitution.typeArgs
 
       // When reflecting OuterClass these values are:
       //
@@ -108,23 +130,32 @@ object Reflection {
 
       val childAsParentTypeArgsAfterSubstitution =
         for ((parentTypeArg, childAsParentTypeArgBeforeSubstitution) <- parentTypeArgs zip childAsParentTypeArgsBeforeSubstitution) yield {
-          populateChildTypeArgs(parentTypeArg, childAsParentTypeArgBeforeSubstitution)
+          populateChildTypeArgs(
+            parentTypeArg,
+            childAsParentTypeArgBeforeSubstitution
+          )
         }
 
-      val childAsParentTypeAfterSubstitution = appliedType(parentTypeConstructor, childAsParentTypeArgsAfterSubstitution)
+      val childAsParentTypeAfterSubstitution = appliedType(
+        parentTypeConstructor,
+        childAsParentTypeArgsAfterSubstitution
+      )
       // co.blocke.scalajack.test.OuterTrait[co.blocke.scalajack.test.InnerTrait[Char],co.blocke.scalajack.test.InnerTrait[Boolean],Int]
 
       val childTypeArgs =
         for (childTypeParam <- childTypeParams.map(_.asType.toType)) yield {
-          val optionalChildTypeArgAfterSubstitution = solveForNeedleAfterSubstitution(
-            haystackBeforeSubstitution = childAsParentTypeBeforeSubstitution,
-            haystackAfterSubstitution  = childAsParentTypeAfterSubstitution,
-            needleBeforeSubstitution   = childTypeParam)
+          val optionalChildTypeArgAfterSubstitution =
+            solveForNeedleAfterSubstitution(
+              haystackBeforeSubstitution = childAsParentTypeBeforeSubstitution,
+              haystackAfterSubstitution  = childAsParentTypeAfterSubstitution,
+              needleBeforeSubstitution   = childTypeParam
+            )
 
           optionalChildTypeArgAfterSubstitution.getOrElse(childTypeParam)
         }
 
-      val childTypeAfterSubstitution = appliedType(childTypeConstructor, childTypeArgs)
+      val childTypeAfterSubstitution =
+        appliedType(childTypeConstructor, childTypeArgs)
 
       childTypeAfterSubstitution
     }

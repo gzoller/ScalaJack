@@ -12,14 +12,14 @@ This instance is used for all serialization activities.
   
 ### Flavors  
   
-ScalaJack supports several "flavors": JSON, CSV, MongoDB, and DynamoDB out of the box.  Others may create new flavors by extending the pattern.  
+ScalaJack supports several "flavors": JSON, Delimited (e.g. CSV), MongoDB, and DynamoDB out of the box.  Others may create new flavors by extending the pattern.  
   
 Here's how to get the right flavor of ScalaJack for your needs:  
   
 |Flavor |ScalaJack instantiation  
 |-----|--------  
 |JSON | val sj = ScalaJack()   // JSON is default if no flavor given  
-|CSV  | val sj = ScalaJack(CSVFlavor())  
+|Delimited  | val sj = ScalaJack(DelimitedFlavor())  
 |MongoDB | val sj = ScalaJack(MongoFlavor())  
 |DynamoDB | val sj = ScalaJack(DynamoFlavor())  
   
@@ -36,7 +36,7 @@ val sj = ScalaJack()
 Most of these configurations are JSON-only, as they don't make sense for the other formats.  An exception will be thrown if a configuration method is used that isn't supported for a particular ScalaJack flavor.  
     
 #### allowPermissivePrimitives()  
-Some 3rd party JSON can be pretty messy!  They may make booleans and numbers into strings.  allowPermissivePrimitives() allows ScalaJack to be a little less strict and try to accept "true" as true, for example.  It's a little adaptation to an imperfect world.
+Third party JSON can be pretty messy!  They may make booleans and numbers into strings.  allowPermissivePrimitives() allows ScalaJack to be a little less strict and try to accept "true" as true, for example.  It's a little adaptation to an imperfect world.
   
 ```scala  
 val js = """["true","false"]  
@@ -78,8 +78,7 @@ val sj = ScalaJack()
 ```  
 So in this example, whenever ScalaJack fails to parse an Address-typed value it will substitute a DefaultAddress object in its place.
 
-*__Note:__* There's an important constraint here.  The default objects must have zero-argument constructors because ScalaJack will be trying to create these objects and won't have any arguments to supply.
-  
+ 
 #### withAdapters(ta: TypeAdapterFactory*)  
 Register a list of custom TypeAdapters with ScalaJack.  This is to allow you to offer custom serialization handling of your own types.  
   

@@ -3,7 +3,8 @@ package co.blocke.scalajack;
 public class JavaSimpleBase {
 
     private int two;
-    @DBKey @Change(name="dos") public int getTwo(){ return two; }
+    @DBKey
+    @Change(name="dos") public int getTwo(){ return two; }
     public void setTwo(int v) { two = v; }
 
     private int three = -10;
@@ -13,6 +14,7 @@ public class JavaSimpleBase {
 
     private int bogus = -1;
     public int getBogus(){ return bogus; }
-    @Ignore public void setBogus(int v) { bogus = v; }
+    @Ignore
+    public void setBogus(int v) { bogus = v; }
 
 }
