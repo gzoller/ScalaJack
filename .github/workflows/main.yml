@@ -19,10 +19,22 @@ jobs:
       uses: lokkju/github-action-sbt@master
       with:
         commands: '+ test'
-    - name: Generate coverage report
+    - name: Generate coverage report (1 of 4)
       uses: lokkju/github-action-sbt@master
       with:
-        commands: 'clean coverage test coverageAggregate'
+        commands: 'clean'
+    - name: Generate coverage report (2 of 4)
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: 'coverage'
+    - name: Generate coverage report (3 of 4)
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: 'test'
+    - name: Generate coverage report (4 of 4)
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: 'coverageAggregate'
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
