@@ -3,7 +3,6 @@ package typeadapter
 
 import model._
 import ClassHelper._
-import co.blocke.scalajack.SJCapture
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
@@ -82,7 +81,7 @@ case class PlainClassTypeAdapter[T](
               if aField.isOptional => // try to set (may crash if set value == null and field is non-nullable)
             Try(
               aField
-                .valueSet(asBuilt, args(aField.index))(tt, typeToClassTag[T])
+                .valueSet(asBuilt, args(aField.index))(typeToClassTag[T])
             ) match { // could crash if this is a non-nullable field
               case Failure(_) =>
                 parser.backspace()
@@ -94,7 +93,7 @@ case class PlainClassTypeAdapter[T](
               case _ => // all fine
             }
           case aField if !missingBits(aField.index) => // try to set field
-            aField.valueSet(asBuilt, args(aField.index))(tt, typeToClassTag[T])
+            aField.valueSet(asBuilt, args(aField.index))(typeToClassTag[T])
           case _ => // missing required field fall-thru
         }
       }

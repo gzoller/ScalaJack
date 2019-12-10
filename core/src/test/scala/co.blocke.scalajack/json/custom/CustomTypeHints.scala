@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.custom
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import scala.reflect.runtime.universe.typeOf
 import model._

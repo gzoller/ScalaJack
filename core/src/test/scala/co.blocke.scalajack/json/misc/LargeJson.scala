@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ BeforeAndAfterAll, GivenWhenThen }
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.io.Source
@@ -14,7 +13,7 @@ case class PersonRecord(
     gender:     String,
     ip_address: String)
 
-class LargeJson extends AnyFunSpec with GivenWhenThen with BeforeAndAfterAll {
+class LargeJson extends AnyFunSpec {
 
   val sj = ScalaJack()
 

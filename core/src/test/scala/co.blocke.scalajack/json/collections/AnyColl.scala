@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.collections
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 class AnyColl() extends AnyFunSpec with Matchers {

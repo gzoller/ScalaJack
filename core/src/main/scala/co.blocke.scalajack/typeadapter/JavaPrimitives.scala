@@ -49,7 +49,7 @@ trait JavaBooleanTypeAdapter {
     if (parser.peekForNull)
       null // Booleans are nullable in Java, but not in Scala
     else
-      new java.lang.Boolean(parser.expectBoolean())
+      java.lang.Boolean.valueOf(parser.expectBoolean())
   def write[WIRE](
       t:      java.lang.Boolean,
       writer: Writer[WIRE],
@@ -67,7 +67,7 @@ trait JavaByteTypeAdapter {
     if (parser.peekForNull)
       null // Bytes are nullable in Java, but not Scala
     else
-      new java.lang.Byte(parser.expectNumber().toInt.toByte)
+      java.lang.Byte.valueOf(parser.expectNumber().toInt.toByte)
   def write[WIRE](
       t:      java.lang.Byte,
       writer: Writer[WIRE],
@@ -92,7 +92,7 @@ trait JavaCharacterTypeAdapter {
           throw new ScalaJackError(
             parser.showError("Tried to read a Character but empty string found")
           )
-        case c => new java.lang.Character(c.toCharArray()(0))
+        case c => java.lang.Character.valueOf(c.toCharArray()(0))
       }
   def write[WIRE](
       t:      java.lang.Character,
@@ -111,7 +111,7 @@ trait JavaDoubleTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Double(parser.expectNumber())
+      java.lang.Double.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Double,
       writer: Writer[WIRE],
@@ -129,7 +129,7 @@ trait JavaFloatTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Float(parser.expectNumber())
+      java.lang.Float.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Float,
       writer: Writer[WIRE],
@@ -147,7 +147,7 @@ trait JavaIntTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Integer(parser.expectNumber())
+      java.lang.Integer.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Integer,
       writer: Writer[WIRE],
@@ -165,7 +165,7 @@ trait JavaLongTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Long(parser.expectNumber())
+      java.lang.Long.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Long,
       writer: Writer[WIRE],
@@ -184,12 +184,12 @@ trait JavaNumberTypeAdapter {
       null
     else
       scala.BigDecimal(parser.expectNumber()) match {
-        case d if d.isValidByte     => new java.lang.Byte(d.toByteExact)
-        case d if d.isValidShort    => new java.lang.Short(d.toShortExact)
-        case d if d.isValidInt      => new java.lang.Integer(d.toIntExact)
-        case d if d.isValidLong     => new java.lang.Long(d.toLongExact)
-        case d if d.isDecimalFloat  => new java.lang.Float(d.toFloat)
-        case d if d.isDecimalDouble => new java.lang.Double(d.toDouble)
+        case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+        case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+        case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+        case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+        case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
+        case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
         case d                      => d.bigDecimal
       }
   def write[WIRE](
@@ -224,7 +224,7 @@ trait JavaShortTypeAdapter {
     if (parser.peekForNull)
       null
     else
-      new java.lang.Short(parser.expectNumber())
+      java.lang.Short.valueOf(parser.expectNumber())
   def write[WIRE](
       t:      java.lang.Short,
       writer: Writer[WIRE],

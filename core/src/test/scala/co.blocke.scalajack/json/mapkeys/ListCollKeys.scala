@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.mapkeys
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 class ListCollKeys() extends AnyFunSpec with Matchers {

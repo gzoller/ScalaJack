@@ -2,9 +2,9 @@ package co.blocke.scalajack
 package json.misc
 
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 
-class ChangeNameSpec extends AnyFunSpec {
+class ChangeNameSpec extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

@@ -1,17 +1,14 @@
 package co.blocke.scalajack
 package typeadapter
 
-import model.{ ClassHelper, _ }
-import util.Reflection
-import java.beans.{ Introspector, PropertyDescriptor }
-
+import model._
 import ClassHelper._
-import co.blocke.scalajack.SJCapture
-
-import scala.collection.immutable.{ List, ListMap }
+import util._
+import scala.collection.immutable.List
 import scala.collection.mutable
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
+import java.beans.{ Introspector, PropertyDescriptor }
 
 // WARNING: This adapter should be last in the list!  This classSymbol.isClass will match pretty much
 // anything all the other adapters before it failed to match, so nothing after this adapter will be

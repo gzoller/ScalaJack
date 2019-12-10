@@ -1,16 +1,16 @@
 # See http://about.travis-ci.org/docs/user/build-configuration/
 language: scala
 scala:
-   - 2.11.7
+   - 2.12.10
 notifications:
   email:
     recipients:
       - info@blocke.com
 dist: trusty
 jdk:
-  - oraclejdk8
+  - oraclejdk13
 script:
-  - sbt clean coverage test coverageReport && sbt coverageAggregate
+  - sbt clean coverage test && sbt coverageAggregate
 before_install:
   - export TZ=America/Chicago
   - date

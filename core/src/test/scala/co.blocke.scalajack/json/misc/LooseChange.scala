@@ -5,10 +5,10 @@ import util._
 import scala.reflect.runtime.universe._
 
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 import typeadapter._
 
-class LooseChange extends AnyFunSpec {
+class LooseChange extends AnyFunSpec with Matchers {
 
   val sj = ScalaJack()
 

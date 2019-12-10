@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package mongo
 
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.bson._
 import org.bson.types.ObjectId
 

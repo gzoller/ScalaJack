@@ -3,7 +3,7 @@ package mongo
 
 import co.blocke.scalajack.model.JackFlavor
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 import org.bson._
 import compat.BsonBuilder
 import JsonMatcher._
@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 case class MyNumbers(d: BigDecimal, n: Number)
 case class NumberBoom(x: BigInt)
 
-class LooseChange extends AnyFunSpec {
+class LooseChange extends AnyFunSpec with Matchers {
   val sjM: JackFlavor[BsonValue] = ScalaJack(MongoFlavor())
 
   object MongoMaster {
@@ -302,7 +302,6 @@ class LooseChange extends AnyFunSpec {
           ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]")
         )
         val d = sjM.render(t)
-        val z = OffsetDateTime.parse("2007-12-03T10:15:30+01:00")
         val t2 = sjM.read[Times](d)
         // Extra gymnastics because the read/rendered OffsetDateTime, while the same actual instant, isn't the same value so comparison fails
         t2.offset.atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) == t.offset

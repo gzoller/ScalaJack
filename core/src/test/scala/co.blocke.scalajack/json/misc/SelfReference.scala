@@ -1,14 +1,10 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers
 
-class SelfReference
-  extends AnyFunSpec
-  with GivenWhenThen
-  with BeforeAndAfterAll {
+class SelfReference extends AnyFunSpec with Matchers {
   describe(
     "--------------------------\n:  Self Reference Tests  :\n--------------------------"
   ) {

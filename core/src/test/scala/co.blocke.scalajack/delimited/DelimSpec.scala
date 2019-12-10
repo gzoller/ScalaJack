@@ -1,7 +1,8 @@
 package co.blocke.scalajack
 package delimited
 
-import org.scalatest.{ Matchers, PrivateMethodTester }
+import org.scalatest.PrivateMethodTester
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import scala.reflect.runtime.universe._
 
@@ -196,9 +197,7 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
         }
         it("Tuple with null value") {
           val delim = "\"thing,\""
-          sj.read[HasTuples2](delim) should be(
-            HasTuples2(("thing", null))
-          )
+          sj.read[HasTuples2](delim) should be(HasTuples2(("thing", null)))
         }
         it("Tuple with escaped quote in value") {
           val s = HasTuples(("a\"b", 3), (false, 9))
@@ -297,7 +296,8 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
       describe("Plug coverage holes") {
         it("Non-case classes fail") {
           val delim = "John,35"
-          val msg = """Only case classes with non-empty constructors are supported for delimited data.
+          val msg =
+            """Only case classes with non-empty constructors are supported for delimited data.
                     |John,35
                     |^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[Busted](delim) should have message msg

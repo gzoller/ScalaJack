@@ -3,7 +3,6 @@ package model
 
 import typeadapter._
 import scala.reflect.runtime.universe._
-import java.util.HashMap
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
 

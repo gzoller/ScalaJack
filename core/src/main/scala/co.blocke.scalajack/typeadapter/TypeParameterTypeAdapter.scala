@@ -17,10 +17,8 @@ object TypeParameterTypeAdapterFactory extends TypeAdapterFactory {
       next.typeAdapterOf[T]
 }
 
-case class TypeParameterTypeAdapter[T](jackFlavor: JackFlavor[_])(
-    implicit
-    tt: TypeTag[T]
-) extends TypeAdapter[T] {
+case class TypeParameterTypeAdapter[T](jackFlavor: JackFlavor[_])
+  extends TypeAdapter[T] {
   def read(parser: Parser): T =
     jackFlavor.anyTypeAdapter.read(parser).asInstanceOf[T]
   def write[WIRE](

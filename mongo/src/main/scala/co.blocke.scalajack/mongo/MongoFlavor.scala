@@ -4,7 +4,6 @@ package mongo
 import model._
 import typeadapter._
 
-import scala.language.experimental.macros
 import org.bson._
 
 import scala.collection.mutable

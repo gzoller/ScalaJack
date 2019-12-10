@@ -1,13 +1,9 @@
 package co.blocke.scalajack
 package json.misc
 
-import org.scalatest.{ GivenWhenThen, BeforeAndAfterAll }
 import org.scalatest.funspec.AnyFunSpec
 
-class ComplexRelationships
-  extends AnyFunSpec
-  with GivenWhenThen
-  with BeforeAndAfterAll {
+class ComplexRelationships extends AnyFunSpec {
 
   val sj = ScalaJack()
 

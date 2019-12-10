@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package model
 
-import co.blocke.scalajack.compat
 import typeadapter._
 
 import scala.collection.mutable
@@ -54,7 +53,6 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
       case (attemptedType, fallbackType @ _) =>
         val attemptedTypeAdapter =
           intermediateContext.typeAdapter(attemptedType)
-        val fallbackTypeAdapter = intermediateContext.typeAdapter(fallbackType)
 
         new TypeAdapterFactory {
           override def typeAdapterOf[T](next: TypeAdapterFactory)(

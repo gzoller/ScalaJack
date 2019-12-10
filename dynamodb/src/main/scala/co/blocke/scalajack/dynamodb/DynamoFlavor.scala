@@ -3,7 +3,6 @@ package dynamodb
 
 import model._
 import ClassHelper.ClassFieldMember
-import co.blocke.scalajack.SJCapture
 import typeadapter._
 
 import scala.reflect.runtime.universe._

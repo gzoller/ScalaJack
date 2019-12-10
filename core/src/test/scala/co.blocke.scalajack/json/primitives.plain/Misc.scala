@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json.primitives.plain
 
 import model.ClassNameHintModifier
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 class Misc() extends AnyFunSpec with Matchers {

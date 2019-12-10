@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json
 package misc
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
 case class Person(name: String, age: Int)

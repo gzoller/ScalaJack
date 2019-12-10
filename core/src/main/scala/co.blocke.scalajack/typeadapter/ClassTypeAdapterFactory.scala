@@ -123,7 +123,7 @@ object ClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
         ClassHelper.getAnnotationValue[Collection, String](classSymbol)
 
       val args = new Array[Any](orderedFieldNames.size)
-      var fieldBits = {
+      val fieldBits = {
         val bits = mutable.BitSet()
         fieldMembers.indices map (n => bits += n)
         bits
