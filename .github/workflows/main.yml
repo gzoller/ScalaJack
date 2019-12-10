@@ -19,19 +19,23 @@ jobs:
       uses: lokkju/github-action-sbt@master
       with:
         commands: '+ test'
-    - name: Generate coverage report (1 of 4)
+    - name: Generate coverage report (1 of 5 - clean)
       uses: lokkju/github-action-sbt@master
       with:
         commands: 'clean'
-    - name: Generate coverage report (2 of 4)
+    - name: Generate coverage report (2 of 5 - coverage)
       uses: lokkju/github-action-sbt@master
       with:
         commands: 'coverage'
-    - name: Generate coverage report (3 of 4)
+    - name: Generate coverage report (3 of 5 - test)
       uses: lokkju/github-action-sbt@master
       with:
         commands: 'test'
-    - name: Generate coverage report (4 of 4)
+    - name: Generate coverage report (4 of 5 - coverageReport)
+      uses: lokkju/github-action-sbt@master
+      with:
+        commands: 'coverageReport'
+    - name: Generate coverage report (4 of 5 - coverageAggregate)
       uses: lokkju/github-action-sbt@master
       with:
         commands: 'coverageAggregate'
