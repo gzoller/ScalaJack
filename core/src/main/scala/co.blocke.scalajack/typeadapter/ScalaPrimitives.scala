@@ -11,7 +11,7 @@ object BigDecimalTypeAdapterFactory
   with BigDecimalTypeAdapter
 trait BigDecimalTypeAdapter {
   def read(parser: Parser): BigDecimal = {
-    val bd = parser.expectNumber()
+    val bd = parser.expectNumber(true)
     if (bd == null)
       null
     else
@@ -29,7 +29,7 @@ object BigIntTypeAdapterFactory
   with BigIntTypeAdapter
 trait BigIntTypeAdapter {
   def read(parser: Parser): BigInt = {
-    val bi = parser.expectNumber()
+    val bi = parser.expectNumber(true)
     if (bi == null)
       null
     else
@@ -77,14 +77,16 @@ trait BooleanTypeAdapter {
 
 object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter
 trait ByteTypeAdapter {
-  def read(parser: Parser): Byte = {
-    val b = parser.expectNumber()
-    if (b == null) {
-      parser.backspace()
-      throw new ScalaJackError(parser.showError("Byte values cannot be null"))
-    } else
-      b.toByte
-  }
+  def read(parser: Parser): Byte =
+    parser
+      .expectNumber()
+      .toByteOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Byte from value")
+        )
+      }
   def write[WIRE](
       t:      Byte,
       writer: Writer[WIRE],
@@ -122,7 +124,16 @@ object DoubleTypeAdapterFactory
   extends TypeAdapter.=:=[Double]
   with DoubleTypeAdapter
 trait DoubleTypeAdapter {
-  def read(parser: Parser): Double = parser.expectNumber().toDouble
+  def read(parser: Parser): Double =
+    parser
+      .expectNumber()
+      .toDoubleOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Double from value")
+        )
+      }
   def write[WIRE](
       t:      Double,
       writer: Writer[WIRE],
@@ -134,7 +145,17 @@ object FloatTypeAdapterFactory
   extends TypeAdapter.=:=[Float]
   with FloatTypeAdapter
 trait FloatTypeAdapter {
-  def read(parser: Parser): Float = parser.expectNumber().toFloat
+  //  def read(parser: Parser): Float = parser.expectNumber().toFloat
+  def read(parser: Parser): Float =
+    parser
+      .expectNumber()
+      .toFloatOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Float from value")
+        )
+      }
   def write[WIRE](
       t:      Float,
       writer: Writer[WIRE],
@@ -144,7 +165,17 @@ trait FloatTypeAdapter {
 
 object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntTypeAdapter
 trait IntTypeAdapter {
-  def read(parser: Parser): Int = parser.expectNumber().toInt
+  //  def read(parser: Parser): Int = parser.expectNumber().toInt
+  def read(parser: Parser): Int =
+    parser
+      .expectNumber()
+      .toIntOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Int from value")
+        )
+      }
   def write[WIRE](
       t:      Int,
       writer: Writer[WIRE],
@@ -154,7 +185,17 @@ trait IntTypeAdapter {
 
 object LongTypeAdapterFactory extends TypeAdapter.=:=[Long] with LongTypeAdapter
 trait LongTypeAdapter {
-  def read(parser: Parser): Long = parser.expectNumber().toLong
+  //  def read(parser: Parser): Long = parser.expectNumber().toLong
+  def read(parser: Parser): Long =
+    parser
+      .expectNumber()
+      .toLongOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Long from value")
+        )
+      }
   def write[WIRE](
       t:      Long,
       writer: Writer[WIRE],
@@ -166,7 +207,17 @@ object ShortTypeAdapterFactory
   extends TypeAdapter.=:=[Short]
   with ShortTypeAdapter
 trait ShortTypeAdapter {
-  def read(parser: Parser): Short = parser.expectNumber().toInt.toShort
+  //  def read(parser: Parser): Short = parser.expectNumber().toInt.toShort
+  def read(parser: Parser): Short =
+    parser
+      .expectNumber()
+      .toShortOption
+      .getOrElse {
+        parser.backspace()
+        throw new ScalaJackError(
+          parser.showError("Cannot parse an Short from value")
+        )
+      }
   def write[WIRE](
       t:      Short,
       writer: Writer[WIRE],

@@ -1,11 +1,11 @@
 package co.blocke.scalajack
 package json4s
 
-import co.blocke.scalajack.compat.JValueBuilder
 import org.json4s._
 import org.json4s.{ Diff, JNothing, JObject }
 import org.scalatest.matchers.should._
 import org.scalatest.funspec.AnyFunSpec
+
 import scala.reflect.runtime.universe._
 
 class Json4sSpec extends AnyFunSpec with Matchers {
@@ -100,7 +100,7 @@ class Json4sSpec extends AnyFunSpec with Matchers {
     }
     it("Malformed error works") {
       val js4s = JArray(List(JInt(3), JDouble(3.1)))
-      the[java.lang.NumberFormatException] thrownBy sj.read[List[Int]](js4s) should have message "For input string: \"3.1\""
+      the[ScalaJackError] thrownBy sj.read[List[Int]](js4s) should have message "Cannot parse an Int from value"
     }
     it("Unexpected error works") {
       val js4s = JArray(List(JInt(3), JDouble(3.1)))

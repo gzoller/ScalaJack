@@ -4,7 +4,6 @@ package json4s
 import model._
 import model.Writer
 import ClassHelper.ExtraFieldValue
-import co.blocke.scalajack.compat.JValueBuilder
 
 import scala.collection.{ Map, mutable }
 import org.json4s._
@@ -134,7 +133,7 @@ case class Json4sWriter() extends Writer[JValue] {
         })
         val captureFields = t match {
           case sjc: SJCapture =>
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             sjc.captured.asScala.asInstanceOf[Map[String, JValue]]
           case _ => Map.empty[String, JValue]
         }

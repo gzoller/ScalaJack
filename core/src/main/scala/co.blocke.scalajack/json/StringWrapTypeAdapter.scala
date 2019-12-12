@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json
 
 import model._
+import co.blocke.scalajack.model
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe._
@@ -31,7 +32,7 @@ case class StringWrapTypeAdapter[T](
       t:      T,
       writer: Writer[WIRE],
       out:    mutable.Builder[WIRE, WIRE]): Unit = {
-    val stringBuilder = co.blocke.scalajack.compat.StringBuilder()
+    val stringBuilder = model.StringBuilder()
     wrappedTypeAdapter.write(
       t,
       writer,

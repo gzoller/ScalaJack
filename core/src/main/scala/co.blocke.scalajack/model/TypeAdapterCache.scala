@@ -5,6 +5,7 @@ import typeadapter._
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
 import scala.util.{ Success, Try }
+import cats.data.NonEmptyList
 
 import util.TypeTags
 
@@ -67,7 +68,7 @@ object TypeAdapterCache {
 
 case class TypeAdapterCache(
     jackFlavor: JackFlavor[_],
-    factories:  List[TypeAdapterFactory] = Nil) {
+    factories:  NonEmptyList[TypeAdapterFactory]) {
 
   sealed trait Phase
   case object Uninitialized extends Phase
@@ -97,7 +98,8 @@ case class TypeAdapterCache(
                   val typeAdapterAttempt = Try {
                     val taCache: TypeAdapterCache = TypeAdapterCache.this
                     val tt: TypeTag[Any] = TypeTags.of(currentMirror, tpe)
-                    val head :: tail = factories
+                    val head = factories.head
+                    val tail = factories.tail
                     head.typeAdapterOf(next = TypeAdapterFactory(tail))(
                       taCache,
                       tt

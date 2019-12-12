@@ -161,7 +161,7 @@ case class JsonWriter() extends Writer[String] {
       )
       t match {
         case sjc: SJCapture =>
-          import scala.collection.JavaConverters._
+          import scala.jdk.CollectionConverters._
           var first = wasFirst2
           sjc.captured.asScala.foreach {
             case (field, fvalue) =>

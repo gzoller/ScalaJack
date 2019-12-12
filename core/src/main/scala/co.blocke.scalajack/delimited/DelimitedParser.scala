@@ -84,10 +84,13 @@ case class DelimitedParser(
         builder.result()
     }
 
-  def expectNumber(): String =
+  def expectNumber(nullsOK: Boolean = false): String =
     expectString() match {
       // $COVERAGE-OFF$Never called--nulls caught in CollectionTypeAdapter before coming here.  Left here as a safety
-      case "" => null
+      case "" if nullsOK => null
+      case "" =>
+        backspace()
+        throw new ScalaJackError(showError("Expected a Number here"))
       // $COVERAGE-ON$
       case candidate =>
         candidate.toCharArray.find(c => !isNumberChar(c)) match {

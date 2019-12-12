@@ -3,11 +3,12 @@ package typeadapter
 
 import util.BijectiveFunctionHelpers
 import model._
+import co.blocke.scalajack.model
 
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.{ Try, Success }
+import scala.util.{ Success, Try }
 
 object AnyTypeAdapterFactory extends TypeAdapterFactory {
   override def typeAdapterOf[T](
@@ -135,7 +136,7 @@ case class AnyMapKeyTypeAdapter(
       .asInstanceOf[TypeAdapter[X]] match {
         case ta: Stringish => ta.write(value, writer, out)
         case ta: CaseClassTypeAdapter[X] =>
-          val stringBuilder = co.blocke.scalajack.compat.StringBuilder()
+          val stringBuilder = model.StringBuilder()
           ta.writeWithHint(
             value,
             writer,

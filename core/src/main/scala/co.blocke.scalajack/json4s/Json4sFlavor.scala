@@ -1,6 +1,7 @@
 package co.blocke.scalajack
 package json4s
 
+import co.blocke.scalajack.json4s
 import model._
 import typeadapter.AnyMapKeyTypeAdapter
 import org.json4s._
@@ -28,7 +29,7 @@ case class Json4sFlavorFor[J](
   def read(js: JValue): J = ta.read(json4s.Json4sParser(js, this))
 
   def render(t: J): JValue = {
-    val sb = co.blocke.scalajack.compat.JValueBuilder()
+    val sb = JValueBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -45,7 +46,7 @@ case class Json4sFlavorFor[J](
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JValue = {
-    val sb = co.blocke.scalajack.compat.JValueBuilder()
+    val sb = json4s.JValueBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -84,7 +85,7 @@ case class Json4sFlavorFor[J](
     StringWrapTypeAdapter(wrappedTypeAdapter)
 
   override def getBuilder: mutable.Builder[JValue, JValue] =
-    co.blocke.scalajack.compat.JValueBuilder()
+    json4s.JValueBuilder()
   // $COVERAGE-ON$
 }
 
@@ -118,7 +119,7 @@ case class Json4sFlavor(
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JValue = {
-    val sb = co.blocke.scalajack.compat.JValueBuilder()
+    val sb = json4s.JValueBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -157,5 +158,5 @@ case class Json4sFlavor(
     StringWrapTypeAdapter(wrappedTypeAdapter)
 
   override def getBuilder: mutable.Builder[JValue, JValue] =
-    co.blocke.scalajack.compat.JValueBuilder()
+    json4s.JValueBuilder()
 }

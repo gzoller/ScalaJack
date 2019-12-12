@@ -8,7 +8,7 @@ import typeadapter.ClassTypeAdapterBase
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
   extends Parser {
@@ -142,9 +142,11 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     else
       throw new ScalaJackError(s"Expected boolean here, not '$input'")
 
-  def expectNumber(): String =
+  def expectNumber(nullOK: Boolean = false): String =
     input match {
-      case i if i.isNull       => null
+      case i if i.isNull && nullOK => null
+      case i if i.isNull =>
+        throw new ScalaJackError(s"Expected number here, not '$input'")
       case i if i.isDecimal128 => i.asDecimal128.getValue.toString
       case i if i.isDouble     => i.asDouble.getValue.toString
       case i if i.isInt32      => i.asInt32.getValue.toString

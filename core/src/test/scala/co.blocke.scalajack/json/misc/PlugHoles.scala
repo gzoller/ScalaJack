@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json.misc
 
-import co.blocke.scalajack.compat.StringBuilder
+import co.blocke.scalajack.model.StringBuilder
 
 import scala.reflect.runtime.universe._
 import org.scalatest.matchers.should.Matchers

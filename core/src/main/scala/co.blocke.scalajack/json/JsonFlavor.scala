@@ -30,7 +30,7 @@ case class JsonFlavorFor[J](
 
   def read(js: JSON): J = ta.read(json.JsonParser(js, this))
   def render(t: J): JSON = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -40,7 +40,7 @@ case class JsonFlavorFor[J](
       .asInstanceOf[JackFlavorFor[JSON, U]]
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -111,7 +111,7 @@ case class JsonFlavor(
     )
 
   def render[T](t: T)(implicit tt: TypeTag[T]): JSON = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]

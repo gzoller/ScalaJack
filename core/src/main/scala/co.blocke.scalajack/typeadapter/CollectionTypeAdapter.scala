@@ -1,13 +1,12 @@
 package co.blocke.scalajack
-package compat
+package typeadapter
 
-import json.StringWrapTypeAdapter
+import co.blocke.scalajack.json.StringWrapTypeAdapter
+import co.blocke.scalajack.model._
+import co.blocke.scalajack.util.Reflection
 
-import scala.reflect.runtime.universe._
 import scala.collection.{ mutable, _ }
-import util.Reflection
-import model._
-import typeadapter._
+import scala.reflect.runtime.universe._
 
 case class CollectionTypeAdapterFactory(
     jackFlavor: JackFlavor[_],
@@ -19,7 +18,7 @@ case class CollectionTypeAdapterFactory(
       taCache: TypeAdapterCache,
       tt:      TypeTag[T]
   ): TypeAdapter[T] =
-    if (tt.tpe <:< typeOf[GenTraversableOnce[_]]) {
+    if (tt.tpe <:< typeOf[IterableOnce[_]] && !(tt.tpe <:< typeOf[Option[_]])) { // need the Option check here because 2.13 has Option deriving from IterableOnce, and we don't want Options treated as Collecitons
       val requiredClassSymbol = tt.tpe.typeSymbol.asClass
       val companionSymbol = requiredClassSymbol.companion.asModule
       val companionType = companionSymbol.info
@@ -158,7 +157,7 @@ case class CollectionTypeAdapterFactory(
     )
   }
 
-  private def buildListTA[Elem, To >: Null <: GenTraversableOnce[Elem]](
+  private def buildListTA[Elem, To >: Null <: IterableOnce[Elem]](
       companionInstance: Any,
       method:            MethodSymbol,
       elemTypeAdapter:   TypeAdapter[Elem]

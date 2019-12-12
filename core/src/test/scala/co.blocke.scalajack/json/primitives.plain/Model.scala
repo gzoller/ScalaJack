@@ -14,7 +14,6 @@ class InheritSimpleBase(
 
   // Private var or val
   val notOne: Int = 2
-  private var nada: Int = 3
 
   @Ignore var dontseeme: Int = 90
 

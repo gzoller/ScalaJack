@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package model
 
 import typeadapter._
+import cats.data.NonEmptyList
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe._
@@ -43,9 +44,11 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   def bakeCache(): TypeAdapterCache = {
     val intermediateContext = TypeAdapterCache(
       this,
-      customAdapters ::: co.blocke.scalajack.compat
-        .CollectionTypeAdapterFactory(this, enumsAsInt) ::
-        TypeAdapterCache.StandardFactories
+      NonEmptyList(
+        typeadapter.CollectionTypeAdapterFactory(this, enumsAsInt),
+        customAdapters :::
+          TypeAdapterCache.StandardFactories
+      )
     )
 
     // ParseOrElse functionality
@@ -100,9 +103,8 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
       else
         List.empty[TypeAdapterFactory]
 
-    intermediateContext.copy(
-      factories = parseOrElseFactories ::: permissives ::: intermediateContext.factories
-    )
+    val staged = parseOrElseFactories ::: permissives ::: intermediateContext.factories.toList
+    intermediateContext.copy(factories = NonEmptyList(staged.head, staged.tail))
   }
 
   def enumsAsInts(): JackFlavor[WIRE]
@@ -131,7 +133,6 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
 
   // Need WIRE-specific Builder instance.  By default this is StringBuilder.  Mongo will overwrite this.
   def getBuilder: mutable.Builder[WIRE, WIRE] =
-    co.blocke.scalajack.compat
-      .StringBuilder()
+    StringBuilder()
       .asInstanceOf[mutable.Builder[WIRE, WIRE]]
 }

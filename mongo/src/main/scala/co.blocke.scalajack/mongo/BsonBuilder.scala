@@ -1,8 +1,9 @@
-package co.blocke.scalajack
-package compat
+package co.blocke.scalajack.mongo
+
+import co.blocke.scalajack.ScalaJackError
+import org.bson.BsonValue
 
 import scala.collection.mutable
-import org.bson.BsonValue
 
 case class BsonBuilder() extends mutable.Builder[BsonValue, BsonValue] {
   private var internalValue: Option[BsonValue] = None
@@ -14,5 +15,8 @@ case class BsonBuilder() extends mutable.Builder[BsonValue, BsonValue] {
 
   def clear(): Unit = internalValue = None
 
-  def result(): BsonValue = internalValue.getOrElse(throw new ScalaJackError("No value set for internal mongo builder"))
+  def result(): BsonValue =
+    internalValue.getOrElse(
+      throw new ScalaJackError("No value set for internal mongo builder")
+    )
 }

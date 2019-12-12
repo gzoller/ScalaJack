@@ -17,7 +17,7 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
         next.typeAdapterOf[T]
 
       case asTry =>
-        val valueType :: Nil = asTry.typeArgs
+        val valueType = asTry.typeArgs.head
         val valueTypeAdapter = taCache.typeAdapter(valueType)
         TryTypeAdapter(valueTypeAdapter, taCache.jackFlavor)
           .asInstanceOf[TypeAdapter[T]]

@@ -5,11 +5,10 @@ import co.blocke.scalajack.model.JackFlavor
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.bson._
-import compat.BsonBuilder
 import JsonMatcher._
 import java.time.{ OffsetDateTime, ZonedDateTime }
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class MyNumbers(d: BigDecimal, n: Number)
 case class NumberBoom(x: BigInt)
@@ -315,7 +314,7 @@ class LooseChange extends AnyFunSpec with Matchers {
             new BsonElement("big", new BsonDouble(123.45))
           ).asJava
         )
-        the[java.lang.NumberFormatException] thrownBy sjM.read[OneSub1](d) should have message "For input string: \"123.45\""
+        the[ScalaJackError] thrownBy sjM.read[OneSub1](d) should have message "Cannot parse an Long from value"
       }
       it("Non-hint hint-labeled field") {
         val d = new BsonDocument(
