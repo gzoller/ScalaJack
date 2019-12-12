@@ -3,6 +3,7 @@ package delimited
 
 import model._
 import ClassHelper.ExtraFieldValue
+import co.blocke.scalajack.model
 
 import scala.collection.Map
 import scala.collection.mutable
@@ -14,7 +15,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       elemTypeAdapter: TypeAdapter[Elem],
       out:             mutable.Builder[String, String]): Unit =
     if (t != null) {
-      val sb = compat.StringBuilder()
+      val sb = model.StringBuilder()
       val iter = t.iterator
       while (iter.hasNext) {
         elemTypeAdapter.write(iter.next, this, sb)
@@ -65,7 +66,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
         val f = fieldMembersByName(name)
         f.valueTypeAdapter match {
           case ta if ta.isInstanceOf[Classish] =>
-            val sb = compat.StringBuilder()
+            val sb = model.StringBuilder()
             ta.write(f.valueIn(t), this, sb)
             writeString(sb.result(), out)
           case ta =>
@@ -95,7 +96,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       out:      mutable.Builder[String, String]
   ): Unit = {
     var first = true
-    val sb = compat.StringBuilder()
+    val sb = model.StringBuilder()
     writeFns.foreach { f =>
       if (first)
         first = false
@@ -103,7 +104,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
         sb += delimiter.toString
       f.valueTypeAdapter match {
         case cta: Classish =>
-          val sb2 = compat.StringBuilder()
+          val sb2 = model.StringBuilder()
           f.write(t, this, sb2)
           writeString(sb2.result(), sb)
         case ta => f.write(t, this, sb)

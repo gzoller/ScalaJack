@@ -1,7 +1,8 @@
 package co.blocke.scalajack
-package compat
+package json4s
 
 import org.json4s.JValue
+
 import scala.collection.mutable
 
 case class JValueBuilder() extends mutable.Builder[JValue, JValue] {
@@ -14,5 +15,8 @@ case class JValueBuilder() extends mutable.Builder[JValue, JValue] {
 
   def clear(): Unit = internalValue = None
 
-  def result(): JValue = internalValue.getOrElse(throw new ScalaJackError("No value set for internal json4s builder"))
+  def result(): JValue =
+    internalValue.getOrElse(
+      throw new ScalaJackError("No value set for internal json4s builder")
+    )
 }

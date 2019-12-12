@@ -10,7 +10,7 @@ import java.time._
 object OffsetDateTimeTypeAdapter extends TypeAdapter.=:=[OffsetDateTime] {
 
   def read(parser: Parser): OffsetDateTime =
-    parser.expectNumber() match {
+    parser.expectNumber(true) match {
       case null => null
       case dateTimeLong =>
         OffsetDateTime.ofInstant(

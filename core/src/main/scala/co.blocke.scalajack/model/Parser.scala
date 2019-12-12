@@ -26,7 +26,7 @@ trait Parser {
       hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _])
   def expectBoolean(): Boolean
-  def expectNumber(): String
+  def expectNumber(nullOK: Boolean = false): String
   def peekForNull: Boolean // peek-ahead to find null
   def scanForHint(hint: String, converterFn: HintBijective): Type
 

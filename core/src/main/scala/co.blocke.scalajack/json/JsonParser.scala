@@ -6,7 +6,7 @@ import typeadapter.ClassTypeAdapterBase
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
@@ -110,19 +110,23 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || char == '.' || char == 'e' || char == 'E' || char == '-' || char == '+'
 
-  def expectNumber(): String = {
+  def expectNumber(nullOK: Boolean = false): String = {
     val mark = i
-    while (i < max && isNumberChar(jsChars(i))) i += 1
-    if (mark == i) {
-      if (nullCheck()) {
+    nullCheck() match {
+      case true if nullOK =>
         i += 4
         null
-      } else
+      case true =>
         throw new ScalaJackError(showError("Expected a Number here"))
-    } else if (i == max || "\t\n ,}]".contains(jsChars(i)))
-      js.substring(mark, i)
-    else
-      throw new ScalaJackError(showError("Expected a Number here"))
+      case false =>
+        while (i < max && isNumberChar(jsChars(i))) i += 1
+        if (mark == i)
+          throw new ScalaJackError(showError("Expected a Number here"))
+        else if (i == max || "\t\n ,}]".contains(jsChars(i)))
+          js.substring(mark, i)
+        else
+          throw new ScalaJackError(showError("Expected a Number here"))
+    }
   }
 
   def expectList[E, TO](

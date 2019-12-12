@@ -41,7 +41,8 @@ case class CaseClassTypeAdapter[T](
         taCache.jackFlavor.defaultHint
       )
       if (foundBits.isEmpty) {
-        val asBuilt = constructorMirror.apply(args: _*).asInstanceOf[T]
+        val asBuilt =
+          constructorMirror.apply(args.toIndexedSeq: _*).asInstanceOf[T]
         if (isSJCapture)
           asBuilt.asInstanceOf[SJCapture].captured = captured
         asBuilt

@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package delimited
 
 import model._
+
 import scala.reflect.runtime.universe._
 
 /**
@@ -23,14 +24,14 @@ case class DelimitedFlavorFor[J](
 ) extends JackFlavorFor[DELIMITED, J] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, DELIM_PREFIX + input, this)
+    val parser = DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
   def read(input: DELIMITED): J =
-    ta.read(DelimitedParser(delimiter, DELIM_PREFIX + input, this))
+    ta.read(DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this))
   def render(t: J): DELIMITED = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -40,7 +41,7 @@ case class DelimitedFlavorFor[J](
       .asInstanceOf[JackFlavorFor[DELIMITED, U]]
 
   def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -82,10 +83,9 @@ case class DelimitedFlavorFor[J](
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
     dads.copy(
-      factories = List(
-        DelimitedEitherTypeAdapterFactory,
-        DelimitedOptionTypeAdapterFactory
-      ) ++ dads.factories
+      factories =
+        DelimitedEitherTypeAdapterFactory ::
+          DelimitedOptionTypeAdapterFactory :: dads.factories
     )
   }
   // $COVERAGE-ON$
@@ -104,7 +104,7 @@ case class DelimitedFlavor(
 ) extends JackFlavor[DELIMITED] {
 
   def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, DELIM_PREFIX + input, this)
+    val parser = DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
@@ -123,7 +123,7 @@ case class DelimitedFlavor(
     )
 
   def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = co.blocke.scalajack.compat.StringBuilder()
+    val sb = model.StringBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -164,10 +164,8 @@ case class DelimitedFlavor(
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
     dads.copy(
-      factories = List(
-        DelimitedEitherTypeAdapterFactory,
-        DelimitedOptionTypeAdapterFactory
-      ) ++ dads.factories
+      factories = DelimitedEitherTypeAdapterFactory ::
+        DelimitedOptionTypeAdapterFactory :: dads.factories
     )
   }
 }

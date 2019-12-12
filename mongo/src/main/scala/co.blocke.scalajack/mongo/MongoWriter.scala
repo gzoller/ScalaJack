@@ -3,7 +3,6 @@ package mongo
 
 import model._
 import ClassHelper.ExtraFieldValue
-import compat.BsonBuilder
 
 import scala.collection.Map
 import scala.collection.mutable
@@ -168,7 +167,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
 
       t match {
         case sjc: SJCapture =>
-          import scala.collection.JavaConverters._
+          import scala.jdk.CollectionConverters._
           sjc.captured.asScala.foreach {
             case (label, capturedValue) =>
               doc.append(label, capturedValue.asInstanceOf[BsonValue])

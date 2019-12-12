@@ -3,7 +3,6 @@ package mongo
 
 import model._
 import org.bson._
-import compat.BsonBuilder
 import typeadapter.AnyTypeAdapter
 
 import scala.reflect.runtime.universe._

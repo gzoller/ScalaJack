@@ -68,7 +68,9 @@ case class PlainClassTypeAdapter[T](
           )
         )
       }
-      val asBuilt = constructorMirror.apply(constructorArgs: _*).asInstanceOf[T]
+      val asBuilt = constructorMirror
+        .apply(constructorArgs.toIndexedSeq: _*)
+        .asInstanceOf[T]
 
       if (isSJCapture)
         asBuilt.asInstanceOf[SJCapture].captured = captured

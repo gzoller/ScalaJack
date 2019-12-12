@@ -150,7 +150,10 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
         }
         it("Non-nullables") {
           val delim = """5,"1,,3""""
-          the[NumberFormatException] thrownBy sj.read[WithList[Int]](delim) should have message "null"
+          val msg = """Expected a Number here
+                    |,,3
+                    |-^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[WithList[Int]](delim) should have message msg
         }
         it("Nested lists") {
           val s = WithList(3, List(List("a,b", "c"), List("x", "y")))
@@ -236,7 +239,10 @@ class DelimSpec extends AnyFunSpec with Matchers with PrivateMethodTester {
         }
         it("Either missing a value (no default)") {
           val delim = ",\"99,foo\""
-          the[java.lang.NumberFormatException] thrownBy sj.read[HasEither](delim) should have message "null"
+          val msg = """Expected a Number here
+                      |,"99,foo"
+                      |^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[HasEither](delim) should have message msg
         }
         it("Supports Either field value with default specified") {
           val delim = "15,"

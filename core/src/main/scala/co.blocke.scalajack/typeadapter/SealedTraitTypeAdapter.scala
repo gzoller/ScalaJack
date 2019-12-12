@@ -7,7 +7,6 @@ import scala.collection.immutable
 import scala.collection.mutable
 import scala.util.Try
 import scala.reflect.runtime.universe._
-import co.blocke.scalajack.compat.MapLikeTypeAdapter
 
 object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
 
@@ -61,7 +60,7 @@ object SealedTraitTypeAdapterFactory extends TypeAdapterFactory {
               .subsets(2)
               .map(_.toList)
               .map(list => {
-                val a :: b :: Nil = list
+                val List(a, b) = list.take(2)
                 (a, b)
               })
               .toSet

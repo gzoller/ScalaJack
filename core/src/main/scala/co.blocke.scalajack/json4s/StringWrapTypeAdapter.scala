@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json4s
 
-import compat.JValueBuilder
 import typeadapter.AnyTypeAdapter
 import model._
 import org.json4s._

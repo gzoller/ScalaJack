@@ -199,11 +199,17 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
         }
         it("Bad Float Key") {
           val js = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleFloat](js) should have message "multiple points"
+          val msg = """Cannot parse an Float from value
+                    |90.12.3
+                    |------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleFloat](js) should have message msg
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.0":56,"90":34}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js) should have message "For input string: \"12.0\""
+          val msg = """Cannot parse an Int from value
+                      |12.0
+                      |---^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleInt](js) should have message msg
         }
         it("Bad Long Key") {
           val js = """{"m":{"12":56,"hey":34}}"""

@@ -109,9 +109,11 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
         throw new ScalaJackError(s"Expected boolean here, not '$x'")
     }
 
-  def expectNumber(): String =
+  def expectNumber(nullOK: Boolean = false): String =
     input match {
-      case null | JNull  => null
+      case null | JNull if nullOK => null
+      case null | JNull =>
+        throw new ScalaJackError(s"Expected number here, not '$input'")
       case JDecimal(num) => num.toString
       case JDouble(num)  => num.toString
       case JInt(num)     => num.toString

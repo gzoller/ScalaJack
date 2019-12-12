@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package mongo
 
-import model._
 import org.bson.types.ObjectId
 import org.bson._
 import org.scalatest.matchers.should._

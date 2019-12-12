@@ -171,7 +171,10 @@ class ValueClassPrim() extends AnyFunSpec with Matchers {
       describe("--- Negative Tests ---") {
         it("Wrong JSON for wrapped type") {
           val js = """100.25"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[VCShort](js) should have message "For input string: \"100.25\""
+          val msg = """Cannot parse an Short from value
+                      |100.25
+                      |-----^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[VCShort](js) should have message msg
         }
       }
     }
