@@ -183,25 +183,19 @@ case class YamlWriter() extends Writer[String] {
     addString("null", out)
 
   @inline private def writeFields(
-      isFirst: Boolean,
-      fields:  List[(String, Any, TypeAdapter[Any])],
-      out:     mutable.Builder[String, String]
-  ): Boolean = {
-    var first = isFirst
+      fields: List[(String, Any, TypeAdapter[Any])],
+      out:    mutable.Builder[String, String]
+  ): Unit = {
     for ((label, value, valueTypeAdapter) <- fields)
       if (value != None) {
-        if (first)
-          first = false
-        else
-          out += ","
+        out += tab_prefix
         writeString(label, out)
-        out += ":"
+        out += MAP_PREFIX
         valueTypeAdapter.write(value, this, out)
+        out += "\n"
       }
-    first
   }
 
-  // TODO
   def writeObject[T](
       t:                  T,
       orderedFieldNames:  List[String],
@@ -209,49 +203,52 @@ case class YamlWriter() extends Writer[String] {
       out:                mutable.Builder[String, String],
       extras:             List[(String, ExtraFieldValue[_])]
   ): Unit = {
-    if (t == null) {
-      addString("null", out)
-    } else {
-      out += "{"
-      val wasFirst = writeFields(
-        isFirst = true,
-        extras.map(
-          e =>
-            (
-              e._1,
-              e._2.value,
-              e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
-            )
-        ),
-        out
-      )
-      val wasFirst2 = writeFields(
-        wasFirst,
-        orderedFieldNames
-          .map { fieldName => // Strictly-speaking JSON has no order, but it's clean to write out in constructor order.
-            val oneField = fieldMembersByName(fieldName)
-            (fieldName, oneField.valueIn(t), oneField.valueTypeAdapter)
-          },
-        out
-      )
-      t match {
-        case sjc: SJCapture =>
-          import scala.jdk.CollectionConverters._
-          var first = wasFirst2
-          sjc.captured.asScala.foreach {
-            case (field, fvalue) =>
-              if (first)
-                first = false
-              else
-                out += ","
-              writeString(field, out)
-              out += ":"
-              out += fvalue
-                .asInstanceOf[String] // all json captured things are String
-          }
-        case _ =>
-      }
-      out += "}"
+    t match {
+      case null =>
+        writeNull(out)
+        out += "\n"
+        if (questIndentTrigger) {
+          questIn()
+          questIndentTrigger = false
+        }
+      case _ =>
+        writeFields(
+          extras.map(
+            e =>
+              (
+                e._1,
+                e._2.value,
+                e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
+              )
+          ),
+          out
+        )
+        writeFields(
+          orderedFieldNames
+            .map { fieldName => // Strictly-speaking JSON has no order, but it's clean to write out in constructor order.
+              val oneField = fieldMembersByName(fieldName)
+              (fieldName, oneField.valueIn(t), oneField.valueTypeAdapter)
+            },
+          out
+        )
+        t match {
+          case sjc: SJCapture =>
+            import scala.jdk.CollectionConverters._
+            sjc.captured.asScala.foreach {
+              case (field, fvalue) =>
+                out += tab_prefix
+                writeString(field, out)
+                out += MAP_PREFIX
+                out += fvalue
+                  .asInstanceOf[String] // all json captured things are String
+                out += "\n"
+            }
+          case _ =>
+        }
+        if (questIndentTrigger) {
+          questIn()
+          questIndentTrigger = false
+        }
     }
   }
 
