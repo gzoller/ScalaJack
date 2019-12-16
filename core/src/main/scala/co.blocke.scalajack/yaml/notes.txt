@@ -1,0 +1,4 @@
+NOTES:
+
+Anchors and aliases (& and *) in YMAL need to be handled on read but there's no reason to write YAML this way in a Writer.
+
