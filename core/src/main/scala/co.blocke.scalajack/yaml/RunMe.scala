@@ -7,11 +7,21 @@ object RunMe extends App {
 
   val sj = ScalaJack()
 
-  val yaml = ">\n   Greg\n   Zoller"
+  val yaml =
+    """- a
+      |- |
+      |    Greg
+      |    Zoller
+      |- c""".stripMargin
 
   val parser = YamlParser(yaml, null)
 
-  println(parser.expectString())
+  println(
+    parser.expectList(
+      sj.taCache.typeAdapterOf[String],
+      new scala.collection.mutable.ListBuffer[String]
+    )
+  )
 
   /*
   val writer = YamlWriter()

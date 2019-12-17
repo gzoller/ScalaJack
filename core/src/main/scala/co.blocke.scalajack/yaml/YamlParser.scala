@@ -9,9 +9,13 @@ import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 
 case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
-  extends Parser {
+    extends Parser {
 
   type WIRE = YAML
+
+  private val LIST_PREFIX = "- "
+  private val MAP_PREFIX = ": "
+  private val QUEST_PREFIX = "? "
 
   private var line = 0
   private val yaml: Array[Char] = input.toCharArray
@@ -33,6 +37,10 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
       incLine()
     }
   @inline def incLine(): Unit = line += 1
+  @inline def pushTab(t: Int): Unit =
+    if (t > tabStack.head) tabStack.push(t)
+    else
+      throw new ScalaJackError(showError("Bad tab indent " + t))
 
   def backspace(): Unit = i -= 1
 
@@ -79,20 +87,18 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
         input.substring(mark, i)
     }
     val readNLString = (nlReplace: String) => {
-      tabStack.push(discernTabNextLine)
+      pushTab(discernTabNextLine)
       val builder = new java.lang.StringBuilder()
-      var done = false
       while (expectIndent()) {
-        builder.append(readString(() => yaml(i) != '#' && yaml(i) != '\n'))
-        if (i < max)
-          yaml(i) match {
-            case '\n' =>
-              builder.append(nlReplace)
-              i += 1
-            case '#' => skipToEOL()
-            case _   =>
-          }
+        builder.append(readString(() => yaml(i) != '\n'))
+        val c = yaml(i)
+        if (i < max && yaml(i) == '\n') {
+          builder.append(nlReplace)
+          i += 1
+          incLine()
+        }
       }
+      i -= 1 // backspace over \n because caller does a skipToEOL()
       tabStack.pop()
       builder.toString
     }
@@ -112,15 +118,12 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
           readNLString("\n")
         case '>' =>
           readNLString(" ")
+        case _ =>
+          readString(() => yaml(i) != '\n' && yaml(i) != '#')
       }
     skipToEOL()
-    strVal
+    strVal.stripTrailing
   }
-
-  // TODO: Comment parsing:
-  //    name: #comment
-  //       Greg
-  // Try using a "tab stack".  comment parse pushes stack+1 space then hunt for non-WS char (indent on Greg past current tab level)
 
   // Slower "capture" version for when we discover embedded special chars that need translating, i.e. we
   // can't do a simple substring within quotes.
@@ -214,37 +217,36 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
     num
   }
 
-  def expectList[E, TO](
-      elemTypeAdapter: TypeAdapter[E],
-      builder:         mutable.Builder[E, TO]): TO = {
-    /*
-    if (yaml(i) != '[')
+  def expectList[E, TO](elemTypeAdapter: TypeAdapter[E],
+                        builder: mutable.Builder[E, TO]): TO = {
+    if (!expectIndent())
+      throw new ScalaJackError(
+        showError(
+          s"Didn't find expected number of indent spaces (${tabStack.head}})."
+        )
+      )
+    if (i + 2 >= max || input.substring(i, i + 2) != LIST_PREFIX)
       throw new ScalaJackError(showError("Expected start of list here"))
-    i += 1
-    var first = true
-    while (i < max && yaml(i) != ']') {
-      whitespace()
-      if (!first) {
-        if (yaml(i) != ',')
-          throw new ScalaJackError(showError("Expected comma here"))
-        else
-          i += 1 // skip ','
-        whitespace()
-      } else
-        first = false
-      builder += elemTypeAdapter.read(this) // Parse next item!
-      whitespace()
+
+    // TODO: This is too simple--scalars basically.  Must account for list of collections and flow notation [a,b,c]
+    i += 2 // skip list prefix
+    builder += elemTypeAdapter.read(this) // Parse next item
+
+    var mark = i
+    while (expectIndent() && i + 2 < max && input.substring(i, i + 2) == LIST_PREFIX) {
+      i += 2
+      builder += elemTypeAdapter.read(this) // Parse next item
+      mark = i
     }
-    if (i == max || yaml(i) != ']')
-      throw new ScalaJackError(showError("Expected end of list here"))
-    i += 1
+    if (i < max) {
+      i = mark // backtrack if different indent level found
+      tabStack.pop()
+    }
     builder.result()
-     */
-    null.asInstanceOf[TO]
   }
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
+    readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
   ): List[Any] = {
     /*
     if (i == max || yaml(i) != '[')
@@ -272,10 +274,9 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
     null.asInstanceOf[List[Any]]
   }
 
-  def expectMap[K, V, TO](
-      keyTypeAdapter:   TypeAdapter[K],
-      valueTypeAdapter: TypeAdapter[V],
-      builder:          mutable.Builder[(K, V), TO]): TO = {
+  def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K],
+                          valueTypeAdapter: TypeAdapter[V],
+                          builder: mutable.Builder[(K, V), TO]): TO = {
     /*
     whitespace()
     if (yaml(i) != '{')
@@ -313,8 +314,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
   }
 
   def expectObject(
-      classBase: ClassTypeAdapterBase[_],
-      hintLabel: String
+    classBase: ClassTypeAdapterBase[_],
+    hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
     /*
     whitespace()
@@ -470,8 +471,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
   }
 
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn:       HintBijective
+    typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
+    converterFn: HintBijective
   ): Map[Type, Type] = {
     /*
     val mark = i
