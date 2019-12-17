@@ -33,10 +33,6 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
   def read(parser: Parser): Any =
     if (parser.peekForNull)
       null
-    else if (parser.nextIsString && jackFlavor.permissivesOk)
-      jackFlavor.stringWrapTypeAdapterFactory(this).read(parser)
-    else if (parser.nextIsString)
-      parser.expectString()
     else if (parser.nextIsBoolean)
       parser.expectBoolean()
     else if (parser.nextIsNumber) {
@@ -46,7 +42,11 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any])
         case d if d.isDecimalDouble => d.toDouble
         case d                      => d
       }
-    } else if (parser.nextIsArray) {
+    } else if (parser.nextIsString && jackFlavor.permissivesOk)
+      jackFlavor.stringWrapTypeAdapterFactory(this).read(parser)
+    else if (parser.nextIsString)
+      parser.expectString()
+    else if (parser.nextIsArray) {
       val listBuilder: ListBuffer[Any] = mutable.ListBuffer.empty[Any]
       parser.expectList(jackFlavor.anyTypeAdapter, listBuilder)
     } else if (parser.nextIsObject) { // Could be Class/Trait or Map

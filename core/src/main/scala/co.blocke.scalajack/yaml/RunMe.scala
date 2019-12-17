@@ -7,6 +7,13 @@ object RunMe extends App {
 
   val sj = ScalaJack()
 
+  val yaml = ">\n   Greg\n   Zoller"
+
+  val parser = YamlParser(yaml, null)
+
+  println(parser.expectString())
+
+  /*
   val writer = YamlWriter()
 
   val stuff = List("foo", "Greg Zoller")
@@ -35,7 +42,7 @@ object RunMe extends App {
   //  writer.writeMap(Map("foobar" -> "bar\nbaz"), stringTA, stringTA, out)
 
   writer.writeObject(
-    Person("Greg", 53),
+    Person("  Greg", 53),
     ta2.asInstanceOf[typeadapter.CaseClassTypeAdapter[_]].orderedFieldNames,
     ta2
       .asInstanceOf[typeadapter.CaseClassTypeAdapter[_]]
@@ -58,7 +65,8 @@ object RunMe extends App {
     ta2,
     out
   )
-   */
+ */
 
   println(out.result())
+ */
 }

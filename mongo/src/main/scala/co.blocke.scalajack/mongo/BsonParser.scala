@@ -197,9 +197,6 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       throw new ScalaJackError(s"Expected document (object) here, not '$input'")
 
   def showError(msg: String): String = msg
-  // $COVERAGE-OFF$Not used for MongoDB
-  def skipOverElement(): Unit = {}
-  // $COVERAGE-ON$
   def backspace(): Unit = {}
   def mark(): Int = -1
   def revertToMark(mark: Int): Unit = {}

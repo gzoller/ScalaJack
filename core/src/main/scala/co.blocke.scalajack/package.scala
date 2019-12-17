@@ -9,6 +9,7 @@ import scala.reflect.runtime.universe
 package object scalajack {
   type JSON = String
   type DELIMITED = String
+  type YAML = String
   type MemberName = String
   type HintBijective = BijectiveFunction[String, Type]
 

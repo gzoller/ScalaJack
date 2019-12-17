@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json
+package yaml
 
 import model._
 import typeadapter.ClassTypeAdapterBase
@@ -8,49 +8,128 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 
-case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
+case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML])
+  extends Parser {
 
-  type WIRE = JSON
+  type WIRE = YAML
 
-  private val jsChars: Array[Char] = js.toCharArray
+  private var line = 0
+  private val yaml: Array[Char] = input.toCharArray
   private var i = 0
-  private val max: Int = jsChars.length
+  private val max: Int = yaml.length
+  private var tabStack = mutable.Stack[Int](0)
+  private var savedStack: mutable.Stack[Int] = mutable.Stack.empty[Int]
 
-  @inline def whitespace(): Unit =
-    while (i < max && jsChars(i).isWhitespace) i += 1
+  @inline def whitespace(): Boolean = {
+    while (i < max && yaml(i).isWhitespace) i += 1
+    true
+  }
   @inline def nullCheck(): Boolean =
-    jsChars(i) == 'n' && i + 4 <= max && js.substring(i, i + 4) == "null"
+    yaml(i) == 'n' && i + 4 <= max && input.substring(i, i + 4) == "null"
+  @inline def skipToEOL(): Unit =
+    if (i < max) {
+      while (i < max && yaml(i) != '\n') i += 1
+      i += 1
+      incLine()
+    }
+  @inline def incLine(): Unit = line += 1
 
   def backspace(): Unit = i -= 1
 
-  def expectString(nullOK: Boolean = true): String = {
-    if (nullOK && nullCheck()) {
-      i += 4
-      null
-    } else if (jsChars(i) == '"') {
-      i += 1
-      val mark = i
-      var captured: Option[String] = None
-      while (i < max && jsChars(i) != '"') {
-        if (jsChars(i) == '\\') { // Oops!  Special char found.  Reset and try again while capturing/translating special chars
-          i = mark
-          captured = Some(_expectString())
-        } else
-          i += 1
-      }
-      i += 1
-      captured.getOrElse(js.substring(mark, i - 1))
-    } else
-      throw new ScalaJackError(showError("Expected a String here"))
+  // Leaves cursor on first non-tab character, i.e. ready to parse the next thing
+  private def discernTabNextLine: Int = {
+    skipToEOL()
+    var tab = 0
+    val mark = i
+    while (i < max && "\n# ".contains(yaml(i))) yaml(i) match {
+      case '#' | '\n' =>
+        tab = 0
+        skipToEOL()
+      case ' ' =>
+        tab += 1
+        i += 1
+      case _ =>
+    }
+    i = mark
+    tab
   }
+
+  private def expectIndent(): Boolean = {
+    val expected = tabStack.head
+    if (i + expected < max && input.substring(i, i + expected) == " " * expected) {
+      i += expected
+      true
+    } else false
+  }
+
+  def expectString(nullOK: Boolean = true): String = {
+    val readString = (cond: () => Boolean) => {
+      val mark = i
+      var hasSpecialChar = false
+      while (i < max && cond()) {
+        if (yaml(i) == '\\') {
+          hasSpecialChar = true
+          i += 1
+        }
+        i += 1
+      }
+      if (hasSpecialChar)
+        _expectString(mark, i)
+      else
+        input.substring(mark, i)
+    }
+    val readNLString = (nlReplace: String) => {
+      tabStack.push(discernTabNextLine)
+      val builder = new java.lang.StringBuilder()
+      var done = false
+      while (expectIndent()) {
+        builder.append(readString(() => yaml(i) != '#' && yaml(i) != '\n'))
+        if (i < max)
+          yaml(i) match {
+            case '\n' =>
+              builder.append(nlReplace)
+              i += 1
+            case '#' => skipToEOL()
+            case _   =>
+          }
+      }
+      tabStack.pop()
+      builder.toString
+    }
+
+    val strVal = if (nullCheck()) {
+      if (nullOK) {
+        i += 4
+        null
+      } else
+        throw new ScalaJackError(showError("Expected a String here"))
+    } else
+      yaml(i) match {
+        case '"' =>
+          i += 1
+          readString(() => yaml(i) != '"')
+        case '|' =>
+          readNLString("\n")
+        case '>' =>
+          readNLString(" ")
+      }
+    skipToEOL()
+    strVal
+  }
+
+  // TODO: Comment parsing:
+  //    name: #comment
+  //       Greg
+  // Try using a "tab stack".  comment parse pushes stack+1 space then hunt for non-WS char (indent on Greg past current tab level)
 
   // Slower "capture" version for when we discover embedded special chars that need translating, i.e. we
   // can't do a simple substring within quotes.
-  private def _expectString(): String = {
+  private def _expectString(start: Int, end: Int): String = {
     val builder = new java.lang.StringBuilder()
-    while (i < max && jsChars(i) != '"') {
-      if (jsChars(i) == '\\') {
-        jsChars(i + 1) match {
+    i = start
+    while (i <= end) {
+      if (yaml(i) == '\\') {
+        yaml(i + 1) match {
           case '"' =>
             builder.append('\"')
             i += 2
@@ -80,66 +159,73 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
             i += 2
 
           case 'u' =>
-            val hexEncoded = js.substring(i + 2, i + 6)
+            val hexEncoded = input.substring(i + 2, i + 6)
             val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
             builder.append(unicodeChar.toString)
             i += 6
 
           case c =>
+            builder.append('\\') // unrecognized special char
             builder.append(c)
             i += 2
         }
       } else {
-        builder.append(jsChars(i))
+        builder.append(yaml(i))
         i += 1
       }
     }
     builder.toString
   }
 
-  def expectBoolean(): Boolean =
-    if (i + 4 <= max && js.substring(i, i + 4) == "true") {
+  def expectBoolean(): Boolean = {
+    val b = if (i + 4 <= max && input.substring(i, i + 4) == "true") {
       i += 4
       true
-    } else if (i + 5 <= max && js.substring(i, i + 5) == "false") {
+    } else if (i + 5 <= max && input.substring(i, i + 5) == "false") {
       i += 5
       false
     } else
       throw new ScalaJackError(showError("Expected a Boolean here"))
+    skipToEOL()
+    b
+  }
 
   @inline def isNumberChar(char: Char): Boolean =
     ('0' <= char && char <= '9') || char == '.' || char == 'e' || char == 'E' || char == '-' || char == '+'
 
   def expectNumber(nullOK: Boolean = false): String = {
     val mark = i
-    nullCheck() match {
+    val num = nullCheck() match {
       case true if nullOK =>
         i += 4
         null
       case true =>
         throw new ScalaJackError(showError("Expected a Number here"))
       case false =>
-        while (i < max && isNumberChar(jsChars(i))) i += 1
+        while (i < max && isNumberChar(yaml(i))) i += 1
         if (mark == i)
           throw new ScalaJackError(showError("Expected a Number here"))
-        else if (i == max || "\t\n ,}]".contains(jsChars(i)))
-          js.substring(mark, i)
+        else if (i == max || "\t\n #".contains(yaml(i)))
+          input.substring(mark, i)
         else
           throw new ScalaJackError(showError("Expected a Number here"))
     }
+    skipToEOL()
+    num
   }
 
   def expectList[E, TO](
       elemTypeAdapter: TypeAdapter[E],
       builder:         mutable.Builder[E, TO]): TO = {
-    if (jsChars(i) != '[')
+    /*
+    if (yaml(i) != '[')
       throw new ScalaJackError(showError("Expected start of list here"))
     i += 1
     var first = true
-    while (i < max && jsChars(i) != ']') {
+    while (i < max && yaml(i) != ']') {
       whitespace()
       if (!first) {
-        if (jsChars(i) != ',')
+        if (yaml(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -149,23 +235,26 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       builder += elemTypeAdapter.read(this) // Parse next item!
       whitespace()
     }
-    if (i == max || jsChars(i) != ']')
+    if (i == max || yaml(i) != ']')
       throw new ScalaJackError(showError("Expected end of list here"))
     i += 1
     builder.result()
+     */
+    null.asInstanceOf[TO]
   }
 
   def expectTuple(
       readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
   ): List[Any] = {
-    if (i == max || jsChars(i) != '[')
+    /*
+    if (i == max || yaml(i) != '[')
       throw new ScalaJackError(showError("Expected start of tuple here"))
     i += 1
     var first = true
     val result = readFns.map { fn =>
       whitespace()
       if (!first) {
-        if (i == max || jsChars(i) != ',')
+        if (i == max || yaml(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -174,25 +263,29 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         first = false
       fn.valueTypeAdapter.read(this)
     }
-    if (i == max || jsChars(i) != ']')
+    if (i == max || yaml(i) != ']')
       throw new ScalaJackError(showError("Expected end of tuple here"))
     i += 1
     result
+
+     */
+    null.asInstanceOf[List[Any]]
   }
 
   def expectMap[K, V, TO](
       keyTypeAdapter:   TypeAdapter[K],
       valueTypeAdapter: TypeAdapter[V],
       builder:          mutable.Builder[(K, V), TO]): TO = {
+    /*
     whitespace()
-    if (jsChars(i) != '{')
+    if (yaml(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1
     var first = true
-    while (i < max && jsChars(i) != '}') {
+    while (i < max && yaml(i) != '}') {
       whitespace()
       if (!first) {
-        if (i == max || jsChars(i) != ',')
+        if (i == max || yaml(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -203,7 +296,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       if (key == null)
         throw new ScalaJackError(showError("Map keys cannot be null"))
       whitespace()
-      if (i == max || jsChars(i) != ':')
+      if (i == max || yaml(i) != ':')
         throw new ScalaJackError(showError("Expected colon here"))
       i += 1
       whitespace()
@@ -211,30 +304,33 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       whitespace()
       builder += ((key, value))
     }
-    if (i == max || jsChars(i) != '}')
+    if (i == max || yaml(i) != '}')
       throw new ScalaJackError(showError("Expected end of object here"))
     i += 1
     builder.result()
+     */
+    null.asInstanceOf[TO]
   }
 
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
+    /*
     whitespace()
     val args = classBase.argsTemplate.clone()
     val fieldBits = classBase.fieldBitsTemplate.clone()
     val captured =
       if (classBase.isSJCapture) new java.util.HashMap[String, String]()
       else null
-    if (i == max || jsChars(i) != '{')
+    if (i == max || yaml(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1
     var first = true
-    while (i < max && jsChars(i) != '}') {
+    while (i < max && yaml(i) != '}') {
       whitespace()
       if (!first) {
-        if (i == max || jsChars(i) != ',')
+        if (i == max || yaml(i) != ',')
           throw new ScalaJackError(showError("Expected comma here"))
         else
           i += 1 // skip ','
@@ -243,7 +339,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         first = false
       val key = expectString(false)
       whitespace()
-      if (i == max || jsChars(i) != ':')
+      if (i == max || yaml(i) != ':')
         throw new ScalaJackError(showError("Expected colon here"))
       i += 1
       classBase.fieldMembersByName
@@ -261,29 +357,33 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         }
       whitespace()
     }
-    if (i == max || jsChars(i) != '}')
+    if (i == max || yaml(i) != '}')
       throw new ScalaJackError(showError("Expected end of object here"))
     i += 1
     (fieldBits, args, captured)
+     */
+    null
+      .asInstanceOf[(mutable.BitSet, Array[Any], java.util.HashMap[String, _])]
   }
 
   private def skipString(): Unit = {
     i += 1
-    while (i < max && jsChars(i) != '"') {
-      if (jsChars(i) == '\\') i += 1
+    while (i < max && yaml(i) != '"') {
+      if (yaml(i) == '\\') i += 1
       i += 1
     }
     i += 1
   }
 
   private def skipOverElement(): Unit = {
+    /*
     whitespace()
-    jsChars(i) match {
+    yaml(i) match {
       case '[' =>
         var level = 0
         i += 1
         while (i < max && level >= 0) {
-          jsChars(i) match {
+          yaml(i) match {
             case '[' =>
               level += 1
               i += 1
@@ -298,7 +398,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       case '{' =>
         var level = 0
         i += 1
-        while (i < max && level >= 0) jsChars(i) match {
+        while (i < max && level >= 0) yaml(i) match {
           case '{' =>
             level += 1
             i += 1
@@ -311,8 +411,9 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         }
       case '"' => skipString()
       case _ => // "naked" value: null, number, boolean
-        while (i < max && jsChars(i) != ',' && jsChars(i) != '}' && jsChars(i) != ']') i += 1
+        while (i < max && yaml(i) != ',' && yaml(i) != '}' && yaml(i) != ']') i += 1
     }
+   */
   }
 
   def peekForNull: Boolean =
@@ -323,9 +424,10 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
   // NOTE: Expectation here is we're sitting on beginning of object, '{'.  This is called from TraitTypeAdapter
   def scanForHint(hint: String, converterFn: HintBijective): Type = {
+    /*
     val mark = i
     whitespace()
-    if (i == max || jsChars(i) != '{')
+    if (i == max || yaml(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1 // skip over {
     var done = false
@@ -333,7 +435,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       whitespace()
       val key = expectString()
       whitespace()
-      if (i == max || jsChars(i) != ':')
+      if (i == max || yaml(i) != ':')
         throw new ScalaJackError(showError("Expected ':' here"))
       i += 1 // skip ':'
       if (key == hint) {
@@ -342,7 +444,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       } else {
         skipOverElement()
         whitespace()
-        jsChars(i) match {
+        yaml(i) match {
           case ',' => i += 1 // skip ','
           case '}' =>
             throw new ScalaJackError(showError(s"Type hint '$hint' not found"))
@@ -363,15 +465,18 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     }
     i = mark // we found hint, but go back to parse object
     hintType
+     */
+    null.asInstanceOf[Type]
   }
 
   def resolveTypeMembers(
       typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
       converterFn:       HintBijective
   ): Map[Type, Type] = {
+    /*
     val mark = i
     whitespace()
-    if (i == max || jsChars(i) != '{')
+    if (i == max || yaml(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     val collected = new java.util.HashMap[Type, Type]()
     i += 1 // skip over {
@@ -380,7 +485,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       whitespace()
       val key = expectString()
       whitespace()
-      if (i == max || jsChars(i) != ':')
+      if (i == max || yaml(i) != ':')
         throw new ScalaJackError(showError("Expected ':' here"))
       i += 1 // skip ':'
       if (typeMembersByName.contains(key)) {
@@ -392,7 +497,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       } else
         skipOverElement()
       whitespace()
-      jsChars(i) match {
+      yaml(i) match {
         case ',' => i += 1 // skip ','
         case '}' => done = true
         case _ =>
@@ -401,30 +506,42 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     }
     i = mark // go back to parse object
     collected.asScala.toMap
+     */
+    null.asInstanceOf[Map[Type, Type]]
   }
 
-  def showError(msg: String): String = {
-    val (clip, dashes) = i match {
-      case ep if ep <= 50 && max < 80 => (js, ep)
-      case ep if ep <= 50             => (js.substring(0, 77) + "...", ep)
-      case ep if ep > 50 && ep + 30 >= max =>
-        ("..." + js.substring(i - 49), 52)
-      case ep => ("..." + js.substring(ep - 49, ep + 27) + "...", 52)
-    }
-    msg + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"
+  // TODO: This has to be MUCH smarter!  i.e. handle newlines
+  private def lineContainsColon: Boolean = {
+    while (i < max && yaml(i) != ':') i += 1
+    !(i == max)
+  }
+  // TODO: This has to be MUCH smarter!  i.e. handle newlines
+  private def lineContainsDash: Boolean = {
+    while (i < max && yaml(i) != '-') i += 1
+    !(i == max)
   }
 
-  def mark(): Int = i
-  def revertToMark(mark: Int): Unit = i = mark
+  def showError(msg: String): String = s"Line $line: $msg"
 
-  def nextIsString: Boolean = nullCheck() || jsChars(i) == '"'
-  def nextIsNumber: Boolean = isNumberChar(jsChars(i))
-  def nextIsObject: Boolean = nullCheck() || jsChars(i) == '{'
-  def nextIsArray: Boolean = nullCheck() || jsChars(i) == '['
+  def mark(): Int = {
+    savedStack = tabStack
+    i
+  }
+  def revertToMark(mark: Int): Unit = {
+    i = mark
+    tabStack = savedStack
+  }
+
+  def nextIsString: Boolean =
+    true // basically everything in YAML is a string if its not something else
+  def nextIsNumber: Boolean = whitespace() && isNumberChar(yaml(i))
+  def nextIsObject: Boolean = whitespace() && (nullCheck() || lineContainsColon)
+  def nextIsArray: Boolean = whitespace() && (nullCheck() || lineContainsDash)
   def nextIsBoolean: Boolean =
-    (i + 4 <= max && js.substring(i, i + 4) == "true") || (i + 5 <= max && js
-      .substring(i, i + 5) == "false")
-  def sourceAsString: String = js
+    whitespace() && ((i + 4 <= max && input.substring(i, i + 4) == "true") || (i + 5 <= max && input
+      .substring(i, i + 5) == "false"))
 
-  def subParser(input: JSON): Parser = JsonParser(input, jackFlavor)
+  def sourceAsString: String = input
+
+  def subParser(input: YAML): Parser = YamlParser(input, jackFlavor)
 }

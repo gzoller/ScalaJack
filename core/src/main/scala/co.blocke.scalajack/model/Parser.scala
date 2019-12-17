@@ -37,7 +37,6 @@ trait Parser {
   ): Map[Type, Type] // Returns Map[Type Signature Type (e.g. 'T'), Type]
 
   def showError(msg: String): String
-  def skipOverElement(): Unit
   def backspace(): Unit
   def mark(): Int
   def revertToMark(mark: Int): Unit

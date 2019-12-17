@@ -150,6 +150,10 @@ case class YamlWriter() extends Writer[String] {
         questIndentTrigger = false
       }
     } else {
+      var leadingSpaces = if (t.nonEmpty && t(0).isWhitespace || t == "null") {
+        out += "\""
+        true
+      } else false
       var stringIndent = 0
       var nlFound = false
       if (t.contains('\n')) {
@@ -170,6 +174,8 @@ case class YamlWriter() extends Writer[String] {
           addString("""\""" + "u" + "%04x".format(ch.toInt), out)
         case c => out += c.toString
       }
+      if (leadingSpaces)
+        out += "\""
       if (questIndentTrigger) {
         questIn()
         questIndentTrigger = false
