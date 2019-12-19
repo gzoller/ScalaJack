@@ -8,13 +8,13 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 /**
- * Special type-locked version of JackFlavor.  The normal read/render in JackFlavor reflect on the type
- * of T, which takes valuable time.  If you have repeated operations on a single type you can create JackFlavorFor,
- * which is already locked into type T (doesn't need to look it up for read/render).  This results in a 20%+ boost
- * in performance in some cases.
- * @tparam WIRE
- * @tparam T
- */
+  * Special type-locked version of JackFlavor.  The normal read/render in JackFlavor reflect on the type
+  * of T, which takes valuable time.  If you have repeated operations on a single type you can create JackFlavorFor,
+  * which is already locked into type T (doesn't need to look it up for read/render).  This results in a 20%+ boost
+  * in performance in some cases.
+  * @tparam WIRE
+  * @tparam T
+  */
 trait JackFlavorFor[WIRE, T] extends JackFlavor[WIRE] {
   def read(input: WIRE): T
   def render(t: T): WIRE
@@ -28,16 +28,16 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
 
   def parse(input: WIRE): Parser
 
-  val defaultHint: String = "_hint"
-  val stringifyMapKeys: Boolean = false
+  val defaultHint: String        = "_hint"
+  val stringifyMapKeys: Boolean  = false
   val hintMap: Map[Type, String] = Map.empty[Type, String]
   val hintValueModifiers: Map[Type, HintValueModifier] =
     Map.empty[Type, HintValueModifier]
-  val typeValueModifier: HintValueModifier = DefaultHintModifier
-  val enumsAsInt: Boolean = false
+  val typeValueModifier: HintValueModifier     = DefaultHintModifier
+  val enumsAsInt: Boolean                      = false
   val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory]
-  val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type]
-  val permissivesOk: Boolean = false
+  val parseOrElseMap: Map[Type, Type]          = Map.empty[Type, Type]
+  val permissivesOk: Boolean                   = false
 
   lazy val taCache: TypeAdapterCache = bakeCache()
 
@@ -50,6 +50,14 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
           TypeAdapterCache.StandardFactories
       )
     )
+    /*
+          NonEmptyList(
+        BinaryTypeAdapterFactory,
+        typeadapter.CollectionTypeAdapterFactory(this, enumsAsInt) +: customAdapters :::
+          TypeAdapterCache.StandardFactories
+      )
+
+     */
 
     // ParseOrElse functionality
     val parseOrElseFactories = parseOrElseMap.map {
@@ -66,8 +74,7 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
             if (typeTag.tpe =:= attemptedType) {
               val primary = attemptedTypeAdapter.asInstanceOf[TypeAdapter[T]]
               FallbackTypeAdapter[T, T](
-                () =>
-                  taCache, // We use an accessor function here because taCache isn't baked at this point!
+                () => taCache, // We use an accessor function here because taCache isn't baked at this point!
                 Some(primary),
                 fallbackType
               )
@@ -112,7 +119,7 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   // These is so pervasively handy, let's just pre-stage it for easy access
   lazy val stringTypeAdapter: TypeAdapter[String] =
     taCache.typeAdapterOf[String]
-  lazy val anyTypeAdapter: TypeAdapter[Any] = taCache.typeAdapterOf[Any]
+  lazy val anyTypeAdapter: TypeAdapter[Any]       = taCache.typeAdapterOf[Any]
   lazy val anyMapKeyTypeAdapter: TypeAdapter[Any] = taCache.typeAdapterOf[Any]
 
   // Look up any custom hint label for given type, and if none then use default
@@ -120,7 +127,7 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
 
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
-      emptyStringOk:      Boolean        = true
+      emptyStringOk: Boolean = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T]
 
   def allowPermissivePrimitives(): JackFlavor[WIRE]

@@ -13,8 +13,8 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
   type WIRE = JSON
 
   private val jsChars: Array[Char] = js.toCharArray
-  private var i = 0
-  private val max: Int = jsChars.length
+  private var i                    = 0
+  private val max: Int             = jsChars.length
 
   @inline def whitespace(): Unit =
     while (i < max && jsChars(i).isWhitespace) i += 1
@@ -29,7 +29,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       null
     } else if (jsChars(i) == '"') {
       i += 1
-      val mark = i
+      val mark                     = i
       var captured: Option[String] = None
       while (i < max && jsChars(i) != '"') {
         if (jsChars(i) == '\\') { // Oops!  Special char found.  Reset and try again while capturing/translating special chars
@@ -80,7 +80,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
             i += 2
 
           case 'u' =>
-            val hexEncoded = js.substring(i + 2, i + 6)
+            val hexEncoded  = js.substring(i + 2, i + 6)
             val unicodeChar = Integer.parseInt(hexEncoded, 16).toChar
             builder.append(unicodeChar.toString)
             i += 6
@@ -129,9 +129,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     }
   }
 
-  def expectList[E, TO](
-      elemTypeAdapter: TypeAdapter[E],
-      builder:         mutable.Builder[E, TO]): TO = {
+  def expectList[E, TO](elemTypeAdapter: TypeAdapter[E], builder: mutable.Builder[E, TO]): TO = {
     if (jsChars(i) != '[')
       throw new ScalaJackError(showError("Expected start of list here"))
     i += 1
@@ -180,10 +178,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     result
   }
 
-  def expectMap[K, V, TO](
-      keyTypeAdapter:   TypeAdapter[K],
-      valueTypeAdapter: TypeAdapter[V],
-      builder:          mutable.Builder[(K, V), TO]): TO = {
+  def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K], valueTypeAdapter: TypeAdapter[V], builder: mutable.Builder[(K, V), TO]): TO = {
     whitespace()
     if (jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
@@ -222,7 +217,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       hintLabel: String
   ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
     whitespace()
-    val args = classBase.argsTemplate.clone()
+    val args      = classBase.argsTemplate.clone()
     val fieldBits = classBase.fieldBitsTemplate.clone()
     val captured =
       if (classBase.isSJCapture) new java.util.HashMap[String, String]()
@@ -246,19 +241,17 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       if (i == max || jsChars(i) != ':')
         throw new ScalaJackError(showError("Expected colon here"))
       i += 1
-      classBase.fieldMembersByName
-        .get(key)
-        .map { field =>
+      classBase.fieldMembersByName.get(key) match {
+        case Some(field) =>
           whitespace()
           fieldBits -= field.index
           args(field.index) = field.valueTypeAdapter.read(this)
-        }
-        .getOrElse {
+        case None => // found some input field not present in class
           val mark = i
           skipOverElement()
           if (classBase.isSJCapture && key != hintLabel)
             captured.put(key, js.substring(mark, i))
-        }
+      }
       whitespace()
     }
     if (i == max || jsChars(i) != '}')
@@ -367,7 +360,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
   def resolveTypeMembers(
       typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn:       HintBijective
+      converterFn: HintBijective
   ): Map[Type, Type] = {
     val mark = i
     whitespace()
@@ -414,13 +407,13 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     msg + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"
   }
 
-  def mark(): Int = i
+  def mark(): Int                   = i
   def revertToMark(mark: Int): Unit = i = mark
 
   def nextIsString: Boolean = nullCheck() || jsChars(i) == '"'
   def nextIsNumber: Boolean = isNumberChar(jsChars(i))
   def nextIsObject: Boolean = nullCheck() || jsChars(i) == '{'
-  def nextIsArray: Boolean = nullCheck() || jsChars(i) == '['
+  def nextIsArray: Boolean  = nullCheck() || jsChars(i) == '['
   def nextIsBoolean: Boolean =
     (i + 4 <= max && js.substring(i, i + 4) == "true") || (i + 5 <= max && js
       .substring(i, i + 5) == "false")

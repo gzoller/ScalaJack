@@ -1,0 +1,76 @@
+package co.blocke.scalajack
+package yaml
+
+import org.snakeyaml.engine.v2.api.{DumpSettings, LoadSettings}
+import org.snakeyaml.engine.v2.api.lowlevel._
+import org.snakeyaml.engine.v2.nodes._
+import org.snakeyaml.engine.v2.common._
+import org.snakeyaml.engine.v2.parser.ParserImpl
+import org.snakeyaml.engine.v2.scanner.StreamReader
+
+import scala.jdk.CollectionConverters._
+
+case class Person(name: String, age: List[Int]) extends SJCapture
+
+object RunMe extends App {
+
+  val sj = ScalaJack(YamlFlavor())
+
+  val person = Person("Greg", List(53, 21, 99))
+
+  /*
+  ScalarStyle:
+  DOUBLE_QUOTED(Optional.of('"')),
+    SINGLE_QUOTED(Optional.of('\'')),
+    LITERAL(Optional.of('|')),
+    FOLDED(Optional.of('>')),
+    PLAIN(Optional.empty());
+
+    Tag:
+        public static final String PREFIX = "tag:yaml.org,2002:";
+    public static final Tag SET = new Tag(PREFIX + "set");
+    public static final Tag BINARY = new Tag(PREFIX + "binary");
+    public static final Tag INT = new Tag(PREFIX + "int");
+    public static final Tag FLOAT = new Tag(PREFIX + "float");
+    public static final Tag BOOL = new Tag(PREFIX + "bool");
+    public static final Tag NULL = new Tag(PREFIX + "null");
+    public static final Tag STR = new Tag(PREFIX + "str");
+    public static final Tag SEQ = new Tag(PREFIX + "seq");
+    public static final Tag MAP = new Tag(PREFIX + "map");
+
+    FlowStyle:  FLOW, BLOCK
+   */
+
+//  val loadSettings = LoadSettings.builder().build()
+//  val snake        = new ParserImpl(new StreamReader(binary, loadSettings), loadSettings)
+//  while (snake.hasNext()) println(snake.next())
+
+//  val sn1: Node = new ScalarNode(Tag.STR, "Gregory", ScalarStyle.PLAIN)
+//  val sn2: Node = new ScalarNode(Tag.STR, "William", ScalarStyle.PLAIN)
+//  val sn3: Node = new ScalarNode(Tag.STR, "Zoller", ScalarStyle.PLAIN)
+//  val ln        = new SequenceNode(Tag.SEQ, List(sn1, sn2, sn3).asJava, FlowStyle.BLOCK)
+//
+//  val settings   = DumpSettings.builder().build()
+//  val serializer = new Serialize(settings)
+//  val presenter  = new Present(settings)
+
+//  val events = serializer.serializeOne(ln)
+//  println(presenter.emitToString(events.iterator()))
+
+  val yaml =
+    """
+      |name: Greg
+      |age: [4,5,6]
+      |foo: bar
+      |stuff: 
+      |  one: 1
+      |  two: 2
+      |  three: 3
+      |""".stripMargin
+
+  val y = sj.read[Person](yaml)
+  println(y)
+  println(sj.render(y))
+//  println(sj.render(y))
+
+}

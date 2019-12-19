@@ -8,14 +8,11 @@ import co.blocke.scalajack.model
 import scala.collection.Map
 import scala.collection.mutable
 
-case class DelimitedWriter(delimiter: Char) extends Writer[String] {
+case class DelimitedWriter(delimiter: Char) extends Writer[DELIMITED] {
 
-  def writeArray[Elem](
-      t:               Iterable[Elem],
-      elemTypeAdapter: TypeAdapter[Elem],
-      out:             mutable.Builder[String, String]): Unit =
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     if (t != null) {
-      val sb = model.StringBuilder()
+      val sb   = model.StringBuilder()
       val iter = t.iterator
       while (iter.hasNext) {
         elemTypeAdapter.write(iter.next, this, sb)
@@ -25,36 +22,32 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       writeString(sb.result(), out)
     }
 
-  def writeBigInt(t: BigInt, out: mutable.Builder[String, String]): Unit =
+  def writeBigInt(t: BigInt, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
-  def writeBoolean(t: Boolean, out: mutable.Builder[String, String]): Unit =
+  def writeBoolean(t: Boolean, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
-  def writeDecimal(t: BigDecimal, out: mutable.Builder[String, String]): Unit =
+  def writeDecimal(t: BigDecimal, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
-  def writeDouble(t: Double, out: mutable.Builder[String, String]): Unit =
+  def writeDouble(t: Double, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
-  def writeInt(t: Int, out: mutable.Builder[String, String]): Unit =
+  def writeInt(t: Int, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
-  def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
+  def writeLong(t: Long, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     out += t.toString
 
-  def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
-      valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     throw new ScalaJackError(
       "Map-typed data is not supported for delimited output"
     )
 
-  def writeNull(out: mutable.Builder[String, String]): Unit = {} // write empty field
+  def writeNull(out: mutable.Builder[DELIMITED, DELIMITED]): Unit = {} // write empty field
 
   def writeObject[T](
-      t:                  T,
-      orderedFieldNames:  List[String],
+      t: T,
+      orderedFieldNames: List[String],
       fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:                mutable.Builder[String, String],
-      extras:             List[(String, ExtraFieldValue[_])]                = List.empty[(String, ExtraFieldValue[_])]
+      out: mutable.Builder[DELIMITED, DELIMITED],
+      extras: List[(String, ExtraFieldValue[_])] = List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
     if (t != null) {
       var first = true
@@ -75,7 +68,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       }
     }
 
-  def writeString(t: String, out: mutable.Builder[String, String]): Unit =
+  def writeString(t: String, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     if (t != null) {
       val t0 = t.replaceAll("\"", "\"\"")
       val toWrite =
@@ -86,17 +79,17 @@ case class DelimitedWriter(delimiter: Char) extends Writer[String] {
       out += toWrite
     }
   // $COVERAGE-OFF$Never called for delimited output
-  def writeRaw(t: Any, out: mutable.Builder[String, String]): Unit =
-    writeString(t.asInstanceOf[String], out)
+  def writeRaw(t: DELIMITED, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
+    writeString(t, out)
   // $COVERAGE-ON$
 
   def writeTuple[T](
-      t:        T,
+      t: T,
       writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
-      out:      mutable.Builder[String, String]
+      out: mutable.Builder[DELIMITED, DELIMITED]
   ): Unit = {
     var first = true
-    val sb = model.StringBuilder()
+    val sb    = model.StringBuilder()
     writeFns.foreach { f =>
       if (first)
         first = false

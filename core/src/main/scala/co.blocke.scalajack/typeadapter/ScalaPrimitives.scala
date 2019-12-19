@@ -6,9 +6,7 @@ import model._
 
 import scala.collection.mutable
 
-object BigDecimalTypeAdapterFactory
-  extends TypeAdapter.=:=[BigDecimal]
-  with BigDecimalTypeAdapter
+object BigDecimalTypeAdapterFactory extends TypeAdapter.=:=[BigDecimal] with BigDecimalTypeAdapter
 trait BigDecimalTypeAdapter {
   def read(parser: Parser): BigDecimal = {
     val bd = parser.expectNumber(true)
@@ -17,16 +15,11 @@ trait BigDecimalTypeAdapter {
     else
       BigDecimal(bd)
   }
-  def write[WIRE](
-      t:      BigDecimal,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: BigDecimal, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeDecimal(t, out)
 }
 
-object BigIntTypeAdapterFactory
-  extends TypeAdapter.=:=[BigInt]
-  with BigIntTypeAdapter
+object BigIntTypeAdapterFactory extends TypeAdapter.=:=[BigInt] with BigIntTypeAdapter
 trait BigIntTypeAdapter {
   def read(parser: Parser): BigInt = {
     val bi = parser.expectNumber(true)
@@ -35,43 +28,31 @@ trait BigIntTypeAdapter {
     else
       BigInt(bi)
   }
-  def write[WIRE](
-      t:      BigInt,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit = t match {
+  def write[WIRE](t: BigInt, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit = t match {
     case null => writer.writeNull(out)
     case _    => writer.writeBigInt(t, out)
   }
 }
 
-object BinaryTypeAdapterFactory
-  extends TypeAdapter.=:=[Array[Byte]]
-  with BinaryTypeAdapter
-  with Stringish
+object BinaryTypeAdapterFactory extends TypeAdapter.=:=[Array[Byte]] with BinaryTypeAdapter with Stringish
 trait BinaryTypeAdapter {
   def read(parser: Parser): Array[Byte] =
     parser.expectString() match {
       case null      => null
       case s: String => Base64.decodeBase64(s)
     }
-  def write[WIRE](
-      t:      Array[Byte],
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit = t match {
-    case null => writer.writeNull(out)
-    case _    => writer.writeString(Base64.encodeBase64String(t), out)
-  }
+
+  def write[WIRE](t: Array[Byte], writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
+    t match {
+      case null => writer.writeNull(out)
+      case _    => writer.writeString(Base64.encodeBase64String(t), out)
+    }
 }
 
-object BooleanTypeAdapterFactory
-  extends TypeAdapter.=:=[Boolean]
-  with BooleanTypeAdapter
+object BooleanTypeAdapterFactory extends TypeAdapter.=:=[Boolean] with BooleanTypeAdapter
 trait BooleanTypeAdapter {
   def read(parser: Parser): Boolean = parser.expectBoolean()
-  def write[WIRE](
-      t:      Boolean,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Boolean, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeBoolean(t, out)
 }
 
@@ -87,17 +68,11 @@ trait ByteTypeAdapter {
           parser.showError("Cannot parse an Byte from value")
         )
       }
-  def write[WIRE](
-      t:      Byte,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Byte, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeInt(t, out)
 }
 
-object CharTypeAdapterFactory
-  extends TypeAdapter.=:=[Char]
-  with CharTypeAdapter
-  with Stringish
+object CharTypeAdapterFactory extends TypeAdapter.=:=[Char] with CharTypeAdapter with Stringish
 trait CharTypeAdapter {
   def read(parser: Parser): Char =
     parser.expectString() match {
@@ -113,16 +88,11 @@ trait CharTypeAdapter {
         )
       case s => s.charAt(0)
     }
-  def write[WIRE](
-      t:      Char,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Char, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeString(t.toString, out)
 }
 
-object DoubleTypeAdapterFactory
-  extends TypeAdapter.=:=[Double]
-  with DoubleTypeAdapter
+object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] with DoubleTypeAdapter
 trait DoubleTypeAdapter {
   def read(parser: Parser): Double =
     parser
@@ -134,16 +104,11 @@ trait DoubleTypeAdapter {
           parser.showError("Cannot parse an Double from value")
         )
       }
-  def write[WIRE](
-      t:      Double,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Double, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeDouble(t, out)
 }
 
-object FloatTypeAdapterFactory
-  extends TypeAdapter.=:=[Float]
-  with FloatTypeAdapter
+object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with FloatTypeAdapter
 trait FloatTypeAdapter {
   //  def read(parser: Parser): Float = parser.expectNumber().toFloat
   def read(parser: Parser): Float =
@@ -156,10 +121,7 @@ trait FloatTypeAdapter {
           parser.showError("Cannot parse an Float from value")
         )
       }
-  def write[WIRE](
-      t:      Float,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Float, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeDouble(util.FixFloat.capFloat(t), out)
 }
 
@@ -176,10 +138,7 @@ trait IntTypeAdapter {
           parser.showError("Cannot parse an Int from value")
         )
       }
-  def write[WIRE](
-      t:      Int,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Int, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeInt(t, out)
 }
 
@@ -196,16 +155,11 @@ trait LongTypeAdapter {
           parser.showError("Cannot parse an Long from value")
         )
       }
-  def write[WIRE](
-      t:      Long,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Long, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeLong(t, out)
 }
 
-object ShortTypeAdapterFactory
-  extends TypeAdapter.=:=[Short]
-  with ShortTypeAdapter
+object ShortTypeAdapterFactory extends TypeAdapter.=:=[Short] with ShortTypeAdapter
 trait ShortTypeAdapter {
   //  def read(parser: Parser): Short = parser.expectNumber().toInt.toShort
   def read(parser: Parser): Short =
@@ -218,18 +172,12 @@ trait ShortTypeAdapter {
           parser.showError("Cannot parse an Short from value")
         )
       }
-  def write[WIRE](
-      t:      Short,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Short, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeInt(t, out)
 }
 
 object StringTypeAdapterFactory extends TypeAdapter.=:=[String] with Stringish {
   def read(parser: Parser): String = parser.expectString()
-  def write[WIRE](
-      t:      String,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: String, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeString(t, out)
 }
