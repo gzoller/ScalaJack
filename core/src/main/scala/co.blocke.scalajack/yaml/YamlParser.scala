@@ -154,8 +154,10 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
   }
 
   def peekForNull: Boolean = events(i) match {
-    case n: ScalarEvent if n.getValue == "null" => true
-    case _                                      => false
+    case n: ScalarEvent if n.getValue == "null" =>
+      i += 1
+      true
+    case _ => false
   }
 
   def skipOverElement(startIndent: Int): Unit = {

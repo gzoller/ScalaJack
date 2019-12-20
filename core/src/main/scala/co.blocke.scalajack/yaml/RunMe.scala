@@ -12,15 +12,18 @@ import scala.jdk.CollectionConverters._
 
 case class Person(name: String, age: List[Int]) extends SJCapture
 
-case class SampleByte(b1: Byte, b2: Byte, b3: Byte, b4: Byte)
+case class AnyShell(a: Any)
 
 object RunMe extends App {
 
   val sj = ScalaJack(YamlFlavor())
 
-  val yaml2 =
-    """1.2""".stripMargin
+  val yaml2 = """a: null"""
 
-  val z = sj.read[Short](yaml2)
-  println(z)
+  try {
+    val z = sj.read[AnyShell](yaml2)
+    println(z)
+  } catch {
+    case _ => println("*** Boom! ***")
+  }
 }
