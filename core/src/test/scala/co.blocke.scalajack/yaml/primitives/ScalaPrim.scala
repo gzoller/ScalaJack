@@ -268,7 +268,7 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
             |b2: -128
             |b3: 0
             |b4: null""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleByte](yaml2) should have message "Line 3: A Byte typed value cannot be null"
+        the[ScalaJackError] thrownBy sj.read[SampleByte](yaml2) should have message "Line 3: Cannot parse an Byte from value"
       }
       it("Char must break") {
         val yaml =

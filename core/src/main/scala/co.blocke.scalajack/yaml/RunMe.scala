@@ -19,10 +19,8 @@ object RunMe extends App {
   val sj = ScalaJack(YamlFlavor())
 
   val yaml2 =
-    """b1: 12
-      |b2: -128
-      |b3:
-      |b4: 5""".stripMargin
+    """1.2""".stripMargin
 
-  println(sj.read[SampleByte](yaml2))
+  val z = sj.read[Short](yaml2)
+  println(z)
 }

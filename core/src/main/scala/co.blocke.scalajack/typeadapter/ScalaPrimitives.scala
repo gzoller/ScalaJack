@@ -59,20 +59,14 @@ trait BooleanTypeAdapter {
 object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter
 trait ByteTypeAdapter {
   def read(parser: Parser): Byte =
-    parser.expectNumber() match {
-      case null =>
+    Option(parser.expectNumber())
+      .flatMap(_.toByteOption)
+      .getOrElse {
         parser.backspace()
         throw new ScalaJackError(
-          parser.showError("A Byte typed value cannot be null")
+          parser.showError("Cannot parse an Byte from value")
         )
-      case n =>
-        n.toByteOption.getOrElse {
-          parser.backspace()
-          throw new ScalaJackError(
-            parser.showError("Cannot parse an Byte from value")
-          )
-        }
-    }
+      }
   def write[WIRE](t: Byte, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeInt(t, out)
 }
@@ -100,9 +94,10 @@ trait CharTypeAdapter {
 object DoubleTypeAdapterFactory extends TypeAdapter.=:=[Double] with DoubleTypeAdapter
 trait DoubleTypeAdapter {
   def read(parser: Parser): Double =
-    parser
-      .expectNumber()
-      .toDoubleOption
+    Option(
+      parser
+        .expectNumber())
+      .flatMap(_.toDoubleOption)
       .getOrElse {
         parser.backspace()
         throw new ScalaJackError(
@@ -115,11 +110,11 @@ trait DoubleTypeAdapter {
 
 object FloatTypeAdapterFactory extends TypeAdapter.=:=[Float] with FloatTypeAdapter
 trait FloatTypeAdapter {
-  //  def read(parser: Parser): Float = parser.expectNumber().toFloat
   def read(parser: Parser): Float =
-    parser
-      .expectNumber()
-      .toFloatOption
+    Option(
+      parser
+        .expectNumber())
+      .flatMap(_.toFloatOption)
       .getOrElse {
         parser.backspace()
         throw new ScalaJackError(
@@ -132,11 +127,11 @@ trait FloatTypeAdapter {
 
 object IntTypeAdapterFactory extends TypeAdapter.=:=[Int] with IntTypeAdapter
 trait IntTypeAdapter {
-  //  def read(parser: Parser): Int = parser.expectNumber().toInt
   def read(parser: Parser): Int =
-    parser
-      .expectNumber()
-      .toIntOption
+    Option(
+      parser
+        .expectNumber())
+      .flatMap(_.toIntOption)
       .getOrElse {
         parser.backspace()
         throw new ScalaJackError(
@@ -149,11 +144,11 @@ trait IntTypeAdapter {
 
 object LongTypeAdapterFactory extends TypeAdapter.=:=[Long] with LongTypeAdapter
 trait LongTypeAdapter {
-  //  def read(parser: Parser): Long = parser.expectNumber().toLong
   def read(parser: Parser): Long =
-    parser
-      .expectNumber()
-      .toLongOption
+    Option(
+      parser
+        .expectNumber())
+      .flatMap(_.toLongOption)
       .getOrElse {
         parser.backspace()
         throw new ScalaJackError(
@@ -166,11 +161,11 @@ trait LongTypeAdapter {
 
 object ShortTypeAdapterFactory extends TypeAdapter.=:=[Short] with ShortTypeAdapter
 trait ShortTypeAdapter {
-  //  def read(parser: Parser): Short = parser.expectNumber().toInt.toShort
   def read(parser: Parser): Short =
-    parser
-      .expectNumber()
-      .toShortOption
+    Option(
+      parser
+        .expectNumber())
+      .flatMap(_.toShortOption)
       .getOrElse {
         parser.backspace()
         throw new ScalaJackError(

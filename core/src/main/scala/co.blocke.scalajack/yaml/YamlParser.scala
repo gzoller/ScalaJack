@@ -244,7 +244,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
   }
 
   def showError(msg: String): String = s"Line ${events(i).getStartMark.get().getLine}: " + msg
-  def backspace(): Unit              = i -= 2
+  def backspace(): Unit              = i -= 1
   def mark(): Int                    = i
   def revertToMark(mark: Int): Unit  = i = mark
   def nextIsString: Boolean          = events(i).isInstanceOf[ScalarEvent]
