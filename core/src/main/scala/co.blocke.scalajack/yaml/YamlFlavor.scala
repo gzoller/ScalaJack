@@ -13,50 +13,52 @@ import org.snakeyaml.engine.v2.api.lowlevel.{Present, Serialize}
   * unfortunate amount of boilerplate copying between this class and JsonFlavor, but it facilitates a clean
   * user experience--smooth API for ScalaJack:  val fooSerializer = sj.forType[Foo];  fooSerializer.read(input)
   */
-/*
 case class YamlFlavorFor[J](
-  ta: TypeAdapter[J],
-  override val defaultHint: String = "_hint",
-  override val permissivesOk: Boolean = false,
-  override val customAdapters: List[TypeAdapterFactory] =
-    List.empty[TypeAdapterFactory],
-  override val hintMap: Map[Type, String] = Map.empty[Type, String],
-  override val hintValueModifiers: Map[Type, HintValueModifier] =
-    Map.empty[Type, HintValueModifier],
-  override val typeValueModifier: HintValueModifier = DefaultHintModifier,
-  override val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type],
-  override val enumsAsInt: Boolean = false
+    ta: TypeAdapter[J],
+    override val defaultHint: String = "_hint",
+    override val permissivesOk: Boolean = false,
+    override val customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
+    override val hintMap: Map[Type, String] = Map.empty[Type, String],
+    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
+    override val typeValueModifier: HintValueModifier = DefaultHintModifier,
+    override val parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type],
+    override val enumsAsInt: Boolean = false
 ) extends JackFlavorFor[YAML, J] {
 
-  def read[T](js: YAML)(implicit tt: TypeTag[T]): T = {
-    val parser = JsonParser(js, this)
+  private val settings   = DumpSettings.builder().setIndent(2).build()
+  private val serializer = new Serialize(settings)
+  private val presenter  = new Present(settings)
+
+  def read[T](input: YAML)(implicit tt: TypeTag[T]): T = {
+    val parser = YamlParser(input, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
-  def read(js: YAML): J = ta.read(json.JsonParser(js, this))
+  def read(input: YAML): J = ta.read(YamlParser(input, this))
   def render(t: J): YAML = {
-    val sb = model.StringBuilder()
+    val sb = YamlBuilder()
     ta.write(t, writer, sb)
-    sb.result()
+    presenter.emitToString(serializer.serializeOne(sb.result()).iterator)
   }
+
   def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[YAML, U] =
     this
       .copy(ta = taCache.typeAdapter(tu.tpe.dealias))
       .asInstanceOf[JackFlavorFor[YAML, U]]
 
   def render[T](t: T)(implicit tt: TypeTag[T]): YAML = {
-    val sb = model.StringBuilder()
+    val sb = YamlBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
       .write(t, writer, sb)
-    sb.result()
+    presenter.emitToString(serializer.serializeOne(sb.result()).iterator)
   }
 
   // $COVERAGE-OFF$All this is carbon-copy from JsonFlavor, which has test coverage.
-  def parse(input: YAML): Parser = JsonParser(input, this)
+  def parse(input: YAML): Parser = YamlParser(input, this)
 
-  private val writer = JsonWriter()
+  private val writer = YamlWriter()
 
   override val stringifyMapKeys: Boolean = true
   override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
@@ -79,13 +81,11 @@ case class YamlFlavorFor[J](
     this.copy(typeValueModifier = tm)
 
   def stringWrapTypeAdapterFactory[T](
-    wrappedTypeAdapter: TypeAdapter[T],
-    emptyStringOk: Boolean = true
-  )(implicit tt: TypeTag[T]): TypeAdapter[T] =
-    StringWrapTypeAdapter(wrappedTypeAdapter, emptyStringOk)
+      wrappedTypeAdapter: TypeAdapter[T],
+      emptyStringOk: Boolean = true
+  )(implicit tt: TypeTag[T]): TypeAdapter[T] = wrappedTypeAdapter // no need to stringify--YAML handles complex key values!
   // $COVERAGE-ON$
 }
- */
 
 case class YamlFlavor(
     override val defaultHint: String = "_hint",
@@ -102,8 +102,8 @@ case class YamlFlavor(
   private val serializer = new Serialize(settings)
   private val presenter  = new Present(settings)
 
-  def read[T](js: YAML)(implicit tt: TypeTag[T]): T = {
-    val parser = YamlParser(js, this)
+  def read[T](input: YAML)(implicit tt: TypeTag[T]): T = {
+    val parser = YamlParser(input, this)
     taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
   }
 
@@ -159,6 +159,5 @@ case class YamlFlavor(
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
       emptyStringOk: Boolean = true
-  )(implicit tt: TypeTag[T]): TypeAdapter[T] = null.asInstanceOf[TypeAdapter[T]]
-//    StringWrapTypeAdapter(wrappedTypeAdapter, emptyStringOk)
+  )(implicit tt: TypeTag[T]): TypeAdapter[T] = wrappedTypeAdapter // no need to stringify--YAML handles complex key values!
 }

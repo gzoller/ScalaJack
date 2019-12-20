@@ -59,15 +59,20 @@ trait BooleanTypeAdapter {
 object ByteTypeAdapterFactory extends TypeAdapter.=:=[Byte] with ByteTypeAdapter
 trait ByteTypeAdapter {
   def read(parser: Parser): Byte =
-    parser
-      .expectNumber()
-      .toByteOption
-      .getOrElse {
+    parser.expectNumber() match {
+      case null =>
         parser.backspace()
         throw new ScalaJackError(
-          parser.showError("Cannot parse an Byte from value")
+          parser.showError("A Byte typed value cannot be null")
         )
-      }
+      case n =>
+        n.toByteOption.getOrElse {
+          parser.backspace()
+          throw new ScalaJackError(
+            parser.showError("Cannot parse an Byte from value")
+          )
+        }
+    }
   def write[WIRE](t: Byte, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     writer.writeInt(t, out)
 }

@@ -4,7 +4,6 @@ package yaml
 import model._
 import typeadapter.ClassTypeAdapterBase
 import scala.collection.mutable
-import scala.util.control.Breaks._
 import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 import org.snakeyaml.engine.v2.parser.ParserImpl
@@ -144,6 +143,9 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     case (acc, c) => acc && isNumberChar(c)
   }
   def expectNumber(nullOK: Boolean = false): String = events(i) match {
+    case n: ScalarEvent if n.getValue == "null" || n.getValue == "" =>
+      i += 1
+      null
     case n: ScalarEvent if isNumber(n.getValue) =>
       i += 1
       n.getValue
@@ -156,31 +158,22 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     case _                                      => false
   }
 
-  // returns true if some value found
-  // returns false if collection ends at same level as startIndent
-  def skipOverElement(startIndent: Int): Boolean = {
-    var done  = false
-    var found = false
+  def skipOverElement(startIndent: Int): Unit = {
+    var done = false
     while (!done) {
       events(i) match {
         case _: ScalarEvent if indentLevel == startIndent =>
-          found = true
-          done = true
-        case _: CollectionEndEvent if indentLevel == startIndent =>
           done = true
         case _: CollectionStartEvent =>
           indentLevel += 1
-        case _: CollectionEndEvent =>
+        case _: CollectionEndEvent => // close of a nested collection
           indentLevel -= 1
-          if (indentLevel == startIndent) {
-            found = true
+          if (indentLevel == startIndent)
             done = true
-          }
         case _ =>
       }
       i += 1
     }
-    found
   }
 
   def scanForHint(hint: String, converterFn: HintBijective): Type = {
@@ -193,18 +186,17 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
       )
     i += 1
 
-    breakable {
-      for (j <- i until events.length) {
-        if (expectString(false) == hint) {
-          i += 1
-          break
-        } else { // skip over value of map entry
-          i += 1
-          if (!skipOverElement(startIndent))
-            throw new ScalaJackError(showError(s"Type hint '$hint' not found"))
-        }
-      }
+    val max   = events.length
+    var found = false
+    while (!found && i < max && !events(i).isInstanceOf[CollectionEndEvent] && startIndent != indentLevel) {
+      found = expectString(false) == hint
+      i += 1
+      if (!found)
+        skipOverElement(startIndent)
     }
+    if (!found)
+      throw new ScalaJackError(showError(s"Type hint '$hint' not found"))
+
     // Found hint or we wouldn't be here
     val rawHintString = expectString(false)
     val hintType = try {
@@ -252,7 +244,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
   }
 
   def showError(msg: String): String = s"Line ${events(i).getStartMark.get().getLine}: " + msg
-  def backspace(): Unit              = {}
+  def backspace(): Unit              = i -= 2
   def mark(): Int                    = i
   def revertToMark(mark: Int): Unit  = i = mark
   def nextIsString: Boolean          = events(i).isInstanceOf[ScalarEvent]

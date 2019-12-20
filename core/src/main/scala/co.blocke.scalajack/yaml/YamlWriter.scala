@@ -33,11 +33,17 @@ case class YamlWriter() extends Writer[Node] {
   }
 
   def writeBigInt(t: BigInt, out: mutable.Builder[Node, Node]): Unit =
-    out += new ScalarNode(Tag.INT, t.toString, ScalarStyle.PLAIN)
+    t match {
+      case null => writeNull(out)
+      case _    => out += new ScalarNode(Tag.INT, t.toString, ScalarStyle.PLAIN)
+    }
   def writeBoolean(t: Boolean, out: mutable.Builder[Node, Node]): Unit =
     out += new ScalarNode(Tag.BOOL, t.toString, ScalarStyle.PLAIN)
   def writeDecimal(t: BigDecimal, out: mutable.Builder[Node, Node]): Unit =
-    out += new ScalarNode(Tag.FLOAT, t.toString, ScalarStyle.PLAIN)
+    t match {
+      case null => writeNull(out)
+      case _    => out += new ScalarNode(Tag.FLOAT, t.toString, ScalarStyle.PLAIN)
+    }
   def writeDouble(t: Double, out: mutable.Builder[Node, Node]): Unit =
     out += new ScalarNode(Tag.FLOAT, t.toString, ScalarStyle.PLAIN)
   def writeInt(t: Int, out: mutable.Builder[Node, Node]): Unit =
