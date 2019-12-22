@@ -190,9 +190,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
 
     val max   = events.length
     var found = false
-    while (!found && i < max && !events(i).isInstanceOf[CollectionEndEvent] && startIndent != indentLevel) {
+    while (!found && i < max && !events(i).isInstanceOf[CollectionEndEvent]) {
       found = expectString(false) == hint
-      i += 1
       if (!found)
         skipOverElement(startIndent)
     }
@@ -229,9 +228,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     i += 1
 
     val collected = new java.util.HashMap[Type, Type]()
-    while (!events(i).isInstanceOf[CollectionEndEvent] || indentLevel != startIndent) {
+    while (!events(i).isInstanceOf[CollectionEndEvent]) {
       val key = expectString()
-      i += 1
       if (typeMembersByName.contains(key))
         collected.put(
           typeMembersByName(key).typeSignature,
