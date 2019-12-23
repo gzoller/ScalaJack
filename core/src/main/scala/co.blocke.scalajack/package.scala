@@ -7,9 +7,10 @@ import reflect.ClassTag
 import scala.reflect.runtime.universe
 
 package object scalajack {
-  type JSON = String
-  type DELIMITED = String
-  type MemberName = String
+  type JSON          = String
+  type DELIMITED     = String
+  type YAML          = String
+  type MemberName    = String
   type HintBijective = BijectiveFunction[String, Type]
 
   val DELIM_PREFIX: Char = 2

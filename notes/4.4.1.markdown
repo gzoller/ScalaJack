@@ -1,1 +1,0 @@
-This release fixes a minor, but annoying bug where if the last value in a JSON object happens to be a number, parsing fails.

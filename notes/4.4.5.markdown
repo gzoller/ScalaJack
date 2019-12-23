@@ -1,3 +1,0 @@
-This is a bugfix release.
-
-When there was a double-backslash in the JSON both were being skipped by the parser.  Only the first one should be--the second is the 'real' character (the backslash).

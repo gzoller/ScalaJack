@@ -1,1 +1,0 @@
-This release fixes a bug where certain String values in Any-typed JSON renderings didn't have quotes.

@@ -1,1 +1,0 @@
-Disable publish in root project

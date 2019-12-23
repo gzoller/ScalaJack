@@ -1,0 +1,14 @@
+
+    [ ] -- Map one kind of WIRE to another:
+
+            val sj: ScalaJack[JSON]()
+
+            val mapper = sj.mapper(YamlFlavor())
+            mapper.map[Foo](f, Foo => Foo, JSON): YAML
+
+            Possibly use implicit converters?
+
+
+    [ ] -- Stream input/output, e.g. Mutliple back-to-back YAML documents, but not a List[Document]
+
+           Possibly combine with a mapper above

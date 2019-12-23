@@ -176,7 +176,6 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
 
   // $COVERAGE-OFF$Not needed for Json4s
   def showError(msg: String): String = msg
-  def skipOverElement(): Unit = {}
   def backspace(): Unit = {}
   def mark(): Int = 0
   def revertToMark(mark: Int): Unit = {}

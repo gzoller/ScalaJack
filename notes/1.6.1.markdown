@@ -1,4 +1,0 @@
-Refactoring of ScalaJack.scala to clean up repetitive code.
-
-Fixed bug for ScalaJack.render[List[x]] where 'x' is itself a parameterized type.
-Wasn't handled properly in 1.6.0.

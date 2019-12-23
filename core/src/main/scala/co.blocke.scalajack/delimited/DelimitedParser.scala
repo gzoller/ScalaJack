@@ -205,7 +205,6 @@ case class DelimitedParser(
       showError("DelimitedFlavor does not support traits")
     )
 
-  def skipOverElement(): Unit = {} // has no meaning for delimited input, i.e. no trait or capture support that would require skipping
   def nextIsObject: Boolean = false
   def nextIsArray: Boolean = false
   def nextIsBoolean: Boolean = false

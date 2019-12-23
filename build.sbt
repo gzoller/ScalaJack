@@ -12,6 +12,7 @@ val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538"
 val json4s = "org.json4s" %% "json4s-core" % "3.6.6"
 val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 val cats = "org.typelevel" %% "cats-core" % "2.0.0"
+val snakeyaml = "org.snakeyaml" % "snakeyaml-engine" % "2.0"
 
 lazy val basicSettings = Seq(
   resolvers += Resolver.jcenterRepo,
@@ -67,7 +68,7 @@ lazy val scalajack = project
       Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value) ++
         Seq("org.apache.commons" % "commons-text" % "1.6") ++
         Seq("commons-codec" % "commons-codec" % "1.12") ++
-        Seq(json4s, cats) ++
+        Seq(json4s, cats, snakeyaml) ++
         test(scalatest) ++
         test(json4sNative)
   )

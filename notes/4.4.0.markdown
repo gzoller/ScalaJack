@@ -1,3 +1,0 @@
-This version adds support for Scala tuples up to scala.Tuple22.
-
-Tuples are serilialized as arrays in JSON.
