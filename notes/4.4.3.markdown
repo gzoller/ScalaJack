@@ -1,3 +1,0 @@
-This version adds support for default values for case class field membmers.  While reading json if a field is not present in the json and a default value is given in the class this value will be use and no error generated.  (If there's no default value then a missing field error is generated.)  
-
-This is different than an optional field, which may be present or not.  A default-value field may not be there but technically is required so the class must specify a default value.

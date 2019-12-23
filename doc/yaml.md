@@ -2,11 +2,11 @@
 
 YAML is now supported as a flavor for ScalaJack, so you can serialize your Scala artifacts directly to/from YAML documents.
 
-All the normal trait-handling, type hints, modifiers, etc. that apply in JSON apply in YAML too, so you lose on flexibility.
+All the normal trait-handling, type hints, modifiers, etc. that apply in JSON apply in YAML too, so you lose no flexibility.
 
-With YAML you gain the ability to natively support non-String Map keys.  ScalaJack's JSON flavor allowed this too, but required serializing the non-String key into a String, which frankly is a bit messy.  No need for that anymore with YAML!
+With YAML you gain the ability to natively support non-String (i.e. complex) Map keys.  ScalaJack's JSON flavor allowed this too, but required serializing the non-String key into a String, which frankly is a bit messy.  No need for that anymore with YAML!
 
-One thing that is different for YAML is there are no permissive primitives ("true" = true, "123" = 123).  In YAML, permissive primitive behavior is default unless you quote your values.
+One thing that is different for YAML is there are no permissive primitives settings (.withPermissivePrimitives), for example "true" = true, "123" = 123.  In YAML, permissive primitive behavior is default unless you quote your values.
 
 Usage is as you'd expect:
 ```scala

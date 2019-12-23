@@ -1,1 +1,0 @@
-This release contains a bug fix to the JodaTime support (standardizes on UTC time zone), and has some prep for TravisCI support on GitHub.

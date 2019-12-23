@@ -1,3 +1,0 @@
-This is a trivial update geared to minor performance tweaks.
-
-* Migrated things in primitiveTypes to byte keys vs string for (hopefully) faster lookup

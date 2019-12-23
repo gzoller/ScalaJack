@@ -1,3 +1,0 @@
-Fixed a corner-case of logic that can in rare situations cause the parser to spin and eventually
-run out of memory if it expecting a certain data type but the JSON provides something different.
-Most combinations worked fine, but one or two would trigger the fail.

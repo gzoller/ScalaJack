@@ -1,1 +1,0 @@
-This is a bugfix release.  Version 4.4.3 reworked Analyzer code for case class reflection.  This created a bug when a case class had a companion object, which had an apply method.  Basically the analyzer found more than one apply method and crashed.  This patch fixes the problem.
