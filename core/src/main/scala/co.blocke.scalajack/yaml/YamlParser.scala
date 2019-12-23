@@ -32,6 +32,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
   // Just the Events I care about
   private val events = snake.asScala.filter(doICare).toList
 
+  private val indentLevelMap = mutable.Map.empty[Int, Int]
+
   private var i = 0
 
   def expectString(nullOK: Boolean = true): String = {
@@ -245,9 +247,15 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
 
   def showError(msg: String): String = s"Line ${events(i).getStartMark.get().getLine}: " + msg
   def backspace(): Unit              = i -= 1
-  def mark(): Int                    = i
-  def revertToMark(mark: Int): Unit  = i = mark
-  def nextIsString: Boolean          = events(i).isInstanceOf[ScalarEvent]
+  def mark(): Int = {
+    indentLevelMap(i) = indentLevel
+    i
+  }
+  def revertToMark(mark: Int): Unit = {
+    i = mark
+    indentLevel = indentLevelMap(i)
+  }
+  def nextIsString: Boolean = events(i).isInstanceOf[ScalarEvent]
   def nextIsNumber: Boolean =
     events(i).isInstanceOf[ScalarEvent] && isNumber(
       events(i).asInstanceOf[ScalarEvent].getValue

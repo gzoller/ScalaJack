@@ -10,38 +10,25 @@ import org.snakeyaml.engine.v2.scanner.StreamReader
 
 import scala.jdk.CollectionConverters._
 
-case class Person(name: String, age: Int) extends SJCapture
-object Size extends Enumeration {
-  val Small, Medium, Large = Value
-}
-object Food extends Enumeration {
-  val Seeds, Meat, Pellets, Veggies = Value
-}
-trait Pet {
-  val name: String
-  val food: Food.Value
-}
-case class FishPet(name: String, food: Food.Value, waterTemp: Double) extends Pet
-case class DogPet(name: String, food: Food.Value, numLegs: Int)       extends Pet
+import scala.util._
 
-case class AnyShell(a: Any)
+class Embed() {
+  var stuff: List[String] = List.empty[String]
+  var num: Int            = 0
+}
+
+class Boom() {
+  var name: String      = ""
+  var other: Try[Embed] = Success(null)
+}
 
 object RunMe extends App {
 
   val sj = ScalaJack(YamlFlavor())
 
-  val inst = AnyShell(
-    Map(
-      List(1, 2, 3)                -> List("a", "b", "c"),
-      DogPet("Fido", Food.Meat, 4) -> DogPet("Fifi", Food.Meat, 4),
-      Size.Small                   -> "ok",
-      123.456                      -> true,
-      293845                       -> "Greg",
-      false                        -> "16",
-      "Fred"                       -> "Wilma",
-      16.toByte                    -> null
-    )
-  )
+  val yaml =
+    """name: Greg
+      |other: [1, 2, 3]""".stripMargin
 
-  println(sj.render(inst))
+  println(sj.read[Boom](yaml))
 }
