@@ -127,13 +127,13 @@ case class AnyMapKeyTypeAdapter(
       .asInstanceOf[TypeAdapter[X]] match {
       case ta: Stringish => ta.write(value, writer, out)
       case ta: CaseClassTypeAdapter[X] =>
-        val stringBuilder = model.StringBuilder()
+        val builder = jackFlavor.getBuilder
         ta.writeWithHint(
           value,
           writer,
-          stringBuilder.asInstanceOf[mutable.Builder[Any, WIRE]]
+          builder.asInstanceOf[mutable.Builder[Any, WIRE]]
         )
-        writer.writeString(stringBuilder.result(), out)
+        writer.writeString(builder.result().toString, out)
       case ta =>
         jackFlavor.stringWrapTypeAdapterFactory(ta).write(value, writer, out)
     }

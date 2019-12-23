@@ -22,6 +22,8 @@ trait JackFlavorFor[WIRE, T] extends JackFlavor[WIRE] {
 
 trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
 
+  type WIRE_TYPE = WIRE
+
   def read[T](input: WIRE)(implicit tt: TypeTag[T]): T
   def render[T](t: T)(implicit tt: TypeTag[T]): WIRE
   def forType[T](implicit tt: TypeTag[T]): JackFlavorFor[WIRE, T]

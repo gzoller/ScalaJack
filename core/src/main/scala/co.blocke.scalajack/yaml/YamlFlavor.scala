@@ -5,8 +5,10 @@ import model._
 import typeadapter.AnyMapKeyTypeAdapter
 
 import scala.reflect.runtime.universe._
+import scala.collection.mutable
 import org.snakeyaml.engine.v2.api.DumpSettings
 import org.snakeyaml.engine.v2.api.lowlevel.{Present, Serialize}
+import org.snakeyaml.engine.v2.nodes.Node
 
 /**
   * This class is a cut'n paste copy of JsonFlavor with some mods to lock in a type.  There's currently an
@@ -137,8 +139,6 @@ case class YamlFlavor(
   private val writer = YamlWriter() //(this)
 
   override val stringifyMapKeys: Boolean = true
-  override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
-    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
   def allowPermissivePrimitives(): JackFlavor[YAML] =
     this.copy(permissivesOk = true)
@@ -160,4 +160,11 @@ case class YamlFlavor(
       wrappedTypeAdapter: TypeAdapter[T],
       emptyStringOk: Boolean = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T] = wrappedTypeAdapter // no need to stringify--YAML handles complex key values!
+
+  // OK... for YAML I've done a bad thing here and lied.  The JackFlavor trait requires Builder[WIRE,WIRE],
+  // which is Builder[YAML,YAML].  But the internals of snakeyaml require me to use a Builder[Node,Node].
+  // Correctly untangling this would be a huge amount of work...and unnecessary.  Both producer and consumer
+  // of this Builder know and expect Builder[Node,Node], so it was expedient to just lie to the trait and
+  // say this is a Builder[YAML,YAML] to make the compiler happy.   Sue me.
+  override def getBuilder: mutable.Builder[YAML, YAML] = YamlBuilder().asInstanceOf[mutable.Builder[YAML, YAML]]
 }

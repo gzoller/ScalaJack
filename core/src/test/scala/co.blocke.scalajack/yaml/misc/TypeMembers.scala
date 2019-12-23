@@ -37,7 +37,7 @@ class TypeMembers extends AnyFunSpec {
   val sj2 = ScalaJack(YamlFlavor()).parseOrElse((typeOf[Body] -> typeOf[DefaultBody]))
 
   describe(
-    "-----------------------------\n:  Externalized Type Tests  :\n-----------------------------"
+    "------------------------------------\n:  Externalized Type Tests (YAML)  :\n------------------------------------"
   ) {
     it("Read and match") {
       val yaml =

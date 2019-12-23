@@ -10,7 +10,7 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
   val sj = ScalaJack(YamlFlavor())
 
   describe(
-    "-----------------------------------\n:  Scala Primitive Map Key Tests  :\n-----------------------------------"
+    "------------------------------------------\n:  Scala Primitive Map Key Tests (YAML)  :\n------------------------------------------"
   ) {
     describe("+++ Positive Tests +++") {
       it("With Any Key") {
@@ -26,14 +26,30 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
             16.toByte                    -> null
           )
         )
-        val yaml = sj.render(inst)
-        println(yaml)
-        /*
-        parseJValue(yaml) should matchJson(
-          parseJValue(
-            """{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.yamlon.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.yamlon.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}"""
-          )
-        )
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  Fred: Wilma
+                           |  293845: Greg
+                           |  ? _hint: co.blocke.scalajack.yaml.mapkeys.DogPet
+                           |    name: Fido
+                           |    food: Meat
+                           |    numLegs: 4
+                           |  : _hint: co.blocke.scalajack.yaml.mapkeys.DogPet
+                           |    name: Fifi
+                           |    food: Meat
+                           |    numLegs: 4
+                           |  16: null
+                           |  false: '16'
+                           |  Small: ok
+                           |  123.456: true
+                           |  ? - 1
+                           |    - 2
+                           |    - 3
+                           |  : - a
+                           |    - b
+                           |    - c
+                           |""".stripMargin
+        yaml should be(comparison)
         val read =
           sj.read[AnyShell](yaml).m.keySet.map(z => (z, z.getClass.getName))
         read.contains((16, "java.lang.Integer")) should be(true)
@@ -45,13 +61,10 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
         read.contains(
           (
             DogPet("Fido", Food.Meat, 4),
-            "co.blocke.scalajack.yamlon.mapkeys.DogPet"
+            "co.blocke.scalajack.yaml.mapkeys.DogPet"
           )
         ) should be(true)
-
-       */
       }
-      /*
       it("With BigDecimal Key") {
         val inst = SampleBigDecimal(
           Map(
@@ -59,8 +72,12 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
             BigDecimal(789.123) -> BigDecimal(2)
           )
         )
-        val yaml = sj.render(inst)
-        assertResult("""{"m":{"123.456":1,"789.123":2}}""") { yaml }
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  123.456: !!float '1'
+                           |  789.123: !!float '2'
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleBigDecimal](yaml)
         }
@@ -68,40 +85,60 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
       it("With BigInt Key") {
         val inst =
           SampleBigInt(Map(BigInt(123) -> BigInt(1), BigInt(789) -> BigInt(2)))
-        val yaml = sj.render(inst)
-        assertResult("""{"m":{"123":1,"789":2}}""") { yaml }
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  123: 1
+                           |  789: 2
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleBigInt](yaml)
         }
       }
       it("With Boolean Key") {
-        val inst = SampleBoolean(Map(true -> false, false -> true))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"true":false,"false":true}}""") { yaml }
+        val inst       = SampleBoolean(Map(true -> false, false -> true))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  true: false
+                           |  false: true
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleBoolean](yaml)
         }
       }
       it("With Byte Key") {
-        val inst = SampleByte(Map(16.toByte -> 2.toByte, 48.toByte -> 9.toByte))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"16":2,"48":9}}""") { yaml }
+        val inst       = SampleByte(Map(16.toByte -> 2.toByte, 48.toByte -> 9.toByte))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  16: 2
+                           |  48: 9
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleByte](yaml)
         }
       }
       it("With Char Key") {
-        val inst = SampleChar(Map('a' -> 'A', 'z' -> 'Z'))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"a":"A","z":"Z"}}""") { yaml }
+        val inst       = SampleChar(Map('a' -> 'A', 'z' -> 'Z'))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  a: A
+                           |  z: Z
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleChar](yaml)
         }
       }
       it("With Double Key") {
-        val inst = SampleDouble(Map(12.34 -> 56.78, 90.12 -> 34.56))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"12.34":56.78,"90.12":34.56}}""") { yaml }
+        val inst       = SampleDouble(Map(12.34 -> 56.78, 90.12 -> 34.56))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  12.34: 56.78
+                           |  90.12: 34.56
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleDouble](yaml)
         }
@@ -110,32 +147,48 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
         val inst = SampleEnumeration(
           Map(Size.Small -> Size.Large, Size.Large -> Size.Medium)
         )
-        val yaml = sj.render(inst)
-        assertResult("""{"m":{"Small":"Large","Large":"Medium"}}""") { yaml }
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  Small: Large
+                           |  Large: Medium
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleEnumeration](yaml)
         }
       }
       it("With Float Key") {
-        val inst = SampleFloat(Map(12.34F -> 56.78F, 90.12F -> 34.56F))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"12.34":56.78,"90.12":34.56}}""") { yaml }
+        val inst       = SampleFloat(Map(12.34F -> 56.78F, 90.12F -> 34.56F))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  12.34: 56.78
+                           |  90.12: 34.56
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleFloat](yaml)
         }
       }
       it("With Int Key") {
-        val inst = SampleInt(Map(12 -> 56, 90 -> 34))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"12":56,"90":34}}""") { yaml }
+        val inst       = SampleInt(Map(12 -> 56, 90 -> 34))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  12: 56
+                           |  90: 34
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleInt](yaml)
         }
       }
       it("With Long Key") {
-        val inst = SampleLong(Map(12L -> 56L, 90L -> 34L))
-        val yaml   = sj.render(inst)
-        assertResult("""{"m":{"12":56,"90":34}}""") { yaml }
+        val inst       = SampleLong(Map(12L -> 56L, 90L -> 34L))
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  12: 56
+                           |  90: 34
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleLong](yaml)
         }
@@ -143,13 +196,16 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
       it("With Short Key") {
         val inst =
           SampleShort(Map(12.toShort -> 56.toShort, 90.toShort -> 34.toShort))
-        val yaml = sj.render(inst)
-        assertResult("""{"m":{"12":56,"90":34}}""") { yaml }
+        val yaml       = sj.render(inst)
+        val comparison = """m:
+                           |  12: 56
+                           |  90: 34
+                           |""".stripMargin
+        assertResult(comparison) { yaml }
         assertResult(inst) {
           sj.read[SampleShort](yaml)
         }
       }
-     */
     }
     describe("--- Negative Tests ---") {
       /*
