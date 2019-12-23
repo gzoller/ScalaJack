@@ -66,8 +66,8 @@ case class YamlFlavorFor[J](
   override lazy val anyMapKeyTypeAdapter: AnyMapKeyTypeAdapter =
     typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
 
-  def allowPermissivePrimitives(): JackFlavor[YAML] =
-    this.copy(permissivesOk = true)
+  def allowPermissivePrimitives(): JackFlavor[String] =
+    throw new ScalaJackError("Not available for YAML encoding")
   def enumsAsInts(): JackFlavor[YAML] = this.copy(enumsAsInt = true)
   def parseOrElse(poe: (Type, Type)*): JackFlavor[YAML] =
     this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
@@ -110,8 +110,6 @@ case class YamlFlavor(
   }
 
   def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[YAML, U] =
-    null.asInstanceOf[JackFlavorFor[YAML, U]]
-  /*
     YamlFlavorFor(
       taCache.typeAdapter(tu.tpe.dealias).asInstanceOf[TypeAdapter[U]],
       defaultHint,
@@ -123,7 +121,6 @@ case class YamlFlavor(
       parseOrElseMap,
       enumsAsInt
     )
-   */
 
   def render[T](t: T)(implicit tt: TypeTag[T]): YAML = {
     val sb = YamlBuilder()
@@ -140,8 +137,8 @@ case class YamlFlavor(
 
   override val stringifyMapKeys: Boolean = true
 
-  def allowPermissivePrimitives(): JackFlavor[YAML] =
-    this.copy(permissivesOk = true)
+  def allowPermissivePrimitives(): JackFlavor[String] =
+    throw new ScalaJackError("Not available for YAML encoding")
   def enumsAsInts(): JackFlavor[YAML] = this.copy(enumsAsInt = true)
   def parseOrElse(poe: (Type, Type)*): JackFlavor[YAML] =
     this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)

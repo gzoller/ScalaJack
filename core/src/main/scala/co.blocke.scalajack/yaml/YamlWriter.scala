@@ -156,6 +156,7 @@ case class YamlWriter() extends Writer[Node] {
   }
 }
 
+// $COVERAGE-OFF$This is a snakeyaml thing.  It works if consuming it works.
 case class EventParser(events: List[Event]) extends org.snakeyaml.engine.v2.parser.Parser {
   private var i = 0
 
@@ -171,4 +172,5 @@ case class EventParser(events: List[Event]) extends org.snakeyaml.engine.v2.pars
     ret
   }
   def hasNext: Boolean = i < events.length
+  // $COVERAGE-ON$
 }

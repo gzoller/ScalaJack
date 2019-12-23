@@ -270,6 +270,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     events(i).isInstanceOf[ScalarEvent] && List("true", "false").contains(
       events(i).asInstanceOf[ScalarEvent].getValue
     )
+  // $COVERAGE-OFF$Unused, un-called by YamlFlavor machinery
   def subParser(input: YAML): Parser = this.copy(input = input)
   def sourceAsString: String         = input
+  // $COVERAGE-ON$
 }
