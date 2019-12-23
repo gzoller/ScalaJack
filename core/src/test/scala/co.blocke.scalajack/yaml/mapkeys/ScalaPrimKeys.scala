@@ -208,87 +208,84 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
       }
     }
     describe("--- Negative Tests ---") {
-      /*
       it("Bad BigDecimal Key") {
-        val yaml  = """{"m":{"789.123":1,"fred":2}}"""
-        val msg = """Expected a Number here
-                    |fred
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleBigDecimal](yaml) should have message msg
+        val yaml =
+          """m:
+            |  789.123: 1
+            |  fred: 2""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleBigDecimal](yaml) should have message "Line 2: Expected a Number value here: =VAL :fred"
       }
       it("Bad BigInt Key") {
-        val yaml  = """{"m":{"fred":1,"789":2}}"""
-        val msg = """Expected a Number here
-                    |fred
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleBigInt](yaml) should have message msg
+        val yaml =
+          """m:
+            |  fred: 1
+            |  789: 2""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleBigInt](yaml) should have message "Line 1: Expected a Number value here: =VAL :fred"
       }
       it("Bad Boolean Key") {
-        val yaml  = """{"m":{"true":false,"123":true}}"""
-        val msg = """Expected a Boolean here
-                    |123
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleBoolean](yaml) should have message msg
+        val yaml =
+          """m:
+            |  true: false
+            |  123: true""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleBoolean](yaml) should have message "Line 2: Expected a Boolean value here: =VAL :123"
       }
       it("Bad Byte Key") {
-        val yaml  = """{"m":{"16":2,"x48":9}}"""
-        val msg = """Expected a Number here
-                    |x48
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleByte](yaml) should have message msg
+        val yaml =
+          """m:
+            |  16: 2
+            |  x48: 9""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleByte](yaml) should have message "Line 2: Expected a Number value here: =VAL :x48"
       }
       it("Bad Char Key") { // NOTE: This comprehensively tests for any null keyed Map
-        val yaml  = """{"m":{null:"A","z":"Z"}}"""
-        val msg = """A Char typed value cannot be null
-                    |{"m":{null:"A","z":"Z"}}
-                    |---------^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleChar](yaml) should have message msg
+        val yaml =
+          """m:
+            |  null: A
+            |  z: Z""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleChar](yaml) should have message "Line 1: A Char typed value cannot be null"
       }
       it("Bad Double Key") {
-        val yaml  = """{"m":{"12.34":56.78,"true":34.56}}"""
-        val msg = """Expected a Number here
-                    |true
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleDouble](yaml) should have message msg
+        val yaml =
+          """m:
+            |  12.34: 56.78
+            |  true: 34.56""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleDouble](yaml) should have message "Line 2: Expected a Number value here: =VAL :true"
       }
       it("Bad Enumeration Key") {
-        val yaml = """{"m":{"Small":"Large","Bogus":"Medium"}}"""
-        val msg =
-          """No value found in enumeration co.blocke.scalajack.yamlon.mapkeys.Size$ for Bogus
-            |{"m":{"Small":"Large","Bogus":"Medium"}}
-            |----------------------------^""".stripMargin
+        val yaml =
+          """m:
+            |  Small: Large
+            |  Bogus: Medium""".stripMargin
         the[ScalaJackError] thrownBy sj
-          .read[SampleEnumeration](yaml) should have message msg
+          .read[SampleEnumeration](yaml) should have message "Line 2: No value found in enumeration co.blocke.scalajack.yaml.mapkeys.Size$ for Bogus"
       }
       it("Bad Float Key") {
-        val yaml  = """{"m":{"12.34":56.78,"90.12.3":34.56}}"""
-        val msg = """Cannot parse an Float from value
-                    |90.12.3
-                    |------^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleFloat](yaml) should have message msg
+        val yaml =
+          """m:
+            |  12.34: 56.78
+            |  90.12.3: 34.56""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleFloat](yaml) should have message "Line 2: Cannot parse an Float from value"
       }
       it("Bad Int Key") {
-        val yaml  = """{"m":{"12.0":56,"90":34}}"""
-        val msg = """Cannot parse an Int from value
-                    |12.0
-                    |---^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleInt](yaml) should have message msg
+        val yaml =
+          """m:
+            |  12.0: 56
+            |  90: 34""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleInt](yaml) should have message "Line 1: Cannot parse an Int from value"
       }
       it("Bad Long Key") {
-        val yaml  = """{"m":{"12":56,"hey":34}}"""
-        val msg = """Expected a Number here
-                    |hey
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleLong](yaml) should have message msg
+        val yaml =
+          """m: 
+            |  12: 56
+            |  hey: 34""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleLong](yaml) should have message "Line 2: Expected a Number value here: =VAL :hey"
       }
       it("Bad Short Key") {
-        val yaml  = """{"m":{"p99999":56,"90":34}}"""
-        val msg = """Expected a Number here
-                    |p99999
-                    |^""".stripMargin
-        the[ScalaJackError] thrownBy sj.read[SampleShort](yaml) should have message msg
+        val yaml =
+          """m: 
+            |  p99999: 56
+            |  90: 34""".stripMargin
+        the[ScalaJackError] thrownBy sj.read[SampleShort](yaml) should have message "Line 1: Expected a Number value here: =VAL :p99999"
       }
-     */
     }
   }
 }

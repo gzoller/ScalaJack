@@ -27,7 +27,6 @@ class ScalaPrimKeys() extends AnyFunSpec with Matchers {
           )
         )
         val js = sj.render(inst)
-        println(js)
         parseJValue(js) should matchJson(
           parseJValue(
             """{"m":{"false":"16","Small":"ok","123.456":true,"{\"_hint\":\"co.blocke.scalajack.json.mapkeys.DogPet\",\"name\":\"Fido\",\"food\":\"Meat\",\"numLegs\":4}":{"_hint":"co.blocke.scalajack.json.mapkeys.DogPet","name":"Fifi","food":"Meat","numLegs":4},"Fred":"Wilma","[1,2,3]":["a","b","c"],"293845":"Greg","16":null}}"""
