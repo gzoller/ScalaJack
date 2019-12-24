@@ -8,7 +8,6 @@ import scala.reflect.runtime.universe._
 import scala.collection.mutable
 import org.snakeyaml.engine.v2.api.DumpSettings
 import org.snakeyaml.engine.v2.api.lowlevel.{Present, Serialize}
-import org.snakeyaml.engine.v2.nodes.Node
 
 /**
   * This class is a cut'n paste copy of JsonFlavor with some mods to lock in a type.  There's currently an

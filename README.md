@@ -72,6 +72,7 @@ Couldn't be simpler!
 * [View/SpliceInto](doc/viewSplice.md)
 * [Filter](doc/filter.md)
 * [Union type](doc/union.md)
+* [map and Conversions *(new)*](doc/map.md)
 * [ScalaJack Configuration](doc/config.md)
 * [Gimme Speed!](doc/speed.md)
 
