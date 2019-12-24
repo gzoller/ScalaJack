@@ -1,6 +1,6 @@
 ## Converters
 
-As for version 6.2.0, ScalaJack includes a Converters package to add some syntax sugar making it easier to move between wire formats.
+As of version 6.2.0, ScalaJack includes a Converters package to add some syntax sugar making it easier to move between wire formats.
 
 ### Case 1: Simple conversion between two wire formats
 ```scala
@@ -11,7 +11,7 @@ case class Person(name: String, age: Int)
   println(js.jsonToYaml)
 ```
 
-Note: For Delimited converers (delimitedToJson, delimitedToJson4s, delimitedToYaml, jsonToDelimited, json4sToDelimted, yamltoDelimited), you must specify a type parameter.
+Note: For Delimited converers (delimitedToJson, delimitedToJson4s, delimitedToYaml, jsonToDelimited, json4sToDelimted, yamlToDelimited), you must specify a type parameter.
 This is because Delimited format is so representation-poor, it can't represent a Map required for the conversion.  An example:
 
 ```scala
@@ -20,15 +20,17 @@ case class Person(name: String, age: Int)
 
   val js = """{"name":"Greg","age":53}"""
   println(js.jsonToDelimited[Person])
+  // Greg,53
 ```
 
-### Case 2: Map serialized object (same wire format)
+### Case 2: Map serialized object across the same wire format
 ```scala
 import co.blocke.scalajack.Converters._
 case class Person(name: String, age: Int)
 
   val js = """{"name":"Greg","age":53}"""
   println(js.mapJson[Person](person => person.copy(age=35)))
+  // {"name":"Greg","age":35}
 ```
 
 ### Case 3: Convert between wire formats while modifying serialized object
@@ -39,9 +41,14 @@ case class Person(name: String, age: Int)
   val sjYaml = ScalaJack(YamlFlavor())
   val js = """{"name":"Greg","age":53}"""
   println(js.mapJsonTo[Person,YAML](sjYaml)(person => person.copy(age=35)))
+  // name: Greg
+  // age: 35
 ```
 
-### *Bonus:* New to/from convenience implicits
+### *Bonus:* to/from convenience implicits
+
+In addition to the normal ScalaJack read/render functions, the Converters package provides a set of implicit convenience functions
+to perform the same functionality, for those who perfer this style.
 
 ```scala
 import co.blocke.scalajack.Converters._
@@ -52,7 +59,7 @@ import co.blocke.scalajack.Converters._
   val js = """{"name":"Greg","age":53}"""
 
   val person = js.fromJson[Person]
-  val yamlWithHint = person.toYaml[Human]
+  val yamlWithHint = person.toYaml[Human]  // trait generates type hint
   val yamlWithoutHint = person.toYaml[Person]
 ```
 
