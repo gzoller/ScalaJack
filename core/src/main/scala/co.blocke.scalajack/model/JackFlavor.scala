@@ -116,8 +116,6 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
     intermediateContext.copy(factories = NonEmptyList(staged.head, staged.tail))
   }
 
-  def enumsAsInts(): JackFlavor[WIRE]
-
   // These is so pervasively handy, let's just pre-stage it for easy access
   lazy val stringTypeAdapter: TypeAdapter[String] =
     taCache.typeAdapterOf[String]
@@ -132,6 +130,7 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
       emptyStringOk: Boolean = true
   )(implicit tt: TypeTag[T]): TypeAdapter[T]
 
+  def enumsAsInts(): JackFlavor[WIRE]
   def allowPermissivePrimitives(): JackFlavor[WIRE]
   def parseOrElse(poe: (Type, Type)*): JackFlavor[WIRE]
   def withAdapters(ta: TypeAdapterFactory*): JackFlavor[WIRE]

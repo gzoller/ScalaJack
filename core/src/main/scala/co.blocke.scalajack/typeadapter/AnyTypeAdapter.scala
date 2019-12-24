@@ -3,7 +3,6 @@ package typeadapter
 
 import util.BijectiveFunctionHelpers
 import model._
-import co.blocke.scalajack.model
 
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
@@ -67,7 +66,7 @@ case class AnyTypeAdapter(jackFlavor: JackFlavor[_])(implicit tt: TypeTag[Any]) 
             case _ => foundMap
           }
         } else
-          foundMap
+          foundMap.toMap
       case p => p.sourceAsString
     }
 
