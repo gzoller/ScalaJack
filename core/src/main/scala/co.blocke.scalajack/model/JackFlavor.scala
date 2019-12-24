@@ -143,6 +143,4 @@ trait JackFlavor[WIRE] extends Filterable[WIRE] with ViewSplice {
   def getBuilder: mutable.Builder[WIRE, WIRE] =
     StringBuilder()
       .asInstanceOf[mutable.Builder[WIRE, WIRE]]
-
-  def map[T, S](input: WIRE, toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(read[T](input))) }
 }

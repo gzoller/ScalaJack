@@ -44,12 +44,45 @@ class MappingSpec extends AnyFunSpec with Matchers {
   describe(
     "-------------------\n:  Mapping Tests  :\n-------------------"
   ) {
-    it("A to B wire format mapping") {
-      val js = """{"name":"Sally","age":34}"""
+    /*
+    def mapJson[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjJson.render[T](fn(holder.sjJson.read[T](s)))
+    def mapYaml[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjYaml.render[T](fn(holder.sjYaml.read[T](s)))
+    def mapDelimited[T](fn: T => T)(implicit tt: TypeTag[T]): DELIMITED = holder.sjDelimited.render[T](fn(holder.sjDelimited.read[T](s)))
 
-      sj.map[Person, YAML](js, sjY)(a => a) should be("""name: Sally
-                                                        |age: 34
-                                                        |""".stripMargin)
+    def mapJsonTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjJson.read[T](s))) }
+    def mapYamlTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjYaml.read[T](s))) }
+    def mapDelimitedTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjDelimited.read[T](s))) }
+
+    def mapJson4s[T](fn: T => T)(implicit tt: TypeTag[T]): JValue                          = holder.sjJson4s.render[T](fn(holder.sjJson4s.read[T](s)))
+    def mapJson4sTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjJson4s.read[T](s))) }
+     */
+    it("mapJson") {
+      simpleJson.mapJson[Person](_.copy(age = 45)) should be("""{"name":"Fred","age":45}""")
+    }
+    it("mapJson4s") {
+      simpleJson4s.mapJson4s[Person](_.copy(age = 45)) should be(JObject(List(("name", JString("Fred")), ("age", JInt(45)))))
+    }
+    it("mapYaml") {
+      simpleYaml.mapYaml[Person](_.copy(age = 45)) should be("""name: Fred
+                                                               |age: 45
+                                                               |""".stripMargin)
+    }
+    it("mapDelimited") {
+      simpleDelimited.mapDelimited[Person](_.copy(age = 45)) should be("""Fred,45""")
+    }
+    it("mapJsonTo") {
+      simpleJson.mapJsonTo[Person, YAML](ScalaJack(YamlFlavor()))(_.copy(age = 45)) should be("""name: Fred
+                                                                                                |age: 45
+                                                                                                |""".stripMargin)
+    }
+    it("mapJson4sTo") {
+      simpleJson4s.mapJson4sTo[Person, JSON](ScalaJack())(_.copy(age = 45)) should be("""{"name":"Fred","age":45}""")
+    }
+    it("mapYamlTo") {
+      simpleYaml.mapYamlTo[Person, JSON](ScalaJack())(_.copy(age = 45)) should be("""{"name":"Fred","age":45}""")
+    }
+    it("mapDelimitedTo") {
+      simpleDelimited.mapDelimitedTo[Person, JSON](ScalaJack())(_.copy(age = 45)) should be("""{"name":"Fred","age":45}""")
     }
   }
   describe(

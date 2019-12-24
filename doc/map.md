@@ -1,40 +1,47 @@
-## map and Conversions
+## Converters
 
-### map Wire Formats
-ScalaJack supports a number of serialization wire formats (JSON, YAML, Mongo, etc.).  There may be times you wish to map a serialized object from one format to another.  The map feature allows this to be done conveniently in a Scala style.
+As for version 6.2.0, ScalaJack includes a Converters package to add some syntax sugar making it easier to move between wire formats.
 
+### Case 1: Simple conversion between two wire formats
 ```scala
-import co.blocke.scalajack.yaml._
-
-  case class Person(name: String, age: Int)
-
-  val sjJson = ScalaJack()
-  val sjYaml = ScalaJack(YamlFlavor())
-
-  val js = """{"name":"Greg","age":53}"""
-
-  println(sjJson.map[Person, YAML](js, sjYaml)(_.copy(age = 25)))
-```
-Usage is pretty simple.  You provite 2 type parameters: the type of the object to be serialized, and the target type (JSON, YAML, DELIMITED, JValue, BsonValue).  You pass the serialized object in the original format and the target flavor of ScalaJack then in the curried function you pass a map function, allowing you to modify the serialized object in-flight.
-
-### Conversions
-
-A set of convenience functions is supplied in the Conversions object.  They are wrappers around the map feature described above, and can be used when you don't want to modify your serialized object in-flight, but merely convert from one format to another.
-
-Note that only core formats have converters (so no mongo for now, although map works with mongo).
-
-```scala
-import co.blocke.scalajack.yaml._
 import co.blocke.scalajack.Converters._
-
-  case class Person(name: String, age: Int)
+case class Person(name: String, age: Int)
 
   val js = """{"name":"Greg","age":53}"""
-
-  println(js.json2Yaml)
+  println(js.jsonToYaml)
 ```
 
-Also in the Converters object is an alternate way of serializing using implicits, in case you'd like a different feel than the usual read/render functions.
+Note: For Delimited converers (delimitedToJson, delimitedToJson4s, delimitedToYaml, jsonToDelimited, json4sToDelimted, yamltoDelimited), you must specify a type parameter.
+This is because Delimited format is so representation-poor, it can't represent a Map required for the conversion.  An example:
+
+```scala
+import co.blocke.scalajack.Converters._
+case class Person(name: String, age: Int)
+
+  val js = """{"name":"Greg","age":53}"""
+  println(js.jsonToDelimited[Person])
+```
+
+### Case 2: Map serialized object (same wire format)
+```scala
+import co.blocke.scalajack.Converters._
+case class Person(name: String, age: Int)
+
+  val js = """{"name":"Greg","age":53}"""
+  println(js.mapJson[Person](person => person.copy(age=35)))
+```
+
+### Case 3: Convert between wire formats while modifying serialized object
+```scala
+import co.blocke.scalajack.Converters._
+case class Person(name: String, age: Int)
+
+  val sjYaml = ScalaJack(YamlFlavor())
+  val js = """{"name":"Greg","age":53}"""
+  println(js.mapJsonTo[Person,YAML](sjYaml)(person => person.copy(age=35)))
+```
+
+### *Bonus:* New to/from convenience implicits
 
 ```scala
 import co.blocke.scalajack.Converters._

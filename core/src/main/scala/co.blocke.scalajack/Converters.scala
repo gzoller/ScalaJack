@@ -90,23 +90,34 @@ object Converters {
   }
 
   implicit class StringishSerializers(s: String) {
-    def yamlToJson: JSON                                       = holder.sjYaml.map[Any, JSON](s, holder.sjJson)(a => a)
-    def yamlToJson4s: JValue                                   = holder.sjYaml.map[Any, JValue](s, holder.sjJson4s)(a => a)
-    def yamlToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = holder.sjYaml.map[T, DELIMITED](s, holder.sjDelimited)(a => a)
+    def yamlToJson: JSON                                       = s.mapYamlTo[Any, JSON](holder.sjJson)(a => a)
+    def yamlToJson4s: JValue                                   = s.mapYamlTo[Any, JValue](holder.sjJson4s)(a => a)
+    def yamlToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapYamlTo[T, DELIMITED](holder.sjDelimited)(a => a)
 
-    def jsonToYaml: YAML                                       = holder.sjJson.map[Any, YAML](s, holder.sjYaml)(a => a)
-    def jsonToJson4s: JValue                                   = holder.sjJson.map[Any, JValue](s, holder.sjJson4s)(a => a)
-    def jsonToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = holder.sjJson.map[T, DELIMITED](s, holder.sjDelimited)(a => a)
+    def jsonToYaml: YAML                                       = s.mapJsonTo[Any, YAML](holder.sjYaml)(a => a)
+    def jsonToJson4s: JValue                                   = s.mapJsonTo[Any, JValue](holder.sjJson4s)(a => a)
+    def jsonToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapJsonTo[T, DELIMITED](holder.sjDelimited)(a => a)
 
-    def delimitedToYaml[T](implicit tt: TypeTag[T]): YAML     = holder.sjDelimited.map[T, YAML](s, holder.sjYaml)(a => a)
-    def delimitedToJson4s[T](implicit tt: TypeTag[T]): JValue = holder.sjDelimited.map[T, JValue](s, holder.sjJson4s)(a => a)
-    def delimitedToJson[T](implicit tt: TypeTag[T]): JSON     = holder.sjDelimited.map[T, JSON](s, holder.sjJson)(a => a)
+    def delimitedToYaml[T](implicit tt: TypeTag[T]): YAML     = s.mapDelimitedTo[T, YAML](holder.sjYaml)(a => a)
+    def delimitedToJson4s[T](implicit tt: TypeTag[T]): JValue = s.mapDelimitedTo[T, JValue](holder.sjJson4s)(a => a)
+    def delimitedToJson[T](implicit tt: TypeTag[T]): JSON     = s.mapDelimitedTo[T, JSON](holder.sjJson)(a => a)
+
+    def mapJsonTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjJson.read[T](s))) }
+    def mapYamlTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjYaml.read[T](s))) }
+    def mapDelimitedTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjDelimited.read[T](s))) }
+
+    def mapJson[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjJson.render[T](fn(holder.sjJson.read[T](s)))
+    def mapYaml[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjYaml.render[T](fn(holder.sjYaml.read[T](s)))
+    def mapDelimited[T](fn: T => T)(implicit tt: TypeTag[T]): DELIMITED = holder.sjDelimited.render[T](fn(holder.sjDelimited.read[T](s)))
   }
 
   implicit class JValueSerializers(s: JValue) {
-    def json4sToYaml: YAML                                       = holder.sjJson4s.map[Any, YAML](s, holder.sjYaml)(a => a)
-    def json4sToJson: JSON                                       = holder.sjJson4s.map[Any, JSON](s, holder.sjJson)(a => a)
-    def json4sToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = holder.sjJson4s.map[T, DELIMITED](s, holder.sjDelimited)(a => a)
+    def json4sToYaml: YAML                                       = s.mapJson4sTo[Any, YAML](holder.sjYaml)(a => a)
+    def json4sToJson: JSON                                       = s.mapJson4sTo[Any, JSON](holder.sjJson)(a => a)
+    def json4sToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapJson4sTo[T, DELIMITED](holder.sjDelimited)(a => a)
+
+    def mapJson4s[T](fn: T => T)(implicit tt: TypeTag[T]): JValue                          = holder.sjJson4s.render[T](fn(holder.sjJson4s.read[T](s)))
+    def mapJson4sTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjJson4s.read[T](s))) }
   }
 
   implicit class AnyConvenience(a: Any) {
