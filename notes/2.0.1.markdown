@@ -1,1 +1,0 @@
-Upgraded to Scala 2.11.1 build and move on to non-RC versions of dependent libraries.

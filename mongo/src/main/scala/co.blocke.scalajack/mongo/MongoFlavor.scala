@@ -1,9 +1,9 @@
 package co.blocke.scalajack
 package mongo
 
+import cats.data.NonEmptyList
 import model._
 import typeadapter._
-
 import org.bson._
 
 import scala.collection.mutable
@@ -23,7 +23,7 @@ case class MongoFlavorFor[J](
 
   def read(input: BsonValue): J = ta.read(BsonParser(input, this))
   def render(t: J): BsonValue = {
-    val sb = co.blocke.scalajack.compat.BsonBuilder()
+    val sb = BsonBuilder()
     ta.write(t, writer, sb)
     sb.result()
   }
@@ -59,11 +59,10 @@ case class MongoFlavorFor[J](
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
     dads.copy(
-      factories = List(
+      factories = NonEmptyList(
         ObjectIdTypeAdapter,
-        OffsetDateTimeTypeAdapter,
-        ZonedDateTimeTypeAdapter
-      ) ++ dads.factories
+        ObjectIdTypeAdapter :: OffsetDateTimeTypeAdapter :: ZonedDateTimeTypeAdapter :: dads.factories.toList
+      )
     )
   }
 
@@ -82,7 +81,7 @@ case class MongoFlavorFor[J](
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): BsonValue = {
-    val sb = co.blocke.scalajack.compat.BsonBuilder()
+    val sb = mongo.BsonBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -133,11 +132,10 @@ case class MongoFlavor(
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
     dads.copy(
-      factories = List(
+      factories = NonEmptyList(
         ObjectIdTypeAdapter,
-        OffsetDateTimeTypeAdapter,
-        ZonedDateTimeTypeAdapter
-      ) ++ dads.factories
+        ObjectIdTypeAdapter :: OffsetDateTimeTypeAdapter :: ZonedDateTimeTypeAdapter :: dads.factories.toList
+      )
     )
   }
 
@@ -164,7 +162,7 @@ case class MongoFlavor(
   }
 
   def render[T](t: T)(implicit tt: TypeTag[T]): BsonValue = {
-    val sb = co.blocke.scalajack.compat.BsonBuilder()
+    val sb = mongo.BsonBuilder()
     taCache
       .typeAdapter(tt.tpe.dealias)
       .asInstanceOf[TypeAdapter[T]]
@@ -173,5 +171,5 @@ case class MongoFlavor(
   }
 
   override def getBuilder: mutable.Builder[BsonValue, BsonValue] =
-    co.blocke.scalajack.compat.BsonBuilder()
+    mongo.BsonBuilder()
 }

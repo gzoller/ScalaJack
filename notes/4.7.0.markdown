@@ -1,5 +1,0 @@
-This release introduces:
-
-* A bunch of performance improvements, resulting in ~40% gain in parsing speed
-* Increasing the default capacity of the tokenizing arrays (set in VisitorContext) to 1024, 
-  meaning you'll seldom have to override this manually.

@@ -4,7 +4,7 @@ package mongo
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.bson._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class Something(name: String, stuff: Map[String, Any])
 

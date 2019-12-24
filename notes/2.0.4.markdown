@@ -1,2 +1,0 @@
-Bump Scala version to 2.11.2.
-Support java.util.UUID types as a primitive type (convert inline to String)

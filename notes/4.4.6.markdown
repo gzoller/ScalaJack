@@ -1,1 +1,0 @@
-This release fixes a bug with the default values support where some values were erroneously wrapped in an Option.

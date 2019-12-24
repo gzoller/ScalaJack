@@ -4,8 +4,8 @@ package typeadapter
 import model._
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{ NoType, TypeTag, typeOf }
-import scala.util.{ Failure, Success, Try }
+import scala.reflect.runtime.universe.{NoType, TypeTag, typeOf}
+import scala.util.{Failure, Success, Try}
 
 object TryTypeAdapterFactory extends TypeAdapterFactory {
 
@@ -17,7 +17,7 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
         next.typeAdapterOf[T]
 
       case asTry =>
-        val valueType :: Nil = asTry.typeArgs
+        val valueType        = asTry.typeArgs.head
         val valueTypeAdapter = taCache.typeAdapter(valueType)
         TryTypeAdapter(valueTypeAdapter, taCache.jackFlavor)
           .asInstanceOf[TypeAdapter[T]]
@@ -25,10 +25,7 @@ object TryTypeAdapterFactory extends TypeAdapterFactory {
 
 }
 
-case class TryTypeAdapter[T](
-    valueTypeAdapter: TypeAdapter[T],
-    jackFlavor:       JackFlavor[_])
-  extends TypeAdapter[Try[T]] {
+case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], jackFlavor: JackFlavor[_]) extends TypeAdapter[Try[T]] {
 
   def read(parser: Parser): Try[T] = {
     val saved = parser.mark()
@@ -36,16 +33,14 @@ case class TryTypeAdapter[T](
       case self @ Success(_) => self
       case Failure(cause) =>
         parser.revertToMark(saved)
-        Failure(
+        val f = Failure(
           new ScalaJackValueError(jackFlavor.anyTypeAdapter.read(parser), cause)
         )
+        f
     }
   }
 
-  def write[WIRE](
-      t:      Try[T],
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](t: Try[T], writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case Success(v) => valueTypeAdapter.write(v, writer, out)
       case Failure(e: ScalaJackValueError) =>

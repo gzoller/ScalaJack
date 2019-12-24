@@ -326,15 +326,24 @@ class ValueClassKeys() extends AnyFunSpec with Matchers {
         }
         it("Bad Int Key") {
           val js = """{"m":{"12.5":56}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCInt](js) should have message "For input string: \"12.5\""
+          val msg = """Cannot parse an Int from value
+                    |12.5
+                    |---^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleVCInt](js) should have message msg
         }
         it("Bad Long Key") {
           val js = """{"m":{"12.5":56}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCLong](js) should have message "For input string: \"12.5\""
+          val msg = """Cannot parse an Long from value
+                    |12.5
+                    |---^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleVCLong](js) should have message msg
         }
         it("Bad Short Key") {
           val js = """{"m":{"12.5":56}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCShort](js) should have message "For input string: \"12.5\""
+          val msg = """Cannot parse an Short from value
+                    |12.5
+                    |---^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleVCShort](js) should have message msg
         }
         it("Bad String Key") {
           val js = """{"m":{true:"B"}}"""
@@ -395,7 +404,12 @@ class ValueClassKeys() extends AnyFunSpec with Matchers {
         }
         it("Bad Parameterized Case Class Key") {
           val js = """{"m":{"{\"a\":5.5,\"b\":\"wow\"}":{"a":6,"b":"zoom"}}}"""
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleVCParamClass[String, Int]](js) should have message "For input string: \"5.5\""
+          val msg = """Cannot parse an Int from value
+                      |{"a":5.5,"b":"wow"}
+                      |-------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleVCParamClass[String, Int]](
+            js
+          ) should have message msg
         }
         it("Bad Parameterized Trait Key") {
           val js =

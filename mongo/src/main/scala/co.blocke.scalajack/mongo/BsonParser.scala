@@ -8,10 +8,9 @@ import typeadapter.ClassTypeAdapterBase
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe.Type
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
-case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
-  extends Parser {
+case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) extends Parser {
   type WIRE = BsonValue
 
   def expectString(nullOK: Boolean = true): String =
@@ -22,9 +21,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     else
       throw new ScalaJackError(s"Expected string here, not '$input'")
 
-  def expectList[K, TO](
-      KtypeAdapter: TypeAdapter[K],
-      builder:      mutable.Builder[K, TO]): TO =
+  def expectList[K, TO](KtypeAdapter: TypeAdapter[K], builder: mutable.Builder[K, TO]): TO =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       null.asInstanceOf[TO]
@@ -51,10 +48,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     } else
       throw new ScalaJackError(s"Expected tuple (list) here, not '$input'")
 
-  def expectMap[K, V, TO](
-      keyTypeAdapter:   TypeAdapter[K],
-      valueTypeAdapter: TypeAdapter[V],
-      builder:          mutable.Builder[(K, V), TO]): TO =
+  def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K], valueTypeAdapter: TypeAdapter[V], builder: mutable.Builder[(K, V), TO]): TO =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       null.asInstanceOf[TO]
@@ -82,7 +76,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
       null
     // $COVERAGE-ON$
     else if (input.isDocument) {
-      val args = classBase.argsTemplate.clone()
+      val args      = classBase.argsTemplate.clone()
       val fieldBits = classBase.fieldBitsTemplate.clone()
       val captured =
         if (classBase.isSJCapture) new java.util.HashMap[String, BsonValue]()
@@ -91,8 +85,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
         case entry if entry.getKey == ID_FIELD && classBase.dbKeys.size == 1 =>
           val dbKey = classBase.dbKeys.head
           fieldBits -= dbKey.index
-          args(dbKey.index) =
-            dbKey.valueTypeAdapter.read(BsonParser(entry.getValue, jackFlavor))
+          args(dbKey.index) = dbKey.valueTypeAdapter.read(BsonParser(entry.getValue, jackFlavor))
         case entry if entry.getKey == ID_FIELD => // compound key
           entry.getValue.asDocument.entrySet.asScala.foreach { dbKeyEntry =>
             classBase.fieldMembersByName
@@ -105,18 +98,16 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
               }
           }
         case entry =>
-          classBase.fieldMembersByName
-            .get(entry.getKey)
-            .map { field =>
+          classBase.fieldMembersByName.get(entry.getKey) match {
+            case Some(field) =>
               fieldBits -= field.index
               args(field.index) = field.valueTypeAdapter.read(
                 BsonParser(entry.getValue, jackFlavor)
               )
-            }
-            .getOrElse {
+            case None => // found some input field not present in class
               if (captured != null)
                 captured.put(entry.getKey, entry.getValue)
-            }
+          }
       }
       val missing = fieldBits.intersect(classBase.dbKeys.map(_.index).toSet)
       if (missing.nonEmpty) {
@@ -128,8 +119,8 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
           throw new ScalaJackError(
             "Missing key (_id) field, or a component of a compound key field: " +
               classBase.dbKeys
-              .collect { case f if missing.contains(f.index) => f.name }
-              .mkString(",")
+                .collect { case f if missing.contains(f.index) => f.name }
+                .mkString(",")
           )
       }
       (fieldBits, args, captured)
@@ -142,9 +133,11 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     else
       throw new ScalaJackError(s"Expected boolean here, not '$input'")
 
-  def expectNumber(): String =
+  def expectNumber(nullOK: Boolean = false): String =
     input match {
-      case i if i.isNull       => null
+      case i if i.isNull && nullOK => null
+      case i if i.isNull =>
+        throw new ScalaJackError(s"Expected number here, not '$input'")
       case i if i.isDecimal128 => i.asDecimal128.getValue.toString
       case i if i.isDouble     => i.asDouble.getValue.toString
       case i if i.isInt32      => i.asInt32.getValue.toString
@@ -179,7 +172,7 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
   // For embedded type members.  Convert the type member into runtime "actual" type, e.g. T --> Foo
   def resolveTypeMembers(
       typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn:       HintBijective
+      converterFn: HintBijective
   ): Map[Type, Type] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
     if (input.isDocument) {
       val doc = input.asDocument
@@ -194,18 +187,15 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue])
     } else
       throw new ScalaJackError(s"Expected document (object) here, not '$input'")
 
-  def showError(msg: String): String = msg
-  // $COVERAGE-OFF$Not used for MongoDB
-  def skipOverElement(): Unit = {}
-  // $COVERAGE-ON$
-  def backspace(): Unit = {}
-  def mark(): Int = -1
-  def revertToMark(mark: Int): Unit = {}
-  def nextIsString: Boolean = input.isString
-  def nextIsNumber: Boolean = input.isNumber
-  def nextIsObject: Boolean = input.isDocument
-  def nextIsArray: Boolean = input.isArray
-  def nextIsBoolean: Boolean = input.isBoolean
+  def showError(msg: String): String      = msg
+  def backspace(): Unit                   = {}
+  def mark(): Int                         = -1
+  def revertToMark(mark: Int): Unit       = {}
+  def nextIsString: Boolean               = input.isString
+  def nextIsNumber: Boolean               = input.isNumber
+  def nextIsObject: Boolean               = input.isDocument
+  def nextIsArray: Boolean                = input.isArray
+  def nextIsBoolean: Boolean              = input.isBoolean
   def subParser(input: BsonValue): Parser = this
   def sourceAsString: String =
     throw new ScalaJackError(

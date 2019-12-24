@@ -30,11 +30,11 @@ class JavaPrim() extends AnyFunSpec with Matchers {
             new JBigDecimal(
               "0.1499999999999999944488848768742172978818416595458984375"
             ),
-            null
+            JBigDecimal.ZERO
           )
           val js = sj.render(inst)
           assertResult(
-            """{"bd1":0,"bd2":1,"bd3":10,"bd4":0.1499999999999999944488848768742172978818416595458984375,"bd5":null}"""
+            """{"bd1":0,"bd2":1,"bd3":10,"bd4":0.1499999999999999944488848768742172978818416595458984375,"bd5":0}"""
           ) { js }
           assertResult(inst) {
             sj.read[SampleJBigDecimal](js)
@@ -48,11 +48,11 @@ class JavaPrim() extends AnyFunSpec with Matchers {
             new JBigInteger("-90182736451928374653345"),
             new JBigInteger("90182736451928374653345"),
             new JBigInteger("0"),
-            null
+            JBigInteger.ZERO
           )
           val js = sj.render(inst)
           assertResult(
-            """{"bi1":0,"bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}"""
+            """{"bi1":0,"bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":0}"""
           ) { js }
           assertResult(inst) {
             sj.read[SampleJBigInteger](js)

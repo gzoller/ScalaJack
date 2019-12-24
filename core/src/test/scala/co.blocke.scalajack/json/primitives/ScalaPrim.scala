@@ -220,9 +220,9 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
                     |------^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[SampleByte](js) should have message msg
           val js2 = """{"b1":12,"b2":-128,"b3":0,"b4":null}"""
-          val msg2 = """Byte values cannot be null
+          val msg2 = """Expected a Number here
                      |{"b1":12,"b2":-128,"b3":0,"b4":null}
-                     |----------------------------------^""".stripMargin
+                     |-------------------------------^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[SampleByte](js2) should have message msg2
         }
         it("Char must break") {
@@ -240,8 +240,11 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
         it("Double must break") {
           val js =
             """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
-          val msg = """For input string: "1.79769313486E23157E308"""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleDouble](js) should have message msg
+          val msg =
+            """Cannot parse an Double from value
+                    |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123...
+                    |----------------------------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleDouble](js) should have message msg
         }
         it("Enumeration must break") {
           val js =
@@ -281,8 +284,10 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
                     |---------------------------------------^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[SampleInt](js) should have message msg
           val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}"""
-          val msg2 = """For input string: "2.3"""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleInt](js2) should have message msg2
+          val msg2 = """Cannot parse an Int from value
+                       |{"i1":2147483647,"i2":-2147483648,"i3":2.3,"i4":123}
+                       |-----------------------------------------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleInt](js2) should have message msg2
         }
         it("Long must break") {
           val js =
@@ -294,8 +299,11 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
           the[ScalaJackError] thrownBy sj.read[SampleLong](js) should have message msg
           val js2 =
             """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}"""
-          val msg2 = """For input string: "0.3"""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleLong](js2) should have message msg2
+          val msg2 =
+            """Cannot parse an Long from value
+              |...372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}
+              |----------------------------------------------------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleLong](js2) should have message msg2
         }
         it("Short must break") {
           val js = """{"s1":32767,"s2":true,"s3":0,"s4":123}"""
@@ -304,8 +312,10 @@ class ScalaPrim() extends AnyFunSpec with Matchers {
                     |-----------------^""".stripMargin
           the[ScalaJackError] thrownBy sj.read[SampleShort](js) should have message msg
           val js2 = """{"s1":32767,"s2":3.4,"s3":0,"s4":123}"""
-          val msg2 = """For input string: "3.4"""".stripMargin
-          the[java.lang.NumberFormatException] thrownBy sj.read[SampleShort](js2) should have message msg2
+          val msg2 = """Cannot parse an Short from value
+                       |{"s1":32767,"s2":3.4,"s3":0,"s4":123}
+                       |-------------------^""".stripMargin
+          the[ScalaJackError] thrownBy sj.read[SampleShort](js2) should have message msg2
         }
         it("String must break") {
           val js = """{"s1":"something","s2":-19,"s3":null}"""

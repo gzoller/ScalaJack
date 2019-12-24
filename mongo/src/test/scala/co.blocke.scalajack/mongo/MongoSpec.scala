@@ -12,7 +12,7 @@ import org.bson._
 import org.bson.types.ObjectId
 import org.scalatest.matchers.should._
 import org.scalatest.funspec.AnyFunSpec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class WrappedOffsetDateTime(val offsetDateTime: OffsetDateTime) extends AnyVal
 

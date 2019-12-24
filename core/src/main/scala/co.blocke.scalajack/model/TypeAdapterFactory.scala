@@ -71,7 +71,10 @@ object TypeAdapterFactory {
   abstract class ===[X](implicit ttFactory: TypeTag[X])
     extends TypeAdapterFactory {
 
-    def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X]
+    def create(next: TypeAdapterFactory)(
+        implicit
+        tt: TypeTag[X]
+    ): TypeAdapter[X]
 
     override def typeAdapterOf[T](
         next: TypeAdapterFactory
@@ -87,7 +90,10 @@ object TypeAdapterFactory {
   abstract class =:=[X](implicit ttFactory: TypeTag[X])
     extends TypeAdapterFactory {
 
-    def create(next: TypeAdapterFactory)(implicit tt: TypeTag[X]): TypeAdapter[X]
+    def create(next: TypeAdapterFactory)(
+        implicit
+        tt: TypeTag[X]
+    ): TypeAdapter[X]
 
     override def typeAdapterOf[T](
         next: TypeAdapterFactory
@@ -117,7 +123,7 @@ object TypeAdapterFactory {
         if (tt.tpe == ttFactory.tpe) {
           type E = Any
           type TT = X[E]
-          val elementType :: Nil = tt.tpe.typeArgs
+          val elementType = tt.tpe.typeArgs.head
           create[E, TT](next)(
             taCache,
             tt.asInstanceOf[TypeTag[TT]],
@@ -153,7 +159,7 @@ object TypeAdapterFactory {
           type E1 = Any
           type E2 = Any
           type TT = X[E1, E2]
-          val elementType1 :: elementType2 :: Nil = tt.tpe.typeArgs
+          val List(elementType1, elementType2) = tt.tpe.typeArgs.take(2)
           create[E1, E2, TT](next)(
             taCache,
             tt.asInstanceOf[TypeTag[TT]],
@@ -198,7 +204,7 @@ object TypeAdapterFactory {
       )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
         if (tt.tpe.typeConstructor =:= ttFactory.tpe.typeConstructor) {
           type E = Any
-          val elementType :: Nil = tt.tpe.typeArgs
+          val elementType = tt.tpe.typeArgs.head
           create[E](next)(
             taCache,
             tt.asInstanceOf[TypeTag[X[E]]],
@@ -227,7 +233,7 @@ object TypeAdapterFactory {
         if (tt.tpe.typeConstructor =:= ttFactory.tpe.typeConstructor) {
           type E1 = Any
           type E2 = Any
-          val elementType1 :: elementType2 :: Nil = tt.tpe.typeArgs
+          val List(elementType1, elementType2) = tt.tpe.typeArgs.take(2)
           create[E1, E2](next)(
             tt.asInstanceOf[TypeTag[X[E1, E2]]],
             TypeTags.of[E1](elementType1),
@@ -281,7 +287,7 @@ object TypeAdapterFactory {
           case baseType =>
             type E = Any
             type TT = X[E]
-            val elementType :: Nil = baseType.typeArgs
+            val elementType = baseType.typeArgs.head
             create[E, TT](next)(
               taCache,
               tt.asInstanceOf[TypeTag[TT]],
@@ -316,7 +322,7 @@ object TypeAdapterFactory {
             type E1 = Any
             type E2 = Any
             type TT = X[E1, E2]
-            val elementType1 :: elementType2 :: Nil = baseType.typeArgs
+            val List(elementType1, elementType2) = baseType.typeArgs.take(2)
             create[E1, E2, TT](next)(
               taCache,
               tt.asInstanceOf[TypeTag[TT]],

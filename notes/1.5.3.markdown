@@ -1,2 +1,0 @@
-Fixed bug that causes crashes when rendering a case class having all-Option members when 
-all the members were None (i.e. an empty class).

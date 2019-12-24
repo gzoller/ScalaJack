@@ -3,27 +3,21 @@ package mongo
 
 import model._
 import ClassHelper.ExtraFieldValue
-import compat.BsonBuilder
 
 import scala.collection.Map
 import scala.collection.mutable
 import org.bson._
 import org.bson.types.Decimal128
 
-case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
-  extends Writer[BsonValue] {
+case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValue] {
 
   def writeBigInt(t: BigInt, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     throw new ScalaJackError(
       "BigInt is currently an unsupported datatype for MongoDB serialization"
     )
-  def writeBoolean(
-      t:   Boolean,
-      out: mutable.Builder[BsonValue, BsonValue]): Unit =
+  def writeBoolean(t: Boolean, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     out += new BsonBoolean(t)
-  def writeDecimal(
-      t:   BigDecimal,
-      out: mutable.Builder[BsonValue, BsonValue]): Unit =
+  def writeDecimal(t: BigDecimal, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     out += new BsonDecimal128(new Decimal128(t.bigDecimal))
   def writeDouble(t: Double, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     out += new BsonDouble(t)
@@ -35,19 +29,16 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
     out += new BsonNull()
   def writeString(t: String, out: mutable.Builder[BsonValue, BsonValue]): Unit =
     out += new BsonString(t)
-  def writeRaw(t: Any, out: mutable.Builder[BsonValue, BsonValue]): Unit =
-    out += t.asInstanceOf[BsonValue]
+  def writeRaw(t: BsonValue, out: mutable.Builder[BsonValue, BsonValue]): Unit =
+    out += t
 
-  def writeArray[Elem](
-      t:               Iterable[Elem],
-      elemTypeAdapter: TypeAdapter[Elem],
-      out:             mutable.Builder[BsonValue, BsonValue]): Unit =
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[BsonValue, BsonValue]): Unit =
     t match {
       case null => out += new BsonNull()
       case a =>
-        val array = new BsonArray()
+        val array   = new BsonArray()
         val builder = BsonBuilder()
-        val iter = a.iterator
+        val iter    = a.iterator
         while (iter.hasNext) {
           elemTypeAdapter.write[BsonValue](iter.next, this, builder)
           array.add(builder.result())
@@ -57,15 +48,15 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
     }
 
   def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
+      t: Map[Key, Value],
+      keyTypeAdapter: TypeAdapter[Key],
       valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[BsonValue, BsonValue]
+      out: mutable.Builder[BsonValue, BsonValue]
   ): Unit = t match {
     case null => out += new BsonNull()
     case daMap =>
-      val doc = new BsonDocument()
-      val keyBuilder = BsonBuilder()
+      val doc          = new BsonDocument()
+      val keyBuilder   = BsonBuilder()
       val valueBuilder = BsonBuilder()
       daMap.foreach {
         case (key, value) =>
@@ -84,11 +75,11 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
   }
 
   def writeTuple[T](
-      t:        T,
+      t: T,
       writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
-      out:      mutable.Builder[BsonValue, BsonValue]
+      out: mutable.Builder[BsonValue, BsonValue]
   ): Unit = {
-    val array = new BsonArray()
+    val array   = new BsonArray()
     val builder = BsonBuilder()
     writeFns.foreach { f =>
       f.write(t, this, builder)
@@ -98,9 +89,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
     out += array
   }
 
-  @inline private def writeFields(
-      fields: List[(String, Any, TypeAdapter[Any])],
-      doc:    BsonDocument): Unit = {
+  @inline private def writeFields(fields: List[(String, Any, TypeAdapter[Any])], doc: BsonDocument): Unit = {
     for ((label, value, valueTypeAdapter) <- fields)
       if (value != None) {
         val builder = BsonBuilder()
@@ -110,11 +99,11 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
   }
 
   def writeObject[T](
-      t:                  T,
-      orderedFieldNames:  List[String],
+      t: T,
+      orderedFieldNames: List[String],
       fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:                mutable.Builder[BsonValue, BsonValue],
-      extras:             List[(String, ExtraFieldValue[_])]                = List.empty[(String, ExtraFieldValue[_])]
+      out: mutable.Builder[BsonValue, BsonValue],
+      extras: List[(String, ExtraFieldValue[_])] = List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
     if (t == null)
       out += new BsonNull()
@@ -127,7 +116,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
               e._1,
               e._2.value,
               e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
-            )
+          )
         ),
         doc
       )
@@ -168,7 +157,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any])
 
       t match {
         case sjc: SJCapture =>
-          import scala.collection.JavaConverters._
+          import scala.jdk.CollectionConverters._
           sjc.captured.asScala.foreach {
             case (label, capturedValue) =>
               doc.append(label, capturedValue.asInstanceOf[BsonValue])

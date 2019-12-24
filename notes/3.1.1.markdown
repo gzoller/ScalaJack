@@ -1,1 +1,0 @@
-This release of ScalaJack simply removes the scala compiler from being a dependency.

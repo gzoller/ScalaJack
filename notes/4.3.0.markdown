@@ -1,5 +1,0 @@
-This release contains one nice enhancement:
-
-The Any time has limited support for JSON and MongoDB.  That means you can have Map[String,Any], or List[Any].  Nested structures are possible too: List[Map[String,Any]]. 
-
-Note that Any support relies on simple type inference when re-materializing (reading) an object, so only primitive types, List[Any], and Map[String,Any] are supported (and nesting of the same).

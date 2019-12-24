@@ -1,0 +1,6 @@
+This version contains following changes:
+
+* Re-booting the change notes, having abandoned them too long!
+* Removed Scala 2.12 support entirely
+* Added YAML flavor
+* map feature (map serialization from one wire format to another)

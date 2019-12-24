@@ -1,6 +1,0 @@
-New feature!  This version adds view and spliceInto functions to the ScalaJack suite, which allow
-you to project from/into subobjects w/o field-by-field copy.  Use this when you need
-a "lite" version of a larger master object that you may not want to transport everywhere.  
-For example, let's say you have a User object, which includes account credentials and private
-information, that you store in your database.  You might have a LiteUser that has a subset of
-User's fields you send to front-end UI.

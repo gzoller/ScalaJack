@@ -8,6 +8,7 @@ import scala.reflect.runtime.universe._
 
 import scala.collection.mutable
 import scala.collection.immutable.ListMap
+import cats.data.NonEmptyList
 
 object Factory1 extends TypeAdapterFactory.===.withOneTypeParam[List] {
   def create[E, T <: List[E]](next: TypeAdapterFactory)(
@@ -107,14 +108,13 @@ class TAx[T]() extends EmptyTypeAdapter[T]
 class TypeAdapterFactorySpec extends AnyFunSpec with Matchers {
   type Phone = String
 
-  val context: TypeAdapterCache = TypeAdapterCache(ScalaJack())
-    .withFactory(Factory1)
-    .withFactory(Factory2)
-    .withFactory(Factory3)
-    .withFactory(Factory7)
-    .withFactory(Factory4)
-    .withFactory(Factory5)
-    .withFactory(Factory6)
+  val context: TypeAdapterCache = TypeAdapterCache(
+    ScalaJack(),
+    NonEmptyList(
+      Factory1,
+      List(Factory2, Factory3, Factory7, Factory4, Factory5, Factory6)
+    )
+  )
 
   describe(
     "----------------------------\n:  TypeAdapter Type Tests  :\n----------------------------"

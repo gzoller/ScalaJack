@@ -29,7 +29,7 @@ object OptionTypeAdapterFactory extends TypeAdapterFactory {
       next: TypeAdapterFactory
   )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
     if (tt.tpe <:< typeOf[Option[_]]) {
-      val elementType :: Nil = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs
+      val elementType = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs.head
       OptionTypeAdapter(taCache.typeAdapter(elementType))
         .asInstanceOf[TypeAdapter[T]]
     } else

@@ -18,7 +18,7 @@ object EitherTypeAdapterFactory extends TypeAdapterFactory {
         next.typeAdapterOf[T]
 
       case asEither =>
-        val leftType :: rightType :: Nil = asEither.typeArgs
+        val List(leftType, rightType) = asEither.typeArgs.take(2)
 
         if (leftType <:< rightType || rightType <:< leftType) {
           throw new IllegalArgumentException(

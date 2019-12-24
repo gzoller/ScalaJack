@@ -20,7 +20,7 @@ object ValueClassTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
       val constructorMirror =
         reflectClass(classSymbol).reflectConstructor(constructorSymbol)
 
-      val (parameter :: Nil) :: Nil = constructorSymbol.paramLists
+      val parameter = constructorSymbol.paramLists.head.head
       val parameterName = parameter.name.encodedName.toString
       val accessorMethodSymbol = tpe.member(TermName(parameterName)).asMethod
       val accessorMethod = Reflection.methodToJava(accessorMethodSymbol)

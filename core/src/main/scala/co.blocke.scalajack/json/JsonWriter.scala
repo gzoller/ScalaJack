@@ -12,10 +12,7 @@ case class JsonWriter() extends Writer[String] {
   @inline def addString(s: String, out: mutable.Builder[String, String]): Unit =
     out += s
 
-  def writeArray[Elem](
-      t:               Iterable[Elem],
-      elemTypeAdapter: TypeAdapter[Elem],
-      out:             mutable.Builder[String, String]): Unit = t match {
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[String, String]): Unit = t match {
     case null => addString("null", out)
     case a =>
       out += "["
@@ -49,11 +46,7 @@ case class JsonWriter() extends Writer[String] {
   def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
     addString(t.toString, out)
 
-  def writeMap[Key, Value, To](
-      t:                Map[Key, Value],
-      keyTypeAdapter:   TypeAdapter[Key],
-      valueTypeAdapter: TypeAdapter[Value],
-      out:              mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String]): Unit =
     t match {
       case null => addString("null", out)
       case daMap =>
@@ -79,9 +72,9 @@ case class JsonWriter() extends Writer[String] {
       case null => addString("null", out)
       case _: String =>
         out += "\""
-        var i = 0
+        var i      = 0
         val length = t.length
-        val chars = t.toCharArray
+        val chars  = t.toCharArray
 
         while (i < length) {
           chars(i) match {
@@ -102,16 +95,16 @@ case class JsonWriter() extends Writer[String] {
         out += "\""
     }
 
-  def writeRaw(t: Any, out: mutable.Builder[String, String]): Unit =
-    addString(t.asInstanceOf[String], out)
+  def writeRaw(t: String, out: mutable.Builder[String, String]): Unit =
+    addString(t, out)
 
   def writeNull(out: mutable.Builder[String, String]): Unit =
     addString("null", out)
 
   @inline private def writeFields(
       isFirst: Boolean,
-      fields:  List[(String, Any, TypeAdapter[Any])],
-      out:     mutable.Builder[String, String]
+      fields: List[(String, Any, TypeAdapter[Any])],
+      out: mutable.Builder[String, String]
   ): Boolean = {
     var first = isFirst
     for ((label, value, valueTypeAdapter) <- fields)
@@ -128,11 +121,11 @@ case class JsonWriter() extends Writer[String] {
   }
 
   def writeObject[T](
-      t:                  T,
-      orderedFieldNames:  List[String],
+      t: T,
+      orderedFieldNames: List[String],
       fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out:                mutable.Builder[String, String],
-      extras:             List[(String, ExtraFieldValue[_])]
+      out: mutable.Builder[String, String],
+      extras: List[(String, ExtraFieldValue[_])]
   ): Unit = {
     if (t == null) {
       addString("null", out)
@@ -146,7 +139,7 @@ case class JsonWriter() extends Writer[String] {
               e._1,
               e._2.value,
               e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
-            )
+          )
         ),
         out
       )
@@ -161,7 +154,7 @@ case class JsonWriter() extends Writer[String] {
       )
       t match {
         case sjc: SJCapture =>
-          import scala.collection.JavaConverters._
+          import scala.jdk.CollectionConverters._
           var first = wasFirst2
           sjc.captured.asScala.foreach {
             case (field, fvalue) =>
@@ -180,10 +173,7 @@ case class JsonWriter() extends Writer[String] {
     }
   }
 
-  def writeTuple[T](
-      t:        T,
-      writeFns: List[TupleTypeAdapterFactory.TupleField[_]],
-      out:      mutable.Builder[String, String]): Unit = {
+  def writeTuple[T](t: T, writeFns: List[TupleTypeAdapterFactory.TupleField[_]], out: mutable.Builder[String, String]): Unit = {
     out += "["
     var first = true
     writeFns.foreach { f =>

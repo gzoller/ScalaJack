@@ -10,7 +10,7 @@ import model._
 object ZonedDateTimeTypeAdapter extends TypeAdapter.=:=[ZonedDateTime] {
 
   def read(parser: Parser): ZonedDateTime =
-    parser.expectNumber() match {
+    parser.expectNumber(true) match {
       case null => null
       case dateTimeLong =>
         ZonedDateTime.ofInstant(
