@@ -27,7 +27,7 @@ ScalaJack is extremely simple to use.
 
 Include the following in your build.sbt:
 
-    resolvers += Resolver.url("blocke bintray", url("https://dl.bintray.com/blocke/releases/"))(Patterns("[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"))
+    resolvers += Resolver.bintrayRepo("blocke","releases")
     libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.2.0")
 
 If you want to use the optional MongoDB serialization support include this as well:
