@@ -17,16 +17,17 @@ Advanced Features:
  - Sealed trait-style enumerations
  - Extensible to other encodings (JSON, CSV, MongoDB, and DynamoDB are provided by ScalaJack, but you can roll your own too!)
 
-> **Note:** 2.13.1 on JDK 13.0.1 or later is strongly recommended!
->Scala has done a lot of very recent work to improve compatibility with later JDKs and it's been a bumpy road.  The combination above has been tested.  
-Combinations of earlier versions are known to have compabitility problems.  If you must use earlier Scala or JVM versions then use JDK 1.8.
+> **Note:** Scala 2.13.1 + JDK 13.0.1 + sbt 1.3.5+ or later is strongly recommended!
+>There has been quite a bit of change lately in Scala and sbt and we've found various combinations of Scala/JDK/sbt do not play well together!
+>We can vouch for the combination of Scala 2.13.1 / JDK 13.0.1 / sbt 1.3.5.  Later versions should work as well, but you're on your own with earlier versions.
 
 ## Use
 
 ScalaJack is extremely simple to use.
 
-Include it in your projects by adding the following to your build.sbt:
+Include the following in your build.sbt:
 
+    resolvers += Resolver.bintrayRepo("blocke","releases")
     libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.2.0")
 
 If you want to use the optional MongoDB serialization support include this as well:
