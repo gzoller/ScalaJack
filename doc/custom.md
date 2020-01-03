@@ -25,13 +25,13 @@ Let's look at a straightforward example then unpack some nuances.
 
 ```scala
 object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {  
-  def read[WIRE](path: Path, reader: Reader[WIRE], isMapKey: Boolean): Phone =
-    reader.readString(path) match {  
-      case s: String => s.replaceAll("-", "")  
-      case null => null  
-  }  
+  def read(parser: Parser): Phone =
+    parser.expectString() match {
+      case null      => null
+      case s: String => s.replaceAll("-", "")
+    }
   
-  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE], isMapKey: Boolean): Unit = t match {  
+  def write[WIRE](t: Phone, writer: Writer[WIRE], out: Builder[WIRE, WIRE]): Unit = t match {  
     case null => writer.writeNull(out)  
     case _    => writer.writeString("%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)), out)  
   }  
