@@ -1,70 +1,103 @@
 package co.blocke.scalajack
 package json4s
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
+import TestUtil._
+import munit._
+import munit.internal.console
 import org.json4s._
+import co.blocke.scalajack.json4s.Json4sFlavor
 
-class Parsing extends AnyFunSpec with Matchers {
+class Parsing() extends FunSuite:
 
-  val sj = ScalaJack(Json4sFlavor())
+  val sj = co.blocke.scalajack.ScalaJack(Json4sFlavor())
 
-  describe(
-    "-----------------------\n:  Parsing (MongoDB)  :\n-----------------------"
-  ) {
-      it("Null String value") {
-        sj.read[String](null) should be(null)
-      }
-      it("Null (BSON null) String value") {
-        sj.read[String](JNull) should be(null)
-      }
-      it("Non-String value where String expected") {
-        the[ScalaJackError] thrownBy sj.read[String](JInt(5)) should have message "Expected string here, not 'JInt(5)'"
-      }
-      it("Null List value") {
-        sj.read[List[Int]](null) should be(null)
-      }
-      it("Null (BSON null) List value") {
-        sj.read[List[Int]](JNull) should be(null)
-      }
-      it("Non-List value where List expected") {
-        the[ScalaJackError] thrownBy sj.read[List[Int]](JInt(5)) should have message "Expected list here, not 'JInt(5)'"
-      }
-      it("Null tuple value") {
-        sj.read[(Int, Int)](null) should be(null)
-      }
-      it("Null (BSON null) tuple value") {
-        sj.read[(Int, Int)](JNull) should be(null)
-      }
-      it("Non-tuple value where tuple expected") {
-        the[ScalaJackError] thrownBy sj.read[(Int, Int)](JInt(5)) should have message "Expected tuple (list) here, not 'JInt(5)'"
-      }
-      it("Null Map value") {
-        sj.read[Map[String, Int]](null) should be(null)
-      }
-      it("Null (BSON null) Map value") {
-        sj.read[Map[String, Int]](JNull) should be(null)
-      }
-      it("Non-Map value where Map expected") {
-        the[ScalaJackError] thrownBy sj.read[Map[String, Int]](JInt(5)) should have message "Expected map here, not 'JInt(5)'"
-      }
-      it("Null object value") {
-        sj.read[Person](null) should be(null)
-      }
-      it("Null (BSON null) object value") {
-        sj.read[Person](JNull) should be(null)
-      }
-      it("Non-Boolean value where Boolean expected") {
-        the[ScalaJackError] thrownBy sj.read[Boolean](JInt(5)) should have message "Expected boolean here, not 'JInt(5)'"
-      }
-      it("Non-Number value where Number expected") {
-        the[ScalaJackError] thrownBy sj.read[Int](new JString("x")) should have message "Expected number here, not 'JString(x)'"
-      }
-      it("Attempt to scan for type hint on a non-object") {
-        the[ScalaJackError] thrownBy sj.read[Address](JInt(5)) should have message "Expected object here, not 'JInt(5)'"
-      }
-      it("Attempt to resolve type members on a non-object") {
-        the[ScalaJackError] thrownBy sj.read[Envelope[FancyBody]](JInt(5)) should have message "Expected object here, not 'JInt(5)'"
-      }
+  test("Null String value") {
+    describe(
+      "----------------------\n:  Parsing (Json4s)  :\n----------------------", Console.BLUE
+    )
+    assertEquals(sj.read[String](null), null)
+  }
+
+  test("Null (BSON null) String value") {
+    assertEquals(sj.read[String](JNull), null)
+  }
+
+  test("Non-String value where String expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected string here, not 'JInt(5)'"){
+      sj.read[String](JInt(5))
     }
-}
+  }
+
+  test("Null List value") {
+    assertEquals(sj.read[List[Int]](null), null)
+  }
+
+  test("Null (BSON null) List value") {
+    assertEquals(sj.read[List[Int]](JNull), null)
+  }
+
+  test("Non-List value where List expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected list here, not 'JInt(5)'"){
+      sj.read[List[Int]](JInt(5))
+    }
+  }
+
+  test("Null tuple value") {
+    assertEquals(sj.read[(Int, Int)](null), null)
+  }
+
+  test("Null (BSON null) tuple value") {
+    assertEquals(sj.read[(Int, Int)](JNull), null)
+  }
+
+  test("Non-tuple value where tuple expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected tuple (list) here, not 'JInt(5)'"){
+      sj.read[(Int, Int)](JInt(5))
+    }
+  }
+
+  test("Null Map value") {
+    assertEquals(sj.read[Map[String, Int]](null), null)
+  }
+
+  test("Null (BSON null) Map value") {
+    assertEquals(sj.read[Map[String, Int]](JNull), null)
+  }
+
+  test("Non-Map value where Map expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected map here, not 'JInt(5)'"){
+      sj.read[Map[String, Int]](JInt(5))
+    }
+  }
+
+  test("Null object value") {
+    assertEquals(sj.read[Person](null), null)
+  }
+
+  test("Null (BSON null) object value") {
+    assertEquals(sj.read[Person](JNull), null)
+  }
+
+  test("Non-Boolean value where Boolean expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected boolean here, not 'JInt(5)'"){
+      sj.read[Boolean](JInt(5))
+    }
+  }
+
+  test("Non-Number value where Number expected") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected number here, not 'JString(x)'"){
+      sj.read[Int](new JString("x"))
+    }
+  }
+
+  test("Attempt to scan for type hint on a non-object") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected object here, not 'JInt(5)'"){
+      sj.read[Address](JInt(5))
+    }
+  }
+
+  test("Attempt to resolve type members on a non-object") {
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Expected object here, not 'JInt(5)'"){
+      sj.read[Envelope[FancyBody]](JInt(5))
+    }
+  }

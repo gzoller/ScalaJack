@@ -4,30 +4,28 @@ package typeadapter
 import model._
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.{NoType, TypeTag, typeOf}
-import scala.util.{Failure, Success, Try}
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info._
+import scala.util.{Try, Success, Failure}
 
-object TryTypeAdapterFactory extends TypeAdapterFactory {
 
-  override def typeAdapterOf[T](
-      next: TypeAdapterFactory
-  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Try[_]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
-
-      case asTry =>
-        val valueType        = asTry.typeArgs.head
-        val valueTypeAdapter = taCache.typeAdapter(valueType)
-        TryTypeAdapter(valueTypeAdapter, taCache.jackFlavor)
-          .asInstanceOf[TypeAdapter[T]]
+object TryTypeAdapterFactory extends TypeAdapterFactory:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case _: TryInfo => true
+      case _ => false
     }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[_] =
+    TryTypeAdapter(concrete, taCache.typeAdapterOf(concrete.asInstanceOf[TryInfo].tryType), taCache.jackFlavor)
 
-}
 
-case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], jackFlavor: JackFlavor[_]) extends TypeAdapter[Try[T]] {
+case class TryTypeAdapter[T](
+    info:             RType,
+    valueTypeAdapter: TypeAdapter[T],
+    jackFlavor:       JackFlavor[_]
+  ) extends TypeAdapter[Try[T]]:
 
-  def read(parser: Parser): Try[T] = {
+  def read(parser: Parser): Try[T] =
     val saved = parser.mark()
     Try { valueTypeAdapter.read(parser) } match {
       case self @ Success(_) => self
@@ -38,15 +36,13 @@ case class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T], jackFlavor: JackF
         )
         f
     }
-  }
 
-  def write[WIRE](t: Try[T], writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit =
+  def write[WIRE](
+      t:      Try[T],
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case Success(v) => valueTypeAdapter.write(v, writer, out)
-      case Failure(e: ScalaJackValueError) =>
-        jackFlavor.anyTypeAdapter.write(e.value, writer, out)
-      // $COVERAGE-OFF$Can't test--never called, but compiler requires this case for match completeness
+      case Failure(e: ScalaJackValueError) => jackFlavor.anyTypeAdapter.write(e.value, writer, out)
       case Failure(e) => throw e
-      // $COVERAGE-ON$
     }
-}

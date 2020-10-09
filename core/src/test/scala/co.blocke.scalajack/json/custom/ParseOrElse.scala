@@ -1,25 +1,19 @@
 package co.blocke.scalajack
 package json.custom
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-import scala.reflect.runtime.universe.typeOf
+import co.blocke.scala_reflection._
+import TestUtil._
+import munit._
+import munit.internal.console
+import co.blocke.scalajack.json.JSON
 
-class ParseOrElse() extends AnyFunSpec with Matchers {
+class ParseOrElse() extends FunSuite:
 
-  describe(
-    "-----------------------\n:  ParseOrElse Tests  :\n-----------------------"
-  ) {
-      it(
-        "Provide a default object if the object specified in the type hint is unknown"
-      ) {
-          val sj =
-            ScalaJack().parseOrElse((typeOf[Address] -> typeOf[DefaultAddress]))
-          val js =
-            """{"_hint":"co.blocke.scalajack.json.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.custom.UnknownAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}"""
-          assertResult(USDemographic(50, DefaultAddress("39822"))) {
-            sj.read[Demographic](js)
-          }
-        }
-    }
-}
+  test("Provide a default object if the object specified in the type hint is unknown") {
+    describe("-----------------------\n:  ParseOrElse Tests  :\n-----------------------", Console.BLUE)
+
+    val sj = co.blocke.scalajack.ScalaJack().parseOrElse( (RType.of[Address] -> RType.of[DefaultAddress]) )
+    val js =
+      """{"_hint":"co.blocke.scalajack.json.custom.USDemographic","age":50,"address":{"_hint":"co.blocke.scalajack.json.custom.UnknownAddress","street":"123 Main","city":"New York","state":"NY","postalCode":"39822"}}""".asInstanceOf[JSON]
+    assert(USDemographic(50, DefaultAddress("39822")) == sj.read[Demographic](js))
+  }

@@ -1,5 +1,0 @@
-sbt clean coverage test
-sleep 3
-sbt coverageAggregate
-sleep 3
-sbt coveralls

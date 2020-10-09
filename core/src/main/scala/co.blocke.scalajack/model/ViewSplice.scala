@@ -1,10 +1,9 @@
 package co.blocke.scalajack
 package model
 
-import typeadapter.CaseClassTypeAdapter
-import scala.reflect.runtime.universe._
+import typeadapter.classes.CaseClassTypeAdapter
 
-trait ViewSplice {
+trait ViewSplice:
 
   me: JackFlavor[_] =>
 
@@ -15,20 +14,20 @@ trait ViewSplice {
    * @return an object of type T which is a "subset" of the master
    */
   // WARNING: Assumes CaseClassTypeAdapter.members is in constructor-order.  If not, sort on members.index.
-  def view[T](master: Any)(implicit tt: TypeTag[T]): T = {
-    val viewTarget = taCache.typeAdapter(tt.tpe) match {
-      case ta: CaseClassTypeAdapter[_] => ta
-      case _ =>
+  inline def view[T](master: Any): T = {
+    val viewTarget = taCache.typeAdapterOf[T] match {
+      case ta: CaseClassTypeAdapter[T] => ta
+      case ta =>
         throw new ScalaJackError(
-          s"Output of view() must be a case class.  ${tt.tpe.typeSymbol.fullName} is not a case class."
+          s"Output of view() must be a case class. ${ta.info.name} is not a case class."
         )
     }
     val masterData = master.getClass.getDeclaredFields
     val args = viewTarget.fieldMembersByName.toList.flatMap {
-      case (fieldName: String, f: ClassHelper.ClassFieldMember[_, _]) =>
+      case (fieldName: String, f: ClassFieldMember[_, _]) =>
         val gotOne = masterData
           .find(
-            md => md.getName == f.name && md.getType == f.valueAccessorMethod.getReturnType
+            md => md.getName == f.name && md.getType == f.outerClass.getMethod(f.name).getReturnType
           )
           .map(dataField => {
             dataField.setAccessible(true)
@@ -36,11 +35,11 @@ trait ViewSplice {
           })
         if (gotOne.isEmpty && !f.isOptional)
           throw new ScalaJackError(
-            "View master object " + master.getClass.getName + " is missing field " + fieldName + " required to build view object " + viewTarget.className
+            "View master object " + master.getClass.getName + " is missing field " + fieldName + " required to build view object " + viewTarget.info.name
           )
         gotOne
     }
-    viewTarget.constructorMirror.apply(args: _*).asInstanceOf[T]
+    viewTarget.constructWith(args)
   }
 
   /**
@@ -49,12 +48,12 @@ trait ViewSplice {
    * @param master master object
    * @return the master object with the view object's corresponding fields merged/overlayed
    */
-  def spliceInto[T, U](view: T, master: U)(implicit tu: TypeTag[U]): U = {
-    val masterTarget = taCache.typeAdapter(tu.tpe) match {
-      case ta: CaseClassTypeAdapter[_] => ta
-      case _ =>
+  inline def spliceInto[T, U](view: T, master: U): U = {
+    val masterTarget = taCache.typeAdapterOf[U] match {
+      case ta: CaseClassTypeAdapter[U] => ta
+      case ta =>
         throw new ScalaJackError(
-          s"Output of spliceInto() must be a case class.  ${tu.tpe.typeSymbol.fullName} is not a case class."
+          s"Output of spliceInto() must be a case class.  ${ta.info.name} is not a case class."
         )
     }
     val viewData = view.getClass.getDeclaredFields
@@ -63,7 +62,7 @@ trait ViewSplice {
       val f = masterTarget.fieldMembersByName(fieldName)
       viewData
         .find(
-          vd => vd.getName == f.name && vd.getType == f.valueAccessorMethod.getReturnType
+          vd => vd.getName == f.name && vd.getType == f.outerClass.getMethod(f.name).getReturnType
         )
         .map(dataField => {
           // Found matching master field in view object
@@ -81,6 +80,5 @@ trait ViewSplice {
             .get
         )
     }
-    masterTarget.constructorMirror.apply(args: _*).asInstanceOf[U]
+    masterTarget.constructWith(args)
   }
-}

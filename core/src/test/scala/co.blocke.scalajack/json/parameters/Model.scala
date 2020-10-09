@@ -55,3 +55,6 @@ case class TBlah1[A, B](w: A, z: B) extends T11[A, B]
 case class TBar7[A, B](thing1: A, thing2: B) extends T5[A, B]
 case class TFoo6[A, B, C, D](x: T11[C, T5[D, A]], y: B)
   extends T10[T11[C, T5[D, A]], B]
+
+trait Pet[T]{ val name: String; val other: T }
+case class Dog[X](name: String, numLegs: Int, other: X) extends Pet[X]

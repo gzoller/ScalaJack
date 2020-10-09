@@ -1,5 +1,7 @@
 package co.blocke.scalajack;
 
+import co.blocke.scalajack.*;
+
 public class JavaSimpleBase {
 
     private int two;

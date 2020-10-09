@@ -1,0 +1,709 @@
+[info] Loading global plugins from /Users/wmy965/.sbt/1.0/plugins
+[info] Loading settings for project scalajack-build from plugins.sbt ...
+[info] Loading project definition from /Users/wmy965/git/scalajack/project
+[info] Loading settings for project root from build.sbt ...
+[info] Set current project to scalajack (in build file:/Users/wmy965/git/scalajack/)
+[32mco.blocke.scalajack.json.mapkeys.TupleCollKeys:[0m
+[34m-------------------------
+:  Tuple Map Key Tests  :
+-------------------------[0m
+[32m  + [0m[32mTuple as key[0m [90m0.247s[0m
+[32m  + [0m[32mTuple as key, null tuple as value[0m [90m0.002s[0m
+[32m  + [0m[32mTuple of Lists as key[0m [90m0.012s[0m
+[32m  + [0m[32mTuple of Maps as key[0m [90m0.006s[0m
+[32m  + [0m[32mTuple of Tuples as key[0m [90m0.006s[0m
+[32m  + [0m[32mTuple of Case Class as key[0m [90m0.009s[0m
+[32m  + [0m[32mTuple of Trait as key[0m [90m0.047s[0m
+[32m  + [0m[32mTuple of Any as key[0m [90m0.007s[0m
+[32m  + [0m[32mTuple of Optional as key[0m [90m0.006s[0m
+[32m  + [0m[32mTuple of ValueClass as key[0m [90m0.007s[0m
+[32m  + [0m[32mComplex class (having members that are classes) as key[0m [90m0.015s[0m
+[32m  + [0m[32mClass having collections as members[0m [90m0.006s[0m
+[32m  + [0m[32mClass having collections as members (empty collections[0m [90m0.003s[0m
+[32m  + [0m[32mCustom trait hint field and value for key trait[0m [90m0.011s[0m
+[32m  + [0m[32mCustom trait hint field and value for key member's trait[0m [90m0.008s[0m
+[32m  + [0m[32mParameterized class[0m [90m0.003s[0m
+[32m  + [0m[32mParameterized trait[0m [90m0.012s[0m
+[32m  + [0m[32mParameterized trait having parameterized trait members[0m [90m0.009s[0m
+[32mco.blocke.scalajack.json.collections.Seqs:[0m
+[34m---------------------
+:  Scala Seq Tests  :
+---------------------[0m
+[35m+++ Primitive Types +++[0m
+[32m  + [0m[32mBigDecimal must work[0m [90m0.005s[0m
+[32m  + [0m[32mBigInt must work[0m [90m0.004s[0m
+[32m  + [0m[32mBoolean must work[0m [90m0.017s[0m
+[32m  + [0m[32mByte must work[0m [90m0.006s[0m
+[32m  + [0m[32mChar must work[0m [90m0.01s[0m
+[32m  + [0m[32mDouble must work[0m [90m0.006s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.006s[0m
+[32m  + [0m[32mInt must work[0m [90m0.003s[0m
+[32m  + [0m[32mLong must work[0m [90m0.004s[0m
+[32m  + [0m[32mShort must work[0m [90m0.005s[0m
+[32m  + [0m[32mString must work[0m [90m0.003s[0m
+[35m+++ Collection Types +++[0m
+[32m  + [0m[32mLists must work[0m [90m0.002s[0m
+[32m  + [0m[32mMaps must work[0m [90m0.004s[0m
+[35m+++ Class Types +++[0m
+[32m  + [0m[32mClasses must work[0m [90m0.01s[0m
+[35m+++ Complex Types +++[0m
+[32m  + [0m[32mMultidimensional arrays must work[0m [90m0.004s[0m
+[34m--------------------
+:  Java Seq Tests  :
+--------------------[0m
+[35m+++ Primitive Types (Mix of List/Set/Queue +++[0m
+[32m  + [0m[32mBigDecimal (LinkedList) must work[0m [90m0.018s[0m
+[32m  + [0m[32mBigInt (Vector) must work[0m [90m0.005s[0m
+[32m  + [0m[32mBoolean (ArrayList) must work[0m [90m0.003s[0m
+[32m  + [0m[32mChar (PriorityQueue) must work[0m [90m0.004s[0m
+[32m  + [0m[32mInt (Stack) must work[0m [90m0.006s[0m
+[32m  + [0m[32mMaps must work-1[0m [90m0.004s[0m
+[35m+++ Class Types +++[0m
+[32m  + [0m[32mClasses must work-1[0m [90m0.003s[0m
+[32mco.blocke.scalajack.json.mapkeys.ListCollKeys:[0m
+[34m------------------------
+:  List Map Key Tests  :
+------------------------[0m
+[32m  + [0m[32mList as key[0m [90m0.001s[0m
+[32m  + [0m[32mList of Lists as key[0m [90m0.001s[0m
+[32m  + [0m[32mList of Tuples as key[0m [90m0.002s[0m
+[32m  + [0m[32mList of Maps as key[0m [90m0.001s[0m
+[32m  + [0m[32mList of Case Class as key[0m [90m0.003s[0m
+[32m  + [0m[32mList of Trait as key[0m [90m0.005s[0m
+[32m  + [0m[32mList of Any as key[0m [90m0.003s[0m
+[32m  + [0m[32mList of parameterized class as key[0m [90m0.003s[0m
+[32m  + [0m[32mList of parameterized trait as key[0m [90m0.005s[0m
+[32m  + [0m[32mList of Optional as key[0m [90m0.002s[0m
+[32m  + [0m[32mList of ValueClass as key[0m [90m0.003s[0m
+[32mco.blocke.scalajack.json.structures.SealedTraits:[0m
+[34m------------------------
+:  Sealed Trait Tests  :
+------------------------[0m
+[32m  + [0m[32mRead - unambiguous[0m [90m0.015s[0m
+[32m  + [0m[32mWrite - unambiguous[0m [90m0.002s[0m
+[32m  + [0m[32mRead - ambiguous[0m [90m0.008s[0m
+[32m  + [0m[32mWrite - ambiguous[0m [90m0.015s[0m
+[32m  + [0m[32mCase object implementation[0m [90m0.01s[0m
+[32m  + [0m[32mHandles null[0m [90m0.001s[0m
+[32m  + [0m[32mHandle not a sealed trait[0m [90m0.001s[0m
+[32m  + [0m[32mResolved ambiguous trait[0m [90m0.008s[0m
+[32mco.blocke.scalajack.json.mapkeys.MapCollKeys:[0m
+[34m-----------------------
+:  Map Map Key Tests  :
+-----------------------[0m
+[32m  + [0m[32mMap as key[0m [90m0.001s[0m
+[32m  + [0m[32mMap as key, map value is null[0m [90m0.001s[0m
+[32m  + [0m[32mMap of Lists as key[0m [90m0.002s[0m
+[32m  + [0m[32mMap of Maps as key[0m [90m0.001s[0m
+[32m  + [0m[32mMap of Tuples as key[0m [90m0.002s[0m
+[32m  + [0m[32mMap of Case Class as key[0m [90m0.005s[0m
+[32m  + [0m[32mMap of Trait as key[0m [90m0.008s[0m
+[32m  + [0m[32mMap of Any as key[0m [90m0.005s[0m
+[32m  + [0m[32mMap of parameterized class as key[0m [90m0.002s[0m
+[32m  + [0m[32mMap of parameterized trait as key[0m [90m0.006s[0m
+[32m  + [0m[32mMap of Optional as key[0m [90m0.001s[0m
+[32m  + [0m[32mMap of Option as key where Option is null must fail[0m [90m0.001s[0m
+[32m  + [0m[32mMap of ValueClass as key[0m [90m0.002s[0m
+[32mco.blocke.scalajack.json.collections.Options:[0m
+[34m--------------------------------------------
+:  Option (Scala) & Optional (Java) Tests  :
+--------------------------------------------[0m
+[35m+++ Scala Options[0m
+[32m  + [0m[32mOption of primitive (naked)[0m [90m0.001s[0m
+[32m  + [0m[32mOption of primitive (in class)[0m [90m0.005s[0m
+[32m  + [0m[32mOption of List[0m [90m0.003s[0m
+[32m  + [0m[32mOption of Map[0m [90m0.002s[0m
+[32m  + [0m[32mOption of Tuple[0m [90m0.002s[0m
+[32m  + [0m[32mOption of Case Class[0m [90m0.004s[0m
+[32m  + [0m[32mOption of Parameterized Class[0m [90m0.003s[0m
+[32m  + [0m[32mOption of Trait[0m [90m0.004s[0m
+[32m  + [0m[32mOption of Parameterized Trait[0m [90m0.004s[0m
+[35m+++ Scala None/null tests[0m
+[32m  + [0m[32mOption is None (in class)[0m [90m0.004s[0m
+[32m  + [0m[32mOption is None (in List)[0m [90m0.001s[0m
+[32m  + [0m[32mOption is None (value in Map)[0m [90m0.001s[0m
+[32m  + [0m[32mOption is None (key in Map)[0m [90m0.001s[0m
+[32m  + [0m[32mOption is None (in Tuple)[0m [90m0.004s[0m
+[32m  + [0m[32mReading null into optional (naked)[0m [90m0.0s[0m
+[32m  + [0m[32mReading null into optional class field[0m [90m0.001s[0m
+[32m  + [0m[32mReading null into optional List item[0m [90m0.0s[0m
+[32m  + [0m[32mReading null into optional Map item[0m [90m0.001s[0m
+[32m  + [0m[32mReading null into optional Tuple item[0m [90m0.001s[0m
+[35m++++ Java Optional[0m
+[32m  + [0m[32mOption of primitive (naked)-1[0m [90m0.005s[0m
+[32m  + [0m[32mJava class with Optional - empty JSON[0m [90m0.044s[0m
+[32m  + [0m[32mJava class with Optional - some args specified[0m [90m0.036s[0m
+[32m  + [0m[32mOptional of primitive (in class)[0m [90m0.003s[0m
+[32m  + [0m[32mOptional of List[0m [90m0.002s[0m
+[32m  + [0m[32mOptional of Map[0m [90m0.001s[0m
+[32m  + [0m[32mOptional of Tuple[0m [90m0.003s[0m
+[32m  + [0m[32mOptional of Case Class[0m [90m0.002s[0m
+[32m  + [0m[32mOptional of Parameterized Class[0m [90m0.002s[0m
+[35m+++ Java Empty/null tests[0m
+[32m  + [0m[32mOptional is None (in class)[0m [90m0.002s[0m
+[32m  + [0m[32mOptional is None (in List)[0m [90m0.001s[0m
+[32m  + [0m[32mOptional is None (value in Map)[0m [90m0.001s[0m
+[32m  + [0m[32mOptional is None (key in Map)[0m [90m0.001s[0m
+[32m  + [0m[32mOptional is Empty (in Tuple)[0m [90m0.003s[0m
+[32m  + [0m[32mReading null into Optional (naked)[0m [90m0.0s[0m
+[32m  + [0m[32mReading null into Optional class field[0m [90m0.001s[0m
+[32m  + [0m[32mReading null into Optional List item[0m [90m0.0s[0m
+[32m  + [0m[32mReading null into Optional Map item[0m [90m0.001s[0m
+[32m  + [0m[32mReading null into Optional Tuple item[0m [90m0.0s[0m
+[32mco.blocke.scalajack.json.primitives.PermissivePrimitives:[0m
+[34m--------------------------------
+:  Permissive Primitive Tests  :
+--------------------------------[0m
+[32m  + [0m[32mBoolean must work[0m [90m0.027s[0m
+[32m  + [0m[32mByte must work[0m [90m0.003s[0m
+[32m  + [0m[32mDouble must work[0m [90m0.003s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.003s[0m
+[32m  + [0m[32mInt must work[0m [90m0.005s[0m
+[32m  + [0m[32mLong must work[0m [90m0.004s[0m
+[32m  + [0m[32mShort must work[0m [90m0.003s[0m
+[32m  + [0m[32mScala BigInt must work[0m [90m0.002s[0m
+[32m  + [0m[32mJava BigInteger must work[0m [90m0.004s[0m
+[32m  + [0m[32mScala BigDecimal must work[0m [90m0.003s[0m
+[32m  + [0m[32mJava BigDecimal must work[0m [90m0.004s[0m
+[32m  + [0m[32mJava Number must work[0m [90m0.003s[0m
+[32mco.blocke.scalajack.json.collections.Tuples:[0m
+[34m-----------------
+:  Tuple Tests  :
+-----------------[0m
+[32m  + [0m[32mnull tuples work[0m [90m0.002s[0m
+[32m  + [0m[32mmissing start bracken[0m [90m0.002s[0m
+[32m  + [0m[32mmissing comma[0m [90m0.001s[0m
+[32m  + [0m[32mno closing bracket[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.primitives.JavaPrim:[0m
+[34m--------------------------
+:  Java Primitive Tests  :
+--------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mBigDecimal must work[0m [90m0.004s[0m
+[32m  + [0m[32mBigInteger must work[0m [90m0.004s[0m
+[32m  + [0m[32mBoolean must work[0m [90m0.003s[0m
+[32m  + [0m[32mByte must work[0m [90m0.003s[0m
+[32m  + [0m[32mChar must work[0m [90m0.003s[0m
+[32m  + [0m[32mDouble must work[0m [90m0.003s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.002s[0m
+[32m  + [0m[32mInt must work[0m [90m0.003s[0m
+[32m  + [0m[32mLong must work[0m [90m0.002s[0m
+[32m  + [0m[32mNumber must work[0m [90m0.006s[0m
+[32m  + [0m[32mShort must work[0m [90m0.003s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mBigDecimal must break[0m [90m0.001s[0m
+[32m  + [0m[32mBigInt must break[0m [90m0.001s[0m
+[32m  + [0m[32mBoolean must break[0m [90m0.001s[0m
+[32m  + [0m[32mByte must break[0m [90m0.0s[0m
+[32m  + [0m[32mChar must break[0m [90m0.002s[0m
+[32m  + [0m[32mDouble must break[0m [90m0.001s[0m
+[32m  + [0m[32mFloat must break[0m [90m0.001s[0m
+[32m  + [0m[32mInt must break[0m [90m0.001s[0m
+[32m  + [0m[32mLong must break[0m [90m0.001s[0m
+[32m  + [0m[32mNumber must break[0m [90m0.002s[0m
+[32m  + [0m[32mShort must break[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.plainclass.ValueClass:[0m
+[34m----------------------------------------------
+:  ValueClass DelimSpec Tests (Plain Class)  :
+----------------------------------------------[0m
+[32m  + [0m[32mValue class of Double[0m [90m0.019s[0m
+[32mco.blocke.scalajack.json.custom.ParseOrElse:[0m
+[34m-----------------------
+:  ParseOrElse Tests  :
+-----------------------[0m
+[32m  + [0m[32mProvide a default object if the object specified in the type hint is unknown[0m [90m0.011s[0m
+[32mco.blocke.scalajack.json.custom.CustomTypeHints:[0m
+[34m-----------------------------
+:  Custom Type Hints Tests  :
+-----------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mOverride default trait/polymorphic type hint[0m [90m0.003s[0m
+[32m  + [0m[32mOverride type-specific trait/polymorphic type hint[0m [90m0.003s[0m
+[32m  + [0m[32mUse ClassNameHintModifier to modify trait/polymorphic type hint value[0m [90m0.01s[0m
+[32m  + [0m[32mUse StringMatchHintModifier to modify trait/polymorphic type hint value[0m [90m0.004s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mUse unspecified type hint[0m [90m0.002s[0m
+[32m  + [0m[32mHint value after modification doesn't resolve to known class name[0m [90m0.003s[0m
+[32m  + [0m[32mUnknown string given as type hint value (no cooresponding match to class in mapping)[0m [90m0.001s[0m
+[32m  + [0m[32mSerialize object with unmapped hint class[0m [90m0.003s[0m
+[32mco.blocke.scalajack.json.primitives.ScalaPrim:[0m
+[34m---------------------------
+:  Scala Primitive Tests  :
+---------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mBigDecimal must work[0m [90m0.005s[0m
+[32m  + [0m[32mBigInt must work[0m [90m0.003s[0m
+[32m  + [0m[32mBinary must work[0m [90m0.01s[0m
+[32m  + [0m[32mBoolean must work (not nullable)[0m [90m0.003s[0m
+[32m  + [0m[32mByte must work (not nullable)[0m [90m0.002s[0m
+[32m  + [0m[32mChar must work (not nullable)[0m [90m0.003s[0m
+[32m  + [0m[32mDouble must work (not nullable)[0m [90m0.01s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.005s[0m
+[32m  + [0m[32mInt must work (not nullable)[0m [90m0.002s[0m
+[32m  + [0m[32mLong must work (not nullable)[0m [90m0.002s[0m
+[32m  + [0m[32mShort must work (not nullable)[0m [90m0.003s[0m
+[32m  + [0m[32mString must work[0m [90m0.009s[0m
+[32m  + [0m[32mUUID must work[0m [90m0.002s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mBigDecimal must break[0m [90m0.0s[0m
+[32m  + [0m[32mBigInt must break[0m [90m0.001s[0m
+[32m  + [0m[32mBoolean must break[0m [90m0.001s[0m
+[32m  + [0m[32mByte must break[0m [90m0.002s[0m
+[32m  + [0m[32mChar must break[0m [90m0.001s[0m
+[32m  + [0m[32mDouble must break[0m [90m0.001s[0m
+[32m  + [0m[32mFloat must break[0m [90m0.001s[0m
+[32m  + [0m[32mInt must break[0m [90m0.002s[0m
+[32m  + [0m[32mLong must break[0m [90m0.005s[0m
+[32m  + [0m[32mShort must break[0m [90m0.001s[0m
+[32m  + [0m[32mString must break[0m [90m0.001s[0m
+[32m  + [0m[32mUUID must break[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.plainclass.TryAndCapture:[0m
+[34m-----------------------------------------
+:  Try and Capture Tests (Plain class)  :
+-----------------------------------------[0m
+[35mTry:[0m
+[32m  + [0m[32mTry sucess[0m [90m0.012s[0m
+[32m  + [0m[32mTry failure[0m [90m0.003s[0m
+[32m  + [0m[32mTry failure 2[0m [90m0.002s[0m
+[35mCapture:[0m
+[32m  + [0m[32mPlain-class capture can write semantically equivalent JSON[0m [90m0.013s[0m
+[32m  + [0m[32mCase class capture can write semantically equivalent JSON[0m [90m0.004s[0m
+[32m  + [0m[32mJava class capture can write semantically equivalent JSON[0m [90m0.006s[0m
+[32mco.blocke.scalajack.json.primitives.AnyPrim:[0m
+[34m-------------------------
+:  Any Primitive Tests  :
+-------------------------[0m
+[32m  + [0m[32mnull works[0m [90m0.003s[0m
+[32m  + [0m[32mBigDecimal works[0m [90m1.347s[0m
+[32m  + [0m[32mBigInt works[0m [90m0.087s[0m
+[32m  + [0m[32mBoolean works[0m [90m0.002s[0m
+[32m  + [0m[32mByte works[0m [90m0.001s[0m
+[32m  + [0m[32mChar works[0m [90m0.001s[0m
+[32m  + [0m[32mDouble works[0m [90m0.003s[0m
+[32m  + [0m[32mEnumeration works[0m [90m0.002s[0m
+[32m  + [0m[32mEnum works[0m [90m0.003s[0m
+[32m  + [0m[32mFloat works[0m [90m0.003s[0m
+[32m  + [0m[32mInt works[0m [90m0.001s[0m
+[32m  + [0m[32mLong works[0m [90m0.005s[0m
+[32m  + [0m[32mShort works[0m [90m0.001s[0m
+[32m  + [0m[32mString works[0m [90m0.002s[0m
+[32mco.blocke.scalajack.json.primitives.TimePrim:[0m
+[34m--------------------------
+:  Time Primitive Tests  :
+--------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mDuration must work[0m [90m0.021s[0m
+[32m  + [0m[32mInstant must work[0m [90m0.014s[0m
+[32m  + [0m[32mLocalDateTime must work[0m [90m0.019s[0m
+[32m  + [0m[32mLocalDate must work[0m [90m0.005s[0m
+[32m  + [0m[32mLocalTime must work[0m [90m0.005s[0m
+[32m  + [0m[32mOffsetDateTime must work[0m [90m0.005s[0m
+[32m  + [0m[32mOffsetTime must work[0m [90m0.005s[0m
+[32m  + [0m[32mPeriod must work[0m [90m0.003s[0m
+[32m  + [0m[32mZonedDateTime must work[0m [90m0.01s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mDuration must break[0m [90m0.002s[0m
+[32m  + [0m[32mInstant must break[0m [90m0.002s[0m
+[32m  + [0m[32mLocalDateTime must break[0m [90m0.001s[0m
+[32m  + [0m[32mLocalDate must break[0m [90m0.001s[0m
+[32m  + [0m[32mLocalTime must break[0m [90m0.004s[0m
+[32m  + [0m[32mOffsetDateTime must break[0m [90m0.001s[0m
+[32m  + [0m[32mOffsetTime must break[0m [90m0.001s[0m
+[32m  + [0m[32mPeriod must break[0m [90m0.001s[0m
+[32m  + [0m[32mZonedDateTime must break[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.collections.Arrays:[0m
+[34m-----------------------
+:  Scala Array Tests  :
+-----------------------[0m
+[35m+++ Primitive Types +++[0m
+[32m  + [0m[32mBigDecimal must work[0m [90m0.003s[0m
+[32m  + [0m[32mBigInt must work[0m [90m0.003s[0m
+[32m  + [0m[32mBoolean must work[0m [90m0.003s[0m
+[32m  + [0m[32mChar must work[0m [90m0.003s[0m
+[32m  + [0m[32mDouble must work[0m [90m0.002s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.003s[0m
+[32m  + [0m[32mInt must work[0m [90m0.001s[0m
+[32m  + [0m[32mLong must work[0m [90m0.003s[0m
+[32m  + [0m[32mShort must work[0m [90m0.003s[0m
+[32m  + [0m[32mString must work[0m [90m0.004s[0m
+[35m+++ Collection Types +++[0m
+[32m  + [0m[32mLists must work[0m [90m0.005s[0m
+[32m  + [0m[32mMaps must work[0m [90m0.002s[0m
+[35m+++ Class Types +++[0m
+[32m  + [0m[32mClasses must work[0m [90m0.004s[0m
+[35m+++ Complex Types +++[0m
+[32m  + [0m[32mMultidimensional arrays must work[0m [90m0.005s[0m
+[34m----------------------
+:  Java Array Tests  :
+----------------------[0m
+[35m+++ Primitive Types +++[0m
+[32m  + [0m[32mJava primitives must work[0m [90m0.154s[0m
+[32mco.blocke.scalajack.json.structures.TryAndCapture:[0m
+[34m---------------------------
+:  Try and Capture Tests  :
+---------------------------[0m
+[35mTry:[0m
+[32m  + [0m[32mTry success[0m [90m0.004s[0m
+[32m  + [0m[32mTry failure[0m [90m0.001s[0m
+[32m  + [0m[32mTry failure 2[0m [90m0.002s[0m
+[35mCapture:[0m
+[32m  + [0m[32mCapture can write semantically equivalent JSON[0m [90m0.002s[0m
+[32mco.blocke.scalajack.json.mapkeys.ValueClassKeys:[0m
+[34m------------------------------
+:  ValueClass Map Key Tests  :
+------------------------------[0m
+[35m+++ Positive Primitive Tests +++[0m
+[32m  + [0m[32mValue class of BigDecimal[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of BigInt[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Byte[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Boolean[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Char[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Double[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Enumeration[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Float[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Int[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Long[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Short[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of String[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of UUID[0m [90m0.003s[0m
+[35m+++ Positive Collection Tests +++[0m
+[32m  + [0m[32mValue class of List[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of List (empty List)[0m [90m0.0s[0m
+[32m  + [0m[32mValue class of Map[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Map (empty Map[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Tupple[0m [90m0.003s[0m
+[35m+++ Positive Complex Tests +++[0m
+[32m  + [0m[32mValue class of Case Class[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Trait[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Parameterized Case Class[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Parameterized Trait[0m [90m0.005s[0m
+[32m  + [0m[32mValue class of Option[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of nested collection[0m [90m0.004s[0m
+[35m--- Negative Primitive Tests ---[0m
+[32m  + [0m[32mBad BigDecimal Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad BigInt Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Boolean Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Char Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Double Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Enumeration Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Float Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Int Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Long Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Short Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad String Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad UUID Key[0m [90m0.001s[0m
+[35m--- Negative Collection Tests ---[0m
+[32m  + [0m[32mBad List Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Map Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Tuple Key[0m [90m0.001s[0m
+[35m--- Negative Complex Tests ---[0m
+[32m  + [0m[32mBad Case Class Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Trait Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Parameterized Case Class Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Parameterized Trait Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Option Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Nested Collection Key[0m [90m0.0s[0m
+[32mco.blocke.scalajack.json.collections.Maps:[0m
+[34m---------------------
+:  Scala Map Tests  :
+---------------------[0m
+[35m+++ Primitive Types +++[0m
+[32m  + [0m[32mBigDecimal must work[0m [90m0.003s[0m
+[32m  + [0m[32mBigInt must work[0m [90m0.003s[0m
+[32m  + [0m[32mBoolean must work[0m [90m0.003s[0m
+[32m  + [0m[32mByte must work[0m [90m0.003s[0m
+[32m  + [0m[32mChar must work[0m [90m0.002s[0m
+[32m  + [0m[32mDouble must work[0m [90m0.002s[0m
+[32m  + [0m[32mFloat must work[0m [90m0.004s[0m
+[32m  + [0m[32mInt must work[0m [90m0.002s[0m
+[32m  + [0m[32mLong must work[0m [90m0.002s[0m
+[32m  + [0m[32mShort must work[0m [90m0.002s[0m
+[35m+++ Collection Types +++[0m
+[32m  + [0m[32mArrays must work[0m [90m0.004s[0m
+[32m  + [0m[32mMaps must work[0m [90m0.005s[0m
+[35m+++ Class Types +++[0m
+[32m  + [0m[32mClasses must work[0m [90m0.005s[0m
+[35m+++ Complex Types +++[0m
+[32m  + [0m[32mMultidimensional arrays must work[0m [90m0.002s[0m
+[34m--------------------
+:  Java Map Tests  :
+--------------------[0m
+[35m+++ Primitive Types +++[0m
+[32m  + [0m[32mBigDecimal must work-1[0m [90m0.008s[0m
+[32m  + [0m[32mBigInt must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mBoolean must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mByte must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mChar must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mDouble must work-1[0m [90m0.004s[0m
+[32m  + [0m[32mFloat must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mInt must work-1[0m [90m0.002s[0m
+[32m  + [0m[32mLong must work-1[0m [90m0.003s[0m
+[32m  + [0m[32mShort must work-1[0m [90m0.002s[0m
+[32m  + [0m[32mLists must work[0m [90m0.004s[0m
+[35m+++ Class Types +++[0m
+[32m  + [0m[32mClasses must work-1[0m [90m0.002s[0m
+[35m+++ Complex Types +++[0m
+[32m  + [0m[32mMultidimensional arrays must work-1[0m [90m0.003s[0m
+[32mco.blocke.scalajack.json.structures.UnionsAndIntersections:[0m
+[34m-----------------------------------
+:  Union and Intersection Tests  :
+----------------------------------[0m
+[32m  + [0m[32mSimple union type[0m [90m0.009s[0m
+[32m  + [0m[32m3-way union type[0m [90m0.004s[0m
+[32m  + [0m[32m4-way union type[0m [90m0.006s[0m
+[32m  + [0m[32mIntersection type[0m [90m0.009s[0m
+[32mco.blocke.scalajack.json.structures.Eithers:[0m
+[34m------------------
+:  Either Tests  :
+------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mLeft - two class types[0m [90m0.007s[0m
+[32m  + [0m[32mRight - two class types[0m [90m0.002s[0m
+[32m  + [0m[32mLeft - class type and scalar type[0m [90m0.002s[0m
+[32m  + [0m[32mRight - class type and scalar type[0m [90m0.002s[0m
+[32m  + [0m[32mEither is null[0m [90m0.001s[0m
+[32m  + [0m[32mDifferent classes with identical fields--favor Right[0m [90m0.003s[0m
+[32m  + [0m[32mHandles traits - Right[0m [90m0.003s[0m
+[32m  + [0m[32mHandles traits - Left[0m [90m0.002s[0m
+[34m--- Negative Tests ---[0m
+[32m  + [0m[32mSame instance Left and Right[0m [90m0.0s[0m
+[32m  + [0m[32mNeither value works[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.custom.CustomAdapter:[0m
+[34m--------------------------
+:  Custom Adapter Tests  :
+--------------------------[0m
+[32m  + [0m[32mOverrides type adapter for specific (given) type[0m [90m0.004s[0m
+[32mco.blocke.scalajack.json.primitives.ValueClassPrim:[0m
+[34m--------------------------------
+:  ValueClass Primitive Tests  :
+--------------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mValue class of BigDecimal[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of BigDecimal with null[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of BigInt[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of BigInt with null[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Byte[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Boolean[0m [90m0.003s[0m
+[32m  + [0m[32mValue class of Char[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Double[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Enumeration[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Enumeration with null[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Enum[0m [90m0.004s[0m
+[32m  + [0m[32mValue class of Enum with null[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Float[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Int[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of Long[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of Short[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of String[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of String with null[0m [90m0.001s[0m
+[32m  + [0m[32mValue class of UUID[0m [90m0.002s[0m
+[32m  + [0m[32mValue class of UUID with null[0m [90m0.0s[0m
+[32m  + [0m[32mValue class of Number[0m [90m0.002s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mWrong JSON for wrapped type[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.mapkeys.ScalaPrimKeys:[0m
+[34m-----------------------------------
+:  Scala Primitive Map Key Tests  :
+-----------------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mWith Any Key[0m [90m0.014s[0m
+[32m  + [0m[32mWith BigDecimal Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith BigInt Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Boolean Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Byte Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Char Key[0m [90m0.001s[0m
+[32m  + [0m[32mWith Double Key[0m [90m0.005s[0m
+[32m  + [0m[32mWith Enumeration Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Float Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Int Key[0m [90m0.001s[0m
+[32m  + [0m[32mWith Long Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith Short Key[0m [90m0.004s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mBad BigDecimal Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad BigInt Key[0m [90m0.002s[0m
+[32m  + [0m[32mBad Boolean Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Byte Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Char Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Double Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Enumeration Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Float Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Int Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Long Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Short Key[0m [90m0.0s[0m
+[32mco.blocke.scalajack.json.plainclass.Misc:[0m
+[34m------------------------
+:  Misc Tests (Plain)  :
+------------------------[0m
+[32m  + [0m[32mRead/write null into object[0m [90m0.002s[0m
+[32m  + [0m[32mHandles type members with modifier[0m [90m0.017s[0m
+[32m  + [0m[32mFails if no hint for type member[0m [90m0.002s[0m
+[32m  + [0m[32mMust accept missing default constructor values[0m [90m0.003s[0m
+[32m  + [0m[32mMust accept missing optional constructor values[0m [90m0.001s[0m
+[32m  + [0m[32mMust ignore unneeded type members[0m [90m0.001s[0m
+[32m  + [0m[32mMust require Java classes to have an empty constructor[0m [90m0.003s[0m
+[32m  + [0m[32mMust handle Change on Java setter[0m [90m0.004s[0m
+[32mco.blocke.scalajack.json.parameters.TraitParams:[0m
+[34m---------------------------------
+:  Trait Paramterization Tests  :
+---------------------------------[0m
+[35mBasic Parameterized Trait[0m
+[32m  + [0m[32mSimple parameters - Foo[A](x:A) where A -> simple type[0m [90m0.003s[0m
+[32m  + [0m[32mNon-parameter trait as a parameter - Foo[A](x:A) where A -> Bar (case class)[0m [90m0.004s[0m
+[32mco.blocke.scalajack.json.mapkeys.ClassPrimKeys:[0m
+[34m-------------------------
+:  Class Map Key Tests  :
+-------------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mSimple (flat) class as key[0m [90m0.004s[0m
+[32m  + [0m[32mComplex class (having members that are classes) as key[0m [90m0.003s[0m
+[32m  + [0m[32mSimple (flat) trait as key[0m [90m0.004s[0m
+[32m  + [0m[32mComplex trait (having members that are traits) as key[0m [90m0.004s[0m
+[32m  + [0m[32mComplex trait (having members that are traits) as key where trait member is null[0m [90m0.001s[0m
+[32m  + [0m[32mClass having collections as members[0m [90m0.003s[0m
+[32m  + [0m[32mClass having collections as members (empty collections[0m [90m0.001s[0m
+[32m  + [0m[32mCustom trait hint field and value for key trait[0m [90m0.002s[0m
+[32m  + [0m[32mCustom trait hint field and value for key member's trait[0m [90m0.003s[0m
+[32m  + [0m[32mKey value is a class having a noncanoncial map[0m [90m0.004s[0m
+[32m  + [0m[32mExtra/unneeded fields in key's JSON harmlessly ignored[0m [90m0.001s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mBad (invalid--missing field) class json as map key[0m [90m0.0s[0m
+[32m  + [0m[32mBad class json as map key (valid json, but wrong for given class)[0m [90m0.0s[0m
+[32m  + [0m[32mBad json for member class[0m [90m0.001s[0m
+[32m  + [0m[32mBad (invalid) trait json as map key[0m [90m0.001s[0m
+[32m  + [0m[32mBad trait json (missing hint) as map key[0m [90m0.0s[0m
+[32m  + [0m[32mBad trait json (hint to unknown class) as map key[0m [90m0.001s[0m
+[32m  + [0m[32mBad (invalid) trait json for member trait[0m [90m0.001s[0m
+[32m  + [0m[32mBad trait json (missing hint) for member trait[0m [90m0.001s[0m
+[32m  + [0m[32mBad trait json (hint to unknown classs) for member trait[0m [90m0.001s[0m
+[32m  + [0m[32mBad collection value in map key class having collections[0m [90m0.001s[0m
+[32m  + [0m[32mBad custom hint value for map key trait (sort instead of kind[0m [90m0.001s[0m
+[32m  + [0m[32mBad class for hint in Map key (trait)[0m [90m0.001s[0m
+[32m  + [0m[32mBad custom hint value for Map key member's trait[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.mapkeys.JavaPrimKeys:[0m
+[34m----------------------------------
+:  Java Primitive Map Key Tests  :
+----------------------------------[0m
+[35m+++ Positive Tests +++[0m
+[35mSimple DelimSpec:[0m
+[32m  + [0m[32mWith BigDecimal Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith BigInteger Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Boolean Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Byte Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith Char Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Double Key[0m [90m0.001s[0m
+[32m  + [0m[32mWith Float Key[0m [90m0.008s[0m
+[32m  + [0m[32mWith Integer Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith Long Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith Number Key[0m [90m0.005s[0m
+[32m  + [0m[32mWith Short Key[0m [90m0.002s[0m
+[35mTime DelimSpec:[0m
+[32m  + [0m[32mWith Duration Key[0m [90m0.004s[0m
+[32m  + [0m[32mWith Instant Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith LocalDateTime Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith LocalDate Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith LocalTime Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith OffsetDateTime Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith OffsetTime Key[0m [90m0.003s[0m
+[32m  + [0m[32mWith Period Key[0m [90m0.002s[0m
+[32m  + [0m[32mWith ZonedDateTime Key[0m [90m0.003s[0m
+[35m--- Negative Tests ---[0m
+[35mSimple DelimSpec:[0m
+[32m  + [0m[32mBad BigDecimal Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad BigInt Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Boolean Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Byte Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Char Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Double Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Float Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Int Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad Long Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Number Key[0m [90m0.001s[0m
+[35mTime DelimSpec:[0m
+[32m  + [0m[32mBad Duration Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Instant Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad LocalDateTime Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad LocalDate Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad LocalTime Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad OffsetDateTime Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad OffsetTime Key[0m [90m0.0s[0m
+[32m  + [0m[32mBad Period Key[0m [90m0.001s[0m
+[32m  + [0m[32mBad ZonedDateTime Key[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.plainclass.Inheritance:[0m
+[34m-------------------------------------
+:  Inheritance Tests (Plain Class)  :
+-------------------------------------[0m
+[35mScala Plain[0m
+[32m  + [0m[32mSimple class inheritance must work (all fields present)[0m [90m0.007s[0m
+[32m  + [0m[32mMapName, and Ignore annotations must be inherited properly[0m [90m0.006s[0m
+[32m  + [0m[32mWith type parameter[0m [90m0.004s[0m
+[32m  + [0m[32mWith type member (as part of a trait)[0m [90m0.002s[0m
+[35mScala Plain Negative[0m
+[32m  + [0m[32mMust catch missing/required var[0m [90m0.001s[0m
+[32m  + [0m[32mMust catch missing/required constructor field (with newline)[0m [90m0.0s[0m
+[32m  + [0m[32mMust catch missing/required getter/setter field[0m [90m0.001s[0m
+[35mJava Plain[0m
+[32m  + [0m[32mSimple class inheritance must work (all fields present) including MapName and Ignore[0m [90m0.01s[0m
+[32m  + [0m[32mOptional annotation must be inherited properly[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.structures.TypeMembers:[0m
+[34m-----------------------------
+:  Externalized Type Tests  :
+-----------------------------[0m
+[32m  + [0m[32mRead and match[0m [90m0.006s[0m
+[32m  + [0m[32mWrite -- Concrete T value[0m [90m0.001s[0m
+[32m  + [0m[32mWrite -- Trait T value[0m [90m0.001s[0m
+[32m  + [0m[32mWrapped[0m [90m0.003s[0m
+[32m  + [0m[32mType modifier works[0m [90m0.003s[0m
+[32m  + [0m[32mHandles mutliple externalized types (bonus: with modifier)[0m [90m0.005s[0m
+[32m  + [0m[32mWorks with ParseOrElse[0m [90m0.004s[0m
+[32mco.blocke.scalajack.json.collections.AnyCollections:[0m
+[34m--------------------------
+:  Any Collection Tests  :
+--------------------------[0m
+[32m  + [0m[32mList works (Int)[0m [90m0.002s[0m
+[32m  + [0m[32mList works (String)[0m [90m0.001s[0m
+[32m  + [0m[32mFirst-Level List works (Class)[0m [90m0.004s[0m
+[32m  + [0m[32mMap works (Int,Int)[0m [90m0.002s[0m
+[32m  + [0m[32mMap works (String,Int)[0m [90m0.001s[0m
+[32m  + [0m[32mFirst-Level Map works (Class)[0m [90m0.002s[0m
+[32m  + [0m[32mSecond-Level Map works (Class keys) (Class)[0m [90m0.001s[0m
+[32m  + [0m[32mSecond-Level Map (List keys) works (Class)[0m [90m0.001s[0m
+[32mco.blocke.scalajack.json.parameters.ClassParams:[0m
+[34m---------------------------------
+:  Class Paramterization Tests  :
+---------------------------------[0m
+[35mBasic Parameterized Case Class[0m
+[32m  + [0m[32mSimple parameters - Foo[A](x:A) where A -> simple type[0m [90m0.002s[0m
+[32m  + [0m[32mNon-parameter case class as a parameter - Foo[A](x:A) where A -> Bar (case clas)[0m [90m0.003s[0m
+[35mAdvanced Parameterized Case Class[0m
+[32m  + [0m[32mParameterized case class as parameter - Foo[A](x:A) where A -> Bar[Int][0m [90m0.003s[0m
+[32m  + [0m[32mValue class as parameter - Foo[A](x:A) where A -> value class[0m [90m0.003s[0m
+[32m  + [0m[32mParameterized case class as a parameter - Foo[A](x:Bar[A])[0m [90m0.002s[0m
+[32m  + [0m[32mParameterized case class with parameterized another member - Foo[A](x:Bar[A], y:A)[0m [90m0.003s[0m
+[32m  + [0m[32mClass with two parameters, one given one not - Foo[A](x:List[Bar[A, Boolean]])[0m [90m0.003s[0m
+[35mVery Advanced Parameterized Case Class[0m
+[32m  + [0m[32mMultiple parameters, in order - Foo[A,B](x:Bar[A,B], y:A)[0m [90m0.002s[0m
+[32m  + [0m[32mMultiple parameters, out of order - Foo[A,B,C,D](x:Bar[C,D,A], y:B)[0m [90m0.004s[0m
+[32m  + [0m[32mNested multiple parameters, out of order - Foo[A,B,C,D](x:Bar[C,Blah[D,A]], y:B)[0m [90m0.004s[0m
+[32mco.blocke.scalajack.json.primitives.Enums:[0m
+[34m-----------------
+:  Scala Enums  :
+-----------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mEnumeration (Scala 2.x) must work (not nullable)[0m [90m0.006s[0m
+[32m  + [0m[32mOrdinal Enumeration (Scala 2.x) must work (not nullable)[0m [90m0.001s[0m
+[32m  + [0m[32mEnum (Scala 3.x) must work (not nullable)[0m [90m0.003s[0m
+[32m  + [0m[32mOrdinal Enum (Scala 3.x) must work (not nullable)[0m [90m0.002s[0m
+[32m  + [0m[32mSealed trait "enums" must work[0m [90m0.006s[0m
+[32m  + [0m[32mCase object "enums" must work[0m [90m0.004s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mEnumeration (Scala 2.x) must break[0m [90m0.002s[0m
+[32m  + [0m[32mEnum (Scala 3.x) must break[0m [90m0.0s[0m
+[34m----------------------
+:  Java Enumeration  :
+----------------------[0m
+[35m+++ Positive Tests +++[0m
+[32m  + [0m[32mJava Enumeration (not nullable) must work[0m [90m0.006s[0m
+[35m--- Negative Tests ---[0m
+[32m  + [0m[32mJava Enumeration (not nullable) must fail[0m [90m0.0s[0m
+[info] Passed: Total 489, Failed 0, Errors 0, Passed 489
+[success] Total time: 7 s, completed Oct 2, 2020, 10:23:22 AM
