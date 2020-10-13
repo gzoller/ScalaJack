@@ -16,6 +16,8 @@ case class MaybeStringWrapTypeAdapter[T](
     emptyStringOk:      Boolean        = true
   ) extends TypeAdapter[T] {
 
+  private val stringWrapTA = StringWrapTypeAdapter(wrappedTypeAdapter)
+
   private val javaEnumClazz = Class.forName("java.util.Enumeration")
 
   override def isStringish: Boolean = true
@@ -43,6 +45,6 @@ case class MaybeStringWrapTypeAdapter[T](
       case e if e.getClass.getName =="scala.Enumeration$Val" && !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
       case _: scala.Enum if !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
       case t if t.getClass <:< javaEnumClazz && !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
-      case _ => jackFlavor.stringWrapTypeAdapterFactory(wrappedTypeAdapter).write(t, writer, out)
-      }
+      case _ => stringWrapTA.write(t, writer, out)
+    }
 }
