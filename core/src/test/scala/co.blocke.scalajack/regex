@@ -1,0 +1,14 @@
+yaml.split
+yaml.asInstanceOf[String].split
+
+assertResult\((.*)\) \{\s*(.*)\}
+assertEquals($1, $2)
+
+assertResult\((.*)\) \{\n\s+(.*)\n\s+\}
+assertEquals($1, $2)
+
+\}\n\s+it\(
+}\n\n  test(
+
+the\[(.*)\] thrownBy (.*) should have message (.*)
+interceptMessage[$1]($3){\n      $2\n    }

@@ -53,7 +53,8 @@ case class DelimitedFlavor(
       wrappedTypeAdapter: TypeAdapter[T],
       emptyStringOk:      Boolean        = true
     ): TypeAdapter[T] =
-    wrappedTypeAdapter // No-Op for delimited
+      StringWrapTypeAdapter(wrappedTypeAdapter)
+    // wrappedTypeAdapter // No-Op for delimited
 
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()

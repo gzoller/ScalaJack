@@ -157,7 +157,7 @@ case class JsonParser(jsRaw: JSON, jackFlavor: JackFlavor[JSON]) extends Parser 
   }
 
   def expectTuple(
-      tupleFieldTypeAdapters: List[TypeAdapter[_]]
+    tupleFieldTypeAdapters: List[TypeAdapter[_]]
   ): List[Object] = {
     if (i == max || jsChars(i) != '[')
       throw new ScalaJackError(showError("Expected start of tuple here"))
