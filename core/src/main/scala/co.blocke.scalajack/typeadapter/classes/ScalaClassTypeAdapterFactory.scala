@@ -87,7 +87,8 @@ object ScalaClassTypeAdapterFactory extends TypeAdapterFactory:
           args,
           bits,
           classInfo.typeMembers.map( tmem => (tmem.name, tmem.asInstanceOf[TypeMemberInfo]) ).toMap,
-          orderedFieldNames
+          orderedFieldNames,
+          classInfo.annotations.get(DB_COLLECTION).map(_("name")) // Exctract Collection name annotation if present (for plain classes)
         )
 
       case classInfo: ScalaClassInfo =>
@@ -109,6 +110,7 @@ object ScalaClassTypeAdapterFactory extends TypeAdapterFactory:
           bits,
           classInfo.typeMembers.map( tmem => (tmem.name, tmem.asInstanceOf[TypeMemberInfo]) ).toMap,
           orderedFieldNames,
-          fieldMembersByName.values.filter(_.info.asInstanceOf[ScalaFieldInfo].isNonConstructorField).toList
+          fieldMembersByName.values.filter(_.info.asInstanceOf[ScalaFieldInfo].isNonConstructorField).toList,
+          classInfo.annotations.get(DB_COLLECTION).map(_("name")) // Exctract Collection name annotation if present (for plain classes)
         )
     }

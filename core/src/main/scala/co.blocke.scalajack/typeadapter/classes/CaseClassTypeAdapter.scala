@@ -15,8 +15,8 @@ case class CaseClassTypeAdapter[T](
     argsTemplate:       Array[Object],
     fieldBitsTemplate:  mutable.BitSet,
     typeMembersByName:  Map[String, TypeMemberInfo],
-    orderedFieldNames:  List[String]
-    // dbCollectionName:   Option[String]
+    orderedFieldNames:  List[String],
+    dbCollectionName:   Option[String] = None
 )(implicit taCache: TypeAdapterCache) extends ScalaClassTypeAdapter[T]:
 
   override val isCaseClass = true;

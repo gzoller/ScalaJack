@@ -53,7 +53,17 @@ object JavaClassTypeAdapterFactory extends TypeAdapterFactory:
         }
       }.toMap
 
-    JavaClassTypeAdapter(concrete, args, bits, fieldMembersByName, fieldsWeCareAbout.map( f => f.annotations.get(CHANGE_ANNO).map(_("name")).getOrElse(f.name)).toList)
+    // Exctract Collection name annotation if present (for plain classes)
+    val dbCollectionAnnotation = classInfo.annotations.get(DB_COLLECTION).map(_("name"))
+
+    JavaClassTypeAdapter(
+      concrete, 
+      args, 
+      bits, 
+      fieldMembersByName, 
+      fieldsWeCareAbout.map( f => f.annotations.get(CHANGE_ANNO).map(_("name")).getOrElse(f.name)).toList,
+      dbCollectionAnnotation
+      )
 
 
 case class JavaClassTypeAdapter[J](
@@ -61,7 +71,8 @@ case class JavaClassTypeAdapter[J](
     argsTemplate:       Array[Object],
     fieldBitsTemplate:  mutable.BitSet,
     fieldMembersByName: Map[String, ClassFieldMember[_,_]],
-    orderedFieldNames:  List[String]
+    orderedFieldNames:  List[String],
+    dbCollectionName:   Option[String]
   )(implicit taCache: TypeAdapterCache) extends ClassTypeAdapterBase[J]:
 
   val javaClassInfo = info.asInstanceOf[JavaClassInfo]

@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack)
+  .aggregate(scalajack, scalajack_dynamo)
 
 lazy val scalajack = (project in file("core"))
   .settings(settings)
@@ -26,18 +26,33 @@ lazy val scalajack = (project in file("core"))
     scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
   )
 
+lazy val scalajack_dynamo = (project in file("dynamodb"))
+  .settings(settings)
+  .settings(
+    doc := null,  // disable dottydoc for now
+    sources in (Compile, doc) := Seq(),
+    libraryDependencies ++= commonDependencies ++ Seq(dependencies.dynamo),
+    Test / parallelExecution := false,
+    
+    // This messy stuff turns off reflection compiler plugin except for test case code
+    addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
+    autoCompilerPlugins := false,
+    ivyConfigurations += Configurations.CompilerPlugin,
+    scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
+  ).dependsOn(scalajack)
 
 //==========================
 // Dependencies
 //==========================
 lazy val dependencies =
   new {
-    val dottyReflection = "co.blocke"     %% "scala-reflection"  % reflectionLibVersion
-    val munit           = "org.scalameta" %% "munit"             % "0.7.12+51-8feb6e8b-SNAPSHOT" % Test
-    val commonsCodec    = "commons-codec" % "commons-codec"      % "1.12"
-    val snakeyaml       = "org.snakeyaml" % "snakeyaml-engine"   % "2.0"
-    val json4sCore      = "org.json4s"    % "json4s-core_2.13"   % "3.6.6"
-    val json4sNative    = "org.json4s"    % "json4s-native_2.13" % "3.6.6" % Test
+    val dottyReflection = "co.blocke"     %% "scala-reflection"     % reflectionLibVersion
+    val munit           = "org.scalameta" %% "munit"                % "0.7.12+51-8feb6e8b-SNAPSHOT" % Test
+    val commonsCodec    = "commons-codec" % "commons-codec"         % "1.12"
+    val snakeyaml       = "org.snakeyaml" % "snakeyaml-engine"      % "2.0"
+    val json4sCore      = "org.json4s"    % "json4s-core_2.13"      % "3.6.6"
+    val dynamo          = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538" % Compile
+    val json4sNative    = "org.json4s"    % "json4s-native_2.13"    % "3.6.6" % Test
   }
 
 lazy val commonDependencies = Seq(

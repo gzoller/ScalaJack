@@ -15,8 +15,8 @@ case class NonCaseClassTypeAdapter[T](
     fieldBitsTemplate:    mutable.BitSet,
     typeMembersByName:    Map[String, TypeMemberInfo],
     orderedFieldNames:    List[String],
-    nonConstructorFields: List[ClassFieldMember[_,_]]
-    // dbCollectionName:   Option[String]
+    nonConstructorFields: List[ClassFieldMember[_,_]],
+    dbCollectionName:     Option[String]
 )(implicit taCache: TypeAdapterCache) extends ScalaClassTypeAdapter[T]:
 
   private val classInfo = info.asInstanceOf[ScalaClassInfo]
