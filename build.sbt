@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
   .settings(publishArtifact := false)
   .settings(publish := {})
   .settings(crossScalaVersions := Nil)
-  .aggregate(scalajack, scalajack_dynamo)
+  .aggregate(scalajack, scalajack_dynamo, scalajack_mongo)
 
 lazy val scalajack = (project in file("core"))
   .settings(settings)
@@ -41,6 +41,21 @@ lazy val scalajack_dynamo = (project in file("dynamodb"))
     scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
   ).dependsOn(scalajack)
 
+lazy val scalajack_mongo = (project in file("mongo"))
+  .settings(settings)
+  .settings(
+    doc := null,  // disable dottydoc for now
+    sources in (Compile, doc) := Seq(),
+    libraryDependencies ++= commonDependencies ++ Seq(dependencies.mongo),
+    Test / parallelExecution := false,
+    
+    // This messy stuff turns off reflection compiler plugin except for test case code
+    addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
+    autoCompilerPlugins := false,
+    ivyConfigurations += Configurations.CompilerPlugin,
+    scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
+  ).dependsOn(scalajack)
+
 //==========================
 // Dependencies
 //==========================
@@ -51,7 +66,8 @@ lazy val dependencies =
     val commonsCodec    = "commons-codec" % "commons-codec"         % "1.12"
     val snakeyaml       = "org.snakeyaml" % "snakeyaml-engine"      % "2.0"
     val json4sCore      = "org.json4s"    % "json4s-core_2.13"      % "3.6.6"
-    val dynamo          = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.538" % Compile
+    val mongo           = "org.mongodb"   % "mongo-java-driver"     % "3.12.7"
+    val dynamo          = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.882" % Compile
     val json4sNative    = "org.json4s"    % "json4s-native_2.13"    % "3.6.6" % Test
   }
 

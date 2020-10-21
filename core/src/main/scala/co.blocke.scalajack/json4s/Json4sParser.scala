@@ -165,11 +165,8 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
     input match {
       case JObject(obj) =>
         val collected = obj.collect {
-          case (key, oneValue) if typeMembersByName.contains(key) && oneValue
-            .isInstanceOf[JString] =>
+          case (key, oneValue) if typeMembersByName.contains(key) && oneValue.isInstanceOf[JString] =>
             (
-              // typeMembersByName(key).typeSignature,
-              // converterFn.apply(oneValue.asInstanceOf[JString].s)
               key,
               TypeMemberInfo(key, typeMembersByName(key).typeSymbol, RType.of(Class.forName(converterFn.apply(oneValue.asInstanceOf[JString].s))))    
             )

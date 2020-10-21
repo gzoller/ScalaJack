@@ -201,7 +201,7 @@ class Json4sSpec extends FunSuite:
         "bar" -> JInt(3)
       )
     )
-    interceptMessage[co.blocke.scalajack.ScalaJackError]("Only scalar values are supported as BSON Map keys"){
+    interceptMessage[co.blocke.scalajack.ScalaJackError]("Only scalar values are supported as JValue Map keys"){
       sj.read[Map[Player, Int]](js4s)
     }
   }
