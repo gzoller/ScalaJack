@@ -6,22 +6,41 @@ import org.apache.commons.codec.binary.Base64
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
-import co.blocke.scalajack.json.JSON
+import json._
+import yaml._
+import delimited._
+import model.JackFlavor
+import co.blocke.scalajack.Converters._
 
 
-case class Eek(t: (Option[String],Int))
+trait Human
+case class Person(name: String, age: Int) extends Human
+case class Typey[T](thing: T) {
+  type foom = T
+}
 
 object Main {
 
   def main(args: Array[String]): Unit = 
 
-    val sj = co.blocke.scalajack.ScalaJack()
+    val sj: JsonFlavor        = ScalaJack()
+    val sjY: JackFlavor[YAML] = ScalaJack(YamlFlavor())
 
-    val e = Eek( (None,1) )
-    val js = sj.render(e)
+    val simple: Person        = Person("Fred", 34)
+    val complex: Typey[Human] = Typey[Human](Person("Fred", 34))
+
+    val js = simple.toJson[Person]
     println(js)
-    // println(sj.read[Eek](js))
-
+    println(js.jsonToYaml)
+    println(js.jsonToJson4s)
+    // println(js.toDelimited)  // This should work!
+    println("BACK: "+js.fromJson[Person])
+    println("-------")
+    val js2 = complex.toJson[Typey[Human]]
+    println(js2)
+    println(js2.jsonToYaml)
+    println(js2.jsonToJson4s)
+    println("BACK: "+js2.fromJson[Typey[Human]])
 
 
   def constructors(clazz: Class[_]): String = 
