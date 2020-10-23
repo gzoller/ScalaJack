@@ -19,36 +19,31 @@ object Converters:
   //------
 
   // JSON mappers
-  extension (j: JSON)
-    def jsonToYaml(implicit sjY: JackFlavor[YAML], sjJ: JackFlavor[JSON]): YAML                = sjY.render( sjJ.read[Any](j) )
-    def jsonToJson4s(implicit sjV: JackFlavor[JValue], sjJ: JackFlavor[JSON]): JValue          = sjV.render( sjJ.read[Any](j) )
-
   extension[T, S] (j: JSON)
     inline def mapJsonTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjJ: JackFlavor[JSON]): S = toFlavor.render[T](fn(sjJ.read[T](j)))
 
   extension[T] (j: JSON)
-    inline def fromJson(implicit sjJ: JackFlavor[JSON]): T               = sjJ.read[T](j)
-    inline def mapJson(fn: T => T)(implicit sjJ: JackFlavor[JSON]): JSON = sjJ.render[T](fn(sjJ.read[T](j)))
+    inline def jsonToYaml(implicit sjY: JackFlavor[YAML], sjJ: JackFlavor[JSON]): YAML        = sjY.render( sjJ.read[T](j) )
+    inline def jsonToJson4s(implicit sjV: JackFlavor[JValue], sjJ: JackFlavor[JSON]): JValue  = sjV.render( sjJ.read[T](j) )
+    inline def fromJson(implicit sjJ: JackFlavor[JSON]): T                                    = sjJ.read[T](j)
+    inline def mapJson(fn: T => T)(implicit sjJ: JackFlavor[JSON]): JSON                      = sjJ.render[T](fn(sjJ.read[T](j)))
 
 
   // YAML mappers
-  extension (y: YAML)
-    def yamlToJson(implicit sjJ: JackFlavor[JSON], sjY: JackFlavor[YAML]): JSON                = sjJ.render( sjY.read[Any](y) )
-    def yamlToJson4s(implicit sjV: JackFlavor[JValue], sjY: JackFlavor[YAML]): JValue          = sjV.render( sjY.read[Any](y) )
-
   extension[T, S] (y: YAML)
     inline def mapYamlTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjY: JackFlavor[YAML]): S = toFlavor.render[T](fn(sjY.read[T](y)))
 
   extension[T] (y: YAML)
-    inline def fromYaml(implicit sjY: JackFlavor[YAML]): T               = sjY.read[T](y)
-    inline def mapYaml(fn: T => T)(implicit sjY: JackFlavor[YAML]): YAML = sjY.render[T](fn(sjY.read[T](y)))
+    inline def yamlToJson(implicit sjJ: JackFlavor[JSON], sjY: JackFlavor[YAML]): JSON        = sjJ.render( sjY.read[T](y) )
+    inline def yamlToJson4s(implicit sjV: JackFlavor[JValue], sjY: JackFlavor[YAML]): JValue  = sjV.render( sjY.read[T](y) )
+    inline def fromYaml(implicit sjY: JackFlavor[YAML]): T                                    = sjY.read[T](y)
+    inline def mapYaml(fn: T => T)(implicit sjY: JackFlavor[YAML]): YAML                      = sjY.render[T](fn(sjY.read[T](y)))
 
     
   // DELIMITED mappers
   extension[T, S] (d: DELIMITED)
     inline def mapDelimitedTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjD: JackFlavor[DELIMITED]): S = toFlavor.render[T](fn(sjD.read[T](d)))
 
-  // Delimited needs T here because there are no key (field name) information... only the values.
   extension[T] (d: DELIMITED)
     inline def delimitedToJson(implicit sjJ: JackFlavor[JSON], sjD: JackFlavor[DELIMITED]): JSON       = sjJ.render( sjD.read[T](d) )
     inline def delimitedToJson4s(implicit sjV: JackFlavor[JValue], sjD: JackFlavor[DELIMITED]): JValue = sjV.render( sjD.read[T](d) )
@@ -58,16 +53,14 @@ object Converters:
 
 
   // Json4s mappers
-  extension (j: JValue)
-    def json4sToYaml(implicit sjY: JackFlavor[YAML], sjV: JackFlavor[JValue]): YAML                = sjY.render( sjV.read[Any](j) )
-    def json4sToJson(implicit sjJ: JackFlavor[JSON], sjV: JackFlavor[JValue]): JSON                = sjJ.render( sjV.read[Any](j) )
-
   extension[T, S] (j: JValue)
     inline def mapJson4sTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjV: JackFlavor[JValue]): S = toFlavor.render[T](fn(sjV.read[T](j)))
 
   extension[T] (j: JValue)
-    inline def fromJson4s(implicit sjV: JackFlavor[JValue]): T                 = sjV.read[T](j)
-    inline def mapJson4s(fn: T => T)(implicit sjV: JackFlavor[JValue]): JValue = sjV.render[T](fn(sjV.read[T](j)))
+    inline def json4sToYaml(implicit sjY: JackFlavor[YAML], sjV: JackFlavor[JValue]): YAML    = sjY.render( sjV.read[T](j) )
+    inline def json4sToJson(implicit sjJ: JackFlavor[JSON], sjV: JackFlavor[JValue]): JSON    = sjJ.render( sjV.read[T](j) )
+    inline def fromJson4s(implicit sjV: JackFlavor[JValue]): T                                = sjV.read[T](j)
+    inline def mapJson4s(fn: T => T)(implicit sjV: JackFlavor[JValue]): JValue                = sjV.render[T](fn(sjV.read[T](j)))
 
   
   extension[T] (a: T)

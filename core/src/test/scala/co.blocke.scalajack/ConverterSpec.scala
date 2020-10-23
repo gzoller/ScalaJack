@@ -130,23 +130,23 @@ class ConverterSpec extends FunSuite:
     describe(
       "----------------------\n:  Converters Tests  :\n----------------------", Console.BLUE
     )
-    assertEquals(simpleYaml.yamlToJson, simpleJson)
-    assertEquals(complexYaml.yamlToJson, complexJson)
+    assertEquals(simpleYaml.yamlToJson[Person], simpleJson)
+    assertEquals(complexYaml.yamlToJson[Typey[Human]], complexJson)
   }
 
   test("yamlToJson4s") {
-    assertEquals(simpleYaml.yamlToJson4s, simpleJson4s)
-    assertEquals(complexYaml.yamlToJson4s, complexJson4s)
+    assertEquals(simpleYaml.yamlToJson4s[Person], simpleJson4s)
+    assertEquals(complexYaml.yamlToJson4s[Typey[Human]], complexJson4s)
   }
 
   test("jsonToYaml") {
-    assertEquals(simpleJson.jsonToYaml, simpleYaml)
-    assertEquals(complexJson.jsonToYaml, complexYaml)
+    assertEquals(simpleJson.jsonToYaml[Person], simpleYaml)
+    assertEquals(complexJson.jsonToYaml[Typey[Human]], complexYaml)
   }
 
   test("jsonToJson4s") {
-    assertEquals(simpleJson.jsonToJson4s, simpleJson4s)
-    assertEquals(complexJson.jsonToJson4s, complexJson4s)
+    assertEquals(simpleJson.jsonToJson4s[Person], simpleJson4s)
+    assertEquals(complexJson.jsonToJson4s[Typey[Human]], complexJson4s)
   }
 
   test("delimitedToYaml") {
@@ -162,11 +162,11 @@ class ConverterSpec extends FunSuite:
   }
 
   test("json4sToYaml") {
-    assertEquals(simpleJson4s.json4sToYaml, simpleYaml)
-    assertEquals(complexJson4s.json4sToYaml, complexYaml)
+    assertEquals(simpleJson4s.json4sToYaml[Person], simpleYaml)
+    assertEquals(complexJson4s.json4sToYaml[Typey[Human]], complexYaml)
   }
 
   test("json4sToJson") {
-    assertEquals(simpleJson4s.json4sToJson, simpleJson)
-    assertEquals(complexJson4s.json4sToJson, complexJson)
+    assertEquals(simpleJson4s.json4sToJson[Person], simpleJson)
+    assertEquals(complexJson4s.json4sToJson[Typey[Human]], complexJson)
   }
