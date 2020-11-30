@@ -95,12 +95,12 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [View/SpliceInto](doc/viewSplice.md)
 * [Filter](doc/filter.md)
 * [Union type](doc/union.md)
-* [Converters *(new)*](doc/map.md)
+* [Converters](doc/map.md)
 * [ScalaJack Configuration](doc/config.md)
 * [Gimme Speed!](doc/speed.md)
 
 Non-JSON Formats:
-* [YAML *(new)*](doc/yaml.md)
+* [YAML](doc/yaml.md)
 * [MongoDB](doc/mongo.md)
 * [Delimited (e.g. CSV)](doc/delimited.md)
 * [DynamoDB](doc/dynamo.md)
