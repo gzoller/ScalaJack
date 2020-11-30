@@ -6,131 +6,65 @@ import yaml.YamlFlavor
 import delimited.DelimitedFlavor
 import json4s.Json4sFlavor
 import org.json4s.JValue
+import json._
+import yaml._
+import delimited._
 
-import scala.reflect.runtime.universe._
+object Converters:
 
-case class Configuration(
-    defaultHint: String = "_hint",
-    hintMap: Map[Type, String] = Map.empty[Type, String],
-    hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    typeValueModifier: HintValueModifier = DefaultHintModifier,
-    enumsAsInt: Boolean = false,
-    customAdapters: List[TypeAdapterFactory] = List.empty[TypeAdapterFactory],
-    parseOrElseMap: Map[Type, Type] = Map.empty[Type, Type],
-    permissivesOk: Boolean = false,
-    delimiter: Char = ','
-) {
-  // $COVERAGE-OFF$All this is carbon-copy from Flavors, so cut some testing noise here
-  def withDefaultHint(hint: String): Configuration                     = this.copy(defaultHint = hint)
-  def withHints(h: (Type, String)*): Configuration                     = this.copy(hintMap = this.hintMap ++ h)
-  def withHintModifiers(hm: (Type, HintValueModifier)*): Configuration = this.copy(hintValueModifiers = this.hintValueModifiers ++ hm)
-  def withTypeValueModifier(tm: HintValueModifier): Configuration      = this.copy(typeValueModifier = tm)
-  def enumsAsInts(): Configuration                                     = this.copy(enumsAsInt = true)
-  def withAdapters(ta: TypeAdapterFactory*): Configuration             = this.copy(customAdapters = this.customAdapters ++ ta.toList)
-  def parseOrElse(poe: (Type, Type)*): Configuration                   = this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def allowPermissivePrimitives(): Configuration                       = this.copy(permissivesOk = true)
-  def withDelimiter(delim: Char): Configuration                        = this.copy(delimiter = delim)
-  // $COVERAGE-ON$
-}
+  //------
+  // Note: Json, Json4s, and Yaml do NOT have a 'toDelimited' option because delimited format is *ordered*, while 
+  //       other 3 are intrinsically un-ordered, so there's no guarantee the delimited fields will be rendered in the
+  //       'correct' order.
+  //------
 
-object Converters {
+  // JSON mappers
+  extension[T, S] (j: JSON)
+    inline def mapJsonTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjJ: JackFlavor[JSON]): S = toFlavor.render[T](fn(sjJ.read[T](j)))
 
-  case class SJHolder() {
-    lazy val sjJson: JackFlavor[JSON] = JsonFlavor(
-      config.defaultHint,
-      config.permissivesOk,
-      config.customAdapters,
-      config.hintMap,
-      config.hintValueModifiers,
-      config.typeValueModifier,
-      config.parseOrElseMap,
-      config.enumsAsInt
-    )
-    lazy val sjYaml: JackFlavor[YAML] = YamlFlavor(
-      config.defaultHint,
-      config.permissivesOk,
-      config.customAdapters,
-      config.hintMap,
-      config.hintValueModifiers,
-      config.typeValueModifier,
-      config.parseOrElseMap,
-      config.enumsAsInt
-    )
-    lazy val sjJson4s: JackFlavor[JValue] =
-      Json4sFlavor(
-        config.defaultHint,
-        config.permissivesOk,
-        config.customAdapters,
-        config.hintMap,
-        config.hintValueModifiers,
-        config.typeValueModifier,
-        config.parseOrElseMap,
-        config.enumsAsInt
-      )
-    lazy val sjDelimited: JackFlavor[DELIMITED] =
-      DelimitedFlavor(
-        config.delimiter,
-        config.defaultHint,
-        config.permissivesOk,
-        config.customAdapters,
-        config.hintMap,
-        config.hintValueModifiers,
-        config.typeValueModifier,
-        config.parseOrElseMap,
-        config.enumsAsInt
-      )
-  }
+  extension[T] (j: JSON)
+    inline def jsonToYaml(implicit sjY: JackFlavor[YAML], sjJ: JackFlavor[JSON]): YAML        = sjY.render( sjJ.read[T](j) )
+    inline def jsonToJson4s(implicit sjV: JackFlavor[JValue], sjJ: JackFlavor[JSON]): JValue  = sjV.render( sjJ.read[T](j) )
+    inline def fromJson(implicit sjJ: JackFlavor[JSON]): T                                    = sjJ.read[T](j)
+    inline def mapJson(fn: T => T)(implicit sjJ: JackFlavor[JSON]): JSON                      = sjJ.render[T](fn(sjJ.read[T](j)))
 
-  private var config = Configuration()
-  private var holder = SJHolder()
 
-  def withConfig(cfg: Configuration): Unit = {
-    config = cfg
-    holder = SJHolder() // reset holder
-  }
+  // YAML mappers
+  extension[T, S] (y: YAML)
+    inline def mapYamlTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjY: JackFlavor[YAML]): S = toFlavor.render[T](fn(sjY.read[T](y)))
 
-  implicit class StringishSerializers(s: String) {
-    def yamlToJson: JSON                                       = s.mapYamlTo[Any, JSON](holder.sjJson)(a => a)
-    def yamlToJson4s: JValue                                   = s.mapYamlTo[Any, JValue](holder.sjJson4s)(a => a)
-    def yamlToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapYamlTo[T, DELIMITED](holder.sjDelimited)(a => a)
+  extension[T] (y: YAML)
+    inline def yamlToJson(implicit sjJ: JackFlavor[JSON], sjY: JackFlavor[YAML]): JSON        = sjJ.render( sjY.read[T](y) )
+    inline def yamlToJson4s(implicit sjV: JackFlavor[JValue], sjY: JackFlavor[YAML]): JValue  = sjV.render( sjY.read[T](y) )
+    inline def fromYaml(implicit sjY: JackFlavor[YAML]): T                                    = sjY.read[T](y)
+    inline def mapYaml(fn: T => T)(implicit sjY: JackFlavor[YAML]): YAML                      = sjY.render[T](fn(sjY.read[T](y)))
 
-    def jsonToYaml: YAML                                       = s.mapJsonTo[Any, YAML](holder.sjYaml)(a => a)
-    def jsonToJson4s: JValue                                   = s.mapJsonTo[Any, JValue](holder.sjJson4s)(a => a)
-    def jsonToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapJsonTo[T, DELIMITED](holder.sjDelimited)(a => a)
+    
+  // DELIMITED mappers
+  extension[T, S] (d: DELIMITED)
+    inline def mapDelimitedTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjD: JackFlavor[DELIMITED]): S = toFlavor.render[T](fn(sjD.read[T](d)))
 
-    def delimitedToYaml[T](implicit tt: TypeTag[T]): YAML     = s.mapDelimitedTo[T, YAML](holder.sjYaml)(a => a)
-    def delimitedToJson4s[T](implicit tt: TypeTag[T]): JValue = s.mapDelimitedTo[T, JValue](holder.sjJson4s)(a => a)
-    def delimitedToJson[T](implicit tt: TypeTag[T]): JSON     = s.mapDelimitedTo[T, JSON](holder.sjJson)(a => a)
+  extension[T] (d: DELIMITED)
+    inline def delimitedToJson(implicit sjJ: JackFlavor[JSON], sjD: JackFlavor[DELIMITED]): JSON       = sjJ.render( sjD.read[T](d) )
+    inline def delimitedToJson4s(implicit sjV: JackFlavor[JValue], sjD: JackFlavor[DELIMITED]): JValue = sjV.render( sjD.read[T](d) )
+    inline def delimitedToYaml(implicit sjY: JackFlavor[YAML], sjD: JackFlavor[DELIMITED]): YAML       = sjY.render( sjD.read[T](d) )
+    inline def fromDelimited(implicit sjD: JackFlavor[DELIMITED]): T                                   = sjD.read[T](d)
+    inline def mapDelimited(fn: T => T)(implicit sjD: JackFlavor[DELIMITED]): DELIMITED                = sjD.render[T](fn(sjD.read[T](d)))
 
-    def mapJsonTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjJson.read[T](s))) }
-    def mapYamlTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S      = { toFlavor.render[T](fn(holder.sjYaml.read[T](s))) }
-    def mapDelimitedTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjDelimited.read[T](s))) }
 
-    def mapJson[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjJson.render[T](fn(holder.sjJson.read[T](s)))
-    def mapYaml[T](fn: T => T)(implicit tt: TypeTag[T]): JSON           = holder.sjYaml.render[T](fn(holder.sjYaml.read[T](s)))
-    def mapDelimited[T](fn: T => T)(implicit tt: TypeTag[T]): DELIMITED = holder.sjDelimited.render[T](fn(holder.sjDelimited.read[T](s)))
-  }
+  // Json4s mappers
+  extension[T, S] (j: JValue)
+    inline def mapJson4sTo(toFlavor: JackFlavor[S])(fn: T => T)(implicit sjV: JackFlavor[JValue]): S = toFlavor.render[T](fn(sjV.read[T](j)))
 
-  implicit class JValueSerializers(s: JValue) {
-    def json4sToYaml: YAML                                       = s.mapJson4sTo[Any, YAML](holder.sjYaml)(a => a)
-    def json4sToJson: JSON                                       = s.mapJson4sTo[Any, JSON](holder.sjJson)(a => a)
-    def json4sToDelimited[T](implicit tt: TypeTag[T]): DELIMITED = s.mapJson4sTo[T, DELIMITED](holder.sjDelimited)(a => a)
+  extension[T] (j: JValue)
+    inline def json4sToYaml(implicit sjY: JackFlavor[YAML], sjV: JackFlavor[JValue]): YAML    = sjY.render( sjV.read[T](j) )
+    inline def json4sToJson(implicit sjJ: JackFlavor[JSON], sjV: JackFlavor[JValue]): JSON    = sjJ.render( sjV.read[T](j) )
+    inline def fromJson4s(implicit sjV: JackFlavor[JValue]): T                                = sjV.read[T](j)
+    inline def mapJson4s(fn: T => T)(implicit sjV: JackFlavor[JValue]): JValue                = sjV.render[T](fn(sjV.read[T](j)))
 
-    def mapJson4s[T](fn: T => T)(implicit tt: TypeTag[T]): JValue                          = holder.sjJson4s.render[T](fn(holder.sjJson4s.read[T](s)))
-    def mapJson4sTo[T, S](toFlavor: JackFlavor[S])(fn: T => T)(implicit tt: TypeTag[T]): S = { toFlavor.render[T](fn(holder.sjJson4s.read[T](s))) }
-  }
-
-  implicit class AnyConvenience(a: Any) {
-    def toJson[T](implicit tt: TypeTag[T]): JSON = holder.sjJson.render(a.asInstanceOf[T])
-    def fromJson[T](implicit tt: TypeTag[T]): T  = holder.sjJson.read[T](a.asInstanceOf[JSON])
-
-    def toJson4s[T](implicit tt: TypeTag[T]): JValue = holder.sjJson4s.render(a.asInstanceOf[T])
-    def fromJson4s[T](implicit tt: TypeTag[T]): T    = holder.sjJson4s.read[T](a.asInstanceOf[JValue])
-
-    def toYaml[T](implicit tt: TypeTag[T]): YAML = holder.sjYaml.render(a.asInstanceOf[T])
-    def fromYaml[T](implicit tt: TypeTag[T]): T  = holder.sjYaml.read[T](a.asInstanceOf[YAML])
-
-    def toDelimited[T](implicit tt: TypeTag[T]): DELIMITED = holder.sjDelimited.render(a.asInstanceOf[T])
-    def fromDelimited[T](implicit tt: TypeTag[T]): T       = holder.sjDelimited.read[T](a.asInstanceOf[DELIMITED])
-  }
-}
+  
+  extension[T] (a: T)
+    inline def toJson(implicit sjJ: JackFlavor[JSON]): JSON                = sjJ.render[T](a)
+    inline def toYaml(implicit sjY: JackFlavor[YAML]): YAML                = sjY.render[T](a)
+    inline def toDelimited(implicit sjD: JackFlavor[DELIMITED]): DELIMITED = sjD.render[T](a)
+    inline def toJson4s(implicit sjV: JackFlavor[JValue]): JValue          = sjV.render[T](a)

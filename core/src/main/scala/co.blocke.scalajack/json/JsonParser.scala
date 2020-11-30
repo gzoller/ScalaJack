@@ -2,15 +2,18 @@ package co.blocke.scalajack
 package json
 
 import model._
-import typeadapter.ClassTypeAdapterBase
+import typeadapter.classes.ClassTypeAdapterBase
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info.TypeMemberInfo
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 
-case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
+case class JsonParser(jsRaw: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
 
   type WIRE = JSON
+
+  private val js = jsRaw.asInstanceOf[String]
 
   private val jsChars: Array[Char] = js.toCharArray
   private var i                    = 0
@@ -154,13 +157,13 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
   }
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
-  ): List[Any] = {
+    tupleFieldTypeAdapters: List[TypeAdapter[_]]
+  ): List[Object] = {
     if (i == max || jsChars(i) != '[')
       throw new ScalaJackError(showError("Expected start of tuple here"))
     i += 1
     var first = true
-    val result = readFns.map { fn =>
+    val result = tupleFieldTypeAdapters.map { fieldTypeAdapter =>
       whitespace()
       if (!first) {
         if (i == max || jsChars(i) != ',')
@@ -170,12 +173,12 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         whitespace()
       } else
         first = false
-      fn.valueTypeAdapter.read(this)
+      fieldTypeAdapter.read(this)
     }
     if (i == max || jsChars(i) != ']')
       throw new ScalaJackError(showError("Expected end of tuple here"))
     i += 1
-    result
+    result.asInstanceOf[List[Object]]
   }
 
   def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K], valueTypeAdapter: TypeAdapter[V], builder: mutable.Builder[(K, V), TO]): TO = {
@@ -215,13 +218,15 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
+  ): (mutable.BitSet, List[Object], java.util.HashMap[String, String]) = {
     whitespace()
     val args      = classBase.argsTemplate.clone()
-    val fieldBits = classBase.fieldBitsTemplate.clone()
+    val fieldBits = mutable.BitSet() 
     val captured =
-      if (classBase.isSJCapture) new java.util.HashMap[String, String]()
-      else null
+      if (classBase.isSJCapture) 
+        new java.util.HashMap[String, String]()
+      else 
+        null
     if (i == max || jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
     i += 1
@@ -244,8 +249,8 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       classBase.fieldMembersByName.get(key) match {
         case Some(field) =>
           whitespace()
-          fieldBits -= field.index
-          args(field.index) = field.valueTypeAdapter.read(this)
+          fieldBits += field.info.index
+          args(field.info.index) = field.valueTypeAdapter.read(this).asInstanceOf[Object]
         case None => // found some input field not present in class
           val mark = i
           skipOverElement()
@@ -257,7 +262,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     if (i == max || jsChars(i) != '}')
       throw new ScalaJackError(showError("Expected end of object here"))
     i += 1
-    (fieldBits, args, captured)
+    (fieldBits, args.toList, captured)
   }
 
   private def skipString(): Unit = {
@@ -315,7 +320,7 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
     } else false
 
   // NOTE: Expectation here is we're sitting on beginning of object, '{'.  This is called from TraitTypeAdapter
-  def scanForHint(hint: String, converterFn: HintBijective): Type = {
+  def scanForHint(hint: String, converterFn: HintBijective): Class[_] = {
     val mark = i
     whitespace()
     if (i == max || jsChars(i) != '{')
@@ -355,18 +360,18 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
         )
     }
     i = mark // we found hint, but go back to parse object
-    hintType
+    Class.forName(hintType)
   }
 
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
+      typeMembersByName: Map[String, TypeMemberInfo],
       converterFn: HintBijective
-  ): Map[Type, Type] = {
+  ): Map[String, TypeMemberInfo] = {
     val mark = i
     whitespace()
     if (i == max || jsChars(i) != '{')
       throw new ScalaJackError(showError("Expected start of object here"))
-    val collected = new java.util.HashMap[Type, Type]()
+    val collected = new java.util.HashMap[String, TypeMemberInfo]()
     i += 1 // skip over {
     var done = false
     while (!done) {
@@ -379,8 +384,8 @@ case class JsonParser(js: JSON, jackFlavor: JackFlavor[JSON]) extends Parser {
       if (typeMembersByName.contains(key)) {
         whitespace()
         collected.put(
-          typeMembersByName(key).typeSignature,
-          converterFn.apply(expectString())
+          key,
+          TypeMemberInfo(key, typeMembersByName(key).typeSymbol, RType.of(Class.forName(converterFn.apply(expectString()))))
         )
       } else
         skipOverElement()

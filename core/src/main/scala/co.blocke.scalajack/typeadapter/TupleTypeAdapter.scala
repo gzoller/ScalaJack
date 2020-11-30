@@ -2,100 +2,47 @@ package co.blocke.scalajack
 package typeadapter
 
 import model._
-import util.Reflection
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info.TupleInfo
 import java.lang.reflect.Method
-
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{
-  ClassSymbol,
-  MethodMirror,
-  MethodSymbol,
-  TermName,
-  TypeTag
-}
-import TupleTypeAdapterFactory.TupleField
-
 import scala.collection.mutable
 import scala.util.matching.Regex
 
-object TupleTypeAdapterFactory extends TypeAdapterFactory.FromClassSymbol {
+object TupleTypeAdapterFactory extends TypeAdapterFactory:
 
-  case class TupleField[F](
-      index:                     Int,
-      valueTypeAdapter:          TypeAdapter[F],
-      valueAccessorMethodSymbol: MethodSymbol,
-      valueAccessorMethod:       Method) {
+  private val tupleFullName: Regex = """scala.Tuple(\d+)""".r
 
-    def valueIn(tuple: Any): F =
-      valueAccessorMethod.invoke(tuple).asInstanceOf[F]
-
-    def read(parser: Parser): Any = valueTypeAdapter.read(parser)
-
-    def write[WIRE, T](
-        tuple:  T,
-        writer: Writer[WIRE],
-        out:    mutable.Builder[WIRE, WIRE]): Unit =
-      valueTypeAdapter.write(valueIn(tuple), writer, out)
-  }
-
-  val tupleFullName: Regex = """scala.Tuple(\d+)""".r
-
-  override def typeAdapterOf[T](
-      classSymbol: ClassSymbol,
-      next:        TypeAdapterFactory
-  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
-    classSymbol.fullName match {
-      case tupleFullName(numberOfFieldsAsString) =>
-        val numberOfFields = numberOfFieldsAsString.toInt
-        val fieldTypes = tt.tpe.dealias.typeArgs
-
-        val fields = for (i <- 0 until numberOfFields) yield {
-          val fieldType = fieldTypes(i)
-          val fieldTypeAdapter = taCache.typeAdapter(fieldType) match {
-            case opt: OptionTypeAdapter[_] => opt.convertNullToNone()
-            case ta                        => ta
-          }
-
-          val valueAccessorMethodSymbol =
-            tt.tpe.member(TermName(s"_${i + 1}")).asMethod
-          val valueAccessorMethod =
-            Reflection.methodToJava(valueAccessorMethodSymbol)
-          TupleField(
-            i,
-            fieldTypeAdapter,
-            valueAccessorMethodSymbol,
-            valueAccessorMethod
-          )
-        }
-
-        val classMirror = currentMirror.reflectClass(classSymbol)
-        val constructorMirror = classMirror.reflectConstructor(
-          classSymbol.primaryConstructor.asMethod
-        )
-
-        TupleTypeAdapter(fields.toList, constructorMirror)
-          .asInstanceOf[TypeAdapter[T]]
-
-      case _ =>
-        next.typeAdapterOf[T]
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case ti: TupleInfo => true
+      case _ => false
     }
 
-}
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[_] =
+    val fieldTAs = concrete.asInstanceOf[TupleInfo].tupleTypes.map{ f =>
+        taCache.typeAdapterOf(f) match {
+          case ota: OptionTypeAdapter[_] => ota.copy(nullIsNone = true)
+          case jota: JavaOptionalTypeAdapter[_] => jota.copy(nullIsNone = true)
+          case other => other
+        }
+      }.toList
+    val writeFn = (t: Product) => fieldTAs.zip(t.productIterator)
+    TupleTypeAdapter(concrete, writeFn, fieldTAs, concrete.infoClass.getConstructors.head)
 
-case class TupleTypeAdapter[T >: Null](
-    fields:            List[TupleField[_]],
-    constructorMirror: MethodMirror)
-  extends TypeAdapter[T]
-  with Collectionish {
+
+case class TupleTypeAdapter[T](
+  info:          RType,
+  writeFn:       (Product) => List[(TypeAdapter[_], Any)],
+  fieldTAs:      List[TypeAdapter[_]],
+  constructor:   java.lang.reflect.Constructor[T]
+  ) extends TypeAdapter[T] with Collectionish {
 
   def read(parser: Parser): T =
-    if (parser.peekForNull)
-      null
+    if (parser.peekForNull) then
+      null.asInstanceOf[T]
     else
-      constructorMirror.apply(parser.expectTuple(fields): _*).asInstanceOf[T]
+      constructor.newInstance(parser.expectTuple(fieldTAs): _*).asInstanceOf[T]
 
-  // Create functions that know how to self-write each field.  The actual writing of each element
-  // is done in TupleField where the specific field type F is known.
   def write[WIRE](
       t:      T,
       writer: Writer[WIRE],
@@ -103,5 +50,5 @@ case class TupleTypeAdapter[T >: Null](
     if (t == null)
       writer.writeNull(out)
     else
-      writer.writeTuple(t, fields, out)
+      writer.writeTuple(t, writeFn, out)
 }

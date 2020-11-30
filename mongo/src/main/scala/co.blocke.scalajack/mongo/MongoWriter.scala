@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package mongo
 
 import model._
-import ClassHelper.ExtraFieldValue
 
 import scala.collection.Map
 import scala.collection.mutable
@@ -75,25 +74,26 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
   }
 
   def writeTuple[T](
-      t: T,
-      writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
-      out: mutable.Builder[BsonValue, BsonValue]
+    t:       T,
+    writeFn: (Product) => List[(TypeAdapter[_], Any)],
+    out:     mutable.Builder[BsonValue, BsonValue]
   ): Unit = {
-    val array   = new BsonArray()
-    val builder = BsonBuilder()
-    writeFns.foreach { f =>
-      f.write(t, this, builder)
-      array.add(builder.result())
-      builder.clear()
+
+    var arr    = new BsonArray()
+    val outBuf = BsonBuilder()
+    writeFn(t.asInstanceOf[Product]).foreach { (fieldTA, fieldValue) =>
+      outBuf.clear()
+      fieldTA.castAndWrite(fieldValue, this, outBuf)
+      arr.add(outBuf.result())
     }
-    out += array
+    out += arr
   }
 
-  @inline private def writeFields(fields: List[(String, Any, TypeAdapter[Any])], doc: BsonDocument): Unit = {
+  @inline private def writeFields(fields: List[(String, Object, TypeAdapter[_])], doc: BsonDocument): Unit = {
     for ((label, value, valueTypeAdapter) <- fields)
       if (value != None) {
         val builder = BsonBuilder()
-        valueTypeAdapter.write(value, this, builder)
+        valueTypeAdapter.castAndWrite(value, this, builder)
         doc.append(label, builder.result())
       }
   }
@@ -101,7 +101,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
   def writeObject[T](
       t: T,
       orderedFieldNames: List[String],
-      fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
+      fieldMembersByName: Map[String, ClassFieldMember[_,_]],
       out: mutable.Builder[BsonValue, BsonValue],
       extras: List[(String, ExtraFieldValue[_])] = List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
@@ -114,7 +114,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
           e =>
             (
               e._1,
-              e._2.value,
+              e._2.value.asInstanceOf[Object],
               e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
           )
         ),
@@ -127,7 +127,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
       if (dbkeys.isEmpty) // no @DBKey fields
         writeFields(
           fieldMembersByName
-            .map(f => (f._1, f._2.valueIn(t), f._2.valueTypeAdapter))
+            .map(f => (f._1, f._2.info.valueOf(t), f._2.valueTypeAdapter))
             .toList,
           doc
         )
@@ -136,7 +136,7 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
           val toWrite = List(
             (
               ID_FIELD,
-              fieldMembersByName(dbkeys.head._1).valueIn(t),
+              fieldMembersByName(dbkeys.head._1).info.valueOf(t),
               fieldMembersByName(dbkeys.head._1).valueTypeAdapter
             )
           )
@@ -144,13 +144,13 @@ case class MongoWriter(anyTypeAdapter: TypeAdapter[Any]) extends Writer[BsonValu
         } else {
           val idDoc = new BsonDocument()
           val toWrite = dbkeys
-            .map(e => (e._1, e._2.valueIn(t), e._2.valueTypeAdapter))
+            .map(e => (e._1, e._2.info.valueOf(t), e._2.valueTypeAdapter))
             .toList
           writeFields(toWrite, idDoc)
           doc.append(ID_FIELD, idDoc)
         }
         val toWrite = theRest
-          .map(e => (e._1, e._2.valueIn(t), e._2.valueTypeAdapter))
+          .map(e => (e._1, e._2.info.valueOf(t), e._2.valueTypeAdapter))
           .toList
         writeFields(toWrite, doc)
       }

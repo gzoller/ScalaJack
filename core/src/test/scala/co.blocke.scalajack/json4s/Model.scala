@@ -2,8 +2,11 @@ package co.blocke.scalajack
 package json4s
 
 import java.util.UUID
-import model._
+import co.blocke.scalajack.model._
+import co.blocke.scala_reflection.RType
+import co.blocke.scala_reflection.info.AliasInfo
 import scala.collection.mutable
+import co.blocke.scalajack.SJCapture
 
 // === Scala
 case class SampleBigDecimal(
@@ -59,7 +62,8 @@ case class WrappedMaps(
     g: Map[BigInt, Int],
     h: Map[BigDecimal, Int],
     i: Map[Boolean, Int],
-    j: Map[Char, Int])
+    j: Map[Char, Int],
+    k: Map[String, Int])
 
 trait Address { val postalCode: String }
 case class USAddress(
@@ -78,16 +82,25 @@ case class Envelope[T <: Body](id: String, body: T) {
   type Giraffe = T
 }
 
-object MyTypes {
-  type Phone = String
-}
-import MyTypes._
+opaque type Phone >: Null = String
 
-object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
+// Override just Phone
+object PhoneAdapter extends TypeAdapterFactory with TypeAdapter[Phone]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case a: AliasInfo if a.name == "Phone" => 
+        true
+      case _ => 
+        false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[Phone] = this
+  val info = RType.of[Phone]
+  override def isStringish: Boolean = true
+  
   def read(parser: Parser): Phone =
     parser.expectString() match {
-      case null      => null
-      case s: String => s.replaceAll("-", "")
+      case null      => null.asInstanceOf[Phone]
+      case s: String => s.replaceAll("-", "").asInstanceOf[Phone]
     }
 
   def write[WIRE](
@@ -97,10 +110,9 @@ object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
     case null => writer.writeNull(out)
     case _ =>
       writer.writeString(
-        "%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)),
+        "%s-%s-%s".format(t.toString.substring(0, 3), t.toString.substring(3, 6), t.toString.substring(6)),
         out
       )
   }
-}
 
 case class Employee(name: String, phone: Phone)

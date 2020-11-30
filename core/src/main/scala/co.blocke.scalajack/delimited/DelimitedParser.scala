@@ -3,8 +3,8 @@ package delimited
 
 import model._
 import scala.collection.mutable
-import scala.reflect.runtime.universe.Type
-import typeadapter.ClassTypeAdapterBase
+import typeadapter.classes.ClassTypeAdapterBase
+import co.blocke.scala_reflection.info.TypeMemberInfo
 
 case class DelimitedParser(
     delimChar:  Char,
@@ -17,7 +17,7 @@ case class DelimitedParser(
   private val delimPrefixString = DELIM_PREFIX.toString
 
   val (tokens, indexes) = {
-    val dChars: Array[Char] = input.toCharArray
+    val dChars: Array[Char] = input.asInstanceOf[String].toCharArray
     var i = 0
     val maxChars: Int = dChars.length
     val tokenList = scala.collection.mutable.ListBuffer.empty[String]
@@ -77,7 +77,7 @@ case class DelimitedParser(
     expectString() match {
       case "" => null.asInstanceOf[TO]
       case listStr =>
-        val subParser = DelimitedParser(delimChar, listStr, jackFlavor)
+        val subParser = DelimitedParser(delimChar, listStr.asInstanceOf[DELIMITED], jackFlavor)
         while (subParser.pos < subParser.max) builder += KtypeAdapter.read(
           subParser
         )
@@ -111,23 +111,18 @@ case class DelimitedParser(
     }
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
-  ): List[Any] =
+    tupleFieldTypeAdapters: List[TypeAdapter[_]]
+  ): List[Object] =
     expectString() match {
       // $COVERAGE-OFF$Can't test--can't validly tell whether "" is escaped '"' or empty value in this context.  Blame CSV
-      case "" => null.asInstanceOf[List[Any]]
+      case "" => null.asInstanceOf[List[Object]]
       // $COVERAGE-ON$
       case listStr =>
-        val subParser = DelimitedParser(delimChar, listStr, jackFlavor)
-        readFns.map {
-          _.valueTypeAdapter match {
-            case ccta: Classish =>
-              ccta.read(
-                DelimitedParser(delimChar, subParser.expectString(), jackFlavor)
-              )
+        val subParser = DelimitedParser(delimChar, listStr.asInstanceOf[DELIMITED], jackFlavor)
+        tupleFieldTypeAdapters.map { _ match {
+            case ccta: Classish => ccta.read( DelimitedParser(delimChar, subParser.expectString().asInstanceOf[DELIMITED], jackFlavor))
             case ta => ta.read(subParser)
-          }
-        }
+          }}.asInstanceOf[List[Object]]
     }
 
   def expectMap[K, V, TO](
@@ -139,41 +134,41 @@ case class DelimitedParser(
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
+  ): (mutable.BitSet, List[Object], java.util.HashMap[String, _]) = {
     if (!classBase.isCaseClass)
       throw new ScalaJackError(
         showError(
           "Only case classes with non-empty constructors are supported for delimited data."
         )
       )
-    val fieldBits = classBase.fieldBitsTemplate.clone()
+    val fieldBits = mutable.BitSet()
 
     val args = classBase.argsTemplate.clone()
     classBase.orderedFieldNames.foreach { name =>
       val oneField = classBase.fieldMembersByName(name)
       val valueRead = oneField.valueTypeAdapter match {
-        case ccta: typeadapter.CaseClassTypeAdapter[_] =>
+        case ccta: typeadapter.classes.CaseClassTypeAdapter[_] =>
           expectString() match {
             case "" => null
             case listStr =>
-              val subParser = DelimitedParser(delimChar, listStr, jackFlavor)
+              val subParser = DelimitedParser(delimChar, listStr.asInstanceOf[DELIMITED], jackFlavor)
               ccta.read(subParser)
           }
         case ta => ta.read(this)
       }
       valueRead match {
         case None                                    =>
-        case null if oneField.defaultValue.isDefined =>
+        case null if oneField.info.defaultValue.isDefined =>
         case _ =>
-          args(oneField.index) = valueRead
-          fieldBits -= oneField.index
+          args(oneField.info.index) = valueRead.asInstanceOf[Object]
+          fieldBits += oneField.info.index
       }
     }
-    (fieldBits, args, new java.util.HashMap[String, String]())
+    (fieldBits, args.toList, new java.util.HashMap[String, String]())
   }
 
   def showError(msg: String): String = {
-    val inputStr = input.drop(1) // Account for prefix char on input
+    val inputStr = input.asInstanceOf[String].drop(1) // Account for prefix char on input
     val (clip, dashes) = indexes(pos) - 1 match {
       case ep if ep <= 50 && max < 80 => (inputStr, ep)
       case ep if ep <= 50             => (inputStr.substring(0, 77) + "...", ep)
@@ -193,14 +188,14 @@ case class DelimitedParser(
 
   // $COVERAGE-OFF$No meaning for delimited input
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn:       HintBijective
-  ): Map[Type, Type] =
+    typeMembersByName: Map[String, TypeMemberInfo],
+    converterFn: HintBijective
+  ): Map[String, TypeMemberInfo] = 
     throw new ScalaJackError(
       showError("DelimitedFlavor does not support classes with type members")
     )
 
-  def scanForHint(hint: String, converterFn: HintBijective): Type =
+  def scanForHint(hint: String, converterFn: HintBijective): Class[_] =
     throw new ScalaJackError(
       showError("DelimitedFlavor does not support traits")
     )
@@ -208,7 +203,7 @@ case class DelimitedParser(
   def nextIsObject: Boolean = false
   def nextIsArray: Boolean = false
   def nextIsBoolean: Boolean = false
-  def sourceAsString: String = input
+  def sourceAsString: String = input.asInstanceOf[String]
   // $COVERAGE-ON$
 
   def backspace(): Unit = pos -= 1

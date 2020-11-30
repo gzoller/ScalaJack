@@ -2,51 +2,47 @@ package co.blocke.scalajack
 package typeadapter
 
 import model._
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info.EitherInfo
+import co.blocke.scala_reflection.impl.Clazzes._
 
 import scala.collection.mutable.Builder
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{ NoType, Type, TypeTag, typeOf }
 import scala.util.{ Failure, Success, Try }
 
-object EitherTypeAdapterFactory extends TypeAdapterFactory {
+object EitherTypeAdapterFactory extends TypeAdapterFactory:
 
-  override def typeAdapterOf[T](
-      next: TypeAdapterFactory
-  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
-    tt.tpe.baseType(typeOf[Either[_, _]].typeSymbol) match {
-      case NoType =>
-        next.typeAdapterOf[T]
-
-      case asEither =>
-        val List(leftType, rightType) = asEither.typeArgs.take(2)
-
-        if (leftType <:< rightType || rightType <:< leftType) {
-          throw new IllegalArgumentException(
-            s"Types $leftType and $rightType are not mutually exclusive"
-          )
-        }
-
-        val leftTypeAdapter = taCache.typeAdapter(leftType)
-        val rightTypeAdapter = taCache.typeAdapter(rightType)
-        EitherTypeAdapter(
-          leftTypeAdapter,
-          rightTypeAdapter,
-          leftType,
-          rightType
-        ).asInstanceOf[TypeAdapter[T]]
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case _: EitherInfo => true
+      case _ => false
     }
 
-}
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[_] =
+    val eitherInfo = concrete.asInstanceOf[EitherInfo]
+    val leftInfo = eitherInfo.leftType
+    val rightInfo = eitherInfo.rightType
+
+    if( leftInfo.infoClass <:< rightInfo.infoClass || rightInfo.infoClass <:< leftInfo.infoClass)
+      throw new IllegalArgumentException(
+        s"Types ${leftInfo.name} and ${rightInfo.name} are not mutually exclusive"
+      )
+    val leftTypeAdapter = taCache.typeAdapterOf(leftInfo)
+    val rightTypeAdapter = taCache.typeAdapterOf(rightInfo)
+
+    EitherTypeAdapter(
+      concrete,
+      leftTypeAdapter,
+      rightTypeAdapter)
+
 
 case class EitherTypeAdapter[L, R](
+    info: RType,
     leftTypeAdapter:  TypeAdapter[L],
-    rightTypeAdapter: TypeAdapter[R],
-    leftType:         Type,
-    rightType:        Type)
+    rightTypeAdapter: TypeAdapter[R])
   extends TypeAdapter[Either[L, R]] {
 
-  val leftClass: Class[_] = currentMirror.runtimeClass(leftType)
-  val rightClass: Class[_] = currentMirror.runtimeClass(rightType)
+  override def isStringish: Boolean = leftTypeAdapter.isStringish && rightTypeAdapter.isStringish
+  override def maybeStringish: Boolean = !isStringish
 
   def read(parser: Parser): Either[L, R] = {
     val savedReader = parser.mark()

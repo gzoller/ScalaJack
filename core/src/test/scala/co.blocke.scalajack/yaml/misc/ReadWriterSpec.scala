@@ -2,8 +2,9 @@ package co.blocke.scalajack
 package yaml
 package misc
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import TestUtil._
+import munit._
+import munit.internal.console
 import scala.math.BigInt
 
 trait Human
@@ -12,69 +13,83 @@ case class Typey[T](thing: T) {
   type foom = T
 }
 
-class ReadWriterSpec extends AnyFunSpec with Matchers {
+class ReadWriterSpec extends FunSuite:
 
   val sj = ScalaJack(YamlFlavor())
 
-  describe(
-    "-----------------------------\n:  YamlReader Tests (YAML)  :\n-----------------------------"
-  ) {
-    it("Multiline string | and >") {
-      val yaml =
-        """a: |
-          |  This
-          |  is
-          |  a
-          |  test
-          |""".stripMargin
-      sj.read[Map[String, String]](yaml) should be(Map("a" -> "This\nis\na\ntest"))
-      val yaml2 =
-        """a: >
-          |  This
-          |  is
-          |  a
-          |  test
-          |""".stripMargin
-      sj.read[Map[String, String]](yaml2) should be(Map("a" -> "This is a test"))
-    }
-    it("expectCollection nextText fails") {
-      val yaml = """a: foo"""
-      the[ScalaJackError] thrownBy sj.read[Map[String, List[Int]]](yaml) should have message "Line 0: Expected a List here: =VAL :foo"
-    }
-    it("Scan for hint on non-object") {
-      the[ScalaJackError] thrownBy sj.read[Person]("12") should have message "Line 0: Expected an Object here: =VAL :12"
-    }
-    it("Type hint not found in scan") {
-      val yaml =
-        """name: Fred
-          |age: 35
-          |""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[Human](yaml) should have message "Line 2: Type hint '_hint' not found"
-    }
-    it("Resovle type members on non-object") {
-      the[ScalaJackError] thrownBy sj.read[Typey[Person]]("12") should have message "Line 0: Expected an Object here: =VAL :12"
+  test("Multiline string | and >") {
+    describe(
+      "-----------------------------\n:  YamlReader Tests (YAML)  :\n-----------------------------", Console.BLUE
+    )
+    val yaml =
+      """a: |
+        |  This
+        |  is
+        |  a
+        |  test
+        |""".stripMargin.asInstanceOf[YAML]
+    assertEquals(sj.read[Map[String, String]](yaml), Map("a" -> "This\nis\na\ntest"))
+    val yaml2 =
+      """a: >
+        |  This
+        |  is
+        |  a
+        |  test
+        |""".stripMargin.asInstanceOf[YAML]
+    assertEquals(sj.read[Map[String, String]](yaml2), Map("a" -> "This is a test"))
+  }
+
+  test("expectCollection nextText fails") {
+    val yaml = """a: foo""".asInstanceOf[YAML]
+    interceptMessage[ScalaJackError]("Line 0: Expected a List here: =VAL :foo"){
+      sj.read[Map[String, List[Int]]](yaml)
     }
   }
-  describe(
-    "-----------------------------\n:  YamlWriter Tests (YAML)  :\n-----------------------------"
-  ) {
-    it("Null Array") {
-      val yaml =
-        """one: [1,2,3]
-          |two: null
-          |""".stripMargin
-      sj.read[Map[String, List[Int]]](yaml) should be(Map("one" -> List(1, 2, 3), "two" -> null))
-    }
-    it("Null BigInt") {
-      val yaml =
-        """one: 123
-          |two: null
-          |""".stripMargin
-      sj.read[Map[String, BigInt]](yaml) should be(Map("one" -> BigInt(123), "two" -> null))
-    }
-    it("Empty YamlBuilder") {
-      val b = YamlBuilder()
-      the[ScalaJackError] thrownBy b.result() should have message "No value set for internal yaml builder"
+
+  test("Scan for hint on non-object") {
+    interceptMessage[ScalaJackError]("Line 0: Expected an Object here: =VAL :12"){
+      sj.read[Person]("12".asInstanceOf[YAML])
     }
   }
-}
+
+  test("Type hint not found in scan") {
+    val yaml =
+      """name: Fred
+        |age: 35
+        |""".stripMargin.asInstanceOf[YAML]
+    interceptMessage[ScalaJackError]("Line 2: Type hint '_hint' not found"){
+      sj.read[Human](yaml)
+    }
+  }
+
+  test("Resovle type members on non-object") {
+    interceptMessage[ScalaJackError]("Line 0: Expected an Object here: =VAL :12"){
+      sj.read[Typey[Person]]("12".asInstanceOf[YAML])
+    }
+  }
+
+  test("Null Array") {
+    describe(
+      "-----------------------------\n:  YamlWriter Tests (YAML)  :\n-----------------------------", Console.BLUE
+    )
+    val yaml =
+      """one: [1,2,3]
+        |two: null
+        |""".stripMargin.asInstanceOf[YAML]
+    assertEquals(sj.read[Map[String, List[Int]]](yaml), Map("one" -> List(1, 2, 3), "two" -> null))
+  }
+
+  test("Null BigInt") {
+    val yaml =
+      """one: 123
+        |two: null
+        |""".stripMargin.asInstanceOf[YAML]
+    assertEquals(sj.read[Map[String, BigInt]](yaml), Map("one" -> BigInt(123), "two" -> null))
+  }
+
+  test("Empty YamlBuilder") {
+    val b = YamlBuilder()
+    interceptMessage[ScalaJackError]("No value set for internal yaml builder"){
+      b.result()
+    }
+  }

@@ -2,7 +2,6 @@ package co.blocke.scalajack
 package delimited
 
 import model._
-import ClassHelper.ExtraFieldValue
 import co.blocke.scalajack.model
 
 import scala.collection.Map
@@ -12,28 +11,28 @@ case class DelimitedWriter(delimiter: Char) extends Writer[DELIMITED] {
 
   def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     if (t != null) {
-      val sb   = model.StringBuilder()
+      val sb   = model.StringBuilder[DELIMITED]()
       val iter = t.iterator
       while (iter.hasNext) {
         elemTypeAdapter.write(iter.next, this, sb)
         if (iter.hasNext)
-          sb += delimiter.toString
+          sb += delimiter.toString.asInstanceOf[DELIMITED]
       }
-      writeString(sb.result(), out)
+      writeString(sb.result().asInstanceOf[String], out)
     }
 
   def writeBigInt(t: BigInt, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
   def writeBoolean(t: Boolean, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
   def writeDecimal(t: BigDecimal, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
   def writeDouble(t: Double, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
   def writeInt(t: Int, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
   def writeLong(t: Long, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    out += t.toString
+    out += t.toString.asInstanceOf[DELIMITED]
 
   def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
     throw new ScalaJackError(
@@ -45,7 +44,7 @@ case class DelimitedWriter(delimiter: Char) extends Writer[DELIMITED] {
   def writeObject[T](
       t: T,
       orderedFieldNames: List[String],
-      fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
+      fieldMembersByName: Map[String, ClassFieldMember[_,_]],
       out: mutable.Builder[DELIMITED, DELIMITED],
       extras: List[(String, ExtraFieldValue[_])] = List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
@@ -55,15 +54,15 @@ case class DelimitedWriter(delimiter: Char) extends Writer[DELIMITED] {
         if (first)
           first = false
         else
-          out += delimiter.toString
+          out += delimiter.toString.asInstanceOf[DELIMITED]
         val f = fieldMembersByName(name)
         f.valueTypeAdapter match {
           case ta if ta.isInstanceOf[Classish] =>
-            val sb = model.StringBuilder()
-            ta.write(f.valueIn(t), this, sb)
-            writeString(sb.result(), out)
+            val sb = model.StringBuilder[DELIMITED]()
+            ta.castAndWrite(f.info.valueOf(t), this, sb)
+            writeString(sb.result().asInstanceOf[String], out)
           case ta =>
-            ta.write(f.valueIn(t), this, out)
+            ta.castAndWrite(f.info.valueOf(t), this, out)
         }
       }
     }
@@ -76,33 +75,35 @@ case class DelimitedWriter(delimiter: Char) extends Writer[DELIMITED] {
           "\"" + t0 + "\""
         else
           t
-      out += toWrite
+      out += toWrite.asInstanceOf[DELIMITED]
     }
+
   // $COVERAGE-OFF$Never called for delimited output
   def writeRaw(t: DELIMITED, out: mutable.Builder[DELIMITED, DELIMITED]): Unit =
-    writeString(t, out)
+    writeString(t.asInstanceOf[String], out)
   // $COVERAGE-ON$
 
   def writeTuple[T](
       t: T,
-      writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
+      writeFn: (Product) => List[(TypeAdapter[_], Any)],
       out: mutable.Builder[DELIMITED, DELIMITED]
   ): Unit = {
     var first = true
-    val sb    = model.StringBuilder()
-    writeFns.foreach { f =>
+    val sb    = model.StringBuilder[DELIMITED]()
+    writeFn(t.asInstanceOf[Product]).foreach { (fieldTA, fieldValue) =>
       if (first)
         first = false
       else
-        sb += delimiter.toString
-      f.valueTypeAdapter match {
+        sb += delimiter.toString.asInstanceOf[DELIMITED]
+      fieldTA match {
         case cta: Classish =>
-          val sb2 = model.StringBuilder()
-          f.write(t, this, sb2)
-          writeString(sb2.result(), sb)
-        case ta => f.write(t, this, sb)
+          val sb2 = model.StringBuilder[DELIMITED]()
+          fieldTA.castAndWrite(fieldValue, this, sb2)
+          writeString(sb2.result().asInstanceOf[String], sb)
+        case ta => 
+          fieldTA.castAndWrite(fieldValue, this, sb)
       }
     }
-    writeString(sb.result(), out)
+    writeString(sb.result().asInstanceOf[String], out)
   }
 }

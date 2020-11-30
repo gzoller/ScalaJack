@@ -1,20 +1,30 @@
 package co.blocke.scalajack
 package json.custom
 
-object MyTypes {
-  type Phone = String
-}
-import MyTypes._
-import model._
+import co.blocke.scala_reflection.impl.Clazzes._
+import co.blocke.scala_reflection.info.AliasInfo
+import co.blocke.scala_reflection._
+import co.blocke.scalajack.model._
+
+opaque type Phone >: Null = String
 
 import scala.collection.mutable
 
 // Override just Phone
-object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
+object PhoneAdapter extends TypeAdapterFactory with TypeAdapter[Phone]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case a: AliasInfo if a.name == "Phone" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[Phone] = this
+  val info = RType.of[Phone]
+  override def isStringish: Boolean = true
+  
   def read(parser: Parser): Phone =
     parser.expectString() match {
-      case null      => null
-      case s: String => s.replaceAll("-", "")
+      case null      => null.asInstanceOf[Phone]
+      case s: String => s.replaceAll("-", "").asInstanceOf[Phone]
     }
 
   def write[WIRE](
@@ -24,32 +34,10 @@ object PhoneAdapter extends TypeAdapter.===[Phone] with Stringish {
     case null => writer.writeNull(out)
     case _ =>
       writer.writeString(
-        "%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)),
+        "%s-%s-%s".format(t.toString.substring(0, 3), t.toString.substring(3, 6), t.toString.substring(6)),
         out
       )
   }
-}
-
-// Override Phone...and its parents (String)!
-object OopsPhoneAdapter extends TypeAdapter.=:=[Phone] with Stringish {
-  def read(parser: Parser): Phone =
-    parser.expectString() match {
-      case null      => null
-      case s: String => s.replaceAll("-", "")
-    }
-
-  def write[WIRE](
-      t:      Phone,
-      writer: Writer[WIRE],
-      out:    mutable.Builder[WIRE, WIRE]): Unit = t match {
-    case null => writer.writeNull(out)
-    case _ =>
-      writer.writeString(
-        "%s-%s-%s".format(t.substring(0, 3), t.substring(3, 6), t.substring(6)),
-        out
-      )
-  }
-}
 
 case class Person(name: String, phone: Phone)
 

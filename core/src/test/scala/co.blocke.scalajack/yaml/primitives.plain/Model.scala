@@ -67,10 +67,6 @@ class WrapTrait[T <: TraitBase]() {
 
 // ---
 
-class Fail4(val a: Int, b: Int)
-
-// --
-
 class OptConst(val a: Option[Int]) {
   var b: Option[Int] = Some(3)
 }
@@ -100,7 +96,7 @@ class BigPlayer() extends PlayerMix {
   var more: Int = 0
 }
 
-class NotAllVals(val a: Int, b: Int, val c: Int)
+// class NotAllVals(val a: Int, b: Int, val c: Int)
 
 class Embed() {
   var stuff: List[String] = List.empty[String]
