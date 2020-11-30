@@ -4,7 +4,6 @@ package yaml
 import model._
 
 import scala.collection.mutable
-import ClassHelper.ExtraFieldValue
 import org.snakeyaml.engine.v2.nodes._
 import org.snakeyaml.engine.v2.common.{FlowStyle, ScalarStyle}
 import org.snakeyaml.engine.v2.composer.Composer
@@ -77,7 +76,7 @@ case class YamlWriter() extends Writer[Node] {
     out += new ScalarNode(Tag.NULL, "null", ScalarStyle.PLAIN)
 
   @inline private def writeFields(
-      fields: List[(String, Any, TypeAdapter[Any])]
+    fields: List[(String, Any, TypeAdapter[Any])]
   ): Map[Node, Node] = {
     val outBuf = YamlBuilder()
     fields.collect {
@@ -89,42 +88,44 @@ case class YamlWriter() extends Writer[Node] {
   }
 
   def writeObject[T](
-      t: T,
-      orderedFieldNames: List[String],
-      fieldMembersByName: collection.Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out: mutable.Builder[Node, Node],
-      extras: List[(String, ExtraFieldValue[_])]
-  ): Unit = t match {
-    case null => writeNull(out)
-    case _ =>
-      val extraFields = writeFields(
-        extras.map(
-          e =>
-            (
-              e._1,
-              e._2.value,
-              e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
+    t: T,
+    orderedFieldNames: List[String],
+    fieldMembersByName: collection.Map[String, ClassFieldMember[_,_]],
+    out: mutable.Builder[Node, Node],
+    extras: List[(String, ExtraFieldValue[_])]
+  ): Unit = {
+    t match {
+      case null => writeNull(out.asInstanceOf[collection.mutable.Builder[Node,Node]])
+      case _ =>
+        val extraFields = writeFields(
+          extras.map(
+            e =>
+              (
+                e._1,
+                e._2.value,
+                e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
+            )
           )
         )
-      )
-      val classFields = writeFields(orderedFieldNames.map { orn =>
-        val oneField = fieldMembersByName(orn)
-        (orn, oneField.valueIn(t), oneField.valueTypeAdapter)
-      })
-      val captureFields = t match {
-        case sjc: SJCapture =>
-          import scala.jdk.CollectionConverters._
+        val classFields = writeFields(orderedFieldNames.map { orn =>
+          val oneField = fieldMembersByName(orn)
+          (orn, oneField.info.valueOf(t), oneField.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])
+        })
+        val captureFields = t match {
+          case sjc: SJCapture =>
+            import scala.jdk.CollectionConverters._
 
-          sjc.captured.asScala.map {
-            case (k, v) =>
-              val composer = new Composer(new EventParser(v.asInstanceOf[List[Event]]), new JsonScalarResolver())
-              (new ScalarNode(Tag.STR, k, ScalarStyle.PLAIN), composer.next)
-          }
-        case _ => Map.empty[Node, Node]
-      }
+            sjc.captured.asScala.map {
+              case (k, v) =>
+                val composer = new Composer(new EventParser(v.asInstanceOf[List[Event]]), new JsonScalarResolver())
+                (new ScalarNode(Tag.STR, k, ScalarStyle.PLAIN), composer.next)
+            }
+          case _ => Map.empty[Node, Node]
+        }
 
-      val mapNodes = (extraFields ++ classFields ++ captureFields).map { case (k, v) => new NodeTuple(k, v) }
-      out += new MappingNode(Tag.MAP, mapNodes.toList.asJava, FlowStyle.AUTO)
+        val mapNodes = (extraFields ++ classFields ++ captureFields).map { case (k, v) => new NodeTuple(k, v) }
+        out += new MappingNode(Tag.MAP, mapNodes.toList.asJava, FlowStyle.AUTO).asInstanceOf[Node]
+    }
   }
 
   def writeString(t: String, out: mutable.Builder[Node, Node]): Unit = t match {
@@ -137,22 +138,21 @@ case class YamlWriter() extends Writer[Node] {
 
   def writeTuple[T](
       t: T,
-      writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
+      writeFn: (Product) => List[(TypeAdapter[_], Any)],
       out: mutable.Builder[Node, Node]
   ): Unit = {
     val arr    = mutable.ListBuffer.empty[Node]
     val outBuf = YamlBuilder()
-    writeFns.foreach { f =>
+    val flowStyle = writeFn(t.asInstanceOf[Product]).foldLeft(true) { case (acc, (fieldTA, fieldValue)) =>
       outBuf.clear()
-      f.write(t, this, outBuf)
+      fieldTA.castAndWrite(fieldValue, this, outBuf)
       arr += outBuf.result
-    }
-    val flow =
-      if (writeFns.foldLeft(true) { case (acc, taf) => if (taf.valueTypeAdapter.isInstanceOf[ScalarTypeAdapter[_]]) acc else false })
-        FlowStyle.FLOW
+      if fieldTA.isInstanceOf[ScalarTypeAdapter[_]] then
+        acc
       else
-        FlowStyle.BLOCK
-    out += new SequenceNode(Tag.SEQ, arr.asJava, flow)
+        false
+    }
+    out += new SequenceNode(Tag.SEQ, arr.asJava, {if flowStyle then FlowStyle.FLOW else FlowStyle.BLOCK})
   }
 }
 

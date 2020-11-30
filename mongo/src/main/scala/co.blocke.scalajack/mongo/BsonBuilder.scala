@@ -1,6 +1,6 @@
-package co.blocke.scalajack.mongo
+package co.blocke.scalajack
+package mongo
 
-import co.blocke.scalajack.ScalaJackError
 import org.bson.BsonValue
 
 import scala.collection.mutable

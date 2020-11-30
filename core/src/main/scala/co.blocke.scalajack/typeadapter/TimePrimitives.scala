@@ -1,6 +1,10 @@
 package co.blocke.scalajack
 package typeadapter
 
+import co.blocke.scala_reflection.impl.Clazzes._
+import co.blocke.scala_reflection.info._
+import co.blocke.scala_reflection._
+
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
 import java.time._
@@ -8,9 +12,16 @@ import java.time.format.DateTimeFormatter._
 
 import model._
 
-object DurationTypeAdapterFactory
-  extends TypeAdapter.=:=[Duration]
-  with Stringish {
+ object DurationTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[Duration]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.Duration" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[Duration] = this
+  val info = RType.of[Duration]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): Duration =
     parser.expectString() match {
       case null => null
@@ -33,11 +44,18 @@ object DurationTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
-}
 
-object InstantTypeAdapterFactory
-  extends TypeAdapter.=:=[Instant]
-  with Stringish {
+
+object InstantTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[Instant]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.Instant" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[Instant] = this
+  val info = RType.of[Instant]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): Instant =
     parser.expectString() match {
       case null => null
@@ -60,11 +78,18 @@ object InstantTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
-}
 
-object LocalDateTimeTypeAdapterFactory
-  extends TypeAdapter.=:=[LocalDateTime]
-  with Stringish {
+
+object LocalDateTimeTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[LocalDateTime]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.LocalDateTime" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[LocalDateTime] = this
+  val info = RType.of[LocalDateTime]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): LocalDateTime =
     parser.expectString() match {
       case null => null
@@ -88,11 +113,18 @@ object LocalDateTimeTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_DATE_TIME), out)
     }
-}
 
-object LocalDateTypeAdapterFactory
-  extends TypeAdapter.=:=[LocalDate]
-  with Stringish {
+
+object LocalDateTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[LocalDate]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.LocalDate" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[LocalDate] = this
+  val info = RType.of[LocalDate]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): LocalDate =
     parser.expectString() match {
       case null => null
@@ -115,11 +147,18 @@ object LocalDateTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_DATE), out)
     }
-}
 
-object LocalTimeTypeAdapterFactory
-  extends TypeAdapter.=:=[LocalTime]
-  with Stringish {
+
+object LocalTimeTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[LocalTime]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.LocalTime" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[LocalTime] = this
+  val info = RType.of[LocalTime]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): LocalTime =
     parser.expectString() match {
       case null => null
@@ -142,11 +181,18 @@ object LocalTimeTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_LOCAL_TIME), out)
     }
-}
 
-object OffsetDateTimeTypeAdapterFactory
-  extends TypeAdapter.=:=[OffsetDateTime]
-  with Stringish {
+
+object OffsetDateTimeTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[OffsetDateTime]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.OffsetDateTime" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[OffsetDateTime] = this
+  val info = RType.of[OffsetDateTime]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): OffsetDateTime =
     parser.expectString() match {
       case null => null
@@ -171,11 +217,18 @@ object OffsetDateTimeTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_OFFSET_DATE_TIME), out)
     }
-}
 
-object OffsetTimeTypeAdapterFactory
-  extends TypeAdapter.=:=[OffsetTime]
-  with Stringish {
+
+object OffsetTimeTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[OffsetTime]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.OffsetTime" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[OffsetTime] = this
+  val info = RType.of[OffsetTime]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): OffsetTime =
     parser.expectString() match {
       case null => null
@@ -199,9 +252,18 @@ object OffsetTimeTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_OFFSET_TIME), out)
     }
-}
 
-object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] with Stringish {
+
+object PeriodTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[Period]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.Period" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[Period] = this
+  val info = RType.of[Period]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): Period =
     parser.expectString() match {
       case null => null
@@ -224,11 +286,18 @@ object PeriodTypeAdapterFactory extends TypeAdapter.=:=[Period] with Stringish {
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.toString, out)
     }
-}
 
-object ZonedDateTimeTypeAdapterFactory
-  extends TypeAdapter.=:=[ZonedDateTime]
-  with Stringish {
+
+object ZonedDateTimeTypeAdapterFactory extends TypeAdapterFactory with TypeAdapter[ZonedDateTime]:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case u: JavaClassInfo if u.infoClass.getName == "java.time.ZonedDateTime" => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[ZonedDateTime] = this
+  val info = RType.of[ZonedDateTime]
+  override def isStringish: Boolean = true
+
   def read(parser: Parser): ZonedDateTime =
     parser.expectString() match {
       case null => null
@@ -252,4 +321,3 @@ object ZonedDateTimeTypeAdapterFactory
       case null => writer.writeNull(out)
       case _    => writer.writeString(t.format(ISO_ZONED_DATE_TIME), out)
     }
-}

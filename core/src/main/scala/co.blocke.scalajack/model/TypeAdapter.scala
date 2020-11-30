@@ -1,9 +1,12 @@
 package co.blocke.scalajack
 package model
 
-import scala.reflect.runtime.universe._
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info._
+import co.blocke.scala_reflection.impl.Clazzes._
+
 
 /**
  * TypeAdapter includes two matching patterns you can use when you extend trait TypeAdapter for your
@@ -22,36 +25,20 @@ import scala.reflect.ClassTag
  * in this case.  With strict matching String != Phone.
  *
  */
-object TypeAdapter {
-
-  abstract class ===[X](implicit ttFactory: TypeTag[X])
-    extends TypeAdapterFactory.===[X]
-    with ScalarTypeAdapter[X] {
-    val scalarType = ttFactory.tpe
-    override def create(next: TypeAdapterFactory)(
-        implicit
-        tt: TypeTag[X]
-    ): TypeAdapter[X] = this
-  }
-
-  abstract class =:=[X](implicit ttFactory: TypeTag[X])
-    extends TypeAdapterFactory.=:=[X]
-    with ScalarTypeAdapter[X] {
-    val scalarType = ttFactory.tpe
-    override def create(next: TypeAdapterFactory)(
-        implicit
-        tt: TypeTag[X]
-    ): TypeAdapter[X] = this
-  }
-
-}
-
-trait TypeAdapter[T] {
+ trait TypeAdapter[T] {
   self =>
 
+  type tpe = T
+
+  val info: RType
+  def resolved: TypeAdapter[T] = this // Might be something else during Lazy construction
+  
   def defaultValue: Option[T] = None
-  def resolved: TypeAdapter[T] =
-    this // Might be something else during Lazy construction
+
+  // Used to determine if we need to wrap Map keys in quotes (no, if isStringish == true -- the quotes are automatic in this case)
+  def isStringish: Boolean = false
+  def maybeStringish: Boolean = false // means we don't know for sure if something is Stringish until read/render time (not in Factory), e.g. Option or Union
+  
   def read(parser: Parser): T
   def write[WIRE](
       t:      T,
@@ -69,16 +56,14 @@ trait TypeAdapter[T] {
         )
     }
   }
+
+  // Used to correctly-type tuple fields, which each have separate types that are unknown at write, but...
+  // each field's TypeAdapter *does* know its type so it can be correctly cast inside the TypeAdapter.
+  inline def castAndWrite[WIRE]( v: Any, writer: Writer[WIRE], out: mutable.Builder[WIRE, WIRE]): Unit = 
+    write(v.asInstanceOf[tpe], writer, out)
 }
 
-trait ScalarTypeAdapter[T] extends TypeAdapter[T] {
-  val scalarType: Type
-}
-
-// Marker trait for anything that boils down to String, e.g. Char, UUID, etc.
-trait Stringish {
-  this: TypeAdapter[_] =>
-}
+trait ScalarTypeAdapter[T] extends TypeAdapter[T] 
 
 // Marker trait for collections
 trait Collectionish

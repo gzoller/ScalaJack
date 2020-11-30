@@ -2,164 +2,59 @@ package co.blocke.scalajack
 package delimited
 
 import model._
+import co.blocke.scala_reflection.RType
+import typeadapter.{MaybeStringWrapTypeAdapter, StringWrapTypeAdapter}
 
-import scala.reflect.runtime.universe._
-
-/**
- * This class is a cut'n paste copy of DelimitedFlavor with some mods to lock in a type.  There's currently an
- * unfortunate amount of boilerplate copying between this class and DelimitedFlavor, but it facilitates a clean
- * user experience--smooth API for ScalaJack:  val fooSerializer = sj.forType[Foo];  fooSerializer.read(input)
- */
-case class DelimitedFlavorFor[J](
-    delimiter:                       Char                         = ',',
-    ta:                              TypeAdapter[J],
-    override val defaultHint:        String                       = "_hint",
-    override val permissivesOk:      Boolean                      = false,
-    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
-    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
-    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
-    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
-) extends JackFlavorFor[DELIMITED, J] {
-
-  def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this)
-    taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
-  }
-
-  def read(input: DELIMITED): J =
-    ta.read(DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this))
-  def render(t: J): DELIMITED = {
-    val sb = model.StringBuilder()
-    ta.write(t, writer, sb)
-    sb.result()
-  }
-  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[DELIMITED, U] =
-    this
-      .copy(ta = taCache.typeAdapter(tu.tpe.dealias))
-      .asInstanceOf[JackFlavorFor[DELIMITED, U]]
-
-  def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = model.StringBuilder()
-    taCache
-      .typeAdapter(tt.tpe.dealias)
-      .asInstanceOf[TypeAdapter[T]]
-      .write(t, writer, sb)
-    sb.result()
-  }
-
-  // $COVERAGE-OFF$All this is carbon-copy from DelimitedFlavor, which has test coverage.
-  def parse(input: DELIMITED): Parser = DelimitedParser(delimiter, input, this)
-
-  private val writer = DelimitedWriter(delimiter)
-
-  //  override val stringifyMapKeys: Boolean = true
-  //  override lazy val anyMapKeyTypeAdapter =
-  //    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
-
-  def allowPermissivePrimitives(): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-  def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
-  def parseOrElse(poe: (Type, Type)*): JackFlavor[String] =
-    this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-  def withDefaultHint(hint: String): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-  def withHints(h: (Type, String)*): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] =
-    throw new ScalaJackError("Not available for delimited encoding")
-
-  def stringWrapTypeAdapterFactory[T](
-      wrappedTypeAdapter: TypeAdapter[T],
-      emptyStringOk:      Boolean        = true
-  )(implicit tt: TypeTag[T]): TypeAdapter[T] =
-    wrappedTypeAdapter // No-Op for delimited
-
-  override def bakeCache(): TypeAdapterCache = {
-    val dads = super.bakeCache()
-    dads.copy(
-      factories =
-        DelimitedEitherTypeAdapterFactory ::
-          DelimitedOptionTypeAdapterFactory :: dads.factories
-    )
-  }
-  // $COVERAGE-ON$
-}
+opaque type DELIMITED = String
+val DELIM_PREFIX: Char = 2
 
 case class DelimitedFlavor(
-    delimiter:                       Char                         = ',',
-    override val defaultHint:        String                       = "_hint",
-    override val permissivesOk:      Boolean                      = false,
-    override val customAdapters:     List[TypeAdapterFactory]     = List.empty[TypeAdapterFactory],
-    override val hintMap:            Map[Type, String]            = Map.empty[Type, String],
-    override val hintValueModifiers: Map[Type, HintValueModifier] = Map.empty[Type, HintValueModifier],
-    override val typeValueModifier:  HintValueModifier            = DefaultHintModifier,
-    override val parseOrElseMap:     Map[Type, Type]              = Map.empty[Type, Type],
-    override val enumsAsInt:         Boolean                      = false
+    delimiter:                       Char                           = ',',
+    override val defaultHint:        String                         = "_hint",
+    override val permissivesOk:      Boolean                        = false,
+    override val customAdapters:     List[TypeAdapterFactory]       = List.empty[TypeAdapterFactory],
+    override val hintMap:            Map[String, String]            = Map.empty[String, String],
+    override val hintValueModifiers: Map[String, HintValueModifier] = Map.empty[String, HintValueModifier],
+    override val typeValueModifier:  HintValueModifier              = DefaultHintModifier,
+    override val parseOrElseMap:     Map[Class[_], RType]           = Map.empty[Class[_], RType],
+    override val enumsAsInt:         Boolean                        = false
 ) extends JackFlavor[DELIMITED] {
 
-  def read[T](input: DELIMITED)(implicit tt: TypeTag[T]): T = {
-    val parser = DelimitedParser(delimiter, s"$DELIM_PREFIX$input", this)
-    taCache.typeAdapter(tt.tpe.dealias).read(parser).asInstanceOf[T]
-  }
+  def _read[T](input: DELIMITED, typeAdapter: TypeAdapter[T]): T =
+    val parser = DelimitedParser(delimiter, s"$DELIM_PREFIX$input".asInstanceOf[DELIMITED], this)
+    typeAdapter.read(parser)
 
-  def forType[U](implicit tu: TypeTag[U]): JackFlavorFor[DELIMITED, U] =
-    DelimitedFlavorFor(
-      delimiter,
-      taCache.typeAdapter(tu.tpe.dealias).asInstanceOf[TypeAdapter[U]],
-      defaultHint,
-      permissivesOk,
-      customAdapters,
-      hintMap,
-      hintValueModifiers,
-      typeValueModifier,
-      parseOrElseMap,
-      enumsAsInt
-    )
-
-  def render[T](t: T)(implicit tt: TypeTag[T]): DELIMITED = {
-    val sb = model.StringBuilder()
-    taCache
-      .typeAdapter(tt.tpe.dealias)
-      .asInstanceOf[TypeAdapter[T]]
-      .write(t, writer, sb)
-    sb.result()
-  }
+  def _render[T](t: T, typeAdapter: TypeAdapter[T]): DELIMITED =
+    val sb = StringBuilder[DELIMITED]()
+    typeAdapter.write(t, writer, sb)
+    sb.result().asInstanceOf[DELIMITED]
 
   def parse(input: DELIMITED): Parser = DelimitedParser(delimiter, input, this)
 
   private val writer = DelimitedWriter(delimiter)
 
-  //  override val stringifyMapKeys: Boolean = true
-  //  override lazy val anyMapKeyTypeAdapter =
-  //    typeadapter.AnyMapKeyTypeAdapter(this, anyTypeAdapter)
-
-  def allowPermissivePrimitives(): JackFlavor[String] =
+  def allowPermissivePrimitives(): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
-  def enumsAsInts(): JackFlavor[String] = this.copy(enumsAsInt = true)
-  def parseOrElse(poe: (Type, Type)*): JackFlavor[String] =
-    this.copy(parseOrElseMap = this.parseOrElseMap ++ poe)
-  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[String] =
+  def enumsAsInts(): JackFlavor[DELIMITED] = this.copy(enumsAsInt = true)
+  def parseOrElse(poe: (RType, RType)*): JackFlavor[DELIMITED] =
+    this.copy(parseOrElseMap = this.parseOrElseMap ++ poe.map{(p,oe) => p.infoClass->oe})
+  def withAdapters(ta: TypeAdapterFactory*): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
-  def withDefaultHint(hint: String): JackFlavor[String] =
+  def withDefaultHint(hint: String): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
-  def withHints(h: (Type, String)*): JackFlavor[String] =
+  def withHints(h: (RType, String)*): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
-  def withHintModifiers(hm: (Type, HintValueModifier)*): JackFlavor[String] =
+  def withHintModifiers(hm: (RType, HintValueModifier)*): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
-  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[String] =
+  def withTypeValueModifier(tm: HintValueModifier): JackFlavor[DELIMITED] =
     throw new ScalaJackError("Not available for delimited encoding")
 
   def stringWrapTypeAdapterFactory[T](
       wrappedTypeAdapter: TypeAdapter[T],
       emptyStringOk:      Boolean        = true
-  )(implicit tt: TypeTag[T]): TypeAdapter[T] =
-    wrappedTypeAdapter // No-Op for delimited
+    ): TypeAdapter[T] =
+      StringWrapTypeAdapter(wrappedTypeAdapter)
+    // wrappedTypeAdapter // No-Op for delimited
 
   override def bakeCache(): TypeAdapterCache = {
     val dads = super.bakeCache()
@@ -168,4 +63,10 @@ case class DelimitedFlavor(
         DelimitedOptionTypeAdapterFactory :: dads.factories
     )
   }
+
+  def maybeStringWrapTypeAdapterFactory[T](
+    wrappedTypeAdapter: TypeAdapter[T],
+    emptyStringOk: Boolean = true
+  ): TypeAdapter[T] =
+    MaybeStringWrapTypeAdapter(this, wrappedTypeAdapter, emptyStringOk)
 }

@@ -1,1 +1,0 @@
-sbt -Dsbt.override.build.repos=true "scalajack_benchmarks/jmh:run -f 1 -t 1 -wi 5 -i 15"

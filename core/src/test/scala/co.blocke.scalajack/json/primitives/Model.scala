@@ -15,6 +15,7 @@ import java.lang.{
 }
 import java.math.{ BigDecimal => JBigDecimal, BigInteger => JBigInteger }
 import java.time._
+import scala.math._
 
 // === Scala
 case class SampleBigDecimal(
@@ -34,12 +35,36 @@ case class SampleDouble(d1: Double, d2: Double, d3: Double, d4: Double)
 object Size extends Enumeration {
   val Small, Medium, Large = Value
 }
+object SizeWithType extends Enumeration {
+  type SizeWithType = Value
+  val Little, Grand = Value
+}
+import SizeWithType._
 case class SampleEnum(
     e1: Size.Value,
     e2: Size.Value,
     e3: Size.Value,
     e4: Size.Value,
-    e5: Size.Value)
+    e5: Size.Value,
+    e6: SizeWithType)
+
+enum Color {
+    case Red, Blue, Green
+}
+case class TVColors( color1: Color, color2: Color )
+
+sealed trait Flavor
+case object Vanilla extends Flavor
+case object Chocolate extends Flavor
+case object Bourbon extends Flavor
+
+sealed trait Vehicle
+case class Truck(numberOfWheels: Int) extends Vehicle
+case class Car(numberOfWheels: Int, color: String) extends Vehicle
+case class Plane(numberOfEngines: Int) extends Vehicle
+
+case class Ride( wheels: Vehicle )
+case class Favorite( flavor: Flavor )
 
 case class SampleFloat(f1: Float, f2: Float, f3: Float, f4: Float)
 case class SampleInt(i1: Int, i2: Int, i3: Int, i4: Int)
@@ -158,6 +183,7 @@ case class VCBoolean(vc: Boolean) extends AnyVal
 case class VCByte(vc: Byte) extends AnyVal
 case class VCChar(vc: Char) extends AnyVal
 case class VCDouble(vc: Double) extends AnyVal
+case class VCEnum(vc: Color) extends AnyVal
 case class VCEnumeration(vc: Size.Value) extends AnyVal
 case class VCFloat(vc: Float) extends AnyVal
 case class VCInt(vc: Int) extends AnyVal
@@ -166,3 +192,6 @@ case class VCShort(vc: Short) extends AnyVal
 case class VCString(vc: String) extends AnyVal
 case class VCUUID(vc: UUID) extends AnyVal
 case class VCNumber(vc: Number) extends AnyVal
+
+// === Permissives test
+case class Holder[T](value: T)

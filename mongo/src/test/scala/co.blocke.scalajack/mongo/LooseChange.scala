@@ -2,8 +2,9 @@ package co.blocke.scalajack
 package mongo
 
 import co.blocke.scalajack.model.JackFlavor
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import TestUtil._
+import munit._
+import munit.internal.console
 import org.bson._
 import JsonMatcher._
 import java.time.{ OffsetDateTime, ZonedDateTime }
@@ -13,7 +14,7 @@ import scala.jdk.CollectionConverters._
 case class MyNumbers(d: BigDecimal, n: Number)
 case class NumberBoom(x: BigInt)
 
-class LooseChange extends AnyFunSpec with Matchers {
+class LooseChange extends FunSuite:
   val sjM: JackFlavor[BsonValue] = ScalaJack(MongoFlavor())
 
   object MongoMaster {
@@ -159,219 +160,217 @@ class LooseChange extends AnyFunSpec with Matchers {
     val g: Something = Something("Fred", Map("a" -> 1, "b" -> 25L))
   }
 
-  describe(
-    "----------------------------\n:  Loose Change (MongoDB) :\n----------------------------"
-  ) {
-      it("Handles null value") {
-        val dbo = new BsonDocument(
-          List(
-            new BsonElement("name", new BsonString("Fred")),
-            new BsonElement(
-              "stuff",
-              new BsonDocument(
-                List(
-                  new BsonElement("a", new BsonInt32(1)),
-                  new BsonElement("b", new BsonInt32(15))
-                ).asJava
-              )
-            )
-          ).asJava
-        )
-        sjM.read[Something](dbo) should be(
-          Something("Fred", Map("a" -> 1, "b" -> 15))
-        )
-      }
-      it("Should blow up for unsupported BSON type") {
-        val dbo = new BsonDocument(
-          List(
-            new BsonElement("name", new BsonString("Fred")),
-            new BsonElement(
-              "stuff",
-              new BsonDocument(
-                List(new BsonElement("a", new BsonJavaScript("code here"))).asJava
-              )
-            )
-          ).asJava
-        )
-        the[ScalaJackError] thrownBy sjM.read[Something](dbo) should have message """BSON type org.bson.BsonJavaScript is not currently supported in ScalaJack."""
-      }
-      it("Field name remapping must work") {
-        val mfp = MapFactor("wonder", 25L, 3, "hungry")
-        val dbo = sjM.render(mfp)
-        dbo.asDocument.toJson should be(
-          """{"foo_bar": "wonder", "a_b": {"$numberLong": "25"}, "count": 3, "big_mac": "hungry"}"""
-        )
-        sjM.read[MapFactor](dbo) should be(mfp)
-      }
-      it("Field name remapping on dbkey must work") {
-        // val mfp = MapFactorId2("wonder", 25L, 1, 3)
-        val mfp = MapFactorId("wonder", 25L, 3, "hungry")
-        val dbo = sjM.render(mfp)
-        dbo.asDocument.toJson should be(
-          """{"_id": "wonder", "a_b": {"$numberLong": "25"}, "count": 3, "big_mac": "hungry"}"""
-        )
-        sjM.read[MapFactorId](dbo) should be(mfp)
-      }
-      it("Field name remapping on dbkey with multi-part keys must work") {
-        val mfp = MapFactorId2("wonder", 25L, 1, 3, "hungry")
-        val dbo = sjM.render(mfp)
-        parseJValue(dbo.asDocument.toJson) should matchJson(
-          parseJValue(
-            """{"_id": {"foo_bar": "wonder", "a_b": {"$numberLong": "25"}, "hey": 1}, "count": 3, "big_mac": "hungry"}"""
+  test("Handles null value") {
+    describe(
+      "----------------------------\n:  Loose Change (MongoDB) :\n----------------------------"
+    )
+    val dbo = new BsonDocument(
+      List(
+        new BsonElement("name", new BsonString("Fred")),
+        new BsonElement(
+          "stuff",
+          new BsonDocument(
+            List(
+              new BsonElement("a", new BsonInt32(1)),
+              new BsonElement("b", new BsonInt32(15))
+            ).asJava
           )
         )
-        sjM.read[MapFactorId2](dbo) should be(mfp)
-      }
-      it("Number, Decimal, and BigInt handling") {
-        val my = MyNumbers(BigDecimal(123.45), 15)
-        val d = sjM.render(my)
-        d.asDocument.toJson should be(
-          """{"d": {"$numberDecimal": "123.45"}, "n": 15}"""
+      ).asJava
+    )
+    assertEquals(sjM.read[Something](dbo), 
+      Something("Fred", Map("a" -> 1, "b" -> 15))
+    )
+  }
+
+  test("Should blow up for unsupported BSON type") {
+    val dbo = new BsonDocument(
+      List(
+        new BsonElement("name", new BsonString("Fred")),
+        new BsonElement(
+          "stuff",
+          new BsonDocument(
+            List(new BsonElement("a", new BsonJavaScript("code here"))).asJava
+          )
         )
-        sjM.read[MyNumbers](d) should be(my)
-
-        val boom = NumberBoom(BigInt(5))
-        the[ScalaJackError] thrownBy sjM.render(boom) should have message "BigInt is currently an unsupported datatype for MongoDB serialization"
-      }
-      /*
-    it("Skip Object (read)") {
-      val c = Carry("carry me", Wrap("my name", true, "info"))
-      val reader = sjM.parse(sjM.render(c))
-      reader.next // skip BeginObject
-      reader.next // skip name label
-      reader.next // skip name value
-      reader.next // skip wrap label
-      reader.skipObject(Path.Root)
-      reader.head.tokenType should be(TokenType.EndObject)
-      reader.next
-      reader.head.tokenType should be(TokenType.End)
-      reader.next
-      reader.hasNext should be(false)
-
-      reader.reset()
-      reader.next
-      reader.skipObject(Path.Root)
-      reader.hasNext should be(true)
-      reader.head.tokenType should be(TokenType.String)
-
-      reader.reset()
-      reader.back
-      reader.head.tokenType should be(TokenType.BeginObject)
+      ).asJava
+    )
+    interceptMessage[ScalaJackError]("""BSON type org.bson.BsonJavaScript is not currently supported in ScalaJack."""){
+      sjM.read[Something](dbo)
     }
-     */
-      it("Nulls") {
-        val prim = PrimitiveLists(null, null, null, null, null)
-        sjM.read[PrimitiveLists](sjM.render(prim)) should be(prim)
+  }
 
-        val os = OneSub2("foo", flipflop = false, null)
-        the[ScalaJackError] thrownBy sjM.read[PrimitiveLists](sjM.render(os)) should have message "Class PrimitiveLists missing required fields: bools, chars, doubles, ints, longs"
+  test("Field name remapping must work") {
+    val mfp = MapFactor("wonder", 25L, 3, "hungry")
+    val dbo = sjM.render(mfp)
+    assertEquals(dbo.asDocument.toJson, 
+      """{"foo_bar": "wonder", "a_b": {"$numberLong": "25"}, "count": 3, "big_mac": "hungry"}"""
+    )
+    assertEquals(sjM.read[MapFactor](dbo), mfp)
+  }
 
-        val os2 =
-          OneSub2("foo", flipflop = false, Map(null.asInstanceOf[String] -> 5))
-        the[ScalaJackError] thrownBy sjM.render(os2) should have message "Map keys cannot be null."
+  test("Field name remapping on dbkey must work") {
+    // val mfp = MapFactorId2("wonder", 25L, 1, 3)
+    val mfp = MapFactorId("wonder", 25L, 3, "hungry")
+    val dbo = sjM.render(mfp)
+    assertEquals(dbo.asDocument.toJson, 
+      """{"_id": "wonder", "a_b": {"$numberLong": "25"}, "count": 3, "big_mac": "hungry"}"""
+    )
+    assertEquals(sjM.read[MapFactorId](dbo), mfp)
+  }
 
-        val out = null
-        sjM.render[OneSub2](out).isNull should be(true)
+  test("Field name remapping on dbkey with multi-part keys must work") {
+    val mfp = MapFactorId2("wonder", 25L, 1, 3, "hungry")
+    val dbo = sjM.render(mfp)
+    assert(jsonMatches(
+      dbo.asDocument.toJson.asInstanceOf[co.blocke.scalajack.json.JSON], 
+      """{"_id": {"foo_bar": "wonder", "a_b": {"$numberLong": "25"}, "hey": 1}, "count": 3, "big_mac": "hungry"}""".asInstanceOf[co.blocke.scalajack.json.JSON]
+      ))
+    assertEquals(sjM.read[MapFactorId2](dbo), mfp)
+  }
 
-        val mapDoc = new BsonDocument(
-          List(
-            new BsonElement("i", new BsonInt32(5)),
-            new BsonElement("items", new BsonNull())
-          ).asJava
-        )
-        sjM.read[BagMap[Int]](mapDoc) should be(BagMap(5, null))
+  test("Number, Decimal, and BigInt handling") {
+    val my = MyNumbers(BigDecimal(123.45), 15)
+    val d = sjM.render(my)
+    assertEquals(d.asDocument.toJson, 
+      """{"d": {"$numberDecimal": "123.45"}, "n": 15}"""
+    )
+    assertEquals(sjM.read[MyNumbers](d), my)
 
-        sjM.read[OneSub2](null) should be(null)
-
-        val times = Times(null, null)
-        val d = sjM.render(times)
-        d.asDocument().toJson should be("""{"offset": null, "zoned": null}""")
-        sjM.read[Times](d) should be(times)
-        val d2 = new BsonDocument(
-          List(
-            new BsonElement("offset", new BsonNull()),
-            new BsonElement("zoned", new BsonNull())
-          ).asJava
-        )
-        sjM.read[Times](d2) should be(times)
-      }
-      it("Good time values") {
-        val t = Times(
-          OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
-          ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]")
-        )
-        val d = sjM.render(t)
-        val t2 = sjM.read[Times](d)
-        // Extra gymnastics because the read/rendered OffsetDateTime, while the same actual instant, isn't the same value so comparison fails
-        t2.offset.atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) == t.offset
-          .atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) should be(true)
-        t2.zoned == t.zoned should be(true)
-      }
-      it("Bad expected values") {
-        val d = new BsonDocument(
-          List(
-            new BsonElement("name", new BsonString("Fred")),
-            new BsonElement("big", new BsonDouble(123.45))
-          ).asJava
-        )
-        the[ScalaJackError] thrownBy sjM.read[OneSub1](d) should have message "Cannot parse an Long from value"
-      }
-      it("Non-hint hint-labeled field") {
-        val d = new BsonDocument(
-          List(
-            new BsonElement("num", new BsonInt32(3)),
-            new BsonElement(
-              "s",
-              new BsonDocument(
-                List(
-                  new BsonElement("_hint", new BsonInt32(45)),
-                  new BsonElement("size", new BsonInt32(34))
-                ).asJava
-              )
-            )
-          ).asJava
-        )
-        the[ScalaJackError] thrownBy sjM.read[StrangeWrapper](d) should have message "Hint value _hint must be a string value"
-      }
-      it("Can't find trait hint") {
-        val d = new BsonDocument(
-          List(
-            new BsonElement("num", new BsonInt32(3)),
-            new BsonElement(
-              "s",
-              new BsonDocument(
-                List(new BsonElement("size", new BsonInt32(34))).asJava
-              )
-            )
-          ).asJava
-        )
-        the[ScalaJackError] thrownBy sjM.read[StrangeWrapper](d) should have message "Type hint '_hint' not found"
-      }
-      it("Enums as ints work") {
-        val sj = ScalaJack(MongoFlavor()).enumsAsInts()
-        val n = Numy(5, Num.B)
-        val d = sj.render(n)
-        d.asDocument.toJson should be("""{"age": 5, "num": 1}""")
-        sj.read[Numy](d) should be(n)
-      }
-      it("Failure due to empty BsonBuilder") {
-        the[ScalaJackError] thrownBy BsonBuilder()
-          .result() should have message "No value set for internal mongo builder"
-      }
-      it("Parse only") {
-        val d = new BsonDocument(
-          List(
-            new BsonElement("num", new BsonInt32(3)),
-            new BsonElement(
-              "s",
-              new BsonDocument(
-                List(new BsonElement("size", new BsonInt32(34))).asJava
-              )
-            )
-          ).asJava
-        )
-        val p = sjM.parse(d)
-        p.isInstanceOf[BsonParser] should be(true)
-      }
+    val boom = NumberBoom(BigInt(5))
+    interceptMessage[ScalaJackError]("BigInt is currently an unsupported datatype for MongoDB serialization"){
+      sjM.render(boom)
     }
-}
+  }
+
+  test("Nulls") {
+    val prim = PrimitiveLists(null, null, null, null, null)
+    assertEquals(sjM.read[PrimitiveLists](sjM.render(prim)), prim)
+
+    val os = OneSub2("foo", flipflop = false, null)
+    interceptMessage[ScalaJackError]("Class co.blocke.scalajack.mongo.PrimitiveLists missing required fields: bools, chars, doubles, ints, longs"){
+      sjM.read[PrimitiveLists](sjM.render(os))
+    }
+
+    val os2 =
+      OneSub2("foo", flipflop = false, Map(null.asInstanceOf[String] -> 5))
+    interceptMessage[ScalaJackError]("Map keys cannot be null."){
+      sjM.render(os2)
+    }
+
+    val out = null
+    assertEquals(sjM.render[OneSub2](out).isNull, true)
+
+    val mapDoc = new BsonDocument(
+      List(
+        new BsonElement("i", new BsonInt32(5)),
+        new BsonElement("items", new BsonNull())
+      ).asJava
+    )
+    assertEquals(sjM.read[BagMap[Int]](mapDoc), BagMap(5, null))
+
+    assertEquals(sjM.read[OneSub2](null), null)
+
+    val times = Times(null, null)
+    val d = sjM.render(times)
+    assertEquals(d.asDocument().toJson, """{"offset": null, "zoned": null}""")
+    assertEquals(sjM.read[Times](d), times)
+    val d2 = new BsonDocument(
+      List(
+        new BsonElement("offset", new BsonNull()),
+        new BsonElement("zoned", new BsonNull())
+      ).asJava
+    )
+    assertEquals(sjM.read[Times](d2), times)
+  }
+
+  test("Good time values") {
+    val t = Times(
+      OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+      ZonedDateTime.parse("2007-12-03T10:15:30Z[UTC]")
+    )
+    val d = sjM.render(t)
+    val t2 = sjM.read[Times](d)
+    // Extra gymnastics because the read/rendered OffsetDateTime, while the same actual instant, isn't the same value so comparison fails
+    assert(t2.offset.atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")) == t.offset.atZoneSameInstant(java.time.ZoneId.of("Europe/Paris")))
+    assertEquals(t2.zoned == t.zoned, true)
+  }
+
+  test("Bad expected values") {
+    val d = new BsonDocument(
+      List(
+        new BsonElement("name", new BsonString("Fred")),
+        new BsonElement("big", new BsonDouble(123.45))
+      ).asJava
+    )
+    interceptMessage[ScalaJackError]("Cannot parse an Long from value"){
+      sjM.read[OneSub1](d)
+    }
+  }
+
+  test("Non-hint hint-labeled field") {
+    val d = new BsonDocument(
+      List(
+        new BsonElement("num", new BsonInt32(3)),
+        new BsonElement(
+          "s",
+          new BsonDocument(
+            List(
+              new BsonElement("_hint", new BsonInt32(45)),
+              new BsonElement("size", new BsonInt32(34))
+            ).asJava
+          )
+        )
+      ).asJava
+    )
+    interceptMessage[ScalaJackError]("Hint value _hint must be a string value"){
+      sjM.read[StrangeWrapper](d)
+    }
+  }
+
+  test("Can't find trait hint") {
+    val d = new BsonDocument(
+      List(
+        new BsonElement("num", new BsonInt32(3)),
+        new BsonElement(
+          "s",
+          new BsonDocument(
+            List(new BsonElement("size", new BsonInt32(34))).asJava
+          )
+        )
+      ).asJava
+    )
+    interceptMessage[ScalaJackError]("Type hint '_hint' not found"){
+      sjM.read[StrangeWrapper](d)
+    }
+  }
+
+  test("Enums as ints work") {
+    val sj = ScalaJack(MongoFlavor()).enumsAsInts()
+    val n = Numy(5, Num.B)
+    val d = sj.render(n)
+    assertEquals(d.asDocument.toJson, """{"age": 5, "num": 1}""")
+    assertEquals(sj.read[Numy](d), n)
+  }
+
+  test("Failure due to empty BsonBuilder") {
+    interceptMessage[ScalaJackError]("No value set for internal mongo builder"){
+      BsonBuilder().result()
+    }
+  }
+
+  test("Parse only") {
+    val d = new BsonDocument(
+      List(
+        new BsonElement("num", new BsonInt32(3)),
+        new BsonElement(
+          "s",
+          new BsonDocument(
+            List(new BsonElement("size", new BsonInt32(34))).asJava
+          )
+        )
+      ).asJava
+    )
+    val p = sjM.parse(d)
+    assertEquals(p.isInstanceOf[BsonParser], true)
+  }

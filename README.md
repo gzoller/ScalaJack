@@ -1,10 +1,10 @@
+
 # ScalaJack
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
 [![bintray](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg)](https://bintray.com/blocke/releases/scalajack/_latestVersion)
-[![Build Status](https://img.shields.io/travis/gzoller/ScalaJack.svg?branch=master)](https://travis-ci.org/gzoller/ScalaJack)
-[![Codacy branch grade](https://img.shields.io/codacy/grade/9437bb8b88464096b1a848ba0eed8b7d/master.svg?maxAge=2592000)](https://www.codacy.com/app/gzoller/ScalaJack?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gzoller/ScalaJack&amp;utm_campaign=Badge_Grade)
-[![Coveralls branch](https://img.shields.io/coveralls/gzoller/ScalaJack/master.svg?maxAge=360)](https://coveralls.io/github/gzoller/ScalaJack)
+
+ScalaJack 7 an all-new ScalaJack implmenation built on Scala 3.  For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0.  ScalaJack 7 is built on JDK 13+.
 
 ScalaJack is a very fast, seamless serialization engine for JSON, and other protocols, designed to require the minimum amount of help possible when serializing a class.
 
@@ -17,44 +17,66 @@ Advanced Features:
  - Sealed trait-style enumerations
  - Extensible to other encodings (JSON, CSV, MongoDB, and DynamoDB are provided by ScalaJack, but you can roll your own too!)
 
-> **Note:** Scala 2.13.1 + JDK 13.0.1 + sbt 1.3.5+ or later is strongly recommended!
->There has been quite a bit of change lately in Scala and sbt and we've found various combinations of Scala/JDK/sbt do not play well together!
->We can vouch for the combination of Scala 2.13.1 / JDK 13.0.1 / sbt 1.3.5.  Later versions should work as well, but you're on your own with earlier versions.
-
 ## Use
 
 ScalaJack is extremely simple to use.
 
 Include the following in your build.sbt:
 
-    resolvers += Resolver.bintrayRepo("blocke","releases")
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % "6.2.0")
+```
+   resolvers += "co.blocke releases resolver" at "https://dl.bintray.com/blocke/releases"
+```
+
+To use the **highly-recommended** reflection compiler plug-in, add to build.sbt:
+```
+addCompilerPlugin("co.blocke" %% "scala-reflection" % VERSION)
+```
+where VERSION is the latest scala-reflection version found by looking at the Download badge here: [www.blocke.co/scala-reflection](http://www.blocke.co/scala-reflection)
 
 If you want to use the optional MongoDB serialization support include this as well:
-
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % "6.2.0")
+```
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_mongo" % SJ_VERSION)
+```
 
 DynamoDB helpers are available here:
-
-    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % "6.2.0")
-
-ScalaJack is hosted on Bintray/JCenter.  If you're using pre-v0.13.9 of SBT you may need to enable the bintray resolver in your build.sbt with
-
-``` sbt
-useJCenter := true
 ```
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % SJ_VERSION)
+```
+where SJ_VERSION is this version of ScalaJack.
 
 Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
 ```scala
 import co.blocke.scalajack._
 
+case class Person(name: String, age: Int)
+
 val sj = ScalaJack()
-val js = sj.render( myCaseObj )  // serialization
-val myObj = sj.read[MyCaseClass](js) // deserialization
+val js = sj.render(Person("Mike",34))  // js == """{"name":"Mike","age":34}"""
+val inst = sj.read[Person](js) // re-constitutes original Person
 ```
 
 Couldn't be simpler!
+
+### A word about performance...
+Compared to pre-7.0 ScalaJack, which used Scala 2.x runtime reflection, ScalaJack is up to 30% faster in many cases when used with the highly-recommended scala-reflection compiler plugin.  
+
+### A word about macros...
+ScalaJack 7 uses Scala 3 macros to the fullest extent possible to do the hard work of reflecting on types. Macros impact the compile/test cycle in ways that are non-intuitive at first. Think of this example:
+
+```scala
+// File1.scala
+case  class  Foo(name: String)
+
+// File2.scala
+val  js = sj.read[Foo](someJson)
+```
+
+In a non-macro implementation (e.g. Scala 2 runtime reflection) if you update Foo in File1.scala you naturally expect sbt to re-compile this file, and anything that depends on Foo, and the changes will be picked up in your program, and all will be well.
+
+That's **not** necessarily what happens with macros! Remember, the macro code is run at compile-time. File2.scala needs to be re-compiled because the RType.of macro needs to be re-run to pick up your changes to Foo class in File1.scala. **Unfortunately sbt doesn't pick up this dependency!** If you don't know any better you'll just re-run your program after a change to File1.scala, like normal, and get a **spectacular exception with exotic errors** that won't mean much to you. The solution is you need to also recompile File2.scala.
+
+This means you will be doing more re-compiling with macro-based code than you would without the macros. It's an unfortunate cost of inconvenience and time, but the payoff is a *dramatic* gain in speed at runtime, and in the case of reflection in Scala 3, using macros is really the only way to accomplish reflection.
 
 ## Features
 
@@ -73,53 +95,18 @@ Couldn't be simpler!
 * [View/SpliceInto](doc/viewSplice.md)
 * [Filter](doc/filter.md)
 * [Union type](doc/union.md)
-* [Converters *(new)*](doc/map.md)
+* [Converters](doc/map.md)
 * [ScalaJack Configuration](doc/config.md)
 * [Gimme Speed!](doc/speed.md)
 
 Non-JSON Formats:
-* [YAML *(new)*](doc/yaml.md)
+* [YAML](doc/yaml.md)
 * [MongoDB](doc/mongo.md)
 * [Delimited (e.g. CSV)](doc/delimited.md)
 * [DynamoDB](doc/dynamo.md)
 * [Json4s](doc/json4s.md)
 
-## Benchmarks
+### Notes:
+* 7.0.0-M2 -- Initial release for Scala 3
 
-I need to start this section with an apology.  After having benchmarks deactivated for some time I finally wired them up and discovered that
-ScalaJack 6.0 series was significantly slower than the 5.x series.  Definitely not desirable!
 
-ScalaJack 6.1 has undergone a significant streamlining and refactoring with beneficial results. Numbers are below.  
-
-*Disclaimer: Benchmarks are very situational.  We didn't hand-pick a senario to favor our product.  It is entirely possible/likely you can find scenarios where your favorite parser beats ScalaJack.*
-
-|Benchmark         |Score      |Error        |Units
-|------------------|----------:|------------:|-----|
-|**ScalaJack 6.1 (forType[T])** |27729.218  |±  338.995   |ops/s
-|Hand-written      |24041.835  |± 1752.455   |ops/s
-|**ScalaJack 6.1** |20232.361  |±  736.766   |ops/s
-|Circe             |19971.288  |±  986.961   |ops/s
-|ScalaJack 5.x     |16349.600  |±  193.090   |ops/s
-|ScalaJack 6.0     |11111.795  |±  127.843   |ops/s
-|LiftJson          |9313.472   |±  639.219   |ops/s
-|Json4s            |3425.144   |±  219.970   |ops/s
-
-The key takeaway here is that for our sample test, ScalaJack was very fast, and most critically, ScalaJack 6.1 is a dramatic improvement over 6.0.
-
-## Series 6
-
-Series 5 introduced a whole new engine for ScalaJack.  For series 6 we went through and streamlined everything internally.  JSON is no longer assumed in the core, allowing for an easier extension to other protocols.  Internally the code is tighter and cleaner, which always makes us feel happy.
-
-A major goal of this release was to clean up the internals to be ready for Dotty/Scala 3.0 when it comes out.
-
-We've got to give our users at least a few new toys, so we've added a filter feature, so you can filter on incoming parsed messages, pulling out those you care about and passively ignoring those you don't.
-
-There have also been improvements to Delimited/CSV handling.  Before, ScalaJack could not handle List in CSV format.  Now it can (for simple Lists), along with Either and Enumeration.
-
-MongoDB support has been strengthened, with some of the limitations of earlier versions removed.  Type hint modifiers (for type members) are now supported.  Support for scalar non-String keys (Int, Boolean, etc) work now too.  Try and SJCapture features are now supported for Mongo as well as JSON.
-
-One feature was removed: non-canonical JSON support.  If you loved this feature, I understand, but its benefits just weren't worth the benefit of continued maintenance.
-
-We hope you'll enjoy using the latest ScalaJack!
-
-*Blöcke*

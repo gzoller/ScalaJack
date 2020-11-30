@@ -1,42 +1,52 @@
 package co.blocke.scalajack
 package json.collections
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
+import TestUtil._
+import munit._
+import munit.internal.console
+import co.blocke.scalajack.json.JSON
+import scala.collection.immutable._
 
-class Tuples() extends AnyFunSpec with Matchers {
+class Tuples() extends FunSuite:
 
-  val sj = ScalaJack()
+  val sj = co.blocke.scalajack.ScalaJack()
 
-  describe("-----------------\n:  Tuple Tests  :\n-----------------") {
-    it("null tuples work") {
-      val jsNull = "null"
-      assertResult(null) { sj.read[(Int, Boolean)](jsNull) }
-      sj.read[(Int, Boolean)]("null") should be(null)
-    }
-    it("missing start bracken") {
-      val js = """12,5"""
-      val msg =
-        """Expected start of tuple here
-          |12,5
-          |^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[(Int, Int)](js) should have message msg
-    }
-    it("missing comma") {
-      val js = """[12"""
-      val msg =
-        """Expected comma here
-        |[12
-        |---^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[(Int, Int)](js) should have message msg
-    }
-    it("no closing bracket") {
-      val js = """[12,5"""
-      val msg =
-        """Expected end of tuple here
-          |[12,5
-          |-----^""".stripMargin
-      the[ScalaJackError] thrownBy sj.read[(Int, Int)](js) should have message msg
+  test("null tuples work") {
+    describe("-----------------\n:  Tuple Tests  :\n-----------------", Console.BLUE) 
+    val jsNull = "null".asInstanceOf[JSON]
+    assert(sj.read[(Int, Boolean)](jsNull) == null)
+    assert(sj.render[(Int,Boolean)](null) == jsNull)
+  }
+
+  test("missing start bracken") {
+    val js = """12,5""".asInstanceOf[JSON]
+    val msg =
+      """Expected start of tuple here
+        |12,5
+        |^""".stripMargin
+    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
+      sj.read[(Int, Int)](js)
     }
   }
-}
+
+  test("missing comma") {
+    val js = """[12""".asInstanceOf[JSON]
+    val msg =
+      """Expected comma here
+      |[12
+      |---^""".stripMargin
+    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
+      sj.read[(Int, Int)](js)
+    }
+  }
+
+  test("no closing bracket") {
+    val js = """[12,5""".asInstanceOf[JSON]
+    val msg =
+      """Expected end of tuple here
+        |[12,5
+        |-----^""".stripMargin
+    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
+      sj.read[(Int, Int)](js)
+    }
+  }

@@ -4,10 +4,11 @@ package mongo
 import model._
 import org.bson._
 import org.bson.types.ObjectId
-import typeadapter.ClassTypeAdapterBase
+import co.blocke.scalajack.typeadapter.classes.ClassTypeAdapterBase
+import co.blocke.scala_reflection.RType
+import co.blocke.scala_reflection.info.TypeMemberInfo
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 
 case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) extends Parser {
@@ -34,20 +35,21 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) exten
       throw new ScalaJackError(s"Expected list here, not '$input'")
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
-  ): List[Any] =
-    if (input == null || input.isNull)
+    tupleFieldTypeAdapters: List[TypeAdapter[_]]
+  ): List[Object] =
+    input match {
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
-      null
-    // $COVERAGE-ON$
-    else if (input.isArray) {
-      val together = readFns.zip(input.asArray.getValues.asScala)
-      together.map {
-        case (fn, v) => fn.valueTypeAdapter.read(BsonParser(v, jackFlavor))
-      }
-    } else
-      throw new ScalaJackError(s"Expected tuple (list) here, not '$input'")
-
+      case inp if inp == null || inp.isNull =>
+        null
+      // $COVERAGE-ON$
+      case inp if inp.isArray =>
+        tupleFieldTypeAdapters.zip(input.asArray.getValues.asScala).map { (fieldTypeAdapter, v) =>
+          fieldTypeAdapter.read(BsonParser(v, jackFlavor)).asInstanceOf[Object]
+        }
+      case x =>
+        throw new ScalaJackError(s"Expected tuple (list) here, not '$input'")
+    }
+      
   def expectMap[K, V, TO](keyTypeAdapter: TypeAdapter[K], valueTypeAdapter: TypeAdapter[V], builder: mutable.Builder[(K, V), TO]): TO =
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
@@ -68,49 +70,49 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) exten
       throw new ScalaJackError(s"Expected document (map) here, not '$input'")
 
   def expectObject(
-      classBase: ClassTypeAdapterBase[_],
-      hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) =
+    classBase: ClassTypeAdapterBase[_],
+    hintLabel: String
+  ): (mutable.BitSet, List[Object], java.util.HashMap[String, _]) = 
     if (input == null || input.isNull)
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       null
     // $COVERAGE-ON$
     else if (input.isDocument) {
       val args      = classBase.argsTemplate.clone()
-      val fieldBits = classBase.fieldBitsTemplate.clone()
+      val fieldBits = mutable.BitSet()
       val captured =
         if (classBase.isSJCapture) new java.util.HashMap[String, BsonValue]()
         else null
       input.asDocument.entrySet.asScala.foreach {
         case entry if entry.getKey == ID_FIELD && classBase.dbKeys.size == 1 =>
           val dbKey = classBase.dbKeys.head
-          fieldBits -= dbKey.index
-          args(dbKey.index) = dbKey.valueTypeAdapter.read(BsonParser(entry.getValue, jackFlavor))
+          fieldBits += dbKey.info.index
+          args(dbKey.info.index) = dbKey.valueTypeAdapter.read(BsonParser(entry.getValue, jackFlavor)).asInstanceOf[Object]
         case entry if entry.getKey == ID_FIELD => // compound key
           entry.getValue.asDocument.entrySet.asScala.foreach { dbKeyEntry =>
             classBase.fieldMembersByName
               .get(dbKeyEntry.getKey)
               .map { field =>
-                fieldBits -= field.index
-                args(field.index) = field.valueTypeAdapter.read(
+                fieldBits += field.info.index
+                args(field.info.index) = field.valueTypeAdapter.read(
                   BsonParser(dbKeyEntry.getValue, jackFlavor)
-                )
+                ).asInstanceOf[Object]
               }
           }
         case entry =>
           classBase.fieldMembersByName.get(entry.getKey) match {
             case Some(field) =>
-              fieldBits -= field.index
-              args(field.index) = field.valueTypeAdapter.read(
+              fieldBits += field.info.index
+              args(field.info.index) = field.valueTypeAdapter.read(
                 BsonParser(entry.getValue, jackFlavor)
-              )
+              ).asInstanceOf[Object]
             case None => // found some input field not present in class
               if (captured != null)
                 captured.put(entry.getKey, entry.getValue)
           }
       }
-      val missing = fieldBits.intersect(classBase.dbKeys.map(_.index).toSet)
-      if (missing.nonEmpty) {
+      val missing = fieldBits.intersect(classBase.dbKeys.map(_.info.index).toSet)
+      if (classBase.dbKeys.size > 0 && missing.isEmpty) {
         if (classBase.dbKeys.size == 1)
           throw new ScalaJackError(
             "Missing key (_id) field, or a component of a compound key field"
@@ -119,11 +121,11 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) exten
           throw new ScalaJackError(
             "Missing key (_id) field, or a component of a compound key field: " +
               classBase.dbKeys
-                .collect { case f if missing.contains(f.index) => f.name }
+                .collect { case f if missing.contains(f.info.index) => f.name }
                 .mkString(",")
           )
       }
-      (fieldBits, args, captured)
+      (fieldBits, args.toList, captured)
     } else
       throw new ScalaJackError(s"Expected document (object) here, not '$input'")
 
@@ -148,13 +150,13 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) exten
 
   def peekForNull: Boolean = input == null || input.isNull
 
-  def scanForHint(hint: String, converterFn: HintBijective): Type =
+  def scanForHint(hint: String, converterFn: HintBijective): Class[_] =
     if (input.isDocument) {
       val doc = input.asDocument
       Option(doc.get(hint)) match {
         case Some(hintValue) if hintValue.isString =>
           val hintType = try {
-            converterFn.apply(hintValue.asString.getValue)
+            Class.forName(converterFn.apply(hintValue.asString.getValue))
           } catch {
             case t: Throwable =>
               throw new ScalaJackError(
@@ -171,16 +173,16 @@ case class BsonParser(input: BsonValue, jackFlavor: JackFlavor[BsonValue]) exten
 
   // For embedded type members.  Convert the type member into runtime "actual" type, e.g. T --> Foo
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn: HintBijective
-  ): Map[Type, Type] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
+      typeMembersByName: Map[String, TypeMemberInfo],
+      converterFn:       HintBijective
+  ): Map[String, TypeMemberInfo] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
     if (input.isDocument) {
       val doc = input.asDocument
       val collected = doc.keySet.asScala.collect {
         case key if typeMembersByName.contains(key) =>
           (
-            typeMembersByName(key).typeSignature,
-            converterFn.apply(doc.get(key).asString.getValue)
+            key,
+            TypeMemberInfo(key, typeMembersByName(key).typeSymbol, RType.of(Class.forName(converterFn.apply(doc.get(key).asString.getValue))))  
           )
       }
       collected.toMap

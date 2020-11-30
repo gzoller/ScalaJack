@@ -3,7 +3,6 @@ package json4s
 
 import model._
 import model.Writer
-import ClassHelper.ExtraFieldValue
 
 import scala.collection.{Map, mutable}
 import org.json4s._
@@ -58,7 +57,7 @@ case class Json4sWriter() extends Writer[JValue] {
             if (key == null)
               throw new ScalaJackError("Map keys cannot be null.")
             outBuf.clear()
-            keyTypeAdapter.write(key, this, outBuf)
+            keyTypeAdapter.write(key.asInstanceOf[Key], this, outBuf)
             val k = outBuf.result().values.toString
             outBuf.clear()
             valueTypeAdapter.write(value, this, outBuf)
@@ -91,7 +90,7 @@ case class Json4sWriter() extends Writer[JValue] {
   def writeObject[T](
       t: T,
       orderedFieldNames: List[String],
-      fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
+      fieldMembersByName: Map[String, ClassFieldMember[_,_]],
       out: mutable.Builder[JValue, JValue],
       extras: List[(String, ExtraFieldValue[_])] = List.empty[(String, ExtraFieldValue[_])]
   ): Unit =
@@ -110,7 +109,7 @@ case class Json4sWriter() extends Writer[JValue] {
         )
         val classFields = writeFields(orderedFieldNames.map { orn =>
           val oneField = fieldMembersByName(orn)
-          (orn, oneField.valueIn(t), oneField.valueTypeAdapter)
+          (orn, oneField.info.valueOf(t), oneField.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])
         })
         val captureFields = t match {
           case sjc: SJCapture =>
@@ -124,14 +123,14 @@ case class Json4sWriter() extends Writer[JValue] {
 
   def writeTuple[T](
       t: T,
-      writeFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]],
+      writeFn: (Product) => List[(TypeAdapter[_], Any)],
       out: mutable.Builder[JValue, JValue]
   ): Unit = {
     var arr    = JArray(List.empty[JValue])
     val outBuf = JValueBuilder()
-    writeFns.foreach { f =>
+    writeFn(t.asInstanceOf[Product]).foreach { (fieldTA, fieldValue) =>
       outBuf.clear()
-      f.write(t, this, outBuf)
+      fieldTA.castAndWrite(fieldValue, this, outBuf)
       arr = JArray(arr.arr :+ outBuf.result)
     }
     out += arr

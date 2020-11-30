@@ -3,75 +3,73 @@ package json
 
 import model._
 import scala.collection.mutable
-import ClassHelper.ExtraFieldValue
 import scala.collection.Map
-import typeadapter.TupleTypeAdapterFactory
 
-case class JsonWriter() extends Writer[String] {
+case class JsonWriter() extends Writer[JSON] {
 
-  @inline def addString(s: String, out: mutable.Builder[String, String]): Unit =
-    out += s
+  @inline def addString(s: String, out: mutable.Builder[JSON, JSON]): Unit =
+    out += s.asInstanceOf[JSON]
 
-  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[String, String]): Unit = t match {
+  def writeArray[Elem](t: Iterable[Elem], elemTypeAdapter: TypeAdapter[Elem], out: mutable.Builder[JSON, JSON]): Unit = t match {
     case null => addString("null", out)
     case a =>
-      out += "["
+      out += "[".asInstanceOf[JSON]
       val iter = a.iterator
       while (iter.hasNext) {
         elemTypeAdapter.write(iter.next, this, out)
         if (iter.hasNext)
-          out += ","
+          out += ",".asInstanceOf[JSON]
       }
-      out += "]"
+      out += "]".asInstanceOf[JSON]
   }
 
-  def writeBigInt(t: BigInt, out: mutable.Builder[String, String]): Unit =
+  def writeBigInt(t: BigInt, out: mutable.Builder[JSON, JSON]): Unit =
     addString(t.toString, out)
 
-  def writeBoolean(t: Boolean, out: mutable.Builder[String, String]): Unit =
+  def writeBoolean(t: Boolean, out: mutable.Builder[JSON, JSON]): Unit =
     addString(t.toString, out)
 
-  def writeDecimal(t: BigDecimal, out: mutable.Builder[String, String]): Unit =
+  def writeDecimal(t: BigDecimal, out: mutable.Builder[JSON, JSON]): Unit =
     t match {
       case null => addString("null", out)
       case s    => addString(s.toString, out)
     }
 
-  def writeDouble(t: Double, out: mutable.Builder[String, String]): Unit =
+  def writeDouble(t: Double, out: mutable.Builder[JSON, JSON]): Unit =
     addString(t.toString, out)
 
-  def writeInt(t: Int, out: mutable.Builder[String, String]): Unit =
+  def writeInt(t: Int, out: mutable.Builder[JSON, JSON]): Unit =
     addString(t.toString, out)
 
-  def writeLong(t: Long, out: mutable.Builder[String, String]): Unit =
+  def writeLong(t: Long, out: mutable.Builder[JSON, JSON]): Unit =
     addString(t.toString, out)
 
-  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[String, String]): Unit =
+  def writeMap[Key, Value, To](t: Map[Key, Value], keyTypeAdapter: TypeAdapter[Key], valueTypeAdapter: TypeAdapter[Value], out: mutable.Builder[JSON, JSON]): Unit =
     t match {
       case null => addString("null", out)
       case daMap =>
-        out += "{"
+        out += "{".asInstanceOf[JSON]
         var first = true
         daMap.foreach {
           case (key, value) =>
             if (first)
               first = false
             else
-              out += ","
+              out += ",".asInstanceOf[JSON]
             if (key == null)
               throw new ScalaJackError("Map keys cannot be null.")
             keyTypeAdapter.write(key, this, out)
-            out += ":"
+            out += ":".asInstanceOf[JSON]
             valueTypeAdapter.write(value, this, out)
         }
-        out += "}"
+        out += "}".asInstanceOf[JSON]
     }
 
-  def writeString(t: String, out: mutable.Builder[String, String]): Unit =
+  def writeString(t: String, out: mutable.Builder[JSON, JSON]): Unit =
     t match {
       case null => addString("null", out)
       case _: String =>
-        out += "\""
+        out += "\"".asInstanceOf[JSON]
         var i      = 0
         val length = t.length
         val chars  = t.toCharArray
@@ -87,60 +85,63 @@ case class JsonWriter() extends Writer[String] {
             case '\t' => addString("""\t""", out)
             case ch if ch < 32 || ch >= 128 =>
               addString("""\""" + "u" + "%04x".format(ch.toInt), out)
-            case c => out += c.toString
+            case c => out += c.toString.asInstanceOf[JSON]
           }
 
           i += 1
         }
-        out += "\""
+        out += "\"".asInstanceOf[JSON]
     }
 
-  def writeRaw(t: String, out: mutable.Builder[String, String]): Unit =
-    addString(t, out)
+  def writeRaw(t: JSON, out: mutable.Builder[JSON, JSON]): Unit =
+    addString(t.asInstanceOf[String], out)
 
-  def writeNull(out: mutable.Builder[String, String]): Unit =
+  def writeNull(out: mutable.Builder[JSON, JSON]): Unit =
     addString("null", out)
 
   @inline private def writeFields(
       isFirst: Boolean,
       fields: List[(String, Any, TypeAdapter[Any])],
-      out: mutable.Builder[String, String]
+      out: mutable.Builder[JSON, JSON]
   ): Boolean = {
     var first = isFirst
     for ((label, value, valueTypeAdapter) <- fields)
-      if (value != None) {
-        if (first)
-          first = false
-        else
-          out += ","
-        writeString(label, out)
-        out += ":"
-        valueTypeAdapter.write(value, this, out)
-      }
+      value match {
+        case None => // do nothing (skip this field)
+        case o: java.util.Optional[_] if !o.isPresent => // do nothing (skip this field)
+        case _ =>
+          if (first)
+            first = false
+          else
+            out += ",".asInstanceOf[JSON]
+          writeString(label, out)
+          out += ":".asInstanceOf[JSON]
+          valueTypeAdapter.write(value, this, out)
+        }
     first
   }
 
   def writeObject[T](
       t: T,
       orderedFieldNames: List[String],
-      fieldMembersByName: Map[String, ClassHelper.ClassFieldMember[T, Any]],
-      out: mutable.Builder[String, String],
+      fieldMembersByName: Map[String, ClassFieldMember[_,_]],
+      out: mutable.Builder[JSON, JSON],
       extras: List[(String, ExtraFieldValue[_])]
   ): Unit = {
     if (t == null) {
       addString("null", out)
     } else {
-      out += "{"
+      out += "{".asInstanceOf[JSON]
       val wasFirst = writeFields(
         isFirst = true,
-        extras.map(
+        extras.map{
           e =>
             (
               e._1,
               e._2.value,
               e._2.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]
-          )
-        ),
+            )
+        },
         out
       )
       val wasFirst2 = writeFields(
@@ -148,7 +149,7 @@ case class JsonWriter() extends Writer[String] {
         orderedFieldNames
           .map { fieldName => // Strictly-speaking JSON has no order, but it's clean to write out in constructor order.
             val oneField = fieldMembersByName(fieldName)
-            (fieldName, oneField.valueIn(t), oneField.valueTypeAdapter)
+            (fieldName, oneField.info.valueOf(t), oneField.valueTypeAdapter.asInstanceOf[TypeAdapter[Any]])
           },
         out
       )
@@ -161,28 +162,27 @@ case class JsonWriter() extends Writer[String] {
               if (first)
                 first = false
               else
-                out += ","
+                out += ",".asInstanceOf[JSON]
               writeString(field, out)
-              out += ":"
-              out += fvalue
-                .asInstanceOf[String] // all json captured things are String
+              out += ":".asInstanceOf[JSON]
+              out += fvalue.asInstanceOf[JSON] // all json captured things are String
           }
         case _ =>
       }
-      out += "}"
+      out += "}".asInstanceOf[JSON]
     }
   }
 
-  def writeTuple[T](t: T, writeFns: List[TupleTypeAdapterFactory.TupleField[_]], out: mutable.Builder[String, String]): Unit = {
-    out += "["
+  def writeTuple[T](t: T, writeFn: (Product) => List[(TypeAdapter[_], Any)], out: mutable.Builder[JSON, JSON]): Unit = {
+    out += "[".asInstanceOf[JSON]
     var first = true
-    writeFns.foreach { f =>
+    writeFn(t.asInstanceOf[Product]).foreach { (fieldTA, fieldValue) =>
       if (first)
         first = false
       else
-        out += ","
-      f.write(t, this, out)
+        out += ",".asInstanceOf[JSON]
+      fieldTA.castAndWrite( fieldValue, this, out )
     }
-    out += "]"
+    out += "]".asInstanceOf[JSON]
   }
 }

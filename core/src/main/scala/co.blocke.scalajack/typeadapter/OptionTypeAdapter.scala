@@ -4,7 +4,9 @@ package typeadapter
 import model._
 
 import scala.collection.mutable
-import scala.reflect.runtime.universe._
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info._
+import java.util.Optional
 
 /*
  O, the exquisite pain of mapping Option (None) to something in JSON!
@@ -24,27 +26,34 @@ import scala.reflect.runtime.universe._
      doesn't leave many choices here.
  */
 
-object OptionTypeAdapterFactory extends TypeAdapterFactory {
-  def typeAdapterOf[T](
-      next: TypeAdapterFactory
-  )(implicit taCache: TypeAdapterCache, tt: TypeTag[T]): TypeAdapter[T] =
-    if (tt.tpe <:< typeOf[Option[_]]) {
-      val elementType = tt.tpe.baseType(tt.tpe.typeSymbol).typeArgs.head
-      OptionTypeAdapter(taCache.typeAdapter(elementType))
-        .asInstanceOf[TypeAdapter[T]]
-    } else
-      next.typeAdapterOf[T]
-}
+object OptionTypeAdapterFactory extends TypeAdapterFactory:
+  def matches(concrete: RType): Boolean = 
+    concrete match {
+      case _: OptionInfo => true
+      case _ => false
+    }
+  def makeTypeAdapter(concrete: RType)(implicit taCache: TypeAdapterCache): TypeAdapter[_] =
+    val optiBase = concrete.asInstanceOf[OptionInfo]
+    val wrapped = optiBase.optionParamType match {
+      case c: TypeSymbolInfo => throw new ScalaJackError(s"Unexpected non-concrete type in option: ${c.name}")
+      case c => taCache.typeAdapterOf(c)
+    }
+    concrete match {
+      case opti: ScalaOptionInfo   => OptionTypeAdapter(concrete, wrapped)
+      case jopti: JavaOptionalInfo => JavaOptionalTypeAdapter(concrete, wrapped)
+    }
+
 
 case class OptionTypeAdapter[E](
+    info:             RType,
     valueTypeAdapter: TypeAdapter[E],
     nullIsNone:       Boolean        = false
-)(implicit tt: TypeTag[E])
-  extends TypeAdapter[Option[E]] {
+  ) extends TypeAdapter[Option[E]]:
 
   override def defaultValue: Option[Option[E]] = Some(None)
 
-  def valueIsStringish(): Boolean = valueTypeAdapter.isInstanceOf[Stringish]
+  override def isStringish: Boolean = valueTypeAdapter.isStringish
+  override def maybeStringish: Boolean = !valueTypeAdapter.isStringish
 
   def read(parser: Parser): Option[E] =
     // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
@@ -68,4 +77,42 @@ case class OptionTypeAdapter[E](
     }
 
   def convertNullToNone(): OptionTypeAdapter[E] = this.copy(nullIsNone = true)
-}
+
+
+
+case class JavaOptionalTypeAdapter[E](
+    info:             RType,
+    valueTypeAdapter: TypeAdapter[E],
+    nullIsNone:       Boolean        = false
+  ) extends TypeAdapter[Optional[E]]:
+
+  val empty = Optional.empty[E]()
+  override def defaultValue: Option[Optional[E]] = Some(empty)
+
+  override def isStringish: Boolean = valueTypeAdapter.isStringish
+  override def maybeStringish: Boolean = !valueTypeAdapter.isStringish
+
+  def read(parser: Parser): Optional[E] =
+    // We have to do some voodoo here and peek ahead for Null.  Some types, e.g. Int, aren't nullable,
+    // but Option[Int] is nullable, so we can't trust the valueTypeAdapter to catch and handle null in
+    // these cases.
+    parser.peekForNull match {
+      case true if nullIsNone => empty
+      case true               => null
+      case _                  => Optional.of[E](valueTypeAdapter.read(parser))
+    }
+
+  def write[WIRE](
+      t:      Optional[E],
+      writer: Writer[WIRE],
+      out:    mutable.Builder[WIRE, WIRE]): Unit =
+    if t == null then
+      writer.writeNull(out)
+    else
+      if t.isPresent then
+        valueTypeAdapter.write(t.get, writer, out)
+      else if nullIsNone then
+        writer.writeNull(out)
+      // else write nothing
+
+  def convertNullToNone(): JavaOptionalTypeAdapter[E] = this.copy(nullIsNone = true)

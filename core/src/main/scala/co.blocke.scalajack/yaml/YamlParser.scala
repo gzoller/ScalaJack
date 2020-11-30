@@ -2,9 +2,11 @@ package co.blocke.scalajack
 package yaml
 
 import model._
-import typeadapter.ClassTypeAdapterBase
+import typeadapter.classes.ClassTypeAdapterBase
+import co.blocke.scala_reflection._
+import co.blocke.scala_reflection.info.TypeMemberInfo
+
 import scala.collection.mutable
-import scala.reflect.runtime.universe.Type
 import scala.jdk.CollectionConverters._
 import org.snakeyaml.engine.v2.parser.ParserImpl
 import org.snakeyaml.engine.v2.scanner.StreamReader
@@ -14,8 +16,7 @@ import org.snakeyaml.engine.v2.events._
 case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser {
 
   private val loadSettings = LoadSettings.builder().build()
-  private val snake =
-    new ParserImpl(new StreamReader(input, loadSettings), loadSettings)
+  private val snake = new ParserImpl(new StreamReader(input.asInstanceOf[String], loadSettings), loadSettings)
 
   private var indentLevel = 0
 
@@ -41,7 +42,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
       case s: ScalarEvent =>
         i += 1
         s.getScalarStyle.toString match {
-          case "|" | ">"                           => s.getValue.stripTrailing()
+          case "|" | ">"                           => s.getValue().trim()
           case _ if s.getValue == "null" && nullOK => null
           case _                                   => s.getValue
         }
@@ -56,8 +57,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     if (!nextTest)
       throw new ScalaJackError(showError(errStr + events(i)))
     i += 1
-    while (!events(i)
-             .isInstanceOf[CollectionEndEvent] || indentLevel != startIndent) fn()
+    while (!events(i).isInstanceOf[CollectionEndEvent] || indentLevel != startIndent) 
+      fn()
     i += 1 // consume collection end event
     indentLevel -= 1
     builder.result()
@@ -69,12 +70,12 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     }, "Expected a List here: ")
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
-  ): List[Any] = {
-    val builder = new mutable.ListBuffer[Any]()
+    tupleFieldTypeAdapters: List[TypeAdapter[_]]
+  ): List[Object] = {
+    val builder = new mutable.ListBuffer[Object]()
     expectCollecton(nextIsArray, builder, () => {
-      readFns.foreach { fn =>
-        builder += fn.valueTypeAdapter.read(this)
+      tupleFieldTypeAdapters.foreach { fieldTypeAdapter =>
+        builder += fieldTypeAdapter.read(this).asInstanceOf[Object]
       }
     }, "Expected a Tuple here: ")
   }
@@ -94,7 +95,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
   def expectObject(
       classBase: ClassTypeAdapterBase[_],
       hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) = {
+  ): (mutable.BitSet, List[Object], java.util.HashMap[String, _]) = {
     indentLevel += 1
     val startIndent = indentLevel
     if (!nextIsObject)
@@ -102,7 +103,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     i += 1
 
     val args      = classBase.argsTemplate.clone()
-    val fieldBits = classBase.fieldBitsTemplate.clone()
+    val fieldBits = mutable.BitSet() 
     val captured =
       if (classBase.isSJCapture) new java.util.HashMap[String, List[Event]]()
       else null
@@ -111,8 +112,8 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
       val key = expectString(false)
       classBase.fieldMembersByName.get(key) match {
         case Some(field) =>
-          fieldBits -= field.index
-          args(field.index) = field.valueTypeAdapter.read(this)
+          fieldBits += field.info.index
+          args(field.info.index) = field.valueTypeAdapter.read(this).asInstanceOf[Object]
         case None => // found some input field not present in class
           val mark = i
           skipOverElement(startIndent)
@@ -125,7 +126,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
 
     i += 1 // consume collection end event
     indentLevel -= 1
-    (fieldBits, args, captured)
+    (fieldBits, args.toList, captured)
   }
 
   def expectBoolean(): Boolean = events(i) match {
@@ -180,7 +181,7 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     }
   }
 
-  def scanForHint(hint: String, converterFn: HintBijective): Type = {
+  def scanForHint(hint: String, converterFn: HintBijective): Class[_] = {
     val mark = i
     indentLevel += 1
     val startIndent = indentLevel
@@ -212,14 +213,14 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     }
     i = mark // we found hint, but go back to parse object
     indentLevel -= 1
-    hintType
+    Class.forName(hintType)
   }
 
   // For embedded type members.  Convert the type member into runtime "actual" type, e.g. T --> Foo
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
+      typeMembersByName: Map[String, TypeMemberInfo],
       converterFn: HintBijective
-  ): Map[Type, Type] = {
+  ): Map[String, TypeMemberInfo] = {
     val mark = i
     indentLevel += 1
     val startIndent = indentLevel
@@ -229,13 +230,13 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
       )
     i += 1
 
-    val collected = new java.util.HashMap[Type, Type]()
+    val collected = new java.util.HashMap[String, TypeMemberInfo]()
     while (!events(i).isInstanceOf[CollectionEndEvent]) {
       val key = expectString()
       if (typeMembersByName.contains(key))
         collected.put(
-          typeMembersByName(key).typeSignature,
-          converterFn.apply(expectString())
+          key,
+          TypeMemberInfo(key, typeMembersByName(key).typeSymbol, RType.of(Class.forName(converterFn.apply(expectString()))))
         )
       else
         skipOverElement(startIndent)
@@ -272,6 +273,6 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
     )
   // $COVERAGE-OFF$Unused, un-called by YamlFlavor machinery
   def subParser(input: YAML): Parser = this.copy(input = input)
-  def sourceAsString: String         = input
+  def sourceAsString: String         = input.asInstanceOf[String]
   // $COVERAGE-ON$
 }

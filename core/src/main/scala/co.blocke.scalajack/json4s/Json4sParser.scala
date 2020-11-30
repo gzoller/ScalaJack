@@ -3,9 +3,11 @@ package json4s
 
 import org.json4s._
 import model._
-import typeadapter.ClassTypeAdapterBase
+import typeadapter.classes.ClassTypeAdapterBase
 import scala.collection.mutable
-import scala.reflect.runtime.universe.Type
+import co.blocke.scala_reflection.RType
+import co.blocke.scala_reflection.info.TypeMemberInfo
+
 
 case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
   extends Parser {
@@ -36,16 +38,15 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
     }
 
   def expectTuple(
-      readFns: List[typeadapter.TupleTypeAdapterFactory.TupleField[_]]
-  ): List[Any] =
+      tupleFieldTypeAdapters: List[TypeAdapter[_]]
+  ): List[Object] = 
     input match {
       // $COVERAGE-OFF$Null caught by TypeAdapter but this left here as a safety
       case null | JNull => null
       // $COVERAGE-ON$
       case JArray(arr) =>
-        val together = readFns.zip(arr)
-        together.map {
-          case (fn, v) => fn.valueTypeAdapter.read(subParser(v))
+        tupleFieldTypeAdapters.zip(arr).map { (fieldTypeAdapter, v) =>
+          fieldTypeAdapter.read(subParser(v)).asInstanceOf[Object]
         }
       case x =>
         throw new ScalaJackError(s"Expected tuple (list) here, not '$x'")
@@ -73,31 +74,33 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
     }
 
   def expectObject(
-      classBase: ClassTypeAdapterBase[_],
-      hintLabel: String
-  ): (mutable.BitSet, Array[Any], java.util.HashMap[String, _]) =
+    classBase: ClassTypeAdapterBase[_],
+    hintLabel: String
+  ): (mutable.BitSet, List[Object], java.util.HashMap[String, _]) = 
     input match {
       case JObject(obj) =>
         val args = classBase.argsTemplate.clone()
-        val fieldBits = classBase.fieldBitsTemplate.clone()
+        val fieldBits = mutable.BitSet()
         val captured =
-          if (classBase.isSJCapture) new java.util.HashMap[String, JValue]()
-          else null
+          if classBase.isSJCapture then
+            new java.util.HashMap[String, Any]()
+          else 
+            null
         obj.foreach {
           case (key, objVal) =>
             classBase.fieldMembersByName
               .get(key)
               .map { field =>
-                fieldBits -= field.index
-                args(field.index) =
-                  field.valueTypeAdapter.read(subParser(objVal))
+                fieldBits += field.info.index
+                args(field.info.index) =
+                  field.valueTypeAdapter.read(subParser(objVal)).asInstanceOf[Object]
               }
               .getOrElse {
                 if (captured != null)
                   captured.put(key, objVal)
               }
         }
-        (fieldBits, args, captured)
+        (fieldBits, args.toList, captured)
       case x =>
         throw new ScalaJackError(s"Expected object here, not '$x'")
     }
@@ -126,7 +129,7 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
     case _            => false
   }
 
-  def scanForHint(hint: String, converterFn: HintBijective): Type =
+  def scanForHint(hint: String, converterFn: HintBijective): Class[_] =
     input match {
       case JObject(obj) =>
         obj
@@ -136,7 +139,7 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
               hintValue match {
                 case s: JString =>
                   try {
-                    converterFn.apply(s.s)
+                    Class.forName(converterFn.apply(s.s))
                   } catch {
                     case t: Throwable =>
                       throw new ScalaJackError(
@@ -156,17 +159,16 @@ case class Json4sParser(input: JValue, jackFlavor: JackFlavor[JValue])
 
   // For embedded type members.  Convert the type member into runtime "actual" type, e.g. T --> Foo
   def resolveTypeMembers(
-      typeMembersByName: Map[String, ClassHelper.TypeMember[_]],
-      converterFn:       HintBijective
-  ): Map[Type, Type] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
+    typeMembersByName: Map[String, TypeMemberInfo],
+    converterFn: HintBijective
+  ): Map[String, TypeMemberInfo] = // Returns Map[Type Signature Type (e.g. 'T'), Type]
     input match {
       case JObject(obj) =>
         val collected = obj.collect {
-          case (key, oneValue) if typeMembersByName.contains(key) && oneValue
-            .isInstanceOf[JString] =>
+          case (key, oneValue) if typeMembersByName.contains(key) && oneValue.isInstanceOf[JString] =>
             (
-              typeMembersByName(key).typeSignature,
-              converterFn.apply(oneValue.asInstanceOf[JString].s)
+              key,
+              TypeMemberInfo(key, typeMembersByName(key).typeSymbol, RType.of(Class.forName(converterFn.apply(oneValue.asInstanceOf[JString].s))))    
             )
         }
         collected.toMap
