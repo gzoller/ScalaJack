@@ -1,0 +1,37 @@
+name: Package Release
+# This workflow is triggered on pushes to the repository.
+on: 
+  create:
+
+jobs:
+  build:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # - name: Shoe more
+      #   env:
+      #     FOOM: ${{echo git rev-parse --abbrev-ref HEAD}}
+      # - name: Show Me
+      #   if: github.event.ref_type == 'tag' && !contains(github.event.ref, 'release')
+      #   env:
+      #     GITHUB_CONTEXT: ${{ toJson(github) }}
+      #   run: echo "$GITHUB_CONTEXT"
+      - name: Checkout repo
+        if: github.event.ref_type == 'tag' && !contains(github.event.ref, 'release')
+        uses: actions/checkout@v2
+      - name: Set up JDK 13
+        if: github.event.ref_type == 'tag' && !contains(github.event.ref, 'release')
+        uses: actions/setup-java@v1
+        with:
+          java-version: '13.0.1'
+      - name: Test and Release
+        if: github.event.ref_type == 'tag' && !contains(github.event.ref, 'release')
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_UID }}
+          BINTRAY_PASS: ${{ secrets.BINTRAY_PWD }}
+          BUILD_VERSION: ${{ github.event.ref }}
+        id: release
+        uses: lokkju/github-action-sbt@master
+        with:
+          commands: "test; publish"
