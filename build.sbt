@@ -1,5 +1,7 @@
 name := "scalajack"
 organization in ThisBuild := "co.blocke"
+val scala3 = "3.0.0-M2"
+scalaVersion := scala3
 val reflectionLibVersion = "1.0.0-M2"
 
 lazy val root = (project in file("."))
@@ -61,7 +63,6 @@ lazy val commonDependencies = Seq(
   "org.json4s"     %  "json4s-core_2.13"      % "3.6.6",
   "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
   "org.json4s"     %  "json4s-native_2.13"    % "3.6.6" % Test,
-  "org.scala-lang" %% "scala3-staging"        % "3.0.0-M2" % Test,
   "org.scalameta"  %% "munit"                 % "0.7.19" % Test
 )
 
@@ -83,7 +84,7 @@ lazy val compilerOptions = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= compilerOptions,
-  scalaVersion := "3.0.0-M2",
+  scalaVersion := scala3,
   resolvers += "co.blocke releases buildResolver" at "https://dl.bintray.com/blocke/releases",
   testFrameworks += new TestFramework("munit.Framework")
 )
