@@ -42,7 +42,9 @@ case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser 
       case s: ScalarEvent =>
         i += 1
         s.getScalarStyle.toString match {
-          case "|" | ">"                           => s.getValue().stripTrailing()
+          case "|" | ">"                           => 
+            val oneval: String = s.getValue()
+            oneval.stripTrailing()
           case _ if s.getValue == "null" && nullOK => null
           case _                                   => s.getValue
         }
