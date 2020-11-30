@@ -6,7 +6,7 @@ import co.blocke.scala_reflection.info.AliasInfo
 import co.blocke.scala_reflection._
 import co.blocke.scalajack.model._
 
-opaque type Phone = String
+opaque type Phone >: Null = String
 
 import scala.collection.mutable
 

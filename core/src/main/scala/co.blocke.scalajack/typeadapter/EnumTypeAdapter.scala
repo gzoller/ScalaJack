@@ -94,7 +94,7 @@ case class ScalaEnumerationTypeAdapter[E <: Enumeration](
     }
 
 
-case class ScalaEnumTypeAdapter[E <: Enum](
+case class ScalaEnumTypeAdapter[E <: scala.reflect.Enum](
     info:        RType,
     enumsAsInt:  Boolean
   ) extends TypeAdapter[E]:

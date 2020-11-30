@@ -1,7 +1,6 @@
 name := "scalajack"
 organization in ThisBuild := "co.blocke"
-val dottyVersion =  "0.28.0-bin-SNAPSHOT"
-val reflectionLibVersion = "c80908_SNAPSHOT"
+val reflectionLibVersion = "1.0.0-M2"
 
 lazy val root = (project in file("."))
   .settings(settings)
@@ -31,7 +30,7 @@ lazy val scalajack_dynamo = (project in file("dynamodb"))
   .settings(
     doc := null,  // disable dottydoc for now
     sources in (Compile, doc) := Seq(),
-    libraryDependencies ++= commonDependencies ++ Seq(dependencies.dynamo),
+    libraryDependencies ++= commonDependencies ++ Seq("com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.882" % Compile),
     Test / parallelExecution := false,
     
     // This messy stuff turns off reflection compiler plugin except for test case code
@@ -46,7 +45,7 @@ lazy val scalajack_mongo = (project in file("mongo"))
   .settings(
     doc := null,  // disable dottydoc for now
     sources in (Compile, doc) := Seq(),
-    libraryDependencies ++= commonDependencies ++ Seq(dependencies.mongo),
+    libraryDependencies ++= commonDependencies ++ Seq("org.mongodb" % "mongo-java-driver" % "3.12.7"),
     Test / parallelExecution := false,
     
     // This messy stuff turns off reflection compiler plugin except for test case code
@@ -56,28 +55,14 @@ lazy val scalajack_mongo = (project in file("mongo"))
     scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
   ).dependsOn(scalajack)
 
-//==========================
-// Dependencies
-//==========================
-lazy val dependencies =
-  new {
-    val dottyReflection = "co.blocke"     %% "scala-reflection"     % reflectionLibVersion
-    val munit           = "org.scalameta" %% "munit"                % "0.7.12+51-8feb6e8b-SNAPSHOT" % Test
-    val commonsCodec    = "commons-codec" % "commons-codec"         % "1.12"
-    val snakeyaml       = "org.snakeyaml" % "snakeyaml-engine"      % "2.0"
-    val json4sCore      = "org.json4s"    % "json4s-core_2.13"      % "3.6.6"
-    val mongo           = "org.mongodb"   % "mongo-java-driver"     % "3.12.7"
-    val dynamo          = "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.882" % Compile
-    val json4sNative    = "org.json4s"    % "json4s-native_2.13"    % "3.6.6" % Test
-  }
-
 lazy val commonDependencies = Seq(
-  dependencies.dottyReflection,
-  dependencies.commonsCodec,
-  dependencies.json4sCore,
-  dependencies.json4sNative,
-  dependencies.snakeyaml,
-  dependencies.munit
+  "co.blocke"      %% "scala-reflection"      % reflectionLibVersion,
+  "commons-codec"  %  "commons-codec"         % "1.12",
+  "org.json4s"     %  "json4s-core_2.13"      % "3.6.6",
+  "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
+  "org.json4s"     %  "json4s-native_2.13"    % "3.6.6" % Test,
+  "org.scala-lang" %% "scala3-staging"        % "3.0.0-M2" % Test,
+  "org.scalameta"  %% "munit"                 % "0.7.19" % Test
 )
 
 //==========================
@@ -98,9 +83,8 @@ lazy val compilerOptions = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= compilerOptions,
-  // resolvers += Resolver.jcenterRepo,
+  scalaVersion := "3.0.0-M2",
   resolvers += "co.blocke releases buildResolver" at "https://dl.bintray.com/blocke/releases",
-  scalaVersion := dottyVersion,
   testFrameworks += new TestFramework("munit.Framework")
 )
 

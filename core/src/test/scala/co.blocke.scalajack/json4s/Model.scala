@@ -82,7 +82,7 @@ case class Envelope[T <: Body](id: String, body: T) {
   type Giraffe = T
 }
 
-opaque type Phone = String
+opaque type Phone >: Null = String
 
 // Override just Phone
 object PhoneAdapter extends TypeAdapterFactory with TypeAdapter[Phone]:

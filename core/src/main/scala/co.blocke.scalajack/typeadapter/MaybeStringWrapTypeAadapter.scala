@@ -41,7 +41,7 @@ case class MaybeStringWrapTypeAdapter[T](
       case null         => writer.writeNull(out)
       case t if t.getClass <:< classOf[String] => writer.writeString(t.toString, out)
       case e if e.getClass.getName =="scala.Enumeration$Val" && !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
-      case _: scala.Enum if !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
+      case _: scala.reflect.Enum if !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
       case t if t.getClass <:< javaEnumClazz && !jackFlavor.enumsAsInt => writer.writeString(t.toString, out)
       case _ => 
         jackFlavor.stringWrapTypeAdapterFactory(wrappedTypeAdapter).write(t, writer, out)

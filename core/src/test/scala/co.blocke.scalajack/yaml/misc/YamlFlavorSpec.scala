@@ -17,7 +17,7 @@ import co.blocke.scala_reflection.RType
 import co.blocke.scala_reflection.info.AliasInfo
 
 //-----------
-opaque type Phone = String
+opaque type Phone >: Null = String
 
 case class PersonWithPhone(name: String, phone: Phone)
 

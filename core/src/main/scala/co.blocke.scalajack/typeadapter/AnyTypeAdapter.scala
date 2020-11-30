@@ -91,8 +91,8 @@ case class AnyTypeAdapter(info: RType, taCache: TypeAdapterCache) extends TypeAd
       out:    mutable.Builder[WIRE, WIRE]): Unit =
     t match {
       case null         => writer.writeNull(out)
-      case e if e.getClass.getName =="scala.Enumeration$Val" => writer.writeString(t.toString, out)
-      case _: scala.Enum => writer.writeString(t.toString, out)
+      case e if e.getClass.getName == "scala.Enumeration$Val" => writer.writeString(t.toString, out)
+      case _: scala.reflect.Enum => writer.writeString(t.toString, out)
       case _: Map[_, _] => mapAnyTypeAdapter.write(t.asInstanceOf[Map[Any, Any]], writer, out)
       case _: Seq[_]    => listAnyTypeAdapter.write(t.asInstanceOf[List[Any]], writer, out)
       case _: Option[_] => optionAnyTypeAdapter.write(t.asInstanceOf[Option[Any]], writer, out)

@@ -194,7 +194,7 @@ trait Demographic { val address: Address }
 case class USDemographic(@DBKey age: String, address: Address)
   extends Demographic
 
-opaque type Phone = String
+opaque type Phone >: Null = String
 
 // Override just Phone
 object PhoneAdapter extends TypeAdapterFactory with TypeAdapter[Phone]:
