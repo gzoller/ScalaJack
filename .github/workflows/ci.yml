@@ -1,10 +1,7 @@
 name: Package Build
 # This workflow is triggered on pushes to the repository.
 on: 
-  push:
-    branches-ignore:
-      - "feature/*"  # don't run build/test against a feature branch -- no SLA there
-      - "master"
+  pull_request:
 
 jobs:
   build:
