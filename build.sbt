@@ -1,5 +1,5 @@
 name := "scalajack"
-organization in ThisBuild := "co.blocke"
+organization := "co.blocke"
 val scala3 = "3.0.0-M2"
 scalaVersion := scala3
 val reflectionLibVersion = "1.0.0-M2"
