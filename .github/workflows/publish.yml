@@ -17,6 +17,7 @@ jobs:
           java-version: '13.0.1'
       - name: Checkout repo
         uses: actions/checkout@v2
+        run: git fetch --prune --unshallow
       - name: Test and Release
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_UID }}
