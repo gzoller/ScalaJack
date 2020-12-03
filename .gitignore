@@ -1,4 +1,5 @@
 out/
+.bsp/
 .idea/
 .idea_modules/
 target/

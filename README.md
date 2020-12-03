@@ -59,7 +59,7 @@ val inst = sj.read[Person](js) // re-constitutes original Person
 Couldn't be simpler!
 
 ### A word about performance...
-Compared to pre-7.0 ScalaJack, which used Scala 2.x runtime reflection, ScalaJack is up to 30% faster in many cases when used with the highly-recommended dotty-reflection compiler plugin.  
+Compared to pre-7.0 ScalaJack, which used Scala 2.x runtime reflection, ScalaJack is up to 30% faster in many cases when used with the highly-recommended scala-reflection compiler plugin.  
 
 ### A word about macros...
 ScalaJack 7 uses Scala 3 macros to the fullest extent possible to do the hard work of reflecting on types. Macros impact the compile/test cycle in ways that are non-intuitive at first. Think of this example:

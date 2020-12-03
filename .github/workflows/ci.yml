@@ -1,10 +1,7 @@
 name: Package Build
 # This workflow is triggered on pushes to the repository.
 on: 
-  push:
-    branches-ignore:
-      - "feature/*"  # don't run build/test against a feature branch -- no SLA there
-      - "master"
+  pull_request:
 
 jobs:
   build:
@@ -12,12 +9,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
       - name: Set up JDK 13
         uses: actions/setup-java@v1
         with:
           java-version: '13.0.1'
+      - name: Checkout repo
+        uses: actions/checkout@v2
       - name: Test
         id: sbt
         uses: lokkju/github-action-sbt@master
