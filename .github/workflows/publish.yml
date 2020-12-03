@@ -1,9 +1,7 @@
 name: Package Release
 # This workflow is triggered on pushes to the repository.
 on: 
-  push: 
-    branches:
-      - "master"  # only release on a push to main
+  create:  # Publish release on tag creation
 
 jobs:
   build:
@@ -12,14 +10,17 @@ jobs:
 
     steps:
       - name: Set up JDK 13
+        if: github.event.ref_type == 'tag'
         uses: actions/setup-java@v1
         with:
           java-version: '13.0.1'
       - name: Checkout repo
+        if: github.event.ref_type == 'tag'
         uses: actions/checkout@v2
         with:
          fetch-depth: 0
       - name: Test and Release
+        if: github.event.ref_type == 'tag'
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_UID }}
           BINTRAY_PASS: ${{ secrets.BINTRAY_PWD }}
