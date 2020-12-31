@@ -1,8 +1,8 @@
 name := "scalajack"
 organization in ThisBuild := "co.blocke"
-val scala3 = "3.0.0-M2"
+val scala3 = "3.0.0-M3"
 scalaVersion := scala3
-val reflectionLibVersion = "1.0.0-M2"
+val reflectionLibVersion = "1.0.0-M3"
 
 lazy val root = (project in file("."))
   .settings(settings)
@@ -63,7 +63,7 @@ lazy val commonDependencies = Seq(
   "org.json4s"     %  "json4s-core_2.13"      % "3.6.6",
   "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
   "org.json4s"     %  "json4s-native_2.13"    % "3.6.6" % Test,
-  "org.scalameta"  %% "munit"                 % "0.7.19" % Test
+  "org.scalameta"  %% "munit"                 % "0.7.20" % Test
 )
 
 //==========================
