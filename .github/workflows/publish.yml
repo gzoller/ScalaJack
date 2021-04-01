@@ -1,27 +1,24 @@
-name: Package Release
-# This workflow is triggered on pushes to the repository.
-on: 
+name: Release
+on:
   create:  # Publish release on tag creation
 
 jobs:
-  build:
-    name: Release
-    runs-on: ubuntu-latest
-
+  publish:
+    runs-on: ubuntu-20.04
     steps:
-      - name: Checkout repo
+#      - run: git checkout "${GITHUB_REF:11}"
+      - uses: actions/checkout@v2.3.4
         if: github.event.ref_type == 'tag'
-        uses: actions/checkout@v2
         with:
-         fetch-depth: 0
-      - name: Test and Release
+          fetch-depth: 0
+      - uses: olafurpg/setup-scala@v10
+        if: github.event.ref_type == 'tag'
+      - uses: olafurpg/setup-gpg@v3
+        if: github.event.ref_type == 'tag'
+      - run: sbt ci-release
         if: github.event.ref_type == 'tag'
         env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_UID }}
-          BINTRAY_PASS: ${{ secrets.BINTRAY_PWD }}
-          BUILD_VERSION: ${{ github.event.ref }}
-        id: release
-        uses: lokkju/github-action-sbt@11-1.3.0-2.13.0
-        with:
-          commands: "test; publish"
-
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
