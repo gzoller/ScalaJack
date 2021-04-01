@@ -5,14 +5,11 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-20.04
     name: Build
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - name: Test
-        id: sbt
-        uses: lokkju/github-action-sbt@11-1.3.0-2.13.0
-        with:
-          commands: test
+        run: "sbt test"

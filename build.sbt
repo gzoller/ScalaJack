@@ -1,14 +1,30 @@
+inThisBuild(List(
+  organization := "co.blocke",
+  homepage := Some(url("https://github.com/gzoller/ScalaJack")),
+  licenses := List("MIT" -> url("https://opensource.org/licenses/MIT")),
+  developers := List(
+    Developer(
+      "gzoller",
+      "Greg Zoller",
+      "gzoller@outlook.com",
+      url("http://www.blocke.co")
+    )
+  )
+))
+
 name := "scalajack"
 organization in ThisBuild := "co.blocke"
-val scala3 = "3.0.0-M3"
-scalaVersion := scala3
-val reflectionLibVersion = "1.0.0-M3"
+val scala3 = "3.0.0-RC1"
+val reflectionLibVersion = "1.0.0-RC1"
 
 lazy val root = (project in file("."))
   .settings(settings)
-  .settings(publishArtifact := false)
-  .settings(publish := {})
-  .settings(crossScalaVersions := Nil)
+  .settings(skip in publish := true)
+  .settings(
+    crossScalaVersions := Nil,
+    doc := null,  // disable dottydoc for now
+    sources in (Compile, doc) := Seq()
+  )
   .aggregate(scalajack, scalajack_dynamo, scalajack_mongo)
 
 lazy val scalajack = (project in file("core"))
@@ -63,16 +79,12 @@ lazy val commonDependencies = Seq(
   "org.json4s"     %  "json4s-core_2.13"      % "3.6.6",
   "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
   "org.json4s"     %  "json4s-native_2.13"    % "3.6.6" % Test,
-  "org.scalameta"  %% "munit"                 % "0.7.20" % Test
+  "org.scalameta"  %% "munit"                 % "0.7.22" % Test
 )
 
 //==========================
 // Settings
 //==========================
-lazy val settings = 
-  commonSettings ++
-  publishSettings
-
 lazy val compilerOptions = Seq(
   "-unchecked",
   "-feature",
@@ -82,19 +94,9 @@ lazy val compilerOptions = Seq(
   "utf8"
 )
 
-lazy val commonSettings = Seq(
+lazy val settings = Seq(
   scalacOptions ++= compilerOptions,
   scalaVersion := scala3,
-  resolvers += "co.blocke releases buildResolver" at "https://dl.bintray.com/blocke/releases",
   testFrameworks += new TestFramework("munit.Framework")
-)
-
-lazy val publishSettings = Seq(
-  publishMavenStyle := true,
-  bintrayOrganization := Some("blocke"),
-  bintrayReleaseOnPublish in ThisBuild := true,
-  licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
-  bintrayRepository := "releases",
-  bintrayPackageLabels := Seq("scala", "dotty", "reflection")
 )
 

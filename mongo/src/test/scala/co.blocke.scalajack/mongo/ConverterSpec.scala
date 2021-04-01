@@ -91,8 +91,8 @@ class ConverterSpec extends FunSuite:
     describe(
       "-----------------------------------------\n:  Convenience \"to/from\" Tests (Mongo)  :\n-----------------------------------------", Console.BLUE
     )
-    assertEquals(simple.toMongo[PersonM], simpleMongo)
-    assertEquals(complex.toMongo[TypeyM[HumanM]], complexMongo)
+    assertEquals(toMongo[PersonM](simple), simpleMongo)
+    assertEquals(toMongo[TypeyM[HumanM]](complex), complexMongo)
   }
 
   test("fromMongo") {
