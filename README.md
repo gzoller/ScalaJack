@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
 [![bintray](https://api.bintray.com/packages/blocke/releases/scalajack/images/download.svg)](https://bintray.com/blocke/releases/scalajack/_latestVersion)
 
-ScalaJack 7 an all-new ScalaJack implmenation built on Scala 3.  For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0.  ScalaJack 7 is built on JDK 13+.
+ScalaJack 7 is an all-new ScalaJack implmenation built on Scala 3.  For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0.  ScalaJack 7 is built on JDK 13+.
 
 ScalaJack is a very fast, seamless serialization engine for JSON, and other protocols, designed to require the minimum amount of help possible when serializing a class.
 
@@ -22,9 +22,8 @@ Advanced Features:
 ScalaJack is extremely simple to use.
 
 Include the following in your build.sbt:
-
 ```
-   resolvers += "co.blocke releases resolver" at "https://dl.bintray.com/blocke/releases"
+    libraryDependencies ++= Seq("co.blocke" %% "scalajack" % SJ_VERSION)
 ```
 
 To use the **highly-recommended** reflection compiler plug-in, add to build.sbt:
@@ -74,7 +73,7 @@ val  js = sj.read[Foo](someJson)
 
 In a non-macro implementation (e.g. Scala 2 runtime reflection) if you update Foo in File1.scala you naturally expect sbt to re-compile this file, and anything that depends on Foo, and the changes will be picked up in your program, and all will be well.
 
-That's **not** necessarily what happens with macros! Remember, the macro code is run at compile-time. File2.scala needs to be re-compiled because the RType.of macro needs to be re-run to pick up your changes to Foo class in File1.scala. **Unfortunately sbt doesn't pick up this dependency!** If you don't know any better you'll just re-run your program after a change to File1.scala, like normal, and get a **spectacular exception with exotic errors** that won't mean much to you. The solution is you need to also recompile File2.scala.
+That's **not** necessarily what happens with macros! Remember, the macro code is run at compile-time. File2.scala needs to be re-compiled because the macro needs to be re-run to pick up your changes to Foo class in File1.scala. **Unfortunately sbt doesn't pick up this dependency!** If you don't know any better you'll just re-run your program after a change to File1.scala, like normal, and get a **spectacular exception with exotic errors** that won't mean much to you. The solution is you need to also recompile File2.scala.
 
 This means you will be doing more re-compiling with macro-based code than you would without the macros. It's an unfortunate cost of inconvenience and time, but the payoff is a *dramatic* gain in speed at runtime, and in the case of reflection in Scala 3, using macros is really the only way to accomplish reflection.
 
