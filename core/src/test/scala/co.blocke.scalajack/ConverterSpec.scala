@@ -89,8 +89,9 @@ class ConverterSpec extends FunSuite:
     describe(
       "---------------------------------\n:  Convenience \"to/from\" Tests  :\n---------------------------------", Console.BLUE
     )
-    assertEquals(simple.toJson[Person], simpleJson)
-    assertEquals(complex.toJson[Typey[Human]], complexJson)
+    assertEquals((simple: Person).toJson, simpleJson)
+    assertEquals(toJson[Person](simple), simpleJson)
+    assertEquals(toJson[Typey[Human]](complex), complexJson)
   }
 
   test("fromJson") {
@@ -99,8 +100,8 @@ class ConverterSpec extends FunSuite:
   }
 
   test("toJson4s") {
-    assertEquals(simple.toJson4s[Person], simpleJson4s)
-    assertEquals(complex.toJson4s[Typey[Human]], complexJson4s)
+    assertEquals(toJson4s[Person](simple), simpleJson4s)
+    assertEquals(toJson4s[Typey[Human]](complex), complexJson4s)
   }
 
   test("fromJson4s") {
@@ -109,8 +110,8 @@ class ConverterSpec extends FunSuite:
   }
 
   test("toYaml") {
-    assertEquals(simple.toYaml[Person], simpleYaml)
-    assertEquals(complex.toYaml[Typey[Human]], complexYaml)
+    assertEquals(toYaml[Person](simple), simpleYaml)
+    assertEquals(toYaml[Typey[Human]](complex), complexYaml)
   }
 
   test("fromYaml") {
@@ -119,7 +120,7 @@ class ConverterSpec extends FunSuite:
   }
 
   test("toDelimited") {
-    assertEquals(simple.toDelimited[Person], simpleDelimited)
+    assertEquals(toDelimited[Person](simple), simpleDelimited)
   }
 
   test("fromDelimited") {
