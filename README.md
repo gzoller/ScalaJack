@@ -2,7 +2,7 @@
 # ScalaJack
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3.0.0-RC1/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3.0.0-RC1/7.0.0-RC1/jar)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3.0.0-RC3/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3.0.0-RC3/7.0.0-RC3/jar)
 
 ScalaJack 7 is an all-new ScalaJack implmenation built on Scala 3.  For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0.  ScalaJack 7 is built on JDK 13+.
 
