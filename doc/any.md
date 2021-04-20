@@ -1,8 +1,5 @@
 ## Any Support
 
-![Maven Central](https://img.shields.io/maven-central/v/co.blocke/scalajack)
-![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3.0.0-RC1/badge.svg)
-
 Scala has the concept of Any.  ScalaJack supports Any but you should be aware of its special needs and limitations.
 
 A value of type Any means ScalaJack has no specific idea what the type should be, and must therefore infer the type as best it can.  This is necessarily an imperfect process but we can describe the process it uses here.  The main takeaway is this:  Virtually everywhere else, if you render an object with ScalaJack to JSON, then read that object back in, you should get the original object.  This isn't often true with Any-typed data, and we'll see examples of this.
