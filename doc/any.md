@@ -1,6 +1,7 @@
 ## Any Support
 
-[![Maven Central](https://img.shields.io/maven-central/v/co.blocke/scalajack)]
+![Maven Central](https://img.shields.io/maven-central/v/co.blocke/scalajack)
+![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3.0.0-RC1/badge.svg)
 
 Scala has the concept of Any.  ScalaJack supports Any but you should be aware of its special needs and limitations.
 
