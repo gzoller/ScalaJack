@@ -2,7 +2,7 @@
 # ScalaJack
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3.0.0-RC3/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3.0.0-RC3/7.0.0-RC3/jar)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3/7.0.0/jar)
 
 ScalaJack 7 is an all-new ScalaJack implmenation built on Scala 3.  For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0.  ScalaJack 7 is built on JDK 13+.
 
@@ -30,7 +30,7 @@ To use the **highly-recommended** reflection compiler plug-in, add to build.sbt:
 ```
 addCompilerPlugin("co.blocke" %% "scala-reflection" % VERSION)
 ```
-where VERSION is the latest scala-reflection version found by looking at the Download badge here: [www.blocke.co/scala-reflection](http://www.blocke.co/scala-reflection)
+where VERSION is the latest scala-reflection version found by looking at the 'maven central' badge from this repo: [www.blocke.co/scala-reflection](http://www.blocke.co/scala-reflection)
 
 If you want to use the optional MongoDB serialization support include this as well:
 ```
@@ -41,7 +41,7 @@ DynamoDB helpers are available here:
 ```
     libraryDependencies ++= Seq("co.blocke" %% "scalajack_dynamo" % SJ_VERSION)
 ```
-where SJ_VERSION is this version of ScalaJack.
+where SJ_VERSION is this version of ScalaJack (see 'maven central' badge of this repo).
 
 Now you're good to go!  Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 
@@ -106,6 +106,7 @@ Non-JSON Formats:
 * [Json4s](doc/json4s.md)
 
 ### Notes:
+* 7.0.0    -- GA release of ScalaJack 7 for Scala 3.
 * 7.0.0-M2 -- Initial release for Scala 3
 
 

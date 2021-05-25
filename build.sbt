@@ -13,17 +13,17 @@ inThisBuild(List(
 ))
 
 name := "scalajack"
-organization in ThisBuild := "co.blocke"
-val scala3 = "3.0.0-RC3"
-val reflectionLibVersion = "1.0.0-RC3"
+ThisBuild / organization := "co.blocke"
+val scala3 = "3.0.0"
+val reflectionLibVersion = "1.0.0"
 
 lazy val root = (project in file("."))
   .settings(settings)
-  .settings(skip in publish := true)
+  .settings(publish / skip := true)
   .settings(
     crossScalaVersions := Nil,
     doc := null,  // disable dottydoc for now
-    sources in (Compile, doc) := Seq()
+    Compile / doc / sources := Seq()
   )
   .aggregate(scalajack, scalajack_dynamo, scalajack_mongo)
 
@@ -32,7 +32,7 @@ lazy val scalajack = (project in file("core"))
   .settings(
     name := "scalajack",
     doc := null,  // disable dottydoc for now
-    sources in (Compile, doc) := Seq(),
+    Compile / doc / sources := Seq(),
     libraryDependencies ++= commonDependencies,
     Test / parallelExecution := false,
     
@@ -40,14 +40,14 @@ lazy val scalajack = (project in file("core"))
     addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
     autoCompilerPlugins := false,
     ivyConfigurations += Configurations.CompilerPlugin,
-    scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
+    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
   )
 
 lazy val scalajack_dynamo = (project in file("dynamodb"))
   .settings(settings)
   .settings(
     doc := null,  // disable dottydoc for now
-    sources in (Compile, doc) := Seq(),
+    Compile / doc / sources := Seq(),
     libraryDependencies ++= commonDependencies ++ Seq("com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.882" % Compile),
     Test / parallelExecution := false,
     
@@ -55,14 +55,14 @@ lazy val scalajack_dynamo = (project in file("dynamodb"))
     addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
     autoCompilerPlugins := false,
     ivyConfigurations += Configurations.CompilerPlugin,
-    scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
+    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
   ).dependsOn(scalajack)
 
 lazy val scalajack_mongo = (project in file("mongo"))
   .settings(settings)
   .settings(
     doc := null,  // disable dottydoc for now
-    sources in (Compile, doc) := Seq(),
+    Compile / doc / sources := Seq(),
     libraryDependencies ++= commonDependencies ++ Seq("org.mongodb" % "mongo-java-driver" % "3.12.7"),
     Test / parallelExecution := false,
     
@@ -70,7 +70,7 @@ lazy val scalajack_mongo = (project in file("mongo"))
     addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
     autoCompilerPlugins := false,
     ivyConfigurations += Configurations.CompilerPlugin,
-    scalacOptions in Test ++= Classpaths.autoPlugins(update.value, Seq(), true)
+    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
   ).dependsOn(scalajack)
 
 lazy val commonDependencies = Seq(
