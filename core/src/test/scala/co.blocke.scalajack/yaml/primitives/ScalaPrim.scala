@@ -106,8 +106,8 @@ class ScalaPrim() extends FunSuite:
     val inst =
       SampleDouble(Double.MaxValue, Double.MinValue, 0.0, -123.4567)
     val yaml       = sj.render(inst)
-    val comparison = """d1: 1.7976931348623157E308
-                        |d2: -1.7976931348623157E308
+    val comparison = """d1: !!float '1.7976931348623157E308'
+                        |d2: !!float '-1.7976931348623157E308'
                         |d3: 0.0
                         |d4: -123.4567""".stripMargin
     assertEquals(Set.empty[String], yaml.asInstanceOf[String].split("\n").toSet.diff(comparison.split("\n").toSet) )
@@ -146,8 +146,8 @@ class ScalaPrim() extends FunSuite:
   test("Float must work") {
     val inst       = SampleFloat(Float.MaxValue, Float.MinValue, 0.0F, -123.4567F)
     val yaml       = sj.render(inst)
-    val comparison = """f1: 3.4028235E38
-                        |f2: -3.4028235E38
+    val comparison = """f1: !!float '3.4028235E38'
+                        |f2: !!float '-3.4028235E38'
                         |f3: 0.0
                         |f4: -123.4567""".stripMargin
     assertEquals(Set.empty[String], yaml.asInstanceOf[String].split("\n").toSet.diff(comparison.split("\n").toSet) )
