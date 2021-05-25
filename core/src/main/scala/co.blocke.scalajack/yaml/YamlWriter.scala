@@ -5,6 +5,7 @@ import model._
 
 import scala.collection.mutable
 import org.snakeyaml.engine.v2.nodes._
+import org.snakeyaml.engine.v2.api.LoadSettings
 import org.snakeyaml.engine.v2.common.{FlowStyle, ScalarStyle}
 import org.snakeyaml.engine.v2.composer.Composer
 import org.snakeyaml.engine.v2.events.Event
@@ -117,7 +118,7 @@ case class YamlWriter() extends Writer[Node] {
 
             sjc.captured.asScala.map {
               case (k, v) =>
-                val composer = new Composer(new EventParser(v.asInstanceOf[List[Event]]), new JsonScalarResolver())
+                val composer = new Composer(LoadSettings.builder.build, new EventParser(v.asInstanceOf[List[Event]]))
                 (new ScalarNode(Tag.STR, k, ScalarStyle.PLAIN), composer.next)
             }
           case _ => Map.empty[Node, Node]
