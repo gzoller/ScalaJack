@@ -75,9 +75,9 @@ lazy val scalajack_mongo = (project in file("mongo"))
 
 lazy val commonDependencies = Seq(
   "co.blocke"      %% "scala-reflection"      % reflectionLibVersion,
-  "commons-codec"  %  "commons-codec"         % "1.12",
+  "commons-codec"  %  "commons-codec"         % "1.15",
   "org.json4s"     %  "json4s-core_2.13"      % "3.6.11",
-  "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
+  "org.snakeyaml"  %  "snakeyaml-engine"      % "2.3",
   "org.json4s"     %  "json4s-native_2.13"    % "3.6.11" % Test,
   "org.scalameta"  %% "munit"                 % "0.7.25" % Test
 )

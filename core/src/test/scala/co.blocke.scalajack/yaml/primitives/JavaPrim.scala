@@ -112,8 +112,8 @@ class JavaPrim() extends FunSuite:
       """d5: null
         |d3: 0.0
         |d4: -123.4567
-        |d2: 4.9E-324
-        |d1: 1.7976931348623157E308""".stripMargin
+        |d2: !!float '4.9E-324'
+        |d1: !!float '1.7976931348623157E308'""".stripMargin
     assertEquals(Set.empty[String], yaml.asInstanceOf[String].split("\n").toSet.diff(comparison.split("\n").toSet))
     assertEquals(inst, sj.read[SampleJDouble](yaml))
   }
@@ -130,8 +130,8 @@ class JavaPrim() extends FunSuite:
     val comparison = """f4: -123.4567
                         |f5: null
                         |f3: 0.0
-                        |f2: 1.4E-45
-                        |f1: 3.4028235E38""".stripMargin
+                        |f2: !!float '1.4E-45'
+                        |f1: !!float '3.4028235E38'""".stripMargin
     assertEquals(Set.empty[String],  yaml.asInstanceOf[String].split("\n").toSet.diff(comparison.split("\n").toSet) )
     assertEquals(inst, sj.read[SampleJFloat](yaml))
   }
@@ -188,14 +188,14 @@ class JavaPrim() extends FunSuite:
                         |n1: -128
                         |n3: -32768
                         |n15: null
-                        |n14: 1.7E308
-                        |n12: 3.4E38
-                        |n13: 1.7E-308
+                        |n14: !!float '1.7E308'
+                        |n12: !!float '3.4E38'
+                        |n13: !!float '1.7E-308'
                         |n6: 2147483647
                         |n5: -2147483648
                         |n9: null
                         |n7: -9223372036854775808
-                        |n11: 3.4E-38
+                        |n11: !!float '3.4E-38'
                         |n2: 127
                         |n17: null""".stripMargin
     assertEquals(Set.empty[String],  yaml.asInstanceOf[String].split("\n").toSet.diff(comparison.split("\n").toSet) )

@@ -16,7 +16,7 @@ import org.snakeyaml.engine.v2.events._
 case class YamlParser(input: YAML, jackFlavor: JackFlavor[YAML]) extends Parser {
 
   private val loadSettings = LoadSettings.builder().build()
-  private val snake = new ParserImpl(new StreamReader(input.asInstanceOf[String], loadSettings), loadSettings)
+  private val snake = new ParserImpl(loadSettings, new StreamReader(loadSettings, input.asInstanceOf[String]))
 
   private var indentLevel = 0
 
