@@ -78,7 +78,7 @@ lazy val commonDependencies = Seq(
   "commons-codec"  %  "commons-codec"         % "1.12",
   "org.json4s"     %  "json4s-core_2.13"      % "3.6.11",
   "org.snakeyaml"  %  "snakeyaml-engine"      % "2.0",
-  "org.json4s"     %  "json4s-native_2.13"    % "3.6.6" % Test,
+  "org.json4s"     %  "json4s-native_2.13"    % "3.6.11" % Test,
   "org.scalameta"  %% "munit"                 % "0.7.25" % Test
 )
 
