@@ -106,7 +106,6 @@ Non-JSON Formats:
 * [Json4s](doc/json4s.md)
 
 ### Notes:
+* 7.0.3    -- Rebuild on Scala 3.2.1
 * 7.0.1    -- GA release of ScalaJack 7 for Scala 3.
 * 7.0.0-M2 -- Initial release for Scala 3
-
-
