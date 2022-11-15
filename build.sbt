@@ -15,7 +15,7 @@ inThisBuild(List(
 ))
 
 name := "scalajack"
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "8"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "13"))
 ThisBuild / organization := "co.blocke"
 val scala3 = "3.2.1"
 val reflectionLibVersion = "1.1.11"
