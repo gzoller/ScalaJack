@@ -1,21 +1,41 @@
 name: Package Build
 # This workflow is triggered on pushes to the repository.
-on: 
-  pull_request:
+on: [pull_request]
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
-    name: Build
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: Build and Test
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2.3.4
-      - name: Setup JDK 13
-        uses: actions/setup-java@v1
+      - name: Ignore line ending differences in git
+        if: contains(runner.os, 'windows')
+        shell: bash
+        run: git config --global core.autocrlf false
+
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v3
         with:
-          java-version: '13'
-      - name: Show java
-        run: "java -version"
-      - name: Test
-        run: "sbt test"
+          fetch-depth: 0
+
+      - name: Setup Java (zulu@13)
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 8
+
+      - name: Cache sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.coursier/cache/v1
+            ~/.cache/coursier/v1
+            ~/AppData/Local/Coursier/Cache/v1
+            ~/Library/Caches/Coursier/v1
+          key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+
+      - name: Build project
+        shell: bash
+        run: sbt test

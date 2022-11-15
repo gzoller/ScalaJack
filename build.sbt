@@ -1,3 +1,5 @@
+import org.typelevel.sbt.gha.JavaSpec.Distribution.Zulu
+
 inThisBuild(List(
   organization := "co.blocke",
   homepage := Some(url("https://github.com/gzoller/ScalaJack")),
@@ -6,16 +8,17 @@ inThisBuild(List(
     Developer(
       "gzoller",
       "Greg Zoller",
-      "gzoller@outlook.com",
+      "gzoller@blocke.co",
       url("http://www.blocke.co")
     )
   )
 ))
 
 name := "scalajack"
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "8"))
 ThisBuild / organization := "co.blocke"
-val scala3 = "3.0.0"
-val reflectionLibVersion = "1.0.0"
+val scala3 = "3.2.1"
+val reflectionLibVersion = "1.1.11"
 
 lazy val root = (project in file("."))
   .settings(settings)
