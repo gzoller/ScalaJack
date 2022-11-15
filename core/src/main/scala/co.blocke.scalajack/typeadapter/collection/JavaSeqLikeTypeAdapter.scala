@@ -53,6 +53,5 @@ case class JavaSeqLikeTypeAdapter[ELEM, TO](
           out
         )
       case _ =>
-        val iterable = toArrayMethod.invoke(t).asInstanceOf[Array[ELEM]].toIterable
-        writer.writeArray(iterable, elementTypeAdapter, out)
+        writer.writeArray(toArrayMethod.invoke(t).asInstanceOf[Array[ELEM]], elementTypeAdapter, out)
     }
