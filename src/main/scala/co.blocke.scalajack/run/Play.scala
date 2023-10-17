@@ -1,17 +1,17 @@
 package co.blocke.scalajack
 package run
 
-import co.blocke.scala_reflection.* 
+import co.blocke.scala_reflection.*
 
 object RunMe extends App:
 
-    val p = Person("Greg", 57, List(false,true,true))
+  val p = Person("Greg", 57, List(false, true, true), Colors.Blue)
 
-    val i: Array[Int] = Array(1,2,3)
+  val i: Array[Int] = Array(1, 2, 3)
 
-    println(Codec.write(p))
+  println(Codec.write(p)(using json.JsonConfig(List("co.blocke.scalajack.run.ColorsX"))))
 
-    // println(RType.of[Person].pretty)
+// println(RType.of[Person].pretty)
 /*
 
 
@@ -31,4 +31,4 @@ def writeImpl[T:Type](t: Expr[T])(using quotes: Quotes): Expr[String] =
     import quotes.reflect.*
 
 
-*/
+ */

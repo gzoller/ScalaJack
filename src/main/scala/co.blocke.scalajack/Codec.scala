@@ -8,14 +8,14 @@ import json.*
 
 object Codec:
 
-    inline def write[T](t: T): String = ${ writeImpl[T]('t) }
+  inline def write[T](t: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('t, 'cfg) }
 
-    def writeImpl[T:Type](t: Expr[T])(using q: Quotes): Expr[String] =
-        import quotes.reflect.*
+  def writeImpl[T: Type](t: Expr[T], cfg: Expr[JsonConfig])(using q: Quotes): Expr[String] =
+    import quotes.reflect.*
 
-        val rtRef = ReflectOnType[T](q)(TypeRepr.of[T])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-        val fn = JsonWriter.writeJsonFn[T](rtRef)
-        '{ 
-            val sb = new StringBuilder()
-            $fn($t, sb).toString 
-        }
+    val rtRef = ReflectOnType[T](q)(TypeRepr.of[T])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+    val fn = JsonWriter.writeJsonFn[T](rtRef)
+    '{
+      val sb = new StringBuilder()
+      $fn($t, sb, $cfg).toString
+    }
