@@ -1,4 +1,5 @@
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Zulu
+lazy val isCI = sys.env.get("CI").contains("true")
 
 inThisBuild(List(
   organization := "co.blocke",
@@ -12,94 +13,69 @@ inThisBuild(List(
       url("http://www.blocke.co")
     )
   )
+  //coverageMinimumStmtTotal    := 92,
+  //coverageFailOnMinimum       := true
 ))
 
 name := "scalajack"
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "13"))
 ThisBuild / organization := "co.blocke"
-val scala3 = "3.2.1"
-val reflectionLibVersion = "1.1.11"
+ThisBuild / scalaVersion := "3.3.0"
 
-lazy val root = (project in file("."))
-  .settings(settings)
-  .settings(publish / skip := true)
-  .settings(
-    crossScalaVersions := Nil,
-    doc := null,  // disable dottydoc for now
-    Compile / doc / sources := Seq()
-  )
-  .aggregate(scalajack, scalajack_dynamo, scalajack_mongo)
-
-lazy val scalajack = (project in file("core"))
+lazy val root = project
+  .in(file("."))
   .settings(settings)
   .settings(
-    name := "scalajack",
+    name := "serializer",
+    Compile / packageBin / mappings += {
+      (baseDirectory.value / "plugin.properties") -> "plugin.properties"
+    },
     doc := null,  // disable dottydoc for now
     Compile / doc / sources := Seq(),
-    libraryDependencies ++= commonDependencies,
+    //sources in (Compile, doc) := Seq(),
     Test / parallelExecution := false,
-    
-    // This messy stuff turns off reflection compiler plugin except for test case code
-    addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
-    autoCompilerPlugins := false,
-    ivyConfigurations += Configurations.CompilerPlugin,
-    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
+    scalafmtOnCompile := !isCI,
+    libraryDependencies ++= Seq(
+      "co.blocke"      %% "scala-reflection"       % "sj_fixes_58a385",
+      "org.scalameta"  %% "munit"                  % "1.0.0-M9" % Test
+    )
   )
 
-lazy val scalajack_dynamo = (project in file("dynamodb"))
-  .settings(settings)
-  .settings(
-    doc := null,  // disable dottydoc for now
-    Compile / doc / sources := Seq(),
-    libraryDependencies ++= commonDependencies ++ Seq("com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.882" % Compile),
-    Test / parallelExecution := false,
-    
-    // This messy stuff turns off reflection compiler plugin except for test case code
-    addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
-    autoCompilerPlugins := false,
-    ivyConfigurations += Configurations.CompilerPlugin,
-    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
-  ).dependsOn(scalajack)
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "8"))
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.Equals(Ref.Branch("main")),
+  RefPredicate.StartsWith(Ref.Tag("v"))
+)
 
-lazy val scalajack_mongo = (project in file("mongo"))
-  .settings(settings)
-  .settings(
-    doc := null,  // disable dottydoc for now
-    Compile / doc / sources := Seq(),
-    libraryDependencies ++= commonDependencies ++ Seq("org.mongodb" % "mongo-java-driver" % "3.12.7"),
-    Test / parallelExecution := false,
-    
-    // This messy stuff turns off reflection compiler plugin except for test case code
-    addCompilerPlugin("co.blocke" %% "scala-reflection" % reflectionLibVersion),
-    autoCompilerPlugins := false,
-    ivyConfigurations += Configurations.CompilerPlugin,
-    Test / scalacOptions ++= Classpaths.autoPlugins(update.value, Seq(), true)
-  ).dependsOn(scalajack)
-
-lazy val commonDependencies = Seq(
-  "co.blocke"      %% "scala-reflection"      % reflectionLibVersion,
-  "commons-codec"  %  "commons-codec"         % "1.15",
-  "org.json4s"     %  "json4s-core_2.13"      % "3.6.11",
-  "org.snakeyaml"  %  "snakeyaml-engine"      % "2.3",
-  "org.json4s"     %  "json4s-native_2.13"    % "3.6.11" % Test,
-  "org.scalameta"  %% "munit"                 % "0.7.25" % Test
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(
+    List("ci-release"),
+    env = Map(
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
+      "CI_SNAPSHOT_RELEASE" -> "+publishSigned"
+    )
+  )
 )
 
 //==========================
 // Settings
 //==========================
+lazy val settings = Seq(
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+  scalacOptions ++= compilerOptions,
+  testFrameworks += new TestFramework("munit.Framework")
+)
+
 lazy val compilerOptions = Seq(
   "-unchecked",
   "-feature",
   "-language:implicitConversions",
   "-deprecation",
+  // "-explain",
   "-encoding",
   "utf8"
-)
-
-lazy val settings = Seq(
-  scalacOptions ++= compilerOptions,
-  scalaVersion := scala3,
-  testFrameworks += new TestFramework("munit.Framework")
 )
 
