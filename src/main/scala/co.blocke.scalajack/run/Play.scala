@@ -5,11 +5,14 @@ import co.blocke.scala_reflection.*
 
 object RunMe extends App:
 
-  val p = Person("Greg", 57, List(false, true, true), Colors.Blue)
+  // val p = Person("Greg", 57, List(false, true, true), Colors.Blue, "Fred".asInstanceOf[BigName])
 
-  val i: Array[Int] = Array(1, 2, 3)
+  // println(Codec.write(p)(using json.JsonConfig(tryFailureHandling = json.TryOption.ERR_MSG_STRING)))
 
-  println(Codec.write(p)(using json.JsonConfig(List("co.blocke.scalajack.run.ColorsX"))))
+  val animal: Dog = Dog("fido", 4, 2, Some(Dog("Mindy", 4, 0, None)))
+  println(Codec.write(animal)(using json.JsonConfig()))
+
+  // println(RType.of[Person].pretty)
 
 // println(RType.of[Person].pretty)
 /*
