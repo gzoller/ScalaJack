@@ -87,9 +87,10 @@ object JsonWriter:
                     sb.append(',')
                     ()
                   }
-                case _ =>
-              ).asInstanceOf[Expr[Unit]]
-              val stmts = hintStmt +: fieldFns.map { case (fn, field) =>
+                case _ => '{ () }
+              ) // .asInstanceOf[Expr[Unit]]
+              val stmts = hintStmt :: fieldFns.map { case (fn, field) =>
+                // val stmts = fieldFns.map { case (fn, field) =>
                 '{
                   val fieldValue = ${
                     Select.unique('{ a }.asTerm, field.name).asExpr
@@ -120,86 +121,15 @@ object JsonWriter:
         val typedName = Expr(rt.typedName)
         val traitType = rt.expr
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
-          ReflectUtil.inTermsOf[T]($traitType, a, sb, cfg)
-          sb
+          val comboName = ($traitType.typedName.toString + "::" + a.getClass.getName).asInstanceOf[TypedName]
+          Option(refCache.get(comboName)) match
+            case Some(writerFn) =>
+              writerFn.asInstanceOf[(T, StringBuilder, JsonConfig) => StringBuilder](a, sb, cfg)
+            case None =>
+              val writerFn = ReflectUtil.inTermsOf[T]($traitType, a, sb, cfg)
+              refCache.put(comboName, writerFn)
+              writerFn(a, sb, cfg)
         }
-
-      //  def inTermsOf[T](a: T, sb: StringBuilder, cfg: json.JsonConfig)
-      /*
-      case rt: TraitRef[?] =>
-        val typedName = Expr(rt.typedName)
-        val zf = (s: String) => println("HERE: " + s)
-        // val zz = liftFunction(zf)
-        '{
-          val traitFn = (a: T, sb: StringBuilder, cfg: JsonConfig) =>
-            sb.append('{')
-            sb.append(cfg.typeHint)
-            sb.append(':')
-            sb.append('"')
-            sb.append(a.getClass.getName)
-            sb.append('"')
-            val sbLen = sb.length
-
-            def f(g: String => String): String = g(a.getClass.getName)
-            val s = ReflectUtil.mcr(f)
-            println("S: " + s)
-
-            // ${
-            //   val f = Expr((s: String) => println("HERE: " + s))
-            //   '{ f(a.getClass.getName) }
-            // lazy val z = '{ foo() }
-            // println("HERE: " + z.value)
-            // Expr(Nil)
-            // }
-
-            // val q2 = quotes
-            // val traitFn: (String, Quotes) => Expr[List[?]] = ReflectUtil.makeTraitFn()
-            // traitFn(a.getClass.getName, q2)
-
-            /*
-            val inTermsOf = RType.inTermsOf[T](a.getClass).asInstanceOf[ScalaClassRType[T]]
-            type U = inTermsOf.T
-            ${
-              import quotes.reflect.*
-              val seenBefore = scala.collection.mutable.Map.empty[TypedName, Boolean]
-              val inTermsOfRef = ReflectOnType[U](quotes)(TypeRepr.of[U])(using seenBefore)
-              println("--3-- " + inTermsOfRef) // PROBLEM <-- This is a TypeSymbolRef, and should be a class
-
-              val fieldFns = inTermsOfRef
-                .asInstanceOf[ScalaClassRef[?]]
-                .fields
-                .map { f =>
-                  f.fieldRef.refType match
-                    case '[t] => (writeJsonFn[t](f.fieldRef.asInstanceOf[RTypeRef[t]]), f)
-                }
-              val stmts = fieldFns.map { case (fn, field) =>
-                '{
-                  val fieldValue = ${
-                    Select.unique('{ a }.asTerm, field.name).asExpr
-                  }
-                  if isOkToWrite(fieldValue, cfg) then
-                    ${
-                      field.fieldRef.refType match
-                        case '[t] =>
-                          '{
-                            sb.append(${ Expr(field.name) })
-                            sb.append(':')
-                            val fn2 = $fn.asInstanceOf[(t, StringBuilder, JsonConfig) => StringBuilder]
-                            fn2(fieldValue.asInstanceOf[t], sb, cfg)
-                            sb.append(',')
-                          }
-                    }
-                }
-              }
-              Expr.ofList(Nil)
-            }
-       */
-            if sbLen == sb.length then sb.append('}')
-            else sb.setCharAt(sb.length() - 1, '}')
-          refCache.put($typedName, traitFn)
-          traitFn
-        }
-       */
 
       case rt: SeqRef[?] =>
         rt.elementRef.refType match
