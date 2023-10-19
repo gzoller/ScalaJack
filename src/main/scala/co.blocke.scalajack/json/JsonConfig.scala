@@ -4,6 +4,7 @@ package json
 case class JsonConfig(
     noneAsNull: Boolean = false,
     tryFailureHandling: TryOption = TryOption.NO_WRITE,
+    typeHint: String = "_hint",
     enumsAsIds: Char | List[String] = Nil // Char is '*' for all enums as ids
 )
 
