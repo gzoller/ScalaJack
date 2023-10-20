@@ -28,11 +28,6 @@ object JsonWriter:
   def writeJsonFn[T](rtRef: RTypeRef[T])(using tt: Type[T], q: Quotes): Expr[(T, StringBuilder, JsonConfig) => StringBuilder] =
     import quotes.reflect.*
 
-    // def liftFunction[T: Type, U: Type](f: T => U): Expr[T => U] = {
-    //   val fnExpr: Expr[T => U] = '{ (x: T) => ${ f('x) } }
-    //   fnExpr
-    // }
-
     rtRef match
       case rt: PrimitiveRef[?] if rt.isStringish =>
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
@@ -75,14 +70,18 @@ object JsonWriter:
             val sbLen = sb.length
             ${
               val hintStmt = (rt match
-                case s: ScalaClassRef[?] if s.renderHint =>
+                case s: ScalaClassRef[?] if s.renderTrait.isDefined =>
+                  val traitName = Expr(s.renderTrait.get)
                   '{
                     sb.append('"')
-                    sb.append(cfg.typeHint)
+                    sb.append(cfg.typeHintLabelByTrait.getOrElse($traitName, cfg.typeHintLabel))
                     sb.append('"')
                     sb.append(':')
                     sb.append('"')
-                    sb.append(a.getClass.getName)
+                    val hint = cfg.typeHintTransformer.get(a.getClass.getName) match
+                      case Some(xform) => xform(a)
+                      case None        => cfg.typeHintDefaultTransformer(a.getClass.getName)
+                    sb.append(hint)
                     sb.append('"')
                     sb.append(',')
                     ()

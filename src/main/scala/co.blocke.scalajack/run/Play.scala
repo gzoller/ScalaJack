@@ -10,12 +10,25 @@ object RunMe extends App:
   val d = Dog("Fido", 4, 2, Some(Dog("Mindy", 4, 0, None)))
   val d2 = Dog("Spot", 4, 3, Some(Dog("Floppy", 3, 1, None)))
 
-  val cfg = json.JsonConfig()
-  println(Codec.write(d)(using cfg))
+  val mapper = (a: Any) =>
+    a.getClass.getPackage.getName match
+      case p if p.startsWith("co.blocke") => "Blocke"
+      case x                              => "Something " + x.getClass.getName
+
+  given json.JsonConfig = json
+    .JsonConfig()
+    .copy(
+      typeHintDefaultTransformer = (s: String) => s.split("\\.").last,
+      typeHintLabelByTrait = Map("co.blocke.scalajack.run.Animal" -> "kind"),
+      typeHintTransformer = Map("co.blocke.scalajack.run.Dog" -> mapper)
+    )
+
+  println(ScalaJack.write(d))
+
   val t0 = System.currentTimeMillis()
   for i <- 0 to 10000 do
-    Codec.write(d)(using cfg)
-    if i % 100 == 0 then println(i)
+    ScalaJack.write(d)
+    // if i % 100 == 0 then println(i)
     // if i == 10000 then println(i)
 
   // println(Codec.write(d)(using cfg))

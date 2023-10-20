@@ -9,7 +9,12 @@ trait Animal:
   val numLegs: Int
   val friend: Option[Animal]
 
-case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal]) extends Animal
+trait Animal2:
+  val name: String
+  val numLegs: Int
+  val friend: Option[Animal2]
+
+case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal2]) extends Animal2
 
 enum Colors:
   case Red, Blue, Green

@@ -6,7 +6,7 @@ import scala.quoted.*
 import quoted.Quotes
 import json.*
 
-object Codec:
+object ScalaJack:
 
   inline def write[T](t: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('t, 'cfg) }
 

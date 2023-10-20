@@ -10,8 +10,7 @@ import scala.quoted.staging.*
 
 object ReflectUtil:
 
-  /**
-    * This function takes the RType of a trait and an instance of T and does two things.
+  /** This function takes the RType of a trait and an instance of T and does two things.
     * First it expresses the instance's class *in terms of* the trait's concrete type parameters (if any).
     * Then it generates a writer function for the now correctly-typed class.
     *
@@ -46,7 +45,7 @@ object ReflectUtil:
 
       inTermsOfRef.refType match
         case '[t] =>
-          val asClassRef = inTermsOfRef.asInstanceOf[ScalaClassRef[t]].copy(renderHint = true)
+          val asClassRef = inTermsOfRef.asInstanceOf[ScalaClassRef[t]].copy(renderTrait = Some(traitType.name))
           JsonWriter.writeJsonFn[t](asClassRef.asInstanceOf[RTypeRef[t]])
     }
     val writeFn = run(fn)
