@@ -3,6 +3,7 @@ package json
 
 case class JsonConfig(
     noneAsNull: Boolean = false,
+    forbidNullsInInput: Boolean = false,
     tryFailureHandling: TryOption = TryOption.NO_WRITE,
     // --------------------------
     typeHintLabel: String = "_hint",

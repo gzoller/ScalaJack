@@ -29,7 +29,7 @@ object JsonWriter:
     import quotes.reflect.*
 
     rtRef match
-      case rt: PrimitiveRef[?] if rt.isStringish =>
+      case rt: PrimitiveRef[?] if rt.family == PrimFamily.Stringish =>
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
           sb.append('"')
           sb.append(a.toString)
