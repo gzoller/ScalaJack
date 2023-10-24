@@ -3,112 +3,104 @@ package json
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.reflect.*
-import co.blocke.scala_reflection.{RTypeRef, TypedName, Clazzes}
+import co.blocke.scala_reflection.{Clazzes, RTypeRef, TypedName}
 import co.blocke.scala_reflection.rtypes.*
 import co.blocke.scala_reflection.Liftables.TypedNameToExpr
 import scala.quoted.*
+import scala.collection.Factory
 import co.blocke.scala_reflection.RType
 import scala.jdk.CollectionConverters.*
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.{Failure, Success}
 
-
 case class ParserRead():
-    def expectInt(): Either[ParseError,Long] = Right(1L)
+  def expectInt(): Either[ParseError, Long] = Right(1L)
 
-case class Blah(msg: String, age: Int, isOk: Boolean)
-
+import scala.collection.immutable.*
+case class Blah(msg: String, stuff: Array[List[String]]) //, age: Int, isOk: Boolean)
 
 object JsonReader:
 
-  def classInstantiator[T:Type]( ref: ClassRef[T] )(using Quotes): Expr[Map[String, ?] => T] = 
+  def classInstantiator[T: Type](ref: ClassRef[T])(using Quotes): Expr[Map[String, ?] => T] =
     import quotes.reflect.*
     val sym = TypeRepr.of[T].classSymbol.get
-    '{
-        (fieldMap: Map[String, ?]) =>
-            ${
-                val tree = Apply(Select.unique(New(TypeIdent(sym)), "<init>"),
-                    ref.fields.map{f =>
-                        f.fieldRef.refType match
-                            case '[t] =>
-                                '{ fieldMap(${Expr(f.name)}).asInstanceOf[t] }.asTerm
-                    }
-                )
-                tree.asExpr.asExprOf[T]
-            }
+    '{ (fieldMap: Map[String, ?]) =>
+      ${
+        val tree = Apply(
+          Select.unique(New(TypeIdent(sym)), "<init>"),
+          ref.fields.map { f =>
+            f.fieldRef.refType match
+              case '[t] =>
+                '{ fieldMap(${ Expr(f.name) }).asInstanceOf[t] }.asTerm
+          }
+        )
+        tree.asExpr.asExprOf[T]
+      }
     }
 
-  def classParseMap[T:Type]( ref: ClassRef[T] )(using Quotes): Expr[JsonParser => Map[String, JsonConfig=>Either[ParseError, ?]]] = 
-    '{
-        (parser: JsonParser) => 
-            val daList = ${
-                val fieldList = ref.fields.map(f => f.fieldRef match
-                    case t: PrimitiveRef[?] if t.name == Clazzes.CHAR_CLASS =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>
-                                for {
-                                    strVal <- parser.expectLabel
-                                    charVal = strVal.toArray.headOption match
-                                        case Some(c) => Right(c)
-                                        case None => ParseError(s"Cannot convert value '$strVal' into a Char.")                                    
-                                } yield charVal
-                            }
-                        }
-                    case t: PrimitiveRef[?] if t.family == PrimFamily.Stringish =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>parser.expectLabel}
-                        }
-                    case t: PrimitiveRef[?] if t.name == Clazzes.INT_CLASS =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>
-                                for {
-                                    longVal <- parser.expectLong(j)
-                                    intVal = longVal.toInt
-                                } yield intVal
-                            }
-                        }
-                    case t: PrimitiveRef[?] if t.name == Clazzes.SHORT_CLASS =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>
-                                for {
-                                    longVal <- parser.expectLong(j)
-                                    intVal = longVal.toShort
-                                } yield intVal
-                            }
-                        }
-                    case t: PrimitiveRef[?] if t.name == Clazzes.BYTE_CLASS =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>
-                                for {
-                                    longVal <- parser.expectLong(j)
-                                    intVal = longVal.toByte
-                                } yield intVal
-                            }
-                        }
-                    case t: PrimitiveRef[?] if t.family == PrimFamily.Longish =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>parser.expectLong(j)}
-                        }
-                    case t: PrimitiveRef[?] if t.name == Clazzes.FLOAT_CLASS =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>
-                                for {
-                                    longVal <- parser.expectDouble(j)
-                                    intVal = longVal.toFloat
-                                } yield intVal
-                            }
-                        }
-                    case t: PrimitiveRef[?] if t.family == PrimFamily.Doublish =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>parser.expectDouble(j)}
-                        }
-                    case t: PrimitiveRef[?] if t.family == PrimFamily.Boolish =>
-                        '{
-                            ${Expr(f.name)} -> {(j:JsonConfig)=>parser.expectBoolean(j)}
-                        }
-                )
-                Expr.ofList(fieldList)
-            }
-            daList.asInstanceOf[List[(String, JsonConfig=>Either[ParseError, ?])]].toMap
-    }
+  def refFn[T: Type](ref: RTypeRef[T])(using Quotes): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
+    import Clazzes.*
+    import quotes.reflect.*
 
+    ref match
+      case t: PrimitiveRef[?] if t.name == BOOLEAN_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectBoolean(j, p).map(_.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == BYTE_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toByte.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == CHAR_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) =>
+          p.expectString(j, p)
+            .flatMap(s =>
+              s.toArray.headOption match
+                case Some(c) => Right(c.asInstanceOf[T])
+                case None    => Left(ParseError(s"Cannot convert value '$s' into a Char."))
+            )
+        }
+      case t: PrimitiveRef[?] if t.name == DOUBLE_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == FLOAT_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == INT_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toInt.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == LONG_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.asInstanceOf[T]) }
+      case t: PrimitiveRef[?] if t.name == SHORT_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toShort.asInstanceOf[T]) }
+      case t: PrimitiveRef[T] if t.name == STRING_CLASS =>
+        '{ (j: JsonConfig, p: JsonParser) => p.expectString(j, p).map(_.asInstanceOf[T]) }
+
+      case t: SeqRef[T] =>
+        t.refType match
+          case '[s] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val subFn = refFn[e](t.elementRef.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
+                '{ (j: JsonConfig, p: JsonParser) =>
+                  p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
+                }
+      case t: ArrayRef[T] =>
+        t.refType match
+          case '[s] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val subFn = refFn[e](t.elementRef.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
+                '{ (j: JsonConfig, p: JsonParser) =>
+                  p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
+                }
+
+  def classParseMap[T: Type](ref: ClassRef[T])(using Quotes): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
+    import Clazzes.*
+    '{ (parser: JsonParser) =>
+      val daList = ${
+        val fieldList = ref.fields.map(f =>
+          f.fieldRef.refType match
+            case '[m] =>
+              val fn = refFn[m](f.fieldRef.asInstanceOf[RTypeRef[m]])
+              '{
+                ${ Expr(f.name) } -> $fn
+              }
+        )
+        Expr.ofList(fieldList)
+      }
+      daList.toMap
+    }

@@ -21,15 +21,16 @@ object RunMe extends App:
     .JsonConfig()
 
   try
-    println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
+    println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg\nZoller",  "stuff": [["a","b","c"],["x","y","z"]] }"""))
+    // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
   catch {
     case t: Throwable => println("BOOM: " + t.getMessage)
   }
 
-  val t0 = System.currentTimeMillis()
-  for i <- (0 to 10000) do ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}""")
-  val t1 = System.currentTimeMillis()
-  println("TIME: " + (t1 - t0))
+  // val t0 = System.currentTimeMillis()
+  // for i <- (0 to 10000) do ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}""")
+  // val t1 = System.currentTimeMillis()
+  // println("TIME: " + (t1 - t0))
 
   // inline def read[T](js: String)(using cfg: JsonConfig = JsonConfig()): T = ${ readImpl[T]('js, 'cfg) }
 
