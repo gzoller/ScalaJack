@@ -22,7 +22,10 @@ enum Colors:
 import scala.collection.immutable.*
 enum Vehicle:
   case Car, Bus, Train
-case class Blah(msg: String, stuff: Vehicle)
+
+case class Simple(a: Int, b: Boolean, c: Option[String], z: Int = 5)
+
+case class Blah(msg: String, stuff: Simple)
 
 object Talk:
   def say(s: String): String = s"Say $s!"

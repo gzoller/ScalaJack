@@ -13,6 +13,8 @@ case class JsonParser(js: String):
   private var i = 0
   private val max: Int = jsChars.length
 
+  def getPos = i
+
   // Housekeeping
   // ------------------------------
   @inline def nullCheck: Boolean =
@@ -61,7 +63,7 @@ case class JsonParser(js: String):
       case 't' if i + 3 < max && jsChars(i + 1) == 'r' && jsChars(i + 2) == 'u' && jsChars(i + 3) == 'e' =>
         i += 4
         Right(true)
-      case 'f' if i + 4 < max && jsChars(i + 1) == 'a' && jsChars(i + 2) == 'l' && jsChars(i + 3) == 's' && jsChars(i + 3) == 'e' =>
+      case 'f' if i + 4 < max && jsChars(i + 1) == 'a' && jsChars(i + 2) == 'l' && jsChars(i + 3) == 's' && jsChars(i + 4) == 'e' =>
         i += 5
         Right(false)
       case x => Left(JsonParseError(s"Unexpected character '$x' where beginning of boolean value expected at position [$i]"))
@@ -118,13 +120,6 @@ case class JsonParser(js: String):
             Right(captured.getOrElse(js.substring(mark, i - 1)))
           case x => Left(JsonParseError(s"Unexpected character '$x' where beginning of label expected at position [$i]"))
 
-  def expectOption[T](cfg: JsonConfig, expectElement: (JsonConfig, JsonParser) => Either[ParseError, T]): Either[ParseError, Option[T]] =
-    nullCheck match
-      case false                          => expectElement(cfg, this).map(t => Some(t))
-      case true if cfg.noneAsNull         => Right(None)
-      case true if cfg.forbidNullsInInput => Left(JsonParseError(s"Forbidden 'null' value received at position [$i]"))
-      case true                           => Right(Some(null.asInstanceOf[T]))
-
   def expectList[T](cfg: JsonConfig, expectElement: (JsonConfig, JsonParser) => Either[ParseError, T]): Either[ParseError, List[T]] =
     if jsChars(i) != '[' then Left(JsonParseError(s"Beginning of list expected at position [$i]"))
     else
@@ -150,26 +145,26 @@ case class JsonParser(js: String):
   def expectClass[T](
       cfg: JsonConfig,
       fieldMap: Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]],
-      instantiator: Map[String, ?] => T
+      instantiator: Map[String, ?] => T,
+      fieldValues: scala.collection.mutable.HashMap[String, Any] // pre-set values (Option:None, default values)
   ): Either[ParseError, T] =
     if jsChars(i) != '{' then Left(JsonParseError(s"Beginning of object expected at position [$i]"))
     else
       i += 1
       eatWhitespace
       var done: Option[Either[ParseError, T]] = None
-      val fields = scala.collection.mutable.HashMap.empty[String, Any]
       while done.isEmpty do
         (for {
           fieldLabel <- expectLabel
           _ <- expectColon
           fieldValue <- fieldMap(fieldLabel)(cfg, this)
-          _ = fields.put(fieldLabel, fieldValue)
+          _ = fieldValues.put(fieldLabel, fieldValue)
           _ <- expectComma
         } yield fieldValue) match
           case Left(CommaExpected(_)) if jsChars(i) == '}' =>
             i += 1
             eatWhitespace
-            done = Some(Right(instantiator(fields.toMap))) // instantiate the class here!!!
+            done = Some(Right(instantiator(fieldValues.toMap))) // instantiate the class here!!!
           case Left(e) =>
             done = Some(Left(e))
           case Right(_) =>

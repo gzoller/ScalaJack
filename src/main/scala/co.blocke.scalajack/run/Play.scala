@@ -33,7 +33,7 @@ object RunMe extends App:
     // println("Worked? " + c.valueOf("Blue"))
     // println("Color: " + c.getClass.getName)
 
-    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": 2}"""))
+    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false}}"""))
 
     // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
   catch {

@@ -82,6 +82,23 @@ object JsonReader:
                   p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
                 }
 
+      case t: ScalaOptionRef[T] =>
+        t.refType match
+          case '[s] =>
+            t.optionParamType.refType match
+              case '[e] =>
+                val subFn = refFn[e](t.optionParamType.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
+                val isNullable = Expr(t.optionParamType.isNullable)
+                '{ (j: JsonConfig, p: JsonParser) =>
+                  p.nullCheck match {
+                    case true if j.noneAsNull         => Right(None.asInstanceOf[T])
+                    case true if j.forbidNullsInInput => Left(JsonParseError(s"Forbidden 'null' value received at position [${p.getPos}]"))
+                    case true if ! $isNullable        => Left(JsonParseError(s"Null value given for non-nullable value type at position [${p.getPos}]"))
+                    case true                         => Right(Some(null).asInstanceOf[T])
+                    case false                        => $subFn(j, p).map(v => Some(v).asInstanceOf[T])
+                  }
+                }
+
       case t: ScalaEnumRef[T] =>
         t.refType match
           case '[s] =>
@@ -111,6 +128,51 @@ object JsonReader:
                       case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for value '$v'"))
                   }
             }
+
+      case t: ScalaClassRef[T] =>
+        t.refType match
+          case '[s] =>
+            val parseTable = classParseMap[T](t)
+            val instantiator = classInstantiator[T](t)
+
+            '{ (j: JsonConfig, p: JsonParser) =>
+              val rtype = ${ t.expr }.asInstanceOf[ScalaClassRType[T]]
+              val presetFieldValues = scala.collection.mutable.HashMap.empty[String, Any]
+              rtype.fields.foreach(f =>
+                if f.fieldType.clazz == Clazzes.OptionClazz then presetFieldValues.put(f.name, None)
+                else if f.asInstanceOf[ScalaFieldInfo].defaultValueAccessorName.isDefined then
+                  val (companion, accessor) = f.asInstanceOf[ScalaFieldInfo].defaultValueAccessorName.get
+
+                  // Have to use Java reflection here to get default value--Scala compiler won't have access to companion
+                  // or accessor if we do a ${} block, and using compiler staging would murder performance.
+                  val defaultValue = {
+                    val c = Class.forName(companion)
+                    val cons = c.getDeclaredConstructor()
+                    cons.setAccessible(true)
+                    val m = c.getMethod(accessor)
+                    m.setAccessible(true)
+                    m.invoke(cons.newInstance())
+                  }
+                  println("Got: " + defaultValue)
+
+                  presetFieldValues.put(f.name, defaultValue)
+              )
+              val classFieldMap = $parseTable(p) // Map[String, JsonConfig => Either[ParseError, ?]]
+              p.expectClass[T](j, classFieldMap, $instantiator, presetFieldValues)
+            }
+
+      case t: AliasRef[T] =>
+        t.refType match
+          case '[s] =>
+            t.unwrappedType.refType match
+              case '[e] =>
+                val subFn = refFn[e](t.unwrappedType.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
+                '{ (j: JsonConfig, p: JsonParser) =>
+                  $subFn(j,p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]]
+                }
+
+
+  // -----------------------------------
 
   def classParseMap[T: Type](ref: ClassRef[T])(using Quotes): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
     import Clazzes.*
