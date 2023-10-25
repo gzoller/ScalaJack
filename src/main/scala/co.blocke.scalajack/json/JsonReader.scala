@@ -11,13 +11,7 @@ import scala.collection.Factory
 import co.blocke.scala_reflection.RType
 import scala.jdk.CollectionConverters.*
 import java.util.concurrent.ConcurrentHashMap
-import scala.util.{Failure, Success}
-
-case class ParserRead():
-  def expectInt(): Either[ParseError, Long] = Right(1L)
-
-import scala.collection.immutable.*
-case class Blah(msg: String, stuff: Array[List[String]]) //, age: Int, isOk: Boolean)
+import scala.util.{Failure, Success, Try}
 
 object JsonReader:
 
@@ -53,7 +47,7 @@ object JsonReader:
             .flatMap(s =>
               s.toArray.headOption match
                 case Some(c) => Right(c.asInstanceOf[T])
-                case None    => Left(ParseError(s"Cannot convert value '$s' into a Char."))
+                case None    => Left(JsonParseError(s"Cannot convert value '$s' into a Char."))
             )
         }
       case t: PrimitiveRef[?] if t.name == DOUBLE_CLASS =>
@@ -87,6 +81,36 @@ object JsonReader:
                 '{ (j: JsonConfig, p: JsonParser) =>
                   p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
                 }
+
+      case t: ScalaEnumRef[T] =>
+        t.refType match
+          case '[s] =>
+            val rtypeExpr = t.expr
+            '{ (j: JsonConfig, p: JsonParser) =>
+              val rtype = $rtypeExpr.asInstanceOf[ScalaEnumRType[T]]
+              j.enumsAsIds match
+                case '*' =>
+                  p.expectLong(j, p).flatMap { v =>
+                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
+                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
+                      case Success(v2) => Right(v2)
+                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
+                  }
+                case enumList: List[String] if enumList.contains(rtype.name) =>
+                  p.expectLong(j, p).flatMap { v =>
+                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
+                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
+                      case Success(v2) => Right(v2)
+                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
+                  }
+                case _ =>
+                  p.expectString(j, p).flatMap { v =>
+                    val valueOfMethod = Class.forName(rtype.name).getMethod("valueOf", classOf[String])
+                    scala.util.Try(valueOfMethod.invoke(null, v).asInstanceOf[T]) match
+                      case Success(v2) => Right(v2)
+                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for value '$v'"))
+                  }
+            }
 
   def classParseMap[T: Type](ref: ClassRef[T])(using Quotes): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
     import Clazzes.*

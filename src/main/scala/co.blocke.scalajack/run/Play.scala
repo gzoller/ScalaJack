@@ -3,6 +3,9 @@ package run
 
 import co.blocke.scala_reflection.*
 
+enum Color:
+  case Red, Green, Blue
+
 object RunMe extends App:
 
   val js = """[[123,-456],[394,-2]]"""
@@ -19,12 +22,24 @@ object RunMe extends App:
 
   given json.JsonConfig = json
     .JsonConfig()
+    .copy(enumsAsIds = '*')
 
   try
-    println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg\nZoller",  "stuff": [["a","b","c"],["x","y","z"]] }"""))
+    // Works!
+    // val c = Class.forName("co.blocke.scalajack.run.Color")
+    // val valueOfMethod = c.getMethod("valueOf", classOf[String])
+    // println(valueOfMethod.invoke(null, "Boom"))
+
+    // println("Worked? " + c.valueOf("Blue"))
+    // println("Color: " + c.getClass.getName)
+
+    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": 2}"""))
+
     // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
   catch {
-    case t: Throwable => println("BOOM: " + t.getMessage)
+    case t: Throwable =>
+      println(s"BOOM ($t): " + t.getMessage)
+      println(t.getClass.getName)
   }
 
   // val t0 = System.currentTimeMillis()

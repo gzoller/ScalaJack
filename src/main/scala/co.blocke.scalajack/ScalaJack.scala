@@ -34,7 +34,5 @@ object ScalaJack:
       val classFieldMap = $parseTable(parser) // Map[String, JsonConfig => Either[ParseError, ?]]
       parser.expectClass[T]($cfg, classFieldMap, $instantiator) match
         case Right(v) => v
-        case Left(t) =>
-          println("BOOM: " + t.msg)
-          throw t
+        case Left(t)  => throw t
     }

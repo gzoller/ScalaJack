@@ -18,3 +18,11 @@ case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Anima
 
 enum Colors:
   case Red, Blue, Green
+
+import scala.collection.immutable.*
+enum Vehicle:
+  case Car, Bus, Train
+case class Blah(msg: String, stuff: Vehicle)
+
+object Talk:
+  def say(s: String): String = s"Say $s!"

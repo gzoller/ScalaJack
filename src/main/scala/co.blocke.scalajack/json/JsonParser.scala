@@ -3,7 +3,9 @@ package json
 
 import scala.util.*
 
-case class ParseError(msg: String) extends Throwable
+class ParseError(message: String) extends Throwable(message)
+case class JsonParseError(message: String) extends ParseError(message)
+case class CommaExpected(message: String = "") extends ParseError(message)
 
 case class JsonParser(js: String):
 
@@ -28,7 +30,7 @@ case class JsonParser(js: String):
           i += 1
           eatWhitespace
           Right(())
-        else Left(ParseError(s"Expected comma at position [$i]"))
+        else Left(CommaExpected())
     } yield r
   @inline def expectColon: Either[ParseError, Unit] = // Note: this consumes whitespace before/after the ':'
     for {
@@ -38,7 +40,7 @@ case class JsonParser(js: String):
           i += 1
           eatWhitespace
           Right(())
-        else Left(ParseError(s"Expected colon at position [$i]"))
+        else Left(JsonParseError(s"Expected colon at position [$i]"))
     } yield r
 
   // JSON label (i.e. object key, which is always a simple string, ie no escaped/special chars)
@@ -50,7 +52,7 @@ case class JsonParser(js: String):
         while i < max && jsChars(i) != '"' do i += 1
         i += 1
         Right(js.substring(mark, i - 1))
-      case x => Left(ParseError(s"Unexpected character '$x' where beginning of label expected at position [$i]"))
+      case x => Left(JsonParseError(s"Unexpected character '$x' where beginning of label expected at position [$i]"))
 
   // Data Types
   // ------------------------------
@@ -62,7 +64,7 @@ case class JsonParser(js: String):
       case 'f' if i + 4 < max && jsChars(i + 1) == 'a' && jsChars(i + 2) == 'l' && jsChars(i + 3) == 's' && jsChars(i + 3) == 'e' =>
         i += 5
         Right(false)
-      case x => Left(ParseError(s"Unexpected character '$x' where beginning of boolean value expected at position [$i]"))
+      case x => Left(JsonParseError(s"Unexpected character '$x' where beginning of boolean value expected at position [$i]"))
 
   def expectLong(cfg: JsonConfig, p: JsonParser): Either[ParseError, Long] =
     val mark = i
@@ -78,7 +80,7 @@ case class JsonParser(js: String):
           if mark == i then s"""Int/Long expected but couldn't parse from "${jsChars(i)}" at position [$i]"""
           else s"""Int/Long expected but couldn't parse from "${js.substring(mark, i)}" at position [$i]"""
         i = mark
-        Left(ParseError(msg))
+        Left(JsonParseError(msg))
 
   def expectDouble(cfg: JsonConfig, p: JsonParser): Either[ParseError, Double] =
     val mark = i
@@ -94,11 +96,11 @@ case class JsonParser(js: String):
           if mark == i then s"Float/Double expected but couldn't parse from \"${jsChars(i)}\" at position [$i]"
           else s"Float/Double expected but couldn't parse from \"${js.substring(mark, i - 1)}\" at position [$i]"
         i = mark
-        Left(ParseError(msg))
+        Left(JsonParseError(msg))
 
   def expectString(cfg: JsonConfig, p: JsonParser): Either[ParseError, String] =
     nullCheck match
-      case true if cfg.forbidNullsInInput => Left(ParseError(s"Forbidden 'null' value received at position [$i]"))
+      case true if cfg.forbidNullsInInput => Left(JsonParseError(s"Forbidden 'null' value received at position [$i]"))
       case true                           => Right(null.asInstanceOf[String])
       case false =>
         jsChars(i) match
@@ -114,17 +116,17 @@ case class JsonParser(js: String):
                 case _ => i += 1
             i += 1
             Right(captured.getOrElse(js.substring(mark, i - 1)))
-          case x => Left(ParseError(s"Unexpected character '$x' where beginning of label expected at position [$i]"))
+          case x => Left(JsonParseError(s"Unexpected character '$x' where beginning of label expected at position [$i]"))
 
   def expectOption[T](cfg: JsonConfig, expectElement: (JsonConfig, JsonParser) => Either[ParseError, T]): Either[ParseError, Option[T]] =
     nullCheck match
       case false                          => expectElement(cfg, this).map(t => Some(t))
       case true if cfg.noneAsNull         => Right(None)
-      case true if cfg.forbidNullsInInput => Left(ParseError(s"Forbidden 'null' value received at position [$i]"))
+      case true if cfg.forbidNullsInInput => Left(JsonParseError(s"Forbidden 'null' value received at position [$i]"))
       case true                           => Right(Some(null.asInstanceOf[T]))
 
   def expectList[T](cfg: JsonConfig, expectElement: (JsonConfig, JsonParser) => Either[ParseError, T]): Either[ParseError, List[T]] =
-    if jsChars(i) != '[' then Left(ParseError(s"Beginning of list expected at position [$i]"))
+    if jsChars(i) != '[' then Left(JsonParseError(s"Beginning of list expected at position [$i]"))
     else
       i += 1
       eatWhitespace
@@ -150,7 +152,7 @@ case class JsonParser(js: String):
       fieldMap: Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]],
       instantiator: Map[String, ?] => T
   ): Either[ParseError, T] =
-    if jsChars(i) != '{' then Left(ParseError(s"Beginning of object expected at position [$i]"))
+    if jsChars(i) != '{' then Left(JsonParseError(s"Beginning of object expected at position [$i]"))
     else
       i += 1
       eatWhitespace
@@ -164,7 +166,7 @@ case class JsonParser(js: String):
           _ = fields.put(fieldLabel, fieldValue)
           _ <- expectComma
         } yield fieldValue) match
-          case Left(_) if jsChars(i) == '}' =>
+          case Left(CommaExpected(_)) if jsChars(i) == '}' =>
             i += 1
             eatWhitespace
             done = Some(Right(instantiator(fields.toMap))) // instantiate the class here!!!
