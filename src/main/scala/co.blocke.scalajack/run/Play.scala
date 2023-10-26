@@ -8,10 +8,6 @@ enum Color:
 
 object RunMe extends App:
 
-  val js = """[[123,-456],[394,-2]]"""
-
-  val parser = json.JsonParser(js)
-
   /*
   val f = () => parser.expectLong
   val f2 = () => parser.expectList[Long](() => parser.expectLong)
@@ -33,7 +29,7 @@ object RunMe extends App:
     // println("Worked? " + c.valueOf("Blue"))
     // println("Color: " + c.getClass.getName)
 
-    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false}}"""))
+    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false, "c":{"a":2,"b":true}}}"""))
 
     // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
   catch {

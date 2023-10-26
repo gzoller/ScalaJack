@@ -10,7 +10,7 @@ import scala.quoted.*
 import scala.collection.Factory
 import co.blocke.scala_reflection.RType
 import scala.jdk.CollectionConverters.*
-import java.util.concurrent.ConcurrentHashMap
+import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 
 object JsonReader:
@@ -32,7 +32,7 @@ object JsonReader:
       }
     }
 
-  def refFn[T: Type](ref: RTypeRef[T])(using Quotes): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
+  def refFn[T](ref: RTypeRef[T])(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
     import Clazzes.*
     import quotes.reflect.*
 
@@ -132,10 +132,11 @@ object JsonReader:
       case t: ScalaClassRef[T] =>
         t.refType match
           case '[s] =>
+            // IDEA:  Somewhere at this level (globally tho) create a seenBefore cache.  Pass this cache to classParseMap() and don't
+            // descend on any SelfRef's found.  Do something else (TBD) with these that, when run, looks up the right fn from cache.
             val parseTable = classParseMap[T](t)
             val instantiator = classInstantiator[T](t)
-
-            '{ (j: JsonConfig, p: JsonParser) =>
+            val classFn = '{ (j: JsonConfig, p: JsonParser) =>
               val rtype = ${ t.expr }.asInstanceOf[ScalaClassRType[T]]
               val presetFieldValues = scala.collection.mutable.HashMap.empty[String, Any]
               rtype.fields.foreach(f =>
@@ -153,13 +154,13 @@ object JsonReader:
                     m.setAccessible(true)
                     m.invoke(cons.newInstance())
                   }
-                  println("Got: " + defaultValue)
-
                   presetFieldValues.put(f.name, defaultValue)
               )
               val classFieldMap = $parseTable(p) // Map[String, JsonConfig => Either[ParseError, ?]]
               p.expectClass[T](j, classFieldMap, $instantiator, presetFieldValues)
             }
+            cache.put(Expr(t.typedName), classFn)
+            classFn
 
       case t: AliasRef[T] =>
         t.refType match
@@ -167,14 +168,39 @@ object JsonReader:
             t.unwrappedType.refType match
               case '[e] =>
                 val subFn = refFn[e](t.unwrappedType.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
-                '{ (j: JsonConfig, p: JsonParser) =>
-                  $subFn(j,p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]]
-                }
+                '{ (j: JsonConfig, p: JsonParser) => $subFn(j, p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]] }
 
+      case t: SelfRefRef[T] =>
+        t.refType match
+          case '[s] =>
+            val className = Expr(t.typedName.toString)
+            '{ (j: JsonConfig, p: JsonParser) =>
+              val cname = $className
+              p.cache.get(cname.asInstanceOf[TypedName]) match
+                case Some(fn) => fn(j, p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]]
+                case None     => Left(ParseError(s"Expected self-ref class $cname but none found in cache at position [${p.getPos}]"))
+            }
+
+      // TODO:
+      // * Enumeration
+      // * Java Primitives
+      // * Java Classes
+      // * Java Collections
+      // * Java Enums
+      // * Non-case Scala classes
+      // * Map
+      // * Scala2Ref
+      // * SealedTraitRef
+      // * SelfRefRef
+      // * TraitRef
+      // * TryRef
+      // * TupleRef
 
   // -----------------------------------
 
-  def classParseMap[T: Type](ref: ClassRef[T])(using Quotes): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
+  def classParseMap[T: Type](ref: ClassRef[T])(using q: Quotes)(using
+      cache: scala.collection.mutable.HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
+  ): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
     import Clazzes.*
     '{ (parser: JsonParser) =>
       val daList = ${

@@ -2,12 +2,9 @@ package co.blocke.scalajack
 package json
 
 import scala.util.*
+import co.blocke.scala_reflection.TypedName
 
-class ParseError(message: String) extends Throwable(message)
-case class JsonParseError(message: String) extends ParseError(message)
-case class CommaExpected(message: String = "") extends ParseError(message)
-
-case class JsonParser(js: String):
+case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser) => Either[ParseError, ?]]):
 
   private val jsChars: Array[Char] = js.toCharArray
   private var i = 0
