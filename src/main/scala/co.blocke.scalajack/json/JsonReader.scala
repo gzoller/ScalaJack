@@ -32,15 +32,31 @@ object JsonReader:
       }
     }
 
-  def refFn[T](ref: RTypeRef[T])(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
+  def refFn[T](ref: RTypeRef[T], isMapKey: Boolean = false)(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
     import Clazzes.*
     import quotes.reflect.*
 
     ref match
       case t: PrimitiveRef[?] if t.name == BOOLEAN_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectBoolean(j, p).map(_.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectBoolean(j, p).map(_.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectBoolean(j, p).map(_.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == BYTE_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toByte.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectLong(j, p).map(_.toByte.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toByte.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == CHAR_CLASS =>
         '{ (j: JsonConfig, p: JsonParser) =>
           p.expectString(j, p)
@@ -51,19 +67,60 @@ object JsonReader:
             )
         }
       case t: PrimitiveRef[?] if t.name == DOUBLE_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectDouble(j, p).map(_.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == FLOAT_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == INT_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toInt.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectLong(j, p).map(_.toInt.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toInt.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == LONG_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectLong(j, p).map(_.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.asInstanceOf[T]) }
       case t: PrimitiveRef[?] if t.name == SHORT_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toShort.asInstanceOf[T]) }
+        if isMapKey then
+          '{ (j: JsonConfig, p: JsonParser) =>
+            (for {
+              _ <- p.expectQuote
+              v <- p.expectLong(j, p).map(_.toShort.asInstanceOf[T])
+              _ <- p.expectQuote
+            } yield v)
+          }
+        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toShort.asInstanceOf[T]) }
       case t: PrimitiveRef[T] if t.name == STRING_CLASS =>
         '{ (j: JsonConfig, p: JsonParser) => p.expectString(j, p).map(_.asInstanceOf[T]) }
 
       case t: SeqRef[T] =>
+        if isMapKey then throw new JsonError("Seq types cannot be map keys.")
         t.refType match
           case '[s] =>
             t.elementRef.refType match
@@ -72,7 +129,23 @@ object JsonReader:
                 '{ (j: JsonConfig, p: JsonParser) =>
                   p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
                 }
+      case t: MapRef[T] =>
+        if isMapKey then throw new JsonError("Map types cannot be map keys.")
+        t.refType match
+          case '[m] =>
+            t.elementRef.refType match
+              case '[k] =>
+                t.elementRef2.refType match
+                  case '[v] =>
+                    val keyFn = refFn[k](t.elementRef.asInstanceOf[RTypeRef[k]], true).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, k]]]
+                    val valFn = refFn[v](t.elementRef2.asInstanceOf[RTypeRef[v]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, v]]]
+                    '{ (j: JsonConfig, p: JsonParser) =>
+                      val z = p.expectObject[k, v](j, $keyFn, $valFn).map(_.to(${ Expr.summon[Factory[(k, v), T]].get })) // Convert List to whatever the target type should be
+                      println(s"Z ${p.getPos}: " + z)
+                      z
+                    }
       case t: ArrayRef[T] =>
+        if isMapKey then throw new JsonError("Arrays cannot be map keys.")
         t.refType match
           case '[s] =>
             t.elementRef.refType match
@@ -83,6 +156,7 @@ object JsonReader:
                 }
 
       case t: ScalaOptionRef[T] =>
+        if isMapKey then throw new JsonError("Options cannot be map keys.")
         t.refType match
           case '[s] =>
             t.optionParamType.refType match
@@ -103,23 +177,31 @@ object JsonReader:
         t.refType match
           case '[s] =>
             val rtypeExpr = t.expr
+            val wrappedMapKey = Expr(isMapKey)
             '{ (j: JsonConfig, p: JsonParser) =>
               val rtype = $rtypeExpr.asInstanceOf[ScalaEnumRType[T]]
+              def readNumericEnum =
+                if $wrappedMapKey then
+                  (for {
+                    _ <- p.expectQuote
+                    enumVal <- p.expectLong(j, p)
+                    _ <- p.expectQuote
+                  } yield enumVal).flatMap { v =>
+                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
+                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
+                      case Success(v2) => Right(v2)
+                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
+                  }
+                else
+                  p.expectLong(j, p).flatMap { v =>
+                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
+                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
+                      case Success(v2) => Right(v2)
+                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
+                  }
               j.enumsAsIds match
-                case '*' =>
-                  p.expectLong(j, p).flatMap { v =>
-                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
-                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
-                      case Success(v2) => Right(v2)
-                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
-                  }
-                case enumList: List[String] if enumList.contains(rtype.name) =>
-                  p.expectLong(j, p).flatMap { v =>
-                    val fromOrdinalMethod = Class.forName(rtype.name).getMethod("fromOrdinal", classOf[Int])
-                    scala.util.Try(fromOrdinalMethod.invoke(null, v.toInt).asInstanceOf[T]) match
-                      case Success(v2) => Right(v2)
-                      case Failure(e)  => Left(JsonParseError(s"No enum value in ${rtype.name} for ordinal value '$v'"))
-                  }
+                case '*'                                                     => readNumericEnum
+                case enumList: List[String] if enumList.contains(rtype.name) => readNumericEnum
                 case _ =>
                   p.expectString(j, p).flatMap { v =>
                     val valueOfMethod = Class.forName(rtype.name).getMethod("valueOf", classOf[String])
@@ -130,6 +212,7 @@ object JsonReader:
             }
 
       case t: ScalaClassRef[T] =>
+        if isMapKey then throw new JsonError("Class types cannot be map keys.")
         t.refType match
           case '[s] =>
             // IDEA:  Somewhere at this level (globally tho) create a seenBefore cache.  Pass this cache to classParseMap() and don't
@@ -167,10 +250,11 @@ object JsonReader:
           case '[s] =>
             t.unwrappedType.refType match
               case '[e] =>
-                val subFn = refFn[e](t.unwrappedType.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
+                val subFn = refFn[e](t.unwrappedType.asInstanceOf[RTypeRef[e]], isMapKey).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
                 '{ (j: JsonConfig, p: JsonParser) => $subFn(j, p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]] }
 
       case t: SelfRefRef[T] =>
+        if isMapKey then throw new JsonError("Class or trait types cannot be map keys.")
         t.refType match
           case '[s] =>
             val className = Expr(t.typedName.toString)
@@ -188,10 +272,8 @@ object JsonReader:
       // * Java Collections
       // * Java Enums
       // * Non-case Scala classes
-      // * Map
       // * Scala2Ref
       // * SealedTraitRef
-      // * SelfRefRef
       // * TraitRef
       // * TryRef
       // * TupleRef

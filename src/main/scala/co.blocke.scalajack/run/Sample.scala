@@ -29,3 +29,5 @@ case class Blah(msg: String, stuff: Simple)
 
 object Talk:
   def say(s: String): String = s"Say $s!"
+
+case class M1(v: Map[Long, Int], v2: HashMap[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])

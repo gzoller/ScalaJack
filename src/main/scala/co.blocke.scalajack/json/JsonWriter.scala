@@ -25,7 +25,7 @@ object JsonWriter:
 
   val refCache = new ConcurrentHashMap[TypedName, (?, StringBuilder, JsonConfig) => StringBuilder]
 
-  def writeJsonFn[T](rtRef: RTypeRef[T])(using tt: Type[T], q: Quotes): Expr[(T, StringBuilder, JsonConfig) => StringBuilder] =
+  def writeJsonFn[T](rtRef: RTypeRef[T], isMapKey: Boolean = false)(using tt: Type[T], q: Quotes): Expr[(T, StringBuilder, JsonConfig) => StringBuilder] =
     import quotes.reflect.*
 
     rtRef match
@@ -36,13 +36,20 @@ object JsonWriter:
           sb.append('"')
         }
       case rt: PrimitiveRef[?] =>
-        '{ (a: T, sb: StringBuilder, cfg: JsonConfig) => sb.append(a.toString) }
+        if isMapKey then
+          '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
+            sb.append('"')
+            sb.append(a.toString)
+            sb.append('"')
+          }
+        else '{ (a: T, sb: StringBuilder, cfg: JsonConfig) => sb.append(a.toString) }
 
       case rt: AliasRef[?] =>
-        val fn = writeJsonFn[rt.T](rt.unwrappedType.asInstanceOf[RTypeRef[rt.T]])(using Type.of[rt.T])
+        val fn = writeJsonFn[rt.T](rt.unwrappedType.asInstanceOf[RTypeRef[rt.T]], isMapKey)(using Type.of[rt.T])
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) => $fn(a, sb, cfg) }
 
       case rt: ArrayRef[?] =>
+        if isMapKey then throw new JsonError("Arrays cannot be map keys.")
         rt.elementRef.refType match
           case '[t] =>
             val elementFn = writeJsonFn[t](rt.elementRef.asInstanceOf[RTypeRef[t]])
@@ -59,6 +66,7 @@ object JsonWriter:
             }
 
       case rt: ClassRef[?] =>
+        if isMapKey then throw new JsonError("Classes cannot be map keys.")
         val fieldFns = rt.fields.map { f =>
           f.fieldRef.refType match
             case '[t] => (writeJsonFn[t](f.fieldRef.asInstanceOf[RTypeRef[t]]), f)
@@ -89,7 +97,6 @@ object JsonWriter:
                 case _ => '{ () }
               ) // .asInstanceOf[Expr[Unit]]
               val stmts = hintStmt :: fieldFns.map { case (fn, field) =>
-                // val stmts = fieldFns.map { case (fn, field) =>
                 '{
                   val fieldValue = ${
                     Select.unique('{ a }.asTerm, field.name).asExpr
@@ -99,7 +106,9 @@ object JsonWriter:
                       field.fieldRef.refType match
                         case '[t] =>
                           '{
+                            sb.append('"')
                             sb.append(${ Expr(field.name) })
+                            sb.append('"')
                             sb.append(':')
                             val fn2 = $fn.asInstanceOf[(t, StringBuilder, JsonConfig) => StringBuilder]
                             fn2(fieldValue.asInstanceOf[t], sb, cfg)
@@ -117,6 +126,7 @@ object JsonWriter:
         }
 
       case rt: TraitRef[?] =>
+        if isMapKey then throw new JsonError("Traits cannot be map keys.")
         val typedName = Expr(rt.typedName)
         val traitType = rt.expr
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
@@ -131,6 +141,7 @@ object JsonWriter:
         }
 
       case rt: SeqRef[?] =>
+        if isMapKey then throw new JsonError("Seq instances cannot be map keys.")
         rt.elementRef.refType match
           case '[t] =>
             val elementFn = writeJsonFn[t](rt.elementRef.asInstanceOf[RTypeRef[t]])
@@ -147,6 +158,7 @@ object JsonWriter:
             }
 
       case rt: OptionRef[?] =>
+        if isMapKey then throw new JsonError("Options cannot be map keys.")
         rt.optionParamType.refType match
           case '[t] =>
             val fn = writeJsonFn[t](rt.optionParamType.asInstanceOf[RTypeRef[t]])
@@ -157,6 +169,7 @@ object JsonWriter:
             }
 
       case rt: TryRef[?] =>
+        if isMapKey then throw new JsonError("Try cannot be map keys.")
         rt.tryRef.refType match
           case '[t] =>
             val fn = writeJsonFn[t](rt.tryRef.asInstanceOf[RTypeRef[t]])
@@ -171,12 +184,13 @@ object JsonWriter:
             }
 
       case rt: MapRef[?] =>
+        if isMapKey then throw new JsonError("Maps cannot be map keys.")
         rt.elementRef.refType match
           case '[k] =>
             rt.elementRef2.refType match
               case '[v] =>
-                val keyFn = writeJsonFn[k](rt.elementRef.asInstanceOf[RTypeRef[k]])
-                val valueFn = writeJsonFn[v](rt.elementRef.asInstanceOf[RTypeRef[v]])
+                val keyFn = writeJsonFn[k](rt.elementRef.asInstanceOf[RTypeRef[k]], true)
+                val valueFn = writeJsonFn[v](rt.elementRef2.asInstanceOf[RTypeRef[v]])
                 '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
                   sb.append('{')
                   val sbLen = sb.length
@@ -192,6 +206,7 @@ object JsonWriter:
                 }
 
       case rt: LeftRightRef[?] =>
+        if isMapKey then throw new JsonError("Union, intersection, or Either cannot be map keys.")
         rt.leftRef.refType match
           case '[lt] =>
             val leftFn = writeJsonFn[lt](rt.leftRef.asInstanceOf[RTypeRef[lt]])
@@ -215,6 +230,7 @@ object JsonWriter:
 
       case rt: EnumRef[?] =>
         val expr = rt.expr
+        val isMapKeyExpr = Expr(isMapKey)
         '{
           val rtype = $expr.asInstanceOf[EnumRType[?]]
           (a: T, sb: StringBuilder, cfg: JsonConfig) =>
@@ -222,13 +238,20 @@ object JsonWriter:
               case '*'                                               => true
               case aList: List[String] if aList.contains(rtype.name) => true
               case _                                                 => false
-            if enumAsId then sb.append(rtype.ordinal(a.toString).getOrElse(throw new JsonError(s"Value $a is not a valid enum value for ${rtype.name}")))
+            if enumAsId then
+              val enumVal = rtype.ordinal(a.toString).getOrElse(throw new JsonError(s"Value $a is not a valid enum value for ${rtype.name}"))
+              if $isMapKeyExpr then
+                sb.append('"')
+                sb.append(enumVal.toString)
+                sb.append('"')
+              else sb.append(enumVal.toString)
             else
               sb.append('"')
               sb.append(a.toString)
               sb.append('"')
         }
 
+      // TODO:  Not sure this is right!
       case rt: SealedTraitRef[?] =>
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
           sb.append('"')
@@ -237,6 +260,7 @@ object JsonWriter:
         }
 
       case rt: TupleRef[?] =>
+        if isMapKey then throw new JsonError("Tuples cannot be map keys.")
         val elementFns = rt.tupleRefs.map { f =>
           f.refType match
             case '[t] => (writeJsonFn[t](f.asInstanceOf[RTypeRef[t]]), f)
@@ -269,6 +293,7 @@ object JsonWriter:
         }
 
       case rt: SelfRefRef[?] =>
+        if isMapKey then throw new JsonError("Classes or traits cannot be map keys.")
         val e = rt.expr
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
           val fn = refCache.get($e.typedName).asInstanceOf[(T, StringBuilder, JsonConfig) => StringBuilder]
@@ -276,6 +301,7 @@ object JsonWriter:
         }
 
       case rt: JavaCollectionRef[?] =>
+        if isMapKey then throw new JsonError("Collections cannot be map keys.")
         rt.elementRef.refType match
           case '[t] =>
             val elementFn = writeJsonFn[t](rt.elementRef.asInstanceOf[RTypeRef[t]])
@@ -292,11 +318,12 @@ object JsonWriter:
             }
 
       case rt: JavaMapRef[?] =>
+        if isMapKey then throw new JsonError("Maps cannot be map keys.")
         rt.elementRef.refType match
           case '[k] =>
             rt.elementRef2.refType match
               case '[v] =>
-                val keyFn = writeJsonFn[k](rt.elementRef.asInstanceOf[RTypeRef[k]])
+                val keyFn = writeJsonFn[k](rt.elementRef.asInstanceOf[RTypeRef[k]], true)
                 val valueFn = writeJsonFn[v](rt.elementRef.asInstanceOf[RTypeRef[v]])
                 '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
                   sb.append('{')

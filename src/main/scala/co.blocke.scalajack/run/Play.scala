@@ -18,7 +18,7 @@ object RunMe extends App:
 
   given json.JsonConfig = json
     .JsonConfig()
-    .copy(enumsAsIds = '*')
+  // .copy(enumsAsIds = '*')
 
   try
     // Works!
@@ -29,12 +29,25 @@ object RunMe extends App:
     // println("Worked? " + c.valueOf("Blue"))
     // println("Color: " + c.getClass.getName)
 
-    println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false, "c":{"a":2,"b":true}}}"""))
+    // println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false, "c":{"a":2,"b":true}}}"""))
 
     // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
+
+    // case class M1( v: Map[Int, Int], v2: Map[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])
+    val x = M1(
+      Map(1L -> 2, 3L -> 4),
+      scala.collection.immutable.HashMap(Colors.Red -> 5, Colors.Blue -> 6),
+      Map("a".asInstanceOf[TypedName] -> 7, "b".asInstanceOf[TypedName] -> 8)
+    )
+    val js = ScalaJack.write(x)
+    println(js)
+    val inst = ScalaJack.read[M1](js)
+    println(inst)
+
   catch {
     case t: Throwable =>
       println(s"BOOM ($t): " + t.getMessage)
+      println(t.printStackTrace)
       println(t.getClass.getName)
   }
 
