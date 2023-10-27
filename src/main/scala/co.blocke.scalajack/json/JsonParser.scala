@@ -3,6 +3,7 @@ package json
 
 import scala.util.*
 import co.blocke.scala_reflection.TypedName
+import scala.collection.mutable.ListBuffer
 
 case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser) => Either[ParseError, ?]]):
 
@@ -127,7 +128,7 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
     else
       i += 1
       eatWhitespace
-      val acc = scala.collection.mutable.ListBuffer.empty[T]
+      val acc = ListBuffer.empty[T]
       var done: Option[Either[ParseError, List[T]]] = None
       while done.isEmpty do
         (for {
@@ -143,6 +144,33 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
             done = Some(Left(e))
           case Right(_) =>
       done.get
+
+  def expectTuple(
+      cfg: JsonConfig,
+      tupleFns: List[(JsonConfig, JsonParser) => Either[ParseError, ?]]
+  ): Either[ParseError, List[?]] =
+    if jsChars(i) != '[' then Left(JsonParseError(s"Beginning of tuple expected at position [$i]"))
+    else
+      i += 1
+      eatWhitespace
+      val buf = ListBuffer.empty[Any]
+      tupleFns
+        .foldLeft(Right(buf).asInstanceOf[Either[ParseError, ListBuffer[Any]]]) { (acc, fn) =>
+          acc.flatMap(accumulator =>
+            for {
+              el <- fn(cfg, this)
+              newAcc = accumulator.addOne(el)
+              _ <- expectComma
+            } yield newAcc
+          )
+        } match
+        case Left(CommaExpected(_)) if buf.size == tupleFns.size && jsChars(i) == ']' =>
+          i += 1
+          eatWhitespace
+          Right(buf.toList)
+        case Left(CommaExpected(_)) if jsChars(i) == ']' => Left(ParseError(s"Missing required elements in tuple at position [$i]"))
+        case Left(e: ParseError)                         => Left(e)
+        case Right(_)                                    => Left(ParseError(s"Extra/unexpected tuple fields at position [$i]"))
 
   def expectObject[K, V](
       cfg: JsonConfig,
@@ -173,17 +201,16 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
       done.get
 
   // Special case of JSON object where each entry is a field of a class
-  def expectClass[T](
+  def expectClass(
       cfg: JsonConfig,
       fieldMap: Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]],
-      instantiator: Map[String, ?] => T,
       fieldValues: scala.collection.mutable.HashMap[String, Any] // pre-set values (Option:None, default values)
-  ): Either[ParseError, T] =
+  ): Either[ParseError, Map[String, ?]] =
     if jsChars(i) != '{' then Left(JsonParseError(s"Beginning of class object expected at position [$i]"))
     else
       i += 1
       eatWhitespace
-      var done: Option[Either[ParseError, T]] = None
+      var done: Option[Either[ParseError, Map[String, ?]]] = None
       while done.isEmpty do
         (for {
           fieldLabel <- expectLabel
@@ -195,9 +222,7 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
           case Left(CommaExpected(_)) if jsChars(i) == '}' =>
             i += 1
             eatWhitespace
-            done = Try(instantiator(fieldValues.toMap)) match // instantiate the class here!!!
-              case Success(v) => Some(Right(v))
-              case Failure(e) => Some(Left(ParseError(s"Unable to instantiate class at position [${i - 1}] with message ${e.getMessage}")))
+            done = Some(Right(fieldValues.toMap))
           case Left(e) =>
             done = Some(Left(e))
           case Right(_) =>

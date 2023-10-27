@@ -21,27 +21,10 @@ object RunMe extends App:
   // .copy(enumsAsIds = '*')
 
   try
-    // Works!
-    // val c = Class.forName("co.blocke.scalajack.run.Color")
-    // val valueOfMethod = c.getMethod("valueOf", classOf[String])
-    // println(valueOfMethod.invoke(null, "Boom"))
-
-    // println("Worked? " + c.valueOf("Blue"))
-    // println("Color: " + c.getClass.getName)
-
-    // println("RESULT: " + ScalaJack.read[Blah]("""{"msg":"Greg\nZoller",  "stuff": {"a":-100, "b":false, "c":{"a":2,"b":true}}}"""))
-
-    // println("RESULT: " + ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}"""))
-
-    // case class M1( v: Map[Int, Int], v2: Map[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])
-    val x = M1(
-      Map(1L -> 2, 3L -> 4),
-      scala.collection.immutable.HashMap(Colors.Red -> 5, Colors.Blue -> 6),
-      Map("a".asInstanceOf[TypedName] -> 7, "b".asInstanceOf[TypedName] -> 8)
-    )
+    val x = Blah("foo", (5, true, "wow"))
     val js = ScalaJack.write(x)
     println(js)
-    val inst = ScalaJack.read[M1](js)
+    val inst = ScalaJack.read[Blah](js)
     println(inst)
 
   catch {
@@ -50,72 +33,3 @@ object RunMe extends App:
       println(t.printStackTrace)
       println(t.getClass.getName)
   }
-
-  // val t0 = System.currentTimeMillis()
-  // for i <- (0 to 10000) do ScalaJack.read[json.Blah]("""{"msg":"Greg","isOk":true,"age":57}""")
-  // val t1 = System.currentTimeMillis()
-  // println("TIME: " + (t1 - t0))
-
-  // inline def read[T](js: String)(using cfg: JsonConfig = JsonConfig()): T = ${ readImpl[T]('js, 'cfg) }
-
-  //    def expectList[T]( expectElement: ()=>Either[ParseError,T]): Either[ParseError,List[T]] =
-
-/*
-  val p = Person("Greg", 57, List(false, true, true), Colors.Blue, "Fred".asInstanceOf[BigName])
-
-  val d = Dog("Fido", 4, 2, Some(Dog("Mindy", 4, 0, None)))
-  val d2 = Dog("Spot", 4, 3, Some(Dog("Floppy", 3, 1, None)))
-
-  val mapper = (a: Any) =>
-    a.getClass.getPackage.getName match
-      case p if p.startsWith("co.blocke") => "Blocke"
-      case x                              => "Something " + x.getClass.getName
-
-  given json.JsonConfig = json
-    .JsonConfig()
-    .copy(
-      typeHintDefaultTransformer = (s: String) => s.split("\\.").last,
-      typeHintLabelByTrait = Map("co.blocke.scalajack.run.Animal" -> "kind"),
-      typeHintTransformer = Map("co.blocke.scalajack.run.Dog" -> mapper)
-    )
-
-  println(ScalaJack.write(d))
-
-  val t0 = System.currentTimeMillis()
-  for i <- 0 to 10000 do
-    ScalaJack.write(d)
-    // if i % 100 == 0 then println(i)
-    // if i == 10000 then println(i)
-
-  // println(Codec.write(d)(using cfg))
-  // println("")
-  // println(Codec.write(d2)(using cfg))
-  // println("")
-  // println(Codec.write(d)(using cfg))
-
-  val t1 = System.currentTimeMillis()
-  println("TIME: " + (t1 - t0))
- */
-
-/*
-
- case SomeRef =>
-
-    // Compile-Time
-    // * Quotes
-    // * Class details
-
-    // Build field parse map:
-    Map(
-      "name" -> ()=>expectString()
-      "lists" -> ()=>expectList(()=>expectString())
-    )
-
-    '{
-        // Runtime
-        // * json
-        // * cfg
-    }
-
-
- */

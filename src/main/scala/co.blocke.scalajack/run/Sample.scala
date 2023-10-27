@@ -25,7 +25,7 @@ enum Vehicle:
 
 case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
 
-case class Blah(msg: String, stuff: Simple)
+case class Blah(msg: String, stuff: (Int, Boolean, String))
 
 object Talk:
   def say(s: String): String = s"Say $s!"
