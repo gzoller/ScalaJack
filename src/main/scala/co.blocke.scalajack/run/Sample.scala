@@ -23,9 +23,15 @@ import scala.collection.immutable.*
 enum Vehicle:
   case Car, Bus, Train
 
+object WeekDay extends Enumeration {
+  type WeekDay = Value
+  val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
+}
+import WeekDay.*
+
 case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
 
-case class Blah(msg: String, stuff: (Int, Boolean, String))
+case class Blah(msg: String, stuff: WeekDay)
 
 object Talk:
   def say(s: String): String = s"Say $s!"

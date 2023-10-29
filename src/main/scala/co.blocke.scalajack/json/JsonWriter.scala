@@ -11,6 +11,7 @@ import co.blocke.scala_reflection.RType
 import scala.jdk.CollectionConverters.*
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.{Failure, Success}
+import org.apache.commons.text.StringEscapeUtils
 
 object JsonWriter:
 
@@ -30,19 +31,29 @@ object JsonWriter:
 
     rtRef match
       case rt: PrimitiveRef[?] if rt.family == PrimFamily.Stringish =>
+        val nullable = Expr(rt.isNullable)
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
-          sb.append('"')
-          sb.append(a.toString)
-          sb.append('"')
+          if $nullable && a == null then sb.append("null")
+          else
+            sb.append('"')
+            sb.append(StringEscapeUtils.escapeJson(a.toString))
+            sb.append('"')
         }
       case rt: PrimitiveRef[?] =>
+        val nullable = Expr(rt.isNullable)
         if isMapKey then
           '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
-            sb.append('"')
-            sb.append(a.toString)
-            sb.append('"')
+            if $nullable && a == null then sb.append("null")
+            else
+              sb.append('"')
+              sb.append(a.toString)
+              sb.append('"')
           }
-        else '{ (a: T, sb: StringBuilder, cfg: JsonConfig) => sb.append(a.toString) }
+        else
+          '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
+            if $nullable && a == null then sb.append("null")
+            else sb.append(a.toString)
+          }
 
       case rt: AliasRef[?] =>
         val fn = writeJsonFn[rt.T](rt.unwrappedType.asInstanceOf[RTypeRef[rt.T]], isMapKey)(using Type.of[rt.T])
@@ -54,15 +65,17 @@ object JsonWriter:
           case '[t] =>
             val elementFn = writeJsonFn[t](rt.elementRef.asInstanceOf[RTypeRef[t]])
             '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
-              sb.append('[')
-              val sbLen = sb.length
-              a.asInstanceOf[Array[t]].foreach { e =>
-                if isOkToWrite(e, cfg) then
-                  $elementFn(e.asInstanceOf[t], sb, cfg)
-                  sb.append(',')
-              }
-              if sbLen == sb.length then sb.append(']')
-              else sb.setCharAt(sb.length() - 1, ']')
+              if a == null then sb.append("null")
+              else
+                sb.append('[')
+                val sbLen = sb.length
+                a.asInstanceOf[Array[t]].foreach { e =>
+                  if isOkToWrite(e, cfg) then
+                    $elementFn(e.asInstanceOf[t], sb, cfg)
+                    sb.append(',')
+                }
+                if sbLen == sb.length then sb.append(']')
+                else sb.setCharAt(sb.length() - 1, ']')
             }
 
       case rt: ClassRef[?] =>

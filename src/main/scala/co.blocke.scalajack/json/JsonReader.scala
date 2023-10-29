@@ -36,13 +36,11 @@ case class JsonReader() extends ReaderModule:
     modules.readerFn[T](ref)
 
     // TODO:
-    // * Enumeration
-    // * Java Primitives
-    // * Java Classes
-    // * Java Collections
     // * Java Enums
+    // * Java Classes
     // * Non-case Scala classes
     // * SealedTraitRef
     // * TraitRef
+    // * Primitive: Any
 
   // -----------------------------------

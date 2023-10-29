@@ -4,11 +4,11 @@ package readers
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.rtypes.*
-import co.blocke.scala_reflection.{Clazzes, TypedName, RTypeRef}
+import co.blocke.scala_reflection.{Clazzes, RTypeRef, TypedName}
 import co.blocke.scala_reflection.Liftables.TypedNameToExpr
 import scala.quoted.*
 import scala.collection.mutable.HashMap
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 case class ClassReader(next: ReaderModule, root: ReaderModule) extends ReaderModule:
 
@@ -48,11 +48,11 @@ case class ClassReader(next: ReaderModule, root: ReaderModule) extends ReaderMod
                 .flatMap(fieldValues =>
                   scala.util.Try($instantiator(fieldValues.toMap)) match // instantiate the class here!!!
                     case Success(v) => Right(v)
-                    case Failure(e) => Left(ParseError(s"Unable to instantiate class at position [${p.getPos - 1}] with message ${e.getMessage}"))
+                    case Failure(e) => Left(JsonParseError(p.showError(s"Unable to instantiate class at position [${p.getPos - 1}] with message ${e.getMessage}")))
                 )
             }
             cache.put(Expr(t.typedName), classFn)
             classFn
 
-      case t => 
+      case t =>
         next.readerFn[T](t)

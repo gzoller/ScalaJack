@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package run
 
 import co.blocke.scala_reflection.*
+import scala.jdk.CollectionConverters.*
 
 enum Color:
   case Red, Green, Blue
@@ -21,15 +22,13 @@ object RunMe extends App:
   // .copy(enumsAsIds = '*')
 
   try
-    val x = Blah("foo", (5, true, "wow"))
+    val x = Blah("foo", WeekDay.Fri)
     val js = ScalaJack.write(x)
     println(js)
+
     val inst = ScalaJack.read[Blah](js)
     println(inst)
 
   catch {
-    case t: Throwable =>
-      println(s"BOOM ($t): " + t.getMessage)
-      println(t.printStackTrace)
-      println(t.getClass.getName)
+    case t: Throwable => println(s"BOOM ($t): " + t.getMessage)
   }

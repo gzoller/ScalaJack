@@ -1,10 +1,10 @@
 package co.blocke.scalajack
 package json
 
-import co.blocke.scala_reflection.{TypedName, RTypeRef}
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import scala.quoted.*
 import scala.collection.mutable.HashMap
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 trait ReaderModule:
   val root: ReaderModule
@@ -15,10 +15,10 @@ case class TerminusReaderModule(extension: Option[ReaderModule], root: ReaderMod
     ref match
       case t =>
         val extResult = extension match
-            case None => Failure(ParseError("???"))
-            case Some(ext) => Try(ext.readerFn[T](t))
+          case None      => Failure(JsonParseError("???")) // Should Never Happen(tm)
+          case Some(ext) => Try(ext.readerFn[T](t))
         extResult match
-            case Success(v) => v
-            case Failure(_) =>
-                val className = Expr(t.name) 
-                '{ (j: JsonConfig, p: JsonParser) => Left(ParseError("Unknown (or unsupported) RTypeRef class " + $className)) }
+          case Success(v) => v
+          case Failure(_) =>
+            val className = Expr(t.name)
+            '{ (j: JsonConfig, p: JsonParser) => Left(JsonParseError("Unknown (or unsupported) RTypeRef class " + $className)) }

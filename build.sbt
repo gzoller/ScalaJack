@@ -35,8 +35,11 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"      %% "scala-reflection"       % "sj_fixes_58a385",
-      "org.scalameta"  %% "munit"                  % "1.0.0-M9" % Test
+      "co.blocke"          %% "scala-reflection"       % "sj_fixes_58a385",
+      "org.apache.commons" % "commons-text"            % "1.10.0",
+      "org.scalameta"      %% "munit"                  % "1.0.0-M9" % Test,
+      "org.json4s"         %% "json4s-core"            % "4.0.6" % Test,
+      "org.json4s"         %% "json4s-native"          % "4.0.6" % Test
     )
   )
 

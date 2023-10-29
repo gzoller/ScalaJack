@@ -4,10 +4,10 @@ package readers
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.rtypes.*
-import co.blocke.scala_reflection.{Clazzes, TypedName, RTypeRef}
+import co.blocke.scala_reflection.{Clazzes, RTypeRef, TypedName}
 import scala.quoted.*
 import scala.collection.mutable.HashMap
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 case class MiscReader(next: ReaderModule, root: ReaderModule) extends ReaderModule:
 
@@ -26,9 +26,9 @@ case class MiscReader(next: ReaderModule, root: ReaderModule) extends ReaderModu
                 val isNullable = Expr(t.optionParamType.isNullable)
                 '{ (j: JsonConfig, p: JsonParser) =>
                   p.nullCheck match {
-                    case true if j.forbidNullsInInput => Left(JsonParseError(s"Forbidden 'null' value received at position [${p.getPos}]"))
+                    case true if j.forbidNullsInInput => Left(JsonParseError(p.showError(s"Forbidden 'null' value received at position [${p.getPos}]")))
                     case true if j.noneAsNull         => Right(None.asInstanceOf[T])
-                    case true if ! $isNullable        => Left(JsonParseError(s"Null value given for non-nullable value type at position [${p.getPos}]"))
+                    case true if ! $isNullable        => Left(JsonParseError(p.showError(s"Null value given for non-nullable value type at position [${p.getPos}]")))
                     case true                         => Right(Some(null).asInstanceOf[T])
                     case false                        => $subFn(j, p).map(v => Some(v).asInstanceOf[T])
                   }
@@ -51,7 +51,7 @@ case class MiscReader(next: ReaderModule, root: ReaderModule) extends ReaderModu
               val cname = $className
               p.cache.get(cname.asInstanceOf[TypedName]) match
                 case Some(fn) => fn(j, p).asInstanceOf[Either[co.blocke.scalajack.json.ParseError, T]]
-                case None     => Left(ParseError(s"Expected self-ref class $cname but none found in cache at position [${p.getPos}]"))
+                case None     => Left(JsonParseError(p.showError(s"Expected self-ref class $cname but none found in cache at position [${p.getPos}]")))
             }
 
       case t: TryRef[T] =>
@@ -64,13 +64,13 @@ case class MiscReader(next: ReaderModule, root: ReaderModule) extends ReaderModu
                 val isNullable = Expr(t.tryRef.isNullable)
                 '{ (j: JsonConfig, p: JsonParser) =>
                   p.nullCheck match {
-                    case true if j.forbidNullsInInput                      => Left(JsonParseError(s"Forbidden 'null' value received at position [${p.getPos}]"))
-                    case true if j.tryFailureHandling == TryOption.AS_NULL => Right(Failure(ParseError("null value received indicating Try failure")).asInstanceOf[T])
-                    case true if ! $isNullable                             => Left(JsonParseError(s"Null value given for non-nullable value type at position [${p.getPos}]"))
+                    case true if j.forbidNullsInInput                      => Left(JsonParseError(p.showError(s"Forbidden 'null' value received at position [${p.getPos}]")))
+                    case true if j.tryFailureHandling == TryOption.AS_NULL => Right(Failure(JsonParseError(p.showError("null value received indicating Try failure"))).asInstanceOf[T])
+                    case true if ! $isNullable                             => Left(JsonParseError(p.showError(s"Null value given for non-nullable value type at position [${p.getPos}]")))
                     case true                                              => Right(Success(null).asInstanceOf[T])
                     case false                                             => $subFn(j, p).map(v => Success(v).asInstanceOf[T])
                   }
                 }
-            
-      case t => 
+
+      case t =>
         next.readerFn[T](t)
