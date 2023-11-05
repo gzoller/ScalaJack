@@ -1,25 +1,21 @@
 package co.blocke.scalajack
 package json
 
-import org.json4s.JsonAST.{ JNothing, JObject, JValue }
+import org.json4s.JsonAST.{JNothing, JObject, JValue}
 
 object JsonDiff {
 
-  def compare(
-      left:       JValue,
-      right:      JValue,
-      leftLabel:  String = "left",
-      rightLabel: String = "right"): Seq[JsonDiff] = {
+  def compare(left: JValue, right: JValue, leftLabel: String = "left", rightLabel: String = "right"): Seq[JsonDiff] =
     (left, right) match {
       case (JObject(leftFields), JObject(rightFields)) =>
         val allFieldNames =
           (leftFields.map(_._1) ++ rightFields.map(_._1)).distinct
         allFieldNames.sorted flatMap { fieldName =>
           val leftFieldValue = leftFields
-            .collectFirst({ case (`fieldName`, fieldValue) => fieldValue })
+            .collectFirst { case (`fieldName`, fieldValue) => fieldValue }
             .getOrElse(JNothing)
           val rightFieldValue = rightFields
-            .collectFirst({ case (`fieldName`, fieldValue) => fieldValue })
+            .collectFirst { case (`fieldName`, fieldValue) => fieldValue }
             .getOrElse(JNothing)
           compare(leftFieldValue, rightFieldValue, leftLabel, rightLabel)
         }
@@ -35,7 +31,7 @@ object JsonDiff {
       //        }
 
       case _ =>
-        if (left == right) {
+        if left == right then {
           Seq.empty
         } else {
           val outerLeft = left
@@ -48,7 +44,6 @@ object JsonDiff {
           })
         }
     }
-  }
 
 }
 

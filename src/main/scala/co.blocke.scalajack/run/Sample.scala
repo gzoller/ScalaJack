@@ -1,39 +1,60 @@
 package co.blocke.scalajack.run
 
-opaque type BigName = String
+import neotype.*
 
-case class Person(name: String, age: Int, isOk: List[Boolean], favColor: Colors, boss: BigName)
+// opaque type BigName = String
 
-trait Animal:
-  val name: String
-  val numLegs: Int
-  val friend: Option[Animal]
+// case class Person(name: String, age: Int, isOk: List[Boolean], favColor: Colors, boss: BigName)
 
-trait Animal2:
-  val name: String
-  val numLegs: Int
-  val friend: Option[Animal2]
+// trait Animal:
+//   val name: String
+//   val numLegs: Int
+//   val friend: Option[Animal]
 
-case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal2]) extends Animal2
+// trait Animal2:
+//   val name: String
+//   val numLegs: Int
+//   val friend: Option[Animal2]
 
-enum Colors:
-  case Red, Blue, Green
+// case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal2]) extends Animal2
 
-import scala.collection.immutable.*
-enum Vehicle:
-  case Car, Bus, Train
+// enum Colors:
+//   case Red, Blue, Green
 
-object WeekDay extends Enumeration {
-  type WeekDay = Value
-  val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
-}
-import WeekDay.*
+// import scala.collection.immutable.*
+// enum Vehicle:
+//   case Car, Bus, Train
 
-case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
+// object WeekDay extends Enumeration {
+//   type WeekDay = Value
+//   val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
+// }
+// import WeekDay.*
 
-case class Blah(msg: String, stuff: WeekDay)
+// case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
 
-object Talk:
-  def say(s: String): String = s"Say $s!"
+// case class Blah(msg: String, stuff: WeekDay)
 
-case class M1(v: Map[Long, Int], v2: HashMap[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])
+// object Talk:
+//   def say(s: String): String = s"Say $s!"
+
+// case class M1(v: Map[Long, Int], v2: HashMap[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])
+
+trait Miss[E] { val x: E }
+case class Foom[X](x: X) extends Miss[X]
+
+// case class Person[Y](name: String, age: Miss[Y], again: Option[Person[Y]])
+
+case class Person[Y](name: String, again: Option[Person[Y]])
+
+// type NonEmptyString = NonEmptyString.Type
+// given NonEmptyString: Newtype[String] with
+//   inline def validate(input: String): Boolean =
+//     input.nonEmpty
+
+// type MinorPerson = MinorPerson.Type
+// given MinorPerson: Newtype[Person] with
+//   inline def validate(input: Person): Boolean =
+//     input.age < 18
+
+// case class SampleNeo(name: NonEmptyString, label: String, unknown: MinorPerson)

@@ -35,11 +35,12 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"          %% "scala-reflection"       % "sj_fixes_58a385",
-      "org.apache.commons" % "commons-text"            % "1.10.0",
-      "org.scalameta"      %% "munit"                  % "1.0.0-M9" % Test,
-      "org.json4s"         %% "json4s-core"            % "4.0.6" % Test,
-      "org.json4s"         %% "json4s-native"          % "4.0.6" % Test
+      "co.blocke"            %% "scala-reflection"     % "sj_fixes_edbef8",
+      "org.apache.commons"   % "commons-text"          % "1.10.0",
+      "io.github.kitlangton" %% "neotype"              % "0.0.9",
+      "org.scalatest"        %% "scalatest"            % "3.2.17" % Test,
+      "org.json4s"           %% "json4s-core"          % "4.0.6" % Test,
+      "org.json4s"           %% "json4s-native"        % "4.0.6" % Test
     )
   )
 
@@ -68,8 +69,7 @@ ThisBuild / githubWorkflowPublish := Seq(
 //==========================
 lazy val settings = Seq(
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  scalacOptions ++= compilerOptions,
-  testFrameworks += new TestFramework("munit.Framework")
+  scalacOptions ++= compilerOptions
 )
 
 lazy val compilerOptions = Seq(

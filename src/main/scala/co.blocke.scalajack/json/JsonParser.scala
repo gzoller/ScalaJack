@@ -69,7 +69,14 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
       case 'f' if i + 4 < max && jsChars(i + 1) == 'a' && jsChars(i + 2) == 'l' && jsChars(i + 3) == 's' && jsChars(i + 4) == 'e' =>
         i += 5
         Right(false)
-      case x => Left(JsonParseError(showError(s"Unexpected character '$x' where beginning of boolean value expected at position [$i]")))
+      case x =>
+        if cfg.permissivePrimitives && jsChars(i) == '"' then
+          for {
+            _ <- expectQuote
+            result <- expectBoolean(cfg, p)
+            _ <- expectQuote
+          } yield result
+        else Left(JsonParseError(showError(s"Unexpected character '$x' where beginning of boolean value expected at position [$i]")))
 
   def expectLong(cfg: JsonConfig, p: JsonParser): Either[ParseError, Long] =
     val mark = i
@@ -81,11 +88,18 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
     Try(js.substring(mark, i).toLong) match
       case Success(g) => Right(g)
       case Failure(f) =>
-        val msg =
-          if mark == i then s"""Int/Long expected but couldn't parse from "${jsChars(i)}" at position [$i]"""
-          else s"""Int/Long expected but couldn't parse from "${js.substring(mark, i)}" at position [$i]"""
-        i = mark
-        Left(JsonParseError(showError(msg)))
+        if cfg.permissivePrimitives && jsChars(i) == '"' then
+          for {
+            _ <- expectQuote
+            result <- expectLong(cfg, p)
+            _ <- expectQuote
+          } yield result
+        else
+          val msg =
+            if mark == i then s"""Int/Long expected but couldn't parse from "${jsChars(i)}" at position [$i]"""
+            else s"""Int/Long expected but couldn't parse from "${js.substring(mark, i)}" at position [$i]"""
+          i = mark
+          Left(JsonParseError(showError(msg)))
 
   def expectBigLong(cfg: JsonConfig, p: JsonParser): Either[ParseError, BigInt] =
     nullCheck match
@@ -101,11 +115,18 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
         Try(BigInt(js.substring(mark, i))) match
           case Success(g) => Right(g)
           case Failure(f) =>
-            val msg =
-              if mark == i then s"""Int/Long expected but couldn't parse from "${jsChars(i)}" at position [$i]"""
-              else s"""Int/Long expected but couldn't parse from "${js.substring(mark, i)}" at position [$i]"""
-            i = mark
-            Left(JsonParseError(showError(msg)))
+            if cfg.permissivePrimitives && jsChars(i) == '"' then
+              for {
+                _ <- expectQuote
+                result <- expectBigLong(cfg, p)
+                _ <- expectQuote
+              } yield result
+            else
+              val msg =
+                if mark == i then s"""Int/Long expected but couldn't parse from "${jsChars(i)}" at position [$i]"""
+                else s"""Int/Long expected but couldn't parse from "${js.substring(mark, i)}" at position [$i]"""
+              i = mark
+              Left(JsonParseError(showError(msg)))
 
   def expectDouble(cfg: JsonConfig, p: JsonParser): Either[ParseError, Double] =
     val mark = i
@@ -117,11 +138,18 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
     Try(js.substring(mark, i).toDouble) match
       case Success(g) => Right(g)
       case Failure(_) =>
-        val msg =
-          if mark == i then s"Float/Double expected but couldn't parse from \"${jsChars(i)}\" at position [$i]"
-          else s"Float/Double expected but couldn't parse from \"${js.substring(mark, i)}\" at position [$i]"
-        i = mark
-        Left(JsonParseError(showError(msg)))
+        if cfg.permissivePrimitives && jsChars(i) == '"' then
+          for {
+            _ <- expectQuote
+            result <- expectDouble(cfg, p)
+            _ <- expectQuote
+          } yield result
+        else
+          val msg =
+            if mark == i then s"Float/Double expected but couldn't parse from \"${jsChars(i)}\" at position [$i]"
+            else s"Float/Double expected but couldn't parse from \"${js.substring(mark, i)}\" at position [$i]"
+          i = mark
+          Left(JsonParseError(showError(msg)))
 
   def expectBigDouble(cfg: JsonConfig, p: JsonParser): Either[ParseError, BigDecimal] =
     nullCheck match
@@ -137,11 +165,18 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
         Try(BigDecimal(js.substring(mark, i))) match
           case Success(g) => Right(g)
           case Failure(_) =>
-            val msg =
-              if mark == i then s"Float/Double expected but couldn't parse from \"${jsChars(i)}\" at position [$i]"
-              else s"Float/Double expected but couldn't parse from \"${js.substring(mark, i)}\" at position [$i]"
-            i = mark
-            Left(JsonParseError(showError(msg)))
+            if cfg.permissivePrimitives && jsChars(i) == '"' then
+              for {
+                _ <- expectQuote
+                result <- expectBigDouble(cfg, p)
+                _ <- expectQuote
+              } yield result
+            else
+              val msg =
+                if mark == i then s"Float/Double expected but couldn't parse from \"${jsChars(i)}\" at position [$i]"
+                else s"Float/Double expected but couldn't parse from \"${js.substring(mark, i)}\" at position [$i]"
+              i = mark
+              Left(JsonParseError(showError(msg)))
 
   def expectString(cfg: JsonConfig, p: JsonParser): Either[ParseError, String] =
     nullCheck match
@@ -161,7 +196,7 @@ case class JsonParser(js: String, cache: Map[TypedName, (JsonConfig, JsonParser)
                 case _ => i += 1
             i += 1
             Right(captured.getOrElse(js.substring(mark, i - 1)))
-          case x => Left(JsonParseError(showError(s"Unexpected character '$x' where beginning of label expected at position [$i]")))
+          case x => Left(JsonParseError(showError(s"Unexpected character '$x' where beginning of a string expected at position [$i]")))
 
   def expectList[T](cfg: JsonConfig, expectElement: (JsonConfig, JsonParser) => Either[ParseError, T]): Either[ParseError, List[T]] =
     nullCheck match

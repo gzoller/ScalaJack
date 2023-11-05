@@ -73,9 +73,11 @@ case class PrimitiveReader(next: ReaderModule, root: ReaderModule) extends Reade
         '{ (j: JsonConfig, p: JsonParser) =>
           p.expectString(j, p)
             .flatMap(s =>
-              s.toArray.headOption match
-                case Some(c) => Right(c.asInstanceOf[T])
-                case None    => Left(JsonParseError(p.showError(s"Cannot convert value '$s' into a Char.")))
+              if s == null then Left(JsonParseError(p.showError(s"Char typed values cannot be null at position [${p.getPos}]")))
+              else
+                s.toArray.headOption match
+                  case Some(c) => Right(c.asInstanceOf[T])
+                  case None    => Left(JsonParseError(p.showError(s"Cannot convert value '$s' into a Char at position [${p.getPos}]")))
             )
         }
 
@@ -235,7 +237,7 @@ case class PrimitiveReader(next: ReaderModule, root: ReaderModule) extends Reade
               else
                 scala.util.Try(java.util.UUID.fromString(u)) match
                   case Success(uuid) => Right(uuid.asInstanceOf[T])
-                  case Failure(_)    => Left(JsonParseError(p.showError(s"Unable to marshal UUID from value '$u'.")))
+                  case Failure(_)    => Left(JsonParseError(p.showError(s"Unable to marshal UUID from value '$u' at position [${p.getPos}]")))
             )
         }
 

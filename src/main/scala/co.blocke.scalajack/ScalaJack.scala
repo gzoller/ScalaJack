@@ -1,26 +1,23 @@
 package co.blocke.scalajack
 
-import co.blocke.scala_reflection.TypedName
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.ClassRef
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{HashMap, Map}
 import scala.quoted.*
 import quoted.Quotes
 import json.*
 
 object ScalaJack:
 
-  inline def write[T](t: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('t, 'cfg) }
+  inline def write[T](a: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('a, 'cfg) }
 
-  def writeImpl[T: Type](t: Expr[T], cfg: Expr[JsonConfig])(using q: Quotes): Expr[String] =
-    import quotes.reflect.*
-
-    val rtRef = ReflectOnType[T](q)(TypeRepr.of[T])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-    val fn = JsonWriter.writeJsonFn[T](rtRef)
-    '{
-      val sb = new StringBuilder()
-      $fn($t, sb, $cfg).toString
-    }
+  def writeImpl[T](aE: Expr[T], cfg: Expr[JsonConfig])(using q: Quotes, tt: Type[T]): Expr[String] =
+    import q.reflect.*
+    val ref = ReflectOnType(q)(TypeRepr.of[T], true)(using Map.empty[TypedName, Boolean]).asInstanceOf[RTypeRef[T]]
+    val sbE = '{ new StringBuilder() }
+    val classesSeen = Map.empty[TypedName, RTypeRef[?]]
+    '{ ${ JsonWriter.refWrite[T](cfg, ref, aE, sbE)(using classesSeen) }.toString }
 
   // ---------------------------------------------------------------------
 
@@ -43,21 +40,3 @@ object ScalaJack:
         case Right(v) => v
         case Left(t)  => throw t
     }
-
-    /*
-  inline def foo[T](str: String)(using cfg: Config): T = ${ fooImpl[T]('str, 'cfg) }
-
-  def fooImpl[T: Type](str: Expr[String], cfg: Expr[Config])(using q: Quotes): Expr[T] =
-    import quotes.reflect.*
-
-    // How can I get some configuration here???
-
-    '{ // run-time
-      doSomething($str, $cfg) // can use str and cfg here
-    }
-
-    Parameters may only be:
-     * Quoted parameters or fields
-     * Literal values of primitive types
-     * References to `inline val`s
-     */

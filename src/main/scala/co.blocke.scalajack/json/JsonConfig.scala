@@ -5,6 +5,7 @@ case class JsonConfig(
     noneAsNull: Boolean = false,
     forbidNullsInInput: Boolean = false,
     tryFailureHandling: TryOption = TryOption.NO_WRITE,
+    permissivePrimitives: Boolean = false,
     // --------------------------
     typeHintLabel: String = "_hint",
     typeHintLabelByTrait: Map[String, String] = Map.empty[String, String], // Trait name -> type hint label

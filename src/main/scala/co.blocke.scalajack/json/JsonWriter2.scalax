@@ -3,34 +3,13 @@ package json
 
 import scala.quoted.*
 import co.blocke.scala_reflection.*
-import co.blocke.scala_reflection.rtypes.{ScalaClassRType, TraitRType}
+import co.blocke.scala_reflection.rtypes.*
 import co.blocke.scala_reflection.reflect.{ReflectOnType, TypeSymbolMapper}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import scala.util.{Failure, Success, Try}
 import scala.quoted.staging.*
 
-/*
-  TODO:
-    [ ] - Scala non-case class
-    [ ] - Java class (Do I still want to support this???)
-    [ ] - Enum
-    [ ] - Enumeration
-    [ ] - Java Enum
-    [ ] - Java Collections
-    [ ] - Java Map
-    [ ] - Intersection
-    [ ] - Union
-    [ ] - Either
-    [ ] - Object (How???)
-    [ ] - Sealed Trait (How???)
-    [*] - SelfRef
-    [ ] - Tuple
-    [ ] - Unknown (throw exception)
-    [ ] - Scala 2 (throw exception)
-    [ ] - TypeSymbol (throw exception)
- */
-
-object JsonWriter:
+object JsonWriter2:
 
   // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
   def isOkToWrite(a: Any, cfg: JsonConfig) =
@@ -41,18 +20,12 @@ object JsonWriter:
       case Failure(_) if cfg.tryFailureHandling == TryOption.NO_WRITE => false
       case _                                                          => true
 
-  def refWrite[T](
-      cfgE: Expr[JsonConfig],
-      ref: RTypeRef[T],
-      aE: Expr[T],
-      sbE: Expr[StringBuilder],
-      isMapKey: Boolean = false
-  )(using classesSeen: scala.collection.mutable.Map[TypedName, RTypeRef[?]])(using Quotes, Type[T]): Expr[StringBuilder] =
+  def refWrite[T](cfgE: Expr[JsonConfig], rt: RType[T], aE: Expr[T], sbE: Expr[StringBuilder], isMapKey: Boolean = false)(using Quotes)(using tt: Type[T]): Expr[StringBuilder] =
     import quotes.reflect.*
 
-    ref match
-      case t: PrimitiveRef[?] if t.family == PrimFamily.Stringish => '{ if $aE == null then $sbE.append("null") else $sbE.append("\"" + $aE.toString + "\"") }
-      case t: PrimitiveRef[?] =>
+    rt match
+      case StringRType() | CharRType() | JavaCharacterRType() => '{ if $aE == null then $sbE.append("null") else $sbE.append("\"" + $aE.toString + "\"") }
+      case t: PrimitiveRType => 
         if isMapKey then
           '{
             if $aE == null then $sbE.append("\"null\"")
@@ -63,10 +36,10 @@ object JsonWriter:
           }
         else '{ if $aE == null then $sbE.append("null") else $sbE.append($aE.toString) }
 
-      case t: SeqRef[?] =>
+      case t: SeqRType[?] =>
         if isMapKey then throw new JsonError("Seq instances cannot be map keys")
 
-        t.elementRef.refType match
+        t.elementType.toType(quotes) match
           case '[e] =>
             '{
               val sb = $sbE
@@ -77,7 +50,7 @@ object JsonWriter:
 
                 $aE.asInstanceOf[Seq[e]].foldLeft(sb) { (acc, one) =>
                   if isOkToWrite(one, $cfgE) then
-                    ${ refWrite[e](cfgE, t.elementRef.asInstanceOf[RTypeRef[e]], '{ one }, '{ acc }) }
+                    ${ refWrite[e](cfgE, t.elementType.asInstanceOf[RType[e]], '{ one }, '{ acc }) }
                     sb.append(',')
                   else sb
                 }
@@ -85,10 +58,10 @@ object JsonWriter:
                 if sbLen == sb.length then sb.append(']')
                 else sb.setCharAt(sb.length() - 1, ']')
             }
-      case t: ArrayRef[?] =>
-        if isMapKey then throw new JsonError("Arrays cannot be map keys")
+      case t: ArrayRType[?] =>
+        if isMapKey then throw new JsonError("Arrays instances cannot be map keys")
 
-        t.elementRef.refType match
+        t.elementType.toType(quotes) match
           case '[e] =>
             '{
               val sb = $sbE
@@ -97,9 +70,9 @@ object JsonWriter:
                 sb.append('[')
                 val sbLen = sb.length
 
-                $aE.asInstanceOf[Array[e]].foldLeft(sb) { (acc, one) =>
+                $aE.asInstanceOf[Seq[e]].foldLeft(sb) { (acc, one) =>
                   if isOkToWrite(one, $cfgE) then
-                    ${ refWrite[e](cfgE, t.elementRef.asInstanceOf[RTypeRef[e]], '{ one }, '{ acc }) }
+                    ${ refWrite[e](cfgE, t.elementType.asInstanceOf[RType[e]], '{ one }, '{ acc }) }
                     sb.append(',')
                   else sb
                 }
@@ -108,8 +81,7 @@ object JsonWriter:
                 else sb.setCharAt(sb.length() - 1, ']')
             }
 
-      case t: ClassRef[?] =>
-        classesSeen.put(t.typedName, t)
+      case t: ClassRType[?] =>
         '{
           val sb = $sbE
           if $aE == null then sb.append("null")
@@ -118,7 +90,7 @@ object JsonWriter:
             val sbLen = sb.length
             ${
               t.fields.foldLeft('{ sb }) { (accE, f) =>
-                f.fieldRef.refType match
+                f.fieldType.toType(quotes) match
                   case '[e] =>
                     val fieldValue = Select.unique(aE.asTerm, f.name).asExprOf[e]
                     val name = Expr(f.name)
@@ -129,7 +101,7 @@ object JsonWriter:
                         acc.append($name)
                         acc.append('"')
                         acc.append(':')
-                        val b = ${ refWrite[e](cfgE, f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
+                        val b = ${ refWrite[e](cfgE, f.fieldType.asInstanceOf[RType[e]], fieldValue, '{ acc }) }
                         acc.append(',')
                       else acc
                     }
@@ -139,22 +111,90 @@ object JsonWriter:
             else sb.setCharAt(sb.length() - 1, '}')
         }
 
-      case t: TraitRef[?] =>
-        classesSeen.put(t.typedName, t)
-        val rt = t.expr
-        '{
-          given Compiler = Compiler.make($aE.getClass.getClassLoader)
-          val fn = (q: Quotes) ?=> {
-            import q.reflect.*
-            val sb = $sbE
-            val classRType = RType.inTermsOf[T]($aE.getClass).asInstanceOf[ScalaClassRType[T]].copy(renderTrait = Some($rt.name)).asInstanceOf[RType[T]]
-            JsonWriterRT.refWriteRT[classRType.T]($cfgE, classRType, $aE.asInstanceOf[classRType.T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
-            Expr(1) // do-nothing... '{} requires Expr(something) be returned, so...
-          }
-          quoted.staging.run(fn)
-          $sbE
+      case t: TraitRType[?] =>
+        val foo: Expr[RType[T]] = '{
+          // given Compiler = Compiler.make($aE.getClass.getClassLoader)
+          val sb = $sbE
+          sb.append('{')
+          sb.append(s"\"_hint\":\"${$aE.getClass.getName}\"")
+          sb.append('}')
+          RType.inTermsOf[T]($aE.getClass).asInstanceOf[RType[T]]
+          val rt: Expr[RType[T]] = ???
+          ${refWrite[T](cfgE, rt.value, aE, sbE)}
         }
+        
 
+          // val fn = (q: Quotes) ?=> {
+          //   import q.reflect.*
+          //   ReflectUtil.inTermsOf2(RType.of[T].asInstanceOf[TraitRType[T]], $aE.getClass).expr.asInstanceOf[Expr[RTypeRef[?]]]
+          // }
+          // val classRType = quoted.staging.run(fn).asInstanceOf[RType[T]]
+          // ${
+          //   t.toType(quotes) match
+          //     case '[e] =>
+            
+          // }
+          // $sbE
+            // val cRT: ScalaClassRType[T] = ???
+            // refWrite[T](cfgE, cRT, aE, sbE)
+
+      /*
+        given Compiler = Compiler.make(this.getClass.getClassLoader)
+        '{
+          val refMakerFn = (q: Quotes) ?=>
+            import q.reflect.*
+            (traitRef: TraitRef[T], inst: T, instE: Expr[T], cfgE: Expr[JsonConfig], sbE2: Expr[StringBuilder]) =>
+              val clazz = inst.getClass
+              val classRef = ReflectOnType(quotes)(quotes.reflect.TypeRepr.typeConstructorOf(clazz), false)(using scala.collection.mutable.Map.empty[TypedName, Boolean]).asInstanceOf[ScalaClassRef[?]]
+              val inTermsOfRef =
+                if traitRef.typeParamSymbols.nonEmpty then
+                  val seenBefore = scala.collection.mutable.Map.empty[TypedName, Boolean]
+                  val paths = classRef.typePaths.getOrElse(traitRef.name, throw new ReflectException(s"No path in class ${classRef.name} for trait ${traitRef.name}"))
+                  traitRef.refType match
+                    case '[e] =>
+                      val typeParamTypes = TypeSymbolMapper.runPath(quotes)(paths, TypeRepr.of[e])
+                      val classQuotedTypeRepr = TypeRepr.typeConstructorOf(clazz)
+                      ReflectOnType(q)(classQuotedTypeRepr.appliedTo(typeParamTypes))(using seenBefore)
+                else classRef
+              classRef.refType match
+                case '[e] =>
+                  ${
+                    val y = refWrite[e](cfgE, classRef.asInstanceOf[RTypeRef[e]], instE.asInstanceOf[Expr[e]], sbE2)
+                    '{ y }
+                  }
+          quoted.staging.run(refMakerFn(t, $aE, aE, cfgE, sbE))
+        }
+       */
+
+      /*
+        '{
+          val fn = (quotes: Quotes) ?=>
+            (ref2: TraitRef[T], aE2: Expr[T], a2: T, cfgE2: Expr[JsonConfig]) =>
+              import quotes.reflect.*
+              val clazz = a2.getClass
+              val classRef = ReflectOnType(quotes)(quotes.reflect.TypeRepr.typeConstructorOf(clazz), false)(using scala.collection.mutable.Map.empty[TypedName, Boolean]).asInstanceOf[ScalaClassRef[?]]
+              val inTermsOfRef =
+                if ref2.typeParamSymbols.nonEmpty then
+                  val seenBefore = scala.collection.mutable.Map.empty[TypedName, Boolean]
+                  val paths = classRef.typePaths.getOrElse(ref2.name, throw new ReflectException(s"No path in class ${classRef.name} for trait ${ref2.name}"))
+                  ref2.refType match
+                    case '[e] =>
+                      val typeParamTypes = TypeSymbolMapper.runPath(quotes)(paths, TypeRepr.of[e])
+                      val classQuotedTypeRepr = TypeRepr.typeConstructorOf(clazz)
+                      ReflectOnType(quotes)(classQuotedTypeRepr.appliedTo(typeParamTypes))(using seenBefore)
+                else classRef
+
+              inTermsOfRef.refType match
+                case '[e] =>
+                  val asClassRef = inTermsOfRef.asInstanceOf[ScalaClassRef[e]].copy(renderTrait = Some(ref2.name)) // set renderTrait so ClassRef writer code renders type hint
+                  refWrite[e](cfgE, asClassRef.asInstanceOf[RTypeRef[e]], aE2.asInstanceOf[Expr[e]], sbE)
+
+          given Compiler = Compiler.make(this.getClass.getClassLoader)
+          quoted.staging.run(fn(t, aE, $aE, cfgE))
+        }
+       */
+
+       /*
       case t: OptionRef[?] =>
         if isMapKey then throw new JsonError("Option valuess cannot be map keys")
         t.optionParamType.refType match
@@ -208,13 +248,4 @@ object JsonWriter:
         t.unwrappedType.refType match
           case '[e] =>
             refWrite[e](cfgE, t.unwrappedType.asInstanceOf[RTypeRef[e]], aE.asInstanceOf[Expr[e]], sbE)
-
-      case t: SelfRefRef[?] =>
-        if isMapKey then throw new JsonError("Classes or traits cannot be map keys.")
-        import quotes.reflect.*
-        val againE = classesSeen.getOrElse(t.typedName, throw new JsonError("Dangling self-reference: " + t.name)).asInstanceOf[RTypeRef[T]].expr
-        '{
-          val again = $againE.asInstanceOf[RType[T]]
-          JsonWriterRT.refWriteRT[T]($cfgE, again, $aE.asInstanceOf[T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
-          $sbE
-        }
+*/
