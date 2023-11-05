@@ -17,13 +17,13 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.WritingBenchmark"
 
 | Benchmark        | Mode  | Cnt |       Score |        Error | Units |
 |------------------|-------|----:|------------:|-------------:|-------|
-| Hand-Tooled      | thrpt |  20 | 2575393.513 | ± 178731.952 | ops/s |
-| Circe            | thrpt |  20 | 1939339.085 | ±   6279.547 | ops/s |
-| ScalaJack 8      | thrpt |  20 | 1703256.521 | ±  12260.518 | ops/s |
-| ZIO JSON         | thrpt |  20 |  818228.736 | ±   3070.298 | ops/s |
-| Argonaut         | thrpt |  20 |  716228.404 | ±   6241.145 | ops/s |
-| Play JSON        | thrpt |  20 |  438538.475 | ±  16319.198 | ops/s |
-| ScalaJack 7      | thrpt |  20 |  106292.338 | ±    330.111 | ops/s |
+| Hand-Tooled      | thrpt |  20 | 2,575,393.513 | ± 178731.952 | ops/s |
+| Circe            | thrpt |  20 | 1,939,339.085 | ±   6279.547 | ops/s |
+|** ScalaJack 8      | thrpt |  20 | 1,703,256.521 | ±  12260.518 | ops/s** |
+| ZIO JSON         | thrpt |  20 |  818,228.736 | ±   3070.298 | ops/s |
+| Argonaut         | thrpt |  20 |  716,228.404 | ±   6241.145 | ops/s |
+| Play JSON        | thrpt |  20 |  438,538.475 | ±  16319.198 | ops/s |
+| ScalaJack 7      | thrpt |  20 |  106,292.338 | ±    330.111 | ops/s |
 
 ### Writing Interpretation
 
