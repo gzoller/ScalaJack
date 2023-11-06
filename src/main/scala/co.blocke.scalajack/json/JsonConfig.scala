@@ -5,6 +5,7 @@ case class JsonConfig(
     noneAsNull: Boolean = false,
     forbidNullsInInput: Boolean = false,
     tryFailureHandling: TryOption = TryOption.NO_WRITE,
+    undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
     permissivePrimitives: Boolean = false,
     // --------------------------
     typeHintLabel: String = "_hint",
@@ -16,4 +17,7 @@ case class JsonConfig(
 )
 
 enum TryOption:
-  case AS_NULL, NO_WRITE, ERR_MSG_STRING
+  case AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
+
+enum UndefinedValueOption:
+  case AS_NULL, AS_SYMBOL, THROW_EXCEPTION

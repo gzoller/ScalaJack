@@ -312,8 +312,9 @@ object JsonWriter:
           }
           if sbLen == sb.length then sb.append(']')
           else sb.setCharAt(sb.length() - 1, ']')
+        
         }
-
+//*****
       case rt: SelfRefRef[?] =>
         if isMapKey then throw new JsonError("Classes or traits cannot be map keys.")
         val e = rt.expr
@@ -360,7 +361,7 @@ object JsonWriter:
                   if sbLen == sb.length then sb.append('}')
                   else sb.setCharAt(sb.length() - 1, '}')
                 }
-
+//*****
       case rt: ObjectRef =>
         val name = Expr(rt.name)
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
@@ -368,7 +369,7 @@ object JsonWriter:
           sb.append($name)
           sb.append('"')
         }
-
+//*****
       case rt: Scala2Ref[?] =>
         val name = Expr(rt.name)
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
@@ -385,7 +386,7 @@ object JsonWriter:
       //         def goGet: T = summon[Newtype.WithType[?, T]]
       //         val unwrapped = a.asInstanceOf[Newtype[?]].unwrap
       //       }
-
+//*****
       case rt: UnknownRef[?] =>
         '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
           sb.append('"')

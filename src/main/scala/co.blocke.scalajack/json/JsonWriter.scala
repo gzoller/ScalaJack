@@ -3,7 +3,7 @@ package json
 
 import scala.quoted.*
 import co.blocke.scala_reflection.*
-import co.blocke.scala_reflection.rtypes.{ScalaClassRType, TraitRType}
+import co.blocke.scala_reflection.rtypes.{EnumRType, ScalaClassRType, TraitRType}
 import co.blocke.scala_reflection.reflect.{ReflectOnType, TypeSymbolMapper}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import scala.util.{Failure, Success, Try}
@@ -13,21 +13,21 @@ import scala.quoted.staging.*
   TODO:
     [ ] - Scala non-case class
     [ ] - Java class (Do I still want to support this???)
-    [ ] - Enum
-    [ ] - Enumeration
-    [ ] - Java Enum
+    [*] - Enum
+    [*] - Enumeration
+    [*] - Java Enum
     [ ] - Java Collections
     [ ] - Java Map
-    [ ] - Intersection
-    [ ] - Union
-    [ ] - Either
-    [ ] - Object (How???)
+    [*] - Intersection
+    [*] - Union
+    [*] - Either
+    [*] - Object (How???)
     [ ] - Sealed Trait (How???)
     [*] - SelfRef
     [ ] - Tuple
-    [ ] - Unknown (throw exception)
-    [ ] - Scala 2 (throw exception)
-    [ ] - TypeSymbol (throw exception)
+    [*] - Unknown (throw exception)
+    [*] - Scala 2 (throw exception)
+    [*] - TypeSymbol (throw exception)
  */
 
 object JsonWriter:
@@ -129,7 +129,7 @@ object JsonWriter:
                         acc.append($name)
                         acc.append('"')
                         acc.append(':')
-                        val b = ${ refWrite[e](cfgE, f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
+                        ${ refWrite[e](cfgE, f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
                         acc.append(',')
                       else acc
                     }
@@ -189,6 +189,41 @@ object JsonWriter:
                     else sb.setCharAt(sb.length() - 1, '}')
                 }
 
+      case t: LeftRightRef[?] =>
+        if isMapKey then throw new JsonError("Union, Intersection, or Either-typed values cannot be map keys.")
+        t.leftRef.refType match
+          case '[lt] =>
+            t.rightRef.refType match
+              case '[rt] =>
+                val isEither = Expr(t.lrkind == LRKind.EITHER)
+                '{
+                  if $isEither then
+                    $aE match
+                      case Left(v) =>
+                        val vv = v.asInstanceOf[lt]
+                        ${ refWrite[lt](cfgE, t.leftRef.asInstanceOf[RTypeRef[lt]], '{ vv }.asInstanceOf[Expr[lt]], sbE) }
+                      case Right(v) =>
+                        val vv = v.asInstanceOf[rt]
+                        ${ refWrite[rt](cfgE, t.rightRef.asInstanceOf[RTypeRef[rt]], '{ vv }.asInstanceOf[Expr[rt]], sbE) }
+                  else
+                    // Intersection/Union types....take your best shot!  It's all we've got.  No definitive info here.
+                    val trial = new StringBuilder()
+                    val lrSb = scala.util.Try {
+                      val vv = $aE.asInstanceOf[rt]
+                      ${
+                        refWrite[rt](cfgE, t.rightRef.asInstanceOf[RTypeRef[rt]], '{ vv }, '{ trial })
+                      }
+                    } match
+                      case Success(trialSb) => trialSb
+                      case Failure(_) =>
+                        trial.clear
+                        val vv = $aE.asInstanceOf[lt]
+                        ${
+                          refWrite[lt](cfgE, t.leftRef.asInstanceOf[RTypeRef[lt]], '{ vv }, '{ trial })
+                        }
+                    $sbE ++= lrSb
+                }
+
       case t: TryRef[?] =>
         if isMapKey then throw new JsonError("Try values (Succeed/Fail) cannot be map keys")
         t.tryRef.refType match
@@ -198,10 +233,13 @@ object JsonWriter:
                 case Success(v) =>
                   ${ refWrite[e](cfgE, t.tryRef.asInstanceOf[RTypeRef[e]], '{ v }.asInstanceOf[Expr[e]], sbE) }
                 case Failure(_) if $cfgE.tryFailureHandling == TryOption.AS_NULL => $sbE.append("null")
+                case Failure(_) if $cfgE.tryFailureHandling == TryOption.AS_NULL => $sbE.append("null")
+                case Failure(f) if $cfgE.tryFailureHandling == TryOption.THROW_EXCEPTION =>
+                  throw new JsonError("A try value was Failure with message: " + f.getMessage())
                 case Failure(v) =>
-                  $sbE.append('"')
+                  $sbE.append("\"Failure(")
                   $sbE.append(v.getMessage)
-                  $sbE.append('"')
+                  $sbE.append(")\"")
             }
 
       case t: AliasRef[?] =>
@@ -217,4 +255,59 @@ object JsonWriter:
           val again = $againE.asInstanceOf[RType[T]]
           JsonWriterRT.refWriteRT[T]($cfgE, again, $aE.asInstanceOf[T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
           $sbE
+        }
+
+      case t: EnumRef[?] =>
+        val enumE = t.expr
+        val isMapKeyE = Expr(isMapKey)
+        '{
+          val enumRT = $enumE.asInstanceOf[EnumRType[T]]
+          val enumAsId = $cfgE.enumsAsIds match
+            case '*'                                                => true
+            case aList: List[String] if aList.contains(enumRT.name) => true
+            case _                                                  => false
+          if enumAsId then
+            val enumVal = enumRT.ordinal($aE.toString).getOrElse(throw new JsonError("Value " + $aE.toString + s" is not a valid enum value for ${enumRT.name}"))
+            if $isMapKeyE then
+              $sbE.append('"')
+              $sbE.append(enumVal.toString)
+              $sbE.append('"')
+            else $sbE.append(enumVal.toString)
+          else
+            $sbE.append('"')
+            $sbE.append($aE.toString)
+            $sbE.append('"')
+        }
+
+      case t: ObjectRef =>
+        val tname = Expr(t.name)
+        '{
+          $sbE.append("\"" + $tname + "\"")
+        }
+
+      case t: Scala2Ref[?] =>
+        val tname = Expr(t.name)
+        '{
+          $cfgE.undefinedFieldHandling match
+            case UndefinedValueOption.AS_NULL         => $sbE.append("null")
+            case UndefinedValueOption.AS_SYMBOL       => $sbE.append("\"" + $tname + "\"")
+            case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + $aE.toString + " is of some unknown/unsupported Scala 2 type " + $tname)
+        }
+
+      case t: UnknownRef[?] =>
+        val tname = Expr(t.name)
+        '{
+          $cfgE.undefinedFieldHandling match
+            case UndefinedValueOption.AS_NULL         => $sbE.append("null")
+            case UndefinedValueOption.AS_SYMBOL       => $sbE.append("\"" + $tname + "\"")
+            case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + $aE.toString + " is of some unknown/unsupported type " + $tname)
+        }
+
+      case t: TypeSymbolRef =>
+        val tname = Expr(t.name)
+        '{
+          $cfgE.undefinedFieldHandling match
+            case UndefinedValueOption.AS_NULL         => $sbE.append("null")
+            case UndefinedValueOption.AS_SYMBOL       => $sbE.append("\"" + $tname + "\"")
+            case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + $aE.toString + " is of some unknown/unsupported type " + $tname + ". (Class didn't fully define all its type parameters.)")
         }

@@ -15,7 +15,7 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.WritingBenchmark"
 
 ## Writing Performance:
 
-| Benchmark        | Mode  | Cnt |       Score |        Error | Units |
+| Benchmark        | Mode  | Count |       Score |        Error | Units |
 |------------------|-------|----:|------------:|-------------:|-------|
 | Hand-Tooled      | thrpt |  20 | 2,575,393.513 | ± 178731.952 | ops/s |
 | Circe            | thrpt |  20 | 1,939,339.085 | ±   6279.547 | ops/s |

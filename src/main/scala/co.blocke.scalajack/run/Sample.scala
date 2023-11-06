@@ -18,18 +18,18 @@ import neotype.*
 
 // case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal2]) extends Animal2
 
-// enum Colors:
-//   case Red, Blue, Green
+enum Colors:
+  case Red, Blue, Green
 
 // import scala.collection.immutable.*
 // enum Vehicle:
 //   case Car, Bus, Train
 
-// object WeekDay extends Enumeration {
-//   type WeekDay = Value
-//   val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
-// }
-// import WeekDay.*
+object WeekDay extends Enumeration {
+  type WeekDay = Value
+  val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
+}
+import WeekDay.*
 
 // case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
 
@@ -45,7 +45,7 @@ case class Foom[X](x: X) extends Miss[X]
 
 // case class Person[Y](name: String, age: Miss[Y], again: Option[Person[Y]])
 
-case class Person[Y](name: String, again: Option[Person[Y]])
+case class Person(name: String, color: String | Int)
 
 // type NonEmptyString = NonEmptyString.Type
 // given NonEmptyString: Newtype[String] with

@@ -23,23 +23,9 @@ object RunMe extends App:
   // .copy(enumsAsIds = '*')
 
   try
-    val v =
-      Person(
-        "Greg",
-        Some(
-          Person(
-            "Lili",
-            Some(
-              Person(
-                "Katie",
-                None
-              )
-            )
-          )
-        )
-      )
+    val v = Person("Greg", 33)
 
-    println("HERE: " + ScalaJack.write[Person[Boolean]](v.asInstanceOf[Person[Boolean]]))
+    println("HERE: " + ScalaJack.write(v))
 
     // println("HERE: " + ScalaJack.write(Person("Greg", Foom('z'), Some(Person("Lili", Foom('x'), None)))))
 
