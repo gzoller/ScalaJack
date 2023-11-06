@@ -5,6 +5,7 @@ import co.blocke.scala_reflection.*
 import co.blocke.scala_reflection.rtypes.*
 import co.blocke.scala_reflection.reflect.{ReflectOnType, TypeSymbolMapper}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 /** This class is horrible.  It is a mirror of JsonWriter, except this one executes at runtime, and hence
@@ -146,7 +147,7 @@ object JsonWriterRT:
           case Success(trialSb) => trialSb
           case Failure(_) =>
             trial.clear
-            refWriteRT[t.leftType.T](cfg, t.leftType.asInstanceOf[RType[t.leftType.T]], v.asInstanceOf[t.leftType.T], trial)
+            refWriteRT[t.leftType.T](cfg, t.leftType.asInstanceOf[RType[t.leftType.T]], a.asInstanceOf[t.leftType.T], trial)
         sb ++= lrSb
 
       case t: IntersectionRType[?] =>
@@ -158,7 +159,7 @@ object JsonWriterRT:
           case Success(trialSb) => trialSb
           case Failure(_) =>
             trial.clear
-            refWriteRT[t.leftType.T](cfg, t.leftType.asInstanceOf[RType[t.leftType.T]], v.asInstanceOf[t.leftType.T], trial)
+            refWriteRT[t.leftType.T](cfg, t.leftType.asInstanceOf[RType[t.leftType.T]], a.asInstanceOf[t.leftType.T], trial)
         sb ++= lrSb
 
       case t: TryRType[?] =>
@@ -173,6 +174,47 @@ object JsonWriterRT:
             sb.append('"')
             sb.append(v.getMessage)
             sb.append('"')
+
+      case t: TupleRType[?] =>
+        if isMapKey then throw new JsonError("Tuples cannot be map keys")
+        if a == null then sb.append("null")
+        sb.append('[')
+        val sbLen = sb.length
+        val fieldValues = a.asInstanceOf[Product].productIterator.toList
+        t.typeParamValues.zipWithIndex.foreach { case (rt, i) =>
+          val fieldValue = fieldValues(i).asInstanceOf[rt.T]
+          refWriteRT[rt.T](cfg, rt.asInstanceOf[RType[rt.T]], fieldValue, sb)
+          sb.append(',')
+        }
+        if sbLen == sb.length then sb.append(']')
+        else sb.setCharAt(sb.length() - 1, ']')
+
+      case t: JavaCollectionRType[?] =>
+        if isMapKey then throw new JsonError("Collections cannot be map keys.")
+        if a == null then sb.append("null")
+        sb.append('[')
+        val sbLen = sb.length
+        a.asInstanceOf[java.util.Collection[?]].toArray.foreach { elem =>
+          if isOkToWrite(elem, cfg) then refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], elem.asInstanceOf[t.elementType.T], sb)
+        }
+        sb.append(',')
+        if sbLen == sb.length then sb.append(']')
+        else sb.setCharAt(sb.length() - 1, ']')
+
+      case t: JavaMapRType[?] =>
+        if isMapKey then throw new JsonError("Collections cannot be map keys.")
+        if a == null then sb.append("null")
+        sb.append('{')
+        val sbLen = sb.length
+        a.asInstanceOf[java.util.Map[?, ?]].asScala.foreach { case (key, value) =>
+          if isOkToWrite(value, cfg) then
+            refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], key.asInstanceOf[t.elementType.T], sb, true)
+            sb.append(':')
+            refWriteRT[t.elementType2.T](cfg, t.elementType2.asInstanceOf[RType[t.elementType2.T]], value.asInstanceOf[t.elementType2.T], sb)
+            sb.append(',')
+        }
+        if sbLen == sb.length then sb.append('}')
+        else sb.setCharAt(sb.length() - 1, '}')
 
       case t: AliasRType[?] =>
         refWriteRT[t.unwrappedType.T](cfg, t.unwrappedType.asInstanceOf[RType[t.unwrappedType.T]], a.asInstanceOf[t.unwrappedType.T], sb)

@@ -6,6 +6,7 @@ import co.blocke.scala_reflection.*
 import co.blocke.scala_reflection.rtypes.{EnumRType, ScalaClassRType, TraitRType}
 import co.blocke.scala_reflection.reflect.{ReflectOnType, TypeSymbolMapper}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 import scala.quoted.staging.*
 
@@ -16,15 +17,15 @@ import scala.quoted.staging.*
     [*] - Enum
     [*] - Enumeration
     [*] - Java Enum
-    [ ] - Java Collections
-    [ ] - Java Map
+    [*] - Java Collections
+    [*] - Java Map
     [*] - Intersection
     [*] - Union
     [*] - Either
     [*] - Object (How???)
     [ ] - Sealed Trait (How???)
     [*] - SelfRef
-    [ ] - Tuple
+    [*] - Tuple
     [*] - Unknown (throw exception)
     [*] - Scala 2 (throw exception)
     [*] - TypeSymbol (throw exception)
@@ -241,6 +242,70 @@ object JsonWriter:
                   $sbE.append(v.getMessage)
                   $sbE.append(")\"")
             }
+
+      case t: TupleRef[?] =>
+        if isMapKey then throw new JsonError("Tuples cannot be map keys")
+        '{
+          val sb = $sbE
+          if $aE == null then sb.append("null")
+          sb.append('[')
+          val sbLen = sb.length
+          ${
+            val tupleBuf = t.tupleRefs.zipWithIndex.foldLeft(sbE) { case (accE, (ref, i)) =>
+              ref.refType match
+                case '[e] =>
+                  val fieldValue = Select.unique(aE.asTerm, "_" + (i + 1)).asExprOf[e]
+                  '{
+                    val acc = $accE
+                    ${ refWrite[e](cfgE, ref.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
+                    acc.append(',')
+                  }
+            }
+            tupleBuf
+          }
+          if sbLen == sb.length then sb.append(']')
+          else sb.setCharAt(sb.length() - 1, ']')
+        }
+
+      case t: JavaCollectionRef[?] =>
+        if isMapKey then throw new JsonError("Collections cannot be map keys.")
+        t.elementRef.refType match
+          case '[e] =>
+            '{
+              val sb = $sbE
+              if $aE == null then sb.append("null")
+              sb.append('[')
+              val sbLen = sb.length
+              $aE.asInstanceOf[java.util.Collection[?]].toArray.foreach { elem =>
+                if isOkToWrite(elem, $cfgE) then
+                  ${ refWrite[e](cfgE, t.elementRef.asInstanceOf[RTypeRef[e]], '{ elem }.asInstanceOf[Expr[e]], sbE) }
+                  sb.append(',')
+              }
+              if sbLen == sb.length then sb.append(']')
+              else sb.setCharAt(sb.length() - 1, ']')
+            }
+
+      case t: JavaMapRef[?] =>
+        if isMapKey then throw new JsonError("Maps cannot be map keys.")
+        t.elementRef.refType match
+          case '[k] =>
+            t.elementRef2.refType match
+              case '[v] =>
+                '{
+                  val sb = $sbE
+                  if $aE == null then sb.append("null")
+                  sb.append('{')
+                  val sbLen = sb.length
+                  $aE.asInstanceOf[java.util.Map[?, ?]].asScala.foreach { case (key, value) =>
+                    if isOkToWrite(value, $cfgE) then
+                      ${ refWrite[k](cfgE, t.elementRef.asInstanceOf[RTypeRef[k]], '{ key }.asInstanceOf[Expr[k]], sbE, true) }
+                      sb.append(':')
+                      ${ refWrite[v](cfgE, t.elementRef2.asInstanceOf[RTypeRef[v]], '{ value }.asInstanceOf[Expr[v]], sbE) }
+                      sb.append(',')
+                  }
+                  if sbLen == sb.length then sb.append('}')
+                  else sb.setCharAt(sb.length() - 1, '}')
+                }
 
       case t: AliasRef[?] =>
         t.unwrappedType.refType match

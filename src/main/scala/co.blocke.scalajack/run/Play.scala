@@ -23,7 +23,10 @@ object RunMe extends App:
   // .copy(enumsAsIds = '*')
 
   try
-    val v = Person("Greg", 33)
+    val s = new java.util.HashMap[Int, Boolean]()
+    s.put(1, true)
+    s.put(0, false)
+    val v = Person("Greg", s)
 
     println("HERE: " + ScalaJack.write(v))
 

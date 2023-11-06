@@ -45,7 +45,7 @@ case class Foom[X](x: X) extends Miss[X]
 
 // case class Person[Y](name: String, age: Miss[Y], again: Option[Person[Y]])
 
-case class Person(name: String, color: String | Int)
+case class Person(name: String, color: java.util.HashMap[Int, Boolean])
 
 // type NonEmptyString = NonEmptyString.Type
 // given NonEmptyString: Newtype[String] with

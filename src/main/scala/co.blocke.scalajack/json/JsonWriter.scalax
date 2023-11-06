@@ -226,7 +226,7 @@ object JsonWriter:
                   if sbLen == sb.length then sb.append('}')
                   else sb.setCharAt(sb.length() - 1, '}')
                 }
-
+//*****
       case rt: LeftRightRef[?] =>
         if isMapKey then throw new JsonError("Union, intersection, or Either cannot be map keys.")
         rt.leftRef.refType match
@@ -249,7 +249,7 @@ object JsonWriter:
                       if scala.util.Try($rightFn(a.asInstanceOf[rt], trial, cfg)).isFailure then $leftFn(a.asInstanceOf[lt], sb, cfg)
                       else sb ++= trial
                 }
-
+//*****
       case rt: EnumRef[?] =>
         val expr = rt.expr
         val isMapKeyExpr = Expr(isMapKey)
@@ -280,7 +280,7 @@ object JsonWriter:
           a.toString
           sb.append('"')
         }
-
+//*****
       case rt: TupleRef[?] =>
         if isMapKey then throw new JsonError("Tuples cannot be map keys.")
         val elementFns = rt.tupleRefs.map { f =>
@@ -322,7 +322,7 @@ object JsonWriter:
           val fn = refCache.get($e.typedName).asInstanceOf[(T, StringBuilder, JsonConfig) => StringBuilder]
           fn(a, sb, cfg)
         }
-
+//*****
       case rt: JavaCollectionRef[?] =>
         if isMapKey then throw new JsonError("Collections cannot be map keys.")
         rt.elementRef.refType match
