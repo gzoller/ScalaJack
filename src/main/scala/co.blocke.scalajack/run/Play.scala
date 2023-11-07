@@ -4,9 +4,6 @@ package run
 import co.blocke.scala_reflection.*
 import scala.jdk.CollectionConverters.*
 
-enum Color:
-  case Red, Green, Blue
-
 object RunMe extends App:
 
   /*
@@ -23,12 +20,11 @@ object RunMe extends App:
   // .copy(enumsAsIds = '*')
 
   try
-    val s = new java.util.HashMap[Int, Boolean]()
-    s.put(1, true)
-    s.put(0, false)
-    val v = Person("Greg", s)
+    val v = Person("Greg", DIAMOND, Command(15), Foom(3))
 
     println("HERE: " + ScalaJack.write(v))
+
+    // println(RType.of[Person[Int]])
 
     // println("HERE: " + ScalaJack.write(Person("Greg", Foom('z'), Some(Person("Lili", Foom('x'), None)))))
 

@@ -2,50 +2,26 @@ package co.blocke.scalajack.run
 
 import neotype.*
 
-// opaque type BigName = String
+// Enumeration sealed trait
+sealed trait card extends Enumeration
+case object CLUB extends card
+case object HEART extends card
+case object DIAMOND extends card
+case object SPADE extends card
 
-// case class Person(name: String, age: Int, isOk: List[Boolean], favColor: Colors, boss: BigName)
-
-// trait Animal:
-//   val name: String
-//   val numLegs: Int
-//   val friend: Option[Animal]
-
-// trait Animal2:
-//   val name: String
-//   val numLegs: Int
-//   val friend: Option[Animal2]
-
-// case class Dog(name: String, numLegs: Int, carsChased: Int, friend: Option[Animal2]) extends Animal2
+sealed trait msg[X]
+case class Command[T](item: T) extends msg[T]
+case class Query[T](item: T) extends msg[T]
 
 enum Colors:
   case Red, Blue, Green
-
-// import scala.collection.immutable.*
-// enum Vehicle:
-//   case Car, Bus, Train
-
-object WeekDay extends Enumeration {
-  type WeekDay = Value
-  val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
-}
-import WeekDay.*
-
-// case class Simple(a: Int, b: Boolean, c: Option[Simple], z: Int = 5)
-
-// case class Blah(msg: String, stuff: WeekDay)
-
-// object Talk:
-//   def say(s: String): String = s"Say $s!"
-
-// case class M1(v: Map[Long, Int], v2: HashMap[Colors, Int], v3: Map[co.blocke.scala_reflection.TypedName, Int])
 
 trait Miss[E] { val x: E }
 case class Foom[X](x: X) extends Miss[X]
 
 // case class Person[Y](name: String, age: Miss[Y], again: Option[Person[Y]])
 
-case class Person(name: String, color: java.util.HashMap[Int, Boolean])
+case class Person[T](name: String, card: card, msg: msg[T], miss: Miss[T])
 
 // type NonEmptyString = NonEmptyString.Type
 // given NonEmptyString: Newtype[String] with

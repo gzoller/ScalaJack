@@ -7,6 +7,7 @@ case class JsonConfig(
     tryFailureHandling: TryOption = TryOption.NO_WRITE,
     undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
     permissivePrimitives: Boolean = false,
+    writeNonConstructorFields: Boolean = false,
     // --------------------------
     typeHintLabel: String = "_hint",
     typeHintLabelByTrait: Map[String, String] = Map.empty[String, String], // Trait name -> type hint label

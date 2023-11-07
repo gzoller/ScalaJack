@@ -23,15 +23,23 @@ import scala.quoted.staging.*
     [*] - Union
     [*] - Either
     [*] - Object (How???)
-    [ ] - Sealed Trait (How???)
+    [*] - Trait (How???)
+    [*] - Sealed trait
+    [ ] - sealed abstract class (handle like sealed trait....)
     [*] - SelfRef
     [*] - Tuple
     [*] - Unknown (throw exception)
     [*] - Scala 2 (throw exception)
     [*] - TypeSymbol (throw exception)
+
+    [ ] -- correct all the 'if $aE == null...'
+    [ ] -- type hint label mapping
+    [ ] -- type hint value mapping
  */
 
 object JsonWriter:
+
+  final inline def lastPart(n: String) = n.split('.').last.stripSuffix("$")
 
   // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
   def isOkToWrite(a: Any, cfg: JsonConfig) =
@@ -142,19 +150,39 @@ object JsonWriter:
 
       case t: TraitRef[?] =>
         classesSeen.put(t.typedName, t)
-        val rt = t.expr
-        '{
-          given Compiler = Compiler.make($aE.getClass.getClassLoader)
-          val fn = (q: Quotes) ?=> {
-            import q.reflect.*
-            val sb = $sbE
-            val classRType = RType.inTermsOf[T]($aE.getClass).asInstanceOf[ScalaClassRType[T]].copy(renderTrait = Some($rt.name)).asInstanceOf[RType[T]]
-            JsonWriterRT.refWriteRT[classRType.T]($cfgE, classRType, $aE.asInstanceOf[classRType.T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
-            Expr(1) // do-nothing... '{} requires Expr(something) be returned, so...
+        val rt = t.expr.asInstanceOf[Expr[TraitRType[T]]]
+        if t.childrenAreObject then
+          // case object -> just write the simple name of the object
+          '{
+            $sbE.append('"')
+            $sbE.append(lastPart($aE.getClass.getName))
+            $sbE.append('"')
           }
-          quoted.staging.run(fn)
-          $sbE
-        }
+        else if t.isSealed then
+          // Wow!  If this is a sealed trait, all the children already have correctly-typed parameters--no need for expensive inTermsOf()
+          '{
+            val className = $aE.getClass.getName
+            $rt.sealedChildren
+              .find(_.name == className)
+              .map(foundKid =>
+                val augmented = foundKid.asInstanceOf[ScalaClassRType[foundKid.T]].copy(renderTrait = Some($rt.name)).asInstanceOf[RType[foundKid.T]]
+                JsonWriterRT.refWriteRT[foundKid.T]($cfgE, augmented, $aE.asInstanceOf[foundKid.T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
+              )
+              .getOrElse(throw new JsonError(s"Unrecognized child $className of seald trait " + $rt.name))
+          }
+        else
+          '{
+            given Compiler = Compiler.make($aE.getClass.getClassLoader)
+            val fn = (q: Quotes) ?=> {
+              import q.reflect.*
+              val sb = $sbE
+              val classRType = RType.inTermsOf[T]($aE.getClass).asInstanceOf[ScalaClassRType[T]].copy(renderTrait = Some($rt.name)).asInstanceOf[RType[T]]
+              JsonWriterRT.refWriteRT[classRType.T]($cfgE, classRType, $aE.asInstanceOf[classRType.T], $sbE)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
+              Expr(1) // do-nothing... '{} requires Expr(something) be returned, so...
+            }
+            quoted.staging.run(fn)
+            $sbE
+          }
 
       case t: OptionRef[?] =>
         if isMapKey then throw new JsonError("Option valuess cannot be map keys")
@@ -248,23 +276,24 @@ object JsonWriter:
         '{
           val sb = $sbE
           if $aE == null then sb.append("null")
-          sb.append('[')
-          val sbLen = sb.length
-          ${
-            val tupleBuf = t.tupleRefs.zipWithIndex.foldLeft(sbE) { case (accE, (ref, i)) =>
-              ref.refType match
-                case '[e] =>
-                  val fieldValue = Select.unique(aE.asTerm, "_" + (i + 1)).asExprOf[e]
-                  '{
-                    val acc = $accE
-                    ${ refWrite[e](cfgE, ref.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
-                    acc.append(',')
-                  }
+          else
+            sb.append('[')
+            val sbLen = sb.length
+            ${
+              val tupleBuf = t.tupleRefs.zipWithIndex.foldLeft(sbE) { case (accE, (ref, i)) =>
+                ref.refType match
+                  case '[e] =>
+                    val fieldValue = Select.unique(aE.asTerm, "_" + (i + 1)).asExprOf[e]
+                    '{
+                      val acc = $accE
+                      ${ refWrite[e](cfgE, ref.asInstanceOf[RTypeRef[e]], fieldValue, '{ acc }) }
+                      acc.append(',')
+                    }
+              }
+              tupleBuf
             }
-            tupleBuf
-          }
-          if sbLen == sb.length then sb.append(']')
-          else sb.setCharAt(sb.length() - 1, ']')
+            if sbLen == sb.length then sb.append(']')
+            else sb.setCharAt(sb.length() - 1, ']')
         }
 
       case t: JavaCollectionRef[?] =>
