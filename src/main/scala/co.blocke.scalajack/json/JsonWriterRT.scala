@@ -23,14 +23,8 @@ import scala.util.{Failure, Success, Try}
 
 object JsonWriterRT:
 
-  // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
-  def isOkToWrite(a: Any, cfg: JsonConfig) =
-    a match
-      case None if !cfg.noneAsNull                                    => false
-      case Left(None) if !cfg.noneAsNull                              => false
-      case Right(None) if !cfg.noneAsNull                             => false
-      case Failure(_) if cfg.tryFailureHandling == TryOption.NO_WRITE => false
-      case _                                                          => true
+  val secret = "N@rrow !s the w@y"
+  val encryptionDecryption = new AESEncryptionDecryption()
 
   def refWriteRT[T](
       cfg: JsonConfig,
@@ -40,15 +34,15 @@ object JsonWriterRT:
       isMapKey: Boolean = false
   )(using classesSeen: scala.collection.mutable.Map[TypedName, RType[?]]): StringBuilder =
     rt match
-      case StringRType() | CharRType() | JavaCharacterRType() => if a == null then sb.append("null") else sb.append("\"" + a.toString + "\"")
+      case StringRType(_) | CharRType(_) | JavaCharacterRType(_) => if a == null then sb.append("null") else sb.append("\"" + a.toString + "\"")
       case t: PrimitiveRType =>
         if isMapKey then
-          if a == null then sb.append("\"null\"")
+          if t.isNullable && a == null then sb.append("\"null\"")
           else
             sb.append('"')
             sb.append(a.toString)
             sb.append('"')
-        else if a == null then sb.append("null")
+        else if t.isNullable && a == null then sb.append("null")
         else sb.append(a.toString)
 
       case t: SeqRType[?] =>
@@ -57,7 +51,7 @@ object JsonWriterRT:
         else sb.append('[')
         val sbLen = sb.length
         a.asInstanceOf[Seq[t.elementType.T]].foldLeft(sb) { (acc, one) =>
-          if isOkToWrite(one, cfg) then
+          if JsonWriter.isOkToWrite(one, cfg) then
             refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], one, acc)
             sb.append(',')
           else sb
@@ -71,7 +65,7 @@ object JsonWriterRT:
         else sb.append('[')
         val sbLen = sb.length
         a.asInstanceOf[Seq[t.elementType.T]].foldLeft(sb) { (acc, one) =>
-          if isOkToWrite(one, cfg) then
+          if JsonWriter.isOkToWrite(one, cfg) then
             refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], one, acc)
             sb.append(',')
           else sb
@@ -79,18 +73,56 @@ object JsonWriterRT:
         if sbLen == sb.length then sb.append(']')
         else sb.setCharAt(sb.length() - 1, ']')
 
+      case t: ScalaClassRType[?] if t.isSealed && t.isAbstractClass =>
+        classesSeen.put(t.typedName, t)
+        if a == null then sb.append("null")
+        else
+          val className = a.getClass.getName
+          if t.childrenAreObject then
+            // case object -> just write the simple name of the object
+            sb.append('"')
+            sb.append(JsonWriter.lastPart(className))
+            sb.append('"')
+          else
+            // Wow!  If this is a sealed trait, all the children already have correctly-typed parameters--no need for expensive inTermsOf()
+            t.sealedChildren
+              .find(_.name == className)
+              .map(foundKid =>
+                val augmented = foundKid.asInstanceOf[ScalaClassRType[foundKid.T]].copy(renderTrait = Some(t.name)).asInstanceOf[RType[foundKid.T]]
+                JsonWriterRT.refWriteRT[foundKid.T](cfg, augmented, a.asInstanceOf[foundKid.T], sb)
+              )
+              .getOrElse(throw new JsonError(s"Unrecognized child $className of seald trait " + t.name))
+
       case t: ScalaClassRType[?] =>
+        if t.isAbstractClass then throw new JsonError("Cannot serialize an abstract class")
         classesSeen.put(t.typedName, t)
         if a == null then sb.append("null")
         else
           sb.append('{')
           val sbLen = sb.length
-          t.renderTrait.map(traitName => sb.append(s"\"_hint\":\"$traitName\","))
+          t.renderTrait.map { traitName =>
+            sb.append('"')
+            sb.append(cfg.typeHintLabelByTrait.getOrElse(traitName, cfg.typeHintLabel))
+            sb.append('"')
+            sb.append(':')
+            sb.append('"')
+            val hint = t.annotations
+              .get("co.blocke.scalajack.TypeHint")
+              .map(_ => encryptionDecryption.encrypt(JsonWriter.lastPart(t.name), secret)) // only need lat part of class name because the rest is the same as the parent
+              .getOrElse {
+                cfg.typeHintTransformer.get(a.getClass.getName) match
+                  case Some(xform) => xform(a)
+                  case None        => cfg.typeHintDefaultTransformer(a.getClass.getName)
+              }
+            sb.append(hint)
+            sb.append('"')
+            sb.append(',')
+          }
           t.fields.foldLeft(sb) { (acc, f) =>
             val m = a.getClass.getMethod(f.name)
             m.setAccessible(true)
             val fieldValue = m.invoke(a).asInstanceOf[f.fieldType.T]
-            if isOkToWrite(fieldValue, cfg) then
+            if JsonWriter.isOkToWrite(fieldValue, cfg) then
               acc.append('"')
               acc.append(f.name)
               acc.append('"')
@@ -99,20 +131,52 @@ object JsonWriterRT:
               acc.append(',')
             else acc
           }
+          if !t.isCaseClass && cfg.writeNonConstructorFields then
+            t.nonConstructorFields.foldLeft(sb) { (acc, f) =>
+              val m = a.getClass.getMethod(f.getterLabel)
+              m.setAccessible(true)
+              val fieldValue = m.invoke(a).asInstanceOf[f.fieldType.T]
+              if JsonWriter.isOkToWrite(fieldValue, cfg) then
+                acc.append('"')
+                acc.append(f.name)
+                acc.append('"')
+                acc.append(':')
+                refWriteRT[f.fieldType.T](cfg, f.fieldType.asInstanceOf[RType[f.fieldType.T]], fieldValue, acc)
+                acc.append(',')
+              else acc
+            }
           if sbLen == sb.length then sb.append('}')
           else sb.setCharAt(sb.length() - 1, '}')
 
       case t: TraitRType[?] =>
         classesSeen.put(t.typedName, t)
-        val classRType = RType.inTermsOf[T](a.getClass).asInstanceOf[ScalaClassRType[T]].copy(renderTrait = Some(t.name)).asInstanceOf[RType[T]]
-        JsonWriterRT.refWriteRT[classRType.T](cfg, classRType, a.asInstanceOf[classRType.T], sb)
+        if a == null then sb.append("null")
+        if t.childrenAreObject then
+          sb.append('"')
+          sb.append(JsonWriter.lastPart(a.getClass.getName))
+          sb.append('"')
+        else if t.isSealed then
+          // Wow!  If this is a sealed trait, all the children already have correctly-typed parameters--no need for expensive inTermsOf()
+          val className = a.getClass.getName
+          t.sealedChildren
+            .find(_.name == className)
+            .map(foundKid =>
+              val augmented = foundKid.asInstanceOf[ScalaClassRType[foundKid.T]].copy(renderTrait = Some(t.name)).asInstanceOf[RType[foundKid.T]]
+              JsonWriterRT.refWriteRT[foundKid.T](cfg, augmented, a.asInstanceOf[foundKid.T], sb)
+            )
+            .getOrElse(throw new JsonError(s"Unrecognized child $className of seald trait " + t.name))
+        else throw new JsonError("non-sealed traits are not supported")
+      // val classRType = RType.inTermsOf[T](a.getClass).asInstanceOf[ScalaClassRType[T]].copy(renderTrait = Some(t.name)).asInstanceOf[RType[T]]
+      // JsonWriterRT.refWriteRT[classRType.T](cfg, classRType, a.asInstanceOf[classRType.T], sb)
 
       case t: OptionRType[?] =>
         if isMapKey then throw new JsonError("Option valuess cannot be map keys")
-        a match
-          case None => sb.append("null")
-          case Some(v) =>
-            refWriteRT[t.optionParamType.T](cfg, t.optionParamType.asInstanceOf[RType[t.optionParamType.T]], v.asInstanceOf[t.optionParamType.T], sb)
+        if a == null then sb.append("null")
+        else
+          a match
+            case None => sb.append("null")
+            case Some(v) =>
+              refWriteRT[t.optionParamType.T](cfg, t.optionParamType.asInstanceOf[RType[t.optionParamType.T]], v.asInstanceOf[t.optionParamType.T], sb)
 
       case t: MapRType[?] =>
         if isMapKey then throw new JsonError("Map values cannot be map keys")
@@ -121,7 +185,7 @@ object JsonWriterRT:
           sb.append('{')
           val sbLen = sb.length
           a.asInstanceOf[Map[?, ?]].foreach { case (key, value) =>
-            if isOkToWrite(value, cfg) then
+            if JsonWriter.isOkToWrite(value, cfg) then
               val b = refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], key.asInstanceOf[t.elementType.T], sb, true)
               b.append(':')
               val b2 = refWriteRT[t.elementType2.T](cfg, t.elementType2.asInstanceOf[RType[t.elementType2.T]], value.asInstanceOf[t.elementType2.T], sb)
@@ -164,16 +228,18 @@ object JsonWriterRT:
 
       case t: TryRType[?] =>
         if isMapKey then throw new JsonError("Try values (Succeed/Fail) cannot be map keys")
-        a match
-          case Success(v) =>
-            refWriteRT[t.tryType.T](cfg, t.tryType.asInstanceOf[RType[t.tryType.T]], v.asInstanceOf[t.tryType.T], sb)
-          case Failure(_) if cfg.tryFailureHandling == TryOption.AS_NULL => sb.append("null")
-          case Failure(f) if cfg.tryFailureHandling == TryOption.THROW_EXCEPTION =>
-            throw new JsonError("A try value was Failure with message: " + f.getMessage())
-          case Failure(v) =>
-            sb.append('"')
-            sb.append(v.getMessage)
-            sb.append('"')
+        if a == null then sb.append("null")
+        else
+          a match
+            case Success(v) =>
+              refWriteRT[t.tryType.T](cfg, t.tryType.asInstanceOf[RType[t.tryType.T]], v.asInstanceOf[t.tryType.T], sb)
+            case Failure(_) if cfg.tryFailureHandling == TryOption.AS_NULL => sb.append("null")
+            case Failure(f) if cfg.tryFailureHandling == TryOption.THROW_EXCEPTION =>
+              throw new JsonError("A try value was Failure with message: " + f.getMessage())
+            case Failure(v) =>
+              sb.append('"')
+              sb.append(v.getMessage)
+              sb.append('"')
 
       case t: TupleRType[?] =>
         if isMapKey then throw new JsonError("Tuples cannot be map keys")
@@ -195,7 +261,7 @@ object JsonWriterRT:
         sb.append('[')
         val sbLen = sb.length
         a.asInstanceOf[java.util.Collection[?]].toArray.foreach { elem =>
-          if isOkToWrite(elem, cfg) then refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], elem.asInstanceOf[t.elementType.T], sb)
+          if JsonWriter.isOkToWrite(elem, cfg) then refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], elem.asInstanceOf[t.elementType.T], sb)
         }
         sb.append(',')
         if sbLen == sb.length then sb.append(']')
@@ -207,7 +273,7 @@ object JsonWriterRT:
         sb.append('{')
         val sbLen = sb.length
         a.asInstanceOf[java.util.Map[?, ?]].asScala.foreach { case (key, value) =>
-          if isOkToWrite(value, cfg) then
+          if JsonWriter.isOkToWrite(value, cfg) then
             refWriteRT[t.elementType.T](cfg, t.elementType.asInstanceOf[RType[t.elementType.T]], key.asInstanceOf[t.elementType.T], sb, true)
             sb.append(':')
             refWriteRT[t.elementType2.T](cfg, t.elementType2.asInstanceOf[RType[t.elementType2.T]], value.asInstanceOf[t.elementType2.T], sb)
@@ -232,21 +298,46 @@ object JsonWriterRT:
         JsonWriterRT.refWriteRT[again.T](cfg, again, a.asInstanceOf[again.T], sb)
 
       case t: EnumRType[?] =>
-        val enumAsId = cfg.enumsAsIds match
-          case '*'                                           => true
-          case aList: List[String] if aList.contains(t.name) => true
-          case _                                             => false
-        if enumAsId then
-          val enumVal = t.ordinal(a.toString).getOrElse(throw new JsonError(s"Value $a is not a valid enum value for ${t.name}"))
-          if isMapKey then
-            sb.append('"')
-            sb.append(enumVal.toString)
-            sb.append('"')
-          else sb.append(enumVal.toString)
+        if a == null then sb.append("null")
         else
-          sb.append('"')
-          sb.append(a.toString)
-          sb.append('"')
+          val enumAsId = cfg.enumsAsIds match
+            case '*'                                           => true
+            case aList: List[String] if aList.contains(t.name) => true
+            case _                                             => false
+          if enumAsId then
+            val enumVal = t.ordinal(a.toString).getOrElse(throw new JsonError(s"Value $a is not a valid enum value for ${t.name}"))
+            if isMapKey then
+              sb.append('"')
+              sb.append(enumVal.toString)
+              sb.append('"')
+            else sb.append(enumVal.toString)
+          else
+            sb.append('"')
+            sb.append(a.toString)
+            sb.append('"')
+
+      case t: JavaClassRType[?] =>
+        classesSeen.put(t.typedName, t)
+        if a == null then sb.append("null")
+        else
+          sb.append('{')
+          val sbLen = sb.length
+          t.fields.foldLeft(sb) { (acc, f) =>
+            val field = f.asInstanceOf[NonConstructorFieldInfo]
+            val m = a.getClass.getMethod(field.getterLabel)
+            m.setAccessible(true)
+            val fieldValue = m.invoke(a).asInstanceOf[field.fieldType.T]
+            if JsonWriter.isOkToWrite(fieldValue, cfg) then
+              acc.append('"')
+              acc.append(field.name)
+              acc.append('"')
+              acc.append(':')
+              JsonWriterRT.refWriteRT[field.fieldType.T](cfg, field.fieldType, a.asInstanceOf[field.fieldType.T], sb)(using scala.collection.mutable.Map.empty[TypedName, RType[?]])
+              acc.append(',')
+            else acc
+          }
+          if sbLen == sb.length then sb.append('}')
+          else sb.setCharAt(sb.length() - 1, '}')
 
       case t: ObjectRef =>
         sb.append("\"" + t.name + "\"")
@@ -255,16 +346,16 @@ object JsonWriterRT:
         cfg.undefinedFieldHandling match
           case UndefinedValueOption.AS_NULL         => sb.append("null")
           case UndefinedValueOption.AS_SYMBOL       => sb.append("\"" + t.name + "\"")
-          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + a.toString + " is of some unknown/unsupported Scala 2 type " + t.name)
+          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Unknown/unsupported Scala 2 type " + t.name)
 
       case t: UnknownRType[?] =>
         cfg.undefinedFieldHandling match
           case UndefinedValueOption.AS_NULL         => sb.append("null")
           case UndefinedValueOption.AS_SYMBOL       => sb.append("\"" + t.name + "\"")
-          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + a.toString + " is of some unknown/unsupported type " + t.name)
+          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Unknown/unsupported type " + t.name)
 
       case t: TypeSymbolRType =>
         cfg.undefinedFieldHandling match
           case UndefinedValueOption.AS_NULL         => sb.append("null")
           case UndefinedValueOption.AS_SYMBOL       => sb.append("\"" + t.name + "\"")
-          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Value " + a.toString + " is of some unknown/unsupported type " + t.name + ". (Class didn't fully define all its type parameters.)")
+          case UndefinedValueOption.THROW_EXCEPTION => throw new JsonError("Unknown/unsupported type " + t.name + ". (Class didn't fully define all its type parameters.)")

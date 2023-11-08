@@ -17,12 +17,14 @@ object RunMe extends App:
   given json.JsonConfig = json
     .JsonConfig()
     .copy(noneAsNull = true)
+    .copy(writeNonConstructorFields = true)
   // .copy(enumsAsIds = '*')
 
   try
-    val v = Person("Greg", DIAMOND, Command(15), Foom(3))
+    val v = Person("Greg", DIAMOND, Command(15), new Wrapper(-10))
 
     println("HERE: " + ScalaJack.write(v))
+    println(RType.of[Wrapper].pretty)
 
     // println(RType.of[Person[Int]])
 
