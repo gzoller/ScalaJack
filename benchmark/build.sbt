@@ -7,10 +7,7 @@ val compilerOptions = Seq(
   "-feature",
   "-language:existentials",
   "-language:higherKinds",
-  "-unchecked",
-  "-Ywarn-dead-code",
-  "-Ywarn-numeric-widen",
-  "-Xfuture"
+  "-unchecked"
 )
 
 val circeVersion = "0.15.0-M1"
@@ -39,9 +36,14 @@ lazy val benchmark = project
     libraryDependencies ++= Seq(
       "org.playframework" %% "play-json" % "3.0.1",
       "io.argonaut" %% "argonaut" % "6.3.9",
-      "co.blocke" %% "scalajack" % "826a30_unknown",
+      // "co.blocke" %% "scalajack" % "826a30_unknown", // Old-New
+      "co.blocke" %% "scalajack" % "e48b35_unknown", // New-New
       "co.blocke" %% "scala-reflection" % "sj_fixes_edbef8",
       "dev.zio" %% "zio-json" % "0.6.1",
+      "org.typelevel" %% "fabric-core" % "1.12.6",
+      "org.typelevel" %% "fabric-io" % "1.12.6",
+      "org.typelevel" %% "jawn-parser" % "1.3.2",
+      "org.typelevel" %% "jawn-ast" % "1.3.2",
       // "io.circe" %% "circe-derivation" % "0.15.0-M1",
       // "io.circe" %% "circe-jackson29" % "0.14.0",
       // "org.json4s" %% "json4s-jackson" % "4.0.4",

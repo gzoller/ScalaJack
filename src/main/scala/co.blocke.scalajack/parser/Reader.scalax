@@ -1,0 +1,33 @@
+package co.blocke.scalajack
+package parser
+
+import scala.collection.Factory
+
+trait Parser
+
+/**
+  * A Reader's job is simply this: to accept as input raw data from a Parser in one of the basic parser data types
+  * and produce a well-typed result fit for consumption.  Raw Parser types are:
+  *   - String
+  *   - Long
+  *   - BigLong
+  *   - Double
+  *   - BigDouble
+  *   - Object (differs from map in that the values, representing fields, will likely have different types)
+  *   - List[T]
+  *   - Map[K,V]
+  */
+trait Reader
+
+class CharReader() extends Reader:
+    inline def read(p: Parser, data: String): Char = data.head
+
+class StringReader() extends Reader:
+    inline def read(p: Parser, data: String): String = data
+
+case class IntReader() extends Reader:
+    inline def read(p: Parser, data: Long): Int = data.intValue
+
+case class ListReader() extends Reader:
+    inline def collectionConvert[T,U](in:List[T])(using Factory[T, U]) = in.to( summon[Factory[T,U]] )
+    inline def read[E,T](p: Parser, data: List[E])(using Factory[E,T]): T = collectionConvert[E,T](data)

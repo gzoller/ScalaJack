@@ -1,52 +1,14 @@
 package co.blocke
 
 import org.openjdk.jmh.annotations._
-
 import java.util.concurrent.TimeUnit
 
-import co.blocke.scalajack.* 
+import ZIOZ.*
+import zio.json._
+val record = jsData.fromJson[Record] match
+  case Right(r) => r 
+  case Left(_) => null.asInstanceOf[Record]
 
-import io.circe.syntax.*
-import io.circe.*
-import io.circe.generic.semiauto.*
-
-val record = ScalaJack.read[Record](jsData)
-
-implicit val recordDecoder: Decoder[Record] = deriveDecoder[Record]
-implicit val recordEncoder: Encoder[Record] = deriveEncoder[Record]
-
-implicit val personDecoder: Decoder[Person] = deriveDecoder[Person]
-implicit val personEncoder: Encoder[Person] = deriveEncoder[Person]
-
-implicit val addressDecoder: Decoder[Address] = deriveDecoder[Address]
-implicit val addressEncoder: Encoder[Address] = deriveEncoder[Address]
-
-implicit val friendDecoder: Decoder[Friend] = deriveDecoder[Friend]
-implicit val friendEncoder: Encoder[Friend] = deriveEncoder[Friend]
-
-implicit val petDecoder: Decoder[Pet] = deriveDecoder[Pet]
-implicit val petEncoder: Encoder[Pet] = deriveEncoder[Pet]
-
-
-
-trait CirceReadingBenchmark{
-  val circeJson = record.asJson
-  def readRecordCirce = circeJson.as[Record]
-}
-
-// trait ScalaJackReadingBenchmark{
-//   def readRecordScalaJack = ScalaJack.read[Record](jsData)
-// }
-
-trait CirceWritingBenchmark { 
-  @Benchmark
-  def writeRecordCirce = record.asJson
-}
-
-trait ScalaJackWritingBenchmark { 
-  @Benchmark
-  def writeRecordScalaJack = ScalaJack.write(record)
-}
 
 trait HandTooledWritingBenchmark { 
   @Benchmark
@@ -77,20 +39,45 @@ trait HandTooledWritingBenchmark {
     sb.toString
   }
 
-// @State(Scope.Thread)
-// @BenchmarkMode(Array(Mode.Throughput))
-// @OutputTimeUnit(TimeUnit.SECONDS)
-// class ReadingBenchmark
-//     extends CirceReadingBenchmark
-//     with ScalaJackReadingBenchmark
+@State(Scope.Thread)
+@BenchmarkMode(Array(Mode.Throughput))
+@OutputTimeUnit(TimeUnit.SECONDS)
+class ReadingBenchmark
+    // extends CirceZ.CirceReadingBenchmark
+    extends ScalaJackZ.ScalaJackReadingBenchmark
+    // extends ZIOZ.ZIOJsonReadingBenchmark
+    // extends PlayZ.PlayReadingBenchmark
+    // extends FabricZ.FabricReadingBenchmark
+    // extends JawnZ.JawnReadingBenchmark
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
-    extends CirceWritingBenchmark
-    with ScalaJackWritingBenchmark
-    with HandTooledWritingBenchmark
-    with ArgonautWritingBenchmark
-    with PlayWritingBenchmark
-    with ZIOJsonWritingBenchmark
+    // extends CirceZ.CirceWritingBenchmark
+    extends ScalaJackZ.ScalaJackWritingBenchmark
+    // with HandTooledWritingBenchmark
+    // with ArgonautZ.ArgonautWritingBenchmark
+    // with PlayZ.PlayWritingBenchmark
+    // with ZIOZ.ZIOJsonWritingBenchmark
+
+
+// "Old-New" ScalaJack
+// [info] Benchmark                              Mode  Cnt        Score    Error  Units
+// [info] ReadingBenchmark.readRecordScalaJack  thrpt   20    30113.982 ± 97.701  ops/s
+// [info] New-New ScalaJack                     thrpt   20    50908.982 ± 97.701  ops/s
+
+//        ScalaJack w/ZIO-based parser                       635977.008
+//        ZIO (Fast!!)                                       568123.000 <-- How do they do this?!  More than 2x faster than everyone else!
+//        Circe                                              279231.646
+//        Play                                               209756.408
+
+//        Jawn (parse only + AST)                            336384.617
+//        ScalaJack JsonParser3 (parse only + AST)           279456.523
+//        Fabric (new!) (parse only + AST)                   270706.567
+
+
+
+
+// SJ StringBuffer     : 1740040.225
+// SJ FastStringBuffer : 

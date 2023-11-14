@@ -3,6 +3,7 @@ package co.blocke.scalajack
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.ClassRef
+import parser.ParseError
 import scala.collection.mutable.{HashMap, Map}
 import scala.quoted.*
 import quoted.Quotes
@@ -21,22 +22,43 @@ object ScalaJack:
 
   // ---------------------------------------------------------------------
 
-  inline def read[T](js: String)(using cfg: JsonConfig = JsonConfig()): T = ${ readImpl[T]('js, 'cfg) }
+  inline def read[T](js: String)(using cfg: JsonConfig = JsonConfig()): Either[ParseError, T] = ${ readImpl[T]('js, 'cfg) }
 
-  def readImpl[T: Type](js: Expr[String], cfg: Expr[JsonConfig])(using q: Quotes): Expr[T] =
+  def readImpl[T: Type](js: Expr[String], cfg: Expr[JsonConfig])(using q: Quotes): Expr[Either[ParseError, T]] =
     import quotes.reflect.*
 
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
 
-    // Used to trap SelfRef's from going into endless loops and causing Stack Overflow.
-    val seenBeforeFnCache = HashMap.empty[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
+    val instruction = JsonReader.refRead[T](classRef)
 
-    val fn = JsonReader().readerFn[T](classRef)(using quotes, Type.of[T])(using seenBeforeFnCache)
-    val listifiedCache = Expr.ofList(seenBeforeFnCache.toList.map(t => Expr.ofTuple(t)))
-
-    '{ // run-time
-      val parser = JsonParser($js, $listifiedCache.toMap)
-      $fn($cfg, parser) match
-        case Right(v) => v
-        case Left(t)  => throw t
+    '{
+      val foo = json2.JsonReader($js)
+      var c = 0
+      while c != json2.BUFFER_EXCEEDED do c = foo.read()
+      Right(null.asInstanceOf[T])
     }
+
+  // '{
+  //   val parser = JsonParser2($js, $cfg)
+  //   parser.parse($instruction).asInstanceOf[Either[ParseError, T]]
+  // }
+
+  // -------------------->>>> OLD <<----------------------
+
+  //   // Used to trap SelfRef's from going into endless loops and causing Stack Overflow.
+  //   val seenBeforeFnCache = HashMap.empty[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
+
+  //   val parserE = '{ new JsonParser($js, $cfg) }
+  //   JsonReader().refRead(classRef, parserE, cfg)(using quotes, Type.of[T])(using seenBeforeFnCache)
+
+  // ---------------
+
+  // val fn = JsonReader().readerFn[T](classRef)(using quotes, Type.of[T])(using seenBeforeFnCache)
+  // val listifiedCache = Expr.ofList(seenBeforeFnCache.toList.map(t => Expr.ofTuple(t)))
+
+  // '{ // run-time
+  //   val parser = JsonParser($js, $listifiedCache.toMap)
+  //   $fn($cfg, parser) match
+  //     case Right(v) => v
+  //     case Left(t)  => throw t
+  // }

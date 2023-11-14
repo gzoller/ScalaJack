@@ -14,8 +14,95 @@ import scala.jdk.CollectionConverters.*
 import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 
-case class PrimitiveReader(next: ReaderModule, root: ReaderModule) extends ReaderModule:
+case class IntReader() extends JsonReader[Long, Int]:
+  def apply(in: Long) = in.toInt
 
+case class StringReader() extends JsonReader[String, String]:
+  def apply(in: String) = in
+
+// Magic line to convert a List[T] to some U <: Seq[?], eg zconvert[Int,Set[?]]
+// can use this if I have element type T, and target collection U, which the SeqRef has!
+// This line should be executed at runtime.
+//
+// inline def zconvert[T,U](in:List[T])(using Factory[T, U]) = in.to( summon[Factory[T,U]] )
+//
+// case class SeqReader[B, T](toObj: B) extends JsonReader[List[T], Seq[T]]:
+//   def apply(in: List[T]) = in.to(toObj)
+// def apply[s](in: List[T]) = in.to(${ Expr.summon[Factory[T, s]].get })
+
+/*
+case class PrimitiveReader(next: Option[ReaderModule], root: ReaderModule) extends ReaderModule:
+
+  def refRead[T](
+      ref: RTypeRef[T],
+      parserE: Expr[JsonParser],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[Either[ParseError, T]] =
+    import quotes.reflect.*
+    import Clazzes.*
+
+    ref match
+      //
+      // Scala Primitives
+      //
+      case t: PrimitiveRef[T] if t.name == BIG_DECIMAL_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectBigDouble($isMapKeyE).map(_.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == BIG_INT_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectBigLong($isMapKeyE).map(_.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == BOOLEAN_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectBoolean($isMapKeyE).map(_.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == BYTE_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectLong($isMapKeyE).map(_.toByte.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == CHAR_CLASS =>
+        '{
+          $parserE
+            .expectString()
+            .flatMap(s =>
+              if s == null then Left(JsonParseError($parserE.showError(s"Char typed values cannot be null")))
+              else
+                s.toArray.headOption match
+                  case Some(c) => Right(c.asInstanceOf[T])
+                  case None    => Left(JsonParseError($parserE.showError(s"Cannot convert value '$s' into a Char")))
+            )
+        }
+
+      case t: PrimitiveRef[T] if t.name == DOUBLE_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectDouble($isMapKeyE).map(_.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == FLOAT_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectDouble($isMapKeyE).map(_.toFloat.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == INT_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectLong($isMapKeyE).map(_.toInt.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == LONG_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectLong($isMapKeyE).map(_.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == SHORT_CLASS =>
+        val isMapKeyE = Expr(isMapKey)
+        '{ $parserE.expectLong($isMapKeyE).map(_.toShort.asInstanceOf[T]) }
+
+      case t: PrimitiveRef[T] if t.name == STRING_CLASS =>
+        '{ $parserE.expectString().map(_.asInstanceOf[T]) }
+
+      case t =>
+        next.get.refRead(ref, parserE, cfgE, isMapKey)
+ */
+
+/*
   def readerFn[T](ref: RTypeRef[T], isMapKey: Boolean = false)(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
     import Clazzes.*
     import quotes.reflect.*
@@ -25,119 +112,6 @@ case class PrimitiveReader(next: ReaderModule, root: ReaderModule) extends Reade
       //
       // Scala Primitives
       //
-      case t: PrimitiveRef[T] if t.name == BIG_DECIMAL_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectBigDouble(j, p).map(_.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectBigDouble(j, p).map(_.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == BIG_INT_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectBigLong(j, p).map(_.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectBigLong(j, p).map(_.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == BOOLEAN_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectBoolean(j, p).map(_.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectBoolean(j, p).map(_.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == BYTE_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectLong(j, p).map(_.toByte.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toByte.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == CHAR_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) =>
-          p.expectString(j, p)
-            .flatMap(s =>
-              if s == null then Left(JsonParseError(p.showError(s"Char typed values cannot be null at position [${p.getPos}]")))
-              else
-                s.toArray.headOption match
-                  case Some(c) => Right(c.asInstanceOf[T])
-                  case None    => Left(JsonParseError(p.showError(s"Cannot convert value '$s' into a Char at position [${p.getPos}]")))
-            )
-        }
-
-      case t: PrimitiveRef[T] if t.name == DOUBLE_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectDouble(j, p).map(_.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == FLOAT_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectDouble(j, p).map(_.toFloat.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == INT_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectLong(j, p).map(_.toInt.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toInt.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == LONG_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectLong(j, p).map(_.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == SHORT_CLASS =>
-        if isMapKey then
-          '{ (j: JsonConfig, p: JsonParser) =>
-            (for {
-              _ <- p.expectQuote
-              v <- p.expectLong(j, p).map(_.toShort.asInstanceOf[T])
-              _ <- p.expectQuote
-            } yield v)
-          }
-        else '{ (j: JsonConfig, p: JsonParser) => p.expectLong(j, p).map(_.toShort.asInstanceOf[T]) }
-
-      case t: PrimitiveRef[T] if t.name == STRING_CLASS =>
-        '{ (j: JsonConfig, p: JsonParser) => p.expectString(j, p).map(_.asInstanceOf[T]) }
 
       //
       // Java Primitives
@@ -243,3 +217,4 @@ case class PrimitiveReader(next: ReaderModule, root: ReaderModule) extends Reade
 
       case t =>
         next.readerFn[T](t)
+ */

@@ -1,0 +1,35 @@
+package co.blocke.scalajack
+package json
+
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import scala.quoted.*
+import scala.collection.mutable.HashMap
+import scala.util.{Failure, Success, Try}
+
+trait ReaderModule:
+  val next: Option[ReaderModule]
+  val root: ReaderModule
+
+  def refRead[T](
+      ref: RTypeRef[T],
+      parserE: Expr[JsonParser],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[Either[ParseError, T]]
+
+case class TerminusReaderModule(next: Option[ReaderModule], root: ReaderModule) extends ReaderModule:
+
+  def refRead[T](
+      ref: RTypeRef[T],
+      parserE: Expr[JsonParser],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[Either[ParseError, T]] =
+
+    val name = Expr(ref.name)
+    next match
+      case None => '{ Left(JsonParseError("Unknown (or unsupported) type " + $name)) }
+      case Some(ext) =>
+        Try(ext.refRead[T](ref, parserE, cfgE, isMapKey)) match
+          case Success(v) => v
+          case Failure(_) => '{ Left(JsonParseError("Unknown (or unsupported) type " + $name)) }

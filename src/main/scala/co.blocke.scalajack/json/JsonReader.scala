@@ -2,45 +2,44 @@ package co.blocke.scalajack
 package json
 
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import parser.*
 import scala.quoted.*
 import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
+import scala.collection.Factory
 
-case class JsonReader() extends ReaderModule:
+object JsonReader:
 
-  val root: ReaderModule = null // Should never be accessed--we're the root!
+  def refRead[T](
+      ref: RTypeRef[T]
+  )(using q: Quotes, tt: Type[T]): Expr[Instruction] =
+    import quotes.reflect.*
 
-  // Did the user supply an extension module?
-  val extension = Try(Class.forName("co.blocke.scalajack.json.ReaderExtension")) match
-    case Success(c) => Some(c.getDeclaredConstructor().newInstance.asInstanceOf[ReaderModule])
-    case Failure(_) => None
+    ref match
+      case r: PrimitiveRef[?] if r.family == PrimFamily.Boolish   => '{ BooleanInstruction() }
+      case r: PrimitiveRef[?] if r.family == PrimFamily.Stringish => '{ StringInstruction() }
+      case r: PrimitiveRef[?] if r.family == PrimFamily.Longish   => '{ IntInstruction() }
 
-  val modules = readers.PrimitiveReader(
-    readers.ColletionReader(
-      readers.ClassReader(
-        readers.EnumReader(
-          readers.MiscReader(
-            TerminusReaderModule(extension, root),
-            root
-          ),
-          root
-        ),
-        this
-      ),
-      this
-    ),
-    this
-  )
+      case r: SeqRef[?] =>
+        r.elementRef.refType match
+          case '[e] =>
+            r.refType match
+              case '[t] =>
+                val elementInstruction = refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]])
+                '{ SeqInstruction[e, t]($elementInstruction)(using ${ Expr.summon[Factory[e, t]].get }) }
 
-  def readerFn[T](ref: RTypeRef[T], isMapKey: Boolean = false)(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
-    modules.readerFn[T](ref)
-
-    // TODO:
-    // * Java Enums
-    // * Java Classes
-    // * Non-case Scala classes
-    // * SealedTraitRef
-    // * TraitRef
-    // * Primitive: Any
-
-  // -----------------------------------
+      case r: ScalaClassRef[?] =>
+        r.refType match
+          case '[t] =>
+            val fieldInstructions = Expr.ofList(
+              r.fields
+                .map { f =>
+                  f.fieldRef.refType match
+                    case '[e] =>
+                      (Expr(f.name), refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
+                }
+                .map(u => Expr.ofTuple(u))
+            )
+            val instantiator = JsonReaderUtil.classInstantiator[t](r.asInstanceOf[ClassRef[t]])
+            '{ ScalaClassInstruction[t]($fieldInstructions.toMap, $instantiator) }

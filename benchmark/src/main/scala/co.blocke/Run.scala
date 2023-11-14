@@ -1,8 +1,16 @@
 package co.blocke
 
-case class Foo() extends ZIOJsonWritingBenchmark
 
 object RunMe extends App:
 
-    val f = Foo()
-    println(f.writeRecordZIOJson)
+    import ZIOZ.*
+    import zio.json._
+    import co.blocke.scalajack.*
+
+    val f = jsData.fromJson[Record]
+    println(f)
+
+    println("\n---------")
+    println(ScalaJack.write(f))
+
+    println("ZIO Decoder (Address): "+DeriveJsonDecoder.gen[Address])

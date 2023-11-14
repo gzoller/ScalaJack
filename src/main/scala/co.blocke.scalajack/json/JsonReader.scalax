@@ -1,0 +1,49 @@
+package co.blocke.scalajack
+package json
+
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import scala.quoted.*
+import scala.collection.mutable.HashMap
+import scala.util.{Failure, Success, Try}
+
+trait JsonReader[B, T]:
+  def apply(in: B): T
+
+/*
+case class JsonReader() extends ReaderModule:
+
+  val root: ReaderModule = this // Should never be accessed--we're the root!
+
+  // Did the user supply an extension module?
+  val extension = Try(Class.forName("co.blocke.scalajack.json.ReaderExtension")) match
+    case Success(c) => Some(c.getDeclaredConstructor().newInstance.asInstanceOf[ReaderModule])
+    case Failure(_) => None
+
+  val next: Option[ReaderModule] = Some(
+    readers.PrimitiveReader(
+      Some(readers.CollectionReader(Some(TerminusReaderModule(extension, root)), root)),
+      // readers.ColletionReader(
+      //   readers.ClassReader(
+      //     readers.EnumReader(
+      //       readers.MiscReader(
+      //         TerminusReaderModule(extension, root),
+      //         root
+      //       ),
+      //       root
+      //     ),
+      //     this
+      //   ),
+      //   this
+      // ),
+      this
+    )
+  )
+
+  def refRead[T](
+      ref: RTypeRef[T],
+      parserE: Expr[JsonParser],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[Either[ParseError, T]] =
+    next.get.refRead(ref, parserE, cfgE, isMapKey)
+ */

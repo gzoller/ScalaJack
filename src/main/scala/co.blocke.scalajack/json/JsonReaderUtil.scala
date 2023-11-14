@@ -24,6 +24,7 @@ object JsonReaderUtil:
       }
     }
 
+    /*
   def tupleInstantiator[T: Type](ref: TupleRef[T])(using Quotes): Expr[List[?] => T] =
     import quotes.reflect.*
     val sym = TypeRepr.of[T].classSymbol.get
@@ -49,22 +50,23 @@ object JsonReaderUtil:
         tree.asExpr.asExprOf[T]
       }
     }
+     */
 
-  def classParseMap[T: Type](ref: ClassRef[T], root: ReaderModule)(using q: Quotes)(using
-      cache: scala.collection.mutable.HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
-  ): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
-    import Clazzes.*
-    '{ (parser: JsonParser) =>
-      val daList = ${
-        val fieldList = ref.fields.map(f =>
-          f.fieldRef.refType match
-            case '[m] =>
-              val fn = root.readerFn[m](f.fieldRef.asInstanceOf[RTypeRef[m]])
-              '{
-                ${ Expr(f.name) } -> $fn
-              }
-        )
-        Expr.ofList(fieldList)
-      }
-      daList.toMap
-    }
+  // def classParseMap[T: Type](ref: ClassRef[T], root: ReaderModule)(using q: Quotes)(using
+  //     cache: scala.collection.mutable.HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
+  // ): Expr[JsonParser => Map[String, (JsonConfig, JsonParser) => Either[ParseError, ?]]] =
+  //   import Clazzes.*
+  //   '{ (parser: JsonParser) =>
+  //     val daList = ${
+  //       val fieldList = ref.fields.map(f =>
+  //         f.fieldRef.refType match
+  //           case '[m] =>
+  //             val fn = root.readerFn[m](f.fieldRef.asInstanceOf[RTypeRef[m]])
+  //             '{
+  //               ${ Expr(f.name) } -> $fn
+  //             }
+  //       )
+  //       Expr.ofList(fieldList)
+  //     }
+  //     daList.toMap
+  //   }

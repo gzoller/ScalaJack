@@ -14,23 +14,29 @@ import scala.jdk.CollectionConverters.*
 import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 
-case class ColletionReader(next: ReaderModule, root: ReaderModule) extends ReaderModule:
+case class CollectionReader(next: Option[ReaderModule], root: ReaderModule) extends ReaderModule:
 
-  def readerFn[T](ref: RTypeRef[T], isMapKey: Boolean = false)(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[(JsonConfig, JsonParser) => Either[ParseError, T]] =
+  def refRead[T](
+      ref: RTypeRef[T],
+      parserE: Expr[JsonParser],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using q: Quotes, tt: Type[T])(using cache: HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]): Expr[Either[ParseError, T]] =
     import quotes.reflect.*
 
     ref match
       case t: SeqRef[T] =>
-        if isMapKey then throw new JsonError("Seq types cannot be map keys.")
-        t.refType match
-          case '[s] =>
-            t.elementRef.refType match
-              case '[e] =>
-                val subFn = root.readerFn[e](t.elementRef.asInstanceOf[RTypeRef[e]]).asInstanceOf[Expr[(JsonConfig, JsonParser) => Either[ParseError, e]]]
-                '{ (j: JsonConfig, p: JsonParser) =>
-                  p.expectList[e](j, $subFn).map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
-                }
+        if isMapKey then '{ Left(new JsonError("Seq types cannot be map keys.")) }
+        t.elementRef.refType match
+          case '[e] =>
+            val fn = () => root.refRead[e](t.elementRef.asInstanceOf[RTypeRef[e]], parserE, cfgE)
+            '{
+              $parserE
+                .expectList[e]($fn)
+                .map(_.to(${ Expr.summon[Factory[e, T]].get })) // Convert List to whatever the target type should be
+            }
 
+      /*
       case t: MapRef[T] =>
         if isMapKey then throw new JsonError("Map types cannot be map keys.")
         t.refType match
@@ -99,6 +105,26 @@ case class ColletionReader(next: ReaderModule, root: ReaderModule) extends Reade
                         case Failure(e)  => Left(JsonParseError(p.showError(s"Could not instantiate a $cname, with error: " + e)))
                     )
                 }
+       */
 
       case t =>
-        next.readerFn[T](t)
+        next.get.refRead(ref, parserE, cfgE, isMapKey)
+
+
+
+        /*
+
+        1. At compile-time, use reflected RTypes to build a set of pre-baked instructions for the parser... an entire set of commands to parse the given object
+        2. Pass this command set to the parser at runtime for linear execution
+
+
+        Parson(name: String, age: Int, stuff: List[String])
+
+        ParseObject
+                fields:
+                    name: ParseString
+                    age: ParseInt
+                    stuff: ParseList
+                              ParseString
+
+        */
