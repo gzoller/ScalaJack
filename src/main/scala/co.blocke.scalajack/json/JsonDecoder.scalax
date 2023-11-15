@@ -1,17 +1,16 @@
 package co.blocke.scalajack
-package json2
+package json
 
-import json.JsonParseError
-import scala.annotation._
+import scala.annotation.*
 
 trait JsonDecoder[A]:
   final def decodeJson(str: CharSequence): Either[JsonParseError, A] =
-    try Right(unsafeDecode(new JsonReader(str)))
+    try Right(unsafeDecode(new JsonSource(str)))
     catch {
       case jpe: JsonParseError => Left(jpe)
     }
 
-  def unsafeDecode(in: JsonReader): A
+  def unsafeDecode(in: JsonSource): A
 
 //------------------------------------------------------------
 
@@ -20,23 +19,23 @@ object JsonDecoder extends DecoderLowPriority1:
   def apply[A](implicit a: JsonDecoder[A]): JsonDecoder[A] = a
 
   // Primitive support...
-  implicit val string: JsonDecoder[String] = new JsonDecoder[String] { 
-    def unsafeDecode(in: JsonReader): String =
+  implicit val string: JsonDecoder[String] = new JsonDecoder[String] {
+    def unsafeDecode(in: JsonSource): String =
       JsonParser.parseString(in).toString
   }
 
   implicit val boolean: JsonDecoder[Boolean] = new JsonDecoder[Boolean] {
-    def unsafeDecode(in: JsonReader): Boolean =
+    def unsafeDecode(in: JsonSource): Boolean =
       JsonParser.parseBoolean(in)
   }
 
-  implicit val int: JsonDecoder[Int]                         = number(JsonParser.parseInt, _.intValueExact())
+  implicit val int: JsonDecoder[Int] = number(JsonParser.parseInt, _.intValueExact())
   private def number[A](
-    f: (JsonReader) => A,
-    fromBigDecimal: java.math.BigDecimal => A
+      f: (JsonSource) => A,
+      fromBigDecimal: java.math.BigDecimal => A
   ): JsonDecoder[A] =
     new JsonDecoder[A] {
-      def unsafeDecode(in: JsonReader): A =
+      def unsafeDecode(in: JsonSource): A =
         (in.readSkipWhitespace(): @switch) match {
           case '"' =>
             val i = f(in)
@@ -48,18 +47,19 @@ object JsonDecoder extends DecoderLowPriority1:
         }
     }
 
-  private[json2] def builder[A, T[_]](
-    in: JsonReader,
-    builder: scala.collection.mutable.Builder[A, T[A]]
+  private[json] def builder[A, T[_]](
+      in: JsonSource,
+      builder: scala.collection.mutable.Builder[A, T[A]]
   )(implicit A: JsonDecoder[A]): T[A] = {
     JsonParser.charWithWS(in, '[')
     var i: Int = 0
-    if (JsonParser.firstArrayElement(in)) while ({
-      {
-        builder += A.unsafeDecode(in)
-        i += 1
-      }; JsonParser.nextArrayElement(in)
-    }) ()
+    if JsonParser.firstArrayElement(in) then
+      while {
+        {
+          builder += A.unsafeDecode(in)
+          i += 1
+        }; JsonParser.nextArrayElement(in)
+      } do ()
     builder.result()
   }
 
@@ -71,11 +71,11 @@ private trait DecoderLowPriority1:
   // TODO: Experiment with other Seq *NOT* explicitly provided as separate "implicit def"s.  See if this will
   // convert them to the correct subtype.
   implicit def seq[A: JsonDecoder]: JsonDecoder[Seq[A]] = new JsonDecoder[Seq[A]] {
-    def unsafeDecode(in: JsonReader): Seq[A] =
+    def unsafeDecode(in: JsonSource): Seq[A] =
       builder(in, scala.collection.immutable.Seq.newBuilder[A])
   }
 
   implicit def list[A: JsonDecoder]: JsonDecoder[List[A]] = new JsonDecoder[List[A]] {
-    def unsafeDecode(in: JsonReader): List[A] =
+    def unsafeDecode(in: JsonSource): List[A] =
       builder(in, new scala.collection.mutable.ListBuffer[A])
   }

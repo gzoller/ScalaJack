@@ -2,43 +2,43 @@ package co.blocke.scalajack
 package run
 
 case class Person(
-  name: String,
-  age: Int,
-  address: Address,
-  email: String,
-  phone_numbers: List[String],
-  is_employed: Boolean
+    name: String,
+    age: Int,
+    address: Address,
+    email: String,
+    phone_numbers: List[String],
+    is_employed: Boolean
 )
 
 case class Address(
-  street: String,
-  city: String,
-  state: String,
-  postal_code: String
+    street: String,
+    city: String,
+    state: String,
+    postal_code: String
 )
 
 case class Friend(
-  name: String,
-  age: Int,
-  email: String
+    name: String,
+    age: Int,
+    email: String
 )
 
 case class Pet(
-  name: String,
-  species: String,
-  age: Int
+    name: String,
+    species: String,
+    age: Int
 )
 
 case class Record(
-  person: Person,
-  hobbies: List[String],
-  friends: List[Friend],
-  pets: List[Pet]
+    person: Person,
+    hobbies: List[String],
+    friends: List[Friend],
+    pets: List[Pet]
 )
 
-case class Foo(name: String, age:Int)
+case class Foo(name: String, age: Int)
 
-val jsData = 
+val jsData =
   """{
     "person": {
       "name": "John Doe",

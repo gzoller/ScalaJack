@@ -7,17 +7,35 @@ import co.blocke.scala_reflection.{Clazzes, RTypeRef, TypedName}
 
 object JsonReaderUtil:
 
-  def classInstantiator[T: Type](ref: ClassRef[T])(using Quotes): Expr[Map[String, ?] => T] =
+  // def classInstantiator[T: Type](ref: ClassRef[T])(using Quotes): Expr[Map[String, ?] => T] =
+  //   import quotes.reflect.*
+  //   val sym = TypeRepr.of[T].classSymbol.get
+  //   '{ (fieldMap: Map[String, ?]) =>
+  //     ${
+  //       val tree = Apply(
+  //         Select.unique(New(TypeIdent(sym)), "<init>"),
+  //         ref.fields.map { f =>
+  //           f.fieldRef.refType match
+  //             case '[t] =>
+  //               '{ fieldMap(${ Expr(f.name) }).asInstanceOf[t] }.asTerm
+  //         }
+  //       )
+  //       tree.asExpr.asExprOf[T]
+  //     }
+  //   }
+
+  def classInstantiator[T: Type](ref: ClassRef[T])(using Quotes): Expr[Array[?] => T] =
     import quotes.reflect.*
     val sym = TypeRepr.of[T].classSymbol.get
-    '{ (fieldMap: Map[String, ?]) =>
+    '{ (fieldValues: Array[?]) =>
       ${
         val tree = Apply(
           Select.unique(New(TypeIdent(sym)), "<init>"),
-          ref.fields.map { f =>
+          ref.fields.zipWithIndex.map { case (f, i) =>
             f.fieldRef.refType match
               case '[t] =>
-                '{ fieldMap(${ Expr(f.name) }).asInstanceOf[t] }.asTerm
+                val idx = Expr(i)
+                '{ fieldValues($idx).asInstanceOf[t] }.asTerm
           }
         )
         tree.asExpr.asExprOf[T]

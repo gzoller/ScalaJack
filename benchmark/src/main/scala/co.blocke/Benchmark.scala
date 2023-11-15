@@ -43,24 +43,24 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
-    // extends CirceZ.CirceReadingBenchmark
-    extends ScalaJackZ.ScalaJackReadingBenchmark
-    // extends ZIOZ.ZIOJsonReadingBenchmark
-    // extends PlayZ.PlayReadingBenchmark
-    // extends FabricZ.FabricReadingBenchmark
-    // extends JawnZ.JawnReadingBenchmark
+    extends CirceZ.CirceReadingBenchmark
+    with ScalaJackZ.ScalaJackReadingBenchmark
+    with JsoniterZ.JsoniterReadingBenchmark
+    with ZIOZ.ZIOJsonReadingBenchmark
+    with PlayZ.PlayReadingBenchmark
+    with ArgonautZ.ArgonautReadingBenchmark
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
-    // extends CirceZ.CirceWritingBenchmark
-    extends ScalaJackZ.ScalaJackWritingBenchmark
-    // with HandTooledWritingBenchmark
-    // with ArgonautZ.ArgonautWritingBenchmark
-    // with PlayZ.PlayWritingBenchmark
-    // with ZIOZ.ZIOJsonWritingBenchmark
-
+    extends HandTooledWritingBenchmark
+    with CirceZ.CirceWritingBenchmark
+    with ScalaJackZ.ScalaJackWritingBenchmark
+    with JsoniterZ.JsoniterWritingBenchmark
+    with ZIOZ.ZIOJsonWritingBenchmark
+    with PlayZ.PlayWritingBenchmark
+    with ArgonautZ.ArgonautWritingBenchmark
 
 // "Old-New" ScalaJack
 // [info] Benchmark                              Mode  Cnt        Score    Error  Units
@@ -75,9 +75,3 @@ class WritingBenchmark
 //        Jawn (parse only + AST)                            336384.617
 //        ScalaJack JsonParser3 (parse only + AST)           279456.523
 //        Fabric (new!) (parse only + AST)                   270706.567
-
-
-
-
-// SJ StringBuffer     : 1740040.225
-// SJ FastStringBuffer : 

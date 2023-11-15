@@ -44,6 +44,8 @@ lazy val benchmark = project
       "org.typelevel" %% "fabric-io" % "1.12.6",
       "org.typelevel" %% "jawn-parser" % "1.3.2",
       "org.typelevel" %% "jawn-ast" % "1.3.2",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.24.4",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.24.4" % "compile-internal",
       // "io.circe" %% "circe-derivation" % "0.15.0-M1",
       // "io.circe" %% "circe-jackson29" % "0.14.0",
       // "org.json4s" %% "json4s-jackson" % "4.0.4",

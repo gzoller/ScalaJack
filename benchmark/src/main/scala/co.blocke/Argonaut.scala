@@ -21,6 +21,12 @@ object ArgonautZ:
   implicit val CodecRecord: CodecJson[Record] =
     casecodec4(Record.apply, (a: Record) => Option((a.person, a.hobbies, a.friends, a.pets)))("person", "hobbies", "friends", "pets")
 
+
+  trait ArgonautReadingBenchmark {
+    @Benchmark
+    def readRecordArgonaut = Parse.decodeEither[Record](jsData)
+  }
+
   trait ArgonautWritingBenchmark {
     @Benchmark
     def writeRecordArgonaut = record.asJson

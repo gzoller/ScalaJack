@@ -1,16 +1,13 @@
 package co.blocke
 
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.macros._
 
 object RunMe extends App:
 
-    import ZIOZ.*
-    import zio.json._
-    import co.blocke.scalajack.*
+    given codec: JsonValueCodec[Record] = JsonCodecMaker.make
+    println(readFromString[Record](jsData))
 
-    val f = jsData.fromJson[Record]
-    println(f)
+    println(writeToString(record))
 
-    println("\n---------")
-    println(ScalaJack.write(f))
-
-    println("ZIO Decoder (Address): "+DeriveJsonDecoder.gen[Address])
+    println("\nDone")

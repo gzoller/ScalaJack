@@ -10,37 +10,63 @@ of its life, again to be a more realistic use case.
 
 Run benchmark from the ScalaJack/benchmark directory (not the main ScalaJack project directory): 
 ```
-sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.WritingBenchmark"
+sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 ```
+
+## Reading Performance:
+
+| Benchmark        | Mode  | Count  |           Score |        Error | Units |
+|------------------|-------|-------:|----------------:|-------------:|-------|
+| Jsoniter         | thrpt |  20    |     987991.329  |  ±  6645.992 | ops/s |
+| **ScalaJack 8**  | thrpt |  20    |   **633764.943**|  ± 10394.860 | ops/s |
+| ZIOJson          | thrpt |  20    |     586716.228  |  ±  2542.783 | ops/s |
+| Circe            | thrpt |  20    |     266568.198  |  ±  5695.754 | ops/s |
+| Play             | thrpt |  20    |     207737.560  |  ±   842.108 | ops/s |
+| Argonaut         | thrpt |  20    |     197876.777  |  ± 11181.751 | ops/s |
 
 ## Writing Performance:
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-| Hand-Tooled      | thrpt |  20    |     2,575,393.513 | ± 178731.952 | ops/s |
-| Circe            | thrpt |  20    |     1,939,339.085 | ±   6279.547 | ops/s |
-|**ScalaJack 8**   | thrpt |  20    | **176,867,514.557** | ±  12260.518 | ops/s |
-| ZIO JSON         | thrpt |  20    |       818,228.736 | ±   3070.298 | ops/s |
-| Argonaut         | thrpt |  20    |       716,228.404 | ±   6241.145 | ops/s |
-| Play JSON        | thrpt |  20    |       438,538.475 | ±  16319.198 | ops/s |
-| ScalaJack 7      | thrpt |  20    |       106,292.338 | ±    330.111 | ops/s |
+| Jsoniter         | thrpt |  20    |     2843150.452 |  ± 21478.503 | ops/s |
+| Hand-Tooled      | thrpt |  20    |     2732571.374 |  ± 15129.007 | ops/s |
+| Circe            | thrpt |  20    |     1958244.437 |  ± 23965.817 | ops/s |
+|**ScalaJack 8**   | thrpt |  20    | **1729426.328** |  ±  4484.721 | ops/s |
+| ZIO JSON         | thrpt |  20    |      794352.301 |  ± 32336.852 | ops/s |
+| Argonaut         | thrpt |  20    |      690269.697 |  ±  6348.882 | ops/s |
+| Play JSON        | thrpt |  20    |      438650.022 |  ± 23800.221 | ops/s |
 
 ### Interpretation
 
-The Hand-Tooled case is creating JSON manually in code.  I included it to show the presumed 
-upper-bound of achievable performance. No serializer, with whatever logic it must do, can be faster
-than hand-tooled code that is hard-wired in its output and requires zero logic.
+Performance for ScalaJack has been... a journey.  As I've explored the population of serializers
+available for Scala, of which this is a sample of popular choices, I've observed "generations"
+of designs.  ScalaJack 8 has grown through each successive generation.
 
-We see in these results that both Circe and ScalaJack are very close in performance--close to each 
-other and very close to the performance of hand-tooled code.
+Focusing originally on write performance, my original design was very attuned to the internal
+structure of ScalaJack.  The code was clean and beautiful--and slow!  I was able to get a write
+score of only 30-50000, vs Circe, my original benchmark, which was just under 2 million.  Not a 
+good showing.  After an extensive overhaul and re-think, performance peaked at the 1.7 million
+mark, which I was happy with.  That put ScalaJack ahead of everyone else except Circe.  Then
+something unexpected happened...
 
-Circe is the gold standard for JSON serializers due to its many features, excellent performance, and
-widespread adoption.  The one cost Circe imposes is the same one virtually all other serializers
-require: boilerplate must be provided to define encoders/decoders to aid the serializion.  Circe's
-boilerplate is actually not terrible.  Others require a fair bit of extra code per class serialized. 
+I tried Jsoniter, and was dumbstruck when it outperformed hand-tooled code, which I expected
+would be a natural theoretical maximum write performance.  How can a full serializer, having
+whatever logic, be *faster* than hand-tooled code with zero logic?!  This breakout level of 
+performance for Jsoniter continued on the read tests, being roughly 4x faster than most and 
+2x the level of ZIO-Json, the previous front-runner.  How?!
 
-ScalaJack's focus is first and foremost to be frictionless--no drama to the user.  The very slight 
-difference in maximal performance is a worthy expense--its still blazing fast.  ScalaJack requires 
+I observed the older serializers processed JSON to/from an AST and used conventional JSON
+parsing techniques; basically fortified editions of a simple JSON parser.  ZIO-Json's 
+impressive read performance wasn't achieved by any one thing, but rather a collection of well-
+applied techniques, including *not* using an intermediate AST.  So naturally I incorporated
+some of ZIO-Json's approach (and a bit of their code), stripped, refitted, and adapted to 
+ScalaJack, and read performance jumped to 633K.  Nice!
+
+Jsoniter, it turns out, achieves its neck-breaking speed by going deep--very deep.  They
+use a lot of low level byte arrays and bitwise operators, much as you'd expect in a C program,
+to improve on the standard library functions everyone else uses.  It works.
+
+ScalaJack's focus is first and foremost to be frictionless--no drama to the user.  ScalaJack requires 
 zero boilerplate--you can throw any Scala object (or even a Java object) at it with no pre-preparation 
-and it will serialize it.  You'll notice the enormous performange improvement ScalaJack 8 has over 
-ScalaJack 7, due to moving everything possible into compile-time macros for speed.
+and it will serialize it.  For its intended use-cases, ScalaJack offers performance equal
+to, or exceeding, several widely-used alternative choices.

@@ -1,0 +1,24 @@
+package co.blocke
+
+import org.openjdk.jmh.annotations._
+
+object FabricZ:
+    import fabric.*
+    import fabric.io.*
+    import fabric.rw.*
+
+    implicit val rw: RW[Record] = RW.gen
+
+    trait FabricReadingBenchmark{
+        @Benchmark
+        def readRecordFabric = rw.write(JsonParser(jsData, Format.Json))
+            //JsonParser(jsData, Format.Json)
+        }
+
+    trait FabricWritingBenchmark{
+        @Benchmark
+        def writeRecordFabric = rw.read(record)
+        }
+    
+    // No Fabric write test.  Fabric has a different model... not simple serialization.
+    // Kinda like a query captured and compiled.

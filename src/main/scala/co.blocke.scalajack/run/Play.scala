@@ -14,13 +14,20 @@ object RunMe extends App:
 
   try
 
-    import json2.*
-    import json.JsonParseError
+    import json.*
 
-    /* StringMatrix experiments....
-     */
+    val js = """[{
+        "street": "123 Main Street",
+        "city": "Anytown",
+        "state": "CA",
+        "postal_code": "12345"
+      }]"""
+    println(ScalaJack.read[Record](jsData))
 
-    /*
+  /* StringMatrix experiments....
+   */
+
+  /*
     val matrix = new StringMatrix(List("foo", "bar", "baz").toArray, Array(("boom", 0)))
     val r = JsonReader("boom\" asdf ")
     var i: Int = 0
@@ -32,12 +39,13 @@ object RunMe extends App:
     }
     bs = matrix.exact(bs, i)
     println("HERE: " + matrix.first(bs))
-     */
+   */
 
-    // val numList = """[["1","2,3"],["4","5"]]"""
-    // val dec = JsonDecoder[List[List[String]]]
-    // println(dec.decodeJson(numList))
+  // val numList = """[["1","2,3"],["4","5"]]"""
+  // val dec = JsonDecoder[List[List[String]]]
+  // println(dec.decodeJson(numList))
 
+  /*
     implicit val addrDecoder: JsonDecoder[Address] = ClassDecoder(
       Array("street", "city", "state", "postal_code"),
       Array(JsonDecoder[String], JsonDecoder[String], JsonDecoder[String], JsonDecoder[String])
@@ -62,6 +70,7 @@ object RunMe extends App:
     val addr = """{"street":"319 Hampton Ct","city":"Coppell","state":"TX","postal_code":"75019"}"""
     val dec2 = JsonDecoder[Address]
     println(JsonDecoder[Record].decodeJson(jsData))
+   */
 
   /*
     import parser.*

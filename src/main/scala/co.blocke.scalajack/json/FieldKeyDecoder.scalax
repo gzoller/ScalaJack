@@ -1,7 +1,5 @@
 package co.blocke.scalajack
-package json2
-
-import json.JsonParseError
+package json
 
 trait FieldKeyDecoder[+A] {
   self =>
@@ -16,7 +14,7 @@ trait FieldKeyDecoder[+A] {
       def unsafeDecodeField(in: String): B =
         f(self.unsafeDecodeField(in)) match {
           case Left(err) => throw JsonParseError(err)
-          case Right(b) => b
+          case Right(b)  => b
         }
     }
 
@@ -32,18 +30,18 @@ object FieldKeyDecoder {
 
   implicit val int: FieldKeyDecoder[Int] =
     FieldKeyDecoder[String].mapOrFail { str =>
-      try {
+      try
         Right(str.toInt)
-      } catch {
+      catch {
         case n: NumberFormatException => Left(s"Invalid Int: '$str': $n")
       }
     }
 
   implicit val long: FieldKeyDecoder[Long] =
     FieldKeyDecoder[String].mapOrFail { str =>
-      try {
+      try
         Right(str.toLong)
-      } catch {
+      catch {
         case n: NumberFormatException => Left(s"Invalid Long: '$str': $n")
       }
     }

@@ -3,13 +3,12 @@ package co.blocke.scalajack
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.ClassRef
-import parser.ParseError
 import scala.collection.mutable.{HashMap, Map}
 import scala.quoted.*
 import quoted.Quotes
 import json.*
 
-object ScalaJack:
+object sj: // Shorter and "lighter" than "ScalaJack" everywhere.
 
   inline def write[T](a: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('a, 'cfg) }
 
@@ -27,38 +26,15 @@ object ScalaJack:
   def readImpl[T: Type](js: Expr[String], cfg: Expr[JsonConfig])(using q: Quotes): Expr[Either[ParseError, T]] =
     import quotes.reflect.*
 
-    val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-
-    val instruction = JsonReader.refRead[T](classRef)
-
-    '{
-      val foo = json2.JsonReader($js)
-      var c = 0
-      while c != json2.BUFFER_EXCEEDED do c = foo.read()
-      Right(null.asInstanceOf[T])
+    try {
+      val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+      val decoder = JsonReader.refRead[T](classRef)
+      '{
+        $decoder.decodeJson($js)
+      }
+    } catch {
+      case t: Throwable =>
+        val error = Expr(t.getClass.getName())
+        val msg = Expr(t.getMessage())
+        '{ Left(ParseError($error + " was thrown with message " + $msg)) }
     }
-
-  // '{
-  //   val parser = JsonParser2($js, $cfg)
-  //   parser.parse($instruction).asInstanceOf[Either[ParseError, T]]
-  // }
-
-  // -------------------->>>> OLD <<----------------------
-
-  //   // Used to trap SelfRef's from going into endless loops and causing Stack Overflow.
-  //   val seenBeforeFnCache = HashMap.empty[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]
-
-  //   val parserE = '{ new JsonParser($js, $cfg) }
-  //   JsonReader().refRead(classRef, parserE, cfg)(using quotes, Type.of[T])(using seenBeforeFnCache)
-
-  // ---------------
-
-  // val fn = JsonReader().readerFn[T](classRef)(using quotes, Type.of[T])(using seenBeforeFnCache)
-  // val listifiedCache = Expr.ofList(seenBeforeFnCache.toList.map(t => Expr.ofTuple(t)))
-
-  // '{ // run-time
-  //   val parser = JsonParser($js, $listifiedCache.toMap)
-  //   $fn($cfg, parser) match
-  //     case Right(v) => v
-  //     case Left(t)  => throw t
-  // }
