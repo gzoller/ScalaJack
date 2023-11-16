@@ -43,24 +43,24 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
-    extends CirceZ.CirceReadingBenchmark
-    with ScalaJackZ.ScalaJackReadingBenchmark
-    with JsoniterZ.JsoniterReadingBenchmark
-    with ZIOZ.ZIOJsonReadingBenchmark
-    with PlayZ.PlayReadingBenchmark
-    with ArgonautZ.ArgonautReadingBenchmark
+    // extends CirceZ.CirceReadingBenchmark
+    extends ScalaJackZ.ScalaJackReadingBenchmark
+    // with JsoniterZ.JsoniterReadingBenchmark
+    // with ZIOZ.ZIOJsonReadingBenchmark
+    // with PlayZ.PlayReadingBenchmark
+    // with ArgonautZ.ArgonautReadingBenchmark
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
-    extends HandTooledWritingBenchmark
-    with CirceZ.CirceWritingBenchmark
-    with ScalaJackZ.ScalaJackWritingBenchmark
-    with JsoniterZ.JsoniterWritingBenchmark
-    with ZIOZ.ZIOJsonWritingBenchmark
-    with PlayZ.PlayWritingBenchmark
-    with ArgonautZ.ArgonautWritingBenchmark
+    // extends HandTooledWritingBenchmark
+    // with CirceZ.CirceWritingBenchmark
+    extends ScalaJackZ.ScalaJackWritingBenchmark
+    // with JsoniterZ.JsoniterWritingBenchmark
+    // with ZIOZ.ZIOJsonWritingBenchmark
+    // with PlayZ.PlayWritingBenchmark
+    // with ArgonautZ.ArgonautWritingBenchmark
 
 // "Old-New" ScalaJack
 // [info] Benchmark                              Mode  Cnt        Score    Error  Units

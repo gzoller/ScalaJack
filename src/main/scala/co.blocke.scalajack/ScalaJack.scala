@@ -5,19 +5,38 @@ import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.ClassRef
 import scala.collection.mutable.{HashMap, Map}
 import scala.quoted.*
+import scala.reflect.ClassTag
+
 import quoted.Quotes
 import json.*
 
-object sj: // Shorter and "lighter" than "ScalaJack" everywhere.
+object ScalaJack:
+
+  inline def inspect[T]: sj[T] = ${ inspectImpl[T] }
+
+  def inspectImpl[T](using q: Quotes, tt: Type[T]): Expr[sj[T]] =
+    import q.reflect.*
+    val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+    JsonReader.refRead[T](classRef)
+
+  //     inline def sj[T]: sj[T] = ${ sjImpl[T] }
+
+  // def sjImpl[T](using q: Quotes, tt: Type[T]): Expr[sj[T]] =
+  //   import q.reflect.*
+  //   val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+  //   JsonReader.refRead[T](classRef)
+
+  // ---------------------------------------------------------------------
 
   inline def write[T](a: T)(using cfg: JsonConfig = JsonConfig()): String = ${ writeImpl[T]('a, 'cfg) }
 
   def writeImpl[T](aE: Expr[T], cfg: Expr[JsonConfig])(using q: Quotes, tt: Type[T]): Expr[String] =
     import q.reflect.*
     val ref = ReflectOnType(q)(TypeRepr.of[T], true)(using Map.empty[TypedName, Boolean]).asInstanceOf[RTypeRef[T]]
-    val sbE = '{ new StringBuilder() }
     val classesSeen = Map.empty[TypedName, RTypeRef[?]]
-    '{ ${ JsonWriter.refWrite[T](cfg, ref, aE, sbE)(using classesSeen) }.toString }
+
+    val sbE = '{ new StringBuilder() }
+    '{ ${ JsonWriter.refWrite[T](cfg, ref, aE, sbE)(using classesSeen) }.result }
 
   // ---------------------------------------------------------------------
 
@@ -25,16 +44,27 @@ object sj: // Shorter and "lighter" than "ScalaJack" everywhere.
 
   def readImpl[T: Type](js: Expr[String], cfg: Expr[JsonConfig])(using q: Quotes): Expr[Either[ParseError, T]] =
     import quotes.reflect.*
-
-    try {
-      val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-      val decoder = JsonReader.refRead[T](classRef)
-      '{
-        $decoder.decodeJson($js)
-      }
-    } catch {
-      case t: Throwable =>
-        val error = Expr(t.getClass.getName())
-        val msg = Expr(t.getMessage())
-        '{ Left(ParseError($error + " was thrown with message " + $msg)) }
+    val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+    val decoder = JsonReader.refRead[T](classRef)
+    '{
+      $decoder.decodeJson($js)
     }
+
+    /*
+
+    implicit val codec: sj[Record] = ScalaJack.inspect[Record]
+
+    (optional given cfg)
+
+    sj[Record].read(js)
+    sj[Record].readYml(yml)
+    sj[Record].readMP(msgPack)
+
+    sj[Record].write(thing)
+    sj[Record].writeYml(thing)
+    sj[Record].writeMP(thing)
+
+
+    trait sj[A] extends JSModule with YMLModule with MPModule:
+      ...
+     */

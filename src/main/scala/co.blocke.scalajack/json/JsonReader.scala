@@ -9,7 +9,7 @@ import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 import scala.collection.Factory
 
-/** We depart from ZIO-Json here.  ZIO-Json uses implicits to marshal the right JsonDecoder.  This works great for primitive types
+/** We depart from ZIO-Json here.  ZIO-Json uses implicits to marshal the right sj.  This works great for primitive types
   * but I had issues trying to get it to work with macros.  Since we have all the necessary elements to explicitly provide
   * decoders for "constructed" types (collections, classes, ...) we just provided them explicitly.
   */
@@ -17,21 +17,21 @@ object JsonReader:
 
   def refRead[T](
       ref: RTypeRef[T]
-  )(using q: Quotes, tt: Type[T]): Expr[JsonDecoder[T]] =
+  )(using q: Quotes, tt: Type[T]): Expr[sj[T]] =
     import quotes.reflect.*
 
     ref match
       case r: PrimitiveRef[?] =>
-        Expr.summon[JsonDecoder[T]].getOrElse(throw JsonTypeError("No JsonDecoder defined for type " + TypeRepr.of[T].typeSymbol.name))
+        Expr.summon[sj[T]].getOrElse(throw JsonTypeError("No sj defined for type " + TypeRepr.of[T].typeSymbol.name))
 
       case r: SeqRef[?] =>
         r.refType match
           case '[t] =>
             r.elementRef.refType match
               case '[e] =>
-                val elemDecoder = Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
+                val elemDecoder = Expr.summon[sj[e]].getOrElse(refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
                 '{
-                  JsonDecoder.seq[e]($elemDecoder) map (_.to(${ Expr.summon[Factory[e, T]].get }))
+                  sj.seq[e]($elemDecoder) map (_.to(${ Expr.summon[Factory[e, T]].get }))
                 }
 
       case r: ScalaClassRef[?] =>
@@ -40,38 +40,33 @@ object JsonReader:
           r.fields.map(f =>
             f.fieldRef.refType match
               case '[e] =>
-                Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
+                Expr.summon[sj[e]].getOrElse(refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
           )
         )
         val instantiator = JsonReaderUtil.classInstantiator[T](r.asInstanceOf[ClassRef[T]])
         val optionalFields = Expr(r.fields.zipWithIndex.collect { case (f, i) if f.fieldRef.isInstanceOf[OptionRef[_]] => i }.toArray)
         val fieldsE = Expr.ofList(r.fields.asInstanceOf[List[ScalaFieldInfoRef]].map(_.expr))
 
-        // TODO:  See if we can't get the default values at compile-time.  Mix with null/None for a predefined value array:
-        // Use the Select.... business to fire the default accessors and get an Expr[Any] value back, that we can unscrable in '{}
+        // Constructor argument list, preloaded with optional 'None' values and any default values specified
+        val preloaded = Expr
+          .ofList(r.fields.map { f =>
+            val scalaF = f.asInstanceOf[ScalaFieldInfoRef]
+            if scalaF.defaultValueAccessorName.isDefined then
+              r.refType match
+                case '[t] =>
+                  val tpe = TypeRepr.of[t].widen
+                  val sym = tpe.typeSymbol
+                  val companionBody = sym.companionClass.tree.asInstanceOf[ClassDef].body
+                  val companion = Ref(sym.companionModule)
+                  companionBody
+                    .collect {
+                      case defaultMethod @ DefDef(name, _, _, _) if name.startsWith("$lessinit$greater$default$" + (f.index + 1)) =>
+                        companion.select(defaultMethod.symbol).appliedToTypes(tpe.typeArgs).asExpr
+                    }
+                    .headOption
+                    .getOrElse(Expr(null.asInstanceOf[Boolean]))
+            else if scalaF.fieldRef.isInstanceOf[OptionRef[_]] then Expr(None)
+            else Expr(null.asInstanceOf[Int])
+          })
 
-        '{
-          val preloadedFieldValues: Array[Any] = $fieldsE
-            .asInstanceOf[List[ScalaFieldInfo]]
-            .map(_ match
-              case optFld if optFld.fieldType.isInstanceOf[OptionRType[_]] => None
-              case defFld if defFld.defaultValueAccessorName.isDefined =>
-                val (companion, accessor) = defFld.defaultValueAccessorName.get
-                // Have to use Java reflection here to get default value--Scala compiler won't have access to companion
-                // or accessor if we do a ${} block, and using compiler staging would murder performance.
-                {
-                  val c = Class.forName(companion)
-                  val cons = c.getDeclaredConstructor()
-                  cons.setAccessible(true)
-                  val m = c.getMethod(accessor)
-                  m.setAccessible(true)
-                  m.invoke(cons.newInstance())
-                }
-              case _ => null
-            )
-            .toArray
-          ClassDecoder[T]($fieldNames, $fieldDecoders.toArray, $instantiator, preloadedFieldValues)
-        }
-
-      // We'd love to pass this in--preloaded with defaults/None values
-      // val fieldValues = new Array[Any](fields.length)
+        '{ ClassDecoder[T]($fieldNames, $fieldDecoders.toArray, $instantiator, $preloaded.toArray) }

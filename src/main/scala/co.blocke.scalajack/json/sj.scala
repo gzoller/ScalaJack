@@ -3,7 +3,7 @@ package json
 
 import scala.annotation.*
 
-trait JsonDecoder[A]:
+trait sj[A]:
   self =>
   final def decodeJson(str: CharSequence): Either[JsonParseError, A] =
     try Right(unsafeDecode(new JsonSource(str)))
@@ -11,8 +11,8 @@ trait JsonDecoder[A]:
       case jpe: JsonParseError => Left(jpe)
     }
 
-  final def map[B](f: A => B): JsonDecoder[B] =
-    new JsonDecoder[B] {
+  final def map[B](f: A => B): sj[B] =
+    new sj[B] {
       def unsafeDecode(in: JsonSource): B =
         f(self.unsafeDecode(in))
     }
@@ -21,27 +21,27 @@ trait JsonDecoder[A]:
 
 //------------------------------------------------------------
 
-object JsonDecoder extends DecoderLowPriority1:
+object sj extends DecoderLowPriority1:
 
-//   def apply[A](implicit a: JsonDecoder[A]): JsonDecoder[A] = a
+  def apply[A](implicit a: sj[A]): sj[A] = a
 
   // Primitive support...
-  implicit val string: JsonDecoder[String] = new JsonDecoder[String] {
+  implicit val string: sj[String] = new sj[String] {
     def unsafeDecode(in: JsonSource): String =
       JsonParser.parseString(in).toString
   }
 
-  implicit val boolean: JsonDecoder[Boolean] = new JsonDecoder[Boolean] {
+  implicit val boolean: sj[Boolean] = new sj[Boolean] {
     def unsafeDecode(in: JsonSource): Boolean =
       JsonParser.parseBoolean(in)
   }
 
-  implicit val int: JsonDecoder[Int] = number(JsonParser.parseInt, _.intValueExact())
+  implicit val int: sj[Int] = number(JsonParser.parseInt, _.intValueExact())
   private def number[A](
       f: (JsonSource) => A,
       fromBigDecimal: java.math.BigDecimal => A
-  ): JsonDecoder[A] =
-    new JsonDecoder[A] {
+  ): sj[A] =
+    new sj[A] {
       def unsafeDecode(in: JsonSource): A =
         (in.readSkipWhitespace(): @switch) match {
           case '"' =>
@@ -56,7 +56,7 @@ object JsonDecoder extends DecoderLowPriority1:
 
   private[json] def builder[A, T[_]](
       in: JsonSource,
-      elemDecoder: JsonDecoder[A],
+      elemDecoder: sj[A],
       builder: scala.collection.mutable.Builder[A, T[A]]
   ): T[A] = {
     JsonParser.charWithWS(in, '[')
@@ -74,9 +74,9 @@ object JsonDecoder extends DecoderLowPriority1:
 //------------------------------------------------------------
 
 private trait DecoderLowPriority1:
-  this: JsonDecoder.type =>
+  this: sj.type =>
 
-  def seq[A](elemDecoder: JsonDecoder[A]): JsonDecoder[Seq[A]] = new JsonDecoder[Seq[A]] {
+  def seq[A](elemDecoder: sj[A]): sj[Seq[A]] = new sj[Seq[A]] {
     def unsafeDecode(in: JsonSource): Seq[A] =
       builder(in, elemDecoder, scala.collection.immutable.Seq.newBuilder[A])
   }

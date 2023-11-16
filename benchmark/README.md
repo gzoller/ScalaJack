@@ -18,8 +18,9 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
 | Jsoniter         | thrpt |  20    |     987991.329  |  ±  6645.992 | ops/s |
-| **ScalaJack 8**  | thrpt |  20    |   **633764.943**|  ± 10394.860 | ops/s |
+| **ScalaJack 8 (fast mode)**  | thrpt |  20    |   **642235.553**|  ± 10394.860 | ops/s |
 | ZIOJson          | thrpt |  20    |     586716.228  |  ±  2542.783 | ops/s |
+| **ScalaJack 8 (easy mode)**  | thrpt |  20    |   **426718.318**|  ±   692.828 | ops/s |
 | Circe            | thrpt |  20    |     266568.198  |  ±  5695.754 | ops/s |
 | Play             | thrpt |  20    |     207737.560  |  ±   842.108 | ops/s |
 | Argonaut         | thrpt |  20    |     197876.777  |  ± 11181.751 | ops/s |
@@ -59,8 +60,8 @@ I observed the older serializers processed JSON to/from an AST and used conventi
 parsing techniques; basically fortified editions of a simple JSON parser.  ZIO-Json's 
 impressive read performance wasn't achieved by any one thing, but rather a collection of well-
 applied techniques, including *not* using an intermediate AST.  So naturally I incorporated
-some of ZIO-Json's approach (and a bit of their code), stripped, refitted, and adapted to 
-ScalaJack, and read performance jumped to 633K.  Nice!
+some of ZIO-Json's approach (and a bit of their code) for JSON reading, stripped, refitted, 
+and adapted to ScalaJack, and read performance jumped to 633K.  Nice!
 
 Jsoniter, it turns out, achieves its neck-breaking speed by going deep--very deep.  They
 use a lot of low level byte arrays and bitwise operators, much as you'd expect in a C program,

@@ -36,7 +36,7 @@ case class Record(
     pets: List[Pet]
 )
 
-case class Foo(name: String, age: Int)
+case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
 
 val jsData =
   """{
