@@ -1,16 +1,17 @@
 package co.blocke.scalajack
 package json
+package reading
 
 import scala.annotation.*
 
 object ClassDecoder:
-  // def apply[A: scala.reflect.ClassTag](fields: Array[String], fieldDecoders: Array[sj[_]], instantiator: Array[?] => A) = new sj[A] {
+  // def apply[A: scala.reflect.ClassTag](fields: Array[String], fieldDecoders: Array[JsonDecoder[_]], instantiator: Array[?] => A) = new JsonDecoder[A] {
   def apply[A](
       fields: Array[String],
-      fieldDecoders: Array[sj[_]],
+      fieldDecoders: Array[JsonDecoder[_]],
       instantiator: Array[?] => A,
       fieldValues: Array[Any]
-  ) = new sj[A] {
+  ) = new JsonDecoder[A] {
 
     val fieldMatrix = new StringMatrix(fields)
 

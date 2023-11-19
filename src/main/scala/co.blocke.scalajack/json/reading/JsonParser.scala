@@ -1,5 +1,6 @@
 package co.blocke.scalajack
 package json
+package reading
 
 import scala.annotation.*
 

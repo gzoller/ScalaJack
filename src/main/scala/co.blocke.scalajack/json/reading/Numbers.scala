@@ -15,6 +15,8 @@
  */
 package co.blocke.scalajack
 package json
+package reading
+
 
 import java.io.*
 import scala.util.control.NoStackTrace

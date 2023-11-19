@@ -1,5 +1,6 @@
 package co.blocke.scalajack
 package json
+package reading
 
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.rtypes.{OptionRType, ScalaFieldInfo}
@@ -9,29 +10,31 @@ import scala.collection.mutable.HashMap
 import scala.util.{Failure, Success, Try}
 import scala.collection.Factory
 
-/** We depart from ZIO-Json here.  ZIO-Json uses implicits to marshal the right sj.  This works great for primitive types
-  * but I had issues trying to get it to work with macros.  Since we have all the necessary elements to explicitly provide
-  * decoders for "constructed" types (collections, classes, ...) we just provided them explicitly.
+/** We depart from ZIO-Json here.  ZIO-Json uses implicits to marshal the right JsonDecoder.  This works great for primitive types
+  * but I had issues trying to get it to work with macros for more complex types.  Since we actually have all the necessary elements 
+  * to explicitly provide decoders for "constructed" types (collections, classes, ...) we just provided them explicitly.
+  * 
+  * The job of JsonReader is to accept an RTypeRef[T] and produce a JsonDecoder[T] for type T.
   */
 object JsonReader:
 
   def refRead[T](
       ref: RTypeRef[T]
-  )(using q: Quotes, tt: Type[T]): Expr[sj[T]] =
+  )(using q: Quotes, tt: Type[T]): Expr[JsonDecoder[T]] =
     import quotes.reflect.*
 
     ref match
       case r: PrimitiveRef[?] =>
-        Expr.summon[sj[T]].getOrElse(throw JsonTypeError("No sj defined for type " + TypeRepr.of[T].typeSymbol.name))
+        Expr.summon[JsonDecoder[T]].getOrElse(throw JsonTypeError("No JsonDecoder defined for type " + TypeRepr.of[T].typeSymbol.name))
 
       case r: SeqRef[?] =>
         r.refType match
           case '[t] =>
             r.elementRef.refType match
               case '[e] =>
-                val elemDecoder = Expr.summon[sj[e]].getOrElse(refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
+                val elemDecoder = Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
                 '{
-                  sj.seq[e]($elemDecoder) map (_.to(${ Expr.summon[Factory[e, T]].get }))
+                  JsonDecoder.seq[e]($elemDecoder) map (_.to(${ Expr.summon[Factory[e, T]].get }))
                 }
 
       case r: ScalaClassRef[?] =>
@@ -40,7 +43,7 @@ object JsonReader:
           r.fields.map(f =>
             f.fieldRef.refType match
               case '[e] =>
-                Expr.summon[sj[e]].getOrElse(refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
+                Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
           )
         )
         val instantiator = JsonReaderUtil.classInstantiator[T](r.asInstanceOf[ClassRef[T]])

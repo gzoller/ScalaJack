@@ -1,0 +1,13 @@
+package co.blocke.scalajack
+package json
+
+class JsonCodec[T]:
+    parent: ScalaJack[T] =>
+
+    inline def fromJson( js: String )(using cfg: JsonConfig = JsonConfig()): Either[JsonParseError, T] =
+      parent.jsonDecoder.decodeJson(js)
+
+    inline def toJson( a: T )(using cfg: JsonConfig = JsonConfig()): String = 
+      parent.jsonEncoder.encode(a, new StringBuilder(), cfg)
+
+    

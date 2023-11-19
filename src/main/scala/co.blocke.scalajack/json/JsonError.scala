@@ -11,7 +11,7 @@ case class JsonTypeError(override val msg: String) extends ParseError(msg):
   override val show: String = ""
 
 // Thrown at runtime only!
-case class JsonParseError(override val msg: String, context: JsonSource) extends ParseError(msg + " at position " + context.pos):
+case class JsonParseError(override val msg: String, context: reading.JsonSource) extends ParseError(msg + " at position " + context.pos):
   override val show: String =
     val js = context.js.toString
     val (clip, dashes) = context.pos match {

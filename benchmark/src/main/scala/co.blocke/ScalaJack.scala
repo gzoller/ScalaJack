@@ -3,19 +3,19 @@ package co.blocke
 import org.openjdk.jmh.annotations._
 
 object ScalaJackZ:
-    import co.blocke.scalajack.* 
-
-    import json.*
+    import co.blocke.scalajack.ScalaJack.*
+    import co.blocke.scalajack.*
  
-    implicit val blah: sj[Record] = ScalaJack.inspect[Record]
+    implicit val blah: ScalaJack[Record] = sj[Record]
 
     trait ScalaJackReadingBenchmark{
     @Benchmark
-    // def readRecordScalaJack = ScalaJack.read[Record](jsData)
-    def readRecordScalaJack = sj[Record].decodeJson(jsData)
+    // def readRecordScalaJack = sj[Record].fromJson(jsData)
+    def readRecordScalaJack = ScalaJack[Record].fromJson(jsData)
    }
 
     trait ScalaJackWritingBenchmark { 
     @Benchmark
-    def writeRecordScalaJack = ScalaJack.write(record)
+    // def writeRecordScalaJack = sj[Record].toJson(record)   // 677K score
+    def writeRecordScalaJack = ScalaJack[Record].toJson(record)  // 1.7M score <- faster
     }

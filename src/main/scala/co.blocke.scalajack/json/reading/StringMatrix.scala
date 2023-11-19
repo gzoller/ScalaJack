@@ -1,5 +1,6 @@
 package co.blocke.scalajack
 package json
+package reading
 
 // A data structure encoding a simple algorithm for Trie pruning: Given a list
 // of strings, and a sequence of incoming characters, find the strings that

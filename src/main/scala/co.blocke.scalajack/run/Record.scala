@@ -36,7 +36,8 @@ case class Record(
     pets: List[Pet]
 )
 
-case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
+// case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
+case class Foo(name: String, age: Int, expected: String = "nada")
 
 val jsData =
   """{
@@ -86,3 +87,10 @@ val jsData =
       }
     ]
   }"""
+
+val record = Record(
+  Person("John Doe", 30, Address("123 Main Street", "Anytown", "CA", "12345"), "john.doe@example.com", List("555-555-5555", "555-123-4567"), true),
+  List("reading", "swimming", "traveling"),
+  List(Friend("Jane Smith", 28, "jane.smith@example.com"), Friend("Bob Johnson", 32, "bob.johnson@example.com")),
+  List(Pet("Fido", "Dog", 5), Pet("Whiskers", "Cat", 3))
+)

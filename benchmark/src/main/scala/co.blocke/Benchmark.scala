@@ -55,9 +55,9 @@ class ReadingBenchmark
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
     // extends HandTooledWritingBenchmark
-    // with CirceZ.CirceWritingBenchmark
+    // extends CirceZ.CirceWritingBenchmark
     extends ScalaJackZ.ScalaJackWritingBenchmark
-    // with JsoniterZ.JsoniterWritingBenchmark
+    // extends JsoniterZ.JsoniterWritingBenchmark
     // with ZIOZ.ZIOJsonWritingBenchmark
     // with PlayZ.PlayWritingBenchmark
     // with ArgonautZ.ArgonautWritingBenchmark

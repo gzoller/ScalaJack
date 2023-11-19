@@ -48,6 +48,7 @@ object JsonWriter:
   final inline def lastPart(n: String) = n.split('.').last.stripSuffix("$")
 
   // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
+  // Affected types: Option, java.util.Optional, Left/Right, Try/Failure
   def isOkToWrite(a: Any, cfg: JsonConfig) =
     a match
       case None if !cfg.noneAsNull                                    => false
