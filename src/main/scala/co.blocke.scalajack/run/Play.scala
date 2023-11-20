@@ -18,9 +18,9 @@ object RunMe extends App:
     import json.*
     import ScalaJack.*
 
-    internal.CodePrinter.code {
-      sj[Record]
-    }
+    // internal.CodePrinter.code {
+    //   sj[Record]
+    // }
 
     // val thing = Foo("Greg", 57)
 

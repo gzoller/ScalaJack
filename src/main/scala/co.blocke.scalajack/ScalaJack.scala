@@ -7,12 +7,12 @@ import scala.quoted.*
 import quoted.Quotes
 import json.*
 
-case class ScalaJack[T](jsonDecoder: reading.JsonDecoder[T], jsonEncoder: (T, StringBuilder, JsonConfig) => String): // extends JsonCodec[T] //with YamlCodec with MsgPackCodec
+case class ScalaJack[T](jsonDecoder: reading.JsonDecoder[T], jsonEncoder: (T, writing.JsonOutput, JsonConfig) => String): // extends JsonCodec[T] //with YamlCodec with MsgPackCodec
   def fromJson(js: String)(using cfg: JsonConfig = JsonConfig()): Either[JsonParseError, T] =
     jsonDecoder.decodeJson(js)
 
   def toJson(a: T)(using cfg: JsonConfig = JsonConfig()): String =
-    jsonEncoder(a, new StringBuilder(), cfg)
+    jsonEncoder(a, writing.JsonOutput(), cfg)
 
 // ---------------------------------------
 
@@ -26,7 +26,7 @@ object ScalaJack:
     import q.reflect.*
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     val jsonDecoder = reading.JsonReader.refRead(classRef)
-    val jsonEncoder = writing.JW.refRead(classRef)
+    val jsonEncoder = writing.JsonWriter.refRead(classRef)
 
     '{ ScalaJack($jsonDecoder, $jsonEncoder) }
 

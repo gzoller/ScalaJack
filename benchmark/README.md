@@ -32,7 +32,7 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 | Jsoniter         | thrpt |  20    |     2843150.452 |  ± 21478.503 | ops/s |
 | Hand-Tooled      | thrpt |  20    |     2732571.374 |  ± 15129.007 | ops/s |
 | Circe            | thrpt |  20    |     1958244.437 |  ± 23965.817 | ops/s |
-|**ScalaJack 8 (fast mode)**   | thrpt |  20    | **1729426.328** |  ±  4484.721 | ops/s |
+|**ScalaJack 8 (fast mode)**   | thrpt |  20    | **1736631.384** |  ±  4484.721 | ops/s |
 | ZIO JSON         | thrpt |  20    |      794352.301 |  ± 32336.852 | ops/s |
 |**ScalaJack 8 (easy mode)**   | thrpt |  20    | **705318.598** |  ± 19932.389 | ops/s |
 | Argonaut         | thrpt |  20    |      690269.697 |  ±  6348.882 | ops/s |

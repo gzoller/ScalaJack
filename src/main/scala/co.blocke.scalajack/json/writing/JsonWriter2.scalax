@@ -5,58 +5,72 @@ package writing
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import scala.quoted.*
-import scala.collection.mutable.{Map=>MMap}
+import scala.collection.mutable.Map as MMap
+import scala.util.Failure
 
-object JW:
+object JsonWriter2:
 
-  private def shouldTestForOkToWrite( r: RTypeRef[_] ): Boolean =
-    r match 
+  private def shouldTestForOkToWrite(r: RTypeRef[?]): Boolean =
+    r match
       case _: OptionRef[?]    => true
       case _: LeftRightRef[?] => true
       case _: TryRef[?]       => true
       case _                  => false
 
+  // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
+  // Affected types: Option, java.util.Optional, Left/Right, Try/Failure
+  private def isOkToWrite(a: Any, cfg: JsonConfig) =
+    a match
+      case None if !cfg.noneAsNull                                    => false
+      case o: java.util.Optional[?] if o.isEmpty && !cfg.noneAsNull   => false
+      case Left(None) if !cfg.noneAsNull                              => false
+      case Right(None) if !cfg.noneAsNull                             => false
+      case Failure(_) if cfg.tryFailureHandling == TryOption.NO_WRITE => false
+      case _                                                          => true
+
   def refRead[T](
       ref: RTypeRef[T]
-  )(using q: Quotes, tt: Type[T]): Expr[(T, StringBuilder, JsonConfig)=>String] = 
+  )(using q: Quotes, tt: Type[T]): Expr[(T, StringBuilder, JsonConfig) => String] =
     import quotes.reflect.*
-    '{ 
-      (a: T, sb: StringBuilder, cfg: JsonConfig) => ${refWrite(ref, '{a}, '{sb}, '{cfg})(using MMap.empty[TypedName,RTypeRef[?]])}.toString
+    '{ (a: T, sb: StringBuilder, cfg: JsonConfig) =>
+      ${ refWrite(ref, '{ a }, '{ sb }, '{ cfg })(using MMap.empty[TypedName, RTypeRef[?]]) }.toString
     }
 
   private def refWrite[T](
-    ref: RTypeRef[T], 
-    aE: Expr[T], 
-    sbE: Expr[StringBuilder], 
-    cfgE: Expr[JsonConfig], 
-    isMapKey: Boolean = false
-  )(using classesSeen: MMap[TypedName, RTypeRef[?]])(using q: Quotes, tt: Type[T]) : Expr[StringBuilder] = 
+      ref: RTypeRef[T],
+      aE: Expr[T],
+      sbE: Expr[StringBuilder],
+      cfgE: Expr[JsonConfig],
+      isMapKey: Boolean = false
+  )(using classesSeen: MMap[TypedName, RTypeRef[?]])(using q: Quotes, tt: Type[T]): Expr[StringBuilder] =
     import quotes.reflect.*
-    
+
     ref match
-      case t: PrimitiveRef[?] if t.family == PrimFamily.Stringish => 
-        '{ if $aE == null then $sbE.append("null") else $sbE.append(s"\"${$aE}\"") }
+      case t: PrimitiveRef[?] if t.family == PrimFamily.Stringish =>
+        if t.isNullable then '{ if $aE == null then $sbE.append("null") else $sbE.append("\"" + $aE + "\"") }
+        else '{ $sbE.append("\"" + $aE + "\"") }
 
       case t: PrimitiveRef[?] =>
         val isNullable = Expr(t.isNullable)
         if isMapKey then
           '{
             if $isNullable && $aE == null then $sbE.append("\"null\"")
-            else $sbE.append(s"\"${$aE.toString}\"")
+            else $sbE.append($sbE.append("\"" + $aE + "\""))
           }
-        else '{ if $isNullable && $aE == null then $sbE.append("null") else $sbE.append($aE.toString) }
+        else if t.isNullable then '{ if $aE == null then $sbE.append("null") else $sbE.append("\"" + $aE.toString + "\"") }
+        else '{ $sbE.append($aE.toString) }
 
       case t: SeqRef[?] =>
         if isMapKey then throw new JsonError("Seq instances cannot be map keys")
         t.elementRef.refType match
           case '[e] =>
-            val bE = aE.asInstanceOf[Expr[Seq[e]]]  // pull type-cast into complie-time for performance gains
+            val bE = aE.asInstanceOf[Expr[Seq[e]]] // pull type-cast into complie-time for performance gains
             '{
               if $aE == null then $sbE.append("null")
               else
                 $sbE.append('[')
                 val sbLen = $sbE.length()
-                
+
                 $bE.foreach { one =>
                   ${
                     if shouldTestForOkToWrite(t.elementRef) then // A lot of drama to avoid 1 'if' stmt--it matters for max performance
@@ -67,8 +81,8 @@ object JW:
                       }
                     else
                       '{
-                      ${ refWrite[e](t.elementRef.asInstanceOf[RTypeRef[e]], '{ one }, sbE, cfgE) }
-                      $sbE.append(',')
+                        ${ refWrite[e](t.elementRef.asInstanceOf[RTypeRef[e]], '{ one }, sbE, cfgE) }
+                        $sbE.append(',')
                       }
                   }
                 }
@@ -80,36 +94,44 @@ object JW:
         classesSeen.put(t.typedName, t)
         val isCase = Expr(t.isCaseClass)
         '{
+          // Experiment (works!) to generate def fn(in:T, sb: JsonOut).  The goal is to pre-calc all the ugly stuff so that the
+          // macro generated is as pure/fast as possible.
+          //
+          // def foo(in: T): Unit =
+          //   ${
+          //     Expr.ofList(t.fields.map { f =>
+          //       '{ println("Field: " + ${ Select.unique('in.asTerm, f.name).asExprOf[Any] }) }
+          //     })
+          //   }
           if $aE == null then $sbE.append("null")
           else
             $sbE.append('{')
             val sbLen = $sbE.length()
             ${
-              Expr.ofList(t.fields.map{ f =>
+              Expr.ofList(t.fields.map { f =>
                 f.fieldRef.refType match
                   case '[e] =>
                     val fieldValue = Select.unique(aE.asTerm, f.name).asExprOf[e]
                     val name = Expr(f.name)
                     if shouldTestForOkToWrite(f.fieldRef) then // A lot of drama to avoid 1 'if' stmt--it matters for max performance
                       '{
-                          if isOkToWrite($fieldValue, $cfgE) then
-                            $sbE.append(s""""${$name}":""")
-                            ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
-                            $sbE.append(',')
-                          else $sbE
+                        if isOkToWrite($fieldValue, $cfgE) then
+                          $sbE.append("\"" + $name + ":\"")
+                          ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
+                          $sbE.append(',')
                       }
                     else
                       '{
-                          $sbE.append(s""""${$name}":""")
-                          ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
-                          $sbE.append(',')
+                        $sbE.append("\"" + $name + ":\"")
+                        ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
+                        $sbE.append(',')
                       }
               })
             }
             // write out any non-constructor fields (non-case "plain" classes)
             if ! $isCase && $cfgE.writeNonConstructorFields then
               ${
-                Expr.ofList(t.nonConstructorFields.map{ f =>
+                Expr.ofList(t.nonConstructorFields.map { f =>
                   f.fieldRef.refType match
                     case '[e] =>
                       val fieldValue = Select.unique(aE.asTerm, f.getterLabel).asExprOf[e]
@@ -117,14 +139,14 @@ object JW:
                       if shouldTestForOkToWrite(f.fieldRef) then // A lot of drama to avoid 1 'if' stmt--it matters for max performance
                         '{
                           if isOkToWrite($fieldValue, $cfgE) then
-                            $sbE.append(s"\"${$name}\":")
+                            $sbE.append(s"\"$$name\":")
                             ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
                             $sbE.append(',')
                           else $sbE
                         }
-                      else 
+                      else
                         '{
-                          $sbE.append(s"\"${$name}\":")
+                          $sbE.append(s"\"$$name\":")
                           ${ refWrite[e](f.fieldRef.asInstanceOf[RTypeRef[e]], fieldValue, sbE, cfgE) }
                           $sbE.append(',')
                         }

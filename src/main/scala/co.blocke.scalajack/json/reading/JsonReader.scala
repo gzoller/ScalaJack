@@ -11,9 +11,9 @@ import scala.util.{Failure, Success, Try}
 import scala.collection.Factory
 
 /** We depart from ZIO-Json here.  ZIO-Json uses implicits to marshal the right JsonDecoder.  This works great for primitive types
-  * but I had issues trying to get it to work with macros for more complex types.  Since we actually have all the necessary elements 
+  * but I had issues trying to get it to work with macros for more complex types.  Since we actually have all the necessary elements
   * to explicitly provide decoders for "constructed" types (collections, classes, ...) we just provided them explicitly.
-  * 
+  *
   * The job of JsonReader is to accept an RTypeRef[T] and produce a JsonDecoder[T] for type T.
   */
 object JsonReader:
@@ -24,8 +24,13 @@ object JsonReader:
     import quotes.reflect.*
 
     ref match
-      case r: PrimitiveRef[?] =>
-        Expr.summon[JsonDecoder[T]].getOrElse(throw JsonTypeError("No JsonDecoder defined for type " + TypeRepr.of[T].typeSymbol.name))
+      case r: PrimitiveRef =>
+        r.refType match
+          case '[t] =>
+            Expr
+              .summon[JsonDecoder[t]]
+              .getOrElse(throw JsonTypeError("No JsonDecoder defined for type " + TypeRepr.of[t].typeSymbol.name))
+              .asInstanceOf[Expr[JsonDecoder[T]]]
 
       case r: SeqRef[?] =>
         r.refType match
