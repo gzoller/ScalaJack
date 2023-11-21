@@ -27,7 +27,7 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 ## Writing Performance:
 
-![image info](./Writing Performance.png)
+![image info](Writing Performance.png)
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
