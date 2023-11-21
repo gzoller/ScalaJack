@@ -18,35 +18,35 @@ object RunMe extends App:
     import json.*
     import ScalaJack.*
 
-    // internal.CodePrinter.code {
+    // co.blocke.scalajack.internal.CodePrinter.code {
     //   sj[Record]
     // }
 
-    // val thing = Foo("Greg", 57)
-
+    val v = Foo("Hey", "Boo")
+    // println(sj[Foo].toJson(v))
     println(sj[Record].toJson(record))
-    println("------")
-    println(sj[Record].fromJson(jsData))
-    // println(sj[Foo].fromJson("""{"name":"Greg","age":57}"""))
 
-    /*
-    val jjs = """{"name":"Greg","age":57}"""
-    // println(ScalaJack.read[Foo](jjs))
-     */
-
-    // val record = sj[Record].fromJson(jsData) match
-    //   case Right(r)           => r
-    //   case Left(t: Throwable) => throw t
-
-    // println(record)
-    // println("------")
     // println(sj[Record].toJson(record))
 
-    // val r2 = ScalaJack.read[Record](jsData)
-    // println(ScalaJack.write(record))
+    // println("------")
 
-    // implicit val z: json.sj[Record] = ScalaJack.inspect[Record]
-    // println(sj[Record].decodeJson(jsData))
+    // println(sj[Record].fromJson(jsData))
+
+    // import internal.*
+
+    // val root = TreeNode("1A", List(TreeNode("2A", List(TreeNode("3A", Nil))), TreeNode("2B", List(TreeNode("3B", Nil))), TreeNode("2C", List(TreeNode("3C", Nil)))))
+
+    // val m = Map(
+    //   "1A" -> "Report",
+    //   "2A" -> "Person",
+    //   "2B" -> "Seq[Friend]",
+    //   "2C" -> "Seq[Pet]",
+    //   "3A" -> "Address",
+    //   "3B" -> "Friend",
+    //   "3C" -> "Pet"
+    // )
+
+    // println(TreeNode.inverted(root).map(p => m(p.payload)))
 
   catch {
     case t: Throwable =>

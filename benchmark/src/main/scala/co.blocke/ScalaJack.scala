@@ -16,6 +16,6 @@ object ScalaJackZ:
 
     trait ScalaJackWritingBenchmark { 
     @Benchmark
-    // def writeRecordScalaJack = sj[Record].toJson(record)   // 677K score
-    def writeRecordScalaJack = ScalaJack[Record].toJson(record)  // 1.7M score <- faster
+    def writeRecordScalaJack = sj[Record].toJson(record)   // 677K score
+    // def writeRecordScalaJack = ScalaJack[Record].toJson(record)  // 1.7M score <- faster
     }

@@ -1,0 +1,66 @@
+Path to Performance
+-------------------
+
+
+
+[ ] - Create def() for each class (and maybe each collection?) found, to output json as seamlessly as possible
+
+    -- Possibly a multi-pass generation?  Once to identify all the classes and generate def fn names, and another
+       to actually generate the code in dependency order
+
+[*] - Create JsonOutput (like Jsoniter's JsonWriter, but the name conflicts w/mine).  Initially continue to use
+      StringBuilder, but use some of Jsoniter's clever ',' handling
+
+[ ] - Explore dark magic Jsoniter mechanisms for all that bitwise/byte stuff to drive extreme efficiency
+
+[*] - In scala-reflection, explode PrimitiveRTypeRef into separate Refs, like they have for primitive RTypes
+
+
+LEARNINGS: Jsoniter macros to gen an list:
+
+        ... else if (tpe <:< TypeRepr.of[List[_]]) withEncoderFor(methodKey, m, out) { (out, x) =>
+          val tpe1 = typeArg1(tpe)
+          tpe1.asType match
+            case '[t1] =>
+              val tx = x.asExprOf[List[t1]]
+              '{
+                $out.writeArrayStart()
+                var l = $tx
+                while (l ne Nil) {
+                  ${genWriteVal('{ l.head }, tpe1 :: types, isStringified, None, out)}
+                  l = l.tail
+                }
+                $out.writeArrayEnd()
+              }
+        }
+
+Need to learn what "withEnocderFor()" does--specifically how $out gets passed in.
+
+
+This is the dark magic.... It creates a Symbol and a method (DefDef) for the given function f.
+Not sure how to connect/call these together yet, but in isolation, this should allow us to 
+generate discrete functions that output a "thing".
+
+      def withEncoderFor[T: Type](methodKey: EncoderMethodKey, arg: Expr[T], out: Expr[JsonWriter])
+                                 (f: (Expr[JsonWriter], Expr[T])=> Expr[Unit]): Expr[Unit] =
+        Apply(Ref(encodeMethodSyms.getOrElse(methodKey, {
+          val sym = Symbol.newMethod(Symbol.spliceOwner, "e" + encodeMethodSyms.size,
+            MethodType(List("x", "out"))(_ => List(TypeRepr.of[T], TypeRepr.of[JsonWriter]), _ => TypeRepr.of[Unit]))
+          encodeMethodSyms.update(methodKey, sym)
+          encodeMethodDefs += DefDef(sym, params => {
+            val List(List(x, out)) = params
+            Some(f(out.asExprOf[JsonWriter], x.asExprOf[T]).asTerm.changeOwner(sym))
+          })
+          sym
+        })), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
+
+
+Here's the EncoderMethodKey thingy:
+
+      case class EncoderMethodKey(tpe: TypeRepr, isStringified: Boolean, discriminatorKeyValue: Option[(String, String)])
+
+      val encodeMethodSyms = new mutable.HashMap[EncoderMethodKey, Symbol]
+      val encodeMethodDefs = new mutable.ArrayBuffer[DefDef]
+
+Not sure if we need all this drama yet or not.... Perhaps we can use this as a simple wrapper around the TypedName.  Then if
+      it needs to store more, the shell is already wired in.

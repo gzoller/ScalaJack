@@ -37,7 +37,8 @@ case class Record(
 )
 
 // case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
-case class Foo(name: String, age: Int, expected: String = "nada")
+case class Foo(name: String, expected: String = "nada")
+// case class Foo(name: String, age: Int, expected: String = "nada")
 
 val jsData =
   """{

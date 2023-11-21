@@ -3,147 +3,147 @@ package json
 package writing
 
 case class JsonOutput():
-    val internal: StringBuilder = new StringBuilder()
+  val internal: StringBuilder = new StringBuilder()
 
-    private var comma: Boolean = false
+  private var comma: Boolean = false
 
-    def result = internal.result
+  def result = internal.result
 
-    inline def startObject() = 
-        internal.append('{')
-        comma = false
+  inline def startObject(): Unit =
+    maybeComma()
+    internal.append('{')
+    comma = false
 
-    inline def endObject() = 
-        internal.append('}')
-        this
+  inline def endObject(): Unit =
+    internal.append('}')
+    comma = true
 
-    inline def startArray() = 
-        internal.append('[')
-        comma = false
+  inline def startArray(): Unit =
+    maybeComma()
+    internal.append('[')
+    comma = false
 
-    inline def endArray() = 
-        internal.append(']')
-        this
+  inline def endArray(): Unit =
+    internal.append(']')
+    comma = true
 
-    inline def maybeComma() = 
-        if comma then 
-        internal.append(',')
-        comma = false
+  inline def maybeComma(): Unit =
+    if comma then internal.append(',')
+    comma = false
 
-    inline def burpNull() = 
-        internal.append("null")
-        this
+  inline def burpNull(): Unit =
+    internal.append("null")
 
-    inline def label( s: String ) = 
-        maybeComma()
-        internal.append("\""+s+"\":")
+  inline def label(s: String): Unit =
+    maybeComma()
+    internal.append("\"" + s + "\":")
 
-    inline def label( s: Long ) = 
-        maybeComma()
-        internal.append("\""+s+"\":")
-    
-    //----------------------- Primitive/Simple type support
+  inline def label(s: Long): Unit =
+    maybeComma()
+    internal.append("\"" + s + "\":")
 
-    // TODO: BigDecimal, BigInt and Java equiv.
+  // ----------------------- Primitive/Simple type support
 
-    inline def value(v: Boolean) =
-        internal.append(v)
-        comma = true
-        this
+  // TODO: BigDecimal, BigInt and Java equiv.
 
-    inline def value(v: Byte) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Boolean): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: Char) =
-        internal.append("\""+v+"\"")
-        comma = true
-        this
+  inline def value(v: Byte): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: Double) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Char): Unit =
+    maybeComma()
+    internal.append("\"" + v + "\"")
+    comma = true
 
-    inline def value(v: Float) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Double): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: Int) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Float): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: Long) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Int): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: Short) =
-        internal.append(v)
-        comma = true
-        this
+  inline def value(v: Long): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: String) =
-        if v == null then internal.append("null")
-        else internal.append("\""+v+"\"")
-        comma = true
-        this
+  inline def value(v: Short): Unit =
+    maybeComma()
+    internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Boolean) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: String): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append("\"" + v + "\"")
+    comma = true
 
-    inline def value(v: java.lang.Byte) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Boolean): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Character) =
-        if v == null then internal.append("null")
-        else internal.append("\""+v+"\"")
-        comma = true
-        this
+  inline def value(v: java.lang.Byte): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Double) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Character): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append("\"" + v + "\"")
+    comma = true
 
-    inline def value(v: java.lang.Float) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Double): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Integer) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Float): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Long) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Integer): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Short) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Long): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    inline def value(v: java.lang.Number) =
-        if v == null then internal.append("null")
-        else internal.append(v)
-        comma = true
-        this
+  inline def value(v: java.lang.Short): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
 
-    // TODO: UUID
+  inline def value(v: java.lang.Number): Unit =
+    maybeComma()
+    if v == null then internal.append("null")
+    else internal.append(v)
+    comma = true
+
+  // TODO: UUID
