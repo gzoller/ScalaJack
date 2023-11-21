@@ -36,7 +36,7 @@ lazy val benchmark = project
     libraryDependencies ++= Seq(
       "org.playframework" %% "play-json" % "3.0.1",
       "io.argonaut" %% "argonaut" % "6.3.9",
-      "co.blocke" %% "scalajack" % "fa32cf_unknown", 
+      "co.blocke" %% "scalajack" % "fc0b25_unknown", 
       "co.blocke" %% "scala-reflection" % "sj_fixes_edbef8",
       "dev.zio" %% "zio-json" % "0.6.1",
       "org.typelevel" %% "fabric-core" % "1.12.6",

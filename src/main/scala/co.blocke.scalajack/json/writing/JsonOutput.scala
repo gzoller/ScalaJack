@@ -9,6 +9,10 @@ case class JsonOutput():
 
   def result = internal.result
 
+  def clear() =
+    internal.clear()
+    this
+
   inline def startObject(): Unit =
     maybeComma()
     internal.append('{')
