@@ -18,7 +18,18 @@ import scala.collection.Factory
   */
 object JsonReader:
 
+  // Temporary no-op reader...
   def refRead[T](
+      ref: RTypeRef[T]
+  )(using q: Quotes, tt: Type[T]): Expr[JsonDecoder[T]] =
+    import quotes.reflect.*
+    '{
+      new JsonDecoder[T] {
+        def unsafeDecode(in: JsonSource): T = null.asInstanceOf[T]
+      }
+    }
+
+  def refRead2[T](
       ref: RTypeRef[T]
   )(using q: Quotes, tt: Type[T]): Expr[JsonDecoder[T]] =
     import quotes.reflect.*

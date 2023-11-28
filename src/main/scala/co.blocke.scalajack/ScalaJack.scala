@@ -8,11 +8,11 @@ import quoted.Quotes
 import json.*
 
 case class ScalaJack[T](jsonDecoder: reading.JsonDecoder[T], jsonEncoder: JsonCodec[T]): // extends JsonCodec[T] //with YamlCodec with MsgPackCodec
-  def fromJson(js: String)(using cfg: JsonConfig = JsonConfig()): Either[JsonParseError, T] =
+  def fromJson(js: String): Either[JsonParseError, T] =
     jsonDecoder.decodeJson(js)
 
   val out = writing.JsonOutput() // let's clear & re-use JsonOutput--avoid re-allocating all the internal buffer space
-  def toJson(a: T)(using cfg: JsonConfig = JsonConfig()): String =
+  def toJson(a: T): String =
     jsonEncoder.encodeValue(a, out.clear())
     out.result
 
@@ -22,14 +22,24 @@ object ScalaJack:
 
   def apply[A](implicit a: ScalaJack[A]): ScalaJack[A] = a
 
+  // ----- Use default JsonConfig
   inline def sj[T]: ScalaJack[T] = ${ sjImpl[T] }
-
-  def sjImpl[T](using q: Quotes, tt: Type[T]): Expr[ScalaJack[T]] =
-    import q.reflect.*
+  def sjImpl[T: Type](using Quotes): Expr[ScalaJack[T]] =
+    import quotes.reflect.*
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     val jsonDecoder = reading.JsonReader.refRead(classRef)
-    val jsonEncoder = writing.JsonCodecMaker.generateCodecFor(classRef)
+    val jsonEncoder = writing.JsonCodecMaker.generateCodecFor(classRef, JsonConfig)
 
+    '{ ScalaJack($jsonDecoder, $jsonEncoder) }
+
+  // ----- Use given JsonConfig
+  inline def sj[T](inline cfg: JsonConfig): ScalaJack[T] = ${ sjImplWithConfig[T]('cfg) }
+  def sjImplWithConfig[T: Type](cfgE: Expr[JsonConfig])(using Quotes): Expr[ScalaJack[T]] =
+    import quotes.reflect.*
+    val cfg = summon[FromExpr[JsonConfig]].unapply(cfgE)
+    val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+    val jsonDecoder = reading.JsonReader.refRead(classRef)
+    val jsonEncoder = writing.JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(JsonConfig))
     '{ ScalaJack($jsonDecoder, $jsonEncoder) }
 
   //   refRead[T](classRef)

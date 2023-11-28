@@ -4,52 +4,50 @@ package run
 import co.blocke.scala_reflection.*
 import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
+import json.*
 
 object RunMe extends App:
 
-  given json.JsonConfig = json
-    .JsonConfig()
-    .copy(noneAsNull = true)
-    .copy(writeNonConstructorFields = true)
-  // .copy(enumsAsIds = '*')
+  // import scala.util.Random
+  // val random = new Random()
+
+  // def scramble(hash: Int): String =
+  //   val last5 = f"$hash%05d".takeRight(5)
+  //   val digits = (1 to 5).map(_ => random.nextInt(10))
+  //   if digits(0) % 2 == 0 then s"${last5(0)}${digits(0)}${last5(1)}${digits(1)}${last5(2)}-${digits(2)}${last5(3)}${digits(3)}-${last5(4)}${digits(4)}A"
+  //   else s"${digits(0)}${last5(0)}${digits(1)}${last5(1)}${digits(2)}-${last5(2)}${digits(3)}${last5(3)}-${digits(4)}${last5(4)}B"
 
   try
 
     import json.*
     import ScalaJack.*
 
+    implicit val blah: ScalaJack[Foo] = sj[Foo](JsonConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
+
     // co.blocke.scalajack.internal.CodePrinter.code {
     //   sj[Record]
     // }
 
-    val v = Foo("Hey", "Boo")
-    // println(sj[Foo].toJson(v))
-    println(sj[Record].toJson(record))
+    val v = Foo("Hey", Fish("Bloop", false))
+    // val v = Foo("Hey", "Boo")
+
+    println(ScalaJack[Foo].toJson(v))
+    // println(sj[Foo](JsonConfig.withTypeHintLabel("bogus")).toJson(v))
 
     // println(sj[Record].toJson(record))
 
     // println("------")
 
     // println(sj[Record].fromJson(jsData))
-
-    // import internal.*
-
-    // val root = TreeNode("1A", List(TreeNode("2A", List(TreeNode("3A", Nil))), TreeNode("2B", List(TreeNode("3B", Nil))), TreeNode("2C", List(TreeNode("3C", Nil)))))
-
-    // val m = Map(
-    //   "1A" -> "Report",
-    //   "2A" -> "Person",
-    //   "2B" -> "Seq[Friend]",
-    //   "2C" -> "Seq[Pet]",
-    //   "3A" -> "Address",
-    //   "3B" -> "Friend",
-    //   "3C" -> "Pet"
-    // )
-
-    // println(TreeNode.inverted(root).map(p => m(p.payload)))
-
   catch {
     case t: Throwable =>
       println(s"BOOM ($t): " + t.getMessage)
       t.printStackTrace
   }
+
+  // val s1 = scramble(15)
+  // val s2 = scramble(394857)
+  // println(s1)
+  // println(s2)
+  // println(descrambleTest(s1, 15))
+  // println(descrambleTest(s2, 394857))

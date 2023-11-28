@@ -37,8 +37,12 @@ case class Record(
 )
 
 // case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
-case class Foo(name: String, expected: String = "nada")
+case class Foo(name: String, a: Animal, expected: String = "nada")
 // case class Foo(name: String, age: Int, expected: String = "nada")
+
+sealed trait Animal
+case class Dog(name: String, numLegs: Int) extends Animal
+case class Fish(name: String, isFreshwater: Boolean) extends Animal
 
 val jsData =
   """{

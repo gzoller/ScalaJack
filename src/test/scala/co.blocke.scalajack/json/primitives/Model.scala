@@ -7,15 +7,6 @@ import java.math.{BigDecimal as JBigDecimal, BigInteger as JBigInteger}
 import java.time.*
 import scala.math.*
 
-// === Scala
-case class SampleBigDecimal(bd1: BigDecimal, bd2: BigDecimal, bd3: BigDecimal, bd4: BigDecimal, bd5: BigDecimal, bd6: BigDecimal)
-case class SampleBigInt(bi1: BigInt, bi2: BigInt, bi3: BigInt, bi4: BigInt)
-case class SampleBinary(b1: Array[Byte], b2: Array[Byte])
-case class SampleBoolean(bool1: Boolean, bool2: Boolean)
-case class SampleByte(b1: Byte, b2: Byte, b3: Byte, b4: Byte)
-case class SampleChar(c1: Char, c2: Char, c3: Char)
-case class SampleDouble(d1: Double, d2: Double, d3: Double, d4: Double)
-
 object Size extends Enumeration {
   val Small, Medium, Large = Value
 }
@@ -44,6 +35,13 @@ case class Plane(numberOfEngines: Int) extends Vehicle
 case class Ride(wheels: Vehicle)
 case class Favorite(flavor: Flavor)
 
+// === Scala
+case class SampleBigDecimal(bd1: BigDecimal, bd2: BigDecimal, bd3: BigDecimal, bd4: BigDecimal, bd5: BigDecimal, bd6: BigDecimal)
+case class SampleBigInt(bi1: BigInt, bi2: BigInt, bi3: BigInt, bi4: BigInt)
+case class SampleBoolean(bool1: Boolean, bool2: Boolean)
+case class SampleByte(b1: Byte, b2: Byte, b3: Byte, b4: Byte)
+case class SampleChar(c1: Char, c2: Char, c3: Char)
+case class SampleDouble(d1: Double, d2: Double, d3: Double, d4: Double)
 case class SampleFloat(f1: Float, f2: Float, f3: Float, f4: Float)
 case class SampleInt(i1: Int, i2: Int, i3: Int, i4: Int)
 case class SampleLong(l1: Long, l2: Long, l3: Long, l4: Long)
@@ -70,10 +68,16 @@ case class SampleInstant(i1: Instant, i2: Instant, i3: Instant, i4: Instant, i5:
 case class SampleLocalDateTime(d1: LocalDateTime, d2: LocalDateTime, d3: LocalDateTime, d4: LocalDateTime)
 case class SampleLocalDate(d1: LocalDate, d2: LocalDate, d3: LocalDate, d4: LocalDate)
 case class SampleLocalTime(d1: LocalTime, d2: LocalTime, d3: LocalTime, d4: LocalTime, d5: LocalTime, d6: LocalTime)
+case class SampleMonthDay(m1: MonthDay, m2: MonthDay)
 case class SampleOffsetDateTime(o1: OffsetDateTime, o2: OffsetDateTime, o3: OffsetDateTime, o4: OffsetDateTime)
 case class SampleOffsetTime(o1: OffsetTime, o2: OffsetTime, o3: OffsetTime, o4: OffsetTime)
 case class SamplePeriod(p1: Period, p2: Period, p3: Period)
+case class SampleYear(y1: Year, y2: Year, y3: Year, y4: Year)
+case class SampleYearMonth(y1: YearMonth, y2: YearMonth)
 case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
+case class SampleZoneId(z1: ZoneId, z2: ZoneId)
+case class SampleZoneOffset(z1: ZoneOffset, z2: ZoneOffset)
+// TODO: Missing Year, MonthYear, ZoneId, ZoneOffset, others?
 
 // === Any primitives
 case class AnyShell(a: Any)

@@ -12,32 +12,36 @@ import scala.quoted.staging.*
 
 /*
   TODO:
-    [*] - Scala non-case class
-    [*] - Java class (Do I still want to support this???)
-    [*] - Enum
-    [*] - Enumeration
-    [*] - Java Enum
-    [*] - Java Collections
-    [*] - Java Map
-    [*] - Intersection
-    [*] - Union
-    [*] - Either
-    [*] - Object (How???)
-    [*] - Trait (How???)
-    [*] - Sealed trait
-    [*] - sealed abstract class (handle like sealed trait....)
-    [*] - SelfRef
-    [*] - Tuple
-    [*] - Unknown (throw exception)
-    [*] - Scala 2 (throw exception)
-    [*] - TypeSymbol (throw exception)
-    [*] - Value class
+    [*] - Primitive types
+    [*] - Simple Types
+    [*] - Seq/Set/Array
+    [*] - Map
+    [*] - Scala case class
+    [ ] - Scala non-case class
+    [ ] - Java class
+    [ ] - Enum
+    [ ] - Enumeration
+    [ ] - Java Enum
+    [ ] - Java Collections
+    [ ] - Java Map
+    [ ] - Intersection
+    [ ] - Union
+    [ ] - Either
+    [*] - Alias type
+    [ ] - Object (How???)
+    [X] - Trait (How???)
+    [ ] - Sealed Trait
+    [ ] - Sealed Abstract Class (handle like sealed trait....)
+    [ ] - SelfRef
+    [ ] - Tuple
+    [ ] - Unknown (throw exception)
+    [ ] - Scala 2 (throw exception)
+    [ ] - TypeSymbol (throw exception)
+    [ ] - Value class
 
-    [*] -- correct all the 'if $aE == null...'
-    [*] -- type hint label mapping
-    [*] -- type hint value mapping
-    [*] -- Discontinue use of inTermsOf "open" (non-sealed) trait support (?!)
-    [*] -- update runtime-size TraitRType handling to match new compile-time code
+    [ ] -- type hint label mapping
+    [ ] -- type hint value mapping
+    [ ] -- update runtime-size TraitRType handling to match new compile-time code
 
     [ ] -- Streaming JSON write support
     [ ] -- BigJSON support (eg. multi-gig file)
