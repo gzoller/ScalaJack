@@ -8,10 +8,10 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
 import TestUtil.*
-import java.time._
+import java.time.*
 import java.util.UUID
 
-class Simple() extends AnyFunSpec with JsonMatchers:
+class SimpleSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-----------------------\n:  Simple Type Tests  :\n-----------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
@@ -24,12 +24,12 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("Instant must work") {
         val inst = SampleInstant(
-            Instant.EPOCH,
-            Instant.MAX,
-            Instant.MIN,
-            Instant.parse("2007-12-03T10:15:30.00Z"),
-            null
-            )
+          Instant.EPOCH,
+          Instant.MAX,
+          Instant.MIN,
+          Instant.parse("2007-12-03T10:15:30.00Z"),
+          null
+        )
         val js = sj[SampleInstant].toJson(inst)
         js should matchJson("""{"i1":"1970-01-01T00:00:00Z","i2":"+1000000000-12-31T23:59:59.999999999Z","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}""")
         // inst shouldEqual ScalaJack.read[SampleInstant](js)
@@ -37,11 +37,11 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("LocalDate must work") {
         val inst = SampleLocalDate(
-            LocalDate.MAX,
-            LocalDate.MIN,
-            LocalDate.parse("2007-12-03"),
-            null
-            )
+          LocalDate.MAX,
+          LocalDate.MIN,
+          LocalDate.parse("2007-12-03"),
+          null
+        )
         val js = sj[SampleLocalDate].toJson(inst)
         js should matchJson("""{"d1":"+999999999-12-31","d2":"-999999999-01-01","d3":"2007-12-03","d4":null}""")
         // inst shouldEqual ScalaJack.read[SampleLocalDate](js)
@@ -49,11 +49,11 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("LocalDateTime must work") {
         val inst = SampleLocalDateTime(
-            LocalDateTime.MAX,
-            LocalDateTime.MIN,
-            LocalDateTime.parse("2007-12-03T10:15:30"),
-            null
-            )
+          LocalDateTime.MAX,
+          LocalDateTime.MIN,
+          LocalDateTime.parse("2007-12-03T10:15:30"),
+          null
+        )
         val js = sj[SampleLocalDateTime].toJson(inst)
         js should matchJson("""{"d1":"+999999999-12-31T23:59:59.999999999","d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d4":null}""")
         // inst shouldEqual ScalaJack.read[SampleLocalDateTime](js)
@@ -61,13 +61,13 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("LocalTime must work") {
         val inst = SampleLocalTime(
-            LocalTime.MAX,
-            LocalTime.MIN,
-            LocalTime.MIDNIGHT,
-            LocalTime.NOON,
-            LocalTime.parse("10:15:30"),
-            null
-            )
+          LocalTime.MAX,
+          LocalTime.MIN,
+          LocalTime.MIDNIGHT,
+          LocalTime.NOON,
+          LocalTime.parse("10:15:30"),
+          null
+        )
         val js = sj[SampleLocalTime].toJson(inst)
         js should matchJson("""{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"10:15:30","d6":null}""")
         // inst shouldEqual ScalaJack.read[SampleLocalTime](js)
@@ -75,9 +75,9 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("MonthDay must work") {
         val inst = SampleMonthDay(
-            MonthDay.of(7,1),
-            null
-            )
+          MonthDay.of(7, 1),
+          null
+        )
         val js = sj[SampleMonthDay].toJson(inst)
         js should matchJson("""{"m1":"--07-01","m2":null}""")
         // inst shouldEqual ScalaJack.read[SampleMonthDay](js)
@@ -85,11 +85,11 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("OffsetDateTime must work") {
         val inst = SampleOffsetDateTime(
-            OffsetDateTime.MAX,
-            OffsetDateTime.MIN,
-            OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
-            null
-            )
+          OffsetDateTime.MAX,
+          OffsetDateTime.MIN,
+          OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+          null
+        )
         val js = sj[SampleOffsetDateTime].toJson(inst)
         js should matchJson("""{"o1":"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}""")
         // inst shouldEqual ScalaJack.read[SampleOffsetDateTime](js)
@@ -97,11 +97,11 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("OffsetTime must work") {
         val inst = SampleOffsetTime(
-            OffsetTime.MAX,
-            OffsetTime.MIN,
-            OffsetTime.parse("10:15:30+01:00"),
-            null
-            )
+          OffsetTime.MAX,
+          OffsetTime.MIN,
+          OffsetTime.parse("10:15:30+01:00"),
+          null
+        )
         val js = sj[SampleOffsetTime].toJson(inst)
         js should matchJson("""{"o1":"23:59:59.999999999-18:00","o2":"00:00:00+18:00","o3":"10:15:30+01:00","o4":null}""")
         // inst shouldEqual ScalaJack.read[SampleOffsetTime](js)
@@ -122,7 +122,7 @@ class Simple() extends AnyFunSpec with JsonMatchers:
       }
 
       it("YearMonth must work") {
-        val inst = SampleYearMonth(YearMonth.of(2020,7), null)
+        val inst = SampleYearMonth(YearMonth.of(2020, 7), null)
         val js = sj[SampleYearMonth].toJson(inst)
         js should matchJson("""{"y1":"2020-07","y2":null}""")
         // inst shouldEqual ScalaJack.read[SampleYearMonth](js)
@@ -130,9 +130,9 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("ZonedDateTime must work") {
         val inst = SampleZonedDateTime(
-            ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
-            null
-            )
+          ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
+          null
+        )
         val js = sj[SampleZonedDateTime].toJson(inst)
         js should matchJson("""{"o1":"2007-12-03T10:15:30+01:00[Europe/Paris]","o2":null}""")
         // inst shouldEqual ScalaJack.read[SampleZonedDateTime](js)
@@ -140,9 +140,9 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("ZonedId must work") {
         val inst = SampleZoneId(
-            ZoneId.of("America/Puerto_Rico"),
-            null
-            )
+          ZoneId.of("America/Puerto_Rico"),
+          null
+        )
         val js = sj[SampleZoneId].toJson(inst)
         js should matchJson("""{"z1":"America/Puerto_Rico","z2":null}""")
         // inst shouldEqual ScalaJack.read[SampleZoneId](js)
@@ -153,9 +153,9 @@ class Simple() extends AnyFunSpec with JsonMatchers:
         val zone = ZoneId.of("Europe/Berlin")
         val zoneOffSet = zone.getRules().getOffset(ldt)
         val inst = SampleZoneOffset(
-            null,
-            zoneOffSet
-            )
+          null,
+          zoneOffSet
+        )
         val js = sj[SampleZoneOffset].toJson(inst)
         js should matchJson("""{"z1":null,"z2":"+01:00"}""")
         // inst shouldEqual ScalaJack.read[SampleZoneOffset](js)
@@ -163,9 +163,9 @@ class Simple() extends AnyFunSpec with JsonMatchers:
 
       it("UUID must work") {
         val inst = SampleUUID(
-            null,
-            UUID.fromString("580afe0d-81c0-458f-9e09-4486c7af0fe9")
-            )
+          null,
+          UUID.fromString("580afe0d-81c0-458f-9e09-4486c7af0fe9")
+        )
         val js = sj[SampleUUID].toJson(inst)
         js should matchJson("""{"u1":null,"u2":"580afe0d-81c0-458f-9e09-4486c7af0fe9"}""")
         // inst shouldEqual ScalaJack.read[SampleUUID](js)
@@ -185,14 +185,14 @@ class Simple() extends AnyFunSpec with JsonMatchers:
               |------------------^""".stripMargin
     interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
       sj.read[SampleDuration](js)
-    }              
+    }
     val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}""".asInstanceOf[JSON]
     val msg2 = """Failed to parse Duration from input 'bogus'
                 |{"d1":"PT0S","d2":"bogus","d3":null}
                 |------------------------^""".stripMargin
     interceptMessage[co.blocke.scalajack.ScalaJackError](msg2){
       sj.read[SampleDuration](js2)
-    }              
+    }
   }
 
   test("Instant must break") {
@@ -204,7 +204,7 @@ class Simple() extends AnyFunSpec with JsonMatchers:
               |----------------------------------^""".stripMargin
     interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
       sj.read[SampleInstant](js)
-    }              
+    }
     val js2 =
       """{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}""".asInstanceOf[JSON]
     val msg2 =
@@ -213,7 +213,7 @@ class Simple() extends AnyFunSpec with JsonMatchers:
                 |----------------------------------------^""".stripMargin
     interceptMessage[co.blocke.scalajack.ScalaJackError](msg2){
       sj.read[SampleInstant](js2)
-    }     
+    }
   }
 
   test("LocalDateTime must break") {
@@ -354,4 +354,4 @@ class Simple() extends AnyFunSpec with JsonMatchers:
       sj.read[SampleZonedDateTime](js2)
     }
   }
-*/
+ */

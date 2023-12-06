@@ -12,36 +12,40 @@ import scala.quoted.staging.*
 
 /*
   TODO:
-    [*] - Primitive types
-    [*] - Simple Types
-    [*] - Seq/Set/Array
-    [*] - Map
-    [*] - Scala case class
-    [ ] - Scala non-case class
-    [ ] - Java class
-    [ ] - Enum
-    [ ] - Enumeration
-    [ ] - Java Enum
-    [ ] - Java Collections
-    [ ] - Java Map
-    [ ] - Intersection
-    [ ] - Union
-    [ ] - Either
-    [*] - Alias type
-    [ ] - Object (How???)
-    [X] - Trait (How???)
-    [ ] - Sealed Trait
-    [ ] - Sealed Abstract Class (handle like sealed trait....)
-    [ ] - SelfRef
-    [ ] - Tuple
-    [ ] - Unknown (throw exception)
-    [ ] - Scala 2 (throw exception)
-    [ ] - TypeSymbol (throw exception)
-    [ ] - Value class
+   Code  Test
+    [*]   [W] - Primitive types
+    [*]   [W] - Simple Types
 
-    [ ] -- type hint label mapping
-    [ ] -- type hint value mapping
-    [ ] -- update runtime-size TraitRType handling to match new compile-time code
+    [*]   [W] - Seq/Set/Array
+    [*]   [W] - Map
+    [*]   [W] - Java Collections
+    [*]   [W] - Java Map
+    [*]   [W] - Tuple
+
+    [*]   [ ] - Scala case class
+    [*]   [ ] - Scala non-case class
+    [*]   [ ] - Java class
+    [*]   [ ] - Sealed Trait
+    [*]   [ ] - Sealed Abstract Class (handle like sealed trait....)
+
+    [*]   [ ] - Option/Optional
+    [*]   [ ] - Either
+    [*]   [ ] - Intersection
+    [*]   [ ] - Union
+    [*]   [ ] - Enum
+    [*]   [ ] - Enumeration
+    [*]   [ ] - Java Enum
+    [*]   [ ] - Alias type
+    [*]   [ ] - Object
+    [*]   [ ] - SelfRef
+    [ ]   [ ] - TryRef
+    [*]   [X] - Unknown (throw exception)
+    [*]   [X] - Scala 2 (throw exception)
+    [*]   [X] - TypeSymbol (throw exception)
+    [*]   [W] - Value class (tested in MapSpec)
+
+    [*]   [ ] - type hint label mapping
+    [*]   [ ] - type hint value mapping
 
     [ ] -- Streaming JSON write support
     [ ] -- BigJSON support (eg. multi-gig file)

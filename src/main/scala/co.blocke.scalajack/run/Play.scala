@@ -22,16 +22,19 @@ object RunMe extends App:
     import json.*
     import ScalaJack.*
 
-    implicit val blah: ScalaJack[Foo] = sj[Foo](JsonConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
+    val inst = Blah("wow", Some(111)) // Some(Some(None))) // Some(Some(3)))
+    val js = sj[Blah].toJson(inst)
+    println(js)
 
     // co.blocke.scalajack.internal.CodePrinter.code {
     //   sj[Record]
     // }
 
-    val v = Foo("Hey", Fish("Bloop", false))
+    // val y = Foo("You", Dog("Fido", 4), None)
+    // val v = Foo("Hey", Fish("Bloop", None), None, Color.Blue)
     // val v = Foo("Hey", "Boo")
 
-    println(ScalaJack[Foo].toJson(v))
+    // println(ScalaJack[Foo].toJson(v))
     // println(sj[Foo](JsonConfig.withTypeHintLabel("bogus")).toJson(v))
 
     // println(sj[Record].toJson(record))

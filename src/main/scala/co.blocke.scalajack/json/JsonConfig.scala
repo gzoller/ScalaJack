@@ -8,33 +8,49 @@ import scala.quoted.*
 
 class JsonConfig private[scalajack] (
     val noneAsNull: Boolean,
-    // forbidNullsInInput: Boolean = false,
-    // tryFailureHandling: TryOption = TryOption.NO_WRITE,
-    // undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
-    // permissivePrimitives: Boolean = false,
-    // writeNonConstructorFields: Boolean = false,
+    // val forbidNullsInInput: Boolean = false,
+    val tryFailureHandling: TryPolicy,
+    val eitherLeftHandling: EitherLeftPolicy,
+    // val undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
+    // val permissivePrimitives: Boolean = false,
+    val writeNonConstructorFields: Boolean,
     // --------------------------
     val typeHintLabel: String,
-    val typeHintPolicy: TypeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME
+    val typeHintPolicy: TypeHintPolicy,
     // --------------------------
-    // enumsAsIds: Option[List[String]] = None // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
+    val enumsAsIds: Option[List[String]] // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
 ):
   def withNoneAsNull(nan: Boolean): JsonConfig = copy(noneAsNull = nan)
+  def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
+  def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): JsonConfig = copy(eitherLeftHandling = eitherPolicy)
+  def withWriteNonConstructorFields(nonConstFlds: Boolean): JsonConfig = copy(writeNonConstructorFields = nonConstFlds)
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
+  def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
+      tryFailureHandling: TryPolicy = tryFailureHandling,
+      eitherLeftHandling: EitherLeftPolicy = eitherLeftHandling,
+      writeNonConstructorFields: Boolean = writeNonConstructorFields,
       typeHintLabel: String = typeHintLabel,
-      typeHintPolicy: TypeHintPolicy = typeHintPolicy
+      typeHintPolicy: TypeHintPolicy = typeHintPolicy,
+      enumsAsIds: Option[List[String]] = enumsAsIds
   ): JsonConfig = new JsonConfig(
     noneAsNull,
+    tryFailureHandling,
+    eitherLeftHandling,
+    writeNonConstructorFields,
     typeHintLabel,
-    typeHintPolicy
+    typeHintPolicy,
+    enumsAsIds
   )
 
-enum TryOption:
+enum TryPolicy:
   case AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
+
+enum EitherLeftPolicy:
+  case AS_VALUE, AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
 
 enum UndefinedValueOption:
   case AS_NULL, AS_SYMBOL, THROW_EXCEPTION
@@ -45,8 +61,12 @@ enum TypeHintPolicy:
 object JsonConfig
     extends JsonConfig(
       noneAsNull = false,
+      tryFailureHandling = TryPolicy.NO_WRITE,
+      eitherLeftHandling = EitherLeftPolicy.NO_WRITE,
+      writeNonConstructorFields = true,
       typeHintLabel = "_hint",
-      typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME
+      typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
+      enumsAsIds = None
     ):
   import scala.quoted.FromExpr.*
 
@@ -64,13 +84,14 @@ object JsonConfig
               JsonConfig(
                 $noneAsNullE,
                 // $forbitNullsInInputE,
-                // $tryFailureHandlerE,
+                $tryFailureHandlerE,
+                $eitherLeftHandlerE,
                 // $undefinedFieldHandlingE,
                 // $permissivePrimitivesE,
-                // $writeNonConstructorFieldsE,
+                $writeNonConstructorFieldsE,
                 $typeHintLabelE,
-                $typeHintPolicyE
-                // $enumsAsIdsE
+                $typeHintPolicyE,
+                $enumsAsIdsE
               )
             } =>
           try
@@ -78,14 +99,15 @@ object JsonConfig
               JsonConfig(
                 extract("noneAsNull", noneAsNullE),
                 // extract("forbitNullsInInput", forbitNullsInInputE),
-                // extract("tryFailureHandler", tryFailureHandlerE),
+                extract("tryFailureHandler", tryFailureHandlerE),
+                extract("eitherLeftHandler", eitherLeftHandlerE),
                 // extract("undefinedFieldHandling", undefinedFieldHandlingE),
                 // extract("permissivePrimitives", permissivePrimitivesE),
-                // extract("writeNonConstructorFields", writeNonConstructorFieldsE),
+                extract("writeNonConstructorFields", writeNonConstructorFieldsE),
                 // extract2[String]("typeHintLabel", x)
                 extract("typeHintLabel", typeHintLabelE),
-                extract("typeHintPolicy", typeHintPolicyE)
-                // extract("enumsAsIds", enumsAsIdsE)
+                extract("typeHintPolicy", typeHintPolicyE),
+                extract("enumsAsIds", enumsAsIdsE)
               )
             )
           catch {
@@ -93,23 +115,38 @@ object JsonConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ JsonConfig }                              => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull($v) }     => Some(x.valueOrAbort.withNoneAsNull(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintLabel($v) }  => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintPolicy($v) } => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ JsonConfig }                                         => Some(JsonConfig)
+        case '{ ($x: JsonConfig).withNoneAsNull($v) }                => Some(x.valueOrAbort.withNoneAsNull(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withTryFailureHandling($v) }        => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }        => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withWriteNonConstructorFields($v) } => Some(x.valueOrAbort.withWriteNonConstructorFields(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
         case z =>
           println("Z: " + z.show)
           None
   }
 
-  private[scalajack] given FromExpr[TryOption] with {
-    def unapply(x: Expr[TryOption])(using Quotes): Option[TryOption] =
+  private[scalajack] given FromExpr[TryPolicy] with {
+    def unapply(x: Expr[TryPolicy])(using Quotes): Option[TryPolicy] =
       import quotes.reflect.*
       x match
-        case '{ TryOption.AS_NULL }         => Some(TryOption.AS_NULL)
-        case '{ TryOption.NO_WRITE }        => Some(TryOption.NO_WRITE)
-        case '{ TryOption.ERR_MSG_STRING }  => Some(TryOption.ERR_MSG_STRING)
-        case '{ TryOption.THROW_EXCEPTION } => Some(TryOption.THROW_EXCEPTION)
+        case '{ TryPolicy.AS_NULL }         => Some(TryPolicy.AS_NULL)
+        case '{ TryPolicy.NO_WRITE }        => Some(TryPolicy.NO_WRITE)
+        case '{ TryPolicy.ERR_MSG_STRING }  => Some(TryPolicy.ERR_MSG_STRING)
+        case '{ TryPolicy.THROW_EXCEPTION } => Some(TryPolicy.THROW_EXCEPTION)
+  }
+
+  private[scalajack] given FromExpr[EitherLeftPolicy] with {
+    def unapply(x: Expr[EitherLeftPolicy])(using Quotes): Option[EitherLeftPolicy] =
+      import quotes.reflect.*
+      x match
+        case '{ EitherLeftPolicy.AS_VALUE }        => Some(EitherLeftPolicy.AS_VALUE)
+        case '{ EitherLeftPolicy.AS_NULL }         => Some(EitherLeftPolicy.AS_NULL)
+        case '{ EitherLeftPolicy.NO_WRITE }        => Some(EitherLeftPolicy.NO_WRITE)
+        case '{ EitherLeftPolicy.ERR_MSG_STRING }  => Some(EitherLeftPolicy.ERR_MSG_STRING)
+        case '{ EitherLeftPolicy.THROW_EXCEPTION } => Some(EitherLeftPolicy.THROW_EXCEPTION)
   }
 
   private[scalajack] given FromExpr[UndefinedValueOption] with {

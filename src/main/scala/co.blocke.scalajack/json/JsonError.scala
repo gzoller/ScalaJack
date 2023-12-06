@@ -5,6 +5,7 @@ class JsonIllegalKeyType(msg: String) extends Throwable(msg)
 class JsonNullKeyValue(msg: String) extends Throwable(msg)
 class JsonUnsupportedType(msg: String) extends Throwable(msg)
 class JsonConfigError(msg: String) extends Throwable(msg)
+class JsonEitherLeftError(msg: String) extends Throwable(msg)
 
 class ParseError(val msg: String) extends Throwable(msg):
   val show: String = ""

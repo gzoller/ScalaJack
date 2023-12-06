@@ -36,13 +36,25 @@ case class Record(
     pets: List[Pet]
 )
 
+case class Empl(name: String, age: Int)
+case class Foo(a: Empl, b: List[Empl])
+case class Blah(a: String, b: String | Option[Int])
+/*
+case class ArrayHolder[T](a: Array[T])
+
 // case class Foo(name: String, maybe: Option[Int], age: Int, expected: String = "nada", gotit: Option[Int] = Some(5))
-case class Foo(name: String, a: Animal, expected: String = "nada")
+case class Foo(name: String, a: Animal, other: Option[Foo], color: Color, expected: String = "nada")
 // case class Foo(name: String, age: Int, expected: String = "nada")
 
+enum Color:
+  case Red, Blue, Green
+
 sealed trait Animal
+@TypeHint(hintValue = "bow-wow")
 case class Dog(name: String, numLegs: Int) extends Animal
-case class Fish(name: String, isFreshwater: Boolean) extends Animal
+@TypeHint(hintValue = "flippy")
+case class Fish(name: String, isFreshwater: Option[Boolean]) extends Animal
+ */
 
 val jsData =
   """{

@@ -3,13 +3,17 @@ package json
 package writing
 
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+import scala.jdk.CollectionConverters.*
 import scala.quoted.*
+import dotty.tools.dotc.ast.Trees.EmptyTree
 
 object JsonCodecMaker:
 
-  def generateCodecFor[T](ref: RTypeRef[T], cfg: JsonConfig)(using Quotes)(using tt: Type[T]) =
-    import quotes.reflect.*
+  def generateCodecFor[T](ref: RTypeRef[T], cfg: JsonConfig)(using q: Quotes)(using tt: Type[T]) =
+    import q.reflect.*
 
     // Cache generated method Symbols + an array of the generated functions (DefDef)
     case class MethodKey(ref: RTypeRef[?], isStringified: Boolean) // <-- TODO: Not clear what isStringified does here...
@@ -45,6 +49,156 @@ object JsonCodecMaker:
         List(arg.asTerm, out.asTerm)
       ).asExprOf[Unit]
 
+    // ---------------------------------------------------------------------------------------------
+
+    def maybeWrite[T](label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+      val labelE = Expr(label)
+      _maybeWrite[T](
+        '{ $out.label($labelE) },
+        aE,
+        ref,
+        out,
+        cfg
+      )
+
+    def maybeWriteMap[K, V](keyE: Expr[K], valueE: Expr[V], keyRef: RTypeRef[K], valueRef: RTypeRef[V], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+      keyRef.refType match
+        case '[k] =>
+          _maybeWrite[V](
+            '{
+              $out.maybeComma()
+              ${ genWriteVal(keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, true) }
+              $out.colon()
+            },
+            valueE,
+            valueRef,
+            out,
+            cfg
+          )
+
+    // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
+    // Affected types: Option, java.util.Optional, Left/Right, Try/Failure
+    // Returns Expr[Unit] containing either the original phrase (if ok to write) or the phrase
+    // prepended with the type-appropriate runtime check.  This may seem like drama, but the idea
+    // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
+    def _maybeWrite[T](prefix: Expr[Unit], aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+      ref match
+        case t: ScalaOptionRef[?] if !cfg.noneAsNull =>
+          t.optionParamType.refType match
+            case '[e] =>
+              val tin = aE.asExprOf[Option[e]]
+              '{
+                $tin match
+                  case None    => ()
+                  case Some(v) => ${ _maybeWrite[e](prefix, '{ v }.asExprOf[e], t.optionParamType.asInstanceOf[RTypeRef[e]], out, cfg) }
+              }
+        case t: JavaOptionalRef[?] if !cfg.noneAsNull =>
+          t.optionParamType.refType match
+            case '[e] =>
+              val tin = aE.asExprOf[java.util.Optional[e]]
+              '{
+                if ! $tin.isEmpty then ${ _maybeWrite[e](prefix, '{ $tin.get }.asExprOf[e], t.optionParamType.asInstanceOf[RTypeRef[e]], out, cfg) }
+              }
+        case t: TryRef[?] =>
+          t.tryRef.refType match
+            case '[e] =>
+              val tin = aE.asExprOf[scala.util.Try[e]]
+              '{
+                $tin match
+                  case scala.util.Failure(v) =>
+                    ${
+                      cfg.tryFailureHandling match
+                        case TryPolicy.AS_NULL =>
+                          '{
+                            $prefix
+                            $out.burpNull()
+                          }
+                        case TryPolicy.NO_WRITE => '{ () }
+                        case TryPolicy.ERR_MSG_STRING =>
+                          '{
+                            $prefix
+                            $out.value("Try Failure with msg: " + v.getMessage())
+                          }
+                        case TryPolicy.THROW_EXCEPTION => '{ throw v }
+                    }
+                  case _ => ${ _maybeWrite[e](prefix, '{ $tin.get }.asExprOf[e], t.tryRef.asInstanceOf[RTypeRef[e]], out, cfg) }
+              }
+        case t: LeftRightRef[?] if t.lrkind == LRKind.EITHER =>
+          t.refType match
+            case '[u] =>
+              val tin = aE.asExprOf[u]
+              t.rightRef.refType match
+                case '[rt] =>
+                  cfg.eitherLeftHandling match
+                    case EitherLeftPolicy.NO_WRITE =>
+                      '{
+                        if $tin == null then $out.burpNull()
+                        $tin match
+                          case Left(_)  => ()
+                          case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                      }
+                    case EitherLeftPolicy.AS_NULL =>
+                      '{
+                        if $tin == null then $out.burpNull()
+                        $tin match
+                          case Left(_)  => $out.burpNull()
+                          case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                      }
+                    case EitherLeftPolicy.ERR_MSG_STRING =>
+                      '{
+                        if $tin == null then $out.burpNull()
+                        $tin match
+                          case Left(err) =>
+                            $prefix
+                            $out.value("Left Error: " + err.toString)
+                          case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                      }
+                    case EitherLeftPolicy.THROW_EXCEPTION =>
+                      '{
+                        if $tin == null then $out.burpNull()
+                        $tin match
+                          case Left(err) => throw new JsonEitherLeftError("Left Error: " + err.toString)
+                          case Right(v)  => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                      }
+                    case EitherLeftPolicy.AS_VALUE =>
+                      t.leftRef.refType match
+                        case '[lt] =>
+                          '{
+                            if $tin == null then $out.burpNull()
+                            $tin match
+                              case Left(v)  => ${ _maybeWrite[lt](prefix, '{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
+                              case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                          }
+        case t: LeftRightRef[?] if !cfg.noneAsNull && t.lrkind != LRKind.EITHER && (t.leftRef.isInstanceOf[OptionRef[_]] || t.rightRef.isInstanceOf[OptionRef[_]]) =>
+          t.refType match
+            case '[e] =>
+              t.rightRef.refType match
+                case '[rt] =>
+                  t.leftRef.refType match
+                    case '[lt] =>
+                      val tin = aE.asExprOf[e]
+                      '{
+                        if $tin == None then ()
+                        else
+                          $out.mark()
+                          scala.util.Try {
+                            ${ _maybeWrite[rt](prefix, '{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                          } match
+                            case scala.util.Success(_) => ()
+                            case scala.util.Failure(_) =>
+                              $out.revert()
+                              ${ _maybeWrite[lt](prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
+                      }
+        case _ =>
+          ref.refType match
+            case '[u] =>
+              '{
+                $prefix
+                ${ genWriteVal[u](aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out) }
+              }
+
+    // ---------------------------------------------------------------------------------------------
+
     def genFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false)(using Quotes): Expr[Unit] =
       r.refType match
         case '[b] =>
@@ -53,13 +207,15 @@ object JsonCodecMaker:
               makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
-                    val tin = in.asExprOf[Array[e]]
+                    val tin = in.asInstanceOf[Expr[Array[e]]]
                     '{
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startArray()
+                        $tin.foreach { i =>
+                          ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                        }
+                        $out.endArray()
                     }
               }
 
@@ -69,11 +225,13 @@ object JsonCodecMaker:
                   case '[e] =>
                     val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Seq[e]] else in.asExprOf[Seq[e]]
                     '{
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startArray()
+                        $tin.foreach { i =>
+                          ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                        }
+                        $out.endArray()
                     }
               }
 
@@ -83,35 +241,61 @@ object JsonCodecMaker:
                   case '[e] =>
                     val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Set[e]] else in.asExprOf[Set[e]]
                     '{
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startArray()
+                        $tin.foreach { i =>
+                          ${ genWriteVal('{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                        }
+                        $out.endArray()
                     }
               }
 
+            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass => // basically just like sealed trait...
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                if t.childrenAreObject then
+                  // case object -> just write the simple name of the object
+                  '{
+                    $out.value($in.getClass.getName.split('.').last.stripSuffix("$"))
+                  }
+                else
+                  val cases = t.sealedChildren.map { child =>
+                    child.refType match
+                      case '[c] =>
+                        val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
+                        val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
+                        CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
+                  } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
+                  val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
+                  '{
+                    if $in == null then $out.burpNull()
+                    else $matchExpr
+                  }
+              }
+
+            // We don't use makeFn here because a value class is basically just a "box" around a simple type
+            case t: ScalaClassRef[?] if t.isValueClass =>
+              val theField = t.fields.head.fieldRef
+              theField.refType match
+                case '[e] =>
+                  val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
+                  genWriteVal(fieldValue, theField.asInstanceOf[RTypeRef[e]], out)
+
             case t: ScalaClassRef[?] =>
               makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-                val tin = in.asExprOf[b]
                 val body = {
                   val eachField = t.fields.map { f =>
                     f.fieldRef.refType match
                       case '[z] =>
-                        val fname = Expr(f.name)
-                        val fieldValue = Select.unique(tin.asTerm, f.name).asExprOf[z]
-                        '{
-                          $out.label($fname)
-                          ${ genWriteVal(fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out) }
-                        }
+                        val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
+                        maybeWrite[z](f.name, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }
                   if emitDiscriminator then
                     val cname = cfg.typeHintPolicy match
-                      case TypeHintPolicy.SIMPLE_CLASSNAME => Expr(lastPart(t.name))
-                      case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
-                        val hash = Expr(lastPart(t.name).hashCode)
-                        '{ scramble($hash) }
-                      case TypeHintPolicy.USE_ANNOTATION => ???
+                      case TypeHintPolicy.SIMPLE_CLASSNAME   => Expr(lastPart(t.name))
+                      case TypeHintPolicy.SCRAMBLE_CLASSNAME => '{ scramble(${ Expr(lastPart(t.name).hashCode) }) }
+                      case TypeHintPolicy.USE_ANNOTATION =>
+                        Expr(t.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(t.name)))
                     val withDisc = '{
                       $out.label(${ Expr(cfg.typeHintLabel) })
                       $out.value($cname)
@@ -120,35 +304,125 @@ object JsonCodecMaker:
                   else if eachField.length == 1 then eachField.head
                   else Expr.block(eachField.init, eachField.last)
                 }
-                '{
-                  $out.startObject()
-                  $body
-                  $out.endObject()
-                }
+
+                if !t.isCaseClass && cfg.writeNonConstructorFields then
+                  val eachField = t.nonConstructorFields.map { f =>
+                    f.fieldRef.refType match
+                      case '[e] =>
+                        val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
+                        maybeWrite[e](f.name, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
+                  }
+                  val subBody = eachField.length match
+                    case 0 => '{}
+                    case 1 => eachField.head
+                    case _ => Expr.block(eachField.init, eachField.last)
+                  '{
+                    if $in == null then $out.burpNull()
+                    else
+                      $out.startObject()
+                      $body
+                      $subBody
+                      $out.endObject()
+                  }
+                else
+                  '{
+                    if $in == null then $out.burpNull()
+                    else
+                      $out.startObject()
+                      $body
+                      $out.endObject()
+                  }
               }
 
             case t: MapRef[?] =>
-              t.elementRef.refType match
-                case '[k] =>
-                  makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                t.elementRef.refType match
+                  case '[k] =>
                     t.elementRef2.refType match
                       case '[v] =>
                         val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Map[k, v]] else in.asExprOf[Map[k, v]]
                         '{
-                          $out.startObject()
-                          $tin.foreach { case (k, v) =>
-                            $out.maybeComma()
-                            ${ genWriteVal('{ k }, t.elementRef.asInstanceOf[RTypeRef[k]], out, true) }
-                            $out.colon()
-                            ${ genWriteVal('{ v }, t.elementRef2.asInstanceOf[RTypeRef[v]], out) }
-                          }
-                          $out.endObject()
+                          if $tin == null then $out.burpNull()
+                          else
+                            $out.startObject()
+                            $tin.foreach { case (key, value) =>
+                              ${
+                                maybeWriteMap[k, v]('{ key }, '{ value }.asExprOf[v], t.elementRef.asInstanceOf[RTypeRef[k]], t.elementRef2.asInstanceOf[RTypeRef[v]], out, cfg)
+                              }
+                            }
+                            $out.endObject()
                         }
-                  }
+              }
+
+            case t: JavaCollectionRef[?] =>
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                t.elementRef.refType match
+                  case '[e] =>
+                    val tin = in.asExprOf[java.util.Collection[_]]
+                    '{
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startArray()
+                        $tin.toArray.foreach { elem =>
+                          ${ genWriteVal('{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                        }
+                        $out.endArray()
+                    }
+              }
+
+            case t: JavaMapRef[?] =>
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                t.elementRef.refType match
+                  case '[k] =>
+                    t.elementRef2.refType match
+                      case '[v] =>
+                        val tin = in.asExprOf[java.util.Map[k, v]]
+                        '{
+                          if $tin == null then $out.burpNull()
+                          else
+                            $out.startObject()
+                            $tin.asScala.foreach { case (key, value) =>
+                              ${
+                                maybeWriteMap[k, v]('{ key }, '{ value }.asExprOf[v], t.elementRef.asInstanceOf[RTypeRef[k]], t.elementRef2.asInstanceOf[RTypeRef[v]], out, cfg)
+                              }
+                            }
+                            $out.endObject()
+                        }
+              }
+
+            case t: JavaClassRef[?] =>
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                t.refType match
+                  case '[p] =>
+                    val rtype = t.expr.asExprOf[JavaClassRType[p]]
+                    val tin = aE.asExprOf[b]
+                    var fieldRefs = t.fields.asInstanceOf[List[NonConstructorFieldInfoRef]]
+                    val fieldNames = t.fields.map(_.name)
+                    var i = -1
+                    '{
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startObject()
+                        val rt = $rtype
+                        rt.fields.foreach { f =>
+                          val field = f.asInstanceOf[NonConstructorFieldInfo]
+                          val m = $tin.getClass.getMethod(field.getterLabel)
+                          m.setAccessible(true)
+                          val fieldValue = m.invoke($tin)
+                          ${
+                            val ref = fieldRefs.head
+                            fieldRefs = fieldRefs.tail
+                            ref.fieldRef.refType match
+                              case '[e] =>
+                                i += 1
+                                maybeWrite[e](fieldNames(i), '{ fieldValue }.asExprOf[e], ref.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
+                          }
+                        }
+                        $out.endObject()
+                    }
+              }
 
             case t: TraitRef[?] =>
-              // classesSeen.put(t.typedName, t)
-              // val rt = t.expr.asInstanceOf[Expr[TraitRType[T]]]
               if !t.isSealed then throw new JsonUnsupportedType("Non-sealed traits are not supported")
               if t.childrenAreObject then
                 // case object -> just write the simple name of the object
@@ -158,17 +432,9 @@ object JsonCodecMaker:
                 }
               else
                 // So... sealed trait children could be any of those defined for the trait.  We need to
-                // generate functions for each child then a master function that examines $aE and based on
-                // its value, call the appropriate function to render.
-                // val beforeKeys = methodSyms.keySet
-                // t.sealedChildren.foreach { child =>
-                //   child.refType match
-                //     case '[c] =>
-                //       genFnBody[c](child, aE.asExprOf[c], out)
-                // }
-                // Now generate and return the calling function based on runtime type
-                // Refer to Jsoniter: JsonCodecMaker.scala around line 920 for example how to do this, incl a wildcard, which
-                // we don't need here.
+                // generate a match/case statement that in turn generates render functions for each
+                // child of the sealed trait.
+                // Refer to Jsoniter: JsonCodecMaker.scala around line 920 for example how to do this, incl a wildcard.
                 val cases = t.sealedChildren.map { child =>
                   child.refType match
                     case '[c] =>
@@ -177,7 +443,190 @@ object JsonCodecMaker:
                       CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
-                matchExpr
+                // Generating a function for a single match might be overkill, but... there may be a lot of cases, and/or
+                // this sealed trait may be used a lot of times, so... its a trade-off
+                makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                  matchExpr
+                }
+
+            // No makeFn here--Option is just a wrapper to the real thingy
+            case t: OptionRef[?] =>
+              t.optionParamType.refType match
+                case '[e] =>
+                  val tin = aE.asExprOf[b]
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else
+                      $tin match
+                        case None =>
+                          ${
+                            if cfg.noneAsNull then '{ $out.burpNull() }
+                            else '{ () }
+                          }
+                        case Some(v) =>
+                          val vv = v.asInstanceOf[e]
+                          ${ genWriteVal[e]('{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                  }
+
+            // No makeFn here... SelfRef is referring to something we've already seen before.  There absolutely should already be a geneated
+            // and cached function for this thing that we can call.
+            case t: SelfRefRef[?] =>
+              t.refType match
+                case '[e] =>
+                  val key = MethodKey(ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean]), false)
+                  val sym = methodSyms(key)
+                  val tin = aE.asExprOf[b]
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else ${ Ref(sym).appliedTo(tin.asTerm, out.asTerm).asExprOf[Unit] }
+                  }
+
+            // No makeFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
+            case t: LeftRightRef[?] =>
+              val tin = aE.asExprOf[b]
+              t.leftRef.refType match
+                case '[lt] =>
+                  t.rightRef.refType match
+                    case '[rt] =>
+                      // This is a close parallel with maybeWrite handling of Either.  If the Either is a field in a class or
+                      // Map, the maybeWrite logic applies--because we need to not write both the Either value AND the field label.
+                      // If the Either is part of a tuple, Seq, etc., then this logic applies.
+                      if t.lrkind == LRKind.EITHER then
+                        cfg.eitherLeftHandling match
+                          case EitherLeftPolicy.AS_VALUE =>
+                            '{
+                              if $tin == null then $out.burpNull()
+                              else
+                                $tin match
+                                  case Left(v) =>
+                                    ${ genWriteVal[lt]('{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
+                                  case Right(v) =>
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            }
+                          case EitherLeftPolicy.AS_NULL =>
+                            '{
+                              if $tin == null then $out.burpNull()
+                              else
+                                $tin match
+                                  case Left(v) => $out.burpNull()
+                                  case Right(v) =>
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            }
+                          case EitherLeftPolicy.NO_WRITE =>
+                            '{
+                              if $tin == null then $out.burpNull()
+                              else
+                                $tin match
+                                  case Left(v) => ()
+                                  case Right(v) =>
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            }
+                          case EitherLeftPolicy.ERR_MSG_STRING =>
+                            '{
+                              if $tin == null then $out.burpNull()
+                              else
+                                $tin match
+                                  case Left(v) => $out.value("Left Error: " + v.toString)
+                                  case Right(v) =>
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            }
+                          case EitherLeftPolicy.THROW_EXCEPTION =>
+                            '{
+                              if $tin == null then $out.burpNull()
+                              else
+                                $tin match
+                                  case Left(v) => throw new JsonEitherLeftError("Left Error: " + v.toString)
+                                  case Right(v) =>
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            }
+                      else
+                        '{
+                          $out.mark()
+                          scala.util.Try {
+                            ${ genWriteVal[rt]('{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                          } match
+                            case scala.util.Success(_) => ()
+                            case scala.util.Failure(_) =>
+                              $out.revert()
+                              ${ genWriteVal[lt]('{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
+                        }
+
+            // No makeFn here.  Try is just a wrapper
+            case t: TryRef[?] =>
+              t.tryRef.refType match
+                case '[e] =>
+                  val tin = aE.asExprOf[scala.util.Try[e]]
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else
+                      $tin match
+                        case scala.util.Success(v) =>
+                          ${ genWriteVal[e]('{ v }.asInstanceOf[Expr[e]], t.tryRef.asInstanceOf[RTypeRef[e]], out) }
+                        case scala.util.Failure(v) =>
+                          ${
+                            cfg.tryFailureHandling match
+                              case TryPolicy.AS_NULL         => '{ $out.burpNull() }
+                              case TryPolicy.NO_WRITE        => '{ () }
+                              case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage()) }
+                              case TryPolicy.THROW_EXCEPTION => '{ throw v }
+                          }
+                  }
+
+            case t: TupleRef[?] =>
+              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                '{
+                  if $in == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    ${
+                      // Note: Don't use maybeWrite here... Tuples are fixed-length.  We need to write
+                      // something for every position, so write null for None or other "bad" values
+                      val elementsE = t.tupleRefs.zipWithIndex.map { case (ref, i) =>
+                        ref.refType match
+                          case '[e] =>
+                            val fieldValue = Select.unique(in.asTerm, "_" + (i + 1)).asExprOf[e]
+                            // Special handling if field type is Option and value is None.
+                            ref match
+                              case _: OptionRef[?] =>
+                                '{
+                                  if $fieldValue == None then $out.burpNull()
+                                  else ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
+                                }
+                              case _: TryRef[?] =>
+                                '{
+                                  $fieldValue match
+                                    case scala.util.Failure(_)    => $out.burpNull()
+                                    case scala.util.Success(None) => $out.burpNull()
+                                    case _                        => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
+                                }
+                              case r: LeftRightRef[?] if r.lrkind != LRKind.EITHER =>
+                                if r.leftRef.isInstanceOf[TryRef[_]] || r.rightRef.isInstanceOf[TryRef[_]] then
+                                  '{
+                                    $fieldValue match
+                                      case scala.util.Failure(_)    => $out.burpNull()
+                                      case scala.util.Success(None) => $out.burpNull()
+                                      case _                        => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
+                                  }
+                                else if r.leftRef.isInstanceOf[OptionRef[_]] || r.rightRef.isInstanceOf[OptionRef[_]] then
+                                  '{
+                                    $fieldValue match
+                                      case None => $out.burpNull()
+                                      case _    => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
+                                  }
+                                else genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out)
+                              case _ =>
+                                genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out)
+                      }
+                      if elementsE.size == 1 then elementsE.head
+                      else Expr.block(elementsE.init, elementsE.last)
+                    }
+                    $out.endArray()
+                }
+              }
+
+            case t => throw new JsonUnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
+
+    // ---------------------------------------------------------------------------------------------
 
     def genWriteVal[T: Type](
         aE: Expr[T],
@@ -275,12 +724,27 @@ object JsonCodecMaker:
             case t: ZoneIdRef         => '{ $out.value(${ aE.asExprOf[java.time.ZoneId] }) }
             case t: ZoneOffsetRef     => '{ $out.value(${ aE.asExprOf[java.time.ZoneOffset] }) }
 
-            case t: UUIDRef => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
+            case t: UUIDRef   => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
+            case t: ObjectRef => '{ $out.value(${ Expr(t.name) }) }
 
             case t: AliasRef[?] =>
               t.unwrappedType.refType match
                 case '[e] =>
                   genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out)
+
+            // These one's here becaue Enums and their various flavors can be Map keys
+            // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
+            case t: EnumRef[?] =>
+              val enumAsId = cfg.enumsAsIds match
+                case None                                => false
+                case Some(Nil)                           => true
+                case Some(list) if list.contains(t.name) => true
+                case _                                   => false
+              val rtype = t.expr
+              if enumAsId then
+                if isStringified then '{ $out.label($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) }
+                else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
+              else '{ $out.value($aE.toString) }
 
             // Everything else...
             case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")

@@ -35,7 +35,7 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"            %% "scala-reflection"     % "sj_fixes_3a7daa",
+      "co.blocke"            %% "scala-reflection"     % "sj_fixes_f43af7",
       "org.apache.commons"   % "commons-text"          % "1.10.0",
       "io.github.kitlangton" %% "neotype"              % "0.0.9",
       "org.scalatest"        %% "scalatest"            % "3.2.17" % Test,

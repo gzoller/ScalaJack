@@ -2,7 +2,47 @@ Path to Performance
 -------------------
 
 [ ] - Fix string value in JsonOutput to handle escaping " and anything else--maybe use apache library 
+      (Make it a config option (for speed) to handle escaped string values or not--in the case where you know your strings are pure)
 
-[ ] - Study Jsoniter and how it propagates its write config between compile-time and run-time (usage too)
-      Ideally we'd love to be able to see cfg at compile-time and geneate accordingly.... Right now,
-      ScalaJack's config is purely runtime, which is less convenient for us...
+[ ] - Add enum as a map key to MapSpec
+
+[ ] - Implement special Tuple handling for Either and write Seq/Tuple Either tests
+
+  Fature Support:
+   Code  Test
+    [*]   [W] - Primitive types
+    [*]   [W] - Simple Types
+
+    [*]   [W] - Seq/Set/Array
+    [*]   [W] - Map
+    [*]   [W] - Java Collections
+    [*]   [W] - Java Map
+    [*]   [W] - Tuple
+
+    [*]   [ ] - Scala case class
+    [*]   [ ] - Scala non-case class
+    [*]   [ ] - Java class
+    [*]   [ ] - Sealed Trait
+    [*]   [ ] - Sealed Abstract Class (handle like sealed trait....)
+
+    [*]   [W] - Option/Optional
+    [*]   [ ] - Either
+    [*]   [W] - Intersection
+    [*]   [W] - Union
+    [*]   [ ] - Enum
+    [*]   [ ] - Enumeration
+    [*]   [ ] - Java Enum
+    [*]   [ ] - Alias type
+    [*]   [ ] - Object
+    [*]   [ ] - SelfRef
+    [*]   [W] - TryRef
+    [*]   [X] - Unknown (throw exception)
+    [*]   [X] - Scala 2 (throw exception)
+    [*]   [X] - TypeSymbol (throw exception)
+    [*]   [W] - Value class (tested in MapSpec)
+
+    [*]   [ ] - type hint label mapping
+    [*]   [ ] - type hint value mapping
+
+    [ ] -- Streaming JSON write support
+    [ ] -- BigJSON support (eg. multi-gig file)

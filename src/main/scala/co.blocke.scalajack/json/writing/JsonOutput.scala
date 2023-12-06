@@ -4,16 +4,28 @@ package writing
 
 import java.time.format.DateTimeFormatter.*
 
+/** Wrapper around a StringBuilder that offers support for primitive types,
+  * including quotes-wrapping those that need it for use in Map keys (aka stringified).
+  * Handles dangling commas/separators, plus mark & revert capability.  It is reusable
+  * via clear() for speed -- one per thread, of course!
+  */
 case class JsonOutput():
   val internal: StringBuilder = new StringBuilder()
 
   private var comma: Boolean = false
+  private var savePoint: Int = 0
 
   def result = internal.result
 
   def clear() =
     internal.clear()
     this
+
+  def mark() =
+    savePoint = internal.length
+
+  def revert() = // delete everything after the set savePoint
+    internal.setLength(savePoint)
 
   inline def startObject(): Unit =
     maybeComma()

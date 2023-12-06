@@ -11,7 +11,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
 
-class ScalaPrim() extends AnyFunSpec with JsonMatchers:
+class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("---------------------------\n:  Scala Primitive Tests  :\n---------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
