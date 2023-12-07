@@ -1,13 +1,6 @@
 Path to Performance
 -------------------
 
-[ ] - Fix string value in JsonOutput to handle escaping " and anything else--maybe use apache library 
-      (Make it a config option (for speed) to handle escaped string values or not--in the case where you know your strings are pure)
-
-[ ] - Add enum as a map key to MapSpec
-
-[ ] - Implement special Tuple handling for Either and write Seq/Tuple Either tests
-
   Fature Support:
    Code  Test
     [*]   [W] - Primitive types
@@ -22,19 +15,19 @@ Path to Performance
     [*]   [ ] - Scala case class
     [*]   [ ] - Scala non-case class
     [*]   [ ] - Java class
+    [*]   [ ] - SelfRef
     [*]   [ ] - Sealed Trait
     [*]   [ ] - Sealed Abstract Class (handle like sealed trait....)
 
     [*]   [W] - Option/Optional
-    [*]   [ ] - Either
+    [*]   [W] - Either
     [*]   [W] - Intersection
     [*]   [W] - Union
-    [*]   [ ] - Enum
-    [*]   [ ] - Enumeration
-    [*]   [ ] - Java Enum
-    [*]   [ ] - Alias type
-    [*]   [ ] - Object
-    [*]   [ ] - SelfRef
+    [*]   [W] - Enum (tested as part of Map tests)
+    [*]   [W] - Enumeration (tested as part of Map tests)
+    [*]   [W] - Java Enum (tested as part of Map tests)
+    [*]   [W] - Alias type
+    [*]   [X] - Object (recommend do not use except for case objects for sealed traits/classes)
     [*]   [W] - TryRef
     [*]   [X] - Unknown (throw exception)
     [*]   [X] - Scala 2 (throw exception)

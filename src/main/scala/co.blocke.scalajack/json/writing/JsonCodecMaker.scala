@@ -9,6 +9,8 @@ import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstruc
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
 import dotty.tools.dotc.ast.Trees.EmptyTree
+import org.apache.commons.text.StringEscapeUtils
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator
 
 object JsonCodecMaker:
 
@@ -141,7 +143,9 @@ object JsonCodecMaker:
                       '{
                         if $tin == null then $out.burpNull()
                         $tin match
-                          case Left(_)  => $out.burpNull()
+                          case Left(_) =>
+                            $prefix
+                            $out.burpNull()
                           case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
                       }
                     case EitherLeftPolicy.ERR_MSG_STRING =>
@@ -199,7 +203,7 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
-    def genFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false)(using Quotes): Expr[Unit] =
+    def genFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false)(using Quotes): Expr[Unit] =
       r.refType match
         case '[b] =>
           r match
@@ -460,7 +464,7 @@ object JsonCodecMaker:
                       $tin match
                         case None =>
                           ${
-                            if cfg.noneAsNull then '{ $out.burpNull() }
+                            if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
                             else '{ () }
                           }
                         case Some(v) =>
@@ -499,9 +503,9 @@ object JsonCodecMaker:
                               else
                                 $tin match
                                   case Left(v) =>
-                                    ${ genWriteVal[lt]('{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
+                                    ${ genWriteVal[lt]('{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
                                   case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
                           case EitherLeftPolicy.AS_NULL =>
                             '{
@@ -510,7 +514,7 @@ object JsonCodecMaker:
                                 $tin match
                                   case Left(v) => $out.burpNull()
                                   case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
                           case EitherLeftPolicy.NO_WRITE =>
                             '{
@@ -519,7 +523,7 @@ object JsonCodecMaker:
                                 $tin match
                                   case Left(v) => ()
                                   case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
                           case EitherLeftPolicy.ERR_MSG_STRING =>
                             '{
@@ -528,7 +532,7 @@ object JsonCodecMaker:
                                 $tin match
                                   case Left(v) => $out.value("Left Error: " + v.toString)
                                   case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
                           case EitherLeftPolicy.THROW_EXCEPTION =>
                             '{
@@ -537,18 +541,18 @@ object JsonCodecMaker:
                                 $tin match
                                   case Left(v) => throw new JsonEitherLeftError("Left Error: " + v.toString)
                                   case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
                       else
                         '{
                           $out.mark()
                           scala.util.Try {
-                            ${ genWriteVal[rt]('{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out) }
+                            ${ genWriteVal[rt]('{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                           } match
-                            case scala.util.Success(_) => ()
+                            case scala.util.Success(_) => () // do nothing further--write to out already happened
                             case scala.util.Failure(_) =>
                               $out.revert()
-                              ${ genWriteVal[lt]('{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
+                              ${ genWriteVal[lt]('{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
                         }
 
             // No makeFn here.  Try is just a wrapper
@@ -561,10 +565,11 @@ object JsonCodecMaker:
                     else
                       $tin match
                         case scala.util.Success(v) =>
-                          ${ genWriteVal[e]('{ v }.asInstanceOf[Expr[e]], t.tryRef.asInstanceOf[RTypeRef[e]], out) }
+                          ${ genWriteVal[e]('{ v }.asInstanceOf[Expr[e]], t.tryRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                         case scala.util.Failure(v) =>
                           ${
                             cfg.tryFailureHandling match
+                              case _ if inTuple              => '{ $out.burpNull() }
                               case TryPolicy.AS_NULL         => '{ $out.burpNull() }
                               case TryPolicy.NO_WRITE        => '{ () }
                               case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage()) }
@@ -585,37 +590,7 @@ object JsonCodecMaker:
                         ref.refType match
                           case '[e] =>
                             val fieldValue = Select.unique(in.asTerm, "_" + (i + 1)).asExprOf[e]
-                            // Special handling if field type is Option and value is None.
-                            ref match
-                              case _: OptionRef[?] =>
-                                '{
-                                  if $fieldValue == None then $out.burpNull()
-                                  else ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
-                                }
-                              case _: TryRef[?] =>
-                                '{
-                                  $fieldValue match
-                                    case scala.util.Failure(_)    => $out.burpNull()
-                                    case scala.util.Success(None) => $out.burpNull()
-                                    case _                        => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
-                                }
-                              case r: LeftRightRef[?] if r.lrkind != LRKind.EITHER =>
-                                if r.leftRef.isInstanceOf[TryRef[_]] || r.rightRef.isInstanceOf[TryRef[_]] then
-                                  '{
-                                    $fieldValue match
-                                      case scala.util.Failure(_)    => $out.burpNull()
-                                      case scala.util.Success(None) => $out.burpNull()
-                                      case _                        => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
-                                  }
-                                else if r.leftRef.isInstanceOf[OptionRef[_]] || r.rightRef.isInstanceOf[OptionRef[_]] then
-                                  '{
-                                    $fieldValue match
-                                      case None => $out.burpNull()
-                                      case _    => ${ genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out) }
-                                  }
-                                else genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out)
-                              case _ =>
-                                genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out)
+                            genWriteVal[e](fieldValue, ref.asInstanceOf[RTypeRef[e]], out, inTuple = true)
                       }
                       if elementsE.size == 1 then elementsE.head
                       else Expr.block(elementsE.init, elementsE.last)
@@ -634,7 +609,8 @@ object JsonCodecMaker:
         // optWriteDiscriminator: Option[WriteDiscriminator],
         out: Expr[JsonOutput],
         // cfgE: Expr[JsonConfig],
-        isStringified: Boolean = false // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
+        isStringified: Boolean = false, // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
+        inTuple: Boolean = false
     )(using Quotes): Expr[Unit] =
       val methodKey = MethodKey(ref, false)
       methodSyms
@@ -673,7 +649,9 @@ object JsonCodecMaker:
             case t: ShortRef =>
               if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
               else '{ $out.value(${ aE.asExprOf[Short] }) }
-            case t: StringRef => '{ $out.value(${ aE.asExprOf[String] }) }
+            case t: StringRef =>
+              if cfg.escapeStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
+              else '{ $out.value(${ aE.asExprOf[String] }) }
 
             case t: JBigDecimalRef =>
               if isStringified then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
@@ -730,7 +708,7 @@ object JsonCodecMaker:
             case t: AliasRef[?] =>
               t.unwrappedType.refType match
                 case '[e] =>
-                  genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out)
+                  genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
 
             // These one's here becaue Enums and their various flavors can be Map keys
             // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
@@ -742,13 +720,13 @@ object JsonCodecMaker:
                 case _                                   => false
               val rtype = t.expr
               if enumAsId then
-                if isStringified then '{ $out.label($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) }
+                if isStringified then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) }
                 else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
               else '{ $out.value($aE.toString) }
 
             // Everything else...
             case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-            case _                  => genFnBody(ref, aE, out)
+            case _                  => genFnBody(ref, aE, out, inTuple = inTuple)
         )
 
     // ================================================================

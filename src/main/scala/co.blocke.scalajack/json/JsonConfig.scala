@@ -18,7 +18,8 @@ class JsonConfig private[scalajack] (
     val typeHintLabel: String,
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
-    val enumsAsIds: Option[List[String]] // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
+    val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
+    val escapeStrings: Boolean
 ):
   def withNoneAsNull(nan: Boolean): JsonConfig = copy(noneAsNull = nan)
   def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
@@ -27,6 +28,7 @@ class JsonConfig private[scalajack] (
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
+  def withEscapeStrings(escStr: Boolean): JsonConfig = copy(escapeStrings = escStr)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -35,7 +37,8 @@ class JsonConfig private[scalajack] (
       writeNonConstructorFields: Boolean = writeNonConstructorFields,
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
-      enumsAsIds: Option[List[String]] = enumsAsIds
+      enumsAsIds: Option[List[String]] = enumsAsIds,
+      escapeStrings: Boolean = escapeStrings
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
@@ -43,7 +46,8 @@ class JsonConfig private[scalajack] (
     writeNonConstructorFields,
     typeHintLabel,
     typeHintPolicy,
-    enumsAsIds
+    enumsAsIds,
+    escapeStrings
   )
 
 enum TryPolicy:
@@ -52,8 +56,8 @@ enum TryPolicy:
 enum EitherLeftPolicy:
   case AS_VALUE, AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
 
-enum UndefinedValueOption:
-  case AS_NULL, AS_SYMBOL, THROW_EXCEPTION
+// enum UndefinedValueOption:
+//   case AS_NULL, AS_SYMBOL, THROW_EXCEPTION
 
 enum TypeHintPolicy:
   case SIMPLE_CLASSNAME, SCRAMBLE_CLASSNAME, USE_ANNOTATION
@@ -66,7 +70,8 @@ object JsonConfig
       writeNonConstructorFields = true,
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
-      enumsAsIds = None
+      enumsAsIds = None,
+      escapeStrings = true
     ):
   import scala.quoted.FromExpr.*
 
@@ -91,7 +96,8 @@ object JsonConfig
                 $writeNonConstructorFieldsE,
                 $typeHintLabelE,
                 $typeHintPolicyE,
-                $enumsAsIdsE
+                $enumsAsIdsE,
+                $escapeStringsE
               )
             } =>
           try
@@ -107,7 +113,8 @@ object JsonConfig
                 // extract2[String]("typeHintLabel", x)
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
-                extract("enumsAsIds", enumsAsIdsE)
+                extract("enumsAsIds", enumsAsIdsE),
+                extract("escapeStrings", escapeStringsE)
               )
             )
           catch {
@@ -123,9 +130,7 @@ object JsonConfig
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case z =>
-          println("Z: " + z.show)
-          None
+        case '{ ($x: JsonConfig).withEscapeStrings($v) }             => Some(x.valueOrAbort.withEscapeStrings(v.valueOrAbort))
   }
 
   private[scalajack] given FromExpr[TryPolicy] with {
@@ -149,14 +154,14 @@ object JsonConfig
         case '{ EitherLeftPolicy.THROW_EXCEPTION } => Some(EitherLeftPolicy.THROW_EXCEPTION)
   }
 
-  private[scalajack] given FromExpr[UndefinedValueOption] with {
-    def unapply(x: Expr[UndefinedValueOption])(using Quotes): Option[UndefinedValueOption] =
-      import quotes.reflect.*
-      x match
-        case '{ UndefinedValueOption.AS_NULL }         => Some(UndefinedValueOption.AS_NULL)
-        case '{ UndefinedValueOption.AS_SYMBOL }       => Some(UndefinedValueOption.AS_SYMBOL)
-        case '{ UndefinedValueOption.THROW_EXCEPTION } => Some(UndefinedValueOption.THROW_EXCEPTION)
-  }
+  // private[scalajack] given FromExpr[UndefinedValueOption] with {
+  //   def unapply(x: Expr[UndefinedValueOption])(using Quotes): Option[UndefinedValueOption] =
+  //     import quotes.reflect.*
+  //     x match
+  //       case '{ UndefinedValueOption.AS_NULL }         => Some(UndefinedValueOption.AS_NULL)
+  //       case '{ UndefinedValueOption.AS_SYMBOL }       => Some(UndefinedValueOption.AS_SYMBOL)
+  //       case '{ UndefinedValueOption.THROW_EXCEPTION } => Some(UndefinedValueOption.THROW_EXCEPTION)
+  // }
 
   private[scalajack] given FromExpr[TypeHintPolicy] with {
     def unapply(x: Expr[TypeHintPolicy])(using Quotes): Option[TypeHintPolicy] =
