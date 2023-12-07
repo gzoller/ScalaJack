@@ -12,12 +12,12 @@ Path to Performance
     [*]   [W] - Java Map
     [*]   [W] - Tuple
 
-    [*]   [ ] - Scala case class
-    [*]   [ ] - Scala non-case class
-    [*]   [ ] - Java class
-    [*]   [ ] - SelfRef
-    [*]   [ ] - Sealed Trait
-    [*]   [ ] - Sealed Abstract Class (handle like sealed trait....)
+    [*]   [W] - Scala case class
+    [*]   [W] - Scala non-case class
+    [*]   [W] - Java class
+    [*]   [W] - SelfRef
+    [*]   [W] - Sealed Trait
+    [*]   [W] - Sealed Abstract Class (handle like sealed trait....)
 
     [*]   [W] - Option/Optional
     [*]   [W] - Either
@@ -34,8 +34,8 @@ Path to Performance
     [*]   [X] - TypeSymbol (throw exception)
     [*]   [W] - Value class (tested in MapSpec)
 
-    [*]   [ ] - type hint label mapping
-    [*]   [ ] - type hint value mapping
+    [*]   [W] - type hint label mapping
+    [*]   [W] - type hint value mapping
 
     [ ] -- Streaming JSON write support
     [ ] -- BigJSON support (eg. multi-gig file)

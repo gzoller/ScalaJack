@@ -22,15 +22,17 @@ object RunMe extends App:
     import json.*
     import ScalaJack.*
 
-    val inst = Blah("wow", Some(111)) // Some(Some(None))) // Some(Some(3)))
-    val js = sj[Blah].toJson(inst)
-    println(js)
+    // val inst = Blah("wow", Some(111)) // Some(Some(None))) // Some(Some(3)))
+    // val js = sj[Blah].toJson(inst)
+    // println(js)
 
     // co.blocke.scalajack.internal.CodePrinter.code {
     //   sj[Record]
     // }
 
-    // val y = Foo("You", Dog("Fido", 4), None)
+    val y = Foo("You", Dog("Fido", 4))
+    val js2 = sj[Foo]
+    println(js2)
     // val v = Foo("Hey", Fish("Bloop", None), None, Color.Blue)
     // val v = Foo("Hey", "Boo")
 

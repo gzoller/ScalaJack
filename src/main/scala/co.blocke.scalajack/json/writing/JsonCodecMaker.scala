@@ -256,26 +256,22 @@ object JsonCodecMaker:
               }
 
             case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass => // basically just like sealed trait...
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-                if t.childrenAreObject then
-                  // case object -> just write the simple name of the object
-                  '{
-                    $out.value($in.getClass.getName.split('.').last.stripSuffix("$"))
-                  }
-                else
-                  val cases = t.sealedChildren.map { child =>
-                    child.refType match
-                      case '[c] =>
-                        val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
-                        val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                        CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
-                  } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
-                  val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
-                  '{
-                    if $in == null then $out.burpNull()
-                    else $matchExpr
-                  }
-              }
+              if t.childrenAreObject then
+                val tin = aE.asExprOf[b]
+                // case object -> just write the simple name of the object
+                '{
+                  $out.value($tin.getClass.getName.split('.').last.stripSuffix("$"))
+                }
+              else
+                val cases = t.sealedChildren.map { child =>
+                  child.refType match
+                    case '[c] =>
+                      val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
+                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
+                } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
+                val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
+                matchExpr
 
             // We don't use makeFn here because a value class is basically just a "box" around a simple type
             case t: ScalaClassRef[?] if t.isValueClass =>
@@ -399,10 +395,9 @@ object JsonCodecMaker:
                 t.refType match
                   case '[p] =>
                     val rtype = t.expr.asExprOf[JavaClassRType[p]]
-                    val tin = aE.asExprOf[b]
+                    val tin = in.asExprOf[b]
                     var fieldRefs = t.fields.asInstanceOf[List[NonConstructorFieldInfoRef]]
-                    val fieldNames = t.fields.map(_.name)
-                    var i = -1
+                    val sref = ReflectOnType[String](q)(TypeRepr.of[String])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
                     '{
                       if $tin == null then $out.burpNull()
                       else
@@ -418,8 +413,7 @@ object JsonCodecMaker:
                             fieldRefs = fieldRefs.tail
                             ref.fieldRef.refType match
                               case '[e] =>
-                                i += 1
-                                maybeWrite[e](fieldNames(i), '{ fieldValue }.asExprOf[e], ref.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
+                                maybeWriteMap[String, e]('{ field.name }, '{ fieldValue.asInstanceOf[e] }, sref, ref.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
                           }
                         }
                         $out.endObject()
@@ -447,11 +441,7 @@ object JsonCodecMaker:
                       CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
-                // Generating a function for a single match might be overkill, but... there may be a lot of cases, and/or
-                // this sealed trait may be used a lot of times, so... its a trade-off
-                makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-                  matchExpr
-                }
+                matchExpr
 
             // No makeFn here--Option is just a wrapper to the real thingy
             case t: OptionRef[?] =>
