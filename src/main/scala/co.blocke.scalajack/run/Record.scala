@@ -1,6 +1,8 @@
 package co.blocke.scalajack
 package run
 
+import neotype.*
+
 case class Person(
     name: String,
     age: Int,
@@ -50,12 +52,38 @@ enum Color:
   case Red, Blue, Green
  */
 
-case class Foo(name: String, a: Animal)
+case class Foo(name: String, a: Animal, x: (String, Seq[Boolean]))
 sealed abstract class Animal
 @TypeHint(hintValue = "bow-wow")
 case class Dog(name: String, numLegs: Int) extends Animal
 @TypeHint(hintValue = "flippy")
-case class Fish(name: String, isFreshwater: Option[Boolean]) extends Animal
+case class Fish(name: String, @Change(name = "fresh") isFreshwater: Option[Boolean]) extends Animal
+
+type NonEmptyString = NonEmptyString.Type
+given NonEmptyString: Newtype[String] with
+  inline def validate(input: String): Boolean =
+    input.nonEmpty
+
+type NonEmptyList = NonEmptyList.Type
+given NonEmptyList: Newtype[List[Int]] with
+  inline def validate(input: List[Int]): Boolean =
+    input.nonEmpty
+
+type XList = XList.Type
+given XList: Newtype[List[String]] with
+  inline def validate(input: List[String]): Boolean =
+    input(0) == "x"
+
+case class Tag[X](a: X)
+given [A, B](using newType: Newtype.WithType[A, B], tag: Tag[A]): Tag[B] =
+  newType.unsafeWrapF(tag)
+
+type EmptyString = EmptyString.Type
+given EmptyString: Newtype[String] with
+  inline def validate(input: String): Boolean =
+    input.isEmpty
+
+case class Person2(age: XList)
 
 val jsData =
   """{

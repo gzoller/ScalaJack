@@ -62,7 +62,7 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
           Left(None) // Either of Option (L)
         )
         val js = sj[OptionHolder[Int]](
-          JsonConfig.withNoneAsNull(true).withEitherLeftHandling(EitherLeftPolicy.AS_VALUE)
+          JsonConfig.withNoneAsNull().withEitherLeftHandling(EitherLeftPolicy.AS_VALUE)
         ).toJson(inst)
         js should matchJson("""{"a":null,"b":[null,"ok"],"c":[null,null,null],"d":{"1":null,"3":null},"e":null,"f":null,"g":null,"h":null,"i":null,"j":null}""")
       }
@@ -83,7 +83,7 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Complex Either/Option must work (NoneAsNull)") {
         val inst = ComplexEither[Int](Some(Right(None)))
-        val js = sj[ComplexEither[Int]](JsonConfig.withNoneAsNull(true)).toJson(inst)
+        val js = sj[ComplexEither[Int]](JsonConfig.withNoneAsNull()).toJson(inst)
         js should matchJson("""{"a":null}""")
       }
       it("Complex Either/Option must work (Left-NO_WRITE)") {

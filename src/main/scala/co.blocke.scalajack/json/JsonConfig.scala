@@ -19,16 +19,16 @@ class JsonConfig private[scalajack] (
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
     val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
-    val escapeStrings: Boolean
+    val escapedStrings: Boolean
 ):
-  def withNoneAsNull(nan: Boolean): JsonConfig = copy(noneAsNull = nan)
+  def withNoneAsNull(): JsonConfig = copy(noneAsNull = true)
   def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
   def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): JsonConfig = copy(eitherLeftHandling = eitherPolicy)
   def withWriteNonConstructorFields(nonConstFlds: Boolean): JsonConfig = copy(writeNonConstructorFields = nonConstFlds)
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
-  def withEscapeStrings(escStr: Boolean): JsonConfig = copy(escapeStrings = escStr)
+  def withoutEscapedStrings(): JsonConfig = copy(escapedStrings = true)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -38,7 +38,7 @@ class JsonConfig private[scalajack] (
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
       enumsAsIds: Option[List[String]] = enumsAsIds,
-      escapeStrings: Boolean = escapeStrings
+      escapedStrings: Boolean = escapedStrings
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
@@ -47,7 +47,7 @@ class JsonConfig private[scalajack] (
     typeHintLabel,
     typeHintPolicy,
     enumsAsIds,
-    escapeStrings
+    escapedStrings
   )
 
 enum TryPolicy:
@@ -71,7 +71,7 @@ object JsonConfig
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
       enumsAsIds = None,
-      escapeStrings = true
+      escapedStrings = true
     ):
   import scala.quoted.FromExpr.*
 
@@ -97,7 +97,7 @@ object JsonConfig
                 $typeHintLabelE,
                 $typeHintPolicyE,
                 $enumsAsIdsE,
-                $escapeStringsE
+                $escapedStringsE
               )
             } =>
           try
@@ -114,7 +114,7 @@ object JsonConfig
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
                 extract("enumsAsIds", enumsAsIdsE),
-                extract("escapeStrings", escapeStringsE)
+                extract("escapedStrings", escapedStringsE)
               )
             )
           catch {
@@ -123,14 +123,14 @@ object JsonConfig
               None
           }
         case '{ JsonConfig }                                         => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull($v) }                => Some(x.valueOrAbort.withNoneAsNull(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withNoneAsNull() }                  => Some(x.valueOrAbort.withNoneAsNull())
         case '{ ($x: JsonConfig).withTryFailureHandling($v) }        => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEitherLeftHandling($v) }        => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
         case '{ ($x: JsonConfig).withWriteNonConstructorFields($v) } => Some(x.valueOrAbort.withWriteNonConstructorFields(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEscapeStrings($v) }             => Some(x.valueOrAbort.withEscapeStrings(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withoutEscapedStrings() }           => Some(x.valueOrAbort.withoutEscapedStrings())
   }
 
   private[scalajack] given FromExpr[TryPolicy] with {

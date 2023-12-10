@@ -5,7 +5,7 @@ package classes
 import co.blocke.scala_reflection.Ignore
 import dotty.tools.repl.Command
 
-case class Person(name: String, age: Int)
+case class Person(name: String, @Change(name = "duration") age: Int)
 
 class Parent(val phase: Int):
   private var _hidden: Boolean = false

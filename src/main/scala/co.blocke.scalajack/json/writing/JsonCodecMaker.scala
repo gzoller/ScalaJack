@@ -288,7 +288,8 @@ object JsonCodecMaker:
                     f.fieldRef.refType match
                       case '[z] =>
                         val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
-                        maybeWrite[z](f.name, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
+                        val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
+                        maybeWrite[z](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }
                   if emitDiscriminator then
                     val cname = cfg.typeHintPolicy match
@@ -310,7 +311,8 @@ object JsonCodecMaker:
                     f.fieldRef.refType match
                       case '[e] =>
                         val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
-                        maybeWrite[e](f.name, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
+                        val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
+                        maybeWrite[e](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
                   }
                   val subBody = eachField.length match
                     case 0 => '{}
@@ -408,12 +410,13 @@ object JsonCodecMaker:
                           val m = $tin.getClass.getMethod(field.getterLabel)
                           m.setAccessible(true)
                           val fieldValue = m.invoke($tin)
+                          val fieldName = field.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
                           ${
                             val ref = fieldRefs.head
                             fieldRefs = fieldRefs.tail
                             ref.fieldRef.refType match
                               case '[e] =>
-                                maybeWriteMap[String, e]('{ field.name }, '{ fieldValue.asInstanceOf[e] }, sref, ref.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
+                                maybeWriteMap[String, e]('{ fieldName }, '{ fieldValue.asInstanceOf[e] }, sref, ref.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
                           }
                         }
                         $out.endObject()
@@ -640,7 +643,7 @@ object JsonCodecMaker:
               if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
               else '{ $out.value(${ aE.asExprOf[Short] }) }
             case t: StringRef =>
-              if cfg.escapeStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
+              if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
               else '{ $out.value(${ aE.asExprOf[String] }) }
 
             case t: JBigDecimalRef =>
@@ -713,6 +716,32 @@ object JsonCodecMaker:
                 if isStringified then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) }
                 else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
               else '{ $out.value($aE.toString) }
+
+            // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
+            // the argument of method validate$retainedBody.  It happened to have the correctly-typed parameter.
+            // With the correct type, we can correct write out the value.
+            case t: NeoTypeRef[?] => // in Quotes context
+              Symbol.requiredModule(t.name).methodMember("validate$retainedBody").head.paramSymss.head.head.tree match
+                case ValDef(_, tt, _) =>
+                  tt.tpe.asType match
+                    case '[u] =>
+                      val baseTypeRef = ReflectOnType.apply(q)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+                      genWriteVal[u]('{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out)
+
+            /* This is how you call make(), which includes validate()
+              val myMake = module.methodMember("make").head
+              val tm = Ref(module)
+              val z = Apply(
+                Select.unique(tm, "make"),
+                List(
+                  Expr(List(1, 2, 3)).asTerm
+                )
+              ).asExprOf[Either[String, _]]
+              '{
+                println("Hello...")
+                println($z)
+              }
+             */
 
             // Everything else...
             case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")

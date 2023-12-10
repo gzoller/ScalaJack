@@ -27,8 +27,8 @@ class MiscSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("String without escaping must work (bad JSON, but proves escape can be turned off)") {
         val inst = StringHolder("""This is a "strange" test\non another level.""")
-        val js = sj[StringHolder](JsonConfig.withEscapeStrings(false)).toJson(inst)
-        js should equal("""{"a":"This is a "strange" test\non another level."}""")
+        val js = sj[StringHolder](JsonConfig.withoutEscapedStrings()).toJson(inst)
+        js should equal("""{"a":"This is a \"strange\" test\\non another level."}""")
       }
     }
   }

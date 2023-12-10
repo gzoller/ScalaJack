@@ -34,8 +34,13 @@ Path to Performance
     [*]   [X] - TypeSymbol (throw exception)
     [*]   [W] - Value class (tested in MapSpec)
 
+    [*]   [ ] - Any type -- No longer supported.  Can't generate codec code for unknown types
+    [X]   [X] - SJCapture support (optional by config) -- unnecessary!
+    [*]   [ ] - NeoType integration
+
     [*]   [W] - type hint label mapping
     [*]   [W] - type hint value mapping
+    [*]   [W] - @Change - field name change
 
     [ ] -- Streaming JSON write support
     [ ] -- BigJSON support (eg. multi-gig file)
