@@ -22,10 +22,10 @@ object RunMe extends App:
     import json.*
     import ScalaJack.*
 
-    val o = json.writing.JsonOutput()
-    val a: Any = Foo("Hey", Fish("Bloop", Some(true)), ("ok", Seq(true, false)))
-    json.writing.AnyWriter.writeAny(a, o)
-    println(o.result)
+    // val o = json.writing.JsonOutput()
+    // val a: Any = Foo("Hey", Fish("Bloop", Some(true)), ("ok", Seq(true, false)))
+    // json.writing.AnyWriter.writeAny(a, o)
+    // println(o.result)
 
     val p = Person2(XList(List("x", "y")))
     println(RType.of[Person2].pretty)

@@ -28,7 +28,7 @@ class JsonConfig private[scalajack] (
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
-  def withoutEscapedStrings(): JsonConfig = copy(escapedStrings = true)
+  def withoutEscapedStrings(): JsonConfig = copy(escapedStrings = false)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -74,6 +74,28 @@ object JsonConfig
       escapedStrings = true
     ):
   import scala.quoted.FromExpr.*
+
+  private[scalajack] given ToExpr[JsonConfig] with {
+    def apply(x: JsonConfig)(using Quotes): Expr[JsonConfig] =
+      '{
+        val jc = JsonConfig
+          .withTryFailureHandling(${ Expr(x.tryFailureHandling) })
+          .withEitherLeftHandling(${ Expr(x.eitherLeftHandling) })
+          .withWriteNonConstructorFields(${ Expr(x.writeNonConstructorFields) })
+          .withTypeHintLabel(${ Expr(x.typeHintLabel) })
+          .withTypeHintPolicy(${ Expr(x.typeHintPolicy) })
+          .withEnumsAsIds(${ Expr(x.enumsAsIds) })
+        val jc2 = ${
+          if x.noneAsNull then '{ jc.withNoneAsNull() }
+          else '{ jc }
+        }
+        val jc3 = ${
+          if !x.escapedStrings then '{ jc2.withoutEscapedStrings() }
+          else '{ jc2 }
+        }
+        jc3
+      }
+  }
 
   private[scalajack] given FromExpr[JsonConfig] with {
 
@@ -131,6 +153,33 @@ object JsonConfig
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
         case '{ ($x: JsonConfig).withoutEscapedStrings() }           => Some(x.valueOrAbort.withoutEscapedStrings())
+  }
+
+  private[scalajack] given ToExpr[TryPolicy] with {
+    def apply(x: TryPolicy)(using Quotes): Expr[TryPolicy] =
+      x match
+        case TryPolicy.AS_NULL         => '{ TryPolicy.AS_NULL }
+        case TryPolicy.ERR_MSG_STRING  => '{ TryPolicy.ERR_MSG_STRING }
+        case TryPolicy.NO_WRITE        => '{ TryPolicy.NO_WRITE }
+        case TryPolicy.THROW_EXCEPTION => '{ TryPolicy.THROW_EXCEPTION }
+  }
+
+  private[scalajack] given ToExpr[EitherLeftPolicy] with {
+    def apply(x: EitherLeftPolicy)(using Quotes): Expr[EitherLeftPolicy] =
+      x match
+        case EitherLeftPolicy.AS_VALUE        => '{ EitherLeftPolicy.AS_VALUE }
+        case EitherLeftPolicy.AS_NULL         => '{ EitherLeftPolicy.AS_NULL }
+        case EitherLeftPolicy.ERR_MSG_STRING  => '{ EitherLeftPolicy.ERR_MSG_STRING }
+        case EitherLeftPolicy.NO_WRITE        => '{ EitherLeftPolicy.NO_WRITE }
+        case EitherLeftPolicy.THROW_EXCEPTION => '{ EitherLeftPolicy.THROW_EXCEPTION }
+  }
+
+  private[scalajack] given ToExpr[TypeHintPolicy] with {
+    def apply(x: TypeHintPolicy)(using Quotes): Expr[TypeHintPolicy] =
+      x match
+        case TypeHintPolicy.SIMPLE_CLASSNAME   => '{ TypeHintPolicy.SIMPLE_CLASSNAME }
+        case TypeHintPolicy.SCRAMBLE_CLASSNAME => '{ TypeHintPolicy.SCRAMBLE_CLASSNAME }
+        case TypeHintPolicy.USE_ANNOTATION     => '{ TypeHintPolicy.USE_ANNOTATION }
   }
 
   private[scalajack] given FromExpr[TryPolicy] with {

@@ -193,6 +193,8 @@ object JsonCodecMaker:
                               $out.revert()
                               ${ _maybeWrite[lt](prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
                       }
+        case t: AnyRef =>
+          AnyWriter.okToWrite2(prefix, aE, out, cfg)
         case _ =>
           ref.refType match
             case '[u] =>
@@ -742,6 +744,11 @@ object JsonCodecMaker:
                 println($z)
               }
              */
+
+            case t: AnyRef =>
+              '{
+                AnyWriter.writeAny($aE, $out, ${ Expr(cfg) })
+              }
 
             // Everything else...
             case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")

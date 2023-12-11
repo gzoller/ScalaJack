@@ -4,6 +4,7 @@ package misc
 
 import java.util.Optional
 import scala.util.*
+import neotype.*
 
 case class Person(name: String, age: Int)
 
@@ -32,3 +33,32 @@ case class AliasHolder[T](a: T, b: List[T], c: Map[T, String], d: Map[String, T]
 case class AliasHolder2[T](a: T, b: List[T], c: Map[String, T])
 
 case class StringHolder(a: String)
+
+type NonEmptyString = NonEmptyString.Type
+given NonEmptyString: Newtype[String] with
+  inline def validate(input: String): Boolean =
+    input.nonEmpty
+
+type XList = XList.Type
+given XList: Newtype[List[String]] with
+  inline def validate(input: List[String]): Boolean =
+    input.nonEmpty && input(0) == "x"
+
+type EmptyString = EmptyString.Type
+given EmptyString: Newtype[String] with
+  inline def validate(input: String): Boolean =
+    input.isEmpty
+
+case class Validated(name: NonEmptyString, xspot: XList, nada: List[EmptyString])
+
+case class AnyHolder(
+    maybe: Any, // Option[List[String]] <- Some
+    maybeNot: Any, // None
+    itried: Any, // TryHolder[Int] <- class test
+    itried2: Any, // Try[Int] (Success)
+    ifailed: Any, // Try[Int] (Failure)
+    anymap: Any, // Map[String,Int]
+    whichOneR: Any, // Either[String,Int] <- right
+    whichOneL: Any, // Either[String,Int] <- left
+    bunch: Any // (Some('a'),None,Some('b'))
+)

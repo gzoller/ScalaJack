@@ -34,9 +34,9 @@ Path to Performance
     [*]   [X] - TypeSymbol (throw exception)
     [*]   [W] - Value class (tested in MapSpec)
 
-    [*]   [ ] - Any type -- No longer supported.  Can't generate codec code for unknown types
+    [*]   [W] - Any type -- No longer supported.  Can't generate codec code for unknown types
     [X]   [X] - SJCapture support (optional by config) -- unnecessary!
-    [*]   [ ] - NeoType integration
+    [*]   [W] - NeoType integration
 
     [*]   [W] - type hint label mapping
     [*]   [W] - type hint value mapping
