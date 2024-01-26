@@ -1,0 +1,114 @@
+package co.blocke.scalajack
+package json
+package reading
+
+import scala.annotation.*
+
+object JsonReader:
+  protected val ull: Array[Char] = "ull".toCharArray
+  protected val alse: Array[Char] = "alse".toCharArray
+  protected val rue: Array[Char] = "rue".toCharArray
+
+case class JsonReader(src: JsonSource):
+
+  private var expectFieldValue = false
+
+  // returns false if 'null' found
+  def expectObjectStart(): Boolean =
+    src.readSkipWhitespace() match {
+      case '{' => true
+      case 'n' =>
+        readChars(JsonReader.ull, "null")
+        false
+      case c => throw new JsonParseError(s"Expected object start '{' but found '$c'", src)
+    }
+
+  def expectArrayStart(): Boolean =
+    src.readSkipWhitespace() match {
+      case '[' => true
+      case 'n' =>
+        readChars(JsonReader.ull, "null")
+        false
+      case c => throw new JsonParseError(s"Expected array start '[' but found '$c'", src)
+    }
+
+  // True if we got a comma, and False for ]
+  def nextArrayElement(): Boolean =
+    (src.readSkipWhitespace(): @switch) match
+      case ',' => true
+      case ']' => false
+      case c   => throw JsonParseError(s"Expected ',' or ']' got '$c'", src)
+
+  // True if we got a comma, and False for }
+  def nextField(): Boolean =
+    (src.readSkipWhitespace(): @switch) match {
+      case ',' =>
+        expectFieldValue = false
+        true
+      case '}' if !expectFieldValue => false
+      case '}' =>
+        throw JsonParseError("Expected field value but got '}' instead.", src)
+      case c =>
+        throw JsonParseError(s"expected ',' or '}' got '$c'", src)
+    }
+
+  inline def expectFieldName(): CharSequence =
+    val charseq = expectString()
+    expectFieldValue = true
+    charseq
+
+  // need flavor of expectString that might be null for field values
+
+  private def expectString(): CharSequence =
+    charWithWS(src, '"')
+    val sb = new FastStringBuilder(64)
+    while true do
+      val c = src.readEscapedString()
+      if c == END_OF_STRING then return sb.buffer // mutable thing escapes, but cannot be changed
+      sb.append(c.toChar)
+    throw JsonParseError("Invalid string value detected", src)
+
+  inline def expectChar(): Char =
+    expectString() match {
+      case s if s.length == 1 => s.charAt(0)
+      case s                  => throw new JsonParseError(s"Expected a Char value but got '$s'", src)
+    }
+
+  def expectBoolean(): Boolean =
+    (src.readSkipWhitespace(): @switch) match
+      case 't' =>
+        readChars(JsonReader.rue, "true")
+        true
+      case 'f' =>
+        readChars(JsonReader.alse, "false")
+        false
+      case c => throw JsonParseError(s"Expected 'true' or 'false' got '$c'", src)
+
+  def expectInt(): Int =
+    checkNumber()
+    try {
+      val i = UnsafeNumbers.int_(src, false)
+      src.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber => throw JsonParseError("Expected an Int", src)
+    }
+
+  private inline def readChars(
+      expect: Array[Char],
+      errMsg: String
+  ): Unit =
+    var i: Int = 0
+    while i < expect.length do
+      if src.read() != expect(i) then throw JsonParseError(s"Expected $errMsg", src)
+      i += 1
+
+  private def checkNumber(): Unit =
+    (src.readSkipWhitespace(): @switch) match
+      case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' => ()
+      case c                                                                     => throw JsonParseError(s"Expected a number, got $c", src)
+    src.retract()
+
+  inline def charWithWS(in: JsonSource, c: Char): Unit =
+    val got = in.readSkipWhitespace()
+    if got != c then throw JsonParseError(s"Expected '$c' got '$got'", src)

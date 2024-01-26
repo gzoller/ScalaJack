@@ -6,8 +6,10 @@ import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+import reading.JsonSource
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
+import scala.collection.Factory
 import dotty.tools.dotc.ast.Trees.EmptyTree
 import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.text.translate.CharSequenceTranslator
@@ -19,25 +21,26 @@ object JsonCodecMaker:
 
     // Cache generated method Symbols + an array of the generated functions (DefDef)
     case class MethodKey(ref: RTypeRef[?], isStringified: Boolean) // <-- TODO: Not clear what isStringified does here...
-    val methodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
-    val methodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
+
+    val writeMethodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
+    val writeMethodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
 
     // Fantastic Dark Magic here--lifted from Jasoniter.  Props!  This thing will create a DefDef, and a Symbol to it.
     // The Symbol will let you call the generated function later from other macro-generated code.  The goal is to use
     // generated functions to create cleaner/faster macro code than what straight quotes/splices would create unaided.
-    def makeFn[U: Type](methodKey: MethodKey, arg: Expr[U], out: Expr[JsonOutput])(f: (Expr[U], Expr[JsonOutput]) => Expr[Unit]): Expr[Unit] =
+    def makeWriteFn[U: Type](methodKey: MethodKey, arg: Expr[U], out: Expr[JsonOutput])(f: (Expr[U], Expr[JsonOutput]) => Expr[Unit]): Expr[Unit] =
       // Get a symbol, if one already created for this key... else make one.
       Apply(
         Ref(
-          methodSyms.getOrElse(
+          writeMethodSyms.getOrElse(
             methodKey, {
               val sym = Symbol.newMethod(
                 Symbol.spliceOwner,
-                "w" + methodSyms.size, // 'w' is for Writer!
+                "w" + writeMethodSyms.size, // 'w' is for Writer!
                 MethodType(List("in", "out"))(_ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]), _ => TypeRepr.of[Unit])
               )
-              methodSyms.update(methodKey, sym)
-              methodDefs += DefDef(
+              writeMethodSyms.update(methodKey, sym)
+              writeMethodDefs += DefDef(
                 sym,
                 params => {
                   val List(List(in, out)) = params
@@ -50,6 +53,39 @@ object JsonCodecMaker:
         ),
         List(arg.asTerm, out.asTerm)
       ).asExprOf[Unit]
+
+    val readMethodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
+    val readMethodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
+
+    class JsonReader // temporary to compile until we write the real JsonReader
+
+    def makeReadFn[U: Type](methodKey: MethodKey, arg: Expr[U], in: Expr[JsonReader])(f: (Expr[JsonReader], Expr[U]) => Expr[U])(using Quotes)(using Type[JsonReader]): Expr[U] =
+      methodKey.ref.refType match
+        case '[tt] =>
+          val typerepr = TypeRepr.of[tt]
+          Apply(
+            Ref(
+              readMethodSyms.getOrElse(
+                methodKey, {
+                  val sym = Symbol.newMethod(
+                    Symbol.spliceOwner,
+                    "r" + readMethodSyms.size,
+                    MethodType(List("in", "default"))(_ => List(TypeRepr.of[JsonReader], typerepr), _ => TypeRepr.of[U])
+                  )
+                  readMethodSyms.update(methodKey, sym)
+                  readMethodDefs += DefDef(
+                    sym,
+                    params => {
+                      val List(List(in, default)) = params
+                      Some(f(in.asExprOf[JsonReader], default.asExprOf[U]).asTerm.changeOwner(sym))
+                    }
+                  )
+                  sym
+                }
+              )
+            ),
+            List(in.asTerm, arg.asTerm)
+          ).asExprOf[U]
 
     // ---------------------------------------------------------------------------------------------
 
@@ -205,12 +241,12 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
-    def genFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false)(using Quotes): Expr[Unit] =
+    def genEncFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false)(using Quotes): Expr[Unit] =
       r.refType match
         case '[b] =>
           r match
             case t: ArrayRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
                     val tin = in.asInstanceOf[Expr[Array[e]]]
@@ -226,7 +262,7 @@ object JsonCodecMaker:
               }
 
             case t: SeqRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
                     val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Seq[e]] else in.asExprOf[Seq[e]]
@@ -242,7 +278,7 @@ object JsonCodecMaker:
               }
 
             case t: SetRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
                     val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Set[e]] else in.asExprOf[Set[e]]
@@ -270,12 +306,12 @@ object JsonCodecMaker:
                     case '[c] =>
                       val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
                       val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
+                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
                 matchExpr
 
-            // We don't use makeFn here because a value class is basically just a "box" around a simple type
+            // We don't use makeWriteFn here because a value class is basically just a "box" around a simple type
             case t: ScalaClassRef[?] if t.isValueClass =>
               val theField = t.fields.head.fieldRef
               theField.refType match
@@ -284,7 +320,7 @@ object JsonCodecMaker:
                   genWriteVal(fieldValue, theField.asInstanceOf[RTypeRef[e]], out)
 
             case t: ScalaClassRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 val body = {
                   val eachField = t.fields.map { f =>
                     f.fieldRef.refType match
@@ -339,7 +375,7 @@ object JsonCodecMaker:
               }
 
             case t: MapRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[k] =>
                     t.elementRef2.refType match
@@ -359,7 +395,7 @@ object JsonCodecMaker:
               }
 
             case t: JavaCollectionRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
                     val tin = in.asExprOf[java.util.Collection[_]]
@@ -375,7 +411,7 @@ object JsonCodecMaker:
               }
 
             case t: JavaMapRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[k] =>
                     t.elementRef2.refType match
@@ -395,7 +431,7 @@ object JsonCodecMaker:
               }
 
             case t: JavaClassRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.refType match
                   case '[p] =>
                     val rtype = t.expr.asExprOf[JavaClassRType[p]]
@@ -443,12 +479,12 @@ object JsonCodecMaker:
                     case '[c] =>
                       val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
                       val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
+                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
                 matchExpr
 
-            // No makeFn here--Option is just a wrapper to the real thingy
+            // No makeWriteFn here--Option is just a wrapper to the real thingy
             case t: OptionRef[?] =>
               t.optionParamType.refType match
                 case '[e] =>
@@ -467,20 +503,20 @@ object JsonCodecMaker:
                           ${ genWriteVal[e]('{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
                   }
 
-            // No makeFn here... SelfRef is referring to something we've already seen before.  There absolutely should already be a geneated
+            // No makeWriteFn here... SelfRef is referring to something we've already seen before.  There absolutely should already be a geneated
             // and cached function for this thing that we can call.
             case t: SelfRefRef[?] =>
               t.refType match
                 case '[e] =>
                   val key = MethodKey(ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean]), false)
-                  val sym = methodSyms(key)
+                  val sym = writeMethodSyms(key)
                   val tin = aE.asExprOf[b]
                   '{
                     if $tin == null then $out.burpNull()
                     else ${ Ref(sym).appliedTo(tin.asTerm, out.asTerm).asExprOf[Unit] }
                   }
 
-            // No makeFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
+            // No makeWriteFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
             case t: LeftRightRef[?] =>
               val tin = aE.asExprOf[b]
               t.leftRef.refType match
@@ -550,7 +586,7 @@ object JsonCodecMaker:
                               ${ genWriteVal[lt]('{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
                         }
 
-            // No makeFn here.  Try is just a wrapper
+            // No makeWriteFn here.  Try is just a wrapper
             case t: TryRef[?] =>
               t.tryRef.refType match
                 case '[e] =>
@@ -573,7 +609,7 @@ object JsonCodecMaker:
                   }
 
             case t: TupleRef[?] =>
-              makeFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 '{
                   if $in == null then $out.burpNull()
                   else
@@ -601,14 +637,12 @@ object JsonCodecMaker:
     def genWriteVal[T: Type](
         aE: Expr[T],
         ref: RTypeRef[T],
-        // optWriteDiscriminator: Option[WriteDiscriminator],
         out: Expr[JsonOutput],
-        // cfgE: Expr[JsonConfig],
         isStringified: Boolean = false, // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
         inTuple: Boolean = false
     )(using Quotes): Expr[Unit] =
       val methodKey = MethodKey(ref, false)
-      methodSyms
+      writeMethodSyms
         .get(methodKey)
         .map { sym => // hit cache first... then match on Ref type
           Apply(Ref(sym), List(aE.asTerm, out.asTerm)).asExprOf[Unit]
@@ -752,8 +786,79 @@ object JsonCodecMaker:
 
             // Everything else...
             case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-            case _                  => genFnBody(ref, aE, out, inTuple = inTuple)
+            case _                  => genEncFnBody(ref, aE, out, inTuple = inTuple)
         )
+
+    // ---------------------------------------------------------------------------------------------
+
+    def genReadVal[T: Type](
+        // default: Expr[T], // needed?  This should already be in ref...
+        ref: RTypeRef[T],
+        in: Expr[JsonSource],
+        isStringified: Boolean = false, // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
+        inTuple: Boolean = false // not sure if needed...
+    )(using Quotes): Expr[T] =
+      val methodKey = MethodKey(ref, false)
+      // Stuff here to hit readMethodSyms first -- TBD
+      ref match
+        // First cover all primitive and simple types...
+        // case t: BigDecimalRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
+        //   else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
+        // case t: BigIntRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
+        //   else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
+        case t: BooleanRef =>
+          '{ $in.expectBoolean() }
+        // if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
+        // else '{ $out.value(${ aE.asExprOf[Boolean] }) }
+        // case t: ByteRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Byte] }) }
+        // case t: CharRef => '{ $out.value(${ aE.asExprOf[Char] }) }
+        // case t: DoubleRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Double] }) }
+        // case t: FloatRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Float] }) }
+        case t: IntRef =>
+          '{ $in.expectInt() }
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Int] }) }
+        // case t: LongRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Long] }) }
+        // case t: ShortRef =>
+        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
+        //   else '{ $out.value(${ aE.asExprOf[Short] }) }
+        case t: StringRef =>
+          '{ Option($in.expectString()).map(_.toString).getOrElse(null) }
+        //   if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
+        //   else '{ $out.value(${ aE.asExprOf[String] }) }
+
+        case _ =>
+          ref.refType match
+            case '[b] =>
+              ref match
+                case t: SeqRef[?] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      '{
+                        if ! $in.expectArrayStart() then null.asInstanceOf[T]
+                        else if $in.here == ']' then // empty Seq
+                          $in.read() // skip the ']'
+                          List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                        else
+                          val acc = scala.collection.mutable.ListBuffer.empty[e]
+                          acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                          while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                          acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                      }
+
+        // case _ => genDecFnBody(ref, in, inTuple = inTuple)
+
+    // ---------------------------------------------------------------------------------------------
 
     // ================================================================
     // You've made it this far!  Ok, now we sew everything together.
@@ -771,11 +876,12 @@ object JsonCodecMaker:
         // }
 
         def encodeValue(in: T, out: JsonOutput): Unit = ${ genWriteVal('in, ref, 'out) }
+        def decodeValue(in: JsonSource): T = ${ genReadVal(ref, 'in) }
       }
     }.asTerm
     val neededDefs =
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
-      methodDefs
+      writeMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
     // println(s"Codec: ${codec.show}")
     codec

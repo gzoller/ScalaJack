@@ -4,18 +4,27 @@ package reading
 
 import scala.annotation.*
 
+object JsonSource:
+  protected val ull: Array[Char] = "ull".toCharArray
+  protected val alse: Array[Char] = "alse".toCharArray
+  protected val rue: Array[Char] = "rue".toCharArray
+
 // ZIO-Json defines a series of different Readers.  Not exactly sure why--maybe to support different
 // modes (streaming, ...)? At least for now we only need one, so merged key bits of Readers into one.
 case class JsonSource(js: CharSequence):
   private var i = 0
+  private var expectFieldValue = false
   private[json] val max = js.length
 
   def pos = i
 
+  def here = js.charAt(i)
+
   inline def read(): Char =
     if i < max then
+      val c = history(i)
       i += 1
-      history(i - 1)
+      c
     else BUFFER_EXCEEDED
 
   inline def readSkipWhitespace(): Char =
@@ -68,3 +77,120 @@ case class JsonSource(js: CharSequence):
       accum = accum * 16 + c
       i += 1
     accum.toChar
+
+//-------
+
+  // returns false if 'null' found
+  def expectObjectStart(): Boolean =
+    readSkipWhitespace() match {
+      case '{' =>
+        true
+      case 'n' =>
+        readChars(JsonSource.ull, "null")
+        false
+      case c => throw new JsonParseError(s"Expected object start '{' but found '$c'", this)
+    }
+
+  def expectArrayStart(): Boolean =
+    readSkipWhitespace() match {
+      case '[' =>
+        true
+      case 'n' =>
+        readChars(JsonSource.ull, "null")
+        false
+      case c => throw new JsonParseError(s"Expected array start '[' but found '$c'", this)
+    }
+
+  // True if we got a comma, and False for ]
+  def nextArrayElement(): Boolean =
+    (readSkipWhitespace(): @switch) match
+      case ',' =>
+        true
+      case ']' =>
+        false
+      case c => throw JsonParseError(s"Expected ',' or ']' got '$c'", this)
+
+  // True if we got a comma, and False for }
+  def nextField(): Boolean =
+    (readSkipWhitespace(): @switch) match {
+      case ',' =>
+        expectFieldValue = false
+        true
+      case '}' if !expectFieldValue =>
+        false
+      case '}' =>
+        throw JsonParseError("Expected field value but got '}' instead.", this)
+      case c =>
+        throw JsonParseError(s"expected ',' or '}' got '$c'", this)
+    }
+
+  inline def expectFieldName(): CharSequence =
+    val charseq = parseString()
+    expectFieldValue = true
+    charseq
+
+  // Value might be null!
+  def expectString(): CharSequence =
+    readSkipWhitespace() match {
+      case '"' =>
+        retract()
+        parseString()
+      case 'n' =>
+        readChars(JsonSource.ull, "null")
+        null
+      case c => throw new JsonParseError(s"Expected a String value but got '$c'", this)
+    }
+
+  private def parseString(): CharSequence =
+    charWithWS('"')
+    val sb = new FastStringBuilder(64)
+    while true do
+      val c = readEscapedString()
+      if c == END_OF_STRING then return sb.buffer // mutable thing escapes, but cannot be changed
+      sb.append(c.toChar)
+    throw JsonParseError("Invalid string value detected", this)
+
+  inline def expectChar(): Char =
+    expectString() match {
+      case s if s.length == 1 => s.charAt(0)
+      case s                  => throw new JsonParseError(s"Expected a Char value but got '$s'", this)
+    }
+
+  def expectBoolean(): Boolean =
+    (readSkipWhitespace(): @switch) match
+      case 't' =>
+        readChars(JsonSource.rue, "true")
+        true
+      case 'f' =>
+        readChars(JsonSource.alse, "false")
+        false
+      case c => throw JsonParseError(s"Expected 'true' or 'false' got '$c'", this)
+
+  def expectInt(): Int =
+    checkNumber()
+    try {
+      val i = UnsafeNumbers.int_(this, false)
+      retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber => throw JsonParseError("Expected an Int", this)
+    }
+
+  private inline def readChars(
+      expect: Array[Char],
+      errMsg: String
+  ): Unit =
+    var i: Int = 0
+    while i < expect.length do
+      if read() != expect(i) then throw JsonParseError(s"Expected $errMsg", this)
+      i += 1
+
+  private def checkNumber(): Unit =
+    (readSkipWhitespace(): @switch) match
+      case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' => ()
+      case c                                                                     => throw JsonParseError(s"Expected a number, got $c", this)
+    retract()
+
+  inline def charWithWS(c: Char): Unit =
+    val got = readSkipWhitespace()
+    if got != c then throw JsonParseError(s"Expected '$c' got '$got'", this)

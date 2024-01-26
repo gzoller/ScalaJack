@@ -48,7 +48,7 @@ object JsonReader:
           case '[t] =>
             r.elementRef.refType match
               case '[e] =>
-                val elemDecoder = Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
+                val elemDecoder = Expr.summon[JsonDecoder[e]].getOrElse(refRead2[e](r.elementRef.asInstanceOf[RTypeRef[e]]))
                 '{
                   JsonDecoder.seq[e]($elemDecoder) map (_.to(${ Expr.summon[Factory[e, T]].get }))
                 }
@@ -59,7 +59,7 @@ object JsonReader:
           r.fields.map(f =>
             f.fieldRef.refType match
               case '[e] =>
-                Expr.summon[JsonDecoder[e]].getOrElse(refRead[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
+                Expr.summon[JsonDecoder[e]].getOrElse(refRead2[e](f.fieldRef.asInstanceOf[RTypeRef[e]]))
           )
         )
         val instantiator = JsonReaderUtil.classInstantiator[T](r.asInstanceOf[ClassRef[T]])
@@ -88,4 +88,7 @@ object JsonReader:
             else Expr(null.asInstanceOf[Int])
           })
 
-        '{ ClassDecoder[T]($fieldNames, $fieldDecoders.toArray, $instantiator, $preloaded.toArray) }
+        val x = '{ ClassDecoder[T]($fieldNames, $fieldDecoders.toArray, $instantiator, $preloaded.toArray) }
+        println(s"Class Decoder: ${x.show}")
+        println("---------------------")
+        x

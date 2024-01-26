@@ -1,21 +1,23 @@
 package co.blocke.scalajack
 package json
 
-class JsonIllegalKeyType(msg: String) extends Throwable(msg)
-class JsonNullKeyValue(msg: String) extends Throwable(msg)
-class JsonUnsupportedType(msg: String) extends Throwable(msg)
-class JsonConfigError(msg: String) extends Throwable(msg)
-class JsonEitherLeftError(msg: String) extends Throwable(msg)
+import scala.util.control.NoStackTrace
 
-class ParseError(val msg: String) extends Throwable(msg):
+class JsonIllegalKeyType(msg: String) extends Throwable(msg) with NoStackTrace
+class JsonNullKeyValue(msg: String) extends Throwable(msg) with NoStackTrace
+class JsonUnsupportedType(msg: String) extends Throwable(msg) with NoStackTrace
+class JsonConfigError(msg: String) extends Throwable(msg) with NoStackTrace
+class JsonEitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
+
+class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
   val show: String = ""
 
 // Thrown at compile-time only!
-case class JsonTypeError(override val msg: String) extends ParseError(msg):
+case class JsonTypeError(override val msg: String) extends ParseError(msg) with NoStackTrace:
   override val show: String = ""
 
 // Thrown at runtime only!
-case class JsonParseError(override val msg: String, context: reading.JsonSource) extends ParseError(msg + " at position " + context.pos):
+case class JsonParseError(override val msg: String, context: reading.JsonSource) extends ParseError(msg + " at position " + context.pos) with NoStackTrace:
   override val show: String =
     val js = context.js.toString
     val (clip, dashes) = context.pos match {

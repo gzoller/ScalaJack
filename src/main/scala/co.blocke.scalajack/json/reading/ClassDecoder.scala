@@ -31,3 +31,18 @@ object ClassDecoder:
       // Construct the new object
       instantiator(fieldValues)
   }
+
+  /*
+
+ClassDecoder.apply[Friend](
+  Array[String]("name", "age", "email"),
+  List[JsonDecoder[_]](
+    JsonDecoder.string,
+    JsonDecoder.int,
+    JsonDecoder.string
+    ).toArray,
+  ((fieldValues: scala.Array[_]) => new Friend(fieldValues.apply(0).asInstanceOf[java.lang.String], fieldValues.apply(1).asInstanceOf[scala.Int], fieldValues.apply(2).asInstanceOf[java.lang.String])),
+  scala.List.apply[scala.Any](0, 0, 0).toArray[scala.Any](scala.reflect.ClassTag.Any)
+  )
+
+   */

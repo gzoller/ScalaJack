@@ -1,4 +1,4 @@
-package co.blocke.scalajack.json;
+package co.blocke.scalajack.json.exp;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

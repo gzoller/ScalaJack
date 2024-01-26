@@ -15,12 +15,30 @@ object RunMe extends App:
     //   deriveEncoder[Record]
     // }
 
-    co.blocke.scalajack.internal.CodePrinter.code {
-        given codec: JsonValueCodec[Record] = JsonCodecMaker.make
-    }
+    // import co.blocke.scalajack.*
+    // import ScalaJack.*
+    // implicit val blah: ScalaJack[Record] = sj[Record]
+    // println(ScalaJack[Record].fromJson(jsData))
+
+
+    // co.blocke.scalajack.internal.CodePrinter.code {
+    //     given codec: JsonValueCodec[Record] = JsonCodecMaker.make
+    // }
     // given codec: JsonValueCodec[Record] = JsonCodecMaker.make
     // println(readFromString[Record](jsData))
 
     // println(writeToString(record))
+
+    import com.github.plokhotnyuk.jsoniter_scala.core._
+    import com.github.plokhotnyuk.jsoniter_scala.macros._
+   
+    given codec: JsonValueCodec[Record] = JsonCodecMaker.make
+    println(readFromString[Record](jsData))
+    //     }
+
+    // trait JsoniterWritingBenchmark{
+    //     @Benchmark
+    //     def writeRecordJsoniter = writeToString(record)
+    //     }    
 
     println("\nDone")

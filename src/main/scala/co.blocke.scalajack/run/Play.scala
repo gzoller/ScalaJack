@@ -1,65 +1,52 @@
 package co.blocke.scalajack
+package json
 package run
 
 import co.blocke.scala_reflection.*
 import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 import json.*
+import scala.collection.immutable.Queue
+
+class Shape[T](polygon: T)
+class Parallelogram()
+class Rectangle() extends Parallelogram
 
 object RunMe extends App:
 
-  // import scala.util.Random
-  // val random = new Random()
+  val suite: Shape[Parallelogram] = new Shape[Parallelogram](new Parallelogram())
 
-  // def scramble(hash: Int): String =
-  //   val last5 = f"$hash%05d".takeRight(5)
-  //   val digits = (1 to 5).map(_ => random.nextInt(10))
-  //   if digits(0) % 2 == 0 then s"${last5(0)}${digits(0)}${last5(1)}${digits(1)}${last5(2)}-${digits(2)}${last5(3)}${digits(3)}-${last5(4)}${digits(4)}A"
-  //   else s"${digits(0)}${last5(0)}${digits(1)}${last5(1)}${digits(2)}-${last5(2)}${digits(3)}${last5(3)}-${digits(4)}${last5(4)}B"
+  // UPDATE: I have no idea what these two cases actually test!  They seem to do different things...
 
-  try
+  // val s = "\"This is a test\""
+  // val now = System.nanoTime()
+  // (1 to 1000000).map(_ => exp.readFromString(s))
+  // val later = System.nanoTime()
+  // println("JsonReader: " + (later - now))
 
-    import json.*
-    import ScalaJack.*
+  // println("==============================")
 
-    // val o = json.writing.JsonOutput()
-    // val a: Any = Foo("Hey", Fish("Bloop", Some(true)), ("ok", Seq(true, false)))
-    // json.writing.AnyWriter.writeAny(a, o)
-    // println(o.result)
+  // val s2 = "This is a test\""
+  // val now2 = System.nanoTime()
+  // (1 to 1000000).map(_ => parseString(reading.JsonSource(s2)))
+  // val later2 = System.nanoTime()
+  // println("SJ        : " + (later2 - now2))
 
-    val p = Person2(XList(List("x", "y")))
-    println(RType.of[Person2].pretty)
-    val js = sj[Person2].toJson(p)
-    println(js)
+  // def parseString(in: reading.JsonSource): CharSequence =
+  //   // charWithWS(in, '"')
+  //   val sb = new reading.FastStringBuilder(64)
+  //   while true do
+  //     val c = in.readEscapedString()
+  //     if c == END_OF_STRING then return sb.buffer // mutable thing escapes, but cannot be changed
+  //     sb.append(c.toChar)
+  //   throw JsonParseError("Invalid string value detected", in)
 
-    // val inst = Blah("wow", Some(111)) // Some(Some(None))) // Some(Some(3)))
-    // val js = sj[Blah].toJson(inst)
-    // println(js)
+  import ScalaJack.*
+  import co.blocke.scalajack.run.Record
+  println("\n")
+  implicit val blah: ScalaJack[List[Queue[Int]]] = sj[List[Queue[Int]]]
+  println(ScalaJack[List[Queue[Int]]].fromJson("[[1,2,3],[4,5,6],[7,8,9]]"))
+  // implicit val blah: ScalaJack[Record] = sj[Record]
+  // println(ScalaJack[Record].fromJson(co.blocke.scalajack.run.jsData))
 
-    // co.blocke.scalajack.internal.CodePrinter.code {
-    //   sj[Record]
-    // }
-
-    // val v = Foo("Hey", Fish("Bloop", None), None, Color.Blue)
-    // val v = Foo("Hey", "Boo")
-
-    // println(ScalaJack[Foo].toJson(v))
-    // println(sj[Foo](JsonConfig.withTypeHintLabel("bogus")).toJson(v))
-
-    // println(sj[Record].toJson(record))
-
-    // println("------")
-
-    // println(sj[Record].fromJson(jsData))
-  catch {
-    case t: Throwable =>
-      println(s"BOOM ($t): " + t.getMessage)
-      t.printStackTrace
-  }
-
-  // val s1 = scramble(15)
-  // val s2 = scramble(394857)
-  // println(s1)
-  // println(s2)
-  // println(descrambleTest(s1, 15))
-  // println(descrambleTest(s2, 394857))
+  println("done.")

@@ -43,12 +43,12 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
-    // extends CirceZ.CirceReadingBenchmark
-    extends ScalaJackZ.ScalaJackReadingBenchmark
-    // with JsoniterZ.JsoniterReadingBenchmark
-    // with ZIOZ.ZIOJsonReadingBenchmark
-    // with PlayZ.PlayReadingBenchmark
-    // with ArgonautZ.ArgonautReadingBenchmark
+    extends CirceZ.CirceReadingBenchmark
+    with ScalaJackZ.ScalaJackReadingBenchmark
+    with JsoniterZ.JsoniterReadingBenchmark
+    with ZIOZ.ZIOJsonReadingBenchmark
+    with PlayZ.PlayReadingBenchmark
+    with ArgonautZ.ArgonautReadingBenchmark
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
