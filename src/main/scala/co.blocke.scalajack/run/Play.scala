@@ -42,10 +42,15 @@ object RunMe extends App:
   //   throw JsonParseError("Invalid string value detected", in)
 
   import ScalaJack.*
-  import co.blocke.scalajack.run.Record
+  import co.blocke.scalajack.json.run.Record
   println("\n")
-  implicit val blah: ScalaJack[List[Queue[Int]]] = sj[List[Queue[Int]]]
-  println(ScalaJack[List[Queue[Int]]].fromJson("[[1,2,3],[4,5,6],[7,8,9]]"))
+
+  implicit val blah: ScalaJack[Foom] = sj[Foom]
+  println(ScalaJack[Foom].fromJson("""{"a": -12, "b":"Greg Z"}"""))
+
+  // implicit val blah: ScalaJack[List[Queue[Int]]] = sj[List[Queue[Int]]]
+  // println(ScalaJack[List[Queue[Int]]].fromJson("null")) // "[[1,2,3],[4,5,6],[7,8,9]]"))
+
   // implicit val blah: ScalaJack[Record] = sj[Record]
   // println(ScalaJack[Record].fromJson(co.blocke.scalajack.run.jsData))
 

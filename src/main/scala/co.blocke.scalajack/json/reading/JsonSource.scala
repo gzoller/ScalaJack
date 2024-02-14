@@ -18,7 +18,7 @@ case class JsonSource(js: CharSequence):
 
   def pos = i
 
-  def here = js.charAt(i)
+  inline def here = js.charAt(i)
 
   inline def read(): Char =
     if i < max then
@@ -44,6 +44,11 @@ case class JsonSource(js: CharSequence):
       case '\t' => true
       case _    => false
     }
+
+  @inline private[this] def isNumber(c: Char): Boolean =
+    (c: @switch) match
+      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' | 'E' => true
+      case _                                                                                       => false
 
   // Read, transforming escaped chars and stopping when we hit '"'
   inline def readEscapedString(): Char =
@@ -101,6 +106,14 @@ case class JsonSource(js: CharSequence):
       case c => throw new JsonParseError(s"Expected array start '[' but found '$c'", this)
     }
 
+  // True if we got anything besides a ], False for ]
+  def firstArrayElement(): Boolean =
+    (readSkipWhitespace(): @switch) match
+      case ']' => false
+      case _ =>
+        retract()
+        true
+
   // True if we got a comma, and False for ]
   def nextArrayElement(): Boolean =
     (readSkipWhitespace(): @switch) match
@@ -110,24 +123,43 @@ case class JsonSource(js: CharSequence):
         false
       case c => throw JsonParseError(s"Expected ',' or ']' got '$c'", this)
 
+  // True if we got a string (implies a retraction), False for }
+  def firstField(): Boolean =
+    (readSkipWhitespace(): @switch) match {
+      case '"' => true
+      case '}' => false
+      case c =>
+        throw JsonParseError(s"expected string or '}' got '$c'", this)
+    }
+
   // True if we got a comma, and False for }
   def nextField(): Boolean =
     (readSkipWhitespace(): @switch) match {
       case ',' =>
         expectFieldValue = false
         true
-      case '}' if !expectFieldValue =>
-        false
+      // case '}' if !expectFieldValue =>
+      //   false
       case '}' =>
-        throw JsonParseError("Expected field value but got '}' instead.", this)
+        false
+      // throw JsonParseError("Expected field value but got '}' instead.", this)
       case c =>
         throw JsonParseError(s"expected ',' or '}' got '$c'", this)
     }
 
-  inline def expectFieldName(): CharSequence =
-    val charseq = parseString()
+  inline def expectFieldName(fieldNameMatrix: StringMatrix): Int =
+    charWithWS('"')
     expectFieldValue = true
-    charseq
+    var fi: Int = 0
+    var bs: Long = fieldNameMatrix.initial
+    var c: Int = -1
+    while { c = readEscapedString(); c != END_OF_STRING } do {
+      bs = fieldNameMatrix.update(bs, fi, c)
+      fi += 1
+    }
+    charWithWS(':')
+    bs = fieldNameMatrix.exact(bs, fi)
+    fieldNameMatrix.first(bs)
 
   // Value might be null!
   def expectString(): CharSequence =
@@ -169,9 +201,9 @@ case class JsonSource(js: CharSequence):
   def expectInt(): Int =
     checkNumber()
     try {
-      val i = UnsafeNumbers.int_(this, false)
+      val intRead = UnsafeNumbers.int_(this, false)
       retract()
-      i
+      intRead
     } catch {
       case UnsafeNumbers.UnsafeNumber => throw JsonParseError("Expected an Int", this)
     }
@@ -194,3 +226,39 @@ case class JsonSource(js: CharSequence):
   inline def charWithWS(c: Char): Unit =
     val got = readSkipWhitespace()
     if got != c then throw JsonParseError(s"Expected '$c' got '$got'", this)
+
+  def skipValue(): Unit =
+    (readSkipWhitespace(): @switch) match {
+      case 'n' => readChars(JsonSource.ull, "null")
+      case 'f' => readChars(JsonSource.alse, "false")
+      case 't' => readChars(JsonSource.rue, "true")
+      case '{' =>
+        if firstField() then {
+          while {
+            {
+              charWithWS('"')
+              skipString()
+              charWithWS(':')
+              skipValue()
+            }; nextField()
+          } do ()
+        }
+      case '[' =>
+        if firstArrayElement() then {
+          while { skipValue(); nextArrayElement() } do ()
+        }
+      case '"' =>
+        skipString()
+      case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' =>
+        skipNumber()
+      case c => throw JsonParseError(s"Unexpected '$c'", this)
+    }
+
+  def skipNumber(): Unit = {
+    while isNumber(read()) do {}
+    retract()
+  }
+
+  def skipString(): Unit =
+    var i: Int = 0
+    while { i = readEscapedString(); i != -1 } do ()

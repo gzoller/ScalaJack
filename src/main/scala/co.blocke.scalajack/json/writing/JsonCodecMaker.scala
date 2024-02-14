@@ -6,13 +6,14 @@ import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
-import reading.JsonSource
+import reading.{JsonReaderUtil, JsonSource, StringMatrix}
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
 import scala.collection.Factory
 import dotty.tools.dotc.ast.Trees.EmptyTree
 import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.text.translate.CharSequenceTranslator
+import dotty.tools.dotc.core.TypeComparer.AnyConstantType
 
 object JsonCodecMaker:
 
@@ -57,35 +58,51 @@ object JsonCodecMaker:
     val readMethodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
     val readMethodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
 
-    class JsonReader // temporary to compile until we write the real JsonReader
+    def makeReadFn[U: Type](methodKey: MethodKey, in: Expr[JsonSource])(f: Expr[JsonSource] => Expr[U])(using Quotes)(using Type[JsonSource]): Expr[Unit] =
+      readMethodSyms.getOrElse(
+        methodKey, {
+          val sym = Symbol.newMethod(
+            Symbol.spliceOwner,
+            "r" + readMethodSyms.size,
+            MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[U])
+            //                    (_ => List(input_params,...), _ => resultType)
+          )
+          readMethodSyms.update(methodKey, sym)
+          readMethodDefs += DefDef(
+            sym,
+            params => {
+              val List(List(in)) = params
+              Some(f(in.asExprOf[JsonSource]).asTerm.changeOwner(sym))
+            }
+          )
+        }
+      )
+      '{}
 
-    def makeReadFn[U: Type](methodKey: MethodKey, arg: Expr[U], in: Expr[JsonReader])(f: (Expr[JsonReader], Expr[U]) => Expr[U])(using Quotes)(using Type[JsonReader]): Expr[U] =
-      methodKey.ref.refType match
-        case '[tt] =>
-          val typerepr = TypeRepr.of[tt]
-          Apply(
-            Ref(
-              readMethodSyms.getOrElse(
-                methodKey, {
-                  val sym = Symbol.newMethod(
-                    Symbol.spliceOwner,
-                    "r" + readMethodSyms.size,
-                    MethodType(List("in", "default"))(_ => List(TypeRepr.of[JsonReader], typerepr), _ => TypeRepr.of[U])
-                  )
-                  readMethodSyms.update(methodKey, sym)
-                  readMethodDefs += DefDef(
-                    sym,
-                    params => {
-                      val List(List(in, default)) = params
-                      Some(f(in.asExprOf[JsonReader], default.asExprOf[U]).asTerm.changeOwner(sym))
-                    }
-                  )
-                  sym
-                }
-              )
-            ),
-            List(in.asTerm, arg.asTerm)
-          ).asExprOf[U]
+      // Apply(
+      //   Ref(
+      //     readMethodSyms.getOrElse(
+      //       methodKey, {
+      //         val sym = Symbol.newMethod(
+      //           Symbol.spliceOwner,
+      //           "r" + readMethodSyms.size,
+      //           MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[U])
+      //           //                    (_ => List(input_params,...), _ => resultType)
+      //         )
+      //         readMethodSyms.update(methodKey, sym)
+      //         readMethodDefs += DefDef(
+      //           sym,
+      //           params => {
+      //             val List(List(in)) = params
+      //             Some(f(in.asExprOf[JsonSource]).asTerm.changeOwner(sym))
+      //           }
+      //         )
+      //         sym
+      //       }
+      //     )
+      //   ),
+      //   List(in.asTerm)
+      // ).asExprOf[Unit]
 
     // ---------------------------------------------------------------------------------------------
 
@@ -791,6 +808,82 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
+    // Little rif on Expr.ofList.  I need an Expr[Array] here because in the runtime code we need to update the
+    // array (which is pre-loaded with default values) with the parsed field values for ultimate class instantiation.
+    import scala.reflect.ClassTag
+    def ofArray[T](xs: Seq[Expr[T]])(using Type[T])(using Quotes): Expr[Array[T]] =
+      '{ scala.Array.apply[T](${ quoted.Varargs(xs) }*)(${ Expr.summon[ClassTag[T]].get }) }
+
+    def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
+      r.refType match // refType is Type[r.R]
+        case '[b] =>
+          r match
+            case t: ScalaClassRef[?] =>
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                val fieldNames = Expr(t.fields.map(_.name).toArray)
+                val instantiator = JsonReaderUtil.classInstantiator[T](t.asInstanceOf[ClassRef[T]])
+                // Constructor argument list, preloaded with optional 'None' values and any default values specified
+                val argListArray =
+                  ofArray(t.fields.map { f =>
+                    val scalaF = f.asInstanceOf[ScalaFieldInfoRef]
+                    if scalaF.defaultValueAccessorName.isDefined then
+                      r.refType match
+                        case '[g] =>
+                          val tpe = TypeRepr.of[g].widen
+                          val sym = tpe.typeSymbol
+                          val companionBody = sym.companionClass.tree.asInstanceOf[ClassDef].body
+                          val companion = Ref(sym.companionModule)
+                          companionBody
+                            .collect {
+                              case defaultMethod @ DefDef(name, _, _, _) if name.startsWith("$lessinit$greater$default$" + (f.index + 1)) =>
+                                companion.select(defaultMethod.symbol).appliedToTypes(tpe.typeArgs).asExpr
+                            }
+                            .headOption
+                            .getOrElse(Expr(null.asInstanceOf[Boolean]))
+                    else if scalaF.fieldRef.isInstanceOf[OptionRef[_]] then Expr(None)
+                    else Expr(null.asInstanceOf[Int])
+                  })
+
+                /* HOWTO: Wildcard case clause: (from https://github.com/arainko/ducktape/blob/bc65ab2a259b85ce51dc6c762b76904d735b7be6/ducktape/src/main/scala/io/github/arainko/ducktape/internal/modules/ZippedProduct.scala#L66)
+                (ducktape/ducktape/src/main/scala/io/github/arainko/ducktape/internal/modules/ZippedProduct.scala)
+
+                  val matchErrorCase = CaseDef(Bind(matchErrorBind, Wildcard()), None, '{ throw new MatchError($wronglyMatchedReference) }.asTerm)
+
+                 */
+
+                '{
+                  val fieldMatrix = new StringMatrix($fieldNames)
+                  val args = $argListArray
+                  if ! $in.expectObjectStart() then null.asInstanceOf[T]
+                  else
+                    if $in.here != '}' then
+                      while
+                        ${
+                          val fieldCases = t.fields.zipWithIndex.map { (f, fidex) =>
+                            f.fieldRef.refType match
+                              case '[c] =>
+                                val fref: RTypeRef[c] = f.fieldRef.asInstanceOf[RTypeRef[c]]
+                                CaseDef(
+                                  Literal(IntConstant(fidex)),
+                                  None,
+                                  '{
+                                    args.update(${ Expr(fidex) }, ${ genReadVal[c](fref, in) })
+                                  }.asTerm
+                                )
+                          } :+ CaseDef(Literal(IntConstant(-1)), None, '{ $in.skipValue() }.asTerm)
+                          Match('{ $in.expectFieldName(fieldMatrix) }.asTerm, fieldCases).asExprOf[Any]
+                        }
+                        $in.nextField()
+                      do ()
+                    else $in.read() // skip the '}'
+                    $instantiator(args) // instantiate class
+                }
+              )
+
+            case _ => ???
+
+    // ---------------------------------------------------------------------------------------------
+
     def genReadVal[T: Type](
         // default: Expr[T], // needed?  This should already be in ref...
         ref: RTypeRef[T],
@@ -799,64 +892,74 @@ object JsonCodecMaker:
         inTuple: Boolean = false // not sure if needed...
     )(using Quotes): Expr[T] =
       val methodKey = MethodKey(ref, false)
-      // Stuff here to hit readMethodSyms first -- TBD
-      ref match
-        // First cover all primitive and simple types...
-        // case t: BigDecimalRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
-        //   else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
-        // case t: BigIntRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
-        //   else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
-        case t: BooleanRef =>
-          '{ $in.expectBoolean() }
-        // if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
-        // else '{ $out.value(${ aE.asExprOf[Boolean] }) }
-        // case t: ByteRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Byte] }) }
-        // case t: CharRef => '{ $out.value(${ aE.asExprOf[Char] }) }
-        // case t: DoubleRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Double] }) }
-        // case t: FloatRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Float] }) }
-        case t: IntRef =>
-          '{ $in.expectInt() }
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Int] }) }
-        // case t: LongRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Long] }) }
-        // case t: ShortRef =>
-        //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
-        //   else '{ $out.value(${ aE.asExprOf[Short] }) }
-        case t: StringRef =>
-          '{ Option($in.expectString()).map(_.toString).getOrElse(null) }
-        //   if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
-        //   else '{ $out.value(${ aE.asExprOf[String] }) }
+      readMethodSyms
+        .get(methodKey)
+        .map { sym => // hit cache first... then match on Ref type
+          println("Calling generated method " + sym)
+          Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+        }
+        .getOrElse(
+          ref match
+            // First cover all primitive and simple types...
+            // case t: BigDecimalRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
+            //   else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
+            // case t: BigIntRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
+            //   else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
+            case t: BooleanRef =>
+              '{ $in.expectBoolean() }.asExprOf[T]
+            // if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
+            // else '{ $out.value(${ aE.asExprOf[Boolean] }) }
+            // case t: ByteRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Byte] }) }
+            // case t: CharRef => '{ $out.value(${ aE.asExprOf[Char] }) }
+            // case t: DoubleRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Double] }) }
+            // case t: FloatRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Float] }) }
+            case t: IntRef =>
+              '{ $in.expectInt() }.asExprOf[T]
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Int] }) }
+            // case t: LongRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Long] }) }
+            // case t: ShortRef =>
+            //   if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
+            //   else '{ $out.value(${ aE.asExprOf[Short] }) }
+            case t: StringRef =>
+              '{ Option($in.expectString()).map(_.toString).getOrElse(null) }.asExprOf[T]
+            //   if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
+            //   else '{ $out.value(${ aE.asExprOf[String] }) }
 
-        case _ =>
-          ref.refType match
-            case '[b] =>
-              ref match
-                case t: SeqRef[?] =>
-                  t.elementRef.refType match
-                    case '[e] =>
-                      '{
-                        if ! $in.expectArrayStart() then null.asInstanceOf[T]
-                        else if $in.here == ']' then // empty Seq
-                          $in.read() // skip the ']'
-                          List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
-                        else
-                          val acc = scala.collection.mutable.ListBuffer.empty[e]
-                          acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                          while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                          acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
-                      }
+            case _ =>
+              ref.refType match
+                case '[b] =>
+                  ref match
+                    case t: SeqRef[?] =>
+                      t.elementRef.refType match
+                        case '[e] =>
+                          '{
+                            if ! $in.expectArrayStart() then null.asInstanceOf[T]
+                            else if $in.here == ']' then // empty Seq
+                              $in.read() // skip the ']'
+                              List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                            else
+                              val acc = scala.collection.mutable.ListBuffer.empty[e]
+                              acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                              while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                              acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                          }
 
-        // case _ => genDecFnBody(ref, in, inTuple = inTuple)
+                    case _ =>
+                      genDecFnBody[T](ref, in) // Create a new decoder function (presumably for class, trait, etc)
+                      genReadVal(ref, in)
+          // Just-created function is present now and will be called
+        )
 
     // ---------------------------------------------------------------------------------------------
 
@@ -881,7 +984,7 @@ object JsonCodecMaker:
     }.asTerm
     val neededDefs =
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
-      writeMethodDefs
+      writeMethodDefs ++ readMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
-    // println(s"Codec: ${codec.show}")
+    println(s"Codec: ${codec.show}")
     codec

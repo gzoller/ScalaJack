@@ -1,4 +1,5 @@
 package co.blocke.scalajack
+package json
 package run
 
 import neotype.*
@@ -84,6 +85,8 @@ given EmptyString: Newtype[String] with
     input.isEmpty
 
 case class Person2(age: XList)
+
+case class Foom(a: Int = 5, b: String = "Wow")
 
 val jsData =
   """{
