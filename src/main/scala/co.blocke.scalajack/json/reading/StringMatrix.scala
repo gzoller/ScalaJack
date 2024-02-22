@@ -9,10 +9,6 @@ package reading
 // ScalaJack: Removal of ZIO's original aliases feature for speed--we don't need this.
 //
 final class StringMatrix(val xs: Array[String]) {
-  require(xs.forall(_.nonEmpty))
-  require(xs.nonEmpty)
-  require(xs.length < 64)
-
   val width = xs.length
   val height: Int = xs.map(_.length).max
   val lengths: Array[Int] = xs.map(_.length)

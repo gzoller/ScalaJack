@@ -39,7 +39,7 @@ object ScalaJack:
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     // val jsonDecoder = reading.JsonReader.refRead2(classRef)
     // println(s"Decoder: ${jsonDecoder.show}")
-    val jsonCodec = writing.JsonCodecMaker.generateCodecFor(classRef, JsonConfig)
+    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, JsonConfig)
 
     '{ ScalaJack($jsonCodec) }
 
@@ -50,7 +50,7 @@ object ScalaJack:
     val cfg = summon[FromExpr[JsonConfig]].unapply(cfgE)
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     // val jsonDecoder = reading.JsonReader.refRead2(classRef)
-    val jsonCodec = writing.JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(JsonConfig))
+    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(JsonConfig))
     '{ ScalaJack($jsonCodec) }
 
   //   refRead[T](classRef)

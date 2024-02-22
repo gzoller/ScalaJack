@@ -25,25 +25,30 @@ object JsonReaderUtil:
   //     }
   //   }
 
+  // Given an array of Any, produce a T (class instance)
   def classInstantiator[T: Type](ref: ClassRef[T])(using Quotes): Expr[Array[?] => T] =
     import quotes.reflect.*
-    val sym = TypeRepr.of[T].classSymbol.get
+
+    val aTpr = TypeRepr.of[T]
+    val ctor = aTpr.typeSymbol.primaryConstructor
+
     '{ (fieldValues: Array[?]) =>
       ${
-        val tree = Apply(
-          Select.unique(New(TypeIdent(sym)), "<init>"),
-          ref.fields.zipWithIndex.map { case (f, i) =>
-            f.fieldRef.refType match
-              case '[t] =>
-                val idx = Expr(i)
-                '{ fieldValues($idx).asInstanceOf[t] }.asTerm
-          }
-        )
-        tree.asExpr.asExprOf[T]
+        New(Inferred(aTpr))
+          .select(ctor)
+          .appliedToArgs({
+            ref.fields.map { case f =>
+              f.fieldRef.refType match
+                case '[t] => // get the Type of each field (stored in fieldRef.refType)
+                  val idx = Expr(f.index)
+                  '{ fieldValues($idx).asInstanceOf[t] }.asTerm
+            }
+          })
+          .asExprOf[T]
       }
     }
 
-    /*
+  /*
   def tupleInstantiator[T: Type](ref: TupleRef[T])(using Quotes): Expr[List[?] => T] =
     import quotes.reflect.*
     val sym = TypeRepr.of[T].classSymbol.get
@@ -69,7 +74,7 @@ object JsonReaderUtil:
         tree.asExpr.asExprOf[T]
       }
     }
-     */
+   */
 
   // def classParseMap[T: Type](ref: ClassRef[T], root: ReaderModule)(using q: Quotes)(using
   //     cache: scala.collection.mutable.HashMap[Expr[TypedName], Expr[(JsonConfig, JsonParser) => Either[ParseError, ?]]]

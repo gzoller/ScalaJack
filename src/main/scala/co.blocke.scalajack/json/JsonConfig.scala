@@ -28,7 +28,7 @@ class JsonConfig private[scalajack] (
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
-  def withoutEscapedStrings(): JsonConfig = copy(escapedStrings = false)
+  def withEscapedStrings(): JsonConfig = copy(escapedStrings = false)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -71,7 +71,7 @@ object JsonConfig
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
       enumsAsIds = None,
-      escapedStrings = true
+      escapedStrings = false
     ):
   import scala.quoted.FromExpr.*
 
@@ -90,7 +90,7 @@ object JsonConfig
           else '{ jc }
         }
         val jc3 = ${
-          if !x.escapedStrings then '{ jc2.withoutEscapedStrings() }
+          if !x.escapedStrings then '{ jc2.withEscapedStrings() }
           else '{ jc2 }
         }
         jc3
@@ -152,7 +152,7 @@ object JsonConfig
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withoutEscapedStrings() }           => Some(x.valueOrAbort.withoutEscapedStrings())
+        case '{ ($x: JsonConfig).withEscapedStrings() }              => Some(x.valueOrAbort.withEscapedStrings())
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

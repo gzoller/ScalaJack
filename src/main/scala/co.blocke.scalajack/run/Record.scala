@@ -86,7 +86,7 @@ given EmptyString: Newtype[String] with
 
 case class Person2(age: XList)
 
-case class Foom(a: Int = 5, b: String = "Wow")
+case class Foom(a: Int, b: String)
 
 val jsData =
   """{

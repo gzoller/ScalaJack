@@ -25,10 +25,12 @@ class MiscSpec() extends AnyFunSpec with JsonMatchers:
         val js = sj[StringHolder].toJson(inst)
         js should matchJson("""{"a":"This is a \"strange\" test\\non another level."}""")
       }
-      it("String without escaping must work (bad JSON, but proves escape can be turned off)") {
+      it("String escaping must work (bad JSON, but proves escape can be turned off)") {
         val inst = StringHolder("""This is a "strange" test\non another level.""")
-        val js = sj[StringHolder](JsonConfig.withoutEscapedStrings()).toJson(inst)
-        js should equal("""{"a":"This is a "strange" test\non another level."}""")
+        val js1 = sj[StringHolder].toJson(inst)
+        val js2 = sj[StringHolder](JsonConfig.withEscapedStrings()).toJson(inst)
+        js1 should equal("""{"a":"This is a "strange" test\non another level."}""")
+        js2 should equal("""{"a":"This is a "strange" test\non another level."}""")
       }
       it("NeoType integration must work") {
         val inst = Validated(NonEmptyString("Mike"), XList(List("x", "y", "z")), List(EmptyString(""), EmptyString(""), EmptyString("")))

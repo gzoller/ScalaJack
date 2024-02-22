@@ -555,13 +555,13 @@ object UnsafeNumbers {
       consume: Boolean,
       max_bits: Int
   ): java.math.BigInteger = {
-    var current: Int = in.read()
+    var current: Int = in.readChar()
     var negative = false
 
     if current == '-' then {
       negative = true
-      current = in.read()
-    } else if current == '+' then current = in.read()
+      current = in.readChar()
+    } else if current == '+' then current = in.readChar()
     if current == -1 then throw UnsafeNumber
 
     bigDecimal__(in, consume, negative, current, true, max_bits).unscaledValue
@@ -576,15 +576,15 @@ object UnsafeNumbers {
   def long__(in: JsonSource, lower: Long, upper: Long, consume: Boolean): Long = {
     var current: Int = 0
 
-    current = in.read()
+    current = in.readChar()
     if current == -1 then throw UnsafeNumber
     var negative = false
     if current == '-' then {
       negative = true
-      current = in.read()
+      current = in.readChar()
       if current == -1 then throw UnsafeNumber
     } else if current == '+' then {
-      current = in.read()
+      current = in.readChar()
       if current == -1 then throw UnsafeNumber
     }
 
@@ -599,7 +599,7 @@ object UnsafeNumbers {
           else if accum == longunderflow && c == 9 then throw UnsafeNumber
         // count down, not up, because it is larger
         accum = accum * 10 - c // should never underflow
-        current = in.read()
+        current = in.readChar()
       }; current != -1 && isDigit(current)
     } do ()
 
@@ -620,7 +620,7 @@ object UnsafeNumbers {
     float_(new JsonSource(num), true, max_bits)
 
   def float_(in: JsonSource, consume: Boolean, max_bits: Int): Float = {
-    var current: Int = in.read()
+    var current: Int = in.readChar()
     var negative = false
 
     def readAll(s: String): Unit = {
@@ -628,12 +628,12 @@ object UnsafeNumbers {
       val len = s.length
 
       while i < len do {
-        current = in.read()
+        current = in.readChar()
         if current != s(i) then throw UnsafeNumber
         i += 1
       }
 
-      current = in.read() // to be consistent read the terminator
+      current = in.readChar() // to be consistent read the terminator
 
       if consume && current != -1 then throw UnsafeNumber
     }
@@ -645,9 +645,9 @@ object UnsafeNumbers {
 
     if current == '-' then {
       negative = true
-      current = in.read()
+      current = in.readChar()
     } else if current == '+' then {
-      current = in.read()
+      current = in.readChar()
     }
 
     if current == 'I' then {
@@ -669,18 +669,18 @@ object UnsafeNumbers {
     double_(new JsonSource(num), true, max_bits)
 
   def double_(in: JsonSource, consume: Boolean, max_bits: Int): Double = {
-    var current: Int = in.read()
+    var current: Int = in.readChar()
     var negative = false
 
     def readall(s: String): Unit = {
       var i = 0
       val len = s.length
       while i < len do {
-        current = in.read()
+        current = in.readChar()
         if current != s(i) then throw UnsafeNumber
         i += 1
       }
-      current = in.read() // to be consistent read the terminator
+      current = in.readChar() // to be consistent read the terminator
       if consume && current != -1 then throw UnsafeNumber
     }
 
@@ -691,8 +691,8 @@ object UnsafeNumbers {
 
     if current == '-' then {
       negative = true
-      current = in.read()
-    } else if current == '+' then current = in.read()
+      current = in.readChar()
+    } else if current == '+' then current = in.readChar()
 
     if current == 'I' then {
       readall("nfinity")
@@ -725,13 +725,13 @@ object UnsafeNumbers {
       consume: Boolean,
       max_bits: Int
   ): java.math.BigDecimal = {
-    var current: Int = in.read()
+    var current: Int = in.readChar()
     var negative = false
 
     if current == '-' then {
       negative = true
-      current = in.read()
-    } else if current == '+' then current = in.read()
+      current = in.readChar()
+    } else if current == '+' then current = in.readChar()
     if current == -1 then throw UnsafeNumber
 
     bigDecimal__(in, consume, negative, current, false, max_bits)
@@ -753,7 +753,7 @@ object UnsafeNumbers {
     var exp: Int = 0 // implied
 
     def advance(): Boolean = {
-      current = in.read()
+      current = in.readChar()
       current != -1
     }
 

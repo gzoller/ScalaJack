@@ -10,8 +10,8 @@ object ScalaJackZ:
 
     trait ScalaJackReadingBenchmark{
     @Benchmark
-    // def readRecordScalaJack = sj[Record].fromJson(jsData)
-    def readRecordScalaJack = ScalaJack[Record].fromJson(jsData)
+    // def readRecordScalaJack = sj[Record].fromJson(jsData) // 500K
+    def readRecordScalaJack = ScalaJack[Record].fromJson(jsData) // 515K :-(
    }
 
     trait ScalaJackWritingBenchmark { 

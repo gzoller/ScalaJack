@@ -1,0 +1,351 @@
+package `co.blocke.scalajack`.run
+
+Codec: {
+
+  //------------------------- Don't care about these--they appear to map index->field name, which we do effectively with StringMatrix
+
+  def f0(i: scala.Int): java.lang.String = i match {
+    case 0 =>
+      "person"
+    case 1 =>
+      "hobbies"
+    case 2 =>
+      "friends"
+    case 3 =>
+      "pets"
+  }
+  def f1(`i₂`: scala.Int): java.lang.String = `i₂` match {
+    case 0 =>
+      "name"
+    case 1 =>
+      "species"
+    case 2 =>
+      "age"
+  }
+  def f2(`i₃`: scala.Int): java.lang.String = `i₃` match {
+    case 0 =>
+      "name"
+    case 1 =>
+      "age"
+    case 2 =>
+      "email"
+  }
+  def f3(`i₄`: scala.Int): java.lang.String = `i₄` match {
+    case 0 =>
+      "name"
+    case 1 =>
+      "age"
+    case 2 =>
+      "address"
+    case 3 =>
+      "email"
+    case 4 =>
+      "phone_numbers"
+    case 5 =>
+      "is_employed"
+  }
+  def f4(`i₅`: scala.Int): java.lang.String = `i₅` match {
+    case 0 =>
+      "street"
+    case 1 =>
+      "city"
+    case 2 =>
+      "state"
+    case 3 =>
+      "postal_code"
+  }
+
+  //------------------------- Read (decode) Pet
+
+  def d2(in: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, default: co.blocke.Pet): co.blocke.Pet = if (in.isNextToken(123)) {
+    var _name: java.lang.String = (null: java.lang.String)  // <-- Secret revealed!  They create local vars for each field then "new" at the end... no Array[Any]
+    var _species: java.lang.String = (null: java.lang.String)
+    var _age: scala.Int = 0
+    var p0: scala.Int = 7   // <-- This seems to be a bit field used to ensure all required fields are set
+    if (in.isNextToken(125).unary_!) {
+      in.rollbackToken()
+      var l: scala.Int = -1
+      while (l.<(0).||(in.isNextToken(44))) {
+        l = in.readKeyAsCharBuf()
+        if (in.isCharBufEqualsTo(l, "name")) {
+          if (p0.&(1).!=(0)) p0 = p0.^(1) else in.duplicatedKeyError(l)
+          _name = in.readString(_name)
+        } else if (in.isCharBufEqualsTo(l, "species")) {
+          if (p0.&(2).!=(0)) p0 = p0.^(2) else in.duplicatedKeyError(l)
+          _species = in.readString(_species)
+        } else if (in.isCharBufEqualsTo(l, "age")) {
+          if (p0.&(4).!=(0)) p0 = p0.^(4) else in.duplicatedKeyError(l)
+          _age = in.readInt()
+        } else in.skip()
+      }
+      if (in.isCurrentToken(125).unary_!) in.objectEndOrCommaError() else ()
+    } else ()
+    // Here's where we check the bit field to ensure all fields were set.  We change the value from 0 (all fields required)
+    // to some other Int representation of bitmap based on which fields were either optional or had pre-supplied default values.
+    if (p0.!=(0)) in.requiredFieldError(f1(java.lang.Integer.numberOfTrailingZeros(p0))) else ()
+    new co.blocke.Pet(_name, _species, _age)
+  } else in.readNullOrTokenError[co.blocke.Pet](default, 123)
+
+  //-------------------------  List/Seq done this way... (note structure, not necessarily that it's a separate function)
+
+  def d1(`in₂`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₂`: scala.collection.immutable.List[co.blocke.Pet]): scala.collection.immutable.List[co.blocke.Pet] = if (`in₂`.isNextToken(91)) if (`in₂`.isNextToken(93)) `default₂` else {
+    `in₂`.rollbackToken()
+    val x: scala.collection.mutable.ListBuffer[co.blocke.Pet] = new scala.collection.mutable.ListBuffer[co.blocke.Pet]()
+    while ({
+      x.addOne(d2(`in₂`, null))
+      `in₂`.isNextToken(44)
+    }) ()
+    if (`in₂`.isCurrentToken(93)) x.toList else `in₂`.arrayEndOrCommaError()
+  } else `in₂`.readNullOrTokenError[scala.collection.immutable.List[co.blocke.Pet]](`default₂`, 91)
+
+  //-------------------------
+
+  def d4(`in₃`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₃`: co.blocke.Friend): co.blocke.Friend = if (`in₃`.isNextToken(123)) {
+    var `_name₂`: java.lang.String = (null: java.lang.String)
+    var `_age₂`: scala.Int = 0
+    var _email: java.lang.String = (null: java.lang.String)
+    var `p0₂`: scala.Int = 7
+    if (`in₃`.isNextToken(125).unary_!) {
+      `in₃`.rollbackToken()
+      var `l₂`: scala.Int = -1
+      while (`l₂`.<(0).||(`in₃`.isNextToken(44))) {
+        `l₂` = `in₃`.readKeyAsCharBuf()
+        if (`in₃`.isCharBufEqualsTo(`l₂`, "name")) {
+          if (`p0₂`.&(1).!=(0)) `p0₂` = `p0₂`.^(1) else `in₃`.duplicatedKeyError(`l₂`)
+          `_name₂` = `in₃`.readString(`_name₂`)
+        } else if (`in₃`.isCharBufEqualsTo(`l₂`, "age")) {
+          if (`p0₂`.&(2).!=(0)) `p0₂` = `p0₂`.^(2) else `in₃`.duplicatedKeyError(`l₂`)
+          `_age₂` = `in₃`.readInt()
+        } else if (`in₃`.isCharBufEqualsTo(`l₂`, "email")) {
+          if (`p0₂`.&(4).!=(0)) `p0₂` = `p0₂`.^(4) else `in₃`.duplicatedKeyError(`l₂`)
+          _email = `in₃`.readString(_email)
+        } else `in₃`.skip()
+      }
+      if (`in₃`.isCurrentToken(125).unary_!) `in₃`.objectEndOrCommaError() else ()
+    } else ()
+    if (`p0₂`.!=(0)) `in₃`.requiredFieldError(f2(java.lang.Integer.numberOfTrailingZeros(`p0₂`))) else ()
+    new co.blocke.Friend(`_name₂`, `_age₂`, _email)
+  } else `in₃`.readNullOrTokenError[co.blocke.Friend](`default₃`, 123)
+  def d3(`in₄`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₄`: scala.collection.immutable.List[co.blocke.Friend]): scala.collection.immutable.List[co.blocke.Friend] = if (`in₄`.isNextToken(91)) if (`in₄`.isNextToken(93)) `default₄` else {
+    `in₄`.rollbackToken()
+    val `x₂`: scala.collection.mutable.ListBuffer[co.blocke.Friend] = new scala.collection.mutable.ListBuffer[co.blocke.Friend]()
+    while ({
+      `x₂`.addOne(d4(`in₄`, null))
+      `in₄`.isNextToken(44)
+    }) ()
+    if (`in₄`.isCurrentToken(93)) `x₂`.toList else `in₄`.arrayEndOrCommaError()
+  } else `in₄`.readNullOrTokenError[scala.collection.immutable.List[co.blocke.Friend]](`default₄`, 91)
+  def d5(`in₅`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₅`: scala.collection.immutable.List[scala.Predef.String]): scala.collection.immutable.List[scala.Predef.String] = if (`in₅`.isNextToken(91)) if (`in₅`.isNextToken(93)) `default₅` else {
+    `in₅`.rollbackToken()
+    val `x₃`: scala.collection.mutable.ListBuffer[java.lang.String] = new scala.collection.mutable.ListBuffer[java.lang.String]()
+    while ({
+      `x₃`.addOne(`in₅`.readString((null: java.lang.String)))
+      `in₅`.isNextToken(44)
+    }) ()
+    if (`in₅`.isCurrentToken(93)) `x₃`.toList else `in₅`.arrayEndOrCommaError()
+  } else `in₅`.readNullOrTokenError[scala.collection.immutable.List[java.lang.String]](`default₅`, 91)
+  def d7(`in₆`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₆`: co.blocke.Address): co.blocke.Address = if (`in₆`.isNextToken(123)) {
+    var _street: java.lang.String = (null: java.lang.String)
+    var _city: java.lang.String = (null: java.lang.String)
+    var _state: java.lang.String = (null: java.lang.String)
+    var _postal_code: java.lang.String = (null: java.lang.String)
+    var `p0₃`: scala.Int = 15
+    if (`in₆`.isNextToken(125).unary_!) {
+      `in₆`.rollbackToken()
+      var `l₃`: scala.Int = -1
+      while (`l₃`.<(0).||(`in₆`.isNextToken(44))) {
+        `l₃` = `in₆`.readKeyAsCharBuf()
+        if (`in₆`.isCharBufEqualsTo(`l₃`, "street")) {
+          if (`p0₃`.&(1).!=(0)) `p0₃` = `p0₃`.^(1) else `in₆`.duplicatedKeyError(`l₃`)
+          _street = `in₆`.readString(_street)
+        } else if (`in₆`.isCharBufEqualsTo(`l₃`, "city")) {
+          if (`p0₃`.&(2).!=(0)) `p0₃` = `p0₃`.^(2) else `in₆`.duplicatedKeyError(`l₃`)
+          _city = `in₆`.readString(_city)
+        } else if (`in₆`.isCharBufEqualsTo(`l₃`, "state")) {
+          if (`p0₃`.&(4).!=(0)) `p0₃` = `p0₃`.^(4) else `in₆`.duplicatedKeyError(`l₃`)
+          _state = `in₆`.readString(_state)
+        } else if (`in₆`.isCharBufEqualsTo(`l₃`, "postal_code")) {
+          if (`p0₃`.&(8).!=(0)) `p0₃` = `p0₃`.^(8) else `in₆`.duplicatedKeyError(`l₃`)
+          _postal_code = `in₆`.readString(_postal_code)
+        } else `in₆`.skip()
+      }
+      if (`in₆`.isCurrentToken(125).unary_!) `in₆`.objectEndOrCommaError() else ()
+    } else ()
+    if (`p0₃`.!=(0)) `in₆`.requiredFieldError(f4(java.lang.Integer.numberOfTrailingZeros(`p0₃`))) else ()
+    new co.blocke.Address(_street, _city, _state, _postal_code)
+  } else `in₆`.readNullOrTokenError[co.blocke.Address](`default₆`, 123)
+  def d6(`in₇`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₇`: co.blocke.Person): co.blocke.Person = if (`in₇`.isNextToken(123)) {
+    var `_name₃`: java.lang.String = (null: java.lang.String)
+    var `_age₃`: scala.Int = 0
+    var _address: co.blocke.Address = null
+    var `_email₂`: java.lang.String = (null: java.lang.String)
+    var _phone_numbers: scala.collection.immutable.List[scala.Predef.String] = scala.Nil
+    var _is_employed: scala.Boolean = false
+    var `p0₄`: scala.Int = 63
+    if (`in₇`.isNextToken(125).unary_!) {
+      `in₇`.rollbackToken()
+      var `l₄`: scala.Int = -1
+      while (`l₄`.<(0).||(`in₇`.isNextToken(44))) {
+        `l₄` = `in₇`.readKeyAsCharBuf()
+        if (`in₇`.isCharBufEqualsTo(`l₄`, "name")) {
+          if (`p0₄`.&(1).!=(0)) `p0₄` = `p0₄`.^(1) else `in₇`.duplicatedKeyError(`l₄`)
+          `_name₃` = `in₇`.readString(`_name₃`)
+        } else if (`in₇`.isCharBufEqualsTo(`l₄`, "age")) {
+          if (`p0₄`.&(2).!=(0)) `p0₄` = `p0₄`.^(2) else `in₇`.duplicatedKeyError(`l₄`)
+          `_age₃` = `in₇`.readInt()
+        } else if (`in₇`.isCharBufEqualsTo(`l₄`, "address")) {
+          if (`p0₄`.&(4).!=(0)) `p0₄` = `p0₄`.^(4) else `in₇`.duplicatedKeyError(`l₄`)
+          _address = d7(`in₇`, _address)
+        } else if (`in₇`.isCharBufEqualsTo(`l₄`, "email")) {
+          if (`p0₄`.&(8).!=(0)) `p0₄` = `p0₄`.^(8) else `in₇`.duplicatedKeyError(`l₄`)
+          `_email₂` = `in₇`.readString(`_email₂`)
+        } else if (`in₇`.isCharBufEqualsTo(`l₄`, "phone_numbers")) {
+          if (`p0₄`.&(16).!=(0)) `p0₄` = `p0₄`.^(16) else `in₇`.duplicatedKeyError(`l₄`)
+          _phone_numbers = d5(`in₇`, _phone_numbers)
+        } else if (`in₇`.isCharBufEqualsTo(`l₄`, "is_employed")) {
+          if (`p0₄`.&(32).!=(0)) `p0₄` = `p0₄`.^(32) else `in₇`.duplicatedKeyError(`l₄`)
+          _is_employed = `in₇`.readBoolean()
+        } else `in₇`.skip()
+      }
+      if (`in₇`.isCurrentToken(125).unary_!) `in₇`.objectEndOrCommaError() else ()
+    } else ()
+    if (`p0₄`.&(47).!=(0)) `in₇`.requiredFieldError(f3(java.lang.Integer.numberOfTrailingZeros(`p0₄`.&(47)))) else ()
+    new co.blocke.Person(`_name₃`, `_age₃`, _address, `_email₂`, _phone_numbers, _is_employed)
+  } else `in₇`.readNullOrTokenError[co.blocke.Person](`default₇`, 123)
+  def d0(`in₈`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₈`: co.blocke.Record): co.blocke.Record = if (`in₈`.isNextToken(123)) {
+    var _person: co.blocke.Person = null
+    var _hobbies: scala.collection.immutable.List[scala.Predef.String] = scala.Nil
+    var _friends: scala.collection.immutable.List[co.blocke.Friend] = scala.Nil
+    var _pets: scala.collection.immutable.List[co.blocke.Pet] = scala.Nil
+    var `p0₅`: scala.Int = 15
+    if (`in₈`.isNextToken(125).unary_!) {
+      `in₈`.rollbackToken()
+      var `l₅`: scala.Int = -1
+      while (`l₅`.<(0).||(`in₈`.isNextToken(44))) {
+        `l₅` = `in₈`.readKeyAsCharBuf()
+        if (`in₈`.isCharBufEqualsTo(`l₅`, "person")) {
+          if (`p0₅`.&(1).!=(0)) `p0₅` = `p0₅`.^(1) else `in₈`.duplicatedKeyError(`l₅`)
+          _person = d6(`in₈`, _person)
+        } else if (`in₈`.isCharBufEqualsTo(`l₅`, "hobbies")) {
+          if (`p0₅`.&(2).!=(0)) `p0₅` = `p0₅`.^(2) else `in₈`.duplicatedKeyError(`l₅`)
+          _hobbies = d5(`in₈`, _hobbies)
+        } else if (`in₈`.isCharBufEqualsTo(`l₅`, "friends")) {
+          if (`p0₅`.&(4).!=(0)) `p0₅` = `p0₅`.^(4) else `in₈`.duplicatedKeyError(`l₅`)
+          _friends = d3(`in₈`, _friends)
+        } else if (`in₈`.isCharBufEqualsTo(`l₅`, "pets")) {
+          if (`p0₅`.&(8).!=(0)) `p0₅` = `p0₅`.^(8) else `in₈`.duplicatedKeyError(`l₅`)
+          _pets = d1(`in₈`, _pets)
+        } else `in₈`.skip()
+      }
+      if (`in₈`.isCurrentToken(125).unary_!) `in₈`.objectEndOrCommaError() else ()
+    } else ()
+    if (`p0₅`.&(1).!=(0)) `in₈`.requiredFieldError(f0(java.lang.Integer.numberOfTrailingZeros(`p0₅`.&(1)))) else ()
+    new co.blocke.Record(_person, _hobbies, _friends, _pets)
+  } else `in₈`.readNullOrTokenError[co.blocke.Record](`default₈`, 123)
+  def e2(`x₄`: co.blocke.Address, out: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    out.writeObjectStart()
+    out.writeNonEscapedAsciiKey("street")
+    out.writeVal(`x₄`.street)
+    out.writeNonEscapedAsciiKey("city")
+    out.writeVal(`x₄`.city)
+    out.writeNonEscapedAsciiKey("state")
+    out.writeVal(`x₄`.state)
+    out.writeNonEscapedAsciiKey("postal_code")
+    out.writeVal(`x₄`.postal_code)
+    out.writeObjectEnd()
+  }
+  def e3(`x₅`: scala.collection.immutable.List[scala.Predef.String] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any], `out₂`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₂`.writeArrayStart()
+    var `l₆`: scala.collection.immutable.List[java.lang.String] = `x₅`
+    while (`l₆`.ne(scala.Nil)) {
+      `out₂`.writeVal(`l₆`.head)
+      `l₆` = `l₆`.tail
+    }
+    `out₂`.writeArrayEnd()
+  }
+  def e1(`x₆`: co.blocke.Person, `out₃`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₃`.writeObjectStart()
+    `out₃`.writeNonEscapedAsciiKey("name")
+    `out₃`.writeVal(`x₆`.name)
+    `out₃`.writeNonEscapedAsciiKey("age")
+    `out₃`.writeVal(`x₆`.age)
+    `out₃`.writeNonEscapedAsciiKey("address")
+    e2(`x₆`.address, `out₃`)
+    `out₃`.writeNonEscapedAsciiKey("email")
+    `out₃`.writeVal(`x₆`.email)
+    val v: scala.collection.immutable.List[scala.Predef.String] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any] = `x₆`.phone_numbers
+    if (v.isEmpty.unary_!) {
+      `out₃`.writeNonEscapedAsciiKey("phone_numbers")
+      e3(v, `out₃`)
+    } else ()
+    `out₃`.writeNonEscapedAsciiKey("is_employed")
+    `out₃`.writeVal(`x₆`.is_employed)
+    `out₃`.writeObjectEnd()
+  }
+  def e5(`x₇`: co.blocke.Friend, `out₄`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₄`.writeObjectStart()
+    `out₄`.writeNonEscapedAsciiKey("name")
+    `out₄`.writeVal(`x₇`.name)
+    `out₄`.writeNonEscapedAsciiKey("age")
+    `out₄`.writeVal(`x₇`.age)
+    `out₄`.writeNonEscapedAsciiKey("email")
+    `out₄`.writeVal(`x₇`.email)
+    `out₄`.writeObjectEnd()
+  }
+  def e4(`x₈`: scala.collection.immutable.List[co.blocke.Friend] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any], `out₅`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₅`.writeArrayStart()
+    var `l₇`: scala.collection.immutable.List[co.blocke.Friend] = `x₈`
+    while (`l₇`.ne(scala.Nil)) {
+      e5(`l₇`.head, `out₅`)
+      `l₇` = `l₇`.tail
+    }
+    `out₅`.writeArrayEnd()
+  }
+  def e7(`x₉`: co.blocke.Pet, `out₆`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₆`.writeObjectStart()
+    `out₆`.writeNonEscapedAsciiKey("name")
+    `out₆`.writeVal(`x₉`.name)
+    `out₆`.writeNonEscapedAsciiKey("species")
+    `out₆`.writeVal(`x₉`.species)
+    `out₆`.writeNonEscapedAsciiKey("age")
+    `out₆`.writeVal(`x₉`.age)
+    `out₆`.writeObjectEnd()
+  }
+  def e6(`x₁₀`: scala.collection.immutable.List[co.blocke.Pet] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any], `out₇`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₇`.writeArrayStart()
+    var `l₈`: scala.collection.immutable.List[co.blocke.Pet] = `x₁₀`
+    while (`l₈`.ne(scala.Nil)) {
+      e7(`l₈`.head, `out₇`)
+      `l₈` = `l₈`.tail
+    }
+    `out₇`.writeArrayEnd()
+  }
+  def e0(`x₁₁`: co.blocke.Record, `out₈`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = {
+    `out₈`.writeObjectStart()
+    `out₈`.writeNonEscapedAsciiKey("person")
+    e1(`x₁₁`.person, `out₈`)
+    val `v₂`: scala.collection.immutable.List[scala.Predef.String] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any] = `x₁₁`.hobbies
+    if (`v₂`.isEmpty.unary_!) {
+      `out₈`.writeNonEscapedAsciiKey("hobbies")
+      e3(`v₂`, `out₈`)
+    } else ()
+    val `v₃`: scala.collection.immutable.List[co.blocke.Friend] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any] = `x₁₁`.friends
+    if (`v₃`.isEmpty.unary_!) {
+      `out₈`.writeNonEscapedAsciiKey("friends")
+      e4(`v₃`, `out₈`)
+    } else ()
+    val `v₄`: scala.collection.immutable.List[co.blocke.Pet] & scala.collection.Iterable[_ >: scala.Nothing <: scala.Any] = `x₁₁`.pets
+    if (`v₄`.isEmpty.unary_!) {
+      `out₈`.writeNonEscapedAsciiKey("pets")
+      e6(`v₄`, `out₈`)
+    } else ()
+    `out₈`.writeObjectEnd()
+  }
+  final class $anon() extends com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec[co.blocke.Record] {
+    def nullValue: co.blocke.Record = null
+    def decodeValue(`in₉`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₉`: co.blocke.Record): co.blocke.Record = d0(`in₉`, `default₉`)
+    def encodeValue(`x₁₂`: co.blocke.Record, `out₉`: com.github.plokhotnyuk.jsoniter_scala.core.JsonWriter): scala.Unit = e0(`x₁₂`, `out₉`)
+  }
+
+  (new $anon(): com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec[co.blocke.Record])
+}
