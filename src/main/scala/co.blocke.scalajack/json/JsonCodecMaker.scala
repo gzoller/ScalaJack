@@ -813,13 +813,13 @@ object JsonCodecMaker:
     import scala.reflect.ClassTag
     def ofArray[T](xs: Seq[Expr[T]])(using Type[T])(using Quotes): Expr[Array[T]] =
       '{ scala.Array.apply[T](${ quoted.Varargs(xs) }*)(${ Expr.summon[ClassTag[T]].get }) }
-      
+
     def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
       import quotes.reflect.*
 
       def typeArgs(tpe: TypeRepr): List[TypeRepr] = tpe match
         case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
-        case _ => Nil
+        case _                        => Nil
 
       r.refType match // refType is Type[r.R]
         case '[b] =>
@@ -832,52 +832,50 @@ object JsonCodecMaker:
                 val tpe = TypeRepr.of[b]
                 val classCompanion = tpe.typeSymbol.companionClass
                 val companionModule = tpe.typeSymbol.companionModule
-                val together = t.fields.map{ oneField =>
+                val together = t.fields.map { oneField =>
                   oneField.fieldRef.refType match {
-                    case '[f] => 
-                      val dvMembers = classCompanion.methodMember("$lessinit$greater$default$" + (oneField.index+1))
-                      val sym = Symbol.newVal(Symbol.spliceOwner, "_" + oneField.name,  TypeRepr.of[f], Flags.Mutable, Symbol.noSymbol)
+                    case '[f] =>
+                      val dvMembers = classCompanion.methodMember("$lessinit$greater$default$" + (oneField.index + 1))
+                      val sym = Symbol.newVal(Symbol.spliceOwner, "_" + oneField.name, TypeRepr.of[f], Flags.Mutable, Symbol.noSymbol)
                       val fieldSymRef = Ident(sym.termRef)
                       val caseDef = CaseDef(
                         Literal(IntConstant(oneField.index)),
                         None,
                         Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
                       )
-                      if (dvMembers.isEmpty) 
-                        (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)),
-                        caseDef, fieldSymRef)
-                      else 
+                      if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                      else
                         val methodSymbol = dvMembers.head
                         val dvSelectNoTArgs = Ref(companionModule).select(methodSymbol)
                         val dvSelect = methodSymbol.paramSymss match
                           case Nil => dvSelectNoTArgs
-                          case List(params) if (params.exists(_.isTypeParam)) => typeArgs(tpe) match
-                            case Nil => ??? //throw JsonParseError("Expected an applied type", ???)
-                            case typeArgs => TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
-                          case _ => ??? //fail(s"Default method for ${symbol.name} of class ${tpe.show} have a complex " +
+                          case List(params) if (params.exists(_.isTypeParam)) =>
+                            typeArgs(tpe) match
+                              case Nil      => ??? // throw JsonParseError("Expected an applied type", ???)
+                              case typeArgs => TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
+                          case _ => ??? // fail(s"Default method for ${symbol.name} of class ${tpe.show} have a complex " +
                           //  s"parameter list: ${methodSymbol.paramSymss}")
                         (ValDef(sym, Some(dvSelect)), caseDef, fieldSymRef)
                   }
                 }
                 val (varDefs, caseDefs, idents) = together.unzip3
 
-                val argss = List( idents ) 
+                val argss = List(idents)
                 val primaryConstructor = tpe.classSymbol.get.primaryConstructor
                 val constructorNoTypes = Select(New(Inferred(tpe)), primaryConstructor)
                 val constructor = typeArgs(tpe) match
-                  case Nil => constructorNoTypes
+                  case Nil      => constructorNoTypes
                   case typeArgs => TypeApply(constructorNoTypes, typeArgs.map(Inferred(_)))
                 val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
                 val parseLoop = '{
                   val fieldMatrix = new StringMatrix($fieldNames)
                   var fldIdx = $in.expectFirstObjectField(fieldMatrix)
-                  while( fldIdx >= -1 ) do  // -2: end-of-object, -3: null (-1: unknown field -> skip)
+                  while fldIdx >= -1 do // -2: end-of-object, -3: null (-1: unknown field -> skip)
                     ${ Match('{ fldIdx }.asTerm, caseDefs :+ CaseDef(Literal(IntConstant(-1)), None, '{ $in.skipValue() }.asTerm)).asExprOf[Any] }
                     fldIdx = $in.expectObjectField(fieldMatrix)
                   if fldIdx == -3 then null.asInstanceOf[T]
-                  else
-                    ${instantiateClass.asExprOf[T]}
+                  else ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
                 Block(varDefs, parseLoop).asExprOf[T]

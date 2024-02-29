@@ -9,7 +9,7 @@ import json.*
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T]): // extends JsonCodec[T] //with YamlCodec with MsgPackCodec
   def fromJson(js: String): T = // Either[JsonParseError, T] =
-    jsonCodec.decodeValue(reading.JsonSource(js))
+    jsonCodec.decodeValue(reading.JsonSource(js, js.getBytes))
 
   val out = writing.JsonOutput() // let's clear & re-use JsonOutput--avoid re-allocating all the internal buffer space
   def toJson(a: T): String =

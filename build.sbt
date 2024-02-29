@@ -19,7 +19,7 @@ inThisBuild(List(
 
 name := "scalajack"
 ThisBuild / organization := "co.blocke"
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.3.2"
 
 lazy val root = project
   .in(file("."))
@@ -38,6 +38,7 @@ lazy val root = project
       "co.blocke"            %% "scala-reflection"     % "sj_fixes_f43af7",
       "org.apache.commons"   % "commons-text"          % "1.11.0",
       "io.github.kitlangton" %% "neotype"              % "0.0.9",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.24.5-SNAPSHOT",
       "org.scalatest"        %% "scalatest"            % "3.2.17" % Test,
       "org.json4s"           %% "json4s-core"          % "4.0.6" % Test,
       "org.json4s"           %% "json4s-native"        % "4.0.6" % Test
@@ -77,8 +78,9 @@ lazy val compilerOptions = Seq(
   "-feature",
   "-language:implicitConversions",
   "-deprecation",
-  // "-explain",
+  "-explain",
   "-encoding",
   "utf8"
 )
 
+//enablePlugins(ScalaNativePlugin)

@@ -11,10 +11,14 @@ object JsonSource:
 
 // ZIO-Json defines a series of different Readers.  Not exactly sure why--maybe to support different
 // modes (streaming, ...)? At least for now we only need one, so merged key bits of Readers into one.
-case class JsonSource(js: CharSequence):
-  private var i = 0
+case class JsonSource(js: CharSequence, jsBytes: Array[Byte]):
+  var i = 0
   private var expectFieldValue = false
   private[json] val max = js.length
+
+  // Jsoniter ParseString machinery
+  val ps = ParseString(jsBytes)
+  val cbuf = new Array[Char](4048)
 
   def pos = i
 
@@ -203,23 +207,26 @@ case class JsonSource(js: CharSequence):
   def expectString(): CharSequence =
     readCharWS() match {
       case '"' =>
-        retract()
-        parseString()
+        val parsedCount = ps.parseString(0, max - i, cbuf, i)
+        i += parsedCount + 1
+        new String(cbuf, 0, parsedCount)
+      // retract()
+      // parseString()
       case 'n' =>
         readChars(JsonSource.ull, "null")
         null
       case c => throw new JsonParseError(s"Expected a String value but got '$c'", this)
     }
 
-  private def parseString(): CharSequence =
-    charWithWS('"')
-    val sb = new FastStringBuilder(64)
-    var c: Char = END_OF_STRING
-    while
-      c = readEscapedChar()
-      c != END_OF_STRING
-    do sb.append(c.toChar)
-    sb.buffer
+  // private def parseString(): CharSequence =
+  //   charWithWS('"')
+  //   val sb = new FastStringBuilder(64)
+  //   var c: Char = END_OF_STRING
+  //   while
+  //     c = readEscapedChar()
+  //     c != END_OF_STRING
+  //   do sb.append(c.toChar)
+  //   sb.buffer
 
   inline def expectChar(): Char =
     expectString() match {

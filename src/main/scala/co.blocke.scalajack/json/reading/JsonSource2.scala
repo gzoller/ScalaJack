@@ -11,8 +11,8 @@ object JsonSource2:
   protected val rue: Array[Char] = "rue".toCharArray
 
 case class JsonSource2(js: CharSequence):
-  private var i = 0   // The great, omnipresent index
-  private[json] val max = js.length  // don't overrun this, or else...
+  private var i = 0 // The great, omnipresent index
+  private[json] val max = js.length // don't overrun this, or else...
 
   inline def here: Char = js.charAt(i)
   inline def pos = i
@@ -37,49 +37,49 @@ case class JsonSource2(js: CharSequence):
 
   // -- Parse Objects
 
-  inline def expectObject: Boolean =  // returns false if null
+  inline def expectObject: Boolean = // returns false if null
     getCharWS match {
-        case '{' => 
-            i += 1
-            true // true -> start of object found
-        case 'n' => 
-            i += 1
-            expectChars(JsonSource2.ull, "'{' or null")
-            false // false -> null found
-        case BUFFER_EXCEEDED => throw JsonParseError2("(1) Tried to read past end of JSON buffer", this)
-        case _ => 
-            throw JsonParseError2("(1) Expected '{' or null", this)
+      case '{' =>
+        i += 1
+        true // true -> start of object found
+      case 'n' =>
+        i += 1
+        expectChars(JsonSource2.ull, "'{' or null")
+        false // false -> null found
+      case BUFFER_EXCEEDED => throw JsonParseError2("(1) Tried to read past end of JSON buffer", this)
+      case _ =>
+        throw JsonParseError2("(1) Expected '{' or null", this)
     }
 
   def expectFieldIndex(fieldNameMatrix: StringMatrix): Int =
     (getCharWS: @switch) match {
-        case '"' => 
-          var fi: Int = 0
-          var bs: Long = fieldNameMatrix.initial
-          var c: Int = -1
+      case '"' =>
+        var fi: Int = 0
+        var bs: Long = fieldNameMatrix.initial
+        var c: Int = -1
+        i += 1
+        while i < max && here != '"' do
+          bs = fieldNameMatrix.update(bs, fi, here)
           i += 1
-          while i < max && here != '"' do 
-            bs = fieldNameMatrix.update(bs, fi, here)
-            i += 1
-            fi += 1
-          bs = fieldNameMatrix.exact(bs, fi)
-          if i == max then throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
-          else
-            i += 1
-            (getCharWS: @switch) match {
-                case ':' => 
-                  i += 1
-                  fieldNameMatrix.first(bs)
-                case BUFFER_EXCEEDED => throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
-                case _ => throw JsonParseError2(s"(2) Expected ':' but got '$here'", this)
-            }
-        case BUFFER_EXCEEDED => throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
-        case _ => throw JsonParseError2(s"(2) Expected start of field name (string) '\"' but got '$here'", this)
+          fi += 1
+        bs = fieldNameMatrix.exact(bs, fi)
+        if i == max then throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
+        else
+          i += 1
+          (getCharWS: @switch) match {
+            case ':' =>
+              i += 1
+              fieldNameMatrix.first(bs)
+            case BUFFER_EXCEEDED => throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
+            case _               => throw JsonParseError2(s"(2) Expected ':' but got '$here'", this)
+          }
+      case BUFFER_EXCEEDED => throw JsonParseError2("(2) Tried to read past end of JSON buffer", this)
+      case _               => throw JsonParseError2(s"(2) Expected start of field name (string) '\"' but got '$here'", this)
     }
 
-  inline def hasFields: Boolean = 
+  inline def hasFields: Boolean =
     (getCharWS: @switch) match {
-      case '}' => 
+      case '}' =>
         i += 1
         false
       case _ => true
@@ -87,10 +87,10 @@ case class JsonSource2(js: CharSequence):
 
   def nextField: Boolean = // true means there is another field.  false means '}' -- end of object
     (getCharWS: @switch) match {
-      case '}' => 
+      case '}' =>
         i += 1
         false
-      case ',' => 
+      case ',' =>
         i += 1
         true
       case _ =>
@@ -99,23 +99,23 @@ case class JsonSource2(js: CharSequence):
 
   // -- Parse Array
 
-  inline def expectArray: Boolean =  // returns false if null
+  inline def expectArray: Boolean = // returns false if null
     getCharWS match {
-        case '[' => 
-            i += 1
-            true // true -> start of object found
-        case 'n' => 
-            i += 1
-            expectChars(JsonSource2.ull, "'[' or null")
-            false // false -> null found
-        case BUFFER_EXCEEDED => throw JsonParseError2("(4) Tried to read past end of JSON buffer", this)
-        case _ => 
-            throw JsonParseError2("(4) Expected '[' or null", this)
+      case '[' =>
+        i += 1
+        true // true -> start of object found
+      case 'n' =>
+        i += 1
+        expectChars(JsonSource2.ull, "'[' or null")
+        false // false -> null found
+      case BUFFER_EXCEEDED => throw JsonParseError2("(4) Tried to read past end of JSON buffer", this)
+      case _ =>
+        throw JsonParseError2("(4) Expected '[' or null", this)
     }
 
-  inline def hasElements: Boolean = 
+  inline def hasElements: Boolean =
     (getCharWS: @switch) match {
-      case ']' => 
+      case ']' =>
         i += 1
         false
       case _ => true
@@ -123,10 +123,10 @@ case class JsonSource2(js: CharSequence):
 
   def nextElement: Boolean = // true means there is another field.  false means '}' -- end of object
     (getCharWS: @switch) match {
-      case ']' => 
+      case ']' =>
         i += 1
         false
-      case ',' => 
+      case ',' =>
         i += 1
         true
       case _ =>
@@ -146,5 +146,5 @@ case class JsonSource2(js: CharSequence):
         expectChars(JsonSource2.alse, "false")
         false
       case BUFFER_EXCEEDED => throw JsonParseError2("(6) Tried to read past end of JSON buffer", this)
-      case _ => throw JsonParseError2(s"(6) Expected boolean value", this)
+      case _               => throw JsonParseError2(s"(6) Expected boolean value", this)
     }
