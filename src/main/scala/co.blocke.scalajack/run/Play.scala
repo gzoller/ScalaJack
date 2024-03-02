@@ -57,134 +57,89 @@ object RunMe extends App:
 
   println("done.")
 
-  // def r0(in: JsonSource): Foom = {
-  //   val fieldMatrix: StringMatrix = new StringMatrix(Array("a", "b"))
-  //   val args: Array[Any] = Array[Any](Foom.$lessinit$greater$default$1, Foom.$lessinit$greater$default$2)(ClassTag.Any)
-
-  //   if !in.expectObjectStart() then null.asInstanceOf[Foom]
-  //   else {
-  //     if in.here.!=('}') then
-  //       while {
-  //         in.expectFieldName(fieldMatrix) match {
-  //           case 0 =>
-  //             args(0) = in.expectInt()
-  //           case 1 =>
-  //             args(1) = in.expectString().toString()
-  //           case -1 =>
-  //             in.skipValue()
-  //         }
-  //         in.nextField()
-  //       } do ()
-  //     else in.read()
-  //     ((fieldValues: Array[Any]) => new Foom(fieldValues(0).asInstanceOf[scala.Int], fieldValues(1).asInstanceOf[String])).apply(args)
-  //   }
-  // }
-
-  /*
-  val buf = Array.fill(1000)('Z')
-  val buf2 = new String(buf)
-  val buf3 = buf2.getBytes
-
-  var i = 0
-  val t0 = System.nanoTime()
-  while i < 1000 do
-    buf2.charAt(i)
-    i += 1
-  val t1 = System.nanoTime()
-  println("Time: " + (t1 - t0)) // 1,802,166
-
-  println("------")
-
-  // Wow... so ByteArrayAccess is about 1/2 as fast as not using it. :-O
-  i = 0
-  val max = 997 // buf2.length
-  println("MAX: " + max)
-  val t2 = System.nanoTime()
-  while i < max do
-    co.blocke.scalajack.util.ByteArrayAccess.getInt(buf3, i)
-    i += 1
-  val t3 = System.nanoTime()
-  println("Time: " + (t3 - t2)) // 2,267,500
-
-  def parseInt(s: String): Int = {
-    var result = 0
-    var sign = 1
-    var i = 0
-
-    // Handle optional sign
-    if s.charAt(0) == '-' then {
-      sign = -1
-      i += 1
-    } else if s.charAt(0) == '+' then {
-      i += 1
-    }
-
-    // Parse digits
-    while i < s.length do {
-      val digit = s.charAt(i) - '0'
-
-      if digit < 0 || digit > 9 then {
-        throw new NumberFormatException(s"Invalid character in integer: ${s.charAt(i)}")
-      }
-
-      result = (result << 3) + (result << 1) + digit // equivalent to result * 10 + digit
-
-      i += 1
-    }
-
-    sign * result
-  }
-
-  println("------")
-   */
-
   /*
   var i = 0
   val msg = """This is a test""""
+
   val cbuf = new Array[Char](4048)
-  val ps = reading.ParseString(msg.getBytes)
   val ta = System.nanoTime()
   while i < 1000 do
+    val ps = reading.ParseString(msg.getBytes)
     val z = ps.parseString(0, msg.length(), cbuf, 0)
-    String(cbuf.take(z))
+    new String(cbuf, 0, z)
     i += 1
   val tb = System.nanoTime()
-  println("Time: " + (tb - ta)) // 3235208
+  println("Time (Jsoniter) : " + (tb - ta)) // 3235208
 
   println("------")
 
   i = 0
-  val src = reading.JsonSource(""""This is a test"""")
-  val tc = System.nanoTime()
+  val tr = System.nanoTime()
+  val msgX = "\"" + msg
   while i < 1000 do
-    src.expectString()
-    src.i = 0
+    val jsrc = reading.JsonSource(msgX)
+    jsrc.expectString()
     i += 1
-  val td = System.nanoTime()
-  println("Time: " + (td - tc)) // 4927792 --> about a 52% improvement!!!
+  val tq = System.nanoTime()
+  println("Time (ExpectNew): " + (tq - tr)) // 4927792 --> about a 52% improvement!!!
+
+  println("------")
+
+  i = 0
+  val tr2 = System.nanoTime()
+  while i < 1000 do
+    val jsrc = reading.JsonSource(msgX)
+    jsrc.expectStringOld()
+    i += 1
+  val tq2 = System.nanoTime()
+  println("Time (ExpectOld): " + (tq2 - tr2)) // 4927792 --> about a 52% improvement!!!
+
+  println("------")
+
+  i = 0
+  val te2 = System.nanoTime()
+  while i < 1000 do
+    val jsrc = reading.JsonSource(msg)
+    val pc = jsrc.parseString(0)
+    jsrc.js.subSequence(0, pc)
+    i += 1
+  val tf2 = System.nanoTime()
+  println("Time (PNew)     : " + (tf2 - te2)) // 4927792 --> about a 52% improvement!!!
+
+  println("------")
+
+  i = 0
+  val te = System.nanoTime()
+  val msgY = "\"" + msg
+  while i < 1000 do
+    val jsrc = reading.JsonSource(msgY)
+    jsrc.parseStringOld()
+    i += 1
+  val tf = System.nanoTime()
+  println("Time (POld)     : " + (tf - te)) // 4927792 --> about a 52% improvement!!!
+
+  println("------")
+
+  i = 0
+  val ty = System.nanoTime()
+  while i < 1000 do
+    blah.fromJson(jsData)
+    i += 1
+  val tz = System.nanoTime()
+  println("Time (ParseAll) : " + (tz - ty))
+  // Orig: 79298041
+  // New : 58537667
+  // Latest: 79713209
+  // Newnew: 34919833
+
+  println("------")
+
+  i = 0
+  val ty2 = System.nanoTime()
+  while i < 1000 do
+    val g = reading.JsonSource("true}")
+    g.expectBoolean()
+    i += 1
+  val tz2 = System.nanoTime()
+  println("Time (Boolean Old) : " + (tz2 - ty2))
    */
-
-  val msg = """This is a test"Another test""""
-  val max = msg.length()
-  println("max: " + max)
-  val cbufLen = 4048
-  val cbuf = new Array[Char](cbufLen)
-  val ps = reading.ParseString(msg.getBytes)
-  var pos = 0
-  val parsedCount = ps.parseString(0, max - pos, cbuf, pos)
-  println("Parsed: " + parsedCount)
-  println("cbuf: " + new String(cbuf, 0, parsedCount))
-  pos = parsedCount + 1
-
-  println("HERE: " + msg.charAt(parsedCount))
-  val pc2 = ps.parseString(0, max - pos, cbuf, 15)
-  println("2: " + pc2 + " : " + new String(cbuf, 0, pc2))
-
-  // import com.github.plokhotnyuk.jsoniter_scala.core.JsonReader as Wow
-
-  // val jsr = new Wow(msg.getBytes)
-  // val a = jsr.parseString(0, cbufLen, cbuf, 0)
-  // println("A: " + new String(cbuf, 0, a))
-
-  // val b = jsr.parseString(0, cbufLen, cbuf, a + 1)
-  // println("B: " + new String(cbuf, 0, b))

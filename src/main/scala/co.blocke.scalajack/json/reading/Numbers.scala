@@ -529,27 +529,27 @@ object UnsafeNumbers {
       with NoStackTrace
 
   def byte(num: String): Byte =
-    byte_(new JsonSource(num, num.getBytes), true)
+    byte_(new JsonSource(num), true)
   def byte_(in: JsonSource, consume: Boolean): Byte =
     long__(in, Byte.MinValue, Byte.MaxValue, consume).toByte
 
   def short(num: String): Short =
-    short_(new JsonSource(num, num.getBytes), true)
+    short_(new JsonSource(num), true)
   def short_(in: JsonSource, consume: Boolean): Short =
     long__(in, Short.MinValue, Short.MaxValue, consume).toShort
 
   def int(num: String): Int =
-    int_(new JsonSource(num, num.getBytes), true)
+    int_(new JsonSource(num), true)
   def int_(in: JsonSource, consume: Boolean): Int =
     long__(in, Int.MinValue, Int.MaxValue, consume).toInt
 
   def long(num: String): Long =
-    long_(new JsonSource(num, num.getBytes), true)
+    long_(new JsonSource(num), true)
   def long_(in: JsonSource, consume: Boolean): Long =
     long__(in, Long.MinValue, Long.MaxValue, consume)
 
   def bigInteger(num: String, max_bits: Int): java.math.BigInteger =
-    bigInteger_(new JsonSource(num, num.getBytes), true, max_bits)
+    bigInteger_(new JsonSource(num), true, max_bits)
   def bigInteger_(
       in: JsonSource,
       consume: Boolean,
@@ -617,7 +617,7 @@ object UnsafeNumbers {
   }
 
   def float(num: String, max_bits: Int): Float =
-    float_(new JsonSource(num, num.getBytes), true, max_bits)
+    float_(new JsonSource(num), true, max_bits)
 
   def float_(in: JsonSource, consume: Boolean, max_bits: Int): Float = {
     var current: Int = in.readChar()
@@ -666,7 +666,7 @@ object UnsafeNumbers {
   }
 
   def double(num: String, max_bits: Int): Double =
-    double_(new JsonSource(num, num.getBytes), true, max_bits)
+    double_(new JsonSource(num), true, max_bits)
 
   def double_(in: JsonSource, consume: Boolean, max_bits: Int): Double = {
     var current: Int = in.readChar()
@@ -719,7 +719,7 @@ object UnsafeNumbers {
   }
 
   def bigDecimal(num: String, max_bits: Int): java.math.BigDecimal =
-    bigDecimal_(new JsonSource(num, num.getBytes), true, max_bits)
+    bigDecimal_(new JsonSource(num), true, max_bits)
   def bigDecimal_(
       in: JsonSource,
       consume: Boolean,

@@ -32,6 +32,10 @@ public class ByteArrayAccess { // FIXME: Use Java wrapper as w/a for missing sup
         return (int) VH_INT.get(buf, pos);
     }
 
+    static public short getShort(byte[] buf, int pos) {
+        return (short) VH_SHORT.get(buf, pos);
+    }
+
     static public void setShort(byte[] buf, int pos, short value) {
         VH_SHORT.set(buf, pos, value);
     }

@@ -6,7 +6,7 @@ import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
-import reading.{JsonReaderUtil, JsonSource, StringMatrix}
+import reading.JsonSource
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
 import scala.collection.Factory
@@ -839,7 +839,7 @@ object JsonCodecMaker:
                       val sym = Symbol.newVal(Symbol.spliceOwner, "_" + oneField.name, TypeRepr.of[f], Flags.Mutable, Symbol.noSymbol)
                       val fieldSymRef = Ident(sym.termRef)
                       val caseDef = CaseDef(
-                        Literal(IntConstant(oneField.index)),
+                        Literal(StringConstant(oneField.name)),
                         None,
                         Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
                       )
@@ -859,6 +859,7 @@ object JsonCodecMaker:
                   }
                 }
                 val (varDefs, caseDefs, idents) = together.unzip3
+                val caseDefsWithFinal = caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
 
                 val argss = List(idents)
                 val primaryConstructor = tpe.classSymbol.get.primaryConstructor
@@ -869,13 +870,13 @@ object JsonCodecMaker:
                 val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
                 val parseLoop = '{
-                  val fieldMatrix = new StringMatrix($fieldNames)
-                  var fldIdx = $in.expectFirstObjectField(fieldMatrix)
-                  while fldIdx >= -1 do // -2: end-of-object, -3: null (-1: unknown field -> skip)
-                    ${ Match('{ fldIdx }.asTerm, caseDefs :+ CaseDef(Literal(IntConstant(-1)), None, '{ $in.skipValue() }.asTerm)).asExprOf[Any] }
-                    fldIdx = $in.expectObjectField(fieldMatrix)
-                  if fldIdx == -3 then null.asInstanceOf[T]
-                  else ${ instantiateClass.asExprOf[T] }
+                  var maybeFname = $in.expectFirstObjectField()
+                  if maybeFname == null then null.asInstanceOf[T]
+                  else
+                    while maybeFname.isDefined do
+                      ${ Match('{ maybeFname.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                      maybeFname = $in.expectObjectField()
+                    ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
                 Block(varDefs, parseLoop).asExprOf[T]
@@ -943,16 +944,20 @@ object JsonCodecMaker:
                     case t: SeqRef[?] =>
                       t.elementRef.refType match
                         case '[e] =>
+                          val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                           '{
-                            if ! $in.expectArrayStart() then null.asInstanceOf[T]
-                            else if $in.here == ']' then // empty Seq
-                              $in.readChar() // skip the ']'
-                              List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
-                            else
-                              val acc = scala.collection.mutable.ListBuffer.empty[e]
-                              acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                              while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                              acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                            val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                            if parsedArray == null then null.asInstanceOf[T]
+                            else parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                            // if ! $in.expectArrayStart() then null.asInstanceOf[T]
+                            // else if $in.here == ']' then // empty Seq
+                            //   $in.readChar() // skip the ']'
+                            //   List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
+                            // else
+                            //   val acc = scala.collection.mutable.ListBuffer.empty[e]
+                            //   acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                            //   while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
+                            //   acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
                           }
 
                     case _ =>
