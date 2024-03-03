@@ -43,9 +43,9 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
-    // extends CirceZ.CirceReadingBenchmark
     extends ScalaJackZ.ScalaJackReadingBenchmark
-    with JsoniterZ.JsoniterReadingBenchmark
+    // with CirceZ.CirceReadingBenchmark
+    // with JsoniterZ.JsoniterReadingBenchmark
     // with ZIOZ.ZIOJsonReadingBenchmark
     // with PlayZ.PlayReadingBenchmark
     // with ArgonautZ.ArgonautReadingBenchmark
@@ -62,30 +62,17 @@ class WritingBenchmark
     // with PlayZ.PlayWritingBenchmark
     // with ArgonautZ.ArgonautWritingBenchmark
 
-// "Old-New" ScalaJack
-// [info] Benchmark                              Mode  Cnt        Score    Error  Units
-// [info] ReadingBenchmark.readRecordScalaJack  thrpt   20    30113.982 ± 97.701  ops/s
-// [info] New-New ScalaJack                     thrpt   20    50908.982 ± 97.701  ops/s
-
-//        ScalaJack w/ZIO-based parser                       635977.008
-//        ZIO (Fast!!)                                       568123.000 <-- How do they do this?!  More than 2x faster than everyone else!
-//        Circe                                              279231.646
-//        Play                                               209756.408
-
-//        Jawn (parse only + AST)                            336384.617
-//        ScalaJack JsonParser3 (parse only + AST)           279456.523
-//        Fabric (new!) (parse only + AST)                   270706.567
 
 
 /*  LATEST RUN:
 
-[info] Benchmark                               Mode  Cnt        Score       Error  Units
-[info] ReadingBenchmark.readRecordArgonaut    thrpt   20   177341.827 ±  7090.749  ops/s
-[info] ReadingBenchmark.readRecordCirce       thrpt   20   289018.255 ±  1797.188  ops/s
-[info] ReadingBenchmark.readRecordJsoniter    thrpt   20  1313108.400 ± 17657.823  ops/s
-[info] ReadingBenchmark.readRecordPlay        thrpt   20   201570.409 ±  3736.467  ops/s
-[info] ReadingBenchmark.readRecordScalaJack   thrpt   20   501950.975 ±  5631.196  ops/s
-[info] ReadingBenchmark.readRecordZIOJson     thrpt   20   587611.803 ±  4701.410  ops/s
-[info] WritingBenchmark.writeRecordScalaJack  thrpt   20   352825.894 ±  7772.927  ops/s
+[info] Benchmark                              Mode  Cnt        Score        Error  Units
+[info] ReadingBenchmark.readRecordArgonaut   thrpt   20   185186.226 ±  16189.626  ops/s
+[info] ReadingBenchmark.readRecordCirce      thrpt   20   281382.258 ±   4449.888  ops/s
+[info] ReadingBenchmark.readRecordJsoniter   thrpt   20  1327809.608 ±  26901.514  ops/s
+[info] ReadingBenchmark.readRecordPlay       thrpt   20   209035.195 ±    671.300  ops/s
+[info] ReadingBenchmark.readRecordScalaJack  thrpt   20   740350.521 ± 190132.195  ops/s
+[info] ReadingBenchmark.readRecordZIOJson    thrpt   20   584964.240 ±    552.648  ops/s
+[info] WritingBenchmark.writeRecordScalaJack thrpt   20   352825.894 ±   7772.927  ops/s
 
  */

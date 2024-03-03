@@ -9,6 +9,7 @@ import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstruc
 import reading.JsonSource
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
+import scala.reflect.ClassTag
 import scala.annotation.switch
 import scala.collection.Factory
 import dotty.tools.dotc.ast.Trees.EmptyTree
@@ -79,31 +80,6 @@ object JsonCodecMaker:
         }
       )
       '{}
-
-      // Apply(
-      //   Ref(
-      //     readMethodSyms.getOrElse(
-      //       methodKey, {
-      //         val sym = Symbol.newMethod(
-      //           Symbol.spliceOwner,
-      //           "r" + readMethodSyms.size,
-      //           MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[U])
-      //           //                    (_ => List(input_params,...), _ => resultType)
-      //         )
-      //         readMethodSyms.update(methodKey, sym)
-      //         readMethodDefs += DefDef(
-      //           sym,
-      //           params => {
-      //             val List(List(in)) = params
-      //             Some(f(in.asExprOf[JsonSource]).asTerm.changeOwner(sym))
-      //           }
-      //         )
-      //         sym
-      //       }
-      //     )
-      //   ),
-      //   List(in.asTerm)
-      // ).asExprOf[Unit]
 
     // ---------------------------------------------------------------------------------------------
 
@@ -809,12 +785,6 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
-    // Little rif on Expr.ofList.  I need an Expr[Array] here because in the runtime code we need to update the
-    // array (which is pre-loaded with default values) with the parsed field values for ultimate class instantiation.
-    import scala.reflect.ClassTag
-    def ofArray[T](xs: Seq[Expr[T]])(using Type[T])(using Quotes): Expr[Array[T]] =
-      '{ scala.Array.apply[T](${ quoted.Varargs(xs) }*)(${ Expr.summon[ClassTag[T]].get }) }
-
     def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
       import quotes.reflect.*
 
@@ -833,18 +803,38 @@ object JsonCodecMaker:
                 val tpe = TypeRepr.of[b]
                 val classCompanion = tpe.typeSymbol.companionClass
                 val companionModule = tpe.typeSymbol.companionModule
+                val totalRequired = math.pow(2, t.fields.length).toInt - 1
+                var required = 0
+                val reqSym = Symbol.newVal(Symbol.spliceOwner, "required", TypeRepr.of[Int], Flags.Mutable, Symbol.noSymbol)
+                val allFieldNames = Expr(t.fields.map(_.name).toArray) // Used for missing required field error
                 val together = t.fields.map { oneField =>
                   oneField.fieldRef.refType match {
                     case '[f] =>
                       val dvMembers = classCompanion.methodMember("$lessinit$greater$default$" + (oneField.index + 1))
                       val sym = Symbol.newVal(Symbol.spliceOwner, "_" + oneField.name, TypeRepr.of[f], Flags.Mutable, Symbol.noSymbol)
                       val fieldSymRef = Ident(sym.termRef)
+                      val reqBit = Expr(math.pow(2, oneField.index).toInt)
+                      val fieldName = Expr(oneField.name)
                       val caseDef = CaseDef(
                         Literal(StringConstant(oneField.name)),
                         None,
-                        Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                        // Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                        '{
+                          if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
+                            ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
+                            ${ Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
+                          else throw new JsonParseError("Duplicate field " + $fieldName, $in)
+                        }.asTerm
                       )
-                      if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                      // if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                      if dvMembers.isEmpty then
+                        // no default... required?  Not if Option/Optional, or a collection
+                        oneField.fieldRef match {
+                          case _: OptionRef[?]     => // not required
+                          case _: CollectionRef[?] => // not required
+                          case _                   => required = required | math.pow(2, oneField.index).toInt // required
+                        }
+                        (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       else
                         val methodSymbol = dvMembers.head
                         val dvSelectNoTArgs = Ref(companionModule).select(methodSymbol)
@@ -855,10 +845,10 @@ object JsonCodecMaker:
                               case Nil      => ??? // throw JsonParseError("Expected an applied type", ???)
                               case typeArgs => TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
                           case _ => ??? // fail(s"Default method for ${symbol.name} of class ${tpe.show} have a complex " +
-                          //  s"parameter list: ${methodSymbol.paramSymss}")
                         (ValDef(sym, Some(dvSelect)), caseDef, fieldSymRef)
                   }
                 }
+                val reqVarDef = ValDef(reqSym, Some(Literal(IntConstant(totalRequired))))
                 val (varDefs, caseDefs, idents) = together.unzip3
                 val caseDefsWithFinal = caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
 
@@ -870,6 +860,7 @@ object JsonCodecMaker:
                   case typeArgs => TypeApply(constructorNoTypes, typeArgs.map(Inferred(_)))
                 val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
+                val exprRequired = Expr(required)
                 val parseLoop = '{
                   if ! $in.expectObjectOrNull() then null.asInstanceOf[T]
                   else
@@ -886,10 +877,12 @@ object JsonCodecMaker:
                         case c   => throw new JsonParseError(s"Expected '\"' or '}' here but found '$c'", $in)
                       }
                     do ()
+                  if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) != 0 then throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
                   ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
-                Block(varDefs, parseLoop).asExprOf[T]
+                // Block(varDefs, parseLoop).asExprOf[T]
+                Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
               )
 
             case _ => ???
@@ -959,7 +952,7 @@ object JsonCodecMaker:
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
                         if parsedArray == null then null
-                        else parsedArray.toList 
+                        else parsedArray.toList
                       }.asExprOf[T]
                 case '[Vector[?]] =>
                   t.elementRef.refType match
