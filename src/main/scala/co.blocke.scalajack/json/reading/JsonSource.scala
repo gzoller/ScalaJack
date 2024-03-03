@@ -2,8 +2,7 @@ package co.blocke.scalajack
 package json
 package reading
 
-import scala.annotation.*
-import scala.annotation.tailrec
+import scala.annotation.{switch, tailrec}
 
 object JsonSource:
   protected val ull: Array[Char] = "ull".toCharArray
@@ -23,6 +22,8 @@ case class JsonSource(js: CharSequence):
 
   // inline def here = js(i).toChar
   inline def here = js.charAt(i)
+
+  inline def revert = i -= 1
 
   private var c: Char = 0
   inline def readChar(): Char =
@@ -84,44 +85,21 @@ case class JsonSource(js: CharSequence):
       i += 1
     accum.toChar
 
-//-------
-
-  // returns false if 'null' found
-  def expectFirstObjectField(): Option[CharSequence] =
+  inline def expectObjectOrNull(): Boolean = // false => null
     readCharWS() match {
-      case '{' =>
-        readCharWS() match {
-          case '"' =>
-            val endI = parseString(i)
-            val fname = js.subSequence(i, endI)
-            i = endI + 1
-            if readCharWS() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
-            Some(fname)
-          case '}' => None // end-of-object (empty, not null)
-          case c   => throw new JsonParseError(s"Expected object field name or '}' but found '$c'", this)
-        }
+      case '{' => true
       case 'n' =>
         readChars(JsonSource.ull, "null")
-        null
-      case c => throw new JsonParseError(s"Expected object start '{' but found '$c'", this)
+        false
+      case _ => throw new JsonParseError(s"Expected object start '{' or null", this)
     }
 
-  def expectObjectField(): Option[CharSequence] =
-    readCharWS() match {
-      case ',' =>
-        readCharWS() match {
-          case '"' =>
-            val endI = parseString(i)
-            val fname = js.subSequence(i, endI)
-            i = endI + 1
-            if readCharWS() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
-            Some(fname)
-          case c => throw new JsonParseError(s"Expected object field name but found '$c'", this)
-        }
-      case '}' => None // end-of-object
-      case c =>
-        throw new JsonParseError(s"Expected ',' or '}' but found '$c'", this)
-    }
+  inline def expectObjectField(): CharSequence =
+    val endI = parseString(i)
+    val fname = js.subSequence(i, endI)
+    i = endI + 1
+    if readCharWS() != ':' then throw new JsonParseError(s"Expected ':' separator token", this)
+    fname
 
   def expectArray[E](f: () => E): scala.collection.mutable.ListBuffer[E] =
     (readCharWS(): @switch) match
@@ -195,6 +173,7 @@ case class JsonSource(js: CharSequence):
     }
 
   // Value might be null!
+  // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
   inline def expectString(): CharSequence =
     readCharWS() match {
       case '"' =>

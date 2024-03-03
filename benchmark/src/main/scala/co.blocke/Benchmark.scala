@@ -45,7 +45,7 @@ trait HandTooledWritingBenchmark {
 class ReadingBenchmark
     // extends CirceZ.CirceReadingBenchmark
     extends ScalaJackZ.ScalaJackReadingBenchmark
-    //with JsoniterZ.JsoniterReadingBenchmark
+    with JsoniterZ.JsoniterReadingBenchmark
     // with ZIOZ.ZIOJsonReadingBenchmark
     // with PlayZ.PlayReadingBenchmark
     // with ArgonautZ.ArgonautReadingBenchmark

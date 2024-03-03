@@ -44,3 +44,19 @@ Path to Performance
 
     [ ] -- Streaming JSON write support
     [ ] -- BigJSON support (eg. multi-gig file)
+
+
+
+    [ ] -- Handle required fields, incl generating mapping fns for err:
+      def f0(i: scala.Int): java.lang.String = i match {
+        case 0 =>
+          "person"
+        case 1 =>
+          "hobbies"
+        case 2 =>
+          "friends"
+        case 3 =>
+          "pets"
+      }
+    [ ] -- Handle special chars in strings (Json parsing)
+    

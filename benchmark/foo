@@ -1,0 +1,98 @@
+SCALAJACK:
+
+  def r1(`in₁₀`: co.blocke.scalajack.json.reading.JsonSource): co.blocke.Person = {
+    var _name: java.lang.String = ""
+    var _age: scala.Int = 0
+    var _address: co.blocke.Address = null
+    var _email: java.lang.String = ""
+    var _phone_numbers: scala.collection.immutable.List[scala.Predef.String] = null
+    var _is_employed: scala.Boolean = false
+    var `maybeFname₂`: scala.Option[java.lang.CharSequence] = `in₁₀`.expectFirstObjectField()
+    if (`maybeFname₂`.==(null)) null.asInstanceOf[co.blocke.Person] else {
+      while (`maybeFname₂`.isDefined) {
+        `maybeFname₂`.get match {
+          case "name" =>
+            _name = `in₁₀`.expectString().toString()
+          case "age" =>
+            _age = `in₁₀`.expectInt()
+          case "address" =>
+            _address = r2(`in₁₀`)
+          case "email" =>
+            _email = `in₁₀`.expectString().toString()
+          case "phone_numbers" =>
+            _phone_numbers = {
+              val parsedArray: scala.collection.mutable.ListBuffer[java.lang.String] = `in₁₀`.expectArray[java.lang.String]((() => `in₁₀`.expectString().toString())
+              if (parsedArray.==(null)) null.asInstanceOf[scala.collection.immutable.List[scala.Predef.String]] else parsedArray.to[scala.collection.immutable.List[scala.Predef.String]](scala.collection.immutable.List.iterableFactory[java.lang.String])
+            }
+          case "is_employed" =>
+            _is_employed = `in₁₀`.expectBoolean()
+          case _ =>
+            `in₁₀`.skipValue()
+        }
+        `maybeFname₂` = `in₁₀`.expectObjectField()
+      }
+      new co.blocke.Person(_name, _age, _address, _email, _phone_numbers, _is_employed)
+    }
+  }
+
+
+JSONITER:
+
+  def d6(`in`: com.github.plokhotnyuk.jsoniter_scala.core.JsonReader, `default₇`: co.blocke.Person): co.blocke.Person = if (`in`.isNextToken(123)) {
+    var `_name₃`: java.lang.String = (null: java.lang.String)
+    var `_age₃`: scala.Int = 0
+    var _address: co.blocke.Address = null
+    var `_email₂`: java.lang.String = (null: java.lang.String)
+    var _phone_numbers: scala.collection.immutable.List[scala.Predef.String] = scala.Nil
+    var _is_employed: scala.Boolean = false
+    var `p0₄`: scala.Int = 63
+    if (!in.isNextToken(125)) {
+      in.rollbackToken()
+      var `l₄`: scala.Int = -1
+      while (l₄ < 0 || in.isNextToken(44)) {
+        `l₄` = `in`.readKeyAsCharBuf()
+        if (`in`.isCharBufEqualsTo(`l₄`, "name")) {
+          if (`p0₄`.&(1).!=(0)) `p0₄` = `p0₄`.^(1) else `in`.duplicatedKeyError(`l₄`)
+          `_name₃` = `in`.readString(`_name₃`)
+        } else if (`in`.isCharBufEqualsTo(`l₄`, "age")) {
+          if (`p0₄`.&(2).!=(0)) `p0₄` = `p0₄`.^(2) else `in`.duplicatedKeyError(`l₄`)
+          `_age₃` = `in`.readInt()
+        } else if (`in`.isCharBufEqualsTo(`l₄`, "address")) {
+          if (`p0₄`.&(4).!=(0)) `p0₄` = `p0₄`.^(4) else `in`.duplicatedKeyError(`l₄`)
+          _address = d7(`in`, _address)
+        } else if (`in`.isCharBufEqualsTo(`l₄`, "email")) {
+          if (`p0₄`.&(8).!=(0)) `p0₄` = `p0₄`.^(8) else `in`.duplicatedKeyError(`l₄`)
+          `_email₂` = `in`.readString(`_email₂`)
+        } else if (`in`.isCharBufEqualsTo(`l₄`, "phone_numbers")) {
+          if (`p0₄`.&(16).!=(0)) `p0₄` = `p0₄`.^(16) else `in`.duplicatedKeyError(`l₄`)
+          _phone_numbers = d5(`in`, _phone_numbers)
+        } else if (`in`.isCharBufEqualsTo(`l₄`, "is_employed")) {
+          if (`p0₄`.&(32).!=(0)) `p0₄` = `p0₄`.^(32) else `in`.duplicatedKeyError(`l₄`)
+          _is_employed = `in`.readBoolean()
+        } else `in`.skip()
+      }
+      if (!in.isCurrentToken(125)) in.objectEndOrCommaError() else ()
+    } else ()
+    if (`p0₄`.&(47).!=(0)) `in`.requiredFieldError(f3(java.lang.Integer.numberOfTrailingZeros(`p0₄`.&(47)))) else ()
+    new co.blocke.Person(`_name₃`, `_age₃`, _address, `_email₂`, _phone_numbers, _is_employed)
+  } else `in`.readNullOrTokenError[co.blocke.Person](`default₇`, 123)
+
+  // List reading thingy... Note, no Seq-type coersion happening...
+  def d5(in: JsonReader, default: List[String]): List[String] = 
+    if (in.isNextToken(91)) 
+      if (in.isNextToken(93)) 
+        default 
+      else {
+        in.rollbackToken()
+        val x: scala.collection.mutable.ListBuffer[String] = new scala.collection.mutable.ListBuffer[String]()
+        while ({
+          x.addOne(in.readString((null: String)))
+          in.isNextToken(44)
+        }) ()
+        if (in.isCurrentToken(93)) 
+          x.toList 
+        else 
+          in.arrayEndOrCommaError()
+      } 
+    else 
+      in.readNullOrTokenError[List[String]](default, 91)

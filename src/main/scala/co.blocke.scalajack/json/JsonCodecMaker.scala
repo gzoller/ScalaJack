@@ -9,6 +9,7 @@ import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstruc
 import reading.JsonSource
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
+import scala.annotation.switch
 import scala.collection.Factory
 import dotty.tools.dotc.ast.Trees.EmptyTree
 import org.apache.commons.text.StringEscapeUtils
@@ -870,13 +871,22 @@ object JsonCodecMaker:
                 val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
                 val parseLoop = '{
-                  var maybeFname = $in.expectFirstObjectField()
-                  if maybeFname == null then null.asInstanceOf[T]
+                  if ! $in.expectObjectOrNull() then null.asInstanceOf[T]
                   else
-                    while maybeFname.isDefined do
-                      ${ Match('{ maybeFname.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
-                      maybeFname = $in.expectObjectField()
-                    ${ instantiateClass.asExprOf[T] }
+                    var c = $in.readCharWS()
+                    while c match {
+                        case '"' =>
+                          ${ Match('{ $in.expectObjectField() }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                          c = $in.readCharWS()
+                          if c == ',' then
+                            c = $in.readCharWS()
+                            true
+                          else true
+                        case '}' => false
+                        case c   => throw new JsonParseError(s"Expected '\"' or '}' here but found '$c'", $in)
+                      }
+                    do ()
+                  ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
                 Block(varDefs, parseLoop).asExprOf[T]
@@ -937,32 +947,85 @@ object JsonCodecMaker:
             //   if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
             //   else '{ $out.value(${ aE.asExprOf[String] }) }
 
-            case _ =>
+            // --------------------
+            //  Collections...
+            // --------------------
+            case t: SeqRef[?] =>
               ref.refType match
-                case '[b] =>
-                  ref match
-                    case t: SeqRef[?] =>
-                      t.elementRef.refType match
-                        case '[e] =>
-                          val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                          '{
-                            val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                            if parsedArray == null then null.asInstanceOf[T]
-                            else parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
-                            // if ! $in.expectArrayStart() then null.asInstanceOf[T]
-                            // else if $in.here == ']' then // empty Seq
-                            //   $in.readChar() // skip the ']'
-                            //   List.empty[e].to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
-                            // else
-                            //   val acc = scala.collection.mutable.ListBuffer.empty[e]
-                            //   acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                            //   while $in.nextArrayElement() do acc.addOne(${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in) })
-                            //   acc.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate Seq[T] here
-                          }
+                case '[List[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.toList 
+                      }.asExprOf[T]
+                case '[Vector[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.toVector
+                      }.asExprOf[T]
+                case '[Seq[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.toSeq
+                      }.asExprOf[T]
+                case '[IndexedSeq[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.toIndexedSeq
+                      }.asExprOf[T]
+                case '[Iterable[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.toIterable
+                      }.asExprOf[T]
+                // Catch all, with (slightly) slower type coersion to proper Seq flavor
+                case _ =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        if parsedArray == null then null
+                        else parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                      }.asExprOf[T]
 
-                    case _ =>
-                      genDecFnBody[T](ref, in) // Create a new decoder function (presumably for class, trait, etc)
-                      genReadVal(ref, in)
+            case t: ArrayRef[?] =>
+              t.elementRef.refType match
+                case '[e] =>
+                  val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                  val ct = Expr.summon[ClassTag[e]].get
+                  '{
+                    val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                    if parsedArray == null then null
+                    else
+                      implicit val ctt = $ct
+                      parsedArray.toArray[e] // (${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                  }.asExprOf[T]
+
+            case _ =>
+              // Classes, traits, etc.
+              genDecFnBody[T](ref, in) // Create a new decoder function (presumably for class, trait, etc)
+              genReadVal(ref, in)
+
           // Just-created function is present now and will be called
         )
 
