@@ -588,7 +588,7 @@ object UnsafeNumbers {
       if current == -1 then throw UnsafeNumber
     }
 
-    if !isDigit(current) then throw UnsafeNumber
+    if !isDigit(current) then throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in) // throw UnsafeNumber
 
     var accum: Long = 0L
     while {

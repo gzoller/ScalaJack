@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 
 import ZIOZ.*
 import zio.json._
-val record = jsData.fromJson[Record] match
+val record = jsData2.fromJson[Record2] match
   case Right(r) => r 
-  case Left(_) => null.asInstanceOf[Record]
+  case Left(_) => null.asInstanceOf[Record2]
 
 
 trait HandTooledWritingBenchmark { 
@@ -45,7 +45,7 @@ trait HandTooledWritingBenchmark {
 class ReadingBenchmark
     extends ScalaJackZ.ScalaJackReadingBenchmark
     // with CirceZ.CirceReadingBenchmark
-    // with JsoniterZ.JsoniterReadingBenchmark
+    // extends JsoniterZ.JsoniterReadingBenchmark
     // with ZIOZ.ZIOJsonReadingBenchmark
     // with PlayZ.PlayReadingBenchmark
     // with ArgonautZ.ArgonautReadingBenchmark

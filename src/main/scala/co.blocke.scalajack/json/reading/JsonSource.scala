@@ -3,6 +3,7 @@ package json
 package reading
 
 import scala.annotation.{switch, tailrec}
+import co.blocke.scalajack.json.reading.SafeNumbers.double
 
 object JsonSource:
   protected val ull: Array[Char] = "ull".toCharArray
@@ -37,9 +38,14 @@ case class JsonSource(js: CharSequence):
   private inline def isWhitespace(c: Char): Boolean =
     c == ' ' || c == '\n' || (c | 0x4) == '\r' || c == '\t'
 
-  inline def readCharWS(): Char =
-    while isWhitespace(here) && i < max do i += 1
-    readChar()
+  @tailrec
+  final private[this] def readToken(): Char =
+    if i == max then throw new JsonParseError("Unexpected end of buffer", this)
+    else
+      val b = here
+      i += 1
+      if !(b == ' ' || b == '\n' || b == '\t' || (b | 0x4) == '\r') then b
+      else readToken()
 
   inline def skipWS(): Unit =
     while isWhitespace(here) && i < max do i += 1
@@ -75,7 +81,7 @@ case class JsonSource(js: CharSequence):
     var accum: Int = 0
     while i < 4 do
       var c = readChar().toInt
-      if c == BUFFER_EXCEEDED then throw JsonParseError("Unexpected EOB in string", this)
+      if c == BUFFER_EXCEEDED then throw JsonParseError("Unexpected end of buffer", this)
       c =
         if '0' <= c && c <= '9' then c - '0'
         else if 'A' <= c && c <= 'F' then c - 'A' + 10
@@ -85,39 +91,61 @@ case class JsonSource(js: CharSequence):
       i += 1
     accum.toChar
 
-  inline def expectObjectOrNull(): Boolean = // false => null
-    readCharWS() match {
-      case '{' => true
-      case 'n' =>
-        readChars(JsonSource.ull, "null")
-        false
-      case _ => throw new JsonParseError(s"Expected object start '{' or null", this)
-    }
+  // returns false if 'null' found
+  def expectFirstObjectField(): Option[CharSequence] =
+    val t = readToken()
+    if t == '{' then
+      val tt = readToken()
+      if tt == '"' then
+        val endI = parseString(i)
+        val fname = js.subSequence(i, endI)
+        i = endI + 1
+        if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
+        Some(fname)
+      else if tt == '}' then None
+      else throw new JsonParseError(s"Expected object field name or '}' but found '$tt'", this)
+    else if t == 'n' then
+      readChars(JsonSource.ull, "null")
+      null
+    else throw new JsonParseError(s"Expected object start '{' or null", this)
 
-  inline def expectObjectField(): CharSequence =
-    val endI = parseString(i)
-    val fname = js.subSequence(i, endI)
-    i = endI + 1
-    if readCharWS() != ':' then throw new JsonParseError(s"Expected ':' separator token", this)
-    fname
+  def expectObjectField(): Option[CharSequence] =
+    val t = readToken()
+    if t == ',' then
+      val tt = readToken()
+      if tt == '"' then
+        val endI = parseString(i)
+        val fname = js.subSequence(i, endI)
+        i = endI + 1
+        if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
+        Some(fname)
+      else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
+    else if t == '}' then None
+    else throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
+
+  @tailrec
+  final private[this] def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E): scala.collection.mutable.ListBuffer[E] =
+    if i == max then throw JsonParseError("Unexpected end of buffer", this)
+    s.addOne(f())
+    val tt = readToken()
+    if tt == ']' then
+      retract()
+      s
+    else if tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
+    else addAllArray(s, f)
 
   def expectArray[E](f: () => E): scala.collection.mutable.ListBuffer[E] =
-    (readCharWS(): @switch) match
-      case '[' =>
-        val seq = scala.collection.mutable.ListBuffer.empty[E]
-        skipWS()
-        while i < max && here != ']' do
-          seq.addOne(f())
-          readCharWS() match {
-            case ']' => retract()
-            case ',' =>
-            case c   => throw JsonParseError(s"Expected ',' or ']' got '$c'", this)
-          }
-        i += 1
-        seq
-      case 'n' =>
-        readChars(JsonSource.ull, "null")
-        null
+    val t = readToken()
+    if t == '[' then
+      val seq = scala.collection.mutable.ListBuffer.empty[E]
+      skipWS()
+      addAllArray(seq, f)
+      i += 1
+      seq
+    else if t == 'n' then
+      readChars(JsonSource.ull, "null")
+      null
+    else throw JsonParseError(s"Expected array start '[' or null but got '$t'", this)
 
   // ---------------
   // DEPRECATED !!!
@@ -175,21 +203,20 @@ case class JsonSource(js: CharSequence):
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
   inline def expectString(): CharSequence =
-    readCharWS() match {
-      case '"' =>
-        val endI = parseString(i)
-        val str = js.subSequence(i, endI)
-        i = endI + 1
-        str
-      case 'n' =>
-        readChars(JsonSource.ull, "null")
-        null
-      case c => throw new JsonParseError(s"Expected a String value but got '$c'", this)
-    }
+    val t = readToken()
+    if t == '"' then
+      val endI = parseString(i)
+      val str = js.subSequence(i, endI)
+      i = endI + 1
+      str
+    else if t == 'n' then
+      readChars(JsonSource.ull, "null")
+      null
+    else throw new JsonParseError(s"Expected a String value but got '$t'", this)
 
   @tailrec
   final def parseString(pos: Int): Int =
-    if pos + 3 < max then { // Based on SWAR routine of JSON string parsing: https://github.com/sirthias/borer/blob/fde9d1ce674d151b0fee1dd0c2565020c3f6633a/core/src/main/scala/io/bullet/borer/json/JsonParser.scala#L456
+    if pos + 3 < max then // Based on SWAR routine of JSON string parsing: https://github.com/sirthias/borer/blob/fde9d1ce674d151b0fee1dd0c2565020c3f6633a/core/src/main/scala/io/bullet/borer/json/JsonParser.scala#L456
       val bs = (js.charAt(pos)) | (js.charAt(pos + 1) << 8) | (js.charAt(pos + 2) << 16) | js.charAt(pos + 3) << 24
       val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
       if mask != 0 then {
@@ -197,12 +224,12 @@ case class JsonSource(js: CharSequence):
         if (bs >> (offset << 3)).toByte == '"' then pos + offset
         else throw new Exception("special chars found 1") // else parseEncodedString(i + offset, charBuf.length - 1, charBuf, pos + offset)
       } else parseString(pos + 4)
-    } else if pos < max then {
+    else if pos == max then throw new Exception("Unterminated string value")
+    else
       val b = js.charAt(pos)
       if b == '"' then pos
       else if (b - 0x20 ^ 0x3c) <= 0 then throw new Exception("special chars found 2") // parseEncodedString(i, charBuf.length - 1, charBuf, pos)
       else parseString(pos + 1)
-    } else throw new Exception("Buffer exceeded--string too long")
 
   inline def expectChar(): Char =
     expectString() match {
@@ -211,7 +238,7 @@ case class JsonSource(js: CharSequence):
     }
 
   def expectBoolean(): Boolean =
-    while isWhitespace(here) do i += 1
+    skipWS()
     val bs = (js.charAt(pos)) | (js.charAt(pos + 1) << 8) | (js.charAt(pos + 2) << 16) | js.charAt(pos + 3) << 24
     if (bs ^ JsonSource.trueBytes) == 0 then
       i += 4
@@ -222,14 +249,11 @@ case class JsonSource(js: CharSequence):
     else throw JsonParseError(s"Expected 'true' or 'false'", this)
 
   def expectInt(): Int =
-    if { skipWS(); !isNumber(here) } then throw JsonParseError(s"Expected a number, got $c", this)
-    try {
-      val intRead = UnsafeNumbers.int_(this, false)
-      retract()
-      intRead
-    } catch {
-      case UnsafeNumbers.UnsafeNumber => throw JsonParseError("Expected an Int", this)
-    }
+    skipWS()
+    if !isNumber(here) then throw JsonParseError(s"Expected a number, got $c", this)
+    val intRead = UnsafeNumbers.int_(this, false)
+    retract()
+    intRead
 
   private inline def readChars(
       expect: Array[Char],
@@ -240,6 +264,16 @@ case class JsonSource(js: CharSequence):
       if readChar() != expect(i) then throw JsonParseError(s"Expected $errMsg", this)
       i += 1
 
+  // ---------------
+  // DEPRECATED !!!
+  // ---------------
+  inline def readCharWS(): Char =
+    while isWhitespace(here) && i < max do i += 1
+    readChar()
+
+  // ---------------
+  // DEPRECATED !!!
+  // ---------------
   inline def charWithWS(c: Char): Unit =
     val got = readCharWS()
     if got != c then throw JsonParseError(s"Expected '$c' got '$got'", this)

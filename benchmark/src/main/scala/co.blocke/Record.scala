@@ -1,42 +1,42 @@
 package co.blocke
 
-case class Person(
+case class Person2(
   name: String,
   age: Int,
-  address: Address,
+  address: Address2,
   email: String,
   phone_numbers: List[String],
   is_employed: Boolean
 )
 
-case class Address(
+case class Address2(
   street: String,
   city: String,
   state: String,
   postal_code: String
 )
 
-case class Friend(
+case class Friend2(
   name: String,
   age: Int,
   email: String
 )
 
-case class Pet(
+case class Pet2(
   name: String,
   species: String,
   age: Int
 )
 
-case class Record(
-  person: Person,
+case class Record2(
+  person: Person2,
   hobbies: List[String],
-  friends: List[Friend],
-  pets: List[Pet]
+  friends: List[Friend2],
+  pets: List[Pet2]
 )
 
 
-val jsData = 
+val jsData2 = 
   """{
     "person": {
       "name": "John Doe",

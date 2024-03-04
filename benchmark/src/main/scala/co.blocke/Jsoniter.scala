@@ -7,10 +7,10 @@ object JsoniterZ:
     import com.github.plokhotnyuk.jsoniter_scala.core._
     import com.github.plokhotnyuk.jsoniter_scala.macros._
    
-    given codec: JsonValueCodec[Record] = JsonCodecMaker.make
+    given codec: JsonValueCodec[Record2] = JsonCodecMaker.make
     trait JsoniterReadingBenchmark{
         @Benchmark
-        def readRecordJsoniter = readFromString[Record](jsData)
+        def readRecordJsoniter = readFromString[Record2](jsData2)
         }
 
     trait JsoniterWritingBenchmark{

@@ -818,21 +818,20 @@ object JsonCodecMaker:
                       val caseDef = CaseDef(
                         Literal(StringConstant(oneField.name)),
                         None,
-                        // Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
-                        '{
-                          if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
-                            ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
-                            ${ Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
-                          else throw new JsonParseError("Duplicate field " + $fieldName, $in)
-                        }.asTerm
+                        Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                        // '{
+                        //   if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
+                        //     ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
+                        //     ${ Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
+                        //   else throw new JsonParseError("Duplicate field " + $fieldName, $in)
+                        // }.asTerm
                       )
-                      // if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                      if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       if dvMembers.isEmpty then
                         // no default... required?  Not if Option/Optional, or a collection
                         oneField.fieldRef match {
-                          case _: OptionRef[?]     => // not required
-                          case _: CollectionRef[?] => // not required
-                          case _                   => required = required | math.pow(2, oneField.index).toInt // required
+                          case _: OptionRef[?] => // not required
+                          case _               => required = required | math.pow(2, oneField.index).toInt // required
                         }
                         (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       else
@@ -861,28 +860,40 @@ object JsonCodecMaker:
                 val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
                 val exprRequired = Expr(required)
+
                 val parseLoop = '{
-                  if ! $in.expectObjectOrNull() then null.asInstanceOf[T]
+                  var maybeFname = $in.expectFirstObjectField()
+                  if maybeFname == null then null.asInstanceOf[T]
                   else
-                    var c = $in.readCharWS()
-                    while c match {
-                        case '"' =>
-                          ${ Match('{ $in.expectObjectField() }.asTerm, caseDefsWithFinal).asExprOf[Any] }
-                          c = $in.readCharWS()
-                          if c == ',' then
-                            c = $in.readCharWS()
-                            true
-                          else true
-                        case '}' => false
-                        case c   => throw new JsonParseError(s"Expected '\"' or '}' here but found '$c'", $in)
-                      }
-                    do ()
-                  if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) != 0 then throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
-                  ${ instantiateClass.asExprOf[T] }
+                    while maybeFname.isDefined do
+                      ${ Match('{ maybeFname.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                      maybeFname = $in.expectObjectField()
+                    ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
-                // Block(varDefs, parseLoop).asExprOf[T]
-                Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
+                // val parseLoop = '{
+                //   if ! $in.expectObjectOrNull() then null.asInstanceOf[T]
+                //   else
+                //     var c = $in.readCharWS()
+                //     while c match {
+                //         case '"' =>
+                //           ${ Match('{ $in.expectObjectField() }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                //           c = $in.readCharWS()
+                //           if c == ',' then
+                //             c = $in.readCharWS()
+                //             true
+                //           else true
+                //         case '}' => false
+                //         case c   => throw new JsonParseError(s"Expected '\"' or '}' here but found '$c'", $in)
+                //       }
+                //     do ()
+                //   ${ instantiateClass.asExprOf[T] }
+                //   // if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
+                //   // else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
+                // }.asTerm
+
+                Block(varDefs, parseLoop).asExprOf[T]
+                // Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
               )
 
             case _ => ???
@@ -951,8 +962,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.toList
+                        if parsedArray != null then parsedArray.toList
+                        else null
                       }.asExprOf[T]
                 case '[Vector[?]] =>
                   t.elementRef.refType match
@@ -960,8 +971,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.toVector
+                        if parsedArray != null then parsedArray.toVector
+                        else null
                       }.asExprOf[T]
                 case '[Seq[?]] =>
                   t.elementRef.refType match
@@ -969,8 +980,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.toSeq
+                        if parsedArray != null then parsedArray.toSeq
+                        else null
                       }.asExprOf[T]
                 case '[IndexedSeq[?]] =>
                   t.elementRef.refType match
@@ -978,8 +989,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.toIndexedSeq
+                        if parsedArray != null then parsedArray.toIndexedSeq
+                        else null
                       }.asExprOf[T]
                 case '[Iterable[?]] =>
                   t.elementRef.refType match
@@ -987,8 +998,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.toIterable
+                        if parsedArray != null then parsedArray.toIterable
+                        else null
                       }.asExprOf[T]
                 // Catch all, with (slightly) slower type coersion to proper Seq flavor
                 case _ =>
@@ -997,8 +1008,8 @@ object JsonCodecMaker:
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                        if parsedArray == null then null
-                        else parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                        if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                        else null
                       }.asExprOf[T]
 
             case t: ArrayRef[?] =>
@@ -1008,10 +1019,10 @@ object JsonCodecMaker:
                   val ct = Expr.summon[ClassTag[e]].get
                   '{
                     val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
-                    if parsedArray == null then null
-                    else
+                    if parsedArray != null then
                       implicit val ctt = $ct
-                      parsedArray.toArray[e] // (${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                      parsedArray.toArray[e]
+                    else null
                   }.asExprOf[T]
 
             case _ =>
