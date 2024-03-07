@@ -55,6 +55,11 @@ object RunMe extends App:
   implicit val blah: ScalaJack[Record] = sj[Record]
   println(blah.fromJson(jsData))
 
+  println("===================")
+
+  // val c = new co.blocke.scalajack.run.Codec()
+  // println(c.decodeValue(co.blocke.scalajack.json.reading.JsonSource(jsData)))
+
   println("done.")
 
   /*

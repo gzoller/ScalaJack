@@ -1,9 +1,8 @@
 # Performance
 
 JSON serialization benchmarks I found in various project repos often measured (IMO) silly things like how fast 
-a parser could handle a small list of Int.  For this benchmark I used a slightly more substantial model.  
-It's still a small model, but it does have some nested objects and collections that make it a more
-interesting test.
+a parser could handle a small list of Int.  For this benchmark I used a small, but slightly more representative model.  
+It has some nested objects and collections that make it a more interesting test.
 
 The test is run via jmh.  The JVM is **stock**--not tuned to within an inch of its life, to be a more realistic 
 use case.
@@ -15,15 +14,16 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 ## Reading Performance:
 
+![image info](./ReadingPerformance.png)
+
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-| Jsoniter         | thrpt |  20    |     987991.329  |  ±  6645.992 | ops/s |
-| **ScalaJack 8 (fast mode)**  | thrpt |  20    |   **642235.553**|  ± 10394.860 | ops/s |
-| ZIOJson          | thrpt |  20    |     586716.228  |  ±  2542.783 | ops/s |
-| **ScalaJack 8 (easy mode)**  | thrpt |  20    |   **426718.318**|  ±   692.828 | ops/s |
-| Circe            | thrpt |  20    |     266568.198  |  ±  5695.754 | ops/s |
-| Play             | thrpt |  20    |     207737.560  |  ±   842.108 | ops/s |
-| Argonaut         | thrpt |  20    |     197876.777  |  ± 11181.751 | ops/s |
+| Jsoniter         | thrpt |  20    |    1346388.345  |  ± 17028.863 | ops/s |
+| **ScalaJack 8**  | thrpt |  20    |   **986597.070**|  ± 7473.148 | ops/s |
+| ZIOJson          | thrpt |  20    |     590995.917  |  ±   817.817 | ops/s |
+| Circe            | thrpt |  20    |     210805.946  |  ± 32488.564 | ops/s |
+| Play             | thrpt |  20    |     198747.067  |  ±  7253.896 | ops/s |
+| Argonaut         | thrpt |  20    |     183670.032  |  ±  8981.485 | ops/s |
 
 ## Writing Performance:
 
@@ -31,11 +31,10 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-|**ScalaJack 8 (fast mode)**   | thrpt |  20    | **3039273.222** |  ± 14952.932 | ops/s |
+|**ScalaJack 8**   | thrpt |  20    | **3039273.222** |  ± 14952.932 | ops/s |
 | Jsoniter         | thrpt |  20    |     2843150.452 |  ± 21478.503 | ops/s |
 | Hand-Tooled      | thrpt |  20    |     2732571.374 |  ± 15129.007 | ops/s |
 | Circe            | thrpt |  20    |     1958244.437 |  ± 23965.817 | ops/s |
-|**ScalaJack 8 (easy mode)**   | thrpt |  20    | **846484.100** |  ± 1123.204 | ops/s |
 | ZIO JSON         | thrpt |  20    |      794352.301 |  ± 32336.852 | ops/s |
 | Argonaut         | thrpt |  20    |      690269.697 |  ±  6348.882 | ops/s |
 | Play JSON        | thrpt |  20    |      438650.022 |  ± 23800.221 | ops/s |
@@ -46,13 +45,13 @@ were performed on the same platform.
 
 ### Interpretation
 
-Performance for ScalaJack has been a journey.  ScalaJack is a mature product--over 10 yrs old,
-can you believe it?. Long ago it was quite fast vs its competition.  Over the years though, its 
-performance has lagged considerably, to the point that it was one of the slower serialization
+Performance for ScalaJack has been a journey.  ScalaJack is a mature product--over 10 yrs old.
+Long ago it was quite fast vs its competition, but over the years its performance lagged 
+considerably as its peers improved, to the point that it was one of the slower serialization
 libraries.  ScalaJack 8 changes that!  
 
 I was sampling and testing against a collection of popular serializers for Scala util
-something quite unexpected happend.  When I tested Jsoniter, its performance was through
+something quite unexpected happend: I discovered Jsoniter.  Its performance was through
 the roof!  It far outpaced all competitors for raw speed.  This was a shock.  I had to 
 learn how this worked.
 
@@ -71,17 +70,9 @@ generation.  They also use a lot of low level byte arrays and bitwise operators,
 expect to see in a C program, to improve on the standard library functions everyone else uses.  
 It works.
 
-ScalaJack's focus is first and foremost to be frictionless--no drama to the user.  ScalaJack requires 
-zero boilerplate--you can throw any Scala object (or even a Java object) at it with no pre-preparation 
-and it will serialize it.  For its intended use-cases, out-of-the-box ScalaJack 8 offers excellent 
-performance, equal to or exceeding a number of widely-used alternative choices.
-
-If you're willing to suffer just 1 single line of boilerplate, ScalaJack 8 will reward you with 
-speed that's in the top one or two of its class ("fast mode" in the results).
-
 ### Technical Notes
 
-Achieving extreme speed for ScalaJack 8 was several weeks of learning, trial, error,
+Achieving extreme speed for ScalaJack 8 was weeks of learning, trial, error,
 and re-writes.  I studied Jsoniter, Circe, ZIO Json, and others to learn optimizations.
 The tough news for anyone wanting to duplicate this kind of performance in your own code 
 is that there isn't one magic trick to achieve maximum performance.  It's a basket 
@@ -96,6 +87,12 @@ enough is enough for you.  Here's a partial list of learnings incorporated into 
 * Lots of specific typing.  Don't make the compiler think--provide detailed types wherever 
   you can
 
+* In some cases (though not all) a series of if/else if/else statements is faster than 
+  match/case statements
+
+* A carefully-crafted @tailrec function is often faster than a function driven by a 
+  while loop.
+
 * For macro-based software like this--find every opportunity to do hard work at 
   compile-time
 
@@ -103,9 +100,20 @@ enough is enough for you.  Here's a partial list of learnings incorporated into 
   splices, like the documentaion and blogs suggest, and you will get something working. 
   When you examine the code a "stock" macro use produces, you may be disappointed
   if ultimate runtime speed is your goal. Then generated code might look a litle kludgy, and
-  it will not necessarily be speed optimized. Rework your macros carefully until the generated code 
+  it will likely not be speed-optimized. Rework your macros carefully until the generated code 
   is as smooth as you might write by hand.  Remember: your macro code doesn't have to win awards for 
   style or beauty--your generated code does!  For the fastest performance you'll actually have 
   to generate custom functions as shown in ScalaJack's code (look at JsonCodecMaker.scala)  This 
   isn't for the faint of heart.  If it all looks like Greek, step back and layer yourself into 
   macros slowly a piece at a time.
+
+After all the performance tunings and learnings, I was able to meet or beat Jsoniter for writing
+speed, putting ScalaJack at the top of the pile.  For reading I made a number of substantial 
+improvements that placed ScalaJack a strong 2nd place under Jsoniter.  There is still a 
+substantial performance gap between Jsoniter's reads and ScalaJack's, and for the life of me I can't
+figure out what's driving those gains.  The generated code is very similar.  Json parsing should
+be similar--in fact in some ways ScalaJack's should be faster.  Although micro-benchmarks indicate
+match/case is significantly slower, in practice replacing these with if/else didn't gain ScalaJack
+a thing--which I find vexing.  Jsoniter has some tricky ByteArrayAccess code that looks very
+low-level and clever, but when I benchmarked it, the gains seemed moninal to none in my use case.
+I dunno--If anyone has any ideas, please drop a comment in the Issues in repo!

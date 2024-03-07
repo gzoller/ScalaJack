@@ -6,7 +6,7 @@ import scala.annotation.{switch, tailrec}
 import co.blocke.scalajack.json.reading.SafeNumbers.double
 
 object JsonSource:
-  protected val ull: Array[Char] = "ull".toCharArray
+  val ull: Array[Char] = "ull".toCharArray
   protected val alse: Array[Char] = "alse".toCharArray
   protected val rue: Array[Char] = "rue".toCharArray
   protected val falseBytes = 'f' | 'a' << 8 | 'l' << 16 | 's' << 24 | 'e' << 32
@@ -39,7 +39,7 @@ case class JsonSource(js: CharSequence):
     c == ' ' || c == '\n' || (c | 0x4) == '\r' || c == '\t'
 
   @tailrec
-  final private[this] def readToken(): Char =
+  final def readToken(): Char =
     if i == max then throw new JsonParseError("Unexpected end of buffer", this)
     else
       val b = here
@@ -92,16 +92,13 @@ case class JsonSource(js: CharSequence):
     accum.toChar
 
   // returns false if 'null' found
-  def expectFirstObjectField(): Option[CharSequence] =
+  def expectFirstObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
     val t = readToken()
     if t == '{' then
       val tt = readToken()
       if tt == '"' then
-        val endI = parseString(i)
-        val fname = js.subSequence(i, endI)
-        i = endI + 1
-        if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
-        Some(fname)
+        val foundIndex = parseFieldName(fieldNameMatrix)
+        Some(foundIndex)
       else if tt == '}' then None
       else throw new JsonParseError(s"Expected object field name or '}' but found '$tt'", this)
     else if t == 'n' then
@@ -109,19 +106,17 @@ case class JsonSource(js: CharSequence):
       null
     else throw new JsonParseError(s"Expected object start '{' or null", this)
 
-  def expectObjectField(): Option[CharSequence] =
+  def expectObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
     val t = readToken()
     if t == ',' then
       val tt = readToken()
       if tt == '"' then
-        val endI = parseString(i)
-        val fname = js.subSequence(i, endI)
-        i = endI + 1
-        if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator", this)
-        Some(fname)
+        val foundIndex = parseFieldName(fieldNameMatrix)
+        Some(foundIndex)
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
     else if t == '}' then None
     else throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
+  // returns false if 'null' found
 
   @tailrec
   final private[this] def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E): scala.collection.mutable.ListBuffer[E] =
@@ -206,9 +201,11 @@ case class JsonSource(js: CharSequence):
     val t = readToken()
     if t == '"' then
       val endI = parseString(i)
-      val str = js.subSequence(i, endI)
-      i = endI + 1
-      str
+      if endI >= 0 then
+        val str = js.subSequence(i, endI)
+        i = endI + 1
+        str
+      else ??? // slower-parseString looking for escaped special chars
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
       null
@@ -222,14 +219,29 @@ case class JsonSource(js: CharSequence):
       if mask != 0 then {
         val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
         if (bs >> (offset << 3)).toByte == '"' then pos + offset
-        else throw new Exception("special chars found 1") // else parseEncodedString(i + offset, charBuf.length - 1, charBuf, pos + offset)
+        else -1 // special char found
       } else parseString(pos + 4)
     else if pos == max then throw new Exception("Unterminated string value")
     else
       val b = js.charAt(pos)
       if b == '"' then pos
-      else if (b - 0x20 ^ 0x3c) <= 0 then throw new Exception("special chars found 2") // parseEncodedString(i, charBuf.length - 1, charBuf, pos)
+      else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
       else parseString(pos + 1)
+
+  final def parseFieldName(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
+    var fi: Int = 0
+    var bs: Long = fieldNameMatrix.initial
+    var c: Int = here
+    while c != '"' do {
+      bs = fieldNameMatrix.update(bs, fi, c)
+      fi += 1
+      i += 1
+      c = here
+    }
+    i += 1
+    bs = fieldNameMatrix.exact(bs, fi)
+    if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
+    fieldNameMatrix.first(bs)
 
   inline def expectChar(): Char =
     expectString() match {
@@ -248,14 +260,30 @@ case class JsonSource(js: CharSequence):
       false
     else throw JsonParseError(s"Expected 'true' or 'false'", this)
 
-  def expectInt(): Int =
-    skipWS()
-    if !isNumber(here) then throw JsonParseError(s"Expected a number, got $c", this)
-    val intRead = UnsafeNumbers.int_(this, false)
+  def expectInt(): Int = {
+    var b = readCharWS()
+    var s = -1
+    if here == '-' then {
+      readChar()
+      s = 0
+    }
+    if b < '0' || b > '9' then throw new Exception("Boom 1")
+    var x = '0' - b
+    while { b = readChar(); b >= '0' && b <= '9' } do
+      if x < -214748364 || {
+          x = x * 10 + ('0' - b)
+          x > 0
+        }
+      then throw new Exception("Boom 2")
+    x ^= s
+    x -= s
+    if (s & x) == -2147483648 then throw new Exception("Boom 3")
+    if (b | 0x20) == 'e' || b == '.' then throw new Exception("Boom 4")
     retract()
-    intRead
+    x
+  }
 
-  private inline def readChars(
+  inline def readChars(
       expect: Array[Char],
       errMsg: String
   ): Unit =

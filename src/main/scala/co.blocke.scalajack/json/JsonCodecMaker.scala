@@ -81,6 +81,26 @@ object JsonCodecMaker:
       )
       '{}
 
+    val classFieldMatrixSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
+    val classFieldMatrixValDefs = new scala.collection.mutable.ArrayBuffer[ValDef]
+
+    def makeClassFieldMatrixValDef(methodKey: MethodKey, className: String, fieldNames: Array[String])(using Quotes): Expr[Unit] =
+      classFieldMatrixSyms.getOrElse(
+        methodKey, {
+          val sym = Symbol.newVal(
+            Symbol.spliceOwner,
+            s"__$className" + "_fields",
+            TypeRepr.of[StringMatrix],
+            Flags.EmptyFlags,
+            Symbol.noSymbol
+          )
+          classFieldMatrixSyms.update(methodKey, sym)
+          val names = Expr(fieldNames)
+          classFieldMatrixValDefs += ValDef(sym, Some('{ new StringMatrix($names) }.asTerm))
+        }
+      )
+      '{}
+
     // ---------------------------------------------------------------------------------------------
 
     def maybeWrite[T](label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
@@ -807,6 +827,7 @@ object JsonCodecMaker:
                 var required = 0
                 val reqSym = Symbol.newVal(Symbol.spliceOwner, "required", TypeRepr.of[Int], Flags.Mutable, Symbol.noSymbol)
                 val allFieldNames = Expr(t.fields.map(_.name).toArray) // Used for missing required field error
+
                 val together = t.fields.map { oneField =>
                   oneField.fieldRef.refType match {
                     case '[f] =>
@@ -815,16 +836,17 @@ object JsonCodecMaker:
                       val fieldSymRef = Ident(sym.termRef)
                       val reqBit = Expr(math.pow(2, oneField.index).toInt)
                       val fieldName = Expr(oneField.name)
+
                       val caseDef = CaseDef(
-                        Literal(StringConstant(oneField.name)),
+                        Literal(IntConstant(oneField.index)),
                         None,
-                        Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
-                        // '{
-                        //   if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
-                        //     ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
-                        //     ${ Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
-                        //   else throw new JsonParseError("Duplicate field " + $fieldName, $in)
-                        // }.asTerm
+                        // Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                        '{
+                          if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
+                            ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
+                            ${ Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
+                          else throw new JsonParseError("Duplicate field " + $fieldName, $in)
+                        }.asTerm
                       )
                       if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       if dvMembers.isEmpty then
@@ -861,39 +883,23 @@ object JsonCodecMaker:
 
                 val exprRequired = Expr(required)
 
+                makeClassFieldMatrixValDef(MethodKey(t, false), t.name.replaceAll("\\.", "_"), t.fields.map(_.name).toArray)
+                val fieldMatrixSym = classFieldMatrixSyms(MethodKey(t, false)).asInstanceOf[Symbol]
+
                 val parseLoop = '{
-                  var maybeFname = $in.expectFirstObjectField()
-                  if maybeFname == null then null.asInstanceOf[T]
+                  var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                  if maybeFieldNum == null then null.asInstanceOf[T]
                   else
-                    while maybeFname.isDefined do
-                      ${ Match('{ maybeFname.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
-                      maybeFname = $in.expectObjectField()
-                    ${ instantiateClass.asExprOf[T] }
+                    while maybeFieldNum.isDefined do
+                      ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                      maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                    if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
+                    else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
+                    // ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
-                // val parseLoop = '{
-                //   if ! $in.expectObjectOrNull() then null.asInstanceOf[T]
-                //   else
-                //     var c = $in.readCharWS()
-                //     while c match {
-                //         case '"' =>
-                //           ${ Match('{ $in.expectObjectField() }.asTerm, caseDefsWithFinal).asExprOf[Any] }
-                //           c = $in.readCharWS()
-                //           if c == ',' then
-                //             c = $in.readCharWS()
-                //             true
-                //           else true
-                //         case '}' => false
-                //         case c   => throw new JsonParseError(s"Expected '\"' or '}' here but found '$c'", $in)
-                //       }
-                //     do ()
-                //   ${ instantiateClass.asExprOf[T] }
-                //   // if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
-                //   // else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
-                // }.asTerm
-
-                Block(varDefs, parseLoop).asExprOf[T]
-                // Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
+                // Block(varDefs, parseLoop).asExprOf[T]
+                Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
               )
 
             case _ => ???
@@ -1056,7 +1062,7 @@ object JsonCodecMaker:
     }.asTerm
     val neededDefs =
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
-      writeMethodDefs ++ readMethodDefs
+      classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
     println(s"Codec: ${codec.show}")
     codec

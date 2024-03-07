@@ -66,13 +66,12 @@ class WritingBenchmark
 
 /*  LATEST RUN:
 
-[info] Benchmark                              Mode  Cnt        Score        Error  Units
-[info] ReadingBenchmark.readRecordArgonaut   thrpt   20   185186.226 ±  16189.626  ops/s
-[info] ReadingBenchmark.readRecordCirce      thrpt   20   281382.258 ±   4449.888  ops/s
-[info] ReadingBenchmark.readRecordJsoniter   thrpt   20  1327809.608 ±  26901.514  ops/s
-[info] ReadingBenchmark.readRecordPlay       thrpt   20   209035.195 ±    671.300  ops/s
-[info] ReadingBenchmark.readRecordScalaJack  thrpt   20   740350.521 ± 190132.195  ops/s
-[info] ReadingBenchmark.readRecordZIOJson    thrpt   20   584964.240 ±    552.648  ops/s
-[info] WritingBenchmark.writeRecordScalaJack thrpt   20   352825.894 ±   7772.927  ops/s
+[info] Benchmark                              Mode  Cnt        Score       Error  Units
+[info] ReadingBenchmark.readRecordJsoniter   thrpt   20  1346388.345 ± 17028.863  ops/s
+[info] ReadingBenchmark.readRecordScalaJack  thrpt   20   941679.824 ± 58208.523  ops/s
+[info] ReadingBenchmark.readRecordZIOJson    thrpt   20   590995.917 ±   817.817  ops/s
+[info] ReadingBenchmark.readRecordCirce      thrpt   20   210805.946 ± 32488.564  ops/s
+[info] ReadingBenchmark.readRecordPlay       thrpt   20   198747.067 ±  7253.896  ops/s
+[info] ReadingBenchmark.readRecordArgonaut   thrpt   20   183670.032 ±  8981.485  ops/s
 
  */
