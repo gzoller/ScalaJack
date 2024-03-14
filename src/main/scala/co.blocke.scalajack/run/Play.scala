@@ -8,6 +8,7 @@ import scala.reflect.ClassTag
 import json.*
 import scala.collection.immutable.Queue
 import co.blocke.scalajack.json.reading.SafeNumbers.double
+import co.blocke.scalajack.schema.*
 
 class Shape[T](polygon: T)
 class Parallelogram()
@@ -46,105 +47,22 @@ object RunMe extends App:
   import co.blocke.scalajack.json.run.Record
   println("\n")
 
-  // implicit val blah: ScalaJack[Foom] = sj[Foom]
-  // println(ScalaJack[Foom].fromJson("""{"a": -12, "b":"Greg Z"}"""))
+  // println(RType.of[Person].pretty)
 
-  // implicit val blah: ScalaJack[List[Queue[Int]]] = sj[List[Queue[Int]]]
-  // println(ScalaJack[List[Queue[Int]]].fromJson("null")) // "[[1,2,3],[4,5,6],[7,8,9]]"))
+  implicit val blah: ScalaJack[Record] = sj[Record] // (JsonConfig.withSuppressedEscapedStrings())
+  println(blah.toJson(record))
 
-  implicit val blah: ScalaJack[Record] = sj[Record]
-  println(blah.fromJson(jsData))
+  // println(RType.of[Schema].pretty)
 
-  println("===================")
+  val f = new FastStringBuilder()
+  val s = """Gregory "William"
+Zoller""" + "\u20A0 wow"
+  f.appendEscaped(s, 0, s.length)
+  println(f.result)
 
-  // val c = new co.blocke.scalajack.run.Codec()
-  // println(c.decodeValue(co.blocke.scalajack.json.reading.JsonSource(jsData)))
+  // implicit val blah: ScalaJack[schema.Schema] = sj[schema.Schema](JsonConfig.withSuppressedTypeHints())
+  // println(sj.toJson(schema.JsonSchema.of[Person]))
+
+  // println(RType.of[schema.Schema].pretty)
 
   println("done.")
-
-  /*
-  var i = 0
-  val msg = """This is a test""""
-
-  val cbuf = new Array[Char](4048)
-  val ta = System.nanoTime()
-  while i < 1000 do
-    val ps = reading.ParseString(msg.getBytes)
-    val z = ps.parseString(0, msg.length(), cbuf, 0)
-    new String(cbuf, 0, z)
-    i += 1
-  val tb = System.nanoTime()
-  println("Time (Jsoniter) : " + (tb - ta)) // 3235208
-
-  println("------")
-
-  i = 0
-  val tr = System.nanoTime()
-  val msgX = "\"" + msg
-  while i < 1000 do
-    val jsrc = reading.JsonSource(msgX)
-    jsrc.expectString()
-    i += 1
-  val tq = System.nanoTime()
-  println("Time (ExpectNew): " + (tq - tr)) // 4927792 --> about a 52% improvement!!!
-
-  println("------")
-
-  i = 0
-  val tr2 = System.nanoTime()
-  while i < 1000 do
-    val jsrc = reading.JsonSource(msgX)
-    jsrc.expectStringOld()
-    i += 1
-  val tq2 = System.nanoTime()
-  println("Time (ExpectOld): " + (tq2 - tr2)) // 4927792 --> about a 52% improvement!!!
-
-  println("------")
-
-  i = 0
-  val te2 = System.nanoTime()
-  while i < 1000 do
-    val jsrc = reading.JsonSource(msg)
-    val pc = jsrc.parseString(0)
-    jsrc.js.subSequence(0, pc)
-    i += 1
-  val tf2 = System.nanoTime()
-  println("Time (PNew)     : " + (tf2 - te2)) // 4927792 --> about a 52% improvement!!!
-
-  println("------")
-
-  i = 0
-  val te = System.nanoTime()
-  val msgY = "\"" + msg
-  while i < 1000 do
-    val jsrc = reading.JsonSource(msgY)
-    jsrc.parseStringOld()
-    i += 1
-  val tf = System.nanoTime()
-  println("Time (POld)     : " + (tf - te)) // 4927792 --> about a 52% improvement!!!
-
-  println("------")
-
-  i = 0
-  val ty = System.nanoTime()
-  while i < 1000 do
-    blah.fromJson(jsData)
-    i += 1
-  val tz = System.nanoTime()
-  println("Time (ParseAll) : " + (tz - ty))
-  // Orig: 79298041
-  // New : 58537667
-  // Latest: 79713209
-  // Newnew: 34919833
-
-  println("------")
-
-  i = 0
-  val ty2 = System.nanoTime()
-  while i < 1000 do
-    val g = reading.JsonSource("true}")
-    g.expectBoolean()
-    i += 1
-  val tz2 = System.nanoTime()
-  println("Time (Boolean Old) : " + (tz2 - ty2))
-   */

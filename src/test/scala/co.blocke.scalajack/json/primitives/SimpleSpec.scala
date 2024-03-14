@@ -10,6 +10,7 @@ import org.scalatest.*
 import TestUtil.*
 import java.time.*
 import java.util.UUID
+import java.net.{URI, URL}
 
 class SimpleSpec() extends AnyFunSpec with JsonMatchers:
 
@@ -159,6 +160,18 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val js = sj[SampleZoneOffset].toJson(inst)
         js should matchJson("""{"z1":null,"z2":"+01:00"}""")
         // inst shouldEqual ScalaJack.read[SampleZoneOffset](js)
+      }
+
+      it("Net types URL and URI must work") {
+        val inst = SampleNet(
+          null,
+          new URL("https://www.foom.com"),
+          null,
+          new URI("https://www.foom.com")
+        )
+        val js = sj[SampleNet].toJson(inst)
+        println(js)
+        js should matchJson("""{"u1":null,"u2":"https://www.foom.com","u3":null,"u4":"https://www.foom.com"}""")
       }
 
       it("UUID must work") {

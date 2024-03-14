@@ -20,17 +20,14 @@ class MiscSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-------------------------------\n:          Misc Tests         :\n-------------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
-      it("String escaping must work") {
-        val inst = StringHolder("""This is a "strange" test\non another level.""")
-        val js = sj[StringHolder].toJson(inst)
-        js should matchJson("""{"a":"This is a \"strange\" test\\non another level."}""")
-      }
-      it("String escaping must work (bad JSON, but proves escape can be turned off)") {
-        val inst = StringHolder("""This is a "strange" test\non another level.""")
+      it("String escaping must work (proves escape can be turned off)") {
+        val inst = StringHolder("""This is a "strange" test
+on another level.""")
         val js1 = sj[StringHolder].toJson(inst)
-        val js2 = sj[StringHolder](JsonConfig.withEscapedStrings()).toJson(inst)
-        js1 should equal("""{"a":"This is a "strange" test\non another level."}""")
-        js2 should equal("""{"a":"This is a "strange" test\non another level."}""")
+        val js2 = sj[StringHolder](JsonConfig.withSuppressEscapedStrings()).toJson(inst)
+        js1 should equal("""{"a":"This is a \"strange\" test\non another level."}""")
+        js2 should equal("""{"a":"This is a "strange" test
+on another level."}""")
       }
       it("NeoType integration must work") {
         val inst = Validated(NonEmptyString("Mike"), XList(List("x", "y", "z")), List(EmptyString(""), EmptyString(""), EmptyString("")))
@@ -50,7 +47,7 @@ class MiscSpec() extends AnyFunSpec with JsonMatchers:
           (Some('a'), None, Some('b'))
         )
         val js = sj[AnyHolder].toJson(inst)
-        js should equal("""{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":"anymap":{"a":1,"b":2},"whichOneR":3,"bunch":["a",null,"b"]}""")
+        js should equal("""{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"anymap":{"a":1,"b":2},"whichOneR":3,"bunch":["a",null,"b"]}""")
       }
       it("Any type must work (none as null)") {
         val inst = AnyHolder(

@@ -19,7 +19,8 @@ class JsonConfig private[scalajack] (
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
     val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
-    val escapedStrings: Boolean
+    val suppressEscapedStrings: Boolean,
+    val suppressTypeHints: Boolean
 ):
   def withNoneAsNull(): JsonConfig = copy(noneAsNull = true)
   def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
@@ -28,7 +29,8 @@ class JsonConfig private[scalajack] (
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
-  def withEscapedStrings(): JsonConfig = copy(escapedStrings = false)
+  def withSuppressEscapedStrings(): JsonConfig = copy(suppressEscapedStrings = true)
+  def withSuppressTypeHints(): JsonConfig = copy(suppressTypeHints = true)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -38,7 +40,8 @@ class JsonConfig private[scalajack] (
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
       enumsAsIds: Option[List[String]] = enumsAsIds,
-      escapedStrings: Boolean = escapedStrings
+      suppressEscapedStrings: Boolean = suppressEscapedStrings,
+      suppressTypeHints: Boolean = suppressTypeHints
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
@@ -47,7 +50,8 @@ class JsonConfig private[scalajack] (
     typeHintLabel,
     typeHintPolicy,
     enumsAsIds,
-    escapedStrings
+    suppressEscapedStrings,
+    suppressTypeHints
   )
 
 enum TryPolicy:
@@ -71,7 +75,8 @@ object JsonConfig
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
       enumsAsIds = None,
-      escapedStrings = false
+      suppressEscapedStrings = false,
+      suppressTypeHints = false
     ):
   import scala.quoted.FromExpr.*
 
@@ -90,10 +95,14 @@ object JsonConfig
           else '{ jc }
         }
         val jc3 = ${
-          if !x.escapedStrings then '{ jc2.withEscapedStrings() }
+          if !x.suppressEscapedStrings then '{ jc2.withSuppressEscapedStrings() }
           else '{ jc2 }
         }
-        jc3
+        val jc4 = ${
+          if !x.suppressTypeHints then '{ jc2.withSuppressTypeHints() }
+          else '{ jc3 }
+        }
+        jc4
       }
   }
 
@@ -119,7 +128,8 @@ object JsonConfig
                 $typeHintLabelE,
                 $typeHintPolicyE,
                 $enumsAsIdsE,
-                $escapedStringsE
+                $suppressEscapedStringsE,
+                $suppressTypeHintsE
               )
             } =>
           try
@@ -136,7 +146,8 @@ object JsonConfig
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
                 extract("enumsAsIds", enumsAsIdsE),
-                extract("escapedStrings", escapedStringsE)
+                extract("suppressEscapedStrings", suppressEscapedStringsE),
+                extract("suppressTypeHints", suppressTypeHintsE)
               )
             )
           catch {
@@ -152,7 +163,8 @@ object JsonConfig
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEscapedStrings() }              => Some(x.valueOrAbort.withEscapedStrings())
+        case '{ ($x: JsonConfig).withSuppressEscapedStrings() }      => Some(x.valueOrAbort.withSuppressEscapedStrings())
+        case '{ ($x: JsonConfig).withSuppressTypeHints() }           => Some(x.valueOrAbort.withSuppressTypeHints())
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

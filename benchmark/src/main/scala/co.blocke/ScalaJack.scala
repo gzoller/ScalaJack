@@ -10,12 +10,13 @@ object ScalaJackZ:
 
     trait ScalaJackReadingBenchmark{
         @Benchmark
-        // def readRecordScalaJack = sj[Record].fromJson(jsData) // 500K
-        def readRecordScalaJack = ScalaJack[co.blocke.Record2].fromJson(jsData2) // 515K :-(
+        def readRecordScalaJack = ScalaJack[co.blocke.Record2].fromJson(jsData2)
     }
 
     trait ScalaJackWritingBenchmark { 
         @Benchmark
-        // def writeRecordScalaJack = sj[Record].toJson(record)   // 677K score
-        def writeRecordScalaJack = ScalaJack[co.blocke.Record2].toJson(record)  // 1.7M score <- faster
+        def writeRecordScalaJack = ScalaJack[co.blocke.Record2].toJson(record)  
+        // 344702.052 with escaped strings (apache lib)
+        // 2225843.198 with FastStringBuilder
+        // 1081490.833 with StringBuilder
     }

@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json.primitives
 
 import java.util.UUID
+import java.net.{URI, URL}
 import java.lang.{Boolean as JBoolean, Byte as JByte, Character as JChar, Double as JDouble, Float as JFloat, Integer as JInt, Long as JLong, Number as JNumber, Short as JShort}
 import java.math.{BigDecimal as JBigDecimal, BigInteger as JBigInteger}
 import java.time.*
@@ -61,6 +62,7 @@ case class SampleJLong(l1: JLong, l2: JLong, l3: JLong, l4: JLong, l5: JLong)
 case class SampleJNumber(n1: JNumber, n2: JNumber, n3: JNumber, n4: JNumber, n5: JNumber, n6: JNumber, n7: JNumber, n8: JNumber, n9: JNumber, n10: JNumber, n11: JNumber, n12: JNumber, n13: JNumber, n14: JNumber, n15: JNumber, n16: JNumber, n17: JNumber)
 case class SampleJShort(s1: JShort, s2: JShort, s3: JShort, s4: JShort, s5: JShort)
 case class SampleUUID(u1: UUID, u2: UUID)
+case class SampleNet(u1: URL, u2: URL, u3: URI, u4: URI)
 
 // === Java Time
 case class SampleDuration(d1: Duration, d2: Duration, d3: Duration)

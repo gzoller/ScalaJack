@@ -488,15 +488,17 @@ object JsonCodecMaker:
                 // generate a match/case statement that in turn generates render functions for each
                 // child of the sealed trait.
                 // Refer to Jsoniter: JsonCodecMaker.scala around line 920 for example how to do this, incl a wildcard.
-                val cases = t.sealedChildren.map { child =>
-                  child.refType match
-                    case '[c] =>
-                      val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
-                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
-                } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
-                val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
-                matchExpr
+                // (f: (Expr[U], Expr[JsonOutput]) => Expr[Unit])
+                makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                  val cases = t.sealedChildren.map { child =>
+                    child.refType match
+                      case '[c] =>
+                        val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
+                        val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
+                        CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype.tpe))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, cfg.suppressTypeHints).asTerm)
+                  } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
+                  Match(in.asTerm, cases).asExprOf[Unit]
+                }
 
             // No makeWriteFn here--Option is just a wrapper to the real thingy
             case t: OptionRef[?] =>
@@ -522,7 +524,8 @@ object JsonCodecMaker:
             case t: SelfRefRef[?] =>
               t.refType match
                 case '[e] =>
-                  val key = MethodKey(ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean]), false)
+                  val ref = ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+                  val key = MethodKey(ref, false)
                   val sym = writeMethodSyms(key)
                   val tin = aE.asExprOf[b]
                   '{
@@ -693,8 +696,8 @@ object JsonCodecMaker:
               if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
               else '{ $out.value(${ aE.asExprOf[Short] }) }
             case t: StringRef =>
-              if cfg.escapedStrings then '{ $out.value(StringEscapeUtils.escapeJson(${ aE.asExprOf[String] })) }
-              else '{ $out.value(${ aE.asExprOf[String] }) }
+              if cfg.suppressEscapedStrings then '{ $out.value(${ aE.asExprOf[String] }) }
+              else '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
 
             case t: JBigDecimalRef =>
               if isStringified then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
@@ -745,13 +748,18 @@ object JsonCodecMaker:
             case t: ZoneIdRef         => '{ $out.value(${ aE.asExprOf[java.time.ZoneId] }) }
             case t: ZoneOffsetRef     => '{ $out.value(${ aE.asExprOf[java.time.ZoneOffset] }) }
 
+            case t: URLRef    => '{ $out.value(${ aE.asExprOf[java.net.URL] }) }
+            case t: URIRef    => '{ $out.value(${ aE.asExprOf[java.net.URI] }) }
             case t: UUIDRef   => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
             case t: ObjectRef => '{ $out.value(${ Expr(t.name) }) }
 
             case t: AliasRef[?] =>
-              t.unwrappedType.refType match
-                case '[e] =>
-                  genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
+              // Special check for RawJson pseudo-type
+              if lastPart(t.definedType) == "RawJson" then '{ $out.valueRaw(${ aE.asExprOf[RawJson] }) }
+              else
+                t.unwrappedType.refType match
+                  case '[e] =>
+                    genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
 
             // These one's here becaue Enums and their various flavors can be Map keys
             // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
@@ -771,7 +779,7 @@ object JsonCodecMaker:
             // the argument of method validate$retainedBody.  It happened to have the correctly-typed parameter.
             // With the correct type, we can correct write out the value.
             case t: NeoTypeRef[?] => // in Quotes context
-              Symbol.requiredModule(t.name).methodMember("validate$retainedBody").head.paramSymss.head.head.tree match
+              Symbol.requiredModule(t.typedName.toString).methodMember("validate$retainedBody").head.paramSymss.head.head.tree match
                 case ValDef(_, tt, _) =>
                   tt.tpe.asType match
                     case '[u] =>
@@ -840,7 +848,6 @@ object JsonCodecMaker:
                       val caseDef = CaseDef(
                         Literal(IntConstant(oneField.index)),
                         None,
-                        // Assign(fieldSymRef, genReadVal[f](oneField.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
                         '{
                           if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
                             ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
@@ -848,7 +855,7 @@ object JsonCodecMaker:
                           else throw new JsonParseError("Duplicate field " + $fieldName, $in)
                         }.asTerm
                       )
-                      if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                      // if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       if dvMembers.isEmpty then
                         // no default... required?  Not if Option/Optional, or a collection
                         oneField.fieldRef match {
@@ -1057,12 +1064,12 @@ object JsonCodecMaker:
         // }
 
         def encodeValue(in: T, out: JsonOutput): Unit = ${ genWriteVal('in, ref, 'out) }
-        def decodeValue(in: JsonSource): T = ${ genReadVal(ref, 'in) }
+        def decodeValue(in: JsonSource): T = null.asInstanceOf[T] // ${ genReadVal(ref, 'in) }
       }
     }.asTerm
     val neededDefs =
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
       classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
-    println(s"Codec: ${codec.show}")
+    // println(s"Codec: ${codec.show}")
     codec

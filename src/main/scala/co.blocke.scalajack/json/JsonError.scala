@@ -8,6 +8,7 @@ class JsonNullKeyValue(msg: String) extends Throwable(msg) with NoStackTrace
 class JsonUnsupportedType(msg: String) extends Throwable(msg) with NoStackTrace
 class JsonConfigError(msg: String) extends Throwable(msg) with NoStackTrace
 class JsonEitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
+class JsonIllegalCharacterError(msg: String) extends Throwable(msg) with NoStackTrace
 
 class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
   val show: String = ""

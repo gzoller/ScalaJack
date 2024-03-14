@@ -3,14 +3,19 @@ package json
 package run
 
 import neotype.*
+import co.blocke.scalajack.schema.*
 
+@additionalProperties(value = "true")
+@id(value = "abc123")
+@title(value = "The Greatest")
+@description(value = "nothing special")
 case class Person(
-    name: String,
-    age: Int,
-    address: Address,
-    email: String,
-    phone_numbers: List[String],
-    is_employed: Boolean
+    name: String = "Greg",
+    age: Int = 57,
+    address: Address = Address("123 Main", "New York", "NY", "12345"),
+    email: Option[String] = Some("wow.gmail.com"),
+    phone_numbers: List[String] = List("a", "b"),
+    is_employed: Boolean = true
 )
 
 case class Address(
@@ -70,10 +75,17 @@ given NonEmptyList: Newtype[List[Int]] with
   inline def validate(input: List[Int]): Boolean =
     input.nonEmpty
 
+type NonZeroInt = NonZeroInt.Type
+object NonZeroInt extends Newtype[Int]:
+  override inline def validate(input: Int): Boolean =
+    input != 0
+
 type XList = XList.Type
 given XList: Newtype[List[String]] with
   inline def validate(input: List[String]): Boolean =
     input(0) == "x"
+
+case class Validated(num: NonZeroInt, name: NonEmptyString, xspot: XList, nada: List[EmptyString])
 
 case class Tag[X](a: X)
 given [A, B](using newType: Newtype.WithType[A, B], tag: Tag[A]): Tag[B] =
@@ -86,7 +98,15 @@ given EmptyString: Newtype[String] with
 
 case class Person2(age: XList)
 
-case class Foom(a: Int, b: String)
+case class Foom(a: schema.Schema)
+
+sealed trait Candy:
+  val isSweet: Boolean
+case class MMs(isSweet: Boolean) extends Candy
+case class Musk(isSweet: Boolean) extends Candy
+case class Veggies(yuks: String)
+
+type Food = Candy | Veggies
 
 val jsData =
   """{
@@ -138,7 +158,7 @@ val jsData =
   }"""
 
 val record = Record(
-  Person("John Doe", 30, Address("123 Main Street", "Anytown", "CA", "12345"), "john.doe@example.com", List("555-555-5555", "555-123-4567"), true),
+  Person("John Doe", 30, Address("123 Main Street", "Anytown", "CA", "12345"), Some("john.doe@example.com"), List("555-555-5555", "555-123-4567"), true),
   List("reading", "swimming", "traveling"),
   List(Friend("Jane Smith", 28, "jane.smith@example.com"), Friend("Bob Johnson", 32, "bob.johnson@example.com")),
   List(Pet("Fido", "Dog", 5), Pet("Whiskers", "Cat", 3))
