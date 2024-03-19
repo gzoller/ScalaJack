@@ -3,7 +3,7 @@ package json
 package run
 
 import neotype.*
-import co.blocke.scalajack.schema.*
+import co.blocke.scalajack.json.schema.*
 
 @additionalProperties(value = "true")
 @id(value = "abc123")
@@ -156,6 +156,22 @@ val jsData =
       }
     ]
   }"""
+
+case class Yippy(a: (Int, List[String], Boolean) = (5, List("a", "b"), false), b: Boolean)
+sealed trait Flavor
+case object Vanilla extends Flavor
+case object ChocolateX extends Flavor
+case object Bourbon extends Flavor
+case class FlavorHolder(f: Flavor)
+
+enum Colors:
+  case Red, Green, Blue
+
+object WeekDay extends Enumeration {
+  type WeekDay = Value
+  val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value
+}
+import WeekDay.*
 
 val record = Record(
   Person("John Doe", 30, Address("123 Main Street", "Anytown", "CA", "12345"), Some("john.doe@example.com"), List("555-555-5555", "555-123-4567"), true),

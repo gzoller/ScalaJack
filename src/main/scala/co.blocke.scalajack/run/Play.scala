@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 import json.*
 import scala.collection.immutable.Queue
 import co.blocke.scalajack.json.reading.SafeNumbers.double
-import co.blocke.scalajack.schema.*
+import co.blocke.scalajack.json.schema.*
 
 class Shape[T](polygon: T)
 class Parallelogram()
@@ -49,20 +49,29 @@ object RunMe extends App:
 
   // println(RType.of[Person].pretty)
 
-  implicit val blah: ScalaJack[Record] = sj[Record] // (JsonConfig.withSuppressedEscapedStrings())
-  println(blah.toJson(record))
+  // implicit val blah: ScalaJack[Record] = sj[Record] // (JsonConfig.withSuppressedEscapedStrings())
+  // println(blah.toJson(record))
 
-  // println(RType.of[Schema].pretty)
+//   val f = new FastStringBuilder()
+//   val s = """Gregory "William"
+// Zoller""" + "\u20A0 wow"
+//   f.appendEscaped(s, 0, s.length)
+//   println(f.result)
 
-  val f = new FastStringBuilder()
-  val s = """Gregory "William"
-Zoller""" + "\u20A0 wow"
-  f.appendEscaped(s, 0, s.length)
-  println(f.result)
+  // implicit val blah: ScalaJack[schema.Schema] = codecOf[schema.Schema](JsonConfig.withSuppressTypeHints())
+  // val oride = Map("co.blocke.scalajack.json.run.Header$Who$$Type" -> schema.EnumSchema(List("staff", "customer", "program")))
+  // println(ScalaJack[schema.Schema].toJson(schema.JsonSchema.of[DormancyEvent](oride)))
 
-  // implicit val blah: ScalaJack[schema.Schema] = sj[schema.Schema](JsonConfig.withSuppressedTypeHints())
-  // println(sj.toJson(schema.JsonSchema.of[Person]))
+  // NOT YET!
+  // implicit val blah: ScalaJack[schema.Schema] = codecOf[schema.Schema](JsonConfig.withSuppressTypeHints())
+  // val s = schema.JsonSchema.of[DormancyEvent]
+  // println(ScalaJack[schema.Schema].toJson(s))
 
-  // println(RType.of[schema.Schema].pretty)
+  // val jssrc = json.reading.JsonSource(""""Red"""")
+  // println("E: " + jssrc.expectEnum())
+
+  // implicit val blah: ScalaJack[Pizza] = codecOf[Pizza]
+  // val c: Pizza = ScalaJack[Pizza].fromJson("\"READY\"")
+  // println("Pizza: " + c)
 
   println("done.")

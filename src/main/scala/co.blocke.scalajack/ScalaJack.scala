@@ -23,22 +23,19 @@ object ScalaJack:
   def apply[A](implicit a: ScalaJack[A]): ScalaJack[A] = a
 
   // ----- Use default JsonConfig
-  inline def sj[T]: ScalaJack[T] = ${ sjImpl[T] }
-  def sjImpl[T: Type](using Quotes): Expr[ScalaJack[T]] =
+  inline def codecOf[T]: ScalaJack[T] = ${ codecOfImpl[T] }
+  def codecOfImpl[T: Type](using Quotes): Expr[ScalaJack[T]] =
     import quotes.reflect.*
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-    // val jsonDecoder = reading.JsonReader.refRead2(classRef)
-    // println(s"Decoder: ${jsonDecoder.show}")
     val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, JsonConfig)
 
     '{ ScalaJack($jsonCodec) }
 
   // ----- Use given JsonConfig
-  inline def sj[T](inline cfg: JsonConfig): ScalaJack[T] = ${ sjImplWithConfig[T]('cfg) }
-  def sjImplWithConfig[T: Type](cfgE: Expr[JsonConfig])(using Quotes): Expr[ScalaJack[T]] =
+  inline def codecOf[T](inline cfg: JsonConfig): ScalaJack[T] = ${ codecOfImplWithConfig[T]('cfg) }
+  def codecOfImplWithConfig[T: Type](cfgE: Expr[JsonConfig])(using Quotes): Expr[ScalaJack[T]] =
     import quotes.reflect.*
     val cfg = summon[FromExpr[JsonConfig]].unapply(cfgE)
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-    // val jsonDecoder = reading.JsonReader.refRead2(classRef)
     val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(JsonConfig))
     '{ ScalaJack($jsonCodec) }

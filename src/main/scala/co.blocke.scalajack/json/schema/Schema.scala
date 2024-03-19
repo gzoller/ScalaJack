@@ -4,12 +4,11 @@ package schema
 
 import java.net.URL
 
-/**
-  * A *very* sparse implementation of JSON Schema Draft 4 (model only).  It is full of holes, but is just
+/** A *very* sparse implementation of JSON Schema Draft 4 (model only).  It is full of holes, but is just
   * enough for what I needed at the time--and had the advantage of leveraging scala-reflection
   * to generate the schema from a type.  At the time of this writing, no other Scala 3-capable JSON
   * library generated a JSON Schema document.  (ZIO-Json genrated their own Schema structure, however.)
-  * 
+  *
   * If there is strong utility for a full-blown JSON Schema utility, that might be something I look
   * at later, unless someone wants to take it up.  I would suggest development of "helper" objects
   * for the more advanced schema operaitons (allOf, anyOf, if/then/else, etc) vs trying to do all that
@@ -19,19 +18,19 @@ import java.net.URL
 // Reference: https://json-schema.org/UnderstandingJSONSchema.pdf
 
 enum SchemaType:
-    case `null`, `boolean`, `object`, `array`, `string`, `number`, `integer`
+  case `null`, `boolean`, `object`, `array`, `string`, `number`, `integer`
 
 enum StringFormat:
-    case `date-time`, email, hostname, ipv4, ipv6, uuid, uri, url
+  case `date-time`, email, hostname, ipv4, ipv6, uuid, uri, url
 
 // opaque type JSON_LITERAL = String
 
 type Schema = StdSchema | EnumSchema
 
 sealed trait StdSchema:
-    val `type`: SchemaType
-    val description: Option[String]
-    val default: Option[RawJson]
+  val `type`: SchemaType
+  val description: Option[String]
+  val default: Option[RawJson]
 
 // Formats: Dates & Times, Email, Hostnames
 case class StringSchema(
@@ -42,7 +41,7 @@ case class StringSchema(
     description: Option[String] = None,
     default: Option[RawJson] = None,
     `type`: SchemaType = SchemaType.`string`
-    ) extends StdSchema
+) extends StdSchema
 
 case class IntegerSchema(
     minimum: Option[Long] = None,
@@ -53,7 +52,7 @@ case class IntegerSchema(
     description: Option[String] = None,
     default: Option[RawJson] = None,
     `type`: SchemaType = SchemaType.`integer`
-    ) extends StdSchema
+) extends StdSchema
 
 case class NumberSchema(
     minimum: Option[Double] = None,
@@ -64,16 +63,16 @@ case class NumberSchema(
     description: Option[String] = None,
     default: Option[RawJson] = None,
     `type`: SchemaType = SchemaType.`number`
-    ) extends StdSchema
+) extends StdSchema
 
 case class BooleanSchema(
     description: Option[String] = None,
     default: Option[RawJson] = None,
     `type`: SchemaType = SchemaType.`boolean`
-    ) extends StdSchema
+) extends StdSchema
 
 case class NullSchema(description: Option[String] = None, `type`: SchemaType = SchemaType.`null`) extends StdSchema:
-    val default: Option[RawJson] = None // no default for null possible
+  val default: Option[RawJson] = None // no default for null possible
 
 case class ArraySchema(
     items: Schema,
@@ -98,12 +97,12 @@ case class TupleSchema(
 
 // Note: patternProperties not implemented at this time (I didn't need them)
 case class ObjectSchema(
-    properties: Map[String,Schema],
+    properties: Map[String, Schema],
     required: List[String],
-    additionalProperties: Boolean = false,
-    `$schema`: URL = new URL("http://jsons-schema.org/draft-04/schema#"),
+    additionalProperties: Option[Boolean] = None,
+    `$schema`: Option[URL] = Some(new URL("http://jsons-schema.org/draft-04/schema#")),
     `$id`: Option[String] = None,
-    title: Option[String] = None, 
+    title: Option[String] = None,
     description: Option[String] = None,
     default: Option[RawJson] = None,
     `type`: SchemaType = SchemaType.`object`

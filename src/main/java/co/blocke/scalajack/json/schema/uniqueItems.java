@@ -1,9 +1,9 @@
-package co.blocke.scalajack.schema;
+package co.blocke.scalajack.json.schema;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface minLength{
+public @interface uniqueItems{
     String value();
 }

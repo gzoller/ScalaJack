@@ -15,28 +15,22 @@ object JsonSource:
 // ZIO-Json defines a series of different Readers.  Not exactly sure why--maybe to support different
 // modes (streaming, ...)? At least for now we only need one, so merged key bits of Readers into one.
 case class JsonSource(js: CharSequence):
-  var i = 0
-  private var expectFieldValue = false
-  private[json] val max = js.length
+
+  private var i = 0
+  private var _mark = 0
+  val max = js.length
+
+  // Navigation...
+  // =======================================================
 
   def pos = i
 
-  // inline def here = js(i).toChar
   inline def here = js.charAt(i)
 
-  inline def revert = i -= 1
+  inline def retract() = i -= 1
 
-  private var c: Char = 0
-  inline def readChar(): Char =
-    if i < max then
-      c = here
-      i += 1
-      c
-    else BUFFER_EXCEEDED
-
-  // JSON definition of whitespace
-  private inline def isWhitespace(c: Char): Boolean =
-    c == ' ' || c == '\n' || (c | 0x4) == '\r' || c == '\t'
+  inline def mark() = _mark = i
+  inline def captureMark(): String = js.subSequence(_mark, i).toString
 
   @tailrec
   final def readToken(): Char =
@@ -47,49 +41,41 @@ case class JsonSource(js: CharSequence):
       if !(b == ' ' || b == '\n' || b == '\t' || (b | 0x4) == '\r') then b
       else readToken()
 
-  inline def skipWS(): Unit =
-    while isWhitespace(here) && i < max do i += 1
-    if i == max then throw new JsonParseError("Unexpected end of buffer", this)
+  // inline def nextHex4(): Char =
+  //   var i: Int = 0
+  //   var accum: Int = 0
+  //   while i < 4 do
+  //     var c = readChar().toInt
+  //     if c == BUFFER_EXCEEDED then throw JsonParseError("Unexpected end of buffer", this)
+  //     c =
+  //       if '0' <= c && c <= '9' then c - '0'
+  //       else if 'A' <= c && c <= 'F' then c - 'A' + 10
+  //       else if 'a' <= c && c <= 'f' then c - 'a' + 10
+  //       else throw JsonParseError("Invalid hex character in string", this)
+  //     accum = accum * 16 + c
+  //     i += 1
+  //   accum.toChar
 
-  inline def retract() = i -= 1
+  // Enum...
+  // =======================================================
+  def expectEnum(): Int | String =
+    readToken() match
+      case t if t >= '0' && t <= '9' =>
+        retract()
+        expectInt()
+      case t if t == '"' =>
+        val endI = parseString(i)
+        val str = js.subSequence(i, endI).toString
+        i = endI + 1
+        str
+      case t if t == 'n' =>
+        readChars(JsonSource.ull, "null")
+        null.asInstanceOf[String]
+      case _ =>
+        throw ParseError("Expected valid enumeration value or null here")
 
-  @inline private[this] def isNumber(c: Char): Boolean =
-    (c: @switch) match
-      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' | 'E' => true
-      case _                                                                                       => false
-
-  // Read, transforming escaped chars and stopping when we hit '"'
-  inline def readEscapedChar(): Char =
-    readChar() match
-      case '\\' =>
-        val c2 = readChar()
-        (c2: @switch) match
-          case '"' | '\\' | '/' => c2
-          case 'b'              => '\b'
-          case 'f'              => '\f'
-          case 'n'              => '\n'
-          case 'r'              => '\r'
-          case 't'              => '\t'
-          case 'u'              => nextHex4()
-          case _                => throw JsonParseError(s"Invalid '\\${c2.toChar}' in string", this)
-      case '"'             => END_OF_STRING
-      case BUFFER_EXCEEDED => throw new JsonParseError("Unexpected end of buffer", this)
-      case c               => c
-
-  inline def nextHex4(): Char =
-    var i: Int = 0
-    var accum: Int = 0
-    while i < 4 do
-      var c = readChar().toInt
-      if c == BUFFER_EXCEEDED then throw JsonParseError("Unexpected end of buffer", this)
-      c =
-        if '0' <= c && c <= '9' then c - '0'
-        else if 'A' <= c && c <= 'F' then c - 'A' + 10
-        else if 'a' <= c && c <= 'f' then c - 'a' + 10
-        else throw JsonParseError("Invalid hex character in string", this)
-      accum = accum * 16 + c
-      i += 1
-    accum.toChar
+  // Object...
+  // =======================================================
 
   // returns false if 'null' found
   def expectFirstObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
@@ -97,7 +83,7 @@ case class JsonSource(js: CharSequence):
     if t == '{' then
       val tt = readToken()
       if tt == '"' then
-        val foundIndex = parseFieldName(fieldNameMatrix)
+        val foundIndex = parseObjectKey(fieldNameMatrix)
         Some(foundIndex)
       else if tt == '}' then None
       else throw new JsonParseError(s"Expected object field name or '}' but found '$tt'", this)
@@ -111,15 +97,33 @@ case class JsonSource(js: CharSequence):
     if t == ',' then
       val tt = readToken()
       if tt == '"' then
-        val foundIndex = parseFieldName(fieldNameMatrix)
+        val foundIndex = parseObjectKey(fieldNameMatrix)
         Some(foundIndex)
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
     else if t == '}' then None
     else throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
   // returns false if 'null' found
 
+  final def parseObjectKey(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
+    var fi: Int = 0
+    var bs: Long = fieldNameMatrix.initial
+    var c: Int = here
+    while c != '"' do {
+      bs = fieldNameMatrix.update(bs, fi, c)
+      fi += 1
+      i += 1
+      c = here
+    }
+    i += 1
+    bs = fieldNameMatrix.exact(bs, fi)
+    if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
+    fieldNameMatrix.first(bs)
+
+  // Array...
+  // =======================================================
+
   @tailrec
-  final private[this] def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E): scala.collection.mutable.ListBuffer[E] =
+  final private def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E): scala.collection.mutable.ListBuffer[E] =
     if i == max then throw JsonParseError("Unexpected end of buffer", this)
     s.addOne(f())
     val tt = readToken()
@@ -142,67 +146,17 @@ case class JsonSource(js: CharSequence):
       null
     else throw JsonParseError(s"Expected array start '[' or null but got '$t'", this)
 
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  // True if we got anything besides a ], False for ]
-  def firstArrayElement(): Boolean =
-    (readCharWS(): @switch) match
-      case ']' => false
-      case _ =>
-        retract()
-        true
-
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  // True if we got a comma, and False for ]
-  def nextArrayElement(): Boolean =
-    (readCharWS(): @switch) match
-      case ',' =>
-        true
-      case ']' =>
-        false
-      case c => throw JsonParseError(s"Expected ',' or ']' got '$c'", this)
-
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  // True if we got a string (implies a retraction), False for }
-  def firstField(): Boolean =
-    (readCharWS(): @switch) match {
-      case '"' => true
-      case '}' => false
-      case c =>
-        throw JsonParseError(s"expected string or '}' got '$c'", this)
-    }
-
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  // True if we got a comma, and False for }
-  def nextField(): Boolean =
-    (readCharWS(): @switch) match {
-      case ',' =>
-        expectFieldValue = false
-        true
-      // case '}' if !expectFieldValue =>
-      //   false
-      case '}' =>
-        false
-      // throw JsonParseError("Expected field value but got '}' instead.", this)
-      case c =>
-        throw JsonParseError(s"expected ',' or '}' got '$c'", this)
-    }
+  // String...
+  // =======================================================
 
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
-  inline def expectString(): CharSequence =
+  inline def expectString(): String =
     val t = readToken()
     if t == '"' then
       val endI = parseString(i)
       if endI >= 0 then
-        val str = js.subSequence(i, endI)
+        val str = js.subSequence(i, endI).toString
         i = endI + 1
         str
       else ??? // slower-parseString looking for escaped special chars
@@ -228,26 +182,8 @@ case class JsonSource(js: CharSequence):
       else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
       else parseString(pos + 1)
 
-  final def parseFieldName(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
-    var fi: Int = 0
-    var bs: Long = fieldNameMatrix.initial
-    var c: Int = here
-    while c != '"' do {
-      bs = fieldNameMatrix.update(bs, fi, c)
-      fi += 1
-      i += 1
-      c = here
-    }
-    i += 1
-    bs = fieldNameMatrix.exact(bs, fi)
-    if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
-    fieldNameMatrix.first(bs)
-
-  inline def expectChar(): Char =
-    expectString() match {
-      case s if s.length == 1 => s.charAt(0)
-      case s                  => throw new JsonParseError(s"Expected a Char value but got '$s'", this)
-    }
+  // Boolean...
+  // =======================================================
 
   def expectBoolean(): Boolean =
     skipWS()
@@ -260,28 +196,16 @@ case class JsonSource(js: CharSequence):
       false
     else throw JsonParseError(s"Expected 'true' or 'false'", this)
 
-  def expectInt(): Int = {
-    var b = readCharWS()
-    var s = -1
-    if here == '-' then {
-      readChar()
-      s = 0
-    }
-    if b < '0' || b > '9' then throw new Exception("Boom 1")
-    var x = '0' - b
-    while { b = readChar(); b >= '0' && b <= '9' } do
-      if x < -214748364 || {
-          x = x * 10 + ('0' - b)
-          x > 0
-        }
-      then throw new Exception("Boom 2")
-    x ^= s
-    x -= s
-    if (s & x) == -2147483648 then throw new Exception("Boom 3")
-    if (b | 0x20) == 'e' || b == '.' then throw new Exception("Boom 4")
-    retract()
-    x
-  }
+  // Characters...
+  // =======================================================
+
+  private var c: Char = 0
+  inline def readChar(): Char =
+    if i < max then
+      c = here
+      i += 1
+      c
+    else BUFFER_EXCEEDED
 
   inline def readChars(
       expect: Array[Char],
@@ -292,52 +216,100 @@ case class JsonSource(js: CharSequence):
       if readChar() != expect(i) then throw JsonParseError(s"Expected $errMsg", this)
       i += 1
 
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  inline def readCharWS(): Char =
-    while isWhitespace(here) && i < max do i += 1
-    readChar()
+  inline def expectChar(): Char =
+    expectString() match {
+      case s if s.length == 1 => s.charAt(0)
+      case s                  => throw new JsonParseError(s"Expected a Char value but got '$s'", this)
+    }
 
-  // ---------------
-  // DEPRECATED !!!
-  // ---------------
-  inline def charWithWS(c: Char): Unit =
-    val got = readCharWS()
-    if got != c then throw JsonParseError(s"Expected '$c' got '$got'", this)
+  // Numbers...
+  // =======================================================
+
+  @inline private def isNumber(c: Char): Boolean =
+    (c: @switch) match
+      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' | 'E' => true
+      case _                                                                                       => false
+
+  def expectFloat(): Float =
+    val result = UnsafeNumbers.float_(this, false, 32)
+    retract()
+    result
+
+  def expectDouble(): Double =
+    val result = UnsafeNumbers.double_(this, false, 64)
+    retract()
+    result
+
+    // BUG: Can't handle single-digit ints...
+  def expectInt(): Int =
+    var b = readToken()
+    var s = -1
+    if b == '-' then
+      b = readChar()
+      s = 0
+    if b < '0' || b > '9' then throw ParseError("Non-numeric digit found when integer value expected")
+    var x = '0' - b
+    while { b = readChar(); b >= '0' && b <= '9' } do
+      if x < -214748364 || {
+          x = x * 10 + ('0' - b)
+          x > 0
+        }
+      then throw ParseError("Integer value overflow")
+    x ^= s
+    x -= s
+    if (s & x) == -2147483648 then throw ParseError("Integer value overflow")
+    if (b | 0x20) == 'e' || b == '.' then throw ParseError("Decimal digit 'e' or '.' found when integer value expected")
+    retract()
+    x
+
+  def expectLong(): Long =
+    val result = UnsafeNumbers.long_(this, false)
+    retract()
+    result
+
+  // Skip things...
+  // =======================================================
+
+  inline def skipWS(): Unit =
+    while (here == ' ' || here == '\n' || (here | 0x4) == '\r' || here == '\t') && i < max do i += 1
+    if i == max then throw new JsonParseError("Unexpected end of buffer", this)
 
   def skipValue(): Unit =
-    (readCharWS(): @switch) match {
+    (readToken(): @switch) match {
       case 'n' => readChars(JsonSource.ull, "null")
       case 'f' => readChars(JsonSource.alse, "false")
       case 't' => readChars(JsonSource.rue, "true")
-      case '{' =>
-        if firstField() then {
-          while {
-            {
-              charWithWS('"')
-              skipString()
-              charWithWS(':')
-              skipValue()
-            }; nextField()
-          } do ()
-        }
-      case '[' =>
-        if firstArrayElement() then {
-          while { skipValue(); nextArrayElement() } do ()
-        }
-      case '"' =>
-        skipString()
+      case '{' => skipObjectValue()
+      case '[' => skipArrayValue()
+      case '"' => parseString(i)
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' =>
         skipNumber()
       case c => throw JsonParseError(s"Unexpected '$c'", this)
     }
 
-  def skipNumber(): Unit = {
-    while isNumber(readChar()) do {}
-    retract()
-  }
+  @tailrec
+  final def skipNumber(): Unit =
+    if !isNumber(readChar()) then retract()
+    else skipNumber()
 
-  def skipString(): Unit =
-    var i: Int = 0
-    while { i = readCharWS(); i != -1 } do ()
+  @tailrec
+  final def skipArrayValue(k: Int = 0): Unit =
+    readChar() match
+      case ']' if k == 0 => ()
+      case '"' =>
+        i = parseString(i) + 1
+        skipArrayValue(k)
+      case ']' => skipArrayValue(k - 1)
+      case '[' => skipArrayValue(k + 1)
+      case _   => skipArrayValue(k)
+
+  @tailrec
+  final def skipObjectValue(k: Int = 0): Unit =
+    readChar() match
+      case '}' if k == 0 => ()
+      case '"' =>
+        i = parseString(i) + 1
+        skipObjectValue(k)
+      case '}' => skipObjectValue(k - 1)
+      case '{' => skipObjectValue(k + 1)
+      case _   => skipObjectValue(k)

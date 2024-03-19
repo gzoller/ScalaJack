@@ -1,4 +1,4 @@
-package co.blocke.scalajack.schema;
+package co.blocke.scalajack.json.schema;
 
 import java.lang.annotation.*;
 

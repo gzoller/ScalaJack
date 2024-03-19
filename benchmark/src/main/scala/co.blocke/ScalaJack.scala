@@ -6,7 +6,7 @@ object ScalaJackZ:
     import co.blocke.scalajack.ScalaJack.*
     import co.blocke.scalajack.*
  
-    implicit val blah: ScalaJack[co.blocke.Record2] = sj[co.blocke.Record2]
+    implicit val blah: ScalaJack[co.blocke.Record2] = codecOf[co.blocke.Record2]
 
     trait ScalaJackReadingBenchmark{
         @Benchmark
@@ -16,7 +16,16 @@ object ScalaJackZ:
     trait ScalaJackWritingBenchmark { 
         @Benchmark
         def writeRecordScalaJack = ScalaJack[co.blocke.Record2].toJson(record)  
-        // 344702.052 with escaped strings (apache lib)
-        // 2225843.198 with FastStringBuilder
-        // 1081490.833 with StringBuilder
     }
+
+    /* 
+    This is the way:
+
+    * Use implicit to define ScalaJack[...] = sj[...]
+    * Then use ScalaJack[...].___() to do json function
+
+    implicit val blah: ScalaJack[co.blocke.Record2] = sj[co.blocke.Record2]
+    def writeRecordScalaJack = ScalaJack[co.blocke.Record2].toJson(record)  
+
+    TODO: Maybe rewrite sj to be something like buildCodec or something more descriptive.
+    */

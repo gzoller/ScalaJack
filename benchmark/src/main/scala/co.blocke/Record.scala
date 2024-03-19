@@ -35,6 +35,20 @@ case class Record2(
   pets: List[Pet2]
 )
 
+// import io.circe.{Codec,Decoder,Encoder,Json}
+// import io.circe.generic.semiauto._
+// case class Who(id: String, name:String, `type`:Who.Type)
+// object Who:
+//   implicit val codec: Codec[Who] = deriveCodec[Who]
+
+//   sealed trait Type extends Product with Serializable
+//   object Type :
+//     val values: Set[Who.Type] = Set(Staff, Customer, Program)
+//     implicit val encoder: Encoder[Type] = ???
+//     implicit val decoder: Decoder[Type] = ???
+//     case object Staff extends Type
+//     case object Customer extends Type
+//     case object Program extends Type
 
 val jsData2 = 
   """{
