@@ -41,20 +41,10 @@ final class FastStringBuilder(initial: Int = 16) {
     25446, 25702, 25958, 26214
   )
 
-  // private[this] def appendEscapedUnicode(ch: Int, pos: Int, buf: Array[Byte]): Int = {
-  //   val ds = lowerCaseHexDigits
-  //   ByteArrayAccess.setShort(buf, pos, 0x755C)
-  //   val d1 = ds(ch >> 8)
-  //   val d2 = ds(ch & 0xFF) << 16
-  //   ByteArrayAccess.setInt(buf, pos + 2, d1 | d2)
-  //   pos + 6
-  // }
-
   private[this] def appendEscapedUnicode(c: Char): Unit = {
     append('\\')
     append('u')
     append("%04x".format(c.toInt))
-    i += 6
   }
 
   @tailrec
@@ -70,7 +60,7 @@ final class FastStringBuilder(initial: Int = 16) {
           i += 1
           appendEscaped(s, from + 1, to)
         else if esc > 0 then
-          chars(i) = 0x5c
+          chars(i) = 0x5c // double quote
           chars(i + 1) = esc.toChar
           i += 2
           appendEscaped(s, from + 1, to)

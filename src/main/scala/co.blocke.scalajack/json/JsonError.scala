@@ -28,4 +28,4 @@ case class JsonParseError(override val msg: String, context: reading.JsonSource)
         ("..." + js.substring(context.pos - 49), 52)
       case ep => ("..." + js.substring(ep - 49, ep + 27) + "...", 52)
     }
-    msg + s" at positio [${context.pos}]" + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"
+    msg + s" at position [${context.pos}]" + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"

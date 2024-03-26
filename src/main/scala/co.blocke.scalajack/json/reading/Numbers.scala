@@ -577,18 +577,20 @@ object UnsafeNumbers {
     var current: Int = 0
 
     current = in.readChar()
-    if current == -1 then throw UnsafeNumber
+    if current == BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
     var negative = false
     if current == '-' then {
       negative = true
       current = in.readChar()
-      if current == -1 then throw UnsafeNumber
+      if current == BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
     } else if current == '+' then {
       current = in.readChar()
-      if current == -1 then throw UnsafeNumber
+      if current == BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
     }
 
-    if !isDigit(current) then throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in) // throw UnsafeNumber
+    if !isDigit(current) then
+      in.retract()
+      throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in)
 
     var accum: Long = 0L
     while {
@@ -603,7 +605,7 @@ object UnsafeNumbers {
       }; current != -1 && isDigit(current)
     } do ()
 
-    if consume && current != -1 then throw UnsafeNumber
+    if consume && current != BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
 
     if negative then
       if accum < lower || upper < accum then throw UnsafeNumber
@@ -629,13 +631,15 @@ object UnsafeNumbers {
 
       while i < len do {
         current = in.readChar()
-        if current != s(i) then throw UnsafeNumber
+        if current != s(i) then
+          in.retract()
+          throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in)
         i += 1
       }
 
       current = in.readChar() // to be consistent read the terminator
 
-      if consume && current != -1 then throw UnsafeNumber
+      if consume && current != BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
     }
 
     if current == 'N' then {
@@ -657,7 +661,7 @@ object UnsafeNumbers {
       else return Float.PositiveInfinity
     }
 
-    if current == -1 then throw UnsafeNumber
+    if current == BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
 
     val res = bigDecimal__(in, consume, negative = negative, initial = current, int_only = false, max_bits = max_bits)
 
@@ -754,7 +758,7 @@ object UnsafeNumbers {
 
     def advance(): Boolean = {
       current = in.readChar()
-      current != -1
+      current != BUFFER_EXCEEDED
     }
 
     // skip trailing zero on the left
@@ -771,7 +775,7 @@ object UnsafeNumbers {
           .multiply(java.math.BigInteger.TEN)
           .add(bigIntegers(c))
         // arbitrary limit on BigInteger size to avoid OOM attacks
-        if sig_.bitLength >= max_bits then throw UnsafeNumber
+        if sig_.bitLength >= max_bits then throw JsonParseError("Number of bits exceeded for Float/Double/BigDecimal", in)
       } else if sig >= longoverflow then
         sig_ = java.math.BigInteger
           .valueOf(sig)
@@ -796,7 +800,7 @@ object UnsafeNumbers {
     }
 
     if int_only then {
-      if consume && current != -1 then throw UnsafeNumber
+      if consume && current != BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
       return significand()
     }
 
@@ -807,15 +811,17 @@ object UnsafeNumbers {
         dot += 1
         if sig > 0 || current != '0' then push_sig()
         // overflowed...
-        if dot < 0 then throw UnsafeNumber
+        if dot < 0 then throw JsonParseError("Read buffer exceeded", in)
         advance()
       }
     }
 
-    if sig < 0 then throw UnsafeNumber // no significand
+    if sig < 0 then
+      in.retract()
+      throw JsonParseError("Malformed Float/Double/BigDecimal", in) // no significand
 
     if current == 'E' || current == 'e' then exp = int_(in, consume)
-    else if consume && current != -1 then throw UnsafeNumber
+    else if consume && current != BUFFER_EXCEEDED then throw JsonParseError("Read buffer exceeded", in)
 
     val scale = if dot < 1 then exp else exp - dot
     val res = significand()

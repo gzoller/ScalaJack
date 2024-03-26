@@ -41,20 +41,26 @@ case class JsonSource(js: CharSequence):
       if !(b == ' ' || b == '\n' || b == '\t' || (b | 0x4) == '\r') then b
       else readToken()
 
-  // inline def nextHex4(): Char =
-  //   var i: Int = 0
-  //   var accum: Int = 0
-  //   while i < 4 do
-  //     var c = readChar().toInt
-  //     if c == BUFFER_EXCEEDED then throw JsonParseError("Unexpected end of buffer", this)
-  //     c =
-  //       if '0' <= c && c <= '9' then c - '0'
-  //       else if 'A' <= c && c <= 'F' then c - 'A' + 10
-  //       else if 'a' <= c && c <= 'f' then c - 'a' + 10
-  //       else throw JsonParseError("Invalid hex character in string", this)
-  //     accum = accum * 16 + c
-  //     i += 1
-  //   accum.toChar
+  @tailrec
+  final def expectToken(t: Char): Unit =
+    if i == max then throw new JsonParseError("Unexpected end of buffer", this)
+    else
+      val b = here
+      i += 1
+      if !(b == ' ' || b == '\n' || b == '\t' || (b | 0x4) == '\r') then
+        if b != t then
+          retract()
+          throw JsonParseError(s"Expected '$t' here", this)
+        else ()
+      else expectToken(t)
+
+  def expectNull(): Boolean =
+    if readToken() == 'n' then
+      readChars(JsonSource.ull, "null")
+      true
+    else
+      retract()
+      false
 
   // Enum...
   // =======================================================
@@ -72,7 +78,7 @@ case class JsonSource(js: CharSequence):
         readChars(JsonSource.ull, "null")
         null.asInstanceOf[String]
       case _ =>
-        throw ParseError("Expected valid enumeration value or null here")
+        throw JsonParseError("Expected valid enumeration value or null here", this)
 
   // Object...
   // =======================================================
@@ -101,8 +107,9 @@ case class JsonSource(js: CharSequence):
         Some(foundIndex)
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
     else if t == '}' then None
-    else throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
-  // returns false if 'null' found
+    else
+      retract()
+      throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
 
   final def parseObjectKey(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
     var fi: Int = 0
@@ -119,7 +126,7 @@ case class JsonSource(js: CharSequence):
     if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
     fieldNameMatrix.first(bs)
 
-  // Array...
+  // Array and Tuple...
   // =======================================================
 
   @tailrec
@@ -152,6 +159,7 @@ case class JsonSource(js: CharSequence):
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
   inline def expectString(): String =
+    mark()
     val t = readToken()
     if t == '"' then
       val endI = parseString(i)
@@ -159,11 +167,61 @@ case class JsonSource(js: CharSequence):
         val str = js.subSequence(i, endI).toString
         i = endI + 1
         str
-      else ??? // slower-parseString looking for escaped special chars
+      else // slower-parseString looking for escaped special chars
+        val buf = FastStringBuilder()
+        expectEncodedString(buf)
+        buf.result
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
       null
-    else throw new JsonParseError(s"Expected a String value but got '$t'", this)
+    else
+      i = _mark
+      throw new JsonParseError(s"Expected a String value but got '$t'", this)
+
+  @tailrec
+  final private def expectEncodedString(buf: FastStringBuilder): Unit =
+    readChar() match
+      case '"' => () // done
+      case '\\' =>
+        readChar() match
+          case '"' =>
+            buf.append('\"')
+            expectEncodedString(buf)
+          case '\\' =>
+            buf.append('\\')
+            expectEncodedString(buf)
+          case 'b' =>
+            buf.append('\b')
+            expectEncodedString(buf)
+          case 'f' =>
+            buf.append('\f')
+            expectEncodedString(buf)
+          case 'n' =>
+            buf.append('\n')
+            expectEncodedString(buf)
+          case 'r' =>
+            buf.append('\r')
+            expectEncodedString(buf)
+          case 't' =>
+            buf.append('\t')
+            expectEncodedString(buf)
+          case 'u' =>
+            val hexEncoded = js.subSequence(i, i + 4)
+            i = i + 4
+            val unicodeChar = Integer.parseInt(hexEncoded.toString, 16).toChar
+            buf.append(unicodeChar.toString)
+            expectEncodedString(buf)
+          case c =>
+            buf.append(c)
+            expectEncodedString(buf)
+      case c =>
+        buf.append(c)
+        expectEncodedString(buf)
+
+  def expectString[T](parseFn: String => T): T =
+    expectString() match
+      case s: String => parseFn(s)
+      case null      => null.asInstanceOf[T]
 
   @tailrec
   final def parseString(pos: Int): Int =
@@ -191,10 +249,27 @@ case class JsonSource(js: CharSequence):
     if (bs ^ JsonSource.trueBytes) == 0 then
       i += 4
       true
-    else if ((bs | js.charAt(pos + 4)) ^ JsonSource.falseBytes) == 0 then
+    else if pos + 4 < max && ((bs | js.charAt(pos + 4)) ^ JsonSource.falseBytes) == 0 then
       i += 5
       false
     else throw JsonParseError(s"Expected 'true' or 'false'", this)
+
+  // Java Boolean can be null
+  def expectJavaBoolean(): java.lang.Boolean =
+    skipWS()
+    val bs = (js.charAt(pos)) | (js.charAt(pos + 1) << 8) | (js.charAt(pos + 2) << 16) | js.charAt(pos + 3) << 24
+    if (bs ^ JsonSource.trueBytes) == 0 then
+      i += 4
+      java.lang.Boolean.TRUE
+    else if pos + 4 < max && ((bs | js.charAt(pos + 4)) ^ JsonSource.falseBytes) == 0 then
+      i += 5
+      java.lang.Boolean.FALSE
+    else if readChar() == 'n' then
+      readChars(JsonSource.ull, "null")
+      null.asInstanceOf[java.lang.Boolean]
+    else
+      retract()
+      throw JsonParseError(s"Expected 'true', 'false', or null here", this)
 
   // Characters...
   // =======================================================
@@ -240,25 +315,40 @@ case class JsonSource(js: CharSequence):
     retract()
     result
 
-    // BUG: Can't handle single-digit ints...
+  def expectNumberOrNull(): String =
+    skipWS()
+    mark()
+    skipNumber()
+    if i != _mark then captureMark()
+    else if readChar() == 'n' then
+      readChars(JsonSource.ull, "null")
+      null
+    else
+      retract()
+      throw new JsonParseError("Expected a numerical value or null here", this)
+
   def expectInt(): Int =
     var b = readToken()
     var s = -1
     if b == '-' then
       b = readChar()
       s = 0
-    if b < '0' || b > '9' then throw ParseError("Non-numeric digit found when integer value expected")
+    if b < '0' || b > '9' then
+      retract()
+      throw JsonParseError("Non-numeric character found when integer value expected", this)
     var x = '0' - b
     while { b = readChar(); b >= '0' && b <= '9' } do
       if x < -214748364 || {
           x = x * 10 + ('0' - b)
           x > 0
         }
-      then throw ParseError("Integer value overflow")
+      then throw JsonParseError("Integer value overflow", this)
     x ^= s
     x -= s
-    if (s & x) == -2147483648 then throw ParseError("Integer value overflow")
-    if (b | 0x20) == 'e' || b == '.' then throw ParseError("Decimal digit 'e' or '.' found when integer value expected")
+    if (s & x) == -2147483648 then throw JsonParseError("Integer value overflow", this)
+    if (b | 0x20) == 'e' || b == '.' then
+      retract()
+      throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
     retract()
     x
 
@@ -281,7 +371,10 @@ case class JsonSource(js: CharSequence):
       case 't' => readChars(JsonSource.rue, "true")
       case '{' => skipObjectValue()
       case '[' => skipArrayValue()
-      case '"' => parseString(i)
+      case '"' =>
+        i += 1
+        val endI = parseString(i)
+        i = endI + 1
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' =>
         skipNumber()
       case c => throw JsonParseError(s"Unexpected '$c'", this)

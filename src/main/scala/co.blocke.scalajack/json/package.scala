@@ -2,6 +2,7 @@ package co.blocke.scalajack
 package json
 
 import scala.util.Failure
+import scala.quoted.{Expr, Quotes, Type}
 
 opaque type RawJson = String
 
@@ -23,3 +24,7 @@ def descrambleTest(in: String, hash: Int): Boolean =
     case 'A' if in.length == 13 => "" + in(0) + in(2) + in(4) + in(7) + in(10) == last5
     case 'B' if in.length == 13 => "" + in(1) + in(3) + in(6) + in(8) + in(11) == last5
     case _                      => false
+
+def ofOption[T](xs: Option[Expr[T]])(using Type[T])(using q: Quotes): Expr[Option[T]] =
+  import q.reflect.*
+  if xs.isEmpty then Expr(None) else '{ Some(${ xs.get }) }

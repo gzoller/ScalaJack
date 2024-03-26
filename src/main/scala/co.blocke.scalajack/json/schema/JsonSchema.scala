@@ -37,9 +37,6 @@ object JsonSchema:
     import quotes.reflect.*
     implicit val q: Quotes = quotes
 
-    def ofOption[T](xs: Option[Expr[T]])(using Type[T])(using Quotes): Expr[Option[T]] =
-      if xs.isEmpty then Expr(None) else '{ Some(${ xs.get }) }
-
     def typeArgs(tpe: TypeRepr): List[TypeRepr] = tpe match
       case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
       case _                        => Nil
@@ -306,7 +303,7 @@ object JsonSchema:
                       ${ Expr(t.annotations.get("co.blocke.scalajack.schema.description").flatMap(_.get("value"))) },
                       ${
                         if defaultValue.isDefined then
-                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig.withSuppressTypeHints())
+                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig.suppressTypeHints())
                           '{
                             val out = new writing.JsonOutput()
                             $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)

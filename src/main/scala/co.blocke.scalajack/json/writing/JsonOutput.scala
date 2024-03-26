@@ -89,10 +89,7 @@ case class JsonOutput():
   inline def value(v: scala.math.BigInt): Unit =
     maybeComma()
     if v == null then internal.append("null")
-    else
-      internal.append('"')
-      internal.append(v.toString)
-      internal.append('"')
+    else internal.append(v.toString)
     comma = true
 
   inline def valueStringified(v: scala.math.BigInt): Unit =
@@ -107,10 +104,7 @@ case class JsonOutput():
   inline def value(v: java.math.BigDecimal): Unit =
     maybeComma()
     if v == null then internal.append("null")
-    else
-      internal.append('"')
-      internal.append(v.toString)
-      internal.append('"')
+    else internal.append(v.toString)
     comma = true
 
   inline def valueStringified(v: java.math.BigDecimal): Unit =
@@ -125,10 +119,7 @@ case class JsonOutput():
   inline def value(v: java.math.BigInteger): Unit =
     maybeComma()
     if v == null then internal.append("null")
-    else
-      internal.append('"')
-      internal.append(v.toString)
-      internal.append('"')
+    else internal.append(v.toString)
     comma = true
 
   inline def valueStringified(v: java.math.BigInteger): Unit =

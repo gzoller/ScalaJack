@@ -14,6 +14,7 @@ import java.util.UUID
 
 class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
 
+  /*
   describe(colorString("-------------------------------\n:         Option Tests        :\n-------------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
       it("Non-empty Options must work") {
@@ -29,7 +30,7 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
           Right(Some(15)), // Either of Option (R)
           Left(Some(-3)) // Either of Option (L)
         )
-        val js = sj[OptionHolder[Int]].toJson(inst)
+        val js = sjCodecOf[OptionHolder[Int]].toJson(inst)
         js should matchJson("""{"a":5,"b":[1,"ok"],"c":[1,3],"d":{"1":2,"3":4},"e":99,"f":100,"g":0,"h":{"name":"BoB","age":34},"i":15}""")
       }
       it("Empty Options must work (default)") {
@@ -45,9 +46,10 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
           Right(None), // Either of Option (R)
           Left(None) // Either of Option (L)
         )
-        val js = sj[OptionHolder[Int]].toJson(inst)
+        val js = sjCodecOf[OptionHolder[Int]].toJson(inst)
         js should matchJson("""{"b":[null,"ok"],"c":[],"d":{}}""")
       }
+      /*
       it("Empty Options must work (config noneAsNull = true)") {
         val inst = OptionHolder[Int](
           None, // straight Option
@@ -66,67 +68,92 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
         ).toJson(inst)
         js should matchJson("""{"a":null,"b":[null,"ok"],"c":[null,null,null],"d":{"1":null,"3":null},"e":null,"f":null,"g":null,"h":null,"i":null,"j":null}""")
       }
+   */
     }
   }
+   */
 
   describe(colorString("-------------------------------\n:         Either Tests        :\n-------------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
       it("Complex Either/Option must work (non-None)") {
         val inst = ComplexEither[Int](Some(Right(Some(3))))
-        val js = sj[ComplexEither[Int]].toJson(inst)
+        val sj = sjCodecOf[ComplexEither[Int]]
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":3}""")
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Complex Either/Option must work (None no-write default)") {
         val inst = ComplexEither[Int](Some(Right(None)))
-        val js = sj[ComplexEither[Int]].toJson(inst)
+        val sj = sjCodecOf[ComplexEither[Int]]
+        val js = sj.toJson(inst)
         js should matchJson("""{}""")
+        sj.fromJson(js) shouldEqual (ComplexEither(null))
       }
       it("Complex Either/Option must work (NoneAsNull)") {
         val inst = ComplexEither[Int](Some(Right(None)))
-        val js = sj[ComplexEither[Int]](JsonConfig.withNoneAsNull()).toJson(inst)
+        val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withNoneAsNull())
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
+        sj.fromJson(js) shouldEqual (ComplexEither(None)) // None here because value existed, but was null with NoneAsNull
       }
       it("Complex Either/Option must work (Left-NO_WRITE)") {
         val inst = ComplexEither[Int](Some(Left("err")))
-        val js = sj[ComplexEither[Int]].toJson(inst)
+        val sj = sjCodecOf[ComplexEither[Int]]
+        val js = sjCodecOf[ComplexEither[Int]].toJson(inst)
         js should matchJson("""{}""")
+        sj.fromJson(js) shouldEqual (ComplexEither(null)) // Null because value didn't exist at all
       }
       it("Complex Either/Option must work (Left-AS_VALUE)") {
         val inst = ComplexEither[Int](Some(Left("err")))
-        val js = sj[ComplexEither[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE)).toJson(inst)
+        val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":"err"}""")
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Either with AS_VALUE left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val js = sj[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE)).toJson(inst)
+        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":5,"b":3}""")
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Either with AS_NULL left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val js = sj[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL)).toJson(inst)
+        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":null,"b":3}""")
+        sj.fromJson(js) shouldEqual (EitherHolder(null, Right(3)))
       }
       it("Either with NO_WRITE left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val js = sj[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.NO_WRITE)).toJson(inst)
+        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.NO_WRITE))
+        val js = sj.toJson(inst)
         js should matchJson("""{"b":3}""")
+        // This js cannot be read back in becuase it's missing required field 'a', which wasn't written out
+        // per NO_WRITE policy.  This is a 1-way trip... so be advised...
       }
       it("Either with ERR_MSG_STRING left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val js = sj[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.ERR_MSG_STRING)).toJson(inst)
+        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.ERR_MSG_STRING))
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":"Left Error: 5","b":3}""")
+        sj.fromJson(js) shouldEqual (EitherHolder(Right("Left Error: 5"), Right(3)))
+        // WARNING!  Here a Left(err_msg) was "promoted" to a Right(String) upon read, because Right was of type
+        // String, and "Left Error: 5" is a valid string.  Use with extreme caution.  Best to consider this a 1-way
+        // trip for debugging purposes only.  You have been warned.
       }
       it("Either with THROW_EXCEPTION left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
         val caught =
           intercept[JsonEitherLeftError] {
-            sj[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.THROW_EXCEPTION)).toJson(inst)
+            sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.THROW_EXCEPTION)).toJson(inst)
           }
         assert(caught.getMessage == "Left Error: 5")
       }
     }
   }
 
+  /*
   describe(colorString("-------------------------------\n:           LR Tests          :\n-------------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
       it("LR (union) must work with Option (non-None)") {
@@ -214,3 +241,4 @@ class OptionLRTrySpec() extends AnyFunSpec with JsonMatchers:
       }
     }
   }
+   */

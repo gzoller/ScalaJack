@@ -100,6 +100,8 @@ case class Person2(age: XList)
 
 case class Foom(a: schema.Schema)
 
+case class Group(t: (Int, String, Boolean))
+
 sealed trait Candy:
   val isSweet: Boolean
 case class MMs(isSweet: Boolean) extends Candy

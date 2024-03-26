@@ -12,15 +12,15 @@ class JsonConfig private[scalajack] (
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
     // val undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
-    // val permissivePrimitives: Boolean = false,
+    // val _allowQuotedPrimitives: Boolean,
     val writeNonConstructorFields: Boolean,
     // --------------------------
     val typeHintLabel: String,
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
     val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
-    val suppressEscapedStrings: Boolean,
-    val suppressTypeHints: Boolean
+    val _suppressEscapedStrings: Boolean,
+    val _suppressTypeHints: Boolean
 ):
   def withNoneAsNull(): JsonConfig = copy(noneAsNull = true)
   def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
@@ -29,8 +29,9 @@ class JsonConfig private[scalajack] (
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
-  def withSuppressEscapedStrings(): JsonConfig = copy(suppressEscapedStrings = true)
-  def withSuppressTypeHints(): JsonConfig = copy(suppressTypeHints = true)
+  def suppressEscapedStrings(): JsonConfig = copy(_suppressEscapedStrings = true)
+  def suppressTypeHints(): JsonConfig = copy(_suppressTypeHints = true)
+  // def allowQuotedPrimitives(): JsonConfig = copy(_allowQuotedPrimitives = true)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -40,18 +41,20 @@ class JsonConfig private[scalajack] (
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
       enumsAsIds: Option[List[String]] = enumsAsIds,
-      suppressEscapedStrings: Boolean = suppressEscapedStrings,
-      suppressTypeHints: Boolean = suppressTypeHints
+      _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
+      _suppressTypeHints: Boolean = _suppressTypeHints
+      // _allowQuotedPrimitives: Boolean = _allowQuotedPrimitives
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
     eitherLeftHandling,
+    // _allowQuotedPrimitives,
     writeNonConstructorFields,
     typeHintLabel,
     typeHintPolicy,
     enumsAsIds,
-    suppressEscapedStrings,
-    suppressTypeHints
+    _suppressEscapedStrings,
+    _suppressTypeHints
   )
 
 enum TryPolicy:
@@ -71,12 +74,13 @@ object JsonConfig
       noneAsNull = false,
       tryFailureHandling = TryPolicy.NO_WRITE,
       eitherLeftHandling = EitherLeftPolicy.NO_WRITE,
-      writeNonConstructorFields = true,
+      // _allowQuotedPrimitives = false writeNonConstructorFields = true,
+      writeNonConstructorFields = false,
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
       enumsAsIds = None,
-      suppressEscapedStrings = false,
-      suppressTypeHints = false
+      _suppressEscapedStrings = false,
+      _suppressTypeHints = false
     ):
   import scala.quoted.FromExpr.*
 
@@ -90,16 +94,17 @@ object JsonConfig
           .withTypeHintLabel(${ Expr(x.typeHintLabel) })
           .withTypeHintPolicy(${ Expr(x.typeHintPolicy) })
           .withEnumsAsIds(${ Expr(x.enumsAsIds) })
+        // .allowQuotedPrimitives(${ Expr(x._allowQuotedPrimitives) })
         val jc2 = ${
           if x.noneAsNull then '{ jc.withNoneAsNull() }
           else '{ jc }
         }
         val jc3 = ${
-          if !x.suppressEscapedStrings then '{ jc2.withSuppressEscapedStrings() }
+          if !x._suppressEscapedStrings then '{ jc2.suppressEscapedStrings() }
           else '{ jc2 }
         }
         val jc4 = ${
-          if !x.suppressTypeHints then '{ jc2.withSuppressTypeHints() }
+          if !x._suppressTypeHints then '{ jc2.suppressTypeHints() }
           else '{ jc3 }
         }
         jc4
@@ -122,6 +127,7 @@ object JsonConfig
                 // $forbitNullsInInputE,
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
+                // $allowQuotedPrimitivesE,
                 // $undefinedFieldHandlingE,
                 // $permissivePrimitivesE,
                 $writeNonConstructorFieldsE,
@@ -139,6 +145,7 @@ object JsonConfig
                 // extract("forbitNullsInInput", forbitNullsInInputE),
                 extract("tryFailureHandler", tryFailureHandlerE),
                 extract("eitherLeftHandler", eitherLeftHandlerE),
+                // extract("_allowQuotedPrimitives", allowQuotedPrimtiviesE),
                 // extract("undefinedFieldHandling", undefinedFieldHandlingE),
                 // extract("permissivePrimitives", permissivePrimitivesE),
                 extract("writeNonConstructorFields", writeNonConstructorFieldsE),
@@ -146,8 +153,8 @@ object JsonConfig
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
                 extract("enumsAsIds", enumsAsIdsE),
-                extract("suppressEscapedStrings", suppressEscapedStringsE),
-                extract("suppressTypeHints", suppressTypeHintsE)
+                extract("_suppressEscapedStrings", suppressEscapedStringsE),
+                extract("_suppressTypeHints", suppressTypeHintsE)
               )
             )
           catch {
@@ -155,16 +162,17 @@ object JsonConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ JsonConfig }                                         => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull() }                  => Some(x.valueOrAbort.withNoneAsNull())
-        case '{ ($x: JsonConfig).withTryFailureHandling($v) }        => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }        => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ JsonConfig }                                  => Some(JsonConfig)
+        case '{ ($x: JsonConfig).withNoneAsNull() }           => Some(x.valueOrAbort.withNoneAsNull())
+        case '{ ($x: JsonConfig).withTryFailureHandling($v) } => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEitherLeftHandling($v) } => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        // case '{ ($x: JsonConfig).allowQuotedPrimitives() }           => Some(x.valueOrAbort.allowQuotedPrimities())
         case '{ ($x: JsonConfig).withWriteNonConstructorFields($v) } => Some(x.valueOrAbort.withWriteNonConstructorFields(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
         case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withSuppressEscapedStrings() }      => Some(x.valueOrAbort.withSuppressEscapedStrings())
-        case '{ ($x: JsonConfig).withSuppressTypeHints() }           => Some(x.valueOrAbort.withSuppressTypeHints())
+        case '{ ($x: JsonConfig).suppressEscapedStrings() }          => Some(x.valueOrAbort.suppressEscapedStrings())
+        case '{ ($x: JsonConfig).suppressTypeHints() }               => Some(x.valueOrAbort.suppressTypeHints())
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

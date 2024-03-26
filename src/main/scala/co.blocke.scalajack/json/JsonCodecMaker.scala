@@ -12,6 +12,7 @@ import scala.quoted.*
 import scala.reflect.ClassTag
 import scala.annotation.switch
 import scala.collection.Factory
+import scala.util.{Failure, Success, Try}
 import dotty.tools.dotc.ast.Trees.EmptyTree
 import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.text.translate.CharSequenceTranslator
@@ -495,7 +496,7 @@ object JsonCodecMaker:
                       case '[c] =>
                         val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
                         val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                        CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype.tpe))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, cfg.suppressTypeHints).asTerm)
+                        CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype.tpe))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, cfg._suppressTypeHints).asTerm)
                   } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                   Match(in.asTerm, cases).asExprOf[Unit]
                 }
@@ -655,7 +656,6 @@ object JsonCodecMaker:
         aE: Expr[T],
         ref: RTypeRef[T],
         out: Expr[JsonOutput],
-        isStringified: Boolean = false, // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
         inTuple: Boolean = false
     )(using Quotes): Expr[Unit] =
       val methodKey = MethodKey(ref, false)
@@ -667,70 +667,29 @@ object JsonCodecMaker:
         .getOrElse(
           ref match
             // First cover all primitive and simple types...
-            case t: BigDecimalRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
-              else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
-            case t: BigIntRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
-              else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
-            case t: BooleanRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
-              else '{ $out.value(${ aE.asExprOf[Boolean] }) }
-            case t: ByteRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
-              else '{ $out.value(${ aE.asExprOf[Byte] }) }
-            case t: CharRef => '{ $out.value(${ aE.asExprOf[Char] }) }
-            case t: DoubleRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
-              else '{ $out.value(${ aE.asExprOf[Double] }) }
-            case t: FloatRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
-              else '{ $out.value(${ aE.asExprOf[Float] }) }
-            case t: IntRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
-              else '{ $out.value(${ aE.asExprOf[Int] }) }
-            case t: LongRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
-              else '{ $out.value(${ aE.asExprOf[Long] }) }
-            case t: ShortRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
-              else '{ $out.value(${ aE.asExprOf[Short] }) }
-            case t: StringRef =>
-              if cfg.suppressEscapedStrings then '{ $out.value(${ aE.asExprOf[String] }) }
-              else '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
+            case t: BigDecimalRef => '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
+            case t: BigIntRef     => '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
+            case t: BooleanRef    => '{ $out.value(${ aE.asExprOf[Boolean] }) }
+            case t: ByteRef       => '{ $out.value(${ aE.asExprOf[Byte] }) }
+            case t: CharRef       => '{ $out.value(${ aE.asExprOf[Char] }) }
+            case t: DoubleRef     => '{ $out.value(${ aE.asExprOf[Double] }) }
+            case t: FloatRef      => '{ $out.value(${ aE.asExprOf[Float] }) }
+            case t: IntRef        => '{ $out.value(${ aE.asExprOf[Int] }) }
+            case t: LongRef       => '{ $out.value(${ aE.asExprOf[Long] }) }
+            case t: ShortRef      => '{ $out.value(${ aE.asExprOf[Short] }) }
+            case t: StringRef     => '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
 
-            case t: JBigDecimalRef =>
-              if isStringified then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
-              else '{ $out.value(${ aE.asExprOf[java.math.BigDecimal] }) }
-            case t: JBigIntegerRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
-              else '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
-            case t: JBooleanRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
-            case t: JByteRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
-            case t: JCharacterRef =>
-              '{ $out.value(${ aE.asExprOf[java.lang.Character] }) }
-            case t: JDoubleRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
-            case t: JFloatRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
-            case t: JIntegerRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
-            case t: JLongRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
-            case t: JShortRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
-            case t: JNumberRef =>
-              if isStringified then '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
-              else '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
+            case t: JBigDecimalRef => '{ $out.value(${ aE.asExprOf[java.math.BigDecimal] }) }
+            case t: JBigIntegerRef => '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
+            case t: JBooleanRef    => '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
+            case t: JByteRef       => '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
+            case t: JCharacterRef  => '{ $out.value(${ aE.asExprOf[java.lang.Character] }) }
+            case t: JDoubleRef     => '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
+            case t: JFloatRef      => '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
+            case t: JIntegerRef    => '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
+            case t: JLongRef       => '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
+            case t: JShortRef      => '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
+            case t: JNumberRef     => '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
 
             case t: DurationRef       => '{ $out.value(${ aE.asExprOf[java.time.Duration] }) }
             case t: InstantRef        => '{ $out.value(${ aE.asExprOf[java.time.Instant] }) }
@@ -769,9 +728,7 @@ object JsonCodecMaker:
                 case Some(list) if list.contains(t.name) => true
                 case _                                   => false
               val rtype = t.expr
-              if enumAsId then
-                if isStringified then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) }
-                else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
+              if enumAsId then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
               else '{ $out.value($aE.toString) }
 
             // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
@@ -800,14 +757,11 @@ object JsonCodecMaker:
               }
              */
 
-            case t: AnyRef =>
-              '{
-                AnyWriter.writeAny($aE, $out, ${ Expr(cfg) })
-              }
+            case t: AnyRef => '{ AnyWriter.writeAny($aE, $out, ${ Expr(cfg) }) }
 
             // Everything else...
-            case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-            case _                  => genEncFnBody(ref, aE, out, inTuple = inTuple)
+            // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
+            case _ => genEncFnBody(ref, aE, out, inTuple = inTuple)
         )
 
     // ---------------------------------------------------------------------------------------------
@@ -901,10 +855,8 @@ object JsonCodecMaker:
                       maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
                     if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
                     else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
-                    // ${ instantiateClass.asExprOf[T] }
                 }.asTerm
 
-                // Block(varDefs, parseLoop).asExprOf[T]
                 Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
               )
 
@@ -916,7 +868,6 @@ object JsonCodecMaker:
         // default: Expr[T], // needed?  This should already be in ref...
         ref: RTypeRef[T],
         in: Expr[JsonSource],
-        isStringified: Boolean = false, // e.g. Map key values.  Doesn't apply to stringish values, which are always quotes-wrapped
         inTuple: Boolean = false // not sure if needed...
     )(using Quotes): Expr[T] =
       val methodKey = MethodKey(ref, false)
@@ -929,229 +880,143 @@ object JsonCodecMaker:
           ref match
             // First cover all primitive and simple types...
             case t: BigDecimalRef =>
-              if isStringified then '{ scala.math.BigDecimal($in.expectString()) }.asExprOf[T]
-              else
-                '{
-                  $in.mark()
-                  $in.skipNumber()
-                  scala.math.BigDecimal($in.captureMark())
-                }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case s    => scala.math.BigDecimal(s)
+              }.asExprOf[T]
             case t: BigIntRef =>
-              if isStringified then '{ scala.math.BigInt($in.expectString()) }.asExprOf[T]
-              else
-                '{
-                  $in.mark()
-                  $in.skipNumber()
-                  scala.math.BigInt($in.captureMark())
-                }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case s    => scala.math.BigInt(s)
+              }.asExprOf[T]
             case t: BooleanRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted boolean value expected")
-                  val v = $in.expectBoolean()
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectBoolean() }.asExprOf[T]
+              '{ $in.expectBoolean() }.asExprOf[T]
             case t: ByteRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted byte value expected")
-                  val v = $in.expectInt().toByte
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectInt().toByte }.asExprOf[T]
+              '{ $in.expectInt().toByte }.asExprOf[T]
             case t: CharRef =>
               '{
-                val c = $in.expectString()
-                if c.length == 0 then throw ParseError("Char value expected but empty string found in json")
-                else c.charAt(0)
+                $in.expectString() match
+                  case null =>
+                    $in.retract()
+                    $in.retract()
+                    $in.retract()
+                    $in.retract()
+                    throw JsonParseError("Char value cannot be null", $in)
+                  case "" =>
+                    $in.retract()
+                    $in.retract()
+                    throw JsonParseError("Char value expected but empty string found in json", $in)
+                  case c => c.charAt(0)
               }.asExprOf[T]
             case t: DoubleRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted double value expected")
-                  val v = $in.expectDouble()
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectDouble() }.asExprOf[T]
+              '{ $in.expectDouble() }.asExprOf[T]
             case t: FloatRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted float value expected")
-                  val v = $in.expectFloat()
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectFloat() }.asExprOf[T]
+              '{ $in.expectFloat() }.asExprOf[T]
             case t: IntRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted integer value expected")
-                  val v = $in.expectInt()
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectInt() }.asExprOf[T]
+              '{ $in.expectInt() }.asExprOf[T]
             case t: LongRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted long value expected")
-                  val v = $in.expectLong()
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectLong() }.asExprOf[T]
+              '{ $in.expectLong() }.asExprOf[T]
             case t: ShortRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted integer value expected")
-                  val v = $in.expectInt().toShort
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ $in.expectInt().toShort }.asExprOf[T]
+              '{ $in.expectInt().toShort }.asExprOf[T]
             case t: StringRef =>
               '{ $in.expectString() }.asExprOf[T]
 
             case t: JBigDecimalRef =>
-              if isStringified then '{ new java.math.BigDecimal($in.expectString()) }.asExprOf[T]
-              else
-                '{
-                  $in.mark()
-                  $in.skipNumber()
-                  new java.math.BigDecimal($in.captureMark())
-                }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => new java.math.BigDecimal(n)
+              }.asExprOf[T]
             case t: JBigIntegerRef =>
-              if isStringified then '{ new java.math.BigInteger($in.expectString()) }.asExprOf[T]
-              else
-                '{
-                  $in.mark()
-                  $in.skipNumber()
-                  new java.math.BigInteger($in.captureMark())
-                }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => new java.math.BigInteger(n)
+              }.asExprOf[T]
             case t: JBooleanRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted boolean value expected")
-                  val v = java.lang.Boolean.valueOf($in.expectBoolean())
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Boolean.valueOf($in.expectBoolean()) }.asExprOf[T]
+              '{ $in.expectJavaBoolean() }.asExprOf[T]
             case t: JByteRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted integer value expected")
-                  val v = java.lang.Byte.valueOf($in.expectInt().toByte)
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Byte.valueOf($in.expectInt().toByte) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Byte.valueOf(n)
+              }.asExprOf[T]
             case t: JCharacterRef =>
               '{
                 val c = $in.expectString()
-                if c.length == 0 then throw ParseError("Character value expected but empty string found in json")
+                if c == null then null
+                else if c.length == 0 then
+                  $in.retract()
+                  $in.retract()
+                  throw JsonParseError("Character value expected but empty string found in json", $in)
                 else java.lang.Character.valueOf(c.charAt(0))
               }.asExprOf[T]
             case t: JDoubleRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted double value expected")
-                  val v = java.lang.Double.valueOf($in.expectDouble())
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Double.valueOf($in.expectDouble()) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Double.valueOf(n)
+              }.asExprOf[T]
             case t: JFloatRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted float value expected")
-                  val v = java.lang.Float.valueOf($in.expectFloat())
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Float.valueOf($in.expectFloat()) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Float.valueOf(n)
+              }.asExprOf[T]
             case t: JIntegerRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted ineger value expected")
-                  val v = java.lang.Integer.valueOf($in.expectInt())
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Integer.valueOf($in.expectInt()) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Integer.valueOf(n)
+              }.asExprOf[T]
             case t: JLongRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted long value expected")
-                  val v = java.lang.Long.valueOf($in.expectLong())
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Long.valueOf($in.expectLong()) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Long.valueOf(n)
+              }.asExprOf[T]
             case t: JShortRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted integer value expected")
-                  val v = java.lang.Short.valueOf($in.expectInt().toShort)
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else '{ java.lang.Short.valueOf($in.expectInt().toShort) }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n    => java.lang.Short.valueOf(n)
+              }.asExprOf[T]
             case t: JNumberRef =>
-              if isStringified then
-                '{
-                  if $in.readChar() != '"' then throw ParseError("Quoted integer value expected")
-                  $in.mark()
-                  $in.skipNumber()
-                  val v = scala.math.BigDecimal($in.captureMark()) match {
-                    case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
-                    case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
-                    case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
-                    case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
-                    case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
-                    case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                    case d                      => d
-                  }
-                  if $in.readChar() != '"' then throw ParseError("Close quotes expected")
-                  v
-                }.asExprOf[T]
-              else
-                '{
-                  $in.mark()
-                  $in.skipNumber()
-                  scala.math.BigDecimal($in.captureMark()) match {
-                    case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
-                    case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
-                    case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
-                    case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
-                    case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
-                    case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                    case d                      => d
-                  }
-                }.asExprOf[T]
+              '{
+                $in.expectNumberOrNull() match
+                  case null => null
+                  case n =>
+                    scala.math.BigDecimal(n) match {
+                      case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                      case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                      case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                      case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                      case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
+                      case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
+                      case d                      => d
+                    }
+              }.asExprOf[T]
 
-            case t: DurationRef       => '{ java.time.Duration.parse($in.expectString()) }.asExprOf[T]
-            case t: InstantRef        => '{ java.time.Instant.parse($in.expectString()) }.asExprOf[T]
-            case t: LocalDateRef      => '{ java.time.LocalDate.parse($in.expectString()) }.asExprOf[T]
-            case t: LocalDateTimeRef  => '{ java.time.LocalDateTime.parse($in.expectString()) }.asExprOf[T]
-            case t: LocalTimeRef      => '{ java.time.LocalTime.parse($in.expectString()) }.asExprOf[T]
-            case t: MonthDayRef       => '{ java.time.MonthDay.parse($in.expectString()) }.asExprOf[T]
-            case t: OffsetDateTimeRef => '{ java.time.OffsetDateTime.parse($in.expectString()) }.asExprOf[T]
-            case t: OffsetTimeRef     => '{ java.time.OffsetTime.parse($in.expectString()) }.asExprOf[T]
-            case t: PeriodRef         => '{ java.time.Period.parse($in.expectString()) }.asExprOf[T]
-            case t: YearRef           => '{ java.time.Year.parse($in.expectString()) }.asExprOf[T]
-            case t: YearMonthRef      => '{ java.time.YearMonth.parse($in.expectString()) }.asExprOf[T]
-            case t: ZonedDateTimeRef  => '{ java.time.ZonedDateTime.parse($in.expectString()) }.asExprOf[T]
-            case t: ZoneIdRef         => '{ java.time.ZoneId.of($in.expectString()) }.asExprOf[T]
-            case t: ZoneOffsetRef     => '{ java.time.ZoneOffset.of($in.expectString()) }.asExprOf[T]
+            case t: DurationRef       => '{ $in.expectString(java.time.Duration.parse) }.asExprOf[T]
+            case t: InstantRef        => '{ $in.expectString(java.time.Instant.parse) }.asExprOf[T]
+            case t: LocalDateRef      => '{ $in.expectString(java.time.LocalDate.parse) }.asExprOf[T]
+            case t: LocalDateTimeRef  => '{ $in.expectString(java.time.LocalDateTime.parse) }.asExprOf[T]
+            case t: LocalTimeRef      => '{ $in.expectString(java.time.LocalTime.parse) }.asExprOf[T]
+            case t: MonthDayRef       => '{ $in.expectString(java.time.MonthDay.parse) }.asExprOf[T]
+            case t: OffsetDateTimeRef => '{ $in.expectString(java.time.OffsetDateTime.parse) }.asExprOf[T]
+            case t: OffsetTimeRef     => '{ $in.expectString(java.time.OffsetTime.parse) }.asExprOf[T]
+            case t: PeriodRef         => '{ $in.expectString(java.time.Period.parse) }.asExprOf[T]
+            case t: YearRef           => '{ $in.expectString(java.time.Year.parse) }.asExprOf[T]
+            case t: YearMonthRef      => '{ $in.expectString(java.time.YearMonth.parse) }.asExprOf[T]
+            case t: ZonedDateTimeRef  => '{ $in.expectString(java.time.ZonedDateTime.parse) }.asExprOf[T]
+            case t: ZoneIdRef         => '{ $in.expectString(java.time.ZoneId.of) }.asExprOf[T]
+            case t: ZoneOffsetRef     => '{ $in.expectString(java.time.ZoneOffset.of) }.asExprOf[T]
 
-            case t: URLRef  => '{ new java.net.URL($in.expectString()) }.asExprOf[T]
-            case t: URIRef  => '{ new java.net.URI($in.expectString()) }.asExprOf[T]
-            case t: UUIDRef => '{ java.util.UUID.fromString($in.expectString()) }.asExprOf[T]
+            case t: URLRef  => '{ $in.expectString((s: String) => new java.net.URL(s)) }.asExprOf[T]
+            case t: URIRef  => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
+            case t: UUIDRef => '{ $in.expectString(java.util.UUID.fromString) }.asExprOf[T]
 
             case t: AliasRef[?] =>
               // Special check for RawJson pseudo-type
@@ -1167,9 +1032,87 @@ object JsonCodecMaker:
                     genReadVal[e](
                       t.unwrappedType.asInstanceOf[RTypeRef[e]],
                       in,
-                      isStringified,
                       inTuple
                     ).asExprOf[T]
+
+            // --------------------
+            //  Options...
+            // --------------------
+            case t: OptionRef[?] =>
+              import quotes.reflect.*
+              t.optionParamType.refType match
+                case '[e] =>
+                  if cfg.noneAsNull || inTuple then
+                    '{
+                      if $in.expectNull() then None
+                      else Some(${ genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in) })
+                    }.asExprOf[T]
+                  else ofOption[e](Some(genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T]
+
+            case t: LeftRightRef[?] if t.lrkind == LRKind.EITHER =>
+              import quotes.reflect.*
+              t.leftRef.refType match
+                case '[l] =>
+                  t.rightRef.refType match
+                    case '[r] =>
+                      '{
+                        $in.mark()
+                        if $in.expectNull() then null
+                        else
+                          scala.util.Try(${ genReadVal[r](t.rightRef.asInstanceOf[RTypeRef[r]], in, inTuple) }) match
+                            case Success(rval) =>
+                              Right(rval)
+                            case Failure(f) =>
+                              scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, inTuple) }) match
+                                case Success(lval) => Left(lval)
+                                case Failure(_) =>
+                                  $in.retract()
+                                  throw JsonParseError("Failed to read either side of Either type", $in)
+                      }.asExprOf[T]
+            /*
+              Either:
+  def read(parser: Parser): Either[L, R] = {
+    val savedReader = parser.mark()
+    if (parser.peekForNull)
+      null
+    else
+      Try(rightTypeAdapter.read(parser)) match {
+        case Success(rightValue) =>
+          Right(rightValue.asInstanceOf[R])
+        case Failure(_) => // Right parse failed... try left
+          parser.revertToMark(savedReader)
+          Try(leftTypeAdapter.read(parser)) match {
+            case Success(leftValue) =>
+              Left(leftValue.asInstanceOf[L])
+            case Failure(x) =>
+              parser.backspace()
+              throw new ScalaJackError(
+                parser.showError(s"Failed to read either side of Either")
+              )
+          }
+      }
+  }
+
+              Intersection:
+val syntheticTA = taCache.typeAdapterOf[L]
+syntheticTA.write(t.asInstanceOf[L], writer, out)
+
+              Union:
+  def read(parser: Parser): L | R = {
+    val savedReader = parser.mark()
+    Try(leftTypeAdapter.read(parser)) match {
+      case Success(leftValue) => leftValue.asInstanceOf[L]
+      case Failure(_) => // Left parse failed... try Right
+        parser.revertToMark(savedReader)
+        Try(rightTypeAdapter.read(parser)) match {
+          case Success(rightValue) => rightValue.asInstanceOf[R]
+          case Failure(x) =>
+            parser.backspace()
+            throw new ScalaJackError( parser.showError(s"Failed to read any values for union type") )
+        }
+    }
+  }
+             */
 
             // --------------------
             //  Enumerations...
@@ -1228,7 +1171,7 @@ object JsonCodecMaker:
                           Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
                         }
                       case v: Int =>
-                        throw ParseError("Ordinal value initiation not valid for Java Enums")
+                        throw JsonParseError("Ordinal value initiation not valid for Java Enums", $in)
                   }.asExprOf[T]
 
             // --------------------
@@ -1241,7 +1184,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toList
                         else null
                       }.asExprOf[T]
@@ -1250,7 +1193,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toVector
                         else null
                       }.asExprOf[T]
@@ -1259,7 +1202,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toSeq
                         else null
                       }.asExprOf[T]
@@ -1268,7 +1211,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toIndexedSeq
                         else null
                       }.asExprOf[T]
@@ -1277,7 +1220,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toIterable
                         else null
                       }.asExprOf[T]
@@ -1287,7 +1230,7 @@ object JsonCodecMaker:
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
                         else null
                       }.asExprOf[T]
@@ -1298,17 +1241,64 @@ object JsonCodecMaker:
                   val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                   val ct = Expr.summon[ClassTag[e]].get
                   '{
-                    val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in) })
+                    val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                     if parsedArray != null then
                       implicit val ctt = $ct
                       parsedArray.toArray[e]
                     else null
                   }.asExprOf[T]
 
+            // --------------------
+            //  Tuples...
+            // --------------------
+            case t: TupleRef[?] =>
+              import quotes.reflect.*
+              t.refType match
+                case '[tt] =>
+                  val tpe = TypeRepr.of[tt]
+                  val maxI = Expr(t.tupleRefs.length - 1)
+                  val indexedTypes = tpe match
+                    case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
+                    case _                        => Nil
+
+                  // make all the tuple terms, accounting for , and ] detection
+                  val tupleTerms =
+                    if t.tupleRefs.length == 1 then
+                      t.tupleRefs(0).refType match
+                        case '[e] =>
+                          List('{
+                            ${ genReadVal[e](t.tupleRefs(0).asInstanceOf[RTypeRef[e]], in, true) }
+                            $in.expectToken(']')
+                          }.asTerm)
+                    else
+                      t.tupleRefs.zipWithIndex.map { case (tpart, i) =>
+                        tpart.refType match
+                          case '[e] =>
+                            if i == 0 then genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true).asTerm
+                            else if i < t.tupleRefs.length - 1 then
+                              '{
+                                $in.expectToken(',')
+                                ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
+                              }.asTerm
+                            else
+                              '{
+                                $in.expectToken(',')
+                                val res = ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
+                                $in.expectToken(']')
+                                res
+                              }.asTerm
+                      }
+                  '{
+                    $in.expectToken('[')
+                    ${
+                      Apply(TypeApply(Select.unique(New(Inferred(tpe)), "<init>"), indexedTypes.map(x => Inferred(x))), tupleTerms).asExpr
+                    }
+                  }.asExprOf[T]
+
             case _ =>
               // Classes, traits, etc.
               genDecFnBody[T](ref, in) // Create a new decoder function (presumably for class, trait, etc)
-              genReadVal(ref, in)
+              genReadVal(ref, in, inTuple)
 
           // Just-created function is present now and will be called
         )
@@ -1338,5 +1328,5 @@ object JsonCodecMaker:
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
       classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
-    // println(s"Codec: ${codec.show}")
+    println(s"Codec: ${codec.show}")
     codec

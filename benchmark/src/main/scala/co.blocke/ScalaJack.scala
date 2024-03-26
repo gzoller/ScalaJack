@@ -6,7 +6,7 @@ object ScalaJackZ:
     import co.blocke.scalajack.ScalaJack.*
     import co.blocke.scalajack.*
  
-    implicit val blah: ScalaJack[co.blocke.Record2] = codecOf[co.blocke.Record2]
+    implicit val blah: ScalaJack[co.blocke.Record2] = sjCodecOf[co.blocke.Record2]
 
     trait ScalaJackReadingBenchmark{
         @Benchmark

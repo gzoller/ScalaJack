@@ -26,9 +26,9 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           ),
           null
         )
-        val js = sj[SampleJBigDecimal].toJson(inst)
+        val js = sjCodecOf[SampleJBigDecimal].toJson(inst)
         js should matchJson("""{"bd1":0,"bd2":1,"bd3":10,"bd4":0.1499999999999999944488848768742172978818416595458984375,"bd5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJBigDecimal](js)
+        sjCodecOf[SampleJBigDecimal].fromJson(js) shouldEqual inst
       }
 
       it("BigInteger must work") {
@@ -41,16 +41,16 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           new JBigInteger("0"),
           null
         )
-        val js = sj[SampleJBigInteger].toJson(inst)
+        val js = sjCodecOf[SampleJBigInteger].toJson(inst)
         js should matchJson("""{"bi1":0,"bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJBigInteger](js)
+        sjCodecOf[SampleJBigInteger].fromJson(js) shouldEqual inst
       }
 
       it("Boolean must work") {
         val inst = SampleJBoolean(JBoolean.TRUE, JBoolean.FALSE, true, false, null)
-        val js = sj[SampleJBoolean].toJson(inst)
+        val js = sjCodecOf[SampleJBoolean].toJson(inst)
         js should matchJson("""{"bool1":true,"bool2":false,"bool3":true,"bool4":false,"bool5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJBoolean](js)
+        sjCodecOf[SampleJBoolean].fromJson(js) shouldEqual inst
       }
 
       it("Byte must work") {
@@ -61,16 +61,16 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           64.asInstanceOf[Byte],
           null
         )
-        val js = sj[SampleJByte].toJson(inst)
+        val js = sjCodecOf[SampleJByte].toJson(inst)
         js should matchJson("""{"b1":127,"b2":-128,"b3":0,"b4":64,"b5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJByte](js)
+        sjCodecOf[SampleJByte].fromJson(js) shouldEqual inst
       }
 
       it("Character must work") {
         val inst = SampleJChar('Z', '\u20A0', null)
-        val js = sj[SampleJChar].toJson(inst)
+        val js = sjCodecOf[SampleJChar].toJson(inst)
         js should matchJson("""{"c1":"Z","c2":"\""" + """u20a0","c3":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJChar](js)
+        sjCodecOf[SampleJChar].fromJson(js) shouldEqual inst
       }
 
       it("Double must work") {
@@ -81,9 +81,9 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           -123.4567,
           null
         )
-        val js = sj[SampleJDouble].toJson(inst)
+        val js = sjCodecOf[SampleJDouble].toJson(inst)
         js should matchJson("""{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":0.0,"d4":-123.4567,"d5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJDouble](js)
+        sjCodecOf[SampleJDouble].fromJson(js) shouldEqual inst
       }
 
       it("Float must work") {
@@ -94,23 +94,23 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           -123.4567f,
           null
         )
-        val js = sj[SampleJFloat].toJson(inst)
+        val js = sjCodecOf[SampleJFloat].toJson(inst)
         js should matchJson("""{"f1":3.4028235E38,"f2":1.4E-45,"f3":0.0,"f4":-123.4567,"f5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJFloat](js)
+        sjCodecOf[SampleJFloat].fromJson(js) shouldEqual inst
       }
 
       it("Integer must work") {
         val inst = SampleJInt(JInt.MAX_VALUE, JInt.MIN_VALUE, 0, 123, null)
-        val js = sj[SampleJInt].toJson(inst)
+        val js = sjCodecOf[SampleJInt].toJson(inst)
         js should matchJson("""{"i1":2147483647,"i2":-2147483648,"i3":0,"i4":123,"i5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJInt](js)
+        sjCodecOf[SampleJInt].fromJson(js) shouldEqual inst
       }
 
       it("Long must work") {
         val inst = SampleJLong(JLong.MAX_VALUE, JLong.MIN_VALUE, 0L, 123L, null)
-        val js = sj[SampleJLong].toJson(inst)
+        val js = sjCodecOf[SampleJLong].toJson(inst)
         js should matchJson("""{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0,"l4":123,"l5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJLong](js)
+        sjCodecOf[SampleJLong].fromJson(js) shouldEqual inst
       }
 
       it("Number must work") {
@@ -133,11 +133,11 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           JFloat.valueOf("0.0"),
           null
         )
-        val js = sj[SampleJNumber].toJson(inst)
+        val js = sjCodecOf[SampleJNumber].toJson(inst)
         js should matchJson(
           """{"n1":-128,"n2":127,"n3":-32768,"n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":null,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":null,"n16":0.0,"n17":null}"""
         )
-        // inst shouldEqual ScalaJack.read[SampleJNumber](js)
+        sjCodecOf[SampleJNumber].fromJson(js) shouldEqual inst
       }
 
       it("Short must work") {
@@ -148,159 +148,141 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
           123.asInstanceOf[Short],
           null
         )
-        val js = sj[SampleJShort].toJson(inst)
+        val js = sjCodecOf[SampleJShort].toJson(inst)
         js should matchJson("""{"s1":32767,"s2":-32768,"s3":0,"s4":123,"s5":null}""")
-        // inst shouldEqual ScalaJack.read[SampleJShort](js)
+        sjCodecOf[SampleJShort].fromJson(js) shouldEqual inst
+      }
+    }
+
+    // --------------------------------------------------------
+
+    describe(colorString("--- Negative Tests ---")) {
+      it("BigDecimal must break") {
+        val js =
+          """{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.1499999999999999944488848768742172978818416595458984375","bd5":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [32]
+              |{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.149999999999999994448884876874217297881841...
+              |--------------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJBigDecimal].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("BigInt must break") {
+        val js =
+          """{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [7]
+                |{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":901827364519...
+                |-------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJBigInteger].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Boolean must break") {
+        val js = """{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}"""
+        val msg =
+          """Expected 'true', 'false', or null here at position [49]
+                      |{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}
+                      |-------------------------------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJBoolean].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Byte must break") {
+        val js = """{"b1":127,"b2":-128,"b3":false,"b4":64,"b5":null}"""
+        val msg = """Expected a numerical value or null here at position [25]
+              |{"b1":127,"b2":-128,"b3":false,"b4":64,"b5":null}
+              |-------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJByte].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Char must break") {
+        val sj = sjCodecOf[SampleJChar]
+        val js = """{"c1":"Z","c2":3,"c3":null}"""
+        val msg = """Expected a String value but got '3' at position [15]
+          |{"c1":"Z","c2":3,"c3":null}
+          |---------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJChar].fromJson(js))
+        ex.show shouldEqual msg
+        val js2 = """{"c1":"Z","c2":"","c3":null}"""
+        val msg2 = """Character value expected but empty string found in json at position [15]
+          |{"c1":"Z","c2":"","c3":null}
+          |---------------^""".stripMargin
+        val ex2 = intercept[JsonParseError](sjCodecOf[SampleJChar].fromJson(js2))
+        ex2.show shouldEqual msg2
+      }
+
+      it("Double must break") {
+        val js =
+          """{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [48]
+                  |{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}
+                  |------------------------------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJDouble].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Float must break") {
+        val js =
+          """{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [24]
+                  |{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}
+                  |------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJFloat].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Int must break") {
+        val js = """{"i1":2147483647,"i2":-2147483648,"i3":false,"i4":123,"i5":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [39]
+                  |{"i1":2147483647,"i2":-2147483648,"i3":false,"i4":123,"i5":null}
+                  |---------------------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJInt].fromJson(js))
+        ex.show shouldEqual msg
+        val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":0.3,"i4":123,"i5":null}"""
+        the[java.lang.NumberFormatException] thrownBy sjCodecOf[SampleJInt].fromJson(js2) should have message "For input string: \"0.3\""
+      }
+
+      it("Long must break") {
+        val js =
+          """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [57]
+                  |...23372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}
+                  |----------------------------------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJLong].fromJson(js))
+        ex.show shouldEqual msg
+        val js2 =
+          """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123,"l5":null}"""
+        the[java.lang.NumberFormatException] thrownBy sjCodecOf[SampleJLong].fromJson(js2) should have message "For input string: \"0.3\""
+      }
+
+      it("Number must break") {
+        val js =
+          """{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":9923372036854755810,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":1.8E+308,"n16":0.0,"n17":null}"""
+        val msg =
+          """Expected a numerical value or null here at position [25]
+                    |{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647...
+                    |-------------------------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJNumber].fromJson(js))
+        ex.show shouldEqual msg
+      }
+
+      it("Short must break") {
+        val sj = sjCodecOf[SampleJByte]
+        val js = """{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
+        val msg = """Expected a numerical value or null here at position [6]
+            |{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}
+            |------^""".stripMargin
+        val ex = intercept[JsonParseError](sjCodecOf[SampleJShort].fromJson(js))
+        ex.show shouldEqual msg
+        val js2 = """{"s1":2.3,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
+        the[java.lang.NumberFormatException] thrownBy sjCodecOf[SampleJShort].fromJson(js2) should have message "For input string: \"2.3\""
       }
     }
   }
-
-/*
-
-  //--------------------------------------------------------
-
-
-  test("BigDecimal must break") {
-    describe("--- Negative Tests ---")
-    val js =
-      """{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.1499999999999999944488848768742172978818416595458984375","bd5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-        |{"bd1":0,"bd2":1,"bd3":10,"bd4":"0.149999999999999994448884876874217297881841...
-        |--------------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJBigDecimal](js)
-    }
-  }
-
-  test("BigInt must break") {
-    val js =
-      """{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":90182736451928374653345,"bi6":0,"bi7":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-        |{"bi1":"0","bi2":1,"bi3":10,"bi4":-90182736451928374653345,"bi5":901827364519...
-        |-------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJBigInteger](js)
-    }
-  }
-
-  test("Boolean must break") {
-    val js = """{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Boolean here
-              |{"bool1":true,"bool2":false,"bool3":true,"bool4":"false","bool5":null}
-              |-------------------------------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJBoolean](js)
-    }
-  }
-
-  test("Byte must break") {
-    val js = """{"b1":127,"b2":-128,"b3":false,"b4":64,"b5":null}""".asInstanceOf[JSON]
-    val msg = """Expected a Number here
-      |{"b1":127,"b2":-128,"b3":false,"b4":64,"b5":null}
-      |-------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJByte](js)
-    }
-  }
-
-  test("Char must break") {
-    val js = """{"c1":"Z","c2":3,"c3":null}""".asInstanceOf[JSON]
-    val msg = """Expected a String here
-      |{"c1":"Z","c2":3,"c3":null}
-      |---------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJChar](js)
-    }
-    val js2 = """{"c1":"Z","c2":"","c3":null}""".asInstanceOf[JSON]
-    val msg2 = """Tried to read a Character but empty string found
-      |{"c1":"Z","c2":"","c3":null}
-      |----------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg2){
-      sj.read[SampleJChar](js2)
-    }
-  }
-
-  test("Double must break") {
-    val js =
-      """{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-              |{"d1":1.7976931348623157E308,"d2":4.9E-324,"d3":"0.0","d4":-123.4567,"d5":null}
-              |------------------------------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJDouble](js)
-    }
-  }
-
-  test("Float must break") {
-    val js =
-      """{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-              |{"f1":3.4028235E38,"f2":"1.4E-45","f3":0.0,"f4":-123.4567,"f5":null}
-              |------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJFloat](js)
-    }
-  }
-
-  test("Int must break") {
-    val js = """{"i1":2147483647,"i2":-2147483648,"i3":false,"i4":123,"i5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-              |{"i1":2147483647,"i2":-2147483648,"i3":false,"i4":123,"i5":null}
-              |---------------------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJInt](js)
-    }
-    val js2 = """{"i1":2147483647,"i2":-2147483648,"i3":0.3,"i4":123,"i5":null}""".asInstanceOf[JSON]
-    interceptMessage[java.lang.NumberFormatException]("For input string: \"0.3\""){
-      sj.read[SampleJInt](js2)
-    }
-  }
-
-  test("Long must break") {
-    val js =
-      """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-              |...23372036854775807,"l2":-9223372036854775808,"l3":"0","l4":123,"l5":null}
-              |----------------------------------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJLong](js)
-    }
-    val js2 =
-      """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123,"l5":null}""".asInstanceOf[JSON]
-    interceptMessage[java.lang.NumberFormatException]("For input string: \"0.3\""){
-      sj.read[SampleJLong](js2)
-    }
-  }
-
-  test("Number must break") {
-    val js = """{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647,"n7":-9223372036854775808,"n8":9223372036854755807,"n9":9923372036854755810,"n10":0,"n11":3.4E-38,"n12":3.4E38,"n13":1.7E-308,"n14":1.7E308,"n15":1.8E+308,"n16":0.0,"n17":null}""".asInstanceOf[JSON]
-    val msg =
-      """Expected a Number here
-              |{"n1":-128,"n2":127,"n3":"-32768","n4":32767,"n5":-2147483648,"n6":2147483647...
-              |-------------------------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJNumber](js)
-    }
-  }
-
-  test("Short must break") {
-    val js = """{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}""".asInstanceOf[JSON]
-    val msg = """Expected a Number here
-      |{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}
-      |------^""".stripMargin
-    interceptMessage[co.blocke.scalajack.ScalaJackError](msg){
-      sj.read[SampleJShort](js)
-    }
-    val js2 = """{"s1":2.3,"s2":-32768,"s3":0,"s4":123,"s5":null}""".asInstanceOf[JSON]
-    interceptMessage[java.lang.NumberFormatException]("For input string: \"2.3\""){
-      sj.read[SampleJShort](js2)
-    }
-  }
- */
