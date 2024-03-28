@@ -1,0 +1,54 @@
+TBD
+
+Test:
+
+* Enumeration
+* Enum 
+* Java Enumeration
+* Sealed trait w/case object
+* Sealed trait w/case classes
+
+* Try permutations of Map having keys of each of the above types, including ordinal (int) values where available
+
+
+Partial:
+
+
+      it("Enum as Map key and value must work") {
+        val inst = MapHolder[Color, Color](Map(Color.Red -> Color.Blue, Color.Green -> Color.Red))
+        val js = sj[MapHolder[Color, Color]].toJson(inst)
+        js should matchJson("""{"a":{"Red":"Blue","Green":"Red"}}""")
+      }
+      it("Enum as Map key and value must work (using id)") {
+        val inst = MapHolder[Color, Color](Map(Color.Red -> Color.Blue, Color.Green -> Color.Red))
+        val js = sj[MapHolder[Color, Color]](JsonConfig.withEnumsAsIds(Some(Nil))).toJson(inst)
+        js should matchJson("""{"a":{"0":2,"1":0}}""")
+      }
+      it("Enumeration as Map key and value must work") {
+        import Permissions.*
+        val inst = MapHolder[Permissions, Permissions](Map(Permissions.READ -> Permissions.WRITE, Permissions.EXEC -> Permissions.NONE))
+        val js = sj[MapHolder[Permissions, Permissions]].toJson(inst)
+        js should matchJson("""{"a":{"READ":"WRITE","EXEC":"NONE"}}""")
+      }
+      it("Enumeration as Map key and value must work (using id)") {
+        import Permissions.*
+        val inst = MapHolder[Permissions, Permissions](Map(Permissions.READ -> Permissions.WRITE, Permissions.EXEC -> Permissions.NONE))
+        val js = sj[MapHolder[Permissions, Permissions]](JsonConfig.withEnumsAsIds(Some(Nil))).toJson(inst)
+        js should matchJson("""{"a":{"0":1,"2":3}}""")
+      }
+      it("Java Enumeration as Map key and value must work") {
+        val inst = MapHolder[CarEnum, CarEnum](Map(CarEnum.VW -> CarEnum.PORSCHE, CarEnum.PORSCHE -> CarEnum.TOYOTA))
+        val js = sj[MapHolder[CarEnum, CarEnum]].toJson(inst)
+        js should matchJson("""{"a":{"VW":"PORSCHE","PORSCHE":"TOYOTA"}}""")
+      }
+      it("Java Enumeration as Map key and value must work (using id)") {
+        val inst = MapHolder[CarEnum, CarEnum](Map(CarEnum.VW -> CarEnum.PORSCHE, CarEnum.PORSCHE -> CarEnum.TOYOTA))
+        val js = sj[MapHolder[CarEnum, CarEnum]](JsonConfig.withEnumsAsIds(Some(Nil))).toJson(inst)
+        js should matchJson("""{"a":{"1":2,"2":0}}""")
+      }
+      it("Enum/Enumeration mix of enum as value must work") {
+        import Permissions.*
+        val inst = MapHolder[Color, Permissions](Map(Color.Red -> Permissions.WRITE, Color.Blue -> Permissions.NONE))
+        val js = sj[MapHolder[Color, Permissions]](JsonConfig.withEnumsAsIds(Some(List("co.blocke.scalajack.json.collections.Color")))).toJson(inst)
+        js should matchJson("""{"a":{"0":"WRITE","2":"NONE"}}""")
+      }

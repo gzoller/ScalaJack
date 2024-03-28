@@ -6,6 +6,9 @@ import java.util.{ArrayList, Map as JMap, Set as JSet}
 
 case class Person(name: String, age: Int)
 
+opaque type OnOff = Boolean
+opaque type Counter = Short
+
 case class SeqHolder[T](a: Seq[T])
 case class SetHolder[T](a: Set[T])
 case class ArrayHolder[T](a: Array[T])

@@ -8,10 +8,10 @@ object RunMe extends App:
   import co.blocke.scalajack.ScalaJack.*
   import co.blocke.scalajack.*
 
-  // given codec: JsonValueCodec[Who.Type] = JsonCodecMaker.make
-
-  // implicit val blah: ScalaJack[co.blocke.scalajack.json.run.Yippy] = sj[co.blocke.scalajack.json.run.Yippy]
-
-  // println( ScalaJack[co.blocke.scalajack.json.run.Yippy].toJson(yippy) )
+  //case class MapHolder( m: Map[Pet2, String])
+  // val mh = MapHolder( Map(Pet2("Mindy","Frenchie",4)->"a", Pet2("Rosie","Terrier",8)->"b"))
+  // given codec: JsonValueCodec[Pet2] = JsonCodecMaker.make
+  // given codec2: JsonValueCodec[MapHolder] = JsonCodecMaker.make
+  // println(writeToString(mh))
   
   println("\nDone")

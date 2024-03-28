@@ -74,11 +74,11 @@ object RunMe extends App:
   // val c: Pizza = ScalaJack[Pizza].fromJson("\"READY\"")
   // println("Pizza: " + c)
 
-  // case class Group(t: (Int, String, Boolean))
-  implicit val blah: ScalaJack[Group] = sjCodecOf[Group]
-  val g = Group((5, "Greg", true))
-  val js = ScalaJack[Group].toJson(g)
-  println(js)
-  println(ScalaJack[Group].fromJson(js))
+  opaque type OnOff = Boolean
+  opaque type Counter = Short
+
+  val m: Map[OnOff, Counter] = Map(true.asInstanceOf[OnOff] -> 1.asInstanceOf[Counter])
+  val n: Map[Boolean, Short] = m.asInstanceOf[Map[Boolean, Short]]
+  println(n)
 
   println("done.")

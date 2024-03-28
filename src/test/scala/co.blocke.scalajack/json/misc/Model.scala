@@ -24,7 +24,7 @@ case class OptionHolder[T](
 case class TryHolder[T](a: Try[T])
 case class TryHolder2[T](a: Seq[Try[T]], b: (Try[T], Try[T]))
 
-case class LRHolder[T, U](a: Seq[T | U], b: (T | U, T | U))
+case class LRUnionHolder[T, U](a: Seq[T | U], b: (T | U, T | U))
 case class EitherHolder[T](a: Either[T, String], b: Either[String, T])
 
 case class ComplexEither[T](a: Option[Either[String, Option[T]]])
@@ -62,3 +62,31 @@ case class AnyHolder(
     whichOneL: Any, // Either[String,Int] <- left
     bunch: Any // (Some('a'),None,Some('b'))
 )
+
+object Size extends Enumeration {
+  val Small, Medium, Large = Value
+}
+object SizeWithType extends Enumeration {
+  type SizeWithType = Value
+  val Little, Grand = Value
+}
+import SizeWithType.*
+case class SampleEnum(e1: Size.Value, e2: Size.Value, e3: Size.Value, e4: Size.Value, e5: Size.Value, e6: SizeWithType)
+
+enum Color {
+  case Red, Blue, Green
+}
+case class TVColors(color1: Color, color2: Color)
+
+sealed trait Flavor
+case object Vanilla extends Flavor
+case object Chocolate extends Flavor
+case object Bourbon extends Flavor
+
+sealed trait Vehicle
+case class Truck(numberOfWheels: Int) extends Vehicle
+case class Car(numberOfWheels: Int, color: String) extends Vehicle
+case class Plane(numberOfEngines: Int) extends Vehicle
+
+case class Ride(wheels: Vehicle)
+case class Favorite(flavor: Flavor)

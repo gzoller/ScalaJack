@@ -8,34 +8,6 @@ import java.math.{BigDecimal as JBigDecimal, BigInteger as JBigInteger}
 import java.time.*
 import scala.math.*
 
-object Size extends Enumeration {
-  val Small, Medium, Large = Value
-}
-object SizeWithType extends Enumeration {
-  type SizeWithType = Value
-  val Little, Grand = Value
-}
-import SizeWithType.*
-case class SampleEnum(e1: Size.Value, e2: Size.Value, e3: Size.Value, e4: Size.Value, e5: Size.Value, e6: SizeWithType)
-
-enum Color {
-  case Red, Blue, Green
-}
-case class TVColors(color1: Color, color2: Color)
-
-sealed trait Flavor
-case object Vanilla extends Flavor
-case object Chocolate extends Flavor
-case object Bourbon extends Flavor
-
-sealed trait Vehicle
-case class Truck(numberOfWheels: Int) extends Vehicle
-case class Car(numberOfWheels: Int, color: String) extends Vehicle
-case class Plane(numberOfEngines: Int) extends Vehicle
-
-case class Ride(wheels: Vehicle)
-case class Favorite(flavor: Flavor)
-
 // === Scala
 case class SampleBigDecimal(bd1: BigDecimal, bd2: BigDecimal, bd3: BigDecimal, bd4: BigDecimal, bd5: BigDecimal, bd6: BigDecimal)
 case class SampleBigInt(bi1: BigInt, bi2: BigInt, bi3: BigInt, bi4: BigInt)
@@ -83,6 +55,14 @@ case class SampleZoneOffset(z1: ZoneOffset, z2: ZoneOffset)
 
 // === Any primitives
 case class AnyShell(a: Any)
+
+object Size extends Enumeration {
+  val Small, Medium, Large = Value
+}
+
+enum Color {
+  case Red, Blue, Green
+}
 
 // === Value Classes
 case class VCBigDecimal(vc: BigDecimal) extends AnyVal

@@ -104,6 +104,16 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
+    def testValidMapKey(testRef: RTypeRef[?]): Boolean =
+      val isValid = testRef match
+        case _: PrimitiveRef => true
+        case _: TimeRef      => true
+        case _: NetRef       => true
+        case a: AliasRef[?]  => testValidMapKey(a.unwrappedType)
+        case _               => false
+      if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
+      isValid
+
     def maybeWrite[T](label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
       val labelE = Expr(label)
       _maybeWrite[T](
@@ -120,7 +130,7 @@ object JsonCodecMaker:
           _maybeWrite[V](
             '{
               $out.maybeComma()
-              ${ genWriteVal(keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, true) }
+              ${ genWriteVal(keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true) }
               $out.colon()
             },
             valueE,
@@ -402,7 +412,48 @@ object JsonCodecMaker:
                             $out.startObject()
                             $tin.foreach { case (key, value) =>
                               ${
-                                maybeWriteMap[k, v]('{ key }, '{ value }.asExprOf[v], t.elementRef.asInstanceOf[RTypeRef[k]], t.elementRef2.asInstanceOf[RTypeRef[v]], out, cfg)
+                                (t.elementRef, t.elementRef2) match
+                                  case (aliasK: AliasRef[?], aliasV: AliasRef[?]) =>
+                                    aliasK.unwrappedType.refType match
+                                      case '[ak] =>
+                                        aliasV.unwrappedType.refType match
+                                          case '[av] =>
+                                            testValidMapKey(aliasK.unwrappedType)
+                                            maybeWriteMap[ak, av](
+                                              '{ key.asInstanceOf[ak] },
+                                              '{ value.asInstanceOf[av] },
+                                              aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
+                                              aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
+                                              out,
+                                              cfg
+                                            )
+                                  case (_, aliasV: AliasRef[?]) =>
+                                    aliasV.unwrappedType.refType match
+                                      case '[av] =>
+                                        testValidMapKey(t.elementRef)
+                                        maybeWriteMap[k, av](
+                                          '{ key }.asExprOf[k],
+                                          '{ value.asInstanceOf[av] },
+                                          t.elementRef.asInstanceOf[RTypeRef[k]],
+                                          aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
+                                          out,
+                                          cfg
+                                        )
+                                  case (aliasK: AliasRef[?], _) =>
+                                    aliasK.unwrappedType.refType match
+                                      case '[ak] =>
+                                        testValidMapKey(aliasK.unwrappedType)
+                                        maybeWriteMap[ak, v](
+                                          '{ key.asInstanceOf[ak] },
+                                          '{ value }.asExprOf[v],
+                                          aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
+                                          t.elementRef2.asInstanceOf[RTypeRef[v]],
+                                          out,
+                                          cfg
+                                        )
+                                  case (_, _) =>
+                                    testValidMapKey(t.elementRef)
+                                    maybeWriteMap[k, v]('{ key }, '{ value }.asExprOf[v], t.elementRef.asInstanceOf[RTypeRef[k]], t.elementRef2.asInstanceOf[RTypeRef[v]], out, cfg)
                               }
                             }
                             $out.endObject()
@@ -656,7 +707,8 @@ object JsonCodecMaker:
         aE: Expr[T],
         ref: RTypeRef[T],
         out: Expr[JsonOutput],
-        inTuple: Boolean = false
+        inTuple: Boolean = false,
+        isMapKey: Boolean = false // only primitive or primitive-equiv types can be Map keys
     )(using Quotes): Expr[Unit] =
       val methodKey = MethodKey(ref, false)
       writeMethodSyms
@@ -667,29 +719,69 @@ object JsonCodecMaker:
         .getOrElse(
           ref match
             // First cover all primitive and simple types...
-            case t: BigDecimalRef => '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
-            case t: BigIntRef     => '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
-            case t: BooleanRef    => '{ $out.value(${ aE.asExprOf[Boolean] }) }
-            case t: ByteRef       => '{ $out.value(${ aE.asExprOf[Byte] }) }
-            case t: CharRef       => '{ $out.value(${ aE.asExprOf[Char] }) }
-            case t: DoubleRef     => '{ $out.value(${ aE.asExprOf[Double] }) }
-            case t: FloatRef      => '{ $out.value(${ aE.asExprOf[Float] }) }
-            case t: IntRef        => '{ $out.value(${ aE.asExprOf[Int] }) }
-            case t: LongRef       => '{ $out.value(${ aE.asExprOf[Long] }) }
-            case t: ShortRef      => '{ $out.value(${ aE.asExprOf[Short] }) }
-            case t: StringRef     => '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
+            case t: BigDecimalRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
+              else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
+            case t: BigIntRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
+              else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
+            case t: BooleanRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
+              else '{ $out.value(${ aE.asExprOf[Boolean] }) }
+            case t: ByteRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
+              else '{ $out.value(${ aE.asExprOf[Byte] }) }
+            case t: CharRef =>
+              '{ $out.value(${ aE.asExprOf[Char] }) }
+            case t: DoubleRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
+              else '{ $out.value(${ aE.asExprOf[Double] }) }
+            case t: FloatRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
+              else '{ $out.value(${ aE.asExprOf[Float] }) }
+            case t: IntRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
+              else '{ $out.value(${ aE.asExprOf[Int] }) }
+            case t: LongRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
+              else '{ $out.value(${ aE.asExprOf[Long] }) }
+            case t: ShortRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
+              else '{ $out.value(${ aE.asExprOf[Short] }) }
+            case t: StringRef => '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
 
-            case t: JBigDecimalRef => '{ $out.value(${ aE.asExprOf[java.math.BigDecimal] }) }
-            case t: JBigIntegerRef => '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
-            case t: JBooleanRef    => '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
-            case t: JByteRef       => '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
-            case t: JCharacterRef  => '{ $out.value(${ aE.asExprOf[java.lang.Character] }) }
-            case t: JDoubleRef     => '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
-            case t: JFloatRef      => '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
-            case t: JIntegerRef    => '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
-            case t: JLongRef       => '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
-            case t: JShortRef      => '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
-            case t: JNumberRef     => '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
+            case t: JBigDecimalRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
+              else '{ $out.value(${ aE.asExprOf[java.math.BigDecimal] }) }
+            case t: JBigIntegerRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigInteger] }) }
+              else '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
+            case t: JBooleanRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Boolean] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
+            case t: JByteRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Byte] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
+            case t: JCharacterRef =>
+              '{ $out.value(${ aE.asExprOf[java.lang.Character] }) }
+            case t: JDoubleRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Double] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
+            case t: JFloatRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Float] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
+            case t: JIntegerRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Integer] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
+            case t: JLongRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Long] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
+            case t: JShortRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Short] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
+            case t: JNumberRef =>
+              if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Number] }) }
+              else '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
 
             case t: DurationRef       => '{ $out.value(${ aE.asExprOf[java.time.Duration] }) }
             case t: InstantRef        => '{ $out.value(${ aE.asExprOf[java.time.Instant] }) }
@@ -728,7 +820,9 @@ object JsonCodecMaker:
                 case Some(list) if list.contains(t.name) => true
                 case _                                   => false
               val rtype = t.expr
-              if enumAsId then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) }
+              if enumAsId then
+                if isMapKey then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) } // stringified id
+                else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) } // int value of id
               else '{ $out.value($aE.toString) }
 
             // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
@@ -868,7 +962,8 @@ object JsonCodecMaker:
         // default: Expr[T], // needed?  This should already be in ref...
         ref: RTypeRef[T],
         in: Expr[JsonSource],
-        inTuple: Boolean = false // not sure if needed...
+        inTuple: Boolean = false, // not sure if needed...
+        isMapKey: Boolean = false
     )(using Quotes): Expr[T] =
       val methodKey = MethodKey(ref, false)
       readMethodSyms
@@ -880,21 +975,37 @@ object JsonCodecMaker:
           ref match
             // First cover all primitive and simple types...
             case t: BigDecimalRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case s    => scala.math.BigDecimal(s)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case s    => scala.math.BigDecimal(s)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case s    => scala.math.BigDecimal(s)
+                }.asExprOf[T]
             case t: BigIntRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case s    => scala.math.BigInt(s)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case s    => scala.math.BigInt(s)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case s    => scala.math.BigInt(s)
+                }.asExprOf[T]
             case t: BooleanRef =>
-              '{ $in.expectBoolean() }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toBoolean }.asExprOf[T]
+              else '{ $in.expectBoolean() }.asExprOf[T]
             case t: ByteRef =>
-              '{ $in.expectInt().toByte }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toInt.toByte }.asExprOf[T]
+              else '{ $in.expectInt().toByte }.asExprOf[T]
             case t: CharRef =>
               '{
                 $in.expectString() match
@@ -911,38 +1022,65 @@ object JsonCodecMaker:
                   case c => c.charAt(0)
               }.asExprOf[T]
             case t: DoubleRef =>
-              '{ $in.expectDouble() }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toDouble }.asExprOf[T]
+              else '{ $in.expectDouble() }.asExprOf[T]
             case t: FloatRef =>
-              '{ $in.expectFloat() }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toFloat }.asExprOf[T]
+              else '{ $in.expectFloat() }.asExprOf[T]
             case t: IntRef =>
-              '{ $in.expectInt() }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toInt }.asExprOf[T]
+              else '{ $in.expectInt() }.asExprOf[T]
             case t: LongRef =>
-              '{ $in.expectLong() }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toLong }.asExprOf[T]
+              else '{ $in.expectLong() }.asExprOf[T]
             case t: ShortRef =>
-              '{ $in.expectInt().toShort }.asExprOf[T]
+              if isMapKey then '{ $in.expectString().toShort }.asExprOf[T]
+              else '{ $in.expectInt().toShort }.asExprOf[T]
             case t: StringRef =>
               '{ $in.expectString() }.asExprOf[T]
 
             case t: JBigDecimalRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => new java.math.BigDecimal(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => new java.math.BigDecimal(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => new java.math.BigDecimal(n)
+                }.asExprOf[T]
             case t: JBigIntegerRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => new java.math.BigInteger(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => new java.math.BigInteger(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => new java.math.BigInteger(n)
+                }.asExprOf[T]
             case t: JBooleanRef =>
-              '{ $in.expectJavaBoolean() }.asExprOf[T]
+              if isMapKey then '{ java.lang.Boolean.valueOf($in.expectString()) }.asExprOf[T]
+              else '{ $in.expectJavaBoolean() }.asExprOf[T]
             case t: JByteRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Byte.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Byte.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Byte.valueOf(n)
+                }.asExprOf[T]
             case t: JCharacterRef =>
               '{
                 val c = $in.expectString()
@@ -954,50 +1092,101 @@ object JsonCodecMaker:
                 else java.lang.Character.valueOf(c.charAt(0))
               }.asExprOf[T]
             case t: JDoubleRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Double.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Double.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Double.valueOf(n)
+                }.asExprOf[T]
             case t: JFloatRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Float.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Float.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Float.valueOf(n)
+                }.asExprOf[T]
             case t: JIntegerRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Integer.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Integer.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Integer.valueOf(n)
+                }.asExprOf[T]
             case t: JLongRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Long.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Long.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Long.valueOf(n)
+                }.asExprOf[T]
             case t: JShortRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n    => java.lang.Short.valueOf(n)
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n    => java.lang.Short.valueOf(n)
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n    => java.lang.Short.valueOf(n)
+                }.asExprOf[T]
             case t: JNumberRef =>
-              '{
-                $in.expectNumberOrNull() match
-                  case null => null
-                  case n =>
-                    scala.math.BigDecimal(n) match {
-                      case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
-                      case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
-                      case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
-                      case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
-                      case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
-                      case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                      case d                      => d
-                    }
-              }.asExprOf[T]
+              if isMapKey then
+                '{
+                  $in.expectString() match
+                    case null => null
+                    case n =>
+                      scala.math.BigDecimal(n) match {
+                        case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                        case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                        case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                        case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                        case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
+                        case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
+                        case d                      => d
+                      }
+                }.asExprOf[T]
+              else
+                '{
+                  $in.expectNumberOrNull() match
+                    case null => null
+                    case n =>
+                      scala.math.BigDecimal(n) match {
+                        case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                        case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                        case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                        case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                        case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
+                        case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
+                        case d                      => d
+                      }
+                }.asExprOf[T]
 
             case t: DurationRef       => '{ $in.expectString(java.time.Duration.parse) }.asExprOf[T]
             case t: InstantRef        => '{ $in.expectString(java.time.Instant.parse) }.asExprOf[T]
@@ -1029,11 +1218,16 @@ object JsonCodecMaker:
               else
                 t.unwrappedType.refType match
                   case '[e] =>
-                    genReadVal[e](
-                      t.unwrappedType.asInstanceOf[RTypeRef[e]],
-                      in,
-                      inTuple
-                    ).asExprOf[T]
+                    '{
+                      ${
+                        genReadVal[e](
+                          t.unwrappedType.asInstanceOf[RTypeRef[e]],
+                          in,
+                          inTuple,
+                          isMapKey
+                        )
+                      }.asInstanceOf[T]
+                    }
 
             // --------------------
             //  Options...
@@ -1069,30 +1263,25 @@ object JsonCodecMaker:
                                   $in.retract()
                                   throw JsonParseError("Failed to read either side of Either type", $in)
                       }.asExprOf[T]
-            /*
-              Either:
-  def read(parser: Parser): Either[L, R] = {
-    val savedReader = parser.mark()
-    if (parser.peekForNull)
-      null
-    else
-      Try(rightTypeAdapter.read(parser)) match {
-        case Success(rightValue) =>
-          Right(rightValue.asInstanceOf[R])
-        case Failure(_) => // Right parse failed... try left
-          parser.revertToMark(savedReader)
-          Try(leftTypeAdapter.read(parser)) match {
-            case Success(leftValue) =>
-              Left(leftValue.asInstanceOf[L])
-            case Failure(x) =>
-              parser.backspace()
-              throw new ScalaJackError(
-                parser.showError(s"Failed to read either side of Either")
-              )
-          }
-      }
-  }
 
+            case t: LeftRightRef[?] if t.lrkind == LRKind.UNION =>
+              import quotes.reflect.*
+              t.leftRef.refType match
+                case '[l] =>
+                  t.rightRef.refType match
+                    case '[r] =>
+                      '{
+                        scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, true) }) match
+                          case Success(lval) => lval
+                          case Failure(f) =>
+                            scala.util.Try(${ genReadVal[r](t.rightRef.asInstanceOf[RTypeRef[r]], in, true) }) match
+                              case Success(rval) => rval
+                              case Failure(_) =>
+                                $in.retract()
+                                throw JsonParseError("Failed to read either side of Union type", $in)
+                      }.asExprOf[T]
+            /*
+            TODO
               Intersection:
 val syntheticTA = taCache.typeAdapterOf[L]
 syntheticTA.write(t.asInstanceOf[L], writer, out)
@@ -1248,6 +1437,24 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                     else null
                   }.asExprOf[T]
 
+            case t: MapRef[?] =>
+              t.elementRef.refType match
+                case '[k] =>
+                  t.elementRef2.refType match
+                    case '[v] =>
+                      testValidMapKey(t.elementRef)
+                      '{
+                        if $in.expectNull() then null
+                        else
+                          $in.expectToken('{')
+                          $in.parseMap[k, v](
+                            () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                            () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                            Map.empty[k, v],
+                            true
+                          )
+                      }.asExprOf[T]
+
             // --------------------
             //  Tuples...
             // --------------------
@@ -1275,24 +1482,21 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                         tpart.refType match
                           case '[e] =>
                             if i == 0 then genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true).asTerm
-                            else if i < t.tupleRefs.length - 1 then
+                            else
                               '{
                                 $in.expectToken(',')
                                 ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
                               }.asTerm
-                            else
-                              '{
-                                $in.expectToken(',')
-                                val res = ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
-                                $in.expectToken(']')
-                                res
-                              }.asTerm
                       }
                   '{
-                    $in.expectToken('[')
-                    ${
-                      Apply(TypeApply(Select.unique(New(Inferred(tpe)), "<init>"), indexedTypes.map(x => Inferred(x))), tupleTerms).asExpr
-                    }
+                    if $in.expectNull() then null
+                    else
+                      $in.expectToken('[')
+                      val tv: T = ${
+                        Apply(TypeApply(Select.unique(New(Inferred(tpe)), "<init>"), indexedTypes.map(x => Inferred(x))), tupleTerms).asExprOf[T]
+                      }
+                      $in.expectToken(']')
+                      tv
                   }.asExprOf[T]
 
             case _ =>
@@ -1328,5 +1532,5 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
       // others here???  Refer to Jsoniter file JsonCodecMaker.scala
       classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs
     val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
-    println(s"Codec: ${codec.show}")
+    // println(s"Codec: ${codec.show}")
     codec

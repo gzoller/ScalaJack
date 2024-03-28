@@ -126,6 +126,23 @@ case class JsonSource(js: CharSequence):
     if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
     fieldNameMatrix.first(bs)
 
+  @tailrec
+  final def parseMap[K, V](kf: () => K, vf: () => V, acc: Map[K, V], isFirst: Boolean = true): Map[K, V] = // initial '{' already consumed
+    readToken() match
+      case '}' => acc
+      case ',' =>
+        val key = kf()
+        expectToken(':')
+        val value = vf()
+        parseMap[K, V](kf, vf, acc + (key -> value), false)
+      case _ if isFirst =>
+        retract()
+        val key = kf()
+        expectToken(':')
+        val value = vf()
+        parseMap[K, V](kf, vf, acc + (key -> value), false)
+      case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
+
   // Array and Tuple...
   // =======================================================
 

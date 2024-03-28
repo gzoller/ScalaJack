@@ -1,0 +1,73 @@
+package co.blocke.scalajack
+package json
+package misc
+
+import ScalaJack.*
+import co.blocke.scala_reflection.*
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers.*
+import org.scalatest.*
+import scala.util.*
+import TestUtil.*
+
+import java.util.UUID
+
+class TrySpec() extends AnyFunSpec with JsonMatchers:
+
+  describe(colorString("-------------------------------\n:          Try Tests          :\n-------------------------------", Console.YELLOW)) {
+    describe(colorString("+++ Positive Tests +++")) {
+      it("Try must work (Success)") {
+        val inst = TryHolder(Success(15))
+        val js = sj[TryHolder[Int]].toJson(inst)
+        js should matchJson("""{"a":15}""")
+      }
+      it("Try of Option (non-None) must work (Success)") {
+        val inst = TryHolder[Option[Int]](Success(Some(15)))
+        val js = sj[TryHolder[Option[Int]]].toJson(inst)
+        js should matchJson("""{"a":15}""")
+      }
+      it("Try of Option (None) must work (Success)") {
+        val inst = TryHolder[Option[Int]](Success(None))
+        val js = sj[TryHolder[Option[Int]]].toJson(inst)
+        js should matchJson("""{}""")
+      }
+      it("Try w/policy AS_NULL must work (Failure)") {
+        val inst = TryHolder[Int](Failure(new Exception("boom")))
+        val js = sj[TryHolder[Int]](JsonConfig.withTryFailureHandling(TryPolicy.AS_NULL)).toJson(inst)
+        js should matchJson("""{"a":null}""")
+      }
+      it("Try w/policy NO_WRITE must work (Failure)") {
+        val inst = TryHolder[Int](Failure(new Exception("boom")))
+        val js = sj[TryHolder[Int]](JsonConfig.withTryFailureHandling(TryPolicy.NO_WRITE)).toJson(inst)
+        js should matchJson("""{}""")
+      }
+      it("Try w/policy ERR_MSG_STRING must work (Failure)") {
+        val inst = TryHolder[Int](Failure(new Exception("boom")))
+        val js = sj[TryHolder[Int]](JsonConfig.withTryFailureHandling(TryPolicy.ERR_MSG_STRING)).toJson(inst)
+        js should matchJson("""{"a":"Try Failure with msg: boom"}""")
+      }
+      it("Try w/policy ATHROW_EXCEPTIONS_NULL must work (Failure)") {
+        val inst = TryHolder[Int](Failure(new Exception("boom")))
+        val caught =
+          intercept[java.lang.Exception] {
+            sj[TryHolder[Int]](JsonConfig.withTryFailureHandling(TryPolicy.THROW_EXCEPTION)).toJson(inst)
+          }
+        assert(caught.getMessage == "boom")
+      }
+      it("Seq and Tuple of Try must work for AS_NULL (Failure)") {
+        val inst = TryHolder2[Int](List(Success(1), Failure(new Exception("boom")), Success(3)), (Failure(new Exception("boom")), Success(0)))
+        val js = sj[TryHolder2[Int]](JsonConfig.withTryFailureHandling(TryPolicy.AS_NULL)).toJson(inst)
+        js should matchJson("""{"a":[1,null,3],"b":[null,0]}""")
+      }
+      it("Seq and Tuple of Try must work for NO_WRITE (Failure)") {
+        val inst = TryHolder2[Int](List(Success(1), Failure(new Exception("boom")), Success(3)), (Failure(new Exception("boom")), Success(0)))
+        val js = sj[TryHolder2[Int]](JsonConfig.withTryFailureHandling(TryPolicy.NO_WRITE)).toJson(inst)
+        js should matchJson("""{"a":[1,3],"b":[null,0]}""")
+      }
+      it("Seq and Tuple of Try of an Option must work for NO_WRITE (Failure)") {
+        val inst = TryHolder2[Option[Int]](List(Success(None), Failure(new Exception("boom")), Success(Some(3))), (Failure(new Exception("boom")), Success(None)))
+        val js = sj[TryHolder2[Option[Int]]](JsonConfig.withTryFailureHandling(TryPolicy.NO_WRITE)).toJson(inst)
+        js should matchJson("""{"a":[3],"b":[null,null]}""")
+      }
+    }
+  }
