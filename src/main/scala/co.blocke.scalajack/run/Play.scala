@@ -74,11 +74,25 @@ object RunMe extends App:
   // val c: Pizza = ScalaJack[Pizza].fromJson("\"READY\"")
   // println("Pizza: " + c)
 
-  opaque type OnOff = Boolean
-  opaque type Counter = Short
-
-  val m: Map[OnOff, Counter] = Map(true.asInstanceOf[OnOff] -> 1.asInstanceOf[Counter])
-  val n: Map[Boolean, Short] = m.asInstanceOf[Map[Boolean, Short]]
-  println(n)
+  implicit val blah: ScalaJack[Decide] = sjCodecOf[Decide]
+  //                                            012345678
+  val c: Decide = ScalaJack[Decide].fromJson("""{"a":[1,2,3]}""")
+  println(c)
 
   println("done.")
+
+  /*
+
+  Option[Left(5)] -> None
+
+  Either[Err,Option[String]]
+
+  Left-Policy                Class Field           Option-Wrapped          In Collection            In Tuple
+  ----------------           --------------        ---------------         ---------------          ------------
+  NO_WRITE                    Null                  None                    ()                      Null  <-- KILL NO_WRITE!!  A symantic mess!
+  AS_VALUE                    Value                 Value                   Value                   Value
+  AS_NULL                     Null                  Null                    Null                    Null
+  ERR_MSG_STRING              Err string            Err String              Err String              Err String
+  THROW_EXCEPTION             Throw Exception       Throw Exception         Throw Exception         Throw Excpeiton
+
+   */

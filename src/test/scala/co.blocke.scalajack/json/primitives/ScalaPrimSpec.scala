@@ -204,7 +204,7 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         val js =
           """{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123.4567}"""
         val msg =
-          """Expected ',' or '}' but found E at position [25]
+          """Expected ',' or '}' but found 'E' at position [25]
                   |{"d1":1.79769313486E23157E308,"d2":-1.7976931348623157E308,"d3":0.0,"d4":-123...
                   |-------------------------^""".stripMargin
         val ex = intercept[JsonParseError](sjCodecOf[SampleDouble].fromJson(js))
@@ -251,7 +251,7 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         val js2 =
           """{"l1":9223372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}"""
         val msg2 =
-          """Expected ',' or '}' but found . at position [58]
+          """Expected ',' or '}' but found '.' at position [58]
             |...3372036854775807,"l2":-9223372036854775808,"l3":0.3,"l4":123}
             |----------------------------------------------------^""".stripMargin
         val ex2 = intercept[JsonParseError](sj.fromJson(js2))

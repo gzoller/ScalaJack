@@ -10,7 +10,7 @@ import reading.JsonSource
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
 import scala.reflect.ClassTag
-import scala.annotation.switch
+import scala.annotation.{switch, tailrec}
 import scala.collection.Factory
 import scala.util.{Failure, Success, Try}
 import dotty.tools.dotc.ast.Trees.EmptyTree
@@ -176,7 +176,6 @@ object JsonCodecMaker:
                             $prefix
                             $out.burpNull()
                           }
-                        case TryPolicy.NO_WRITE => '{ () }
                         case TryPolicy.ERR_MSG_STRING =>
                           '{
                             $prefix
@@ -193,13 +192,6 @@ object JsonCodecMaker:
               t.rightRef.refType match
                 case '[rt] =>
                   cfg.eitherLeftHandling match
-                    case EitherLeftPolicy.NO_WRITE =>
-                      '{
-                        if $tin == null then $out.burpNull()
-                        $tin match
-                          case Left(_)  => ()
-                          case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
-                      }
                     case EitherLeftPolicy.AS_NULL =>
                       '{
                         if $tin == null then $out.burpNull()
@@ -231,10 +223,12 @@ object JsonCodecMaker:
                           '{
                             if $tin == null then $out.burpNull()
                             $tin match
-                              case Left(v)  => ${ _maybeWrite[lt](prefix, '{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
-                              case Right(v) => ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
+                              case Left(v) =>
+                                ${ _maybeWrite[lt](prefix, '{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
+                              case Right(v) =>
+                                ${ _maybeWrite[rt](prefix, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
                           }
-        case t: LeftRightRef[?] if !cfg.noneAsNull && t.lrkind != LRKind.EITHER && (t.leftRef.isInstanceOf[OptionRef[_]] || t.rightRef.isInstanceOf[OptionRef[_]]) =>
+        case t: LeftRightRef[?] if t.lrkind != LRKind.EITHER =>
           t.refType match
             case '[e] =>
               t.rightRef.refType match
@@ -243,14 +237,14 @@ object JsonCodecMaker:
                     case '[lt] =>
                       val tin = aE.asExprOf[e]
                       '{
-                        if $tin == None then ()
+                        if $tin == null then $out.burpNull()
                         else
                           $out.mark()
                           scala.util.Try {
                             ${ _maybeWrite[rt](prefix, '{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, cfg) }
                           } match
                             case scala.util.Success(_) => ()
-                            case scala.util.Failure(_) =>
+                            case scala.util.Failure(f) =>
                               $out.revert()
                               ${ _maybeWrite[lt](prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
                       }
@@ -616,15 +610,6 @@ object JsonCodecMaker:
                                   case Right(v) =>
                                     ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                             }
-                          case EitherLeftPolicy.NO_WRITE =>
-                            '{
-                              if $tin == null then $out.burpNull()
-                              else
-                                $tin match
-                                  case Left(v) => ()
-                                  case Right(v) =>
-                                    ${ genWriteVal[rt]('{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                            }
                           case EitherLeftPolicy.ERR_MSG_STRING =>
                             '{
                               if $tin == null then $out.burpNull()
@@ -671,7 +656,6 @@ object JsonCodecMaker:
                             cfg.tryFailureHandling match
                               case _ if inTuple              => '{ $out.burpNull() }
                               case TryPolicy.AS_NULL         => '{ $out.burpNull() }
-                              case TryPolicy.NO_WRITE        => '{ () }
                               case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage()) }
                               case TryPolicy.THROW_EXCEPTION => '{ throw v }
                           }
@@ -860,6 +844,16 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
+    def lrHasOptionChild(lr: LeftRightRef[?]): String =
+      lr.rightRef match
+        case t: OptionRef[?]    => "r"
+        case t: LeftRightRef[?] => "r" + lrHasOptionChild(t)
+        case _ =>
+          lr.leftRef match
+            case t: OptionRef[?]    => "l"
+            case t: LeftRightRef[?] => "l" + lrHasOptionChild(t)
+            case _                  => ""
+
     def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
       import quotes.reflect.*
 
@@ -905,11 +899,31 @@ object JsonCodecMaker:
                       // if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       if dvMembers.isEmpty then
                         // no default... required?  Not if Option/Optional, or a collection
-                        oneField.fieldRef match {
-                          case _: OptionRef[?] => // not required
-                          case _               => required = required | math.pow(2, oneField.index).toInt // required
+                        val unitVal = oneField.fieldRef match {
+                          case _: OptionRef[?] =>
+                            oneField.fieldRef.unitVal.asTerm // not required
+                          case r: LeftRightRef[?] if r.lrkind == LRKind.EITHER => // maybe required
+                            val optionRecipe = lrHasOptionChild(r)
+                            if optionRecipe.length == 0 then
+                              required = required | math.pow(2, oneField.index).toInt // required
+                              oneField.fieldRef.unitVal.asTerm
+                            else
+                              val recipeE = Expr(optionRecipe)
+                              '{
+                                $recipeE.foldRight(None: Any)((c, acc) => if c == 'r' then Right(acc) else Left(acc)).asInstanceOf[f]
+                              }.asTerm
+                          case r: LeftRightRef[?] => // maybe required
+                            val optionRecipe = lrHasOptionChild(r)
+                            if optionRecipe.length == 0 then // no Option children -> required
+                              required = required | math.pow(2, oneField.index).toInt // required
+                              oneField.fieldRef.unitVal.asTerm
+                            else // at least one Option child -> optional
+                              '{ None }.asTerm
+                          case _ =>
+                            required = required | math.pow(2, oneField.index).toInt // required
+                            oneField.fieldRef.unitVal.asTerm
                         }
-                        (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
+                        (ValDef(sym, Some(unitVal)), caseDef, fieldSymRef)
                       else
                         val methodSymbol = dvMembers.head
                         val dvSelectNoTArgs = Ref(companionModule).select(methodSymbol)
@@ -1010,14 +1024,14 @@ object JsonCodecMaker:
               '{
                 $in.expectString() match
                   case null =>
-                    $in.retract()
-                    $in.retract()
-                    $in.retract()
-                    $in.retract()
+                    $in.backspace()
+                    $in.backspace()
+                    $in.backspace()
+                    $in.backspace()
                     throw JsonParseError("Char value cannot be null", $in)
                   case "" =>
-                    $in.retract()
-                    $in.retract()
+                    $in.backspace()
+                    $in.backspace()
                     throw JsonParseError("Char value expected but empty string found in json", $in)
                   case c => c.charAt(0)
               }.asExprOf[T]
@@ -1086,8 +1100,8 @@ object JsonCodecMaker:
                 val c = $in.expectString()
                 if c == null then null
                 else if c.length == 0 then
-                  $in.retract()
-                  $in.retract()
+                  $in.backspace()
+                  $in.backspace()
                   throw JsonParseError("Character value expected but empty string found in json", $in)
                 else java.lang.Character.valueOf(c.charAt(0))
               }.asExprOf[T]
@@ -1257,10 +1271,11 @@ object JsonCodecMaker:
                             case Success(rval) =>
                               Right(rval)
                             case Failure(f) =>
+                              $in.revertToMark()
                               scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, inTuple) }) match
                                 case Success(lval) => Left(lval)
                                 case Failure(_) =>
-                                  $in.retract()
+                                  $in.backspace()
                                   throw JsonParseError("Failed to read either side of Either type", $in)
                       }.asExprOf[T]
 
@@ -1271,13 +1286,15 @@ object JsonCodecMaker:
                   t.rightRef.refType match
                     case '[r] =>
                       '{
+                        $in.mark()
                         scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, true) }) match
                           case Success(lval) => lval
                           case Failure(f) =>
+                            $in.revertToMark()
                             scala.util.Try(${ genReadVal[r](t.rightRef.asInstanceOf[RTypeRef[r]], in, true) }) match
                               case Success(rval) => rval
                               case Failure(_) =>
-                                $in.retract()
+                                $in.backspace()
                                 throw JsonParseError("Failed to read either side of Union type", $in)
                       }.asExprOf[T]
             /*

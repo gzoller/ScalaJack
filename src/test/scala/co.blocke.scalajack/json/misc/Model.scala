@@ -28,6 +28,7 @@ case class LRUnionHolder[T, U](a: Seq[T | U], b: (T | U, T | U))
 case class EitherHolder[T](a: Either[T, String], b: Either[String, T])
 
 case class ComplexEither[T](a: Option[Either[String, Option[T]]])
+case class EitherRecipe[T](a: Either[Boolean, Either[Option[T], String]])
 
 case class AliasHolder[T](a: T, b: List[T], c: Map[T, String], d: Map[String, T])
 case class AliasHolder2[T](a: T, b: List[T], c: Map[String, T])

@@ -100,7 +100,7 @@ case class Person2(age: XList)
 
 case class Foom(a: schema.Schema)
 
-case class Group(t: (Int, String, Boolean))
+case class Decide(a: List[Int])
 
 sealed trait Candy:
   val isSweet: Boolean

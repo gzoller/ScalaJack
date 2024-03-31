@@ -589,7 +589,7 @@ object UnsafeNumbers {
     }
 
     if !isDigit(current) then
-      in.retract()
+      in.backspace()
       throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in)
 
     var accum: Long = 0L
@@ -632,7 +632,7 @@ object UnsafeNumbers {
       while i < len do {
         current = in.readChar()
         if current != s(i) then
-          in.retract()
+          in.backspace()
           throw JsonParseError("Unexpected character in Int/Long value: " + current.toChar, in)
         i += 1
       }
@@ -817,7 +817,7 @@ object UnsafeNumbers {
     }
 
     if sig < 0 then
-      in.retract()
+      in.backspace()
       throw JsonParseError("Malformed Float/Double/BigDecimal", in) // no significand
 
     if current == 'E' || current == 'e' then exp = int_(in, consume)

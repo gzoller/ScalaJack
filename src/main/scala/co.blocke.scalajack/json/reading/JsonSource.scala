@@ -27,9 +27,10 @@ case class JsonSource(js: CharSequence):
 
   inline def here = js.charAt(i)
 
-  inline def retract() = i -= 1
+  inline def backspace() = i -= 1
 
   inline def mark() = _mark = i
+  inline def revertToMark() = i = _mark
   inline def captureMark(): String = js.subSequence(_mark, i).toString
 
   @tailrec
@@ -49,7 +50,7 @@ case class JsonSource(js: CharSequence):
       i += 1
       if !(b == ' ' || b == '\n' || b == '\t' || (b | 0x4) == '\r') then
         if b != t then
-          retract()
+          backspace()
           throw JsonParseError(s"Expected '$t' here", this)
         else ()
       else expectToken(t)
@@ -59,7 +60,7 @@ case class JsonSource(js: CharSequence):
       readChars(JsonSource.ull, "null")
       true
     else
-      retract()
+      backspace()
       false
 
   // Enum...
@@ -67,7 +68,7 @@ case class JsonSource(js: CharSequence):
   def expectEnum(): Int | String =
     readToken() match
       case t if t >= '0' && t <= '9' =>
-        retract()
+        backspace()
         expectInt()
       case t if t == '"' =>
         val endI = parseString(i)
@@ -108,8 +109,8 @@ case class JsonSource(js: CharSequence):
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
     else if t == '}' then None
     else
-      retract()
-      throw new JsonParseError(s"Expected ',' or '}' but found $t", this)
+      backspace()
+      throw new JsonParseError(s"Expected ',' or '}' but found '$t'", this)
 
   final def parseObjectKey(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
     var fi: Int = 0
@@ -136,7 +137,7 @@ case class JsonSource(js: CharSequence):
         val value = vf()
         parseMap[K, V](kf, vf, acc + (key -> value), false)
       case _ if isFirst =>
-        retract()
+        backspace()
         val key = kf()
         expectToken(':')
         val value = vf()
@@ -147,23 +148,21 @@ case class JsonSource(js: CharSequence):
   // =======================================================
 
   @tailrec
-  final private def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E): scala.collection.mutable.ListBuffer[E] =
+  final private def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E, isFirst: Boolean): scala.collection.mutable.ListBuffer[E] =
     if i == max then throw JsonParseError("Unexpected end of buffer", this)
-    s.addOne(f())
     val tt = readToken()
-    if tt == ']' then
-      retract()
-      s
-    else if tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
-    else addAllArray(s, f)
+    if tt == ']' then s
+    else if !isFirst && tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
+    else
+      if isFirst then backspace()
+      s.addOne(f())
+      addAllArray(s, f, false)
 
   def expectArray[E](f: () => E): scala.collection.mutable.ListBuffer[E] =
     val t = readToken()
     if t == '[' then
       val seq = scala.collection.mutable.ListBuffer.empty[E]
-      skipWS()
-      addAllArray(seq, f)
-      i += 1
+      addAllArray(seq, f, true)
       seq
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
@@ -285,7 +284,7 @@ case class JsonSource(js: CharSequence):
       readChars(JsonSource.ull, "null")
       null.asInstanceOf[java.lang.Boolean]
     else
-      retract()
+      backspace()
       throw JsonParseError(s"Expected 'true', 'false', or null here", this)
 
   // Characters...
@@ -324,12 +323,12 @@ case class JsonSource(js: CharSequence):
 
   def expectFloat(): Float =
     val result = UnsafeNumbers.float_(this, false, 32)
-    retract()
+    backspace()
     result
 
   def expectDouble(): Double =
     val result = UnsafeNumbers.double_(this, false, 64)
-    retract()
+    backspace()
     result
 
   def expectNumberOrNull(): String =
@@ -341,7 +340,7 @@ case class JsonSource(js: CharSequence):
       readChars(JsonSource.ull, "null")
       null
     else
-      retract()
+      backspace()
       throw new JsonParseError("Expected a numerical value or null here", this)
 
   def expectInt(): Int =
@@ -351,7 +350,7 @@ case class JsonSource(js: CharSequence):
       b = readChar()
       s = 0
     if b < '0' || b > '9' then
-      retract()
+      backspace()
       throw JsonParseError("Non-numeric character found when integer value expected", this)
     var x = '0' - b
     while { b = readChar(); b >= '0' && b <= '9' } do
@@ -364,14 +363,14 @@ case class JsonSource(js: CharSequence):
     x -= s
     if (s & x) == -2147483648 then throw JsonParseError("Integer value overflow", this)
     if (b | 0x20) == 'e' || b == '.' then
-      retract()
+      backspace()
       throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
-    retract()
+    backspace()
     x
 
   def expectLong(): Long =
     val result = UnsafeNumbers.long_(this, false)
-    retract()
+    backspace()
     result
 
   // Skip things...
@@ -399,7 +398,7 @@ case class JsonSource(js: CharSequence):
 
   @tailrec
   final def skipNumber(): Unit =
-    if !isNumber(readChar()) then retract()
+    if !isNumber(readChar()) then backspace()
     else skipNumber()
 
   @tailrec

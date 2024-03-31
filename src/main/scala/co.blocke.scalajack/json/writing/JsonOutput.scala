@@ -14,6 +14,7 @@ case class JsonOutput():
 
   private var comma: Boolean = false
   private var savePoint: Int = 0
+  private var saveComma: Boolean = false
 
   def result = internal.result
 
@@ -21,13 +22,16 @@ case class JsonOutput():
     internal.clear()
     comma = false
     savePoint = 0
+    saveComma = false
     this
 
   def mark() =
     savePoint = internal.length
+    saveComma = comma
 
   def revert() = // delete everything after the set savePoint
     internal.setLength(savePoint)
+    comma = saveComma
 
   inline def startObject(): Unit =
     maybeComma()
@@ -60,6 +64,7 @@ case class JsonOutput():
     internal.append("null")
     comma = true
 
+    // Problem:  for unions, if left fails to write, comma is not reset to true for the attempt to write right side
   inline def label(s: String): Unit =
     maybeComma()
     internal.append('"')

@@ -8,11 +8,9 @@ import scala.quoted.*
 
 class JsonConfig private[scalajack] (
     val noneAsNull: Boolean,
-    // val forbidNullsInInput: Boolean = false,
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
     // val undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
-    // val _allowQuotedPrimitives: Boolean,
     val writeNonConstructorFields: Boolean,
     // --------------------------
     val typeHintLabel: String,
@@ -31,7 +29,6 @@ class JsonConfig private[scalajack] (
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
   def suppressEscapedStrings(): JsonConfig = copy(_suppressEscapedStrings = true)
   def suppressTypeHints(): JsonConfig = copy(_suppressTypeHints = true)
-  // def allowQuotedPrimitives(): JsonConfig = copy(_allowQuotedPrimitives = true)
 
   private[this] def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -43,12 +40,10 @@ class JsonConfig private[scalajack] (
       enumsAsIds: Option[List[String]] = enumsAsIds,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
       _suppressTypeHints: Boolean = _suppressTypeHints
-      // _allowQuotedPrimitives: Boolean = _allowQuotedPrimitives
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
     eitherLeftHandling,
-    // _allowQuotedPrimitives,
     writeNonConstructorFields,
     typeHintLabel,
     typeHintPolicy,
@@ -58,10 +53,10 @@ class JsonConfig private[scalajack] (
   )
 
 enum TryPolicy:
-  case AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
+  case AS_NULL, ERR_MSG_STRING, THROW_EXCEPTION
 
 enum EitherLeftPolicy:
-  case AS_VALUE, AS_NULL, NO_WRITE, ERR_MSG_STRING, THROW_EXCEPTION
+  case AS_VALUE, AS_NULL, ERR_MSG_STRING, THROW_EXCEPTION
 
 // enum UndefinedValueOption:
 //   case AS_NULL, AS_SYMBOL, THROW_EXCEPTION
@@ -72,9 +67,8 @@ enum TypeHintPolicy:
 object JsonConfig
     extends JsonConfig(
       noneAsNull = false,
-      tryFailureHandling = TryPolicy.NO_WRITE,
-      eitherLeftHandling = EitherLeftPolicy.NO_WRITE,
-      // _allowQuotedPrimitives = false writeNonConstructorFields = true,
+      tryFailureHandling = TryPolicy.AS_NULL,
+      eitherLeftHandling = EitherLeftPolicy.AS_VALUE,
       writeNonConstructorFields = false,
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
@@ -94,7 +88,6 @@ object JsonConfig
           .withTypeHintLabel(${ Expr(x.typeHintLabel) })
           .withTypeHintPolicy(${ Expr(x.typeHintPolicy) })
           .withEnumsAsIds(${ Expr(x.enumsAsIds) })
-        // .allowQuotedPrimitives(${ Expr(x._allowQuotedPrimitives) })
         val jc2 = ${
           if x.noneAsNull then '{ jc.withNoneAsNull() }
           else '{ jc }
@@ -124,12 +117,9 @@ object JsonConfig
         case '{
               JsonConfig(
                 $noneAsNullE,
-                // $forbitNullsInInputE,
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
-                // $allowQuotedPrimitivesE,
                 // $undefinedFieldHandlingE,
-                // $permissivePrimitivesE,
                 $writeNonConstructorFieldsE,
                 $typeHintLabelE,
                 $typeHintPolicyE,
@@ -142,14 +132,9 @@ object JsonConfig
             Some(
               JsonConfig(
                 extract("noneAsNull", noneAsNullE),
-                // extract("forbitNullsInInput", forbitNullsInInputE),
                 extract("tryFailureHandler", tryFailureHandlerE),
                 extract("eitherLeftHandler", eitherLeftHandlerE),
-                // extract("_allowQuotedPrimitives", allowQuotedPrimtiviesE),
-                // extract("undefinedFieldHandling", undefinedFieldHandlingE),
-                // extract("permissivePrimitives", permissivePrimitivesE),
                 extract("writeNonConstructorFields", writeNonConstructorFieldsE),
-                // extract2[String]("typeHintLabel", x)
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
                 extract("enumsAsIds", enumsAsIdsE),
@@ -162,11 +147,10 @@ object JsonConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ JsonConfig }                                  => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull() }           => Some(x.valueOrAbort.withNoneAsNull())
-        case '{ ($x: JsonConfig).withTryFailureHandling($v) } => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEitherLeftHandling($v) } => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
-        // case '{ ($x: JsonConfig).allowQuotedPrimitives() }           => Some(x.valueOrAbort.allowQuotedPrimities())
+        case '{ JsonConfig }                                         => Some(JsonConfig)
+        case '{ ($x: JsonConfig).withNoneAsNull() }                  => Some(x.valueOrAbort.withNoneAsNull())
+        case '{ ($x: JsonConfig).withTryFailureHandling($v) }        => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }        => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
         case '{ ($x: JsonConfig).withWriteNonConstructorFields($v) } => Some(x.valueOrAbort.withWriteNonConstructorFields(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
         case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
@@ -180,7 +164,6 @@ object JsonConfig
       x match
         case TryPolicy.AS_NULL         => '{ TryPolicy.AS_NULL }
         case TryPolicy.ERR_MSG_STRING  => '{ TryPolicy.ERR_MSG_STRING }
-        case TryPolicy.NO_WRITE        => '{ TryPolicy.NO_WRITE }
         case TryPolicy.THROW_EXCEPTION => '{ TryPolicy.THROW_EXCEPTION }
   }
 
@@ -190,7 +173,6 @@ object JsonConfig
         case EitherLeftPolicy.AS_VALUE        => '{ EitherLeftPolicy.AS_VALUE }
         case EitherLeftPolicy.AS_NULL         => '{ EitherLeftPolicy.AS_NULL }
         case EitherLeftPolicy.ERR_MSG_STRING  => '{ EitherLeftPolicy.ERR_MSG_STRING }
-        case EitherLeftPolicy.NO_WRITE        => '{ EitherLeftPolicy.NO_WRITE }
         case EitherLeftPolicy.THROW_EXCEPTION => '{ EitherLeftPolicy.THROW_EXCEPTION }
   }
 
@@ -207,7 +189,6 @@ object JsonConfig
       import quotes.reflect.*
       x match
         case '{ TryPolicy.AS_NULL }         => Some(TryPolicy.AS_NULL)
-        case '{ TryPolicy.NO_WRITE }        => Some(TryPolicy.NO_WRITE)
         case '{ TryPolicy.ERR_MSG_STRING }  => Some(TryPolicy.ERR_MSG_STRING)
         case '{ TryPolicy.THROW_EXCEPTION } => Some(TryPolicy.THROW_EXCEPTION)
   }
@@ -218,7 +199,6 @@ object JsonConfig
       x match
         case '{ EitherLeftPolicy.AS_VALUE }        => Some(EitherLeftPolicy.AS_VALUE)
         case '{ EitherLeftPolicy.AS_NULL }         => Some(EitherLeftPolicy.AS_NULL)
-        case '{ EitherLeftPolicy.NO_WRITE }        => Some(EitherLeftPolicy.NO_WRITE)
         case '{ EitherLeftPolicy.ERR_MSG_STRING }  => Some(EitherLeftPolicy.ERR_MSG_STRING)
         case '{ EitherLeftPolicy.THROW_EXCEPTION } => Some(EitherLeftPolicy.THROW_EXCEPTION)
   }

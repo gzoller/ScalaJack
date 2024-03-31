@@ -144,7 +144,6 @@ object AnyWriter:
       case Failure(e) =>
         cfg.tryFailureHandling match
           case TryPolicy.AS_NULL         => Some("null")
-          case TryPolicy.NO_WRITE        => None
           case TryPolicy.ERR_MSG_STRING  => Some("Try Failure with msg: " + e.getMessage())
           case TryPolicy.THROW_EXCEPTION => throw e
 
@@ -152,7 +151,6 @@ object AnyWriter:
         cfg.eitherLeftHandling match
           case EitherLeftPolicy.AS_VALUE        => Some(v)
           case EitherLeftPolicy.AS_NULL         => Some("null")
-          case EitherLeftPolicy.NO_WRITE        => None
           case EitherLeftPolicy.ERR_MSG_STRING  => Some("Left Error: " + v.toString)
           case EitherLeftPolicy.THROW_EXCEPTION => throw new JsonEitherLeftError("Left Error: " + v.toString)
       case Some(v) => isOkToWrite(v, cfg)
