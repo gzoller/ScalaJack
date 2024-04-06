@@ -14,7 +14,11 @@ case class SetHolder[T](a: Set[T])
 case class ArrayHolder[T](a: Array[T])
 
 case class MapHolder[T, V](a: Map[T, V])
-case class MMapHolder[T, V](a: scala.collection.mutable.Map[T, V])
+case class MapHolder2[T, V](a: scala.collection.immutable.HashMap[T, V]) // specific
+case class MapHolder3[T, V](a: scala.collection.immutable.SeqMap[T, V]) // open coersion
+case class MMapHolder[T, V](a: scala.collection.mutable.Map[T, V]) // specific
+case class MMapHolder2[T, V](a: scala.collection.mutable.HashMap[T, V]) // specific
+case class MMapHolder3[T, V](a: scala.collection.mutable.SeqMap[T, V]) // open coersion
 case class JMapHolder[T, V](a: JMap[T, V])
 
 class Distance(val meters: Double) extends AnyVal

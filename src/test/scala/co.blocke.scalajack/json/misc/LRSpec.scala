@@ -51,7 +51,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
         val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
-        sj.fromJson(js) shouldEqual (ComplexEither(Some(null)))
+        sj.fromJson(js) shouldEqual (ComplexEither(null))
       }
       it("Complex Either/Option must work (Left-AS_NULL, Option nullAsNull)") {
         val inst = ComplexEither[Int](Some(Left("err")))
@@ -110,19 +110,24 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       js should matchJson("""{"a":["x"],"b":["y",null]}""")
       sj.fromJson(js) shouldEqual LRUnionHolder[Option[Int], String](List("x"), ("y", None))
     }
-    // it("LR (union) must work with Try of Option (non-None)") {
-    // val inst = LRHolder[Try[Option[Int]], String](List(Success(Some(5)), "x"), ("y", Success(Some(10))))
-    // val js = sj[LRHolder[Try[Option[Int]], String]].toJson(inst)
-    // js should matchJson("""{"a":[5,"x"],"b":["y",10]}""")
-    // }
-    // it("LR (union) must work with Try of Option (Success(None))") {
-    // val inst = LRHolder[Try[Option[Int]], String](List(Success(None), "x"), ("y", Success(None)))
-    // val js = sj[LRHolder[Try[Option[Int]], String]].toJson(inst)
-    // js should matchJson("""{"a":["x"],"b":["y",null]}""")
-    // }
-    // it("LR (union) must work with Try of Option (Failure)") {
-    // val inst = LRHolder[Try[Option[Int]], String](List(Failure(new Exception("boom")), "x"), ("y", Failure(new Exception("boom2"))))
-    // val js = sj[LRHolder[Try[Option[Int]], String]].toJson(inst)
-    // js should matchJson("""{"a":["x"],"b":["y",null]}""")
-    // }
+    it("LR (union) must work with Try of Option (non-None)") {
+      val inst = LRUnionHolder[Try[Option[Int]], String](List(Success(Some(5)), "x"), ("y", Success(Some(10))))
+      val sj = sjCodecOf[LRUnionHolder[Try[Option[Int]], String]]
+      val js = sj.toJson(inst)
+      js should matchJson("""{"a":[5,"x"],"b":["y",10]}""")
+      sj.fromJson(js) shouldEqual (inst)
+    }
+    it("LR (union) must work with Try of Option (Success(None))") {
+      val inst = LRUnionHolder[Try[Option[Int]], String](List(Success(None), "x"), ("y", Success(None)))
+      val sj = sjCodecOf[LRUnionHolder[Try[Option[Int]], String]]
+      val js = sj.toJson(inst)
+      sj.fromJson(js) shouldEqual (LRUnionHolder(List("x"), ("y", null))) // None's get swallowed
+    }
+    it("LR (union) must work with Try of Option (Failure)") {
+      val inst = LRUnionHolder[Try[Option[Int]], String](List(Failure(new Exception("boom")), "x"), ("y", Failure(new Exception("boom2"))))
+      val sj = sjCodecOf[LRUnionHolder[Try[Option[Int]], String]]
+      val js = sj.toJson(inst)
+      js should matchJson("""{"a":[null,"x"],"b":["y",null]}""")
+      sj.fromJson(js) shouldEqual (LRUnionHolder(List(null, "x"), ("y", null))) // Left's come back as null
+    }
   }

@@ -17,7 +17,6 @@ object JsonSource:
 case class JsonSource(js: CharSequence):
 
   private var i = 0
-  private var _mark = 0
   val max = js.length
 
   // Navigation...
@@ -29,9 +28,8 @@ case class JsonSource(js: CharSequence):
 
   inline def backspace() = i -= 1
 
-  inline def mark() = _mark = i
-  inline def revertToMark() = i = _mark
-  inline def captureMark(): String = js.subSequence(_mark, i).toString
+  inline def revertToPos(p: Int) = i = p
+  inline def captureMark(mark: Int): String = js.subSequence(mark, i).toString
 
   @tailrec
   final def readToken(): Char =
@@ -97,7 +95,9 @@ case class JsonSource(js: CharSequence):
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
       null
-    else throw new JsonParseError(s"Expected object start '{' or null", this)
+    else
+      backspace()
+      throw new JsonParseError(s"Expected object start '{' or null", this)
 
   def expectObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
     val t = readToken()
@@ -175,7 +175,7 @@ case class JsonSource(js: CharSequence):
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
   inline def expectString(): String =
-    mark()
+    val mark = i
     val t = readToken()
     if t == '"' then
       val endI = parseString(i)
@@ -191,7 +191,7 @@ case class JsonSource(js: CharSequence):
       readChars(JsonSource.ull, "null")
       null
     else
-      i = _mark
+      i = mark
       throw new JsonParseError(s"Expected a String value but got '$t'", this)
 
   @tailrec
@@ -333,9 +333,9 @@ case class JsonSource(js: CharSequence):
 
   def expectNumberOrNull(): String =
     skipWS()
-    mark()
+    val mark = i
     skipNumber()
-    if i != _mark then captureMark()
+    if i != mark then captureMark(mark)
     else if readChar() == 'n' then
       readChars(JsonSource.ull, "null")
       null

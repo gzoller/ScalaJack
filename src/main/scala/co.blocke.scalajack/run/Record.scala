@@ -100,8 +100,6 @@ case class Person2(age: XList)
 
 case class Foom(a: schema.Schema)
 
-case class Decide(a: List[Int])
-
 sealed trait Candy:
   val isSweet: Boolean
 case class MMs(isSweet: Boolean) extends Candy
@@ -109,6 +107,8 @@ case class Musk(isSweet: Boolean) extends Candy
 case class Veggies(yuks: String)
 
 type Food = Candy | Veggies
+
+case class JJ(a: java.util.ArrayList[Int])
 
 val jsData =
   """{

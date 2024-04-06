@@ -17,6 +17,7 @@ import dotty.tools.dotc.ast.Trees.EmptyTree
 import org.apache.commons.text.StringEscapeUtils
 import org.apache.commons.lang3.text.translate.CharSequenceTranslator
 import dotty.tools.dotc.core.TypeComparer.AnyConstantType
+import scala.jdk.CollectionConverters.*
 
 object JsonCodecMaker:
 
@@ -106,11 +107,12 @@ object JsonCodecMaker:
 
     def testValidMapKey(testRef: RTypeRef[?]): Boolean =
       val isValid = testRef match
-        case _: PrimitiveRef => true
-        case _: TimeRef      => true
-        case _: NetRef       => true
-        case a: AliasRef[?]  => testValidMapKey(a.unwrappedType)
-        case _               => false
+        case _: PrimitiveRef                       => true
+        case _: TimeRef                            => true
+        case _: NetRef                             => true
+        case c: ScalaClassRef[?] if c.isValueClass => true
+        case a: AliasRef[?]                        => testValidMapKey(a.unwrappedType)
+        case _                                     => false
       if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
       isValid
 
@@ -260,7 +262,7 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
-    def genEncFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false)(using Quotes): Expr[Unit] =
+    def genEncFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false, isMapKey: Boolean = false)(using Quotes): Expr[Unit] =
       r.refType match
         case '[b] =>
           r match
@@ -336,7 +338,7 @@ object JsonCodecMaker:
               theField.refType match
                 case '[e] =>
                   val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
-                  genWriteVal(fieldValue, theField.asInstanceOf[RTypeRef[e]], out)
+                  genWriteVal(fieldValue, theField.asInstanceOf[RTypeRef[e]], out, isMapKey = isMapKey)
 
             case t: ScalaClassRef[?] =>
               makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
@@ -547,22 +549,37 @@ object JsonCodecMaker:
                 }
 
             // No makeWriteFn here--Option is just a wrapper to the real thingy
-            case t: OptionRef[?] =>
+            case t: ScalaOptionRef[?] =>
               t.optionParamType.refType match
                 case '[e] =>
                   val tin = aE.asExprOf[b]
                   '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $tin match
-                        case None =>
-                          ${
-                            if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
-                            else '{ () }
-                          }
-                        case Some(v) =>
-                          val vv = v.asInstanceOf[e]
-                          ${ genWriteVal[e]('{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                    $tin match
+                      case null => $out.burpNull()
+                      case None =>
+                        ${
+                          if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
+                          else '{ () }
+                        }
+                      case Some(v) =>
+                        val vv = v.asInstanceOf[e]
+                        ${ genWriteVal[e]('{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                  }
+            case t: JavaOptionalRef[?] =>
+              t.optionParamType.refType match
+                case '[e] =>
+                  val tin = aE.asExprOf[b]
+                  '{
+                    $tin.asInstanceOf[java.util.Optional[e]] match
+                      case null => $out.burpNull()
+                      case o if o.isEmpty =>
+                        ${
+                          if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
+                          else '{ () }
+                        }
+                      case o =>
+                        val vv = o.get().asInstanceOf[e]
+                        ${ genWriteVal[e]('{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
                   }
 
             // No makeWriteFn here... SelfRef is referring to something we've already seen before.  There absolutely should already be a geneated
@@ -839,20 +856,35 @@ object JsonCodecMaker:
 
             // Everything else...
             // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-            case _ => genEncFnBody(ref, aE, out, inTuple = inTuple)
+            case _ => genEncFnBody(ref, aE, out, inTuple = inTuple, isMapKey = isMapKey)
         )
 
     // ---------------------------------------------------------------------------------------------
 
-    def lrHasOptionChild(lr: LeftRightRef[?]): String =
+    def lrHasOptionChild(lr: LeftRightRef[?]): (String, Language) =
       lr.rightRef match
-        case t: OptionRef[?]    => "r"
-        case t: LeftRightRef[?] => "r" + lrHasOptionChild(t)
+        case t: ScalaOptionRef[?]  => ("r", Language.Scala)
+        case t: JavaOptionalRef[?] => ("r", Language.Java)
+        case t: LeftRightRef[?] =>
+          val (recipe, lang) = lrHasOptionChild(t)
+          ("r" + recipe, lang)
         case _ =>
           lr.leftRef match
-            case t: OptionRef[?]    => "l"
-            case t: LeftRightRef[?] => "l" + lrHasOptionChild(t)
-            case _                  => ""
+            case t: ScalaOptionRef[?]  => ("l", Language.Scala)
+            case t: JavaOptionalRef[?] => ("l", Language.Java)
+            case t: LeftRightRef[?] =>
+              val (recipe, lang) = lrHasOptionChild(t)
+              ("l" + recipe, lang)
+            case _ => ("", Language.Scala)
+
+    def tryHasOptionChild(t: TryRef[?]): (Boolean, Language) =
+      t.tryRef match
+        case o: ScalaOptionRef[?]  => (true, Language.Scala)
+        case o: JavaOptionalRef[?] => (true, Language.Java)
+        case lr: LeftRightRef[?] =>
+          val (recipe, lang) = lrHasOptionChild(lr)
+          (recipe.length > 0, lang)
+        case _ => (false, Language.Scala)
 
     def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
       import quotes.reflect.*
@@ -864,6 +896,7 @@ object JsonCodecMaker:
       r.refType match // refType is Type[r.R]
         case '[b] =>
           r match
+
             case t: ScalaClassRef[?] =>
               makeReadFn[T](MethodKey(t, false), in)(in =>
                 val fieldNames = Expr(t.fields.map(_.name).toArray)
@@ -896,29 +929,41 @@ object JsonCodecMaker:
                           else throw new JsonParseError("Duplicate field " + $fieldName, $in)
                         }.asTerm
                       )
-                      // if dvMembers.isEmpty then (ValDef(sym, Some(oneField.fieldRef.unitVal.asTerm)), caseDef, fieldSymRef)
                       if dvMembers.isEmpty then
                         // no default... required?  Not if Option/Optional, or a collection
                         val unitVal = oneField.fieldRef match {
                           case _: OptionRef[?] =>
                             oneField.fieldRef.unitVal.asTerm // not required
                           case r: LeftRightRef[?] if r.lrkind == LRKind.EITHER => // maybe required
-                            val optionRecipe = lrHasOptionChild(r)
+                            val (optionRecipe, lang) = lrHasOptionChild(r)
                             if optionRecipe.length == 0 then
                               required = required | math.pow(2, oneField.index).toInt // required
                               oneField.fieldRef.unitVal.asTerm
                             else
                               val recipeE = Expr(optionRecipe)
-                              '{
-                                $recipeE.foldRight(None: Any)((c, acc) => if c == 'r' then Right(acc) else Left(acc)).asInstanceOf[f]
-                              }.asTerm
+                              if lang == Language.Scala then
+                                '{
+                                  $recipeE.foldRight(None: Any)((c, acc) => if c == 'r' then Right(acc) else Left(acc)).asInstanceOf[f]
+                                }.asTerm
+                              else
+                                '{
+                                  $recipeE.foldRight(java.util.Optional.empty: Any)((c, acc) => if c == 'r' then Right(acc) else Left(acc)).asInstanceOf[f]
+                                }.asTerm
                           case r: LeftRightRef[?] => // maybe required
-                            val optionRecipe = lrHasOptionChild(r)
+                            val (optionRecipe, lang) = lrHasOptionChild(r)
                             if optionRecipe.length == 0 then // no Option children -> required
                               required = required | math.pow(2, oneField.index).toInt // required
                               oneField.fieldRef.unitVal.asTerm
                             else // at least one Option child -> optional
-                              '{ None }.asTerm
+                            if lang == Language.Scala then '{ None }.asTerm
+                            else '{ java.util.Optional.empty.asInstanceOf[f] }.asTerm
+                          case y: TryRef[?] =>
+                            tryHasOptionChild(y) match
+                              case (true, Language.Scala) => '{ Success(None) }.asTerm
+                              case (true, Language.Java)  => '{ Success(java.util.Optional.empty).asInstanceOf[f] }.asTerm
+                              case _ =>
+                                required = required | math.pow(2, oneField.index).toInt // required
+                                oneField.fieldRef.unitVal.asTerm
                           case _ =>
                             required = required | math.pow(2, oneField.index).toInt // required
                             oneField.fieldRef.unitVal.asTerm
@@ -1225,9 +1270,9 @@ object JsonCodecMaker:
               // Special check for RawJson pseudo-type
               if lastPart(t.definedType) == "RawJson" then
                 '{
-                  $in.mark()
+                  val mark = $in.pos
                   $in.skipValue()
-                  $in.captureMark()
+                  $in.captureMark(mark)
                 }.asExprOf[T]
               else
                 t.unwrappedType.refType match
@@ -1246,7 +1291,7 @@ object JsonCodecMaker:
             // --------------------
             //  Options...
             // --------------------
-            case t: OptionRef[?] =>
+            case t: ScalaOptionRef[?] =>
               import quotes.reflect.*
               t.optionParamType.refType match
                 case '[e] =>
@@ -1255,7 +1300,26 @@ object JsonCodecMaker:
                       if $in.expectNull() then None
                       else Some(${ genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in) })
                     }.asExprOf[T]
-                  else ofOption[e](Some(genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T]
+                  else
+                    '{
+                      if $in.expectNull() then null
+                      else ${ ofOption[e](Some(genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T] }
+                    }.asExprOf[T]
+            case t: JavaOptionalRef[?] =>
+              import quotes.reflect.*
+              t.optionParamType.refType match
+                case '[e] =>
+                  if cfg.noneAsNull || inTuple then
+                    '{
+                      if $in.expectNull() then java.util.Optional.empty
+                      else java.util.Optional.of(${ genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in) })
+                    }.asExprOf[T]
+                  else
+                    '{
+                      if $in.expectNull() then null
+                      else ${ ofOptional[e](java.util.Optional.of(genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T] }
+                    }.asExprOf[T]
+            // else ofOption[e](Some(genReadVal[e](t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T]
 
             case t: LeftRightRef[?] if t.lrkind == LRKind.EITHER =>
               import quotes.reflect.*
@@ -1264,14 +1328,14 @@ object JsonCodecMaker:
                   t.rightRef.refType match
                     case '[r] =>
                       '{
-                        $in.mark()
+                        val mark = $in.pos
                         if $in.expectNull() then null
                         else
                           scala.util.Try(${ genReadVal[r](t.rightRef.asInstanceOf[RTypeRef[r]], in, inTuple) }) match
                             case Success(rval) =>
                               Right(rval)
                             case Failure(f) =>
-                              $in.revertToMark()
+                              $in.revertToPos(mark)
                               scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, inTuple) }) match
                                 case Success(lval) => Left(lval)
                                 case Failure(_) =>
@@ -1286,11 +1350,11 @@ object JsonCodecMaker:
                   t.rightRef.refType match
                     case '[r] =>
                       '{
-                        $in.mark()
+                        val mark = $in.pos
                         scala.util.Try(${ genReadVal[l](t.leftRef.asInstanceOf[RTypeRef[l]], in, true) }) match
                           case Success(lval) => lval
                           case Failure(f) =>
-                            $in.revertToMark()
+                            $in.revertToPos(mark)
                             scala.util.Try(${ genReadVal[r](t.rightRef.asInstanceOf[RTypeRef[r]], in, true) }) match
                               case Success(rval) => rval
                               case Failure(_) =>
@@ -1302,22 +1366,6 @@ object JsonCodecMaker:
               Intersection:
 val syntheticTA = taCache.typeAdapterOf[L]
 syntheticTA.write(t.asInstanceOf[L], writer, out)
-
-              Union:
-  def read(parser: Parser): L | R = {
-    val savedReader = parser.mark()
-    Try(leftTypeAdapter.read(parser)) match {
-      case Success(leftValue) => leftValue.asInstanceOf[L]
-      case Failure(_) => // Left parse failed... try Right
-        parser.revertToMark(savedReader)
-        Try(rightTypeAdapter.read(parser)) match {
-          case Success(rightValue) => rightValue.asInstanceOf[R]
-          case Failure(x) =>
-            parser.backspace()
-            throw new ScalaJackError( parser.showError(s"Failed to read any values for union type") )
-        }
-    }
-  }
              */
 
             // --------------------
@@ -1407,7 +1455,10 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                   t.elementRef.refType match
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      // println("REF: " + rtypeRef)
+                      // LeftRightRef(scala.Union,List(L, R),TryRef(scala.util.Try,List(A),ScalaOptionRef(scala.Option,List(A),IntRef())),StringRef(),UnionRType)
                       '{
+                        // null
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toSeq
                         else null
@@ -1454,23 +1505,227 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                     else null
                   }.asExprOf[T]
 
-            case t: MapRef[?] =>
-              t.elementRef.refType match
-                case '[k] =>
-                  t.elementRef2.refType match
-                    case '[v] =>
-                      testValidMapKey(t.elementRef)
+            /*
+                  - ArrayBlockingQueue,
+                  + ArrayDeque,
+                  + ArrayList,
+                  + ConcurrentLinkedDeque,
+                  + ConcurrentLinkedQueue,
+                  + ConcurrentSkipListSet,
+                  + CopyOnWriteArrayList,
+                  + CopyOnWriteArraySet,
+                  + DelayQueue,
+                  + HashSet,
+                  + LinkedBlockingDeque,
+                  + LinkedBlockingQueue,
+                  + LinkedHashSet,
+                  + LinkedList,
+                  + LinkedTransferQueue,
+                  + PriorityBlockingQueue,
+                  + PriorityQueue,
+                  - Stack,
+                  + TreeSet,
+                  + Vector
+                  So... 2 special cases.  The rest follow a Collection constructor pattern
+             */
+            // --------------------
+            //  Java Collections...
+            // --------------------
+            case t: JavaCollectionRef[?] =>
+              ref.refType match
+                case '[java.util.concurrent.ArrayBlockingQueue[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
-                        if $in.expectNull() then null
-                        else
-                          $in.expectToken('{')
-                          $in.parseMap[k, v](
-                            () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
-                            () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
-                            Map.empty[k, v],
-                            true
-                          )
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.concurrent.ArrayBlockingQueue(parsedArray.length, true, parsedArray.toList.asJava)
+                        else null
                       }.asExprOf[T]
+                case '[java.util.Stack[?]] =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then
+                          val stack = new java.util.Stack[e]()
+                          parsedArray.map(stack.push(_))
+                          stack
+                        else null
+                      }.asExprOf[T]
+                case _ =>
+                  t.elementRef.refType match
+                    case '[e] =>
+                      val arg = '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in, inTuple) })
+                        if parsedArray == null then null
+                        else parsedArray.toList.asJava
+                      }.asTerm
+                      Select.overloaded(New(Inferred(TypeRepr.of[T])), "<init>", List(TypeRepr.of[e]), List(arg)).asExprOf[T]
+
+            // --------------------
+            //  Maps...
+            // --------------------
+            case t: MapRef[?] =>
+              ref.refType match
+                case '[scala.collection.mutable.HashMap[?, ?]] =>
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.HashMap.from(
+                                $in.parseMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  Map.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
+                case '[scala.collection.mutable.Map[?, ?]] if ref.name == "scala.collection.mutable.Map" =>
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.Map.from(
+                                $in.parseMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  Map.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
+                case '[scala.collection.mutable.Map[?, ?]] => // all other mutable Maps
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.Map
+                                .from(
+                                  $in.parseMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    Map.empty[k, v],
+                                    true
+                                  )
+                                )
+                                .to(${ Expr.summon[Factory[(k, v), T]].get })
+                          }.asExprOf[T]
+                case '[scala.collection.immutable.HashMap[?, ?]] => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.immutable.HashMap.from(
+                                $in.parseMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  Map.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
+                case '[scala.collection.immutable.SeqMap[?, ?]] => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.immutable.SeqMap.from(
+                                $in.parseMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  Map.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
+                case '[Map[?, ?]] if ref.name == "scala.collection.immutable.Map" => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              $in.parseMap[k, v](
+                                () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                Map.empty[k, v],
+                                true
+                              )
+                          }.asExprOf[T]
+                case '[Map[?, ?]] => // all other immutable Maps
+                  println(ref)
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              $in
+                                .parseMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  Map.empty[k, v],
+                                  true
+                                )
+                                .to(${ Expr.summon[Factory[(k, v), T]].get })
+                          }.asExprOf[T]
+
+            // TODO: Find out why SeqMap fails with this summon here.  Create a minimal project w/macro to test/show behavior.
+            // Note: All other Map subtypes seem to work ok.  SortedMap, etc.  No issues.  Just SeqMap.
+
+            /*
+                case _ =>
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              $in.parseMap[k, v](
+                                () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                Map.empty[k, v],
+                                true
+                              )
+                          }.asExprOf[T]
+             */
 
             // --------------------
             //  Tuples...
@@ -1515,6 +1770,38 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                       $in.expectToken(']')
                       tv
                   }.asExprOf[T]
+
+            // --------------------
+            //  Try...
+            // --------------------
+            case t: TryRef[?] =>
+              t.tryRef.refType match
+                case '[e] =>
+                  '{
+                    val mark = $in.pos
+                    try
+                      if $in.expectNull() then null
+                      else scala.util.Success(${ genReadVal[e](t.tryRef.asInstanceOf[RTypeRef[e]], in) })
+                    catch {
+                      case t: Throwable =>
+                        $in.revertToPos(mark)
+                        throw JsonParseError("Unsuccessful attempt to read Try type with failure: " + t.getMessage(), $in)
+                    }
+                  }.asExprOf[T]
+
+            // --------------------
+            //  Value Class...
+            // --------------------
+            case t: ScalaClassRef[?] if t.isValueClass =>
+              val theField = t.fields.head.fieldRef
+              t.refType match
+                case '[e] =>
+                  theField.refType match
+                    case '[f] =>
+                      val tpe = TypeRepr.of[e]
+                      val constructor = Select(New(Inferred(tpe)), tpe.classSymbol.get.primaryConstructor)
+                      val arg = genReadVal[f](theField.asInstanceOf[RTypeRef[f]], in, isMapKey = isMapKey).asTerm
+                      Apply(constructor, List(arg)).asExprOf[T]
 
             case _ =>
               // Classes, traits, etc.

@@ -21,14 +21,29 @@ case class OptionHolder[T](
     j: Either[Option[T], T] // Either of Option (L)
 )
 
+case class OptionalHolder[T](
+    a: Optional[T], // straight Optional
+    b: (Optional[T], String), // tuple w/Optional
+    c: List[Optional[T]], // Seq of Optional
+    d: Map[Int, Optional[T]], // Map of Optional
+    e: T | Optional[T], // Union of Optional (R)
+    f: Optional[T] | T, // Union of Optional (L)
+    g: Optional[Optional[T]], // Nested Optional
+    h: Optional[Person], // Optional of Class
+    i: Either[T, Optional[T]], // Either of Optional (R)
+    j: Either[Optional[T], T] // Either of Optional (L)
+)
+
 case class TryHolder[T](a: Try[T])
 case class TryHolder2[T](a: Seq[Try[T]], b: (Try[T], Try[T]))
 
 case class LRUnionHolder[T, U](a: Seq[T | U], b: (T | U, T | U))
+case class LRUnionHolder2[T, U](a: Seq[Boolean | Int], b: (T | U, T | U))
 case class EitherHolder[T](a: Either[T, String], b: Either[String, T])
 
 case class ComplexEither[T](a: Option[Either[String, Option[T]]])
 case class EitherRecipe[T](a: Either[Boolean, Either[Option[T], String]])
+case class EitherRecipeJ[T](a: Either[Boolean, Either[Optional[T], String]])
 
 case class AliasHolder[T](a: T, b: List[T], c: Map[T, String], d: Map[String, T])
 case class AliasHolder2[T](a: T, b: List[T], c: Map[String, T])

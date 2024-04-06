@@ -47,6 +47,11 @@ object RunMe extends App:
   import co.blocke.scalajack.json.run.Record
   println("\n")
 
+//case class JJ(a: java.util.Stack[Int])
+  given blah: ScalaJack[JJ] = sjCodecOf[JJ]
+  val js = """{"a":[1,2,3]}"""
+  println(blah.fromJson(js))
+
   // println(RType.of[Person].pretty)
 
   // implicit val blah: ScalaJack[Record] = sj[Record] // (JsonConfig.withSuppressedEscapedStrings())
@@ -74,10 +79,12 @@ object RunMe extends App:
   // val c: Pizza = ScalaJack[Pizza].fromJson("\"READY\"")
   // println("Pizza: " + c)
 
-  implicit val blah: ScalaJack[Decide] = sjCodecOf[Decide]
-  //                                            012345678
-  val c: Decide = ScalaJack[Decide].fromJson("""{"a":[1,2,3]}""")
-  println(c)
+  // case class LRUnionHolder2[T, U](a: Seq[Boolean | Int], b: (T | U, T | U))
+  // implicit val blah: ScalaJack[LRUnionHolder2[scala.util.Try[Option[Int]], String]] = sjCodecOf[LRUnionHolder2[scala.util.Try[Option[Int]], String]]
+  // val b: LRUnionHolder2[scala.util.Try[Option[Int]], String] = LRUnionHolder2(List(true, 3, false, -1), ("y", scala.util.Success(Some(5))))
+  // val js = ScalaJack[LRUnionHolder2[scala.util.Try[Option[Int]], String]].toJson(b)
+  // println(js)
+  // println(ScalaJack[LRUnionHolder2[scala.util.Try[Option[Int]], String]].fromJson(js))
 
   println("done.")
 

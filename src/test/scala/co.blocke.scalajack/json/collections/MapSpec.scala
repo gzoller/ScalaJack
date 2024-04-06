@@ -106,29 +106,61 @@ class MapSpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":{"w":3,"y":["wow","blah"]}}""")
         sj.fromJson(js) shouldEqual (inst)
       }
-      /*
-       * Keys of value class (Distance) must work
-
       it("Map value of class must work") {
         val inst = MapHolder[String, Person](Map("w" -> Person("Bob", 34), "y" -> Person("Sally", 25)))
-        val js = sj[MapHolder[String, Person]].toJson(inst)
+        val sj = sjCodecOf[MapHolder[String, Person]]
+        val js = sj.toJson(inst)
         js should matchJson("""{"a":{"w":{"name":"Bob","age":34},"y":{"name":"Sally","age":25}}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Map key of value class must work") {
+        val inst = MapHolder[Distance, String](Map(new Distance(1.23) -> "x", Distance(4.56) -> "y"))
+        val sj = sjCodecOf[MapHolder[Distance, String]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"1.23":"x","4.56":"y"}}""")
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Map value of value class must work") {
         val inst = MapHolder[String, Distance](Map("w" -> new Distance(1.23), "y" -> Distance(4.56)))
-        val js = sj[MapHolder[String, Distance]].toJson(inst)
-        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
-      }
-      it("Mutable Map value must work") {
-        val inst = MMapHolder[String, Distance](scala.collection.mutable.HashMap("w" -> new Distance(1.23), "y" -> Distance(4.56)))
         val sj = sjCodecOf[MapHolder[String, Distance]]
         val js = sj.toJson(inst)
         js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
-       */
+      it("Mutable Map value must work - Map") {
+        val inst = MMapHolder[String, Distance](scala.collection.mutable.Map("w" -> new Distance(1.23), "y" -> Distance(4.56)))
+        val sj = sjCodecOf[MMapHolder[String, Distance]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Mutable Map value must work - HashMap") {
+        val inst = MMapHolder2[String, Distance](scala.collection.mutable.HashMap("w" -> new Distance(1.23), "y" -> Distance(4.56)))
+        val sj = sjCodecOf[MMapHolder2[String, Distance]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Mutable Map value must work - SeqMap (examplar for all other mutable Maps)") {
+        val inst = MMapHolder3[String, Distance](scala.collection.mutable.SeqMap("w" -> new Distance(1.23), "y" -> Distance(4.56)))
+        val sj = sjCodecOf[MMapHolder3[String, Distance]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Map value must work - HashMap") {
+        val inst = MapHolder2[String, Distance](scala.collection.immutable.HashMap("w" -> new Distance(1.23), "y" -> Distance(4.56)))
+        val sj = sjCodecOf[MapHolder2[String, Distance]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Map value must work - SeqMap (examplar for all other immutable Maps)") {
+        val inst = MapHolder3[String, Distance](scala.collection.immutable.SeqMap("w" -> new Distance(1.23), "y" -> Distance(4.56)))
+        val sj = sjCodecOf[MapHolder3[String, Distance]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":{"w":1.23,"y":4.56}}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
     }
-
-    // describe(colorString("--- Negative Tests ---")) {
-    // }
   }
