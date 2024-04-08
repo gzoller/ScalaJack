@@ -22,42 +22,42 @@ class TrySpec() extends AnyFunSpec with JsonMatchers:
         val sj = sjCodecOf[TryHolder[Int]]
         val js = sj.toJson(inst)
         js should matchJson("""{"a":15}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Try of Option (non-None) must work (Success)") {
         val inst = TryHolder[Option[Int]](Success(Some(15)))
         val sj = sjCodecOf[TryHolder[Option[Int]]]
         val js = sj.toJson(inst)
         js should matchJson("""{"a":15}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Try of Option (None) must work (Success)") {
         val inst = TryHolder[Option[Int]](Success(None))
         val sj = sjCodecOf[TryHolder[Option[Int]]]
         val js = sj.toJson(inst)
         js should matchJson("""{}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Try of Optional (non-None) must work (Success)") {
         val inst = TryHolder[Optional[Int]](Success(Optional.of(15)))
         val sj = sjCodecOf[TryHolder[Optional[Int]]]
         val js = sj.toJson(inst)
         js should matchJson("""{"a":15}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Try of Optional (None) must work (Success)") {
         val inst = TryHolder[Optional[Int]](Success(Optional.empty))
         val sj = sjCodecOf[TryHolder[Optional[Int]]]
         val js = sj.toJson(inst)
         js should matchJson("""{}""")
-        sj.fromJson(js) shouldEqual(inst)
+        sj.fromJson(js) shouldEqual (inst)
       }
       it("Try w/policy AS_NULL must work (Failure)") {
         val inst = TryHolder[Int](Failure(new Exception("boom")))
         val sj = sjCodecOf[TryHolder[Int]](JsonConfig.withTryFailureHandling(TryPolicy.AS_NULL))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
-        sj.fromJson(js) shouldEqual(TryHolder[Int](null))
+        sj.fromJson(js) shouldEqual (TryHolder[Int](null))
       }
       it("Try w/policy ERR_MSG_STRING must work (Failure)") {
         val inst = TryHolder[Int](Failure(new Exception("boom")))
@@ -67,7 +67,7 @@ class TrySpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Unsuccessful attempt to read Try type with failure: Non-numeric character found when integer value expected at position 5 at position [5]
           |{"a":"Try Failure with msg: boom"}
           |-----^""".stripMargin
-        val err = intercept[JsonParseError] { sj.fromJson(js) }
+        val err = intercept[JsonParseError](sj.fromJson(js))
         err.show shouldEqual msg
       }
       it("Try w/policy ATHROW_EXCEPTIONS_NULL must work (Failure)") {
@@ -83,7 +83,7 @@ class TrySpec() extends AnyFunSpec with JsonMatchers:
         val sj = sjCodecOf[TryHolder2[Int]](JsonConfig.withTryFailureHandling(TryPolicy.AS_NULL))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[1,null,3],"b":[null,0]}""")
-        sj.fromJson(js) shouldEqual(TryHolder2[Int](List(Success(1), null, Success(3)), (null, Success(0))))
+        sj.fromJson(js) shouldEqual (TryHolder2[Int](List(Success(1), null, Success(3)), (null, Success(0))))
       }
     }
   }

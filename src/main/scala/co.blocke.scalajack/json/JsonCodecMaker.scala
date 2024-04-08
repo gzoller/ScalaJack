@@ -460,7 +460,7 @@ object JsonCodecMaker:
               makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
-                    val tin = in.asExprOf[java.util.Collection[_]]
+                    val tin = '{ $in.asInstanceOf[java.util.Collection[_]] }
                     '{
                       if $tin == null then $out.burpNull()
                       else
@@ -1505,64 +1505,93 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                     else null
                   }.asExprOf[T]
 
-            /*
-                  - ArrayBlockingQueue,
-                  + ArrayDeque,
-                  + ArrayList,
-                  + ConcurrentLinkedDeque,
-                  + ConcurrentLinkedQueue,
-                  + ConcurrentSkipListSet,
-                  + CopyOnWriteArrayList,
-                  + CopyOnWriteArraySet,
-                  + DelayQueue,
-                  + HashSet,
-                  + LinkedBlockingDeque,
-                  + LinkedBlockingQueue,
-                  + LinkedHashSet,
-                  + LinkedList,
-                  + LinkedTransferQueue,
-                  + PriorityBlockingQueue,
-                  + PriorityQueue,
-                  - Stack,
-                  + TreeSet,
-                  + Vector
-                  So... 2 special cases.  The rest follow a Collection constructor pattern
-             */
             // --------------------
             //  Java Collections...
             // --------------------
             case t: JavaCollectionRef[?] =>
-              ref.refType match
-                case '[java.util.concurrent.ArrayBlockingQueue[?]] =>
-                  t.elementRef.refType match
-                    case '[e] =>
-                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+              t.elementRef.refType match
+                case '[e] =>
+                  val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                  ref.name match
+                    // Non-standard concrete Java Collecitons
+                    case "java.util.concurrent.ArrayBlockingQueue" =>
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
-                        if parsedArray != null then new java.util.concurrent.ArrayBlockingQueue(parsedArray.length, true, parsedArray.toList.asJava)
-                        else null
-                      }.asExprOf[T]
-                case '[java.util.Stack[?]] =>
-                  t.elementRef.refType match
-                    case '[e] =>
-                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                      '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
-                        if parsedArray != null then
-                          val stack = new java.util.Stack[e]()
-                          parsedArray.map(stack.push(_))
-                          stack
-                        else null
-                      }.asExprOf[T]
-                case _ =>
-                  t.elementRef.refType match
-                    case '[e] =>
-                      val arg = '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in, inTuple) })
                         if parsedArray == null then null
-                        else parsedArray.toList.asJava
-                      }.asTerm
-                      Select.overloaded(New(Inferred(TypeRepr.of[T])), "<init>", List(TypeRepr.of[e]), List(arg)).asExprOf[T]
+                        else new java.util.concurrent.ArrayBlockingQueue(parsedArray.length, true, parsedArray.toList.asJava)
+                      }.asExprOf[T]
+                    // java.util.Collection interfaces
+                    case "java.util.Stack" =>
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray == null then null
+                        else
+                          val s = new java.util.Stack[e]()
+                          parsedArray.map(j => s.push(j))
+                          s
+                      }.asExprOf[T]
+                    case "java.util.concurrent.TransferQueue" =>
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.concurrent.LinkedTransferQueue(parsedArray.toList.asJava)
+                        else null
+                      }.asExprOf[T]
+                    case "java.util.concurrent.BlockingQueue" =>
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.concurrent.LinkedBlockingQueue(parsedArray.toList.asJava)
+                        else null
+                      }.asExprOf[T]
+                    case "java.util.TreeSet" | "java.util.NavigableSet" | "java.util.SortedSet" =>
+                      t.elementRef match
+                        case _: PrimitiveRef =>
+                          t.elementRef.refType match
+                            case '[z] =>
+                              '{
+                                val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                                if parsedArray != null then new java.util.TreeSet(parsedArray.toList.asJava)
+                                else null
+                              }.asExprOf[T]
+                        case x => throw JsonTypeError("Only primitive types supported for TreeSet, NavigableSet, or SortedSet. You've specified " + x.name)
+                    case "java.util.Queue" | "java.util.Deque" =>
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.LinkedList(parsedArray.toList.asJava)
+                        else null
+                      }.asExprOf[T]
+                    case "java.util.Set" =>
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.HashSet(parsedArray.toList.asJava)
+                        else null
+                      }.asExprOf[T]
+                    case "java.util.List" | "java.lang.Iterable" =>
+                      println(ref)
+                      '{
+                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                        if parsedArray != null then new java.util.ArrayList(parsedArray.toList.asJava)
+                        else null
+                      }.asExprOf[T]
+                    // Normal concrete Java Collecitons
+                    case _ =>
+                      '{
+                        if $in.expectNull() then null
+                        else
+                          ${
+                            val arg = '{
+                              val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](t.elementRef.asInstanceOf[RTypeRef[e]], in, inTuple) })
+                              parsedArray.toList.asJava.asInstanceOf[java.util.Collection[e]]
+                            }.asTerm
+                            Select
+                              .overloaded(
+                                New(Inferred(TypeRepr.of[T])),
+                                "<init>",
+                                List(TypeRepr.of[e]),
+                                List(arg)
+                              )
+                              .asExprOf[T]
+                          }
+                      }.asExprOf[T]
 
             // --------------------
             //  Maps...
@@ -1684,7 +1713,6 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                               )
                           }.asExprOf[T]
                 case '[Map[?, ?]] => // all other immutable Maps
-                  println(ref)
                   t.elementRef.refType match
                     case '[k] =>
                       t.elementRef2.refType match
@@ -1704,28 +1732,110 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                                 .to(${ Expr.summon[Factory[(k, v), T]].get })
                           }.asExprOf[T]
 
-            // TODO: Find out why SeqMap fails with this summon here.  Create a minimal project w/macro to test/show behavior.
-            // Note: All other Map subtypes seem to work ok.  SortedMap, etc.  No issues.  Just SeqMap.
-
-            /*
-                case _ =>
-                  t.elementRef.refType match
-                    case '[k] =>
-                      t.elementRef2.refType match
-                        case '[v] =>
+            // --------------------
+            //  Java Maps...
+            // --------------------
+            case t: JavaMapRef[?] =>
+              t.elementRef.refType match
+                case '[k] =>
+                  t.elementRef2.refType match
+                    case '[v] =>
+                      ref.name match
+                        case "java.util.NavigableMap" | "java.util.SortedMap" | "java.util.TreeMap" =>
                           testValidMapKey(t.elementRef)
                           '{
                             if $in.expectNull() then null
                             else
                               $in.expectToken('{')
-                              $in.parseMap[k, v](
-                                () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
-                                () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
-                                Map.empty[k, v],
-                                true
+                              new java.util.TreeMap(
+                                $in
+                                  .parseMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    Map.empty[k, v],
+                                    true
+                                  )
+                                  .asJava
                               )
                           }.asExprOf[T]
-             */
+                        case "java.util.concurrent.ConcurrentMap" =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              new java.util.concurrent.ConcurrentHashMap(
+                                $in
+                                  .parseMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    Map.empty[k, v],
+                                    true
+                                  )
+                                  .asJava
+                              )
+                          }.asExprOf[T]
+                        case "java.util.concurrent.ConcurrentNavigableMap" =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              new java.util.concurrent.ConcurrentSkipListMap(
+                                $in
+                                  .parseMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    Map.empty[k, v],
+                                    true
+                                  )
+                                  .asJava
+                              )
+                          }.asExprOf[T]
+                        case "java.util.Map" =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              new java.util.HashMap(
+                                $in
+                                  .parseMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    Map.empty[k, v],
+                                    true
+                                  )
+                                  .asJava
+                              )
+                          }.asExprOf[T]
+                        case _ =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              ${
+                                val arg = '{
+                                  $in.expectToken('{')
+                                  $in
+                                    .parseMap[k, v](
+                                      () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                      () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                      Map.empty[k, v],
+                                      true
+                                    )
+                                    .asJava
+                                }.asTerm
+                                Select
+                                  .overloaded(
+                                    New(Inferred(TypeRepr.of[T])),
+                                    "<init>",
+                                    List(TypeRepr.of[k], TypeRepr.of[v]),
+                                    List(arg)
+                                  )
+                                  .asExprOf[T]
+                              }
+                          }.asExprOf[T]
 
             // --------------------
             //  Tuples...

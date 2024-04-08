@@ -47,10 +47,14 @@ object RunMe extends App:
   import co.blocke.scalajack.json.run.Record
   println("\n")
 
+  val a: java.util.Set[Int] = new java.util.TreeSet[Int]()
+  val b: java.util.Set[Int] = new java.util.TreeSet[Int]()
+  val tt = new java.util.TreeSet[java.util.Set[Int]](java.util.Arrays.asList(a, b).asInstanceOf[java.util.Collection[java.util.Set[Int]]])
+  println(tt)
 //case class JJ(a: java.util.Stack[Int])
-  given blah: ScalaJack[JJ] = sjCodecOf[JJ]
-  val js = """{"a":[1,2,3]}"""
-  println(blah.fromJson(js))
+  // given blah: ScalaJack[JJ] = sjCodecOf[JJ]
+  // val js = """{"a":[1,2,3]}"""
+  // println(blah.fromJson(js))
 
   // println(RType.of[Person].pretty)
 

@@ -29,11 +29,13 @@ class TupleSpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":[15,"wow",true]}""")
         sj.fromJson(js) shouldEqual inst
       }
-      // it("Tuple of collecitons (including another tuple) must work") {
-      //   val inst = TupleHolder[Seq[Int], Map[String, Long], (Double, Char, Boolean)]((List(1, 2), Map("a" -> 3L, "b" -> 4L), (1.23d, 'X', true)))
-      //   val js = sjCodecOf[TupleHolder[Seq[Int], Map[String, Long], (Double, Char, Boolean)]].toJson(inst)
-      //   js should matchJson("""{"a":[[1,2],{"a":3,"b":4},[1.23,"X",true]]}""")
-      // }
+      it("Tuple of collecitons (including another tuple) must work") {
+        val inst = TupleHolder[Seq[Int], Map[String, Long], (Double, Char, Boolean)]((List(1, 2), Map("a" -> 3L, "b" -> 4L), (1.23d, 'X', true)))
+        val sj = sjCodecOf[TupleHolder[Seq[Int], Map[String, Long], (Double, Char, Boolean)]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":[[1,2],{"a":3,"b":4},[1.23,"X",true]]}""")
+        sj.fromJson(js) shouldEqual inst
+      }
     }
 
     describe(colorString("--- Negative Tests ---")) {

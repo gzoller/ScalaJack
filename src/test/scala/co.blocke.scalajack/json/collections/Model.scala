@@ -12,6 +12,7 @@ opaque type Counter = Short
 case class SeqHolder[T](a: Seq[T])
 case class SetHolder[T](a: Set[T])
 case class ArrayHolder[T](a: Array[T])
+case class Holder[T](a: T)
 
 case class MapHolder[T, V](a: Map[T, V])
 case class MapHolder2[T, V](a: scala.collection.immutable.HashMap[T, V]) // specific
