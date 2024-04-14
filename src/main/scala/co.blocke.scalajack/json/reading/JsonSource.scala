@@ -125,7 +125,8 @@ case class JsonSource(js: CharSequence):
     i += 1
     bs = fieldNameMatrix.exact(bs, fi)
     if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
-    fieldNameMatrix.first(bs)
+    val ret = fieldNameMatrix.first(bs)
+    ret
 
   @tailrec
   final def parseMap[K, V](kf: () => K, vf: () => V, acc: Map[K, V], isFirst: Boolean = true): Map[K, V] = // initial '{' already consumed
@@ -143,6 +144,31 @@ case class JsonSource(js: CharSequence):
         val value = vf()
         parseMap[K, V](kf, vf, acc + (key -> value), false)
       case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
+
+  @tailrec
+  final def findObjectField(fieldName: String): Option[String] =
+    val mark = i
+    expectToken('{')
+    readToken() match
+      case '}' =>
+        i = mark
+        None
+      case '"' =>
+        val endI = parseString(i)
+        val str = js.subSequence(i, endI).toString
+        i = endI + 1
+        expectToken(':')
+        if str == fieldName then
+          val found = Some(expectString())
+          i = mark
+          found
+        else
+          skipValue()
+          if readToken() == '}' then backspace() // else consume ','
+          findObjectField(fieldName)
+      case t =>
+        backspace()
+        throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
 
   // Array and Tuple...
   // =======================================================

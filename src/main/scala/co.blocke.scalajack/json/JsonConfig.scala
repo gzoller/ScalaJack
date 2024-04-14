@@ -11,22 +11,22 @@ class JsonConfig private[scalajack] (
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
     // val undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
-    val writeNonConstructorFields: Boolean,
     // --------------------------
     val typeHintLabel: String,
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
     val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
+    val _writeNonConstructorFields: Boolean,
     val _suppressEscapedStrings: Boolean,
     val _suppressTypeHints: Boolean
 ):
   def withNoneAsNull(): JsonConfig = copy(noneAsNull = true)
   def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
   def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): JsonConfig = copy(eitherLeftHandling = eitherPolicy)
-  def withWriteNonConstructorFields(nonConstFlds: Boolean): JsonConfig = copy(writeNonConstructorFields = nonConstFlds)
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
+  def writeNonConstructorFields(): JsonConfig = copy(_writeNonConstructorFields = true)
   def suppressEscapedStrings(): JsonConfig = copy(_suppressEscapedStrings = true)
   def suppressTypeHints(): JsonConfig = copy(_suppressTypeHints = true)
 
@@ -34,20 +34,20 @@ class JsonConfig private[scalajack] (
       noneAsNull: Boolean = noneAsNull,
       tryFailureHandling: TryPolicy = tryFailureHandling,
       eitherLeftHandling: EitherLeftPolicy = eitherLeftHandling,
-      writeNonConstructorFields: Boolean = writeNonConstructorFields,
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
       enumsAsIds: Option[List[String]] = enumsAsIds,
+      _writeNonConstructorFields: Boolean = _writeNonConstructorFields,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
       _suppressTypeHints: Boolean = _suppressTypeHints
   ): JsonConfig = new JsonConfig(
     noneAsNull,
     tryFailureHandling,
     eitherLeftHandling,
-    writeNonConstructorFields,
     typeHintLabel,
     typeHintPolicy,
     enumsAsIds,
+    _writeNonConstructorFields,
     _suppressEscapedStrings,
     _suppressTypeHints
   )
@@ -69,10 +69,10 @@ object JsonConfig
       noneAsNull = false,
       tryFailureHandling = TryPolicy.AS_NULL,
       eitherLeftHandling = EitherLeftPolicy.AS_VALUE,
-      writeNonConstructorFields = false,
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
       enumsAsIds = None,
+      _writeNonConstructorFields = false,
       _suppressEscapedStrings = false,
       _suppressTypeHints = false
     ):
@@ -84,7 +84,6 @@ object JsonConfig
         val jc = JsonConfig
           .withTryFailureHandling(${ Expr(x.tryFailureHandling) })
           .withEitherLeftHandling(${ Expr(x.eitherLeftHandling) })
-          .withWriteNonConstructorFields(${ Expr(x.writeNonConstructorFields) })
           .withTypeHintLabel(${ Expr(x.typeHintLabel) })
           .withTypeHintPolicy(${ Expr(x.typeHintPolicy) })
           .withEnumsAsIds(${ Expr(x.enumsAsIds) })
@@ -97,10 +96,14 @@ object JsonConfig
           else '{ jc2 }
         }
         val jc4 = ${
-          if !x._suppressTypeHints then '{ jc2.suppressTypeHints() }
+          if !x._suppressTypeHints then '{ jc3.suppressTypeHints() }
           else '{ jc3 }
         }
-        jc4
+        val jc5 = ${
+          if !x._writeNonConstructorFields then '{ jc4.writeNonConstructorFields() }
+          else '{ jc4 }
+        }
+        jc5
       }
   }
 
@@ -120,10 +123,10 @@ object JsonConfig
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
                 // $undefinedFieldHandlingE,
-                $writeNonConstructorFieldsE,
                 $typeHintLabelE,
                 $typeHintPolicyE,
                 $enumsAsIdsE,
+                $writeNonConstructorFieldsE,
                 $suppressEscapedStringsE,
                 $suppressTypeHintsE
               )
@@ -134,10 +137,10 @@ object JsonConfig
                 extract("noneAsNull", noneAsNullE),
                 extract("tryFailureHandler", tryFailureHandlerE),
                 extract("eitherLeftHandler", eitherLeftHandlerE),
-                extract("writeNonConstructorFields", writeNonConstructorFieldsE),
                 extract("typeHintLabel", typeHintLabelE),
                 extract("typeHintPolicy", typeHintPolicyE),
                 extract("enumsAsIds", enumsAsIdsE),
+                extract("_writeNonConstructorFields", writeNonConstructorFieldsE),
                 extract("_suppressEscapedStrings", suppressEscapedStringsE),
                 extract("_suppressTypeHints", suppressTypeHintsE)
               )
@@ -147,16 +150,16 @@ object JsonConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ JsonConfig }                                         => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull() }                  => Some(x.valueOrAbort.withNoneAsNull())
-        case '{ ($x: JsonConfig).withTryFailureHandling($v) }        => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }        => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withWriteNonConstructorFields($v) } => Some(x.valueOrAbort.withWriteNonConstructorFields(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintLabel($v) }             => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintPolicy($v) }            => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEnumsAsIds($v) }                => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).suppressEscapedStrings() }          => Some(x.valueOrAbort.suppressEscapedStrings())
-        case '{ ($x: JsonConfig).suppressTypeHints() }               => Some(x.valueOrAbort.suppressTypeHints())
+        case '{ JsonConfig }                                   => Some(JsonConfig)
+        case '{ ($x: JsonConfig).withNoneAsNull() }            => Some(x.valueOrAbort.withNoneAsNull())
+        case '{ ($x: JsonConfig).withTryFailureHandling($v) }  => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }  => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withTypeHintLabel($v) }       => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withTypeHintPolicy($v) }      => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ ($x: JsonConfig).withEnumsAsIds($v) }          => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
+        case '{ ($x: JsonConfig).writeNonConstructorFields() } => Some(x.valueOrAbort.writeNonConstructorFields())
+        case '{ ($x: JsonConfig).suppressEscapedStrings() }    => Some(x.valueOrAbort.suppressEscapedStrings())
+        case '{ ($x: JsonConfig).suppressTypeHints() }         => Some(x.valueOrAbort.suppressTypeHints())
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

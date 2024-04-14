@@ -25,7 +25,7 @@ object JsonCodecMaker:
     import q.reflect.*
 
     // Cache generated method Symbols + an array of the generated functions (DefDef)
-    case class MethodKey(ref: RTypeRef[?], isStringified: Boolean) // <-- TODO: Not clear what isStringified does here...
+    case class MethodKey(ref: RTypeRef[?], isNonConstructorFields: Boolean)
 
     val writeMethodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
     val writeMethodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
@@ -102,6 +102,8 @@ object JsonCodecMaker:
         }
       )
       '{}
+
+    inline def changeFieldName(fr: FieldInfoRef): String = fr.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(fr.name)
 
     // ---------------------------------------------------------------------------------------------
 
@@ -325,9 +327,9 @@ object JsonCodecMaker:
                 val cases = t.sealedChildren.map { child =>
                   child.refType match
                     case '[c] =>
-                      val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
-                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                      CaseDef(Bind(sym, Typed(Ref(sym), subtype)), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
+                      val subtype = TypeRepr.of[c]
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype)
+                      CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, true).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
                 matchExpr
@@ -347,7 +349,7 @@ object JsonCodecMaker:
                     f.fieldRef.refType match
                       case '[z] =>
                         val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
-                        val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
+                        val fieldName = changeFieldName(f)
                         maybeWrite[z](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }
                   if emitDiscriminator then
@@ -365,12 +367,12 @@ object JsonCodecMaker:
                   else Expr.block(eachField.init, eachField.last)
                 }
 
-                if !t.isCaseClass && cfg.writeNonConstructorFields then
+                if !t.isCaseClass && cfg._writeNonConstructorFields then
                   val eachField = t.nonConstructorFields.map { f =>
                     f.fieldRef.refType match
                       case '[e] =>
                         val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
-                        val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
+                        val fieldName = changeFieldName(f)
                         maybeWrite[e](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out, cfg)
                   }
                   val subBody = eachField.length match
@@ -799,10 +801,10 @@ object JsonCodecMaker:
             case t: ZoneIdRef         => '{ $out.value(${ aE.asExprOf[java.time.ZoneId] }) }
             case t: ZoneOffsetRef     => '{ $out.value(${ aE.asExprOf[java.time.ZoneOffset] }) }
 
-            case t: URLRef    => '{ $out.value(${ aE.asExprOf[java.net.URL] }) }
-            case t: URIRef    => '{ $out.value(${ aE.asExprOf[java.net.URI] }) }
-            case t: UUIDRef   => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
-            case t: ObjectRef => '{ $out.value(${ Expr(t.name) }) }
+            case t: URLRef       => '{ $out.value(${ aE.asExprOf[java.net.URL] }) }
+            case t: URIRef       => '{ $out.value(${ aE.asExprOf[java.net.URI] }) }
+            case t: UUIDRef      => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
+            case t: ObjectRef[?] => '{ $out.value(${ Expr(t.name) }) }
 
             case t: AliasRef[?] =>
               // Special check for RawJson pseudo-type
@@ -887,7 +889,6 @@ object JsonCodecMaker:
         case _ => (false, Language.Scala)
 
     def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
-      import quotes.reflect.*
 
       def typeArgs(tpe: TypeRepr): List[TypeRepr] = tpe match
         case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
@@ -896,6 +897,102 @@ object JsonCodecMaker:
       r.refType match // refType is Type[r.R]
         case '[b] =>
           r match
+
+            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass && !t.childrenAreObject =>
+              t.sealedChildren.map(kid =>
+                kid.refType match
+                  case '[c] =>
+                    genDecFnBody[c](kid.asInstanceOf[RTypeRef[c]], in)
+              )
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                val hintLabelE = Expr(cfg.typeHintLabel)
+                val classPrefixE = Expr(allButLastPart(t.name))
+                val caseDefs = t.sealedChildren.map { childRef =>
+                  val childNameE = Expr(childRef.name)
+                  cfg.typeHintPolicy match
+                    case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
+                      CaseDef(
+                        Bind(sym, Typed(Wildcard(), Inferred(TypeRepr.of[String]))),
+                        Some({
+                          val tE = Ref(sym).asExprOf[String]
+                          '{ descramble($tE, lastPart($childNameE).hashCode) }.asTerm
+                        }), {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                    case TypeHintPolicy.USE_ANNOTATION =>
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
+                      val annoOrName =
+                        childRef match
+                          case cr: ClassRef[?] => cr.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(cr.name))
+                          case _               => lastPart(childRef.name)
+                      CaseDef(
+                        Literal(StringConstant(annoOrName)),
+                        None, {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                    case TypeHintPolicy.SIMPLE_CLASSNAME => // TODO: Annotation hints
+                      CaseDef(
+                        Literal(StringConstant(childRef.name)),
+                        None, {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                }
+                '{
+                  if $in.expectNull() then null
+                  else
+                    val hint = $in.findObjectField($hintLabelE).getOrElse(throw JsonParseError(s"Unable to find type hint for abstract class $$cnameE", $in))
+                    ${
+                      cfg.typeHintPolicy match
+                        case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+                        case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                        case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                    }
+                }.asExprOf[T]
+              )
+
+            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass && t.childrenAreObject => // case objects
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                val classPrefixE = Expr(allButLastPart(t.name))
+                val caseDefs = t.sealedChildren.map { childRef =>
+                  val nameE = Expr(childRef.name)
+                  childRef.refType match
+                    case '[o] =>
+                      CaseDef(
+                        Literal(StringConstant(childRef.name)),
+                        None,
+                        Ref(TypeRepr.of[o].typeSymbol).asExprOf[o].asTerm
+                      )
+                }
+                '{
+                  if $in.expectNull() then null
+                  else ${ Match('{ $classPrefixE + "." + $in.expectString() }.asTerm, caseDefs).asExprOf[T] }
+                }.asExprOf[T]
+              )
 
             case t: ScalaClassRef[?] =>
               makeReadFn[T](MethodKey(t, false), in)(in =>
@@ -908,7 +1005,7 @@ object JsonCodecMaker:
                 val totalRequired = math.pow(2, t.fields.length).toInt - 1
                 var required = 0
                 val reqSym = Symbol.newVal(Symbol.spliceOwner, "required", TypeRepr.of[Int], Flags.Mutable, Symbol.noSymbol)
-                val allFieldNames = Expr(t.fields.map(_.name).toArray) // Used for missing required field error
+                val allFieldNames = Expr(t.fields.map(f => changeFieldName(f)).toArray) // Used for missing required field error
 
                 val together = t.fields.map { oneField =>
                   oneField.fieldRef.refType match {
@@ -984,7 +1081,7 @@ object JsonCodecMaker:
                 }
                 val reqVarDef = ValDef(reqSym, Some(Literal(IntConstant(totalRequired))))
                 val (varDefs, caseDefs, idents) = together.unzip3
-                val caseDefsWithFinal = caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+                val caseDefsWithFinal = caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
 
                 val argss = List(idents)
                 val primaryConstructor = tpe.classSymbol.get.primaryConstructor
@@ -996,21 +1093,63 @@ object JsonCodecMaker:
 
                 val exprRequired = Expr(required)
 
-                makeClassFieldMatrixValDef(MethodKey(t, false), t.name.replaceAll("\\.", "_"), t.fields.map(_.name).toArray)
+                makeClassFieldMatrixValDef(MethodKey(t, false), t.name.replaceAll("\\.", "_"), t.fields.map(f => changeFieldName(f)).toArray)
                 val fieldMatrixSym = classFieldMatrixSyms(MethodKey(t, false)).asInstanceOf[Symbol]
 
-                val parseLoop = '{
-                  var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
-                  if maybeFieldNum == null then null.asInstanceOf[T]
-                  else
-                    while maybeFieldNum.isDefined do
-                      ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
-                      maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
-                    if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
-                    else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
-                }.asTerm
+                var finalVarDefs = varDefs
+                val parseLoop =
+                  if !cfg._writeNonConstructorFields || t.nonConstructorFields.isEmpty then
+                    // When we don't care about non-constructor fields
+                    '{
+                      var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                      if maybeFieldNum == null then null.asInstanceOf[T]
+                      else
+                        while maybeFieldNum.isDefined do
+                          ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                          maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
 
-                Block(varDefs :+ reqVarDef, parseLoop).asExprOf[T]
+                        if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
+                        else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
+                    }.asTerm
+                  else
+                    val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
+                    finalVarDefs = finalVarDefs :+ ValDef(instanceSym, Some('{ null }.asTerm)) // add var _instance=null to gen'ed code
+                    val instanceSymRef = Ident(instanceSym.termRef)
+                    // When we do care about non-constructor fields
+                    makeClassFieldMatrixValDef(MethodKey(t, true), t.name.replaceAll("\\.", "_"), t.nonConstructorFields.sortBy(_.index).map(f => changeFieldName(f)).toArray)
+                    val fieldMatrixSymNCF = classFieldMatrixSyms(MethodKey(t, true)).asInstanceOf[Symbol]
+                    // New Case/Match for non-constructor fields
+                    val caseDefsWithFinalNC = t.nonConstructorFields.map(ncf =>
+                      ncf.fieldRef.refType match
+                        case '[u] =>
+                          CaseDef(
+                            Literal(IntConstant(ncf.index)),
+                            None,
+                            // Call the setter for this field here...
+                            Apply(Select.unique(Ref(instanceSym), ncf.setterLabel), List(genReadVal[u](ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)).asExpr.asTerm
+                          )
+                    ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+                    '{
+                      val mark = $in.pos
+                      var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                      if maybeFieldNum == null then null.asInstanceOf[T]
+                      else
+                        while maybeFieldNum.isDefined do
+                          ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                          maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+
+                        if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then
+                          ${ Assign(instanceSymRef, instantiateClass.asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
+                          $in.revertToPos(mark) // go back to re-parse object json, this time for non-constructor fields
+                          maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSymNCF).asExprOf[StringMatrix] })
+                          while maybeFieldNum.isDefined do
+                            ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinalNC).asExprOf[Any] }
+                            maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSymNCF).asExprOf[StringMatrix] })
+                          ${ Ref(instanceSym).asExprOf[T] }
+                        else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
+                    }.asTerm
+
+                Block(finalVarDefs :+ reqVarDef, parseLoop).asExprOf[T]
               )
 
             case t => throw new ParseError("Not yet implemented: " + t)
@@ -1266,6 +1405,9 @@ object JsonCodecMaker:
             case t: URIRef  => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
             case t: UUIDRef => '{ $in.expectString(java.util.UUID.fromString) }.asExprOf[T]
 
+            // ZZZ: TODO
+            // case t: ObjectRef => '{ null }.asExprOf[T]
+
             case t: AliasRef[?] =>
               // Special check for RawJson pseudo-type
               if lastPart(t.definedType) == "RawJson" then
@@ -1455,10 +1597,7 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                   t.elementRef.refType match
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                      // println("REF: " + rtypeRef)
-                      // LeftRightRef(scala.Union,List(L, R),TryRef(scala.util.Try,List(A),ScalaOptionRef(scala.Option,List(A),IntRef())),StringRef(),UnionRType)
                       '{
-                        // null
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then parsedArray.toSeq
                         else null
@@ -1566,7 +1705,6 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                         else null
                       }.asExprOf[T]
                     case "java.util.List" | "java.lang.Iterable" =>
-                      println(ref)
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
                         if parsedArray != null then new java.util.ArrayList(parsedArray.toList.asJava)
@@ -1912,6 +2050,19 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                       val constructor = Select(New(Inferred(tpe)), tpe.classSymbol.get.primaryConstructor)
                       val arg = genReadVal[f](theField.asInstanceOf[RTypeRef[f]], in, isMapKey = isMapKey).asTerm
                       Apply(constructor, List(arg)).asExprOf[T]
+
+            case t: SelfRefRef[?] =>
+              t.refType match
+                case '[e] =>
+                  val ref = ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+                  val key = MethodKey(ref, false)
+                  val sym = readMethodSyms(key)
+                  Ref(sym).appliedTo(in.asTerm).asExprOf[T]
+            // val tin = aE.asExprOf[b]
+            // '{
+            //   if $tin == null then $out.burpNull()
+            //   else ${ Ref(sym).appliedTo(tin.asTerm, out.asTerm).asExprOf[Unit] }
+            // }
 
             case _ =>
               // Classes, traits, etc.

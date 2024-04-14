@@ -26,6 +26,4 @@ object ScalaJackZ:
 
     implicit val blah: ScalaJack[co.blocke.Record2] = sj[co.blocke.Record2]
     def writeRecordScalaJack = ScalaJack[co.blocke.Record2].toJson(record)  
-
-    TODO: Maybe rewrite sj to be something like buildCodec or something more descriptive.
     */

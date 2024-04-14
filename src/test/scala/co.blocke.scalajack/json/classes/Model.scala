@@ -4,10 +4,11 @@ package classes
 
 import co.blocke.scala_reflection.Ignore
 import dotty.tools.repl.Command
+import java.net.NoRouteToHostException
 
 case class Person(name: String, @Change(name = "duration") age: Int)
 
-class Parent(val phase: Int):
+class Parent(val phase: Int, var stuff: List[String]):
   private var _hidden: Boolean = false
   def hidden: Boolean = _hidden
   def hidden_=(h: Boolean) = _hidden = h
@@ -19,7 +20,7 @@ class Parent(val phase: Int):
   var foo: String = "ok"
   @Ignore var noFoo: String = "not ok"
 
-case class Child(name: String, age: Int, override val phase: Int) extends Parent(phase)
+case class Child(name: String, age: Int, override val phase: Int) extends Parent(phase, Nil)
 
 case class Params[X, Y](a: List[X], b: Option[Y])
 
@@ -38,7 +39,14 @@ class Dallas(val pop: Int) extends City
 @TypeHint(hintValue = "vice")
 class Miami(val temp: Double) extends City
 
-case class TraitHolder(a: Command, b: Animal, c: City)
+sealed trait Route
+class CityRoute(val numStreets: Int) extends Route
+// Testing indirection. In real-world scenario all your sealed trait's classes
+// must be defined in one file. Implementation classes like CityRouteImpl could
+// be in other files so the sealed trait's file doesn't grow huge.
+case class CityRouteImpl(override val numStreets: Int) extends CityRoute(numStreets)
+
+case class TraitHolder(a: Command, b: Animal, c: City, d: Route)
 
 sealed abstract class Command2
 case object Start2 extends Command2
@@ -55,6 +63,11 @@ class Dallas2(val pop: Int) extends City2
 @TypeHint(hintValue = "vice")
 class Miami2(val temp: Double) extends City2
 
+sealed abstract class AThing[T]
+class Thing1[T](val t: T) extends AThing[T]
+class Thing2[T](val t: T, val s: String) extends AThing[T]
+
 case class AbstractClassHolder(a: Command2, b: Animal2, c: City2)
+case class AbstractClassHolder2[P](a: AThing[P])
 
 case class Empl[T](id: String, data: T, boss: Empl[T], coworkers: List[Empl[T]])
