@@ -67,12 +67,12 @@ case class Fish(name: String, @Change(name = "fresh") isFreshwater: Option[Boole
 
 type NonEmptyString = NonEmptyString.Type
 given NonEmptyString: Newtype[String] with
-  inline def validate(input: String): Boolean =
+  override inline def validate(input: String): Boolean =
     input.nonEmpty
 
 type NonEmptyList = NonEmptyList.Type
 given NonEmptyList: Newtype[List[Int]] with
-  inline def validate(input: List[Int]): Boolean =
+  override inline def validate(input: List[Int]): Boolean =
     input.nonEmpty
 
 type NonZeroInt = NonZeroInt.Type
@@ -82,18 +82,18 @@ object NonZeroInt extends Newtype[Int]:
 
 type XList = XList.Type
 given XList: Newtype[List[String]] with
-  inline def validate(input: List[String]): Boolean =
+  override inline def validate(input: List[String]): Boolean =
     input(0) == "x"
 
 case class Validated(num: NonZeroInt, name: NonEmptyString, xspot: XList, nada: List[EmptyString])
 
-case class Tag[X](a: X)
-given [A, B](using newType: Newtype.WithType[A, B], tag: Tag[A]): Tag[B] =
-  newType.unsafeWrapF(tag)
+// case class Tag[X](a: X)
+// given [A, B](using newType: Newtype.WithType[A, B], tag: Tag[A]): Tag[B] =
+//   newType.unsafeWrapF(tag)
 
 type EmptyString = EmptyString.Type
 given EmptyString: Newtype[String] with
-  inline def validate(input: String): Boolean =
+  override inline def validate(input: String): Boolean =
     input.isEmpty
 
 case class Person2(age: XList)

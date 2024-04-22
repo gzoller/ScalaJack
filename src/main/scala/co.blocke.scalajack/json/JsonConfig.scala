@@ -15,7 +15,7 @@ class JsonConfig private[scalajack] (
     val typeHintLabel: String,
     val typeHintPolicy: TypeHintPolicy,
     // --------------------------
-    val enumsAsIds: Option[List[String]], // None=no enums as ids, Some(Nil)=all enums as ids, Some(List(...))=specified classes enums as ids
+    val enumsAsIds: List[String], // Default: string values.  Nil=all enums as ids, List(...)=specified classes enums as ids
     val _writeNonConstructorFields: Boolean,
     val _suppressEscapedStrings: Boolean,
     val _suppressTypeHints: Boolean
@@ -25,18 +25,18 @@ class JsonConfig private[scalajack] (
   def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): JsonConfig = copy(eitherLeftHandling = eitherPolicy)
   def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
-  def withEnumsAsIds(asIds: Option[List[String]]): JsonConfig = copy(enumsAsIds = asIds)
+  def withEnumsAsIds(asIds: List[String]): JsonConfig = copy(enumsAsIds = asIds)
   def writeNonConstructorFields(): JsonConfig = copy(_writeNonConstructorFields = true)
   def suppressEscapedStrings(): JsonConfig = copy(_suppressEscapedStrings = true)
   def suppressTypeHints(): JsonConfig = copy(_suppressTypeHints = true)
 
-  private[this] def copy(
+  private def copy(
       noneAsNull: Boolean = noneAsNull,
       tryFailureHandling: TryPolicy = tryFailureHandling,
       eitherLeftHandling: EitherLeftPolicy = eitherLeftHandling,
       typeHintLabel: String = typeHintLabel,
       typeHintPolicy: TypeHintPolicy = typeHintPolicy,
-      enumsAsIds: Option[List[String]] = enumsAsIds,
+      enumsAsIds: List[String] = enumsAsIds,
       _writeNonConstructorFields: Boolean = _writeNonConstructorFields,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
       _suppressTypeHints: Boolean = _suppressTypeHints
@@ -71,7 +71,7 @@ object JsonConfig
       eitherLeftHandling = EitherLeftPolicy.AS_VALUE,
       typeHintLabel = "_hint",
       typeHintPolicy = TypeHintPolicy.SIMPLE_CLASSNAME,
-      enumsAsIds = None,
+      enumsAsIds = List("-"), // default -> enum as value
       _writeNonConstructorFields = false,
       _suppressEscapedStrings = false,
       _suppressTypeHints = false

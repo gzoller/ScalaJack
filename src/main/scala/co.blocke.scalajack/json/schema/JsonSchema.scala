@@ -255,7 +255,7 @@ object JsonSchema:
               t.refType match
                 case '[u] =>
                   val requiredFields = Expr(t.fields.collect {
-                    case f: FieldInfoRef if !f.fieldRef.isInstanceOf[OptionRef[_]] => f.name
+                    case f: FieldInfoRef if !f.fieldRef.isInstanceOf[OptionRef[?]] => f.name
                   })
                   '{
                     ObjectSchema(

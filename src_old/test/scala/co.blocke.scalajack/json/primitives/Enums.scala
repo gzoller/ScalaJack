@@ -16,7 +16,6 @@ class Enums() extends FunSuite:
 
   test("Enumeration (Scala 2.x) must work (not nullable)") {
     describe("-----------------\n:  Scala Enums  :\n-----------------", Console.BLUE)
-    describe("+++ Positive Tests +++")
 
     import SizeWithType._
     val inst = SampleEnum(Size.Small, Size.Medium, Size.Large, null, Size.Medium, Little)

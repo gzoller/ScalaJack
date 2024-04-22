@@ -284,20 +284,20 @@ object SafeNumbers {
       }.toString
   }
 
-  private[this] def rop(g1: Long, g0: Long, cp: Long): Long = {
+  private def rop(g1: Long, g0: Long, cp: Long): Long = {
     val x1 = multiplyHigh(g0, cp) // FIXME: Use Math.multiplyHigh after dropping JDK 8 support
     val z = (g1 * cp >>> 1) + x1
     val y1 = multiplyHigh(g1, cp) // FIXME: Use Math.multiplyHigh after dropping JDK 8 support
     (z >>> 63) + y1 | -(z & 0x7fffffffffffffffL) >>> 63
   }
 
-  private[this] def rop(g: Long, cp: Int): Int = {
+  private def rop(g: Long, cp: Int): Int = {
     val x1 =
       ((g & 0xffffffffL) * cp >>> 32) + (g >>> 32) * cp // FIXME: Use Math.multiplyHigh after dropping JDK 8 support
     (x1 >>> 31).toInt | -x1.toInt >>> 31
   }
 
-  private[this] def multiplyHigh(x: Long, y: Long): Long = {
+  private def multiplyHigh(x: Long, y: Long): Long = {
     val x2 = x & 0xffffffffL
     val y2 = y & 0xffffffffL
     val b = x2 * y2
@@ -309,7 +309,7 @@ object SafeNumbers {
 
   // Adoption of a nice trick form Daniel Lemire's blog that works for numbers up to 10^18:
   // https://lemire.me/blog/2021/06/03/computing-the-number-of-digits-of-an-integer-even-faster/
-  private[this] def digitCount(x: Long): Int = (offsets(java.lang.Long.numberOfLeadingZeros(x)) + x >> 58).toInt
+  private def digitCount(x: Long): Int = (offsets(java.lang.Long.numberOfLeadingZeros(x)) + x >> 58).toInt
 
   final private val offsets = Array(
     5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 4889916394579099648L, 4889916394579099648L, 4889916394579099648L,
@@ -320,7 +320,7 @@ object SafeNumbers {
     864691128455135132L, 864691128455135132L, 864691128455135132L, 576460752303423478L, 576460752303423478L, 576460752303423478L, 576460752303423478L, 576460752303423478L, 576460752303423478L, 576460752303423478L
   )
 
-  private[this] val gs: Array[Long] = Array(
+  private val gs: Array[Long] = Array(
     5696189077778435540L, 6557778377634271669L, 9113902524445496865L, 1269073367360058862L, 7291122019556397492L, 1015258693888047090L, 5832897615645117993L, 6346230177223303157L, 4666318092516094394L, 8766332956520552849L, 7466108948025751031L,
     8492109508320019073L, 5972887158420600825L, 4949013199285060097L, 4778309726736480660L, 3959210559428048077L, 7645295562778369056L, 6334736895084876923L, 6116236450222695245L, 3223115108696946377L, 4892989160178156196L, 2578492086957557102L,
     7828782656285049914L, 436238524390181040L, 6263026125028039931L, 2193665226883099993L, 5010420900022431944L, 9133629810990300641L, 8016673440035891111L, 9079784475471615541L, 6413338752028712889L, 5419153173006337271L, 5130671001622970311L,
@@ -568,7 +568,7 @@ object UnsafeNumbers {
   }
 
   // measured faster than Character.isDigit
-  @inline private[this] def isDigit(i: Int): Boolean =
+  @inline private def isDigit(i: Int): Boolean =
     '0' <= i && i <= '9'
 
   // is it worth keeping this custom long__ instead of using bigInteger since it
@@ -829,8 +829,8 @@ object UnsafeNumbers {
     else res
   }
   // note that bigDecimal does not have a negative zero
-  private[this] val bigIntegers: Array[java.math.BigInteger] =
+  private val bigIntegers: Array[java.math.BigInteger] =
     (0L to 9L).map(java.math.BigInteger.valueOf).toArray
-  private[this] val longunderflow: Long = Long.MinValue / 10L
-  private[this] val longoverflow: Long = Long.MaxValue / 10L
+  private val longunderflow: Long = Long.MinValue / 10L
+  private val longoverflow: Long = Long.MaxValue / 10L
 }

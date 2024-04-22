@@ -50,19 +50,21 @@ case class AliasHolder2[T](a: T, b: List[T], c: Map[String, T])
 
 case class StringHolder(a: String)
 
+case class MapHolder[T, V](a: Map[T, V])
+
 type NonEmptyString = NonEmptyString.Type
 given NonEmptyString: Newtype[String] with
-  inline def validate(input: String): Boolean =
+  override inline def validate(input: String): Boolean =
     input.nonEmpty
 
 type XList = XList.Type
 given XList: Newtype[List[String]] with
-  inline def validate(input: List[String]): Boolean =
+  override inline def validate(input: List[String]): Boolean =
     input.nonEmpty && input(0) == "x"
 
 type EmptyString = EmptyString.Type
 given EmptyString: Newtype[String] with
-  inline def validate(input: String): Boolean =
+  override inline def validate(input: String): Boolean =
     input.isEmpty
 
 case class Validated(name: NonEmptyString, xspot: XList, nada: List[EmptyString])
@@ -87,6 +89,13 @@ object SizeWithType extends Enumeration {
   val Little, Grand = Value
 }
 import SizeWithType.*
+
+object Permissions extends Enumeration {
+  type Permissions = Value
+  val READ, WRITE, EXEC, NONE = Value
+}
+
+// case class SampleEnum(e1: Enumeration#Value, e2: Enumeration#Value, e3: Enumeration#Value, e4: Enumeration#Value, e5: Enumeration#Value, e6: SizeWithType)
 case class SampleEnum(e1: Size.Value, e2: Size.Value, e3: Size.Value, e4: Size.Value, e5: Size.Value, e6: SizeWithType)
 
 enum Color {
@@ -98,11 +107,10 @@ sealed trait Flavor
 case object Vanilla extends Flavor
 case object Chocolate extends Flavor
 case object Bourbon extends Flavor
+case class FlavorHolder(f: Flavor, f2: Flavor, f3: Map[Flavor, String], f4: Map[String, Flavor])
 
 sealed trait Vehicle
 case class Truck(numberOfWheels: Int) extends Vehicle
 case class Car(numberOfWheels: Int, color: String) extends Vehicle
 case class Plane(numberOfEngines: Int) extends Vehicle
-
-case class Ride(wheels: Vehicle)
-case class Favorite(flavor: Flavor)
+case class VehicleHolder(f: Vehicle, f2: Vehicle, f4: Map[String, Vehicle])

@@ -44,7 +44,6 @@ class CityRoute(val numStreets: Int) extends Route
 // Testing indirection. In real-world scenario all your sealed trait's classes
 // must be defined in one file. Implementation classes like CityRouteImpl could
 // be in other files so the sealed trait's file doesn't grow huge.
-case class CityRouteImpl(override val numStreets: Int) extends CityRoute(numStreets)
 
 case class TraitHolder(a: Command, b: Animal, c: City, d: Route)
 

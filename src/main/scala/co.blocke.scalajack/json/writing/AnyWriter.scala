@@ -75,7 +75,7 @@ object AnyWriter:
 
       case v: Map[?, ?] =>
         out.startObject()
-        v.map { case (k, v) => okToWrite(k.toString, v, out, cfg) }
+        v.map { case (k, v) => _okToWrite(k.toString, v, out, cfg) }
         out.endObject()
 
       case v: Option[?] =>
@@ -116,34 +116,34 @@ object AnyWriter:
               m.setAccessible(true)
               val fieldValue = m.invoke(v)
               val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
-              okToWrite(fieldName, fieldValue, out, cfg)
+              _okToWrite(fieldName, fieldValue, out, cfg)
             )
             out.endObject()
           case _ => throw new JsonUnsupportedType("Class " + v.getClass.getName + " not supported for Any type")
 
-  // Called for Any-typed classes
-  def okToWrite(label: String, value: Any, out: JsonOutput, cfg: JsonConfig): Unit =
-    isOkToWrite(value, cfg).map { v =>
-      out.label(label)
-      writeAny(v, out, cfg)
-    }
-
   // Called by non-Any classes (in JsonCodecMaker) that have Any-typed fields
-  def okToWrite2(prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput], cfg: JsonConfig)(using Quotes): Expr[Unit] =
+  def isOkToWrite(prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput], cfg: JsonConfig)(using Quotes): Expr[Unit] =
     import quotes.reflect.*
     '{
-      isOkToWrite($value, ${ Expr(cfg) }).map { v =>
+      _okToWrite($value, ${ Expr(cfg) }).map { v =>
         $prefix
         AnyWriter.writeAny(v, $out, ${ Expr(cfg) })
       }
     }
 
-  def isOkToWrite(value: Any, cfg: JsonConfig): Option[Any] =
+  // Called for Any-typed classes
+  private def _okToWrite(label: String, value: Any, out: JsonOutput, cfg: JsonConfig): Unit =
+    _okToWrite(value, cfg).map { v =>
+      out.label(label)
+      writeAny(v, out, cfg)
+    }
+
+  private def _okToWrite(value: Any, cfg: JsonConfig): Option[Any] =
     value match
-      case None => if cfg.noneAsNull then Some("null") else None
+      case None => if cfg.noneAsNull then Some(null) else None
       case Failure(e) =>
         cfg.tryFailureHandling match
-          case TryPolicy.AS_NULL         => Some("null")
+          case TryPolicy.AS_NULL         => Some(null)
           case TryPolicy.ERR_MSG_STRING  => Some("Try Failure with msg: " + e.getMessage())
           case TryPolicy.THROW_EXCEPTION => throw e
 
@@ -153,5 +153,5 @@ object AnyWriter:
           case EitherLeftPolicy.AS_NULL         => Some("null")
           case EitherLeftPolicy.ERR_MSG_STRING  => Some("Left Error: " + v.toString)
           case EitherLeftPolicy.THROW_EXCEPTION => throw new JsonEitherLeftError("Left Error: " + v.toString)
-      case Some(v) => isOkToWrite(v, cfg)
+      case Some(v) => _okToWrite(v, cfg)
       case _       => Some(value)

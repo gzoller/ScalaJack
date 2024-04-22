@@ -113,7 +113,9 @@ object JsonCodecMaker:
         case _: TimeRef                            => true
         case _: NetRef                             => true
         case c: ScalaClassRef[?] if c.isValueClass => true
+        case _: EnumRef[?]                         => true
         case a: AliasRef[?]                        => testValidMapKey(a.unwrappedType)
+        case t: TraitRef[?] if t.childrenAreObject => true
         case _                                     => false
       if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
       isValid
@@ -253,7 +255,7 @@ object JsonCodecMaker:
                               ${ _maybeWrite[lt](prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, cfg) }
                       }
         case t: AnyRef =>
-          AnyWriter.okToWrite2(prefix, aE, out, cfg)
+          AnyWriter.isOkToWrite(prefix, aE, out, cfg)
         case _ =>
           ref.refType match
             case '[u] =>
@@ -316,12 +318,14 @@ object JsonCodecMaker:
                     }
               }
 
-            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass => // basically just like sealed trait...
+            // case t: ScalaClassRef[?] if t.isSealed => // basically just like sealed trait...
+            case t: Sealable if t.isSealed => // basically just like sealed trait...
               if t.childrenAreObject then
                 val tin = aE.asExprOf[b]
                 // case object -> just write the simple name of the object
                 '{
-                  $out.value($tin.getClass.getName.split('.').last.stripSuffix("$"))
+                  if $tin == null then $out.burpNull()
+                  else $out.value($tin.getClass.getName.split('.').last.stripSuffix("$"))
                 }
               else
                 val cases = t.sealedChildren.map { child =>
@@ -349,6 +353,20 @@ object JsonCodecMaker:
                     f.fieldRef.refType match
                       case '[z] =>
                         val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
+                        // val fieldValue =
+                        //   f.fieldRef match
+                        //     case e: ScalaEnumerationRef[?] =>
+                        //       try
+                        //         val tE = Select.unique(in.asTerm, f.name).asExpr // .asExprOf[z]
+                        //         '{ $tE.asInstanceOf[z] }
+                        //       catch {
+                        //         case t: Throwable =>
+                        //           println("BOOM: " + f.name)
+                        //           println("Type: " + f.fieldRef.refType)
+                        //           throw t
+                        //       }
+                        //     case _ =>
+                        //       Select.unique(in.asTerm, f.name).asExprOf[z]
                         val fieldName = changeFieldName(f)
                         maybeWrite[z](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }
@@ -462,7 +480,7 @@ object JsonCodecMaker:
               makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
                   case '[e] =>
-                    val tin = '{ $in.asInstanceOf[java.util.Collection[_]] }
+                    val tin = '{ $in.asInstanceOf[java.util.Collection[?]] }
                     '{
                       if $tin == null then $out.burpNull()
                       else
@@ -525,30 +543,7 @@ object JsonCodecMaker:
                     }
               }
 
-            case t: TraitRef[?] =>
-              if !t.isSealed then throw new JsonUnsupportedType("Non-sealed traits are not supported")
-              if t.childrenAreObject then
-                // case object -> just write the simple name of the object
-                val tin = aE.asExprOf[b]
-                '{
-                  $out.value($tin.getClass.getName.split('.').last.stripSuffix("$"))
-                }
-              else
-                // So... sealed trait children could be any of those defined for the trait.  We need to
-                // generate a match/case statement that in turn generates render functions for each
-                // child of the sealed trait.
-                // Refer to Jsoniter: JsonCodecMaker.scala around line 920 for example how to do this, incl a wildcard.
-                // (f: (Expr[U], Expr[JsonOutput]) => Expr[Unit])
-                makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-                  val cases = t.sealedChildren.map { child =>
-                    child.refType match
-                      case '[c] =>
-                        val subtype = TypeIdent(TypeRepr.of[c].typeSymbol)
-                        val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype.tpe)
-                        CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype.tpe))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, cfg._suppressTypeHints).asTerm)
-                  } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
-                  Match(in.asTerm, cases).asExprOf[Unit]
-                }
+            case t: TraitRef[?] => throw JsonUnsupportedType("Non-sealed traits are not supported")
 
             // No makeWriteFn here--Option is just a wrapper to the real thingy
             case t: ScalaOptionRef[?] =>
@@ -751,7 +746,10 @@ object JsonCodecMaker:
             case t: ShortRef =>
               if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
               else '{ $out.value(${ aE.asExprOf[Short] }) }
-            case t: StringRef => '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
+
+            case t: StringRef =>
+              if cfg._suppressEscapedStrings then '{ $out.value(${ aE.asExprOf[String] }) }
+              else '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
 
             case t: JBigDecimalRef =>
               if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
@@ -814,19 +812,19 @@ object JsonCodecMaker:
                   case '[e] =>
                     genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
 
-            // These one's here becaue Enums and their various flavors can be Map keys
+            // These are here becaue Enums and their various flavors can be Map keys
             // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
             case t: EnumRef[?] =>
               val enumAsId = cfg.enumsAsIds match
-                case None                                => false
-                case Some(Nil)                           => true
-                case Some(list) if list.contains(t.name) => true
-                case _                                   => false
+                case List("-")                     => false
+                case Nil                           => true
+                case list if list.contains(t.name) => true
+                case _                             => false
               val rtype = t.expr
               if enumAsId then
-                if isMapKey then '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get.toString) } // stringified id
-                else '{ $out.value($rtype.asInstanceOf[EnumRType[_]].ordinal($aE.toString).get) } // int value of id
-              else '{ $out.value($aE.toString) }
+                if isMapKey then '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // stringified id
+                else '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get) } // int value of id
+              else '{ if $aE == null then $out.burpNull() else $out.value($aE.toString) }
 
             // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
             // the argument of method validate$retainedBody.  It happened to have the correctly-typed parameter.
@@ -838,21 +836,6 @@ object JsonCodecMaker:
                     case '[u] =>
                       val baseTypeRef = ReflectOnType.apply(q)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
                       genWriteVal[u]('{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out)
-
-            /* This is how you call make(), which includes validate()
-              val myMake = module.methodMember("make").head
-              val tm = Ref(module)
-              val z = Apply(
-                Select.unique(tm, "make"),
-                List(
-                  Expr(List(1, 2, 3)).asTerm
-                )
-              ).asExprOf[Either[String, _]]
-              '{
-                println("Hello...")
-                println($z)
-              }
-             */
 
             case t: AnyRef => '{ AnyWriter.writeAny($aE, $out, ${ Expr(cfg) }) }
 
@@ -898,7 +881,47 @@ object JsonCodecMaker:
         case '[b] =>
           r match
 
-            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass && !t.childrenAreObject =>
+            case t: AnyRef =>
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                '{
+                  if $in.expectNull() then null
+                  else
+                    $in.readToken() match
+                      case '[' =>
+                        $in.backspace()
+                        val parsedArray = $in.expectArray[Any](() => ${ genReadVal[Any](AnyRef(), in, false) })
+                        if parsedArray != null then parsedArray.toList
+                        else null
+                      case '{' =>
+                        $in.parseMap[String, Any](
+                          () => ${ genReadVal[String](StringRef(), in, false, true) },
+                          () => ${ genReadVal[Any](AnyRef(), in, false) },
+                          Map.empty[String, Any],
+                          true
+                        )
+                      case 't' | 'f' =>
+                        $in.backspace()
+                        $in.expectBoolean()
+                      case n if n == '-' | n == '+' | n == '.' | (n >= '0' && n <= '9') =>
+                        $in.backspace()
+                        $in.expectNumberOrNull() match
+                          case null => null
+                          case s =>
+                            scala.math.BigDecimal(s) match {
+                              case i if i.isValidInt      => i.toIntExact
+                              case i if i.isValidLong     => i.toLongExact
+                              case d if d.isDecimalDouble => d.toDouble
+                              case d if d.ulp == 1        => d.toBigInt
+                              case d                      => d
+                            }
+                      case '\"' =>
+                        $in.backspace()
+                        $in.expectString()
+                      case _ => throw new JsonParseError("Illegal JSON char while parsing Any value", $in)
+                }.asExprOf[T]
+              )
+
+            case t: Sealable if t.isSealed && !t.childrenAreObject =>
               t.sealedChildren.map(kid =>
                 kid.refType match
                   case '[c] =>
@@ -975,7 +998,7 @@ object JsonCodecMaker:
                 }.asExprOf[T]
               )
 
-            case t: ScalaClassRef[?] if t.isSealed && t.isAbstractClass && t.childrenAreObject => // case objects
+            case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
               makeReadFn[T](MethodKey(t, false), in)(in =>
                 val classPrefixE = Expr(allButLastPart(t.name))
                 val caseDefs = t.sealedChildren.map { childRef =>
@@ -994,10 +1017,11 @@ object JsonCodecMaker:
                 }.asExprOf[T]
               )
 
+            case t: TraitRef[?] =>
+              throw JsonUnsupportedType("Non-sealed traits are not supported")
+
             case t: ScalaClassRef[?] =>
               makeReadFn[T](MethodKey(t, false), in)(in =>
-                val fieldNames = Expr(t.fields.map(_.name).toArray)
-
                 // Generate vars for each contractor argument, populated with either a "unit" value (eg 0, "") or given default value
                 val tpe = TypeRepr.of[b]
                 val classCompanion = tpe.typeSymbol.companionClass
@@ -1030,6 +1054,8 @@ object JsonCodecMaker:
                         // no default... required?  Not if Option/Optional, or a collection
                         val unitVal = oneField.fieldRef match {
                           case _: OptionRef[?] =>
+                            oneField.fieldRef.unitVal.asTerm // not required
+                          case _: AnyRef =>
                             oneField.fieldRef.unitVal.asTerm // not required
                           case r: LeftRightRef[?] if r.lrkind == LRKind.EITHER => // maybe required
                             val (optionRecipe, lang) = lrHasOptionChild(r)
@@ -1150,6 +1176,48 @@ object JsonCodecMaker:
                     }.asTerm
 
                 Block(finalVarDefs :+ reqVarDef, parseLoop).asExprOf[T]
+              )
+
+            case t: JavaClassRef[?] =>
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                val classNameE = Expr(t.name)
+                val tpe = TypeRepr.of[b]
+                val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
+                val instanceSymRef = Ident(instanceSym.termRef)
+                val nullConst = tpe.classSymbol.get.companionModule.declaredMethods
+                  .find(m => m.paramSymss == List(Nil))
+                  .getOrElse(
+                    throw JsonTypeError("ScalaJack only supports Java classes that have a zero-argument constructor")
+                  )
+                makeClassFieldMatrixValDef(MethodKey(t, true), t.name.replaceAll("\\.", "_"), t.fields.sortBy(_.index).map(f => changeFieldName(f)).toArray)
+                val fieldMatrixSym = classFieldMatrixSyms(MethodKey(t, true)).asInstanceOf[Symbol]
+                val caseDefs = t.fields.map(ncf =>
+                  ncf.fieldRef.refType match
+                    case '[u] =>
+                      CaseDef(
+                        Literal(IntConstant(ncf.index)),
+                        None,
+                        // Call the setter for this field here...
+                        Apply(
+                          Select.unique(Ref(instanceSym), ncf.asInstanceOf[NonConstructorFieldInfoRef].setterLabel),
+                          List(genReadVal[u](ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)
+                        ).asExpr.asTerm
+                      )
+                ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+
+                val parseLoop =
+                  '{
+                    var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                    if maybeFieldNum == null then null.asInstanceOf[T]
+                    else
+                      ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[T] }.asTerm).asExprOf[Any] } // _instance = (new instance)
+                      // ${ Assign(instanceSymRef, Apply(Select(New(Inferred(tpe)), nullConst), Nil).asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
+                      while maybeFieldNum.isDefined do
+                        ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
+                        maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                      ${ Ref(instanceSym).asExprOf[T] }
+                  }.asTerm
+                Block(List(ValDef(instanceSym, Some('{ null }.asTerm))), parseLoop).asExprOf[T]
               )
 
             case t => throw new ParseError("Not yet implemented: " + t)
@@ -1405,9 +1473,6 @@ object JsonCodecMaker:
             case t: URIRef  => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
             case t: UUIDRef => '{ $in.expectString(java.util.UUID.fromString) }.asExprOf[T]
 
-            // ZZZ: TODO
-            // case t: ObjectRef => '{ null }.asExprOf[T]
-
             case t: AliasRef[?] =>
               // Special check for RawJson pseudo-type
               if lastPart(t.definedType) == "RawJson" then
@@ -1522,9 +1587,19 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                       case null => null
                       case s: String =>
                         ${
-                          val typeRepr = TypeRepr.of[e]
-                          val m = typeRepr.typeSymbol.companionClass.declaredMethod("valueOf")
-                          Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
+                          cfg.enumsAsIds match
+                            case List("-") =>
+                              val typeRepr = TypeRepr.of[e]
+                              val m = typeRepr.typeSymbol.companionClass.declaredMethod("valueOf")
+                              Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
+                            case c if c == Nil || c.contains(t.name) =>
+                              val typeRepr = TypeRepr.of[e]
+                              val m = typeRepr.typeSymbol.companionClass.declaredMethod("fromOrdinal")
+                              Apply(Ref(m(0)), List('{ s.toInt }.asTerm)).asExpr
+                            case _ =>
+                              val typeRepr = TypeRepr.of[e]
+                              val m = typeRepr.typeSymbol.companionClass.declaredMethod("valueOf")
+                              Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
                         }
                       case v: Int =>
                         ${
@@ -1542,9 +1617,19 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                       case null => null
                       case s: String =>
                         ${
-                          val enumeration = TypeRepr.of[e] match
-                            case TypeRef(ct, _) => Ref(ct.termSymbol).asExprOf[Enumeration]
-                          '{ ${ enumeration }.values.iterator.find(_.toString == s).get }.asExprOf[e]
+                          cfg.enumsAsIds match
+                            case List("-") =>
+                              val enumeration = TypeRepr.of[e] match
+                                case TypeRef(ct, _) => Ref(ct.termSymbol).asExprOf[Enumeration]
+                              '{ ${ enumeration }.values.iterator.find(_.toString == s).get }.asExprOf[e]
+                            case c if c == Nil || c.contains(t.name) =>
+                              val enumeration = TypeRepr.of[e] match
+                                case TypeRef(ct, _) => Ref(ct.termSymbol).asExprOf[Enumeration]
+                              '{ ${ enumeration }.values.iterator.find(_.id == s.toInt).get }.asExprOf[e]
+                            case _ =>
+                              val enumeration = TypeRepr.of[e] match
+                                case TypeRef(ct, _) => Ref(ct.termSymbol).asExprOf[Enumeration]
+                              '{ ${ enumeration }.values.iterator.find(_.toString == s).get }.asExprOf[e]
                         }
                       case v: Int =>
                         ${
@@ -1557,17 +1642,30 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
               import quotes.reflect.*
               t.refType match
                 case '[e] =>
+                  val valuesE = Expr(t.values)
                   '{
                     $in.expectEnum() match
                       case null => null
                       case s: String =>
+                        scala.util.Try(s.toInt) match
+                          case Success(v) =>
+                            ${
+                              val typeRepr = TypeRepr.of[e]
+                              val m = typeRepr.classSymbol.get.companionModule.methodMember("valueOf")
+                              Apply(Ref(m(0)), List('{ $valuesE(v) }.asTerm)).asExpr
+                            }
+                          case _ =>
+                            ${
+                              val typeRepr = TypeRepr.of[e]
+                              val m = typeRepr.classSymbol.get.companionModule.methodMember("valueOf")
+                              Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
+                            }
+                      case v: Int =>
                         ${
                           val typeRepr = TypeRepr.of[e]
                           val m = typeRepr.classSymbol.get.companionModule.methodMember("valueOf")
-                          Apply(Ref(m(0)), List('{ s }.asTerm)).asExpr
+                          Apply(Ref(m(0)), List('{ $valuesE(v) }.asTerm)).asExpr
                         }
-                      case v: Int =>
-                        throw JsonParseError("Ordinal value initiation not valid for Java Enums", $in)
                   }.asExprOf[T]
 
             // --------------------
@@ -2058,11 +2156,28 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                   val key = MethodKey(ref, false)
                   val sym = readMethodSyms(key)
                   Ref(sym).appliedTo(in.asTerm).asExprOf[T]
-            // val tin = aE.asExprOf[b]
-            // '{
-            //   if $tin == null then $out.burpNull()
-            //   else ${ Ref(sym).appliedTo(tin.asTerm, out.asTerm).asExprOf[Unit] }
-            // }
+
+            // --------------------
+            //  NeoType...
+            // --------------------
+            case t: NeoTypeRef[?] => // in Quotes context
+              val module = Symbol.requiredModule(t.typedName.toString)
+              val myMake = module.methodMember("make").head
+              val tm = Ref(module)
+              t.wrappedTypeRef.refType match
+                case '[e] =>
+                  val res = Apply(
+                    Select.unique(tm, "make"),
+                    List(
+                      genReadVal[e](t.wrappedTypeRef.asInstanceOf[RTypeRef[e]], in, isMapKey = isMapKey).asTerm
+                    )
+                  ).asExprOf[Either[String, T]]
+                  val tnameE = Expr(t.name)
+                  '{
+                    $res match
+                      case Right(r) => r
+                      case Left(m)  => throw JsonParseError("NeoType validation for " + $tnameE + " failed", $in)
+                  }
 
             case _ =>
               // Classes, traits, etc.
@@ -2093,9 +2208,6 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
         def decodeValue(in: JsonSource): T = ${ genReadVal(ref, 'in) }
       }
     }.asTerm
-    val neededDefs =
-      // others here???  Refer to Jsoniter file JsonCodecMaker.scala
-      classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs
-    val codec = Block(neededDefs.toList, codecDef).asExprOf[JsonCodec[T]]
+    val codec = Block((classFieldMatrixValDefs ++ writeMethodDefs ++ readMethodDefs).toList, codecDef).asExprOf[JsonCodec[T]]
     // println(s"Codec: ${codec.show}")
     codec

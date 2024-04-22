@@ -7,8 +7,8 @@ import scala.annotation.tailrec
 
 // like StringBuilder but doesn't have any encoding or range checks
 final class FastStringBuilder(initial: Int = 16) {
-  private[this] var chars: Array[Char] = new Array[Char](initial)
-  private[this] var i: Int = 0
+  private var chars: Array[Char] = new Array[Char](initial)
+  private var i: Int = 0
 
   def clear() = i = 0
   def length = i
@@ -41,7 +41,7 @@ final class FastStringBuilder(initial: Int = 16) {
     25446, 25702, 25958, 26214
   )
 
-  private[this] def appendEscapedUnicode(c: Char): Unit = {
+  private def appendEscapedUnicode(c: Char): Unit = {
     append('\\')
     append('u')
     append("%04x".format(c.toInt))

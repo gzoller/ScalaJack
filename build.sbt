@@ -19,7 +19,7 @@ inThisBuild(List(
 
 name := "scalajack"
 ThisBuild / organization := "co.blocke"
-ThisBuild / scalaVersion := "3.3.1"
+ThisBuild / scalaVersion := "3.4.1"
 
 lazy val root = project
   .in(file("."))
@@ -35,7 +35,7 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"            %% "scala-reflection"     % "fixOptionUnit_ea63ce", //"2.0.3",
+      "co.blocke"            %% "scala-reflection"     % "fixOptionUnit_7632aa", //"2.0.3",
       "org.apache.commons"   % "commons-text"          % "1.11.0",
       "io.github.kitlangton" %% "neotype"              % "0.0.9",
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.24.5-SNAPSHOT",

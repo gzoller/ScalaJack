@@ -9,13 +9,13 @@ public class SampleClass {
     private String address;
 
     // Constructors
-    // public SampleClass(){}
+    public SampleClass(){}
 
-    public SampleClass(String name, int age, String address) {
-        this.name = name;
-        this.age = age;
-        this.address = address;
-    }
+    // public SampleClass(String name, int age, String address) {
+    //     this.name = name;
+    //     this.age = age;
+    //     this.address = address;
+    // }
 
     // Getter methods
     public String getName() {
