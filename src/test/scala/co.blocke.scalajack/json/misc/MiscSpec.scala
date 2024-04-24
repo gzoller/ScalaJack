@@ -25,7 +25,7 @@ on another level.""")
       js1 should equal("""{"a":"This is a \"strange\" test\non another level."}""")
       js2 should equal("""{"a":"This is a "strange" test
 on another level."}""")
-      sj1.fromJson(js1) shouldEqual(inst)
+      sj1.fromJson(js1) shouldEqual (inst)
       val msg =
         """Expected ',' or '}' but found 's' at position [17]
             |{"a":"This is a "strange" test~on another level."}
@@ -38,7 +38,7 @@ on another level."}""")
       val sj = sjCodecOf[Validated]
       val js = sj.toJson(inst)
       js should equal("""{"name":"Mike","xspot":["x","y","z"],"nada":["","",""]}""")
-      sj.fromJson(js) shouldEqual(inst)
+      sj.fromJson(js) shouldEqual (inst)
     }
     it("NeoType validation must work (test failure)") {
       val sj = sjCodecOf[Validated]
@@ -65,7 +65,7 @@ on another level."}""")
       val sj = sjCodecOf[AnyHolder]
       val js = sj.toJson(inst)
       js should equal("""{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]}""")
-      sj.fromJson(js) shouldEqual(AnyHolder(List(1, 2, 3),null,Map("a" -> -5),99,null,Map("a" -> 1, "b" -> 2),3,"nope",List("a", null, "b")))
+      sj.fromJson(js) shouldEqual (AnyHolder(List(1, 2, 3), null, Map("a" -> -5), 99, null, Map("a" -> 1, "b" -> 2), 3, "nope", List("a", null, "b")))
     }
     it("Any type must work (none as null)") {
       val inst = AnyHolder(
@@ -87,6 +87,6 @@ on another level."}""")
       )
       val js = sj.toJson(inst)
       js should equal("""{"maybe":[1,2,3],"maybeNot":null,"itried":{"a":-5},"itried2":99,"ifailed":"Try Failure with msg: oops","anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"Left Error: nope","bunch":["a",null,"b"]}""")
-      sj.fromJson(js) shouldEqual(AnyHolder(List(1, 2, 3),null,Map("a" -> -5),99,"Try Failure with msg: oops",Map("a" -> 1, "b" -> 2),3,"Left Error: nope",List("a", null, "b")))
+      sj.fromJson(js) shouldEqual (AnyHolder(List(1, 2, 3), null, Map("a" -> -5), 99, "Try Failure with msg: oops", Map("a" -> 1, "b" -> 2), 3, "Left Error: nope", List("a", null, "b")))
     }
   }

@@ -970,7 +970,7 @@ object JsonCodecMaker:
                             .asTerm
                         }
                       )
-                    case TypeHintPolicy.SIMPLE_CLASSNAME => // TODO: Annotation hints
+                    case TypeHintPolicy.SIMPLE_CLASSNAME =>
                       CaseDef(
                         Literal(StringConstant(childRef.name)),
                         None, {
@@ -1568,12 +1568,9 @@ object JsonCodecMaker:
                                 $in.backspace()
                                 throw JsonParseError("Failed to read either side of Union type", $in)
                       }.asExprOf[T]
-            /*
-            TODO
-              Intersection:
-val syntheticTA = taCache.typeAdapterOf[L]
-syntheticTA.write(t.asInstanceOf[L], writer, out)
-             */
+
+            case t: LeftRightRef[?] if t.lrkind == LRKind.INTERSECTION =>
+              throw JsonTypeError("Intersection types currently unsupported by ScalaJack")
 
             // --------------------
             //  Enumerations...
@@ -1739,6 +1736,16 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
                     if parsedArray != null then
                       implicit val ctt = $ct
                       parsedArray.toArray[e]
+                    else null
+                  }.asExprOf[T]
+
+            case t: SetRef[?] =>
+              t.elementRef.refType match
+                case '[e] =>
+                  val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                  '{
+                    val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                    if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Set[T] here
                     else null
                   }.asExprOf[T]
 
@@ -2196,14 +2203,6 @@ syntheticTA.write(t.asInstanceOf[L], writer, out)
     // ================================================================
     val codecDef = '{ // FIXME: generate a type class instance using `ClassDef.apply` and `Symbol.newClass` calls after graduating from experimental API: https://www.scala-lang.org/blog/2022/06/21/scala-3.1.3-released.html
       new JsonCodec[T] {
-        // def nullValue: A = ${genNullValue[A](rootTpe :: Nil)} // <- needed?
-
-        // TBD... when we're ready to tackle reading!
-        // def decodeValue(in: JsonReader, default: A): A = ${
-        //     if (cfg.encodingOnly) '{ ??? }
-        //     else genReadVal(rootTpe :: Nil, 'default, cfg.isStringified, false, 'in)
-        // }
-
         def encodeValue(in: T, out: JsonOutput): Unit = ${ genWriteVal('in, ref, 'out) }
         def decodeValue(in: JsonSource): T = ${ genReadVal(ref, 'in) }
       }

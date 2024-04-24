@@ -131,3 +131,13 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       sj.fromJson(js) shouldEqual (LRUnionHolder(List(null, "x"), ("y", null))) // Left's come back as null
     }
   }
+
+  // describe(colorString("----------------------------------\n:       Intersection Tests       :\n----------------------------------", Console.YELLOW)) {
+  //   it("LR (intersection) must work") {
+  //     val inst = LRUnionHolder[Option[Int], String](List(Some(5), "x"), ("y", Some(10)))
+  //     val sj = sjCodecOf[LRUnionHolder[Option[Int], String]]
+  //     val js = sj.toJson(inst)
+  //     js should matchJson("""{"a":[5,"x"],"b":["y",10]}""")
+  //     sj.fromJson(js) shouldEqual inst
+  //   }
+  // }

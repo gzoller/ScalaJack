@@ -44,7 +44,7 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
       val js = sj.toJson(inst)
       val diff = parseJValue(js).diff(parseJValue("""{"a":"Start","b":{"_hint":"86999-847-46A","species":"Beta","freshwater":false},"c":{"_hint":"13652-857-33B","temp":101.1},"d":{"_hint":"51470-503-54B","numStreets":25}}"""))
       val diffMap = diff.changed.values.asInstanceOf[Map[String, Map[String, ?]]]
-      assert(diffMap("b").contains("_hint") && diffMap("c").contains("_hint")  && diffMap("d").contains("_hint") == true) // ie only the scrambled _hint values are different
+      assert(diffMap("b").contains("_hint") && diffMap("c").contains("_hint") && diffMap("d").contains("_hint") == true) // ie only the scrambled _hint values are different
       val re = sj.fromJson(js)
       re.a shouldEqual (inst.a)
       re.b shouldEqual (inst.b)

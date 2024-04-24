@@ -114,3 +114,24 @@ case class Truck(numberOfWheels: Int) extends Vehicle
 case class Car(numberOfWheels: Int, color: String) extends Vehicle
 case class Plane(numberOfEngines: Int) extends Vehicle
 case class VehicleHolder(f: Vehicle, f2: Vehicle, f4: Map[String, Vehicle])
+
+/*
+
+TODO: FUTURE
+
+To implement Intersection types we must be able to support non-sealed traits.
+To do that, we need a full runtime mirror of everything else in ScalaJack that
+happens at compile-time (everything, basically).  Not sure if/when that will
+happen, so for now... no Intersection type support.
+
+trait Scissors:
+  val isSharp: Boolean
+  def cut: Unit
+trait Needle:
+  val bobbins: Int
+  def sew: Unit
+case class DressFixer(isSharp: Boolean, bobbins: Int) extends Scissors, Needle:
+  override def cut = println("Cut")
+  override def sew = println("Sew")
+case class LRInterHolder[T, U](a: Seq[T | U], b: (T | U, T | U))
+ */
