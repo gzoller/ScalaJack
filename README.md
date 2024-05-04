@@ -27,10 +27,15 @@ Include the following in your build.sbt:
 libraryDependencies ++= Seq("co.blocke" %% "scalajack" % SJ_VERSION)
 ```
 Now you're good to go! Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
+**File1.scala**
+```scala
+// Classes must be defined in a different file from where ScalaJack is called.
+// This is a Scala macro requirement, not a ScalaJack "ism"
+case class Person(name: String, age: Int)
+```
+**File2.scala**
 ```scala
 import co.blocke.scalajack.*
-
-case class Person(name: String, age: Int)
 
 given sjPerson: ScalaJack[Person] = sjCodecOf[Person] // create a re-usable Person codec
 ...
@@ -86,7 +91,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Null and None treatment](doc/nullAndNone.md)
 * [NeoType Support](doc/neotype.md)
 * [Union type](doc/union.md)
-* [Gimme Speed!](doc/speed.md)
+* [Gimme Speed!](benchmark/README.md)
 
 ### Notes:
 
