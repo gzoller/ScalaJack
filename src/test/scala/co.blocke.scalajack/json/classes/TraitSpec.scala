@@ -62,4 +62,11 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
       (re.c.asInstanceOf[Miami].temp == inst.c.asInstanceOf[Miami].temp) shouldEqual (true)
       (re.d.asInstanceOf[CityRoute].numStreets == inst.d.asInstanceOf[CityRoute].numStreets) shouldEqual (true)
     }
+    it("Complex trait relationships must work") {
+      val inst: ComplexPerson = Employee(Painter(5, Sports(1.2, 'Z')), Car(4))
+      val sj = sjCodecOf[ComplexPerson]
+      val js = sj.toJson(inst)
+      js should matchJson("""{"_hint":"Employee","who":{"_hint":"Painter","instrument":5,"effort":{"_hint":"Sports","thing1":1.2,"thing2":"Z"}},"org":{"_hint":"Car","passengers":4}}""")
+      sj.fromJson(js) shouldEqual (inst)
+    }
   }

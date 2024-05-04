@@ -18,6 +18,8 @@ case class Person(
     is_employed: Boolean = true
 )
 
+case class Amorphous(thing: Any)
+
 case class Address(
     street: String,
     city: String,
@@ -181,3 +183,24 @@ val record = Record(
   List(Friend("Jane Smith", 28, "jane.smith@example.com"), Friend("Bob Johnson", 32, "bob.johnson@example.com")),
   List(Pet("Fido", "Dog", 5), Pet("Whiskers", "Cat", 3))
 )
+
+//-----
+
+object VehicleClass extends Enumeration {
+  type VehicleClass = Value
+  val Land, Air, Sea = Value
+}
+import VehicleClass.*
+
+sealed trait Vehicle { val kind: VehicleClass }
+case class Car(passengers: Int) extends Vehicle { val kind: Land.type = Land }
+
+sealed trait Hobby[X, Y] { val thing1: X; val thing2: Y }
+sealed trait Artist[W, Z] { val instrument: W; val effort: Z }
+sealed trait PersonX[X, Y] { val who: X; val org: Y }
+
+case class Sports[A, B](thing1: A, thing2: B) extends Hobby[A, B]
+case class Painter[A, B](instrument: A, effort: B) extends Artist[A, B]
+case class Employee[A, B, C, D](who: Artist[C, Hobby[D, A]], org: B) extends PersonX[Artist[C, Hobby[D, A]], B]
+type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle]
+// println(RType.of[ComplexPerson].pretty)

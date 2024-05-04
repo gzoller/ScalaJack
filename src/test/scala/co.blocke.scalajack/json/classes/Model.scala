@@ -70,3 +70,21 @@ case class AbstractClassHolder(a: Command2, b: Animal2, c: City2)
 case class AbstractClassHolder2[P](a: AThing[P])
 
 case class Empl[T](id: String, data: T, boss: Empl[T], coworkers: List[Empl[T]])
+
+object VehicleClass extends Enumeration {
+  type VehicleClass = Value
+  val Land, Air, Sea = Value
+}
+import VehicleClass.*
+
+sealed trait Vehicle { val kind: VehicleClass }
+case class Car(passengers: Int) extends Vehicle { val kind: Land.type = Land }
+
+sealed trait Hobby[X, Y] { val thing1: X; val thing2: Y }
+sealed trait Artist[W, Z] { val instrument: W; val effort: Z }
+sealed trait PersonX[X, Y] { val who: X; val org: Y }
+
+case class Sports[A, B](thing1: A, thing2: B) extends Hobby[A, B]
+case class Painter[A, B](instrument: A, effort: B) extends Artist[A, B]
+case class Employee[A, B, C, D](who: Artist[C, Hobby[D, A]], org: B) extends PersonX[Artist[C, Hobby[D, A]], B]
+type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle]

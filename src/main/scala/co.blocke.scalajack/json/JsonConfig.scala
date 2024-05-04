@@ -10,7 +10,6 @@ class JsonConfig private[scalajack] (
     val noneAsNull: Boolean,
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
-    // val undefinedFieldHandling: UndefinedValueOption = UndefinedValueOption.THROW_EXCEPTION,
     // --------------------------
     val typeHintLabel: String,
     val typeHintPolicy: TypeHintPolicy,
@@ -57,9 +56,6 @@ enum TryPolicy:
 
 enum EitherLeftPolicy:
   case AS_VALUE, AS_NULL, ERR_MSG_STRING, THROW_EXCEPTION
-
-// enum UndefinedValueOption:
-//   case AS_NULL, AS_SYMBOL, THROW_EXCEPTION
 
 enum TypeHintPolicy:
   case SIMPLE_CLASSNAME, SCRAMBLE_CLASSNAME, USE_ANNOTATION
@@ -205,15 +201,6 @@ object JsonConfig
         case '{ EitherLeftPolicy.ERR_MSG_STRING }  => Some(EitherLeftPolicy.ERR_MSG_STRING)
         case '{ EitherLeftPolicy.THROW_EXCEPTION } => Some(EitherLeftPolicy.THROW_EXCEPTION)
   }
-
-  // private[scalajack] given FromExpr[UndefinedValueOption] with {
-  //   def unapply(x: Expr[UndefinedValueOption])(using Quotes): Option[UndefinedValueOption] =
-  //     import quotes.reflect.*
-  //     x match
-  //       case '{ UndefinedValueOption.AS_NULL }         => Some(UndefinedValueOption.AS_NULL)
-  //       case '{ UndefinedValueOption.AS_SYMBOL }       => Some(UndefinedValueOption.AS_SYMBOL)
-  //       case '{ UndefinedValueOption.THROW_EXCEPTION } => Some(UndefinedValueOption.THROW_EXCEPTION)
-  // }
 
   private[scalajack] given FromExpr[TypeHintPolicy] with {
     def unapply(x: Expr[TypeHintPolicy])(using Quotes): Option[TypeHintPolicy] =

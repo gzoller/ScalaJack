@@ -4,9 +4,11 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3/8.0.0/jar)
 
-ScalaJack 8 is an all-new ScalaJack implemenation built on Scala 3. For Scala 2.13 ScalaJack, please use (frozen) version 6.2.0. ScalaJack 8 is built using Scala 3.4.1 on JDK 21 LTS version.
+ScalaJack 8 is an all-new ScalaJack serializer implemenation built on Scala 3. For Scala 2.13 ScalaJack, please use the frozen version 6.2.0. ScalaJack 8 is built 
+using Scala 3.4.1 on JDK 21 LTS version.
 
-ScalaJack is a very fast, seamless serialization engine for JSON designed to require a bare minimum of extra code to serialize a class.
+ScalaJack is a very fast, seamless serialization engine for unstructured data types (JSON, HOCON, Yaml, and MsgPack) designed to require a bare minimum of extra code 
+to serialize a class.
 
 Advanced Features:
 
@@ -34,7 +36,7 @@ given sjPerson: ScalaJack[Person] = sjCodecOf[Person] // create a re-usable Pers
 ...
 val inst = Person("Mike",34)
 val js = sjPerson.toJson(inst) // """{"name":"Mike","age":34}"""
-val inst = sjPerson.fromJson(js) // re-constitutes original Person
+sjPerson.fromJson(js) // re-constitutes original Person
 ```
 Couldn't be simpler!
 
@@ -42,7 +44,8 @@ Couldn't be simpler!
 
 Compared to pre-8.0 ScalaJack, which used Scala 2.x runtime reflection, ScalaJack is dramatically faster in almost every case. How's this work? ScalaJack 8 uses macros, that at compile-time generate all the serialization code for you (the codecs). It's very much like writing hand-tooled, field-by-field serialization code yourself, except ScalaJack does it at compile-time.  Wherever you see ```sjCodecOf``` is where the compiler will generate all the serialization code.  **(That also means try not to use sjCodecOf more than once for any given class or you'll generate a lot of redundant code!)**
 
-You only need to worry about generating codecs for your top-most level classes.  Some serialization libraries require all classes to be specifically called out.  ScalaJack doesn't require this.  For example:
+You only need to worry about generating codecs for your top-most level classes.  Some serialization libraries require all nested classes in an object hierarchy to be 
+specifically called out for code generation.  ScalaJack doesn't require this.  For example:
 
 ```scala
 case class Dog(name: String, numLegs: Int)
@@ -70,7 +73,7 @@ In a non-macro program (e.g. something using Scala 2 runtime reflection) if you 
 
 That's **not** necessarily what happens with macros! Remember, the macro code is run at compile-time. File2.scala needs to be re-compiled because the macro needs to be re-run to pick up your changes to Foo class in File1.scala. **Unfortunately sbt doesn't pick up this dependency!** If you don't know any better you'll just re-run your program after a change to File1.scala, like normal, and get a **spectacular exception with exotic errors** that won't mean much to you. The simple, but non-intuitive, solution is you need to also recompile File2.scala.
 
-This means you will be doing more re-compiling with macro-based code than you would without the macros. It's an unfortunate cost of inconvenience and time, but the payoff is a *dramatic* gain in speed at runtime, and in the case of reflection in Scala 3, using macros is really the only way to accomplish reflection.
+This means you will be doing more re-compiling with macro-based code than you would without the macros. It's an unfortunate cost of inconvenience, but the payoff is a *dramatic* gain in speed at runtime, and in the case of reflection in Scala 3, using macros is the only way to accomplish reflection, so there really isn't an alternative.
 
 ## Features
 * [Case Classes and Traits](doc/classesAndTraits.md)
@@ -85,7 +88,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [ParseOrElse and Cascading Fallback Parsing](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
 * [Externalized Type Hints](doc/externalTypes.md)
-* [View/SpliceInto](doc/viewSplice.md)
+* [NeoType Support](doc/neotype.md)
 * [Filter](doc/filter.md)
 * [Union type](doc/union.md)
 * [Converters](doc/map.md)

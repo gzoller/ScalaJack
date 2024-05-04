@@ -353,20 +353,6 @@ object JsonCodecMaker:
                     f.fieldRef.refType match
                       case '[z] =>
                         val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
-                        // val fieldValue =
-                        //   f.fieldRef match
-                        //     case e: ScalaEnumerationRef[?] =>
-                        //       try
-                        //         val tE = Select.unique(in.asTerm, f.name).asExpr // .asExprOf[z]
-                        //         '{ $tE.asInstanceOf[z] }
-                        //       catch {
-                        //         case t: Throwable =>
-                        //           println("BOOM: " + f.name)
-                        //           println("Type: " + f.fieldRef.refType)
-                        //           throw t
-                        //       }
-                        //     case _ =>
-                        //       Select.unique(in.asTerm, f.name).asExprOf[z]
                         val fieldName = changeFieldName(f)
                         maybeWrite[z](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }

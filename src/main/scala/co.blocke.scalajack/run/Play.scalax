@@ -1,0 +1,32 @@
+package co.blocke.scalajack
+package json
+package run
+
+case class Well(repo: scala.collection.mutable.Map[String, Int] = scala.collection.mutable.Map.empty[String, Int])
+
+object RunMe extends App:
+
+  import ScalaJack.*
+  import co.blocke.scalajack.json.run.Record
+  import co.blocke.scala_reflection.*
+
+  given sjPerson: ScalaJack[Person] = sjCodecOf[Person]
+  given sjAm: ScalaJack[Amorphous] = sjCodecOf[Amorphous]
+
+  println(sjPerson.toJson(Person()))
+
+  println(sjAm.toJson(Amorphous(Person())))
+
+  import VehicleClass.*
+  // type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle[? <: VehicleClass]]
+  // given sjPersonX: ScalaJack[ComplexPerson] = sjCodecOf[ComplexPerson]
+  // val inst: ComplexPerson = Employee(Painter(5, Sports(1.2, 'Z')), Car(2))
+  // val js = sjPersonX.toJson(inst)
+  // println(js)
+
+  println(RType.of[ComplexPerson].pretty)
+  given sjPersonX: ScalaJack[ComplexPerson] = sjCodecOf[ComplexPerson]
+  val inst: ComplexPerson = Employee(Painter(5, Sports(1.2, 'Z')), Car(4))
+  val js = sjPersonX.toJson(inst)
+  println(js)
+  println(sjPersonX.fromJson(js))
