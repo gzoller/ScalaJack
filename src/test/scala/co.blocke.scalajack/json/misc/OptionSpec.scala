@@ -68,7 +68,7 @@ class OptionSpec() extends AnyFunSpec with JsonMatchers:
           Left(None) // Either of Option (L)
         )
         val sj = sjCodecOf[OptionHolder[Int]](
-          JsonConfig.withNoneAsNull()
+          SJConfig.withNoneAsNull()
         )
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null,"b":[null,"ok"],"c":[null,null,null],"d":{"1":null,"3":null},"e":null,"f":null,"g":null,"h":null,"i":null,"j":null}""")
@@ -90,7 +90,7 @@ class OptionSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Either recipe should work (None as null)") {
         val inst = EitherRecipe[Int](Right(Left(None)))
-        val sj = sjCodecOf[EitherRecipe[Int]](JsonConfig.withNoneAsNull())
+        val sj = sjCodecOf[EitherRecipe[Int]](SJConfig.withNoneAsNull())
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (EitherRecipe[Int](null))
@@ -149,7 +149,7 @@ class OptionSpec() extends AnyFunSpec with JsonMatchers:
           Left(Optional.empty) // Either of Option (L)
         )
         val sj = sjCodecOf[OptionalHolder[Int]](
-          JsonConfig.withNoneAsNull()
+          SJConfig.withNoneAsNull()
         )
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null,"b":[null,"ok"],"c":[null,null,null],"d":{"1":null,"3":null},"e":null,"f":null,"g":null,"h":null,"i":null,"j":null}""")
@@ -171,7 +171,7 @@ class OptionSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Either recipe should work (None as null)") {
         val inst = EitherRecipeJ[Int](Right(Left(Optional.empty)))
-        val sj = sjCodecOf[EitherRecipeJ[Int]](JsonConfig.withNoneAsNull())
+        val sj = sjCodecOf[EitherRecipeJ[Int]](SJConfig.withNoneAsNull())
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (EitherRecipeJ[Int](null))

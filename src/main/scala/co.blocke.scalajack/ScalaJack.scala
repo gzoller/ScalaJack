@@ -27,15 +27,15 @@ object ScalaJack:
   def codecOfImpl[T: Type](using Quotes): Expr[ScalaJack[T]] =
     import quotes.reflect.*
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, JsonConfig)
+    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, SJConfig)
 
     '{ ScalaJack($jsonCodec) }
 
   // ----- Use given JsonConfig
-  inline def sjCodecOf[T](inline cfg: JsonConfig): ScalaJack[T] = ${ codecOfImplWithConfig[T]('cfg) }
-  def codecOfImplWithConfig[T: Type](cfgE: Expr[JsonConfig])(using Quotes): Expr[ScalaJack[T]] =
+  inline def sjCodecOf[T](inline cfg: SJConfig): ScalaJack[T] = ${ codecOfImplWithConfig[T]('cfg) }
+  def codecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using Quotes): Expr[ScalaJack[T]] =
     import quotes.reflect.*
-    val cfg = summon[FromExpr[JsonConfig]].unapply(cfgE)
+    val cfg = summon[FromExpr[SJConfig]].unapply(cfgE)
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(JsonConfig))
+    val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(SJConfig))
     '{ ScalaJack($jsonCodec) }

@@ -65,7 +65,7 @@ class JavaCollSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Set of either must work") {
         val inst = JSetHolder[Either[Int, Boolean]](HashSet(Arrays.asList(Right(true), Left(15), Right(false))))
-        val sj = sjCodecOf[JSetHolder[Either[Int, Boolean]]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val sj = sjCodecOf[JSetHolder[Either[Int, Boolean]]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[true,15,false]}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -138,7 +138,7 @@ class JavaCollSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("ArrayList of either must work") {
         val inst = ArrayListHolder[Either[Int, Boolean]](ArrayList[Either[Int, Boolean]](Arrays.asList(Right(true), Left(15), Right(false))))
-        val sj = sjCodecOf[ArrayListHolder[Either[Int, Boolean]]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val sj = sjCodecOf[ArrayListHolder[Either[Int, Boolean]]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[true,15,false]}""")
         sj.fromJson(js) shouldEqual (inst)

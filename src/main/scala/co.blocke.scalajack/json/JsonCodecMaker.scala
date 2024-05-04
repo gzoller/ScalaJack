@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters.*
 
 object JsonCodecMaker:
 
-  def generateCodecFor[T](ref: RTypeRef[T], cfg: JsonConfig)(using q: Quotes)(using tt: Type[T]) =
+  def generateCodecFor[T](ref: RTypeRef[T], cfg: SJConfig)(using q: Quotes)(using tt: Type[T]) =
     import q.reflect.*
 
     // Cache generated method Symbols + an array of the generated functions (DefDef)
@@ -120,7 +120,7 @@ object JsonCodecMaker:
       if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
       isValid
 
-    def maybeWrite[T](label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+    def maybeWrite[T](label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: SJConfig): Expr[Unit] =
       val labelE = Expr(label)
       _maybeWrite[T](
         '{ $out.label($labelE) },
@@ -130,7 +130,7 @@ object JsonCodecMaker:
         cfg
       )
 
-    def maybeWriteMap[K, V](keyE: Expr[K], valueE: Expr[V], keyRef: RTypeRef[K], valueRef: RTypeRef[V], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+    def maybeWriteMap[K, V](keyE: Expr[K], valueE: Expr[V], keyRef: RTypeRef[K], valueRef: RTypeRef[V], out: Expr[JsonOutput], cfg: SJConfig): Expr[Unit] =
       keyRef.refType match
         case '[k] =>
           _maybeWrite[V](
@@ -150,7 +150,7 @@ object JsonCodecMaker:
     // Returns Expr[Unit] containing either the original phrase (if ok to write) or the phrase
     // prepended with the type-appropriate runtime check.  This may seem like drama, but the idea
     // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
-    def _maybeWrite[T](prefix: Expr[Unit], aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: JsonConfig): Expr[Unit] =
+    def _maybeWrite[T](prefix: Expr[Unit], aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput], cfg: SJConfig): Expr[Unit] =
       ref match
         case t: ScalaOptionRef[?] if !cfg.noneAsNull =>
           t.optionParamType.refType match
@@ -2169,7 +2169,9 @@ object JsonCodecMaker:
                   '{
                     $res match
                       case Right(r) => r
-                      case Left(m)  => throw JsonParseError("NeoType validation for " + $tnameE + " failed", $in)
+                      case Left(m) =>
+                        $in.backspace()
+                        throw JsonParseError("NeoType validation for " + $tnameE + " failed", $in)
                   }
 
             case _ =>

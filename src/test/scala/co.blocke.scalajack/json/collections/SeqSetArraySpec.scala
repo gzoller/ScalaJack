@@ -52,7 +52,7 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Seq of either must work") {
         val inst = SeqHolder[Either[Int, Boolean]](List(Right(true), Left(15), Right(false)))
-        val sj = sjCodecOf[SeqHolder[Either[Int, Boolean]]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val sj = sjCodecOf[SeqHolder[Either[Int, Boolean]]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[true,15,false]}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -123,7 +123,7 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Set of either must work") {
         val inst = SetHolder[Either[Int, Boolean]](HashSet(Right(true), Left(15), Right(false)))
-        val sj = sjCodecOf[SetHolder[Either[Int, Boolean]]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val sj = sjCodecOf[SetHolder[Either[Int, Boolean]]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[15,true,false]}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -194,7 +194,7 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Array of either must work") {
         val inst = ArrayHolder[Either[Int, Boolean]](Array(Right(true), Left(15), Right(false)))
-        val sj = sjCodecOf[ArrayHolder[Either[Int, Boolean]]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
+        val sj = sjCodecOf[ArrayHolder[Either[Int, Boolean]]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_VALUE))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":[true,15,false]}""")
         sj.fromJson(js).a.toList shouldEqual (inst.a.toList)

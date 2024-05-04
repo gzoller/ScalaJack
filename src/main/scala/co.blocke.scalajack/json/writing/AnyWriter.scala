@@ -18,7 +18,7 @@ import scala.quoted.*
 
 object AnyWriter:
 
-  def writeAny(target: Any, out: JsonOutput, cfg: JsonConfig, inTuple: Boolean = false): Unit =
+  def writeAny(target: Any, out: JsonOutput, cfg: SJConfig, inTuple: Boolean = false): Unit =
     // val rt = RType.of(target.getClass)
     target match
       case null                        => out.burpNull()
@@ -122,7 +122,7 @@ object AnyWriter:
           case _ => throw new JsonUnsupportedType("Class " + v.getClass.getName + " not supported for Any type")
 
   // Called by non-Any classes (in JsonCodecMaker) that have Any-typed fields
-  def isOkToWrite(prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput], cfg: JsonConfig)(using Quotes): Expr[Unit] =
+  def isOkToWrite(prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput], cfg: SJConfig)(using Quotes): Expr[Unit] =
     import quotes.reflect.*
     '{
       _okToWrite($value, ${ Expr(cfg) }).map { v =>
@@ -132,13 +132,13 @@ object AnyWriter:
     }
 
   // Called for Any-typed classes
-  private def _okToWrite(label: String, value: Any, out: JsonOutput, cfg: JsonConfig): Unit =
+  private def _okToWrite(label: String, value: Any, out: JsonOutput, cfg: SJConfig): Unit =
     _okToWrite(value, cfg).map { v =>
       out.label(label)
       writeAny(v, out, cfg)
     }
 
-  private def _okToWrite(value: Any, cfg: JsonConfig): Option[Any] =
+  private def _okToWrite(value: Any, cfg: SJConfig): Option[Any] =
     value match
       case None => if cfg.noneAsNull then Some(null) else None
       case Failure(e) =>

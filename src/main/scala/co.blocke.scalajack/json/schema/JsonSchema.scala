@@ -65,7 +65,7 @@ object JsonSchema:
                           ${ Expr(context.flatMap(_.annotations.get("description")).flatMap(_.get("value"))) },
                           ${
                             if defaultValue.isDefined then
-                              val codec = JsonCodecMaker.generateCodecFor[u](t.refType.asInstanceOf[RTypeRef[u]], json.JsonConfig)
+                              val codec = JsonCodecMaker.generateCodecFor[u](t.refType.asInstanceOf[RTypeRef[u]], SJConfig)
                               '{
                                 val out = new writing.JsonOutput()
                                 $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)
@@ -111,7 +111,7 @@ object JsonSchema:
                           ${ Expr(context.flatMap(_.annotations.get("description")).flatMap(_.get("value"))) },
                           ${
                             if defaultValue.isDefined then
-                              val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig)
+                              val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], SJConfig)
                               '{
                                 val out = new writing.JsonOutput()
                                 $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)
@@ -135,7 +135,7 @@ object JsonSchema:
                           ${ Expr(context.flatMap(_.annotations.get("description")).flatMap(_.get("value"))) },
                           ${
                             if defaultValue.isDefined then
-                              val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig)
+                              val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], SJConfig)
                               '{
                                 val out = new writing.JsonOutput()
                                 $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)
@@ -164,7 +164,7 @@ object JsonSchema:
                       ${ Expr(context.flatMap(_.annotations.get("description")).flatMap(_.get("value"))) },
                       ${
                         if defaultValue.isDefined then
-                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig)
+                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], SJConfig)
                           '{
                             val out = new writing.JsonOutput()
                             $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)
@@ -303,7 +303,7 @@ object JsonSchema:
                       ${ Expr(t.annotations.get("co.blocke.scalajack.schema.description").flatMap(_.get("value"))) },
                       ${
                         if defaultValue.isDefined then
-                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], json.JsonConfig.suppressTypeHints())
+                          val codec = JsonCodecMaker.generateCodecFor[u](t.asInstanceOf[RTypeRef[u]], SJConfig.suppressTypeHints())
                           '{
                             val out = new writing.JsonOutput()
                             $codec.encodeValue(${ defaultValue.get.asExprOf[u] }, out)

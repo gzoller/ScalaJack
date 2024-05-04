@@ -24,7 +24,7 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Enum as Map key and value must work (using id)") {
         val inst = MapHolder[Color, Color](Map(Color.Red -> Color.Blue, Color.Green -> Color.Red))
-        val sj = sjCodecOf[MapHolder[Color, Color]](JsonConfig.withEnumsAsIds(Nil))
+        val sj = sjCodecOf[MapHolder[Color, Color]](SJConfig.withEnumsAsIds(Nil))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":{"0":1,"2":0}}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -40,7 +40,7 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       it("Enumeration (Scale 2) as Map key and value must work (using id)") {
         import Permissions.*
         val inst = MapHolder[Permissions, Permissions](Map(Permissions.READ -> Permissions.WRITE, Permissions.EXEC -> Permissions.NONE))
-        val sj = sjCodecOf[MapHolder[Permissions, Permissions]](JsonConfig.withEnumsAsIds(Nil))
+        val sj = sjCodecOf[MapHolder[Permissions, Permissions]](SJConfig.withEnumsAsIds(Nil))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":{"0":1,"2":3}}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -64,7 +64,7 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Java Enumeration as Map key and value must work (using id)") {
         val inst = MapHolder[CarEnum, CarEnum](Map(CarEnum.VW -> CarEnum.PORSCHE, CarEnum.PORSCHE -> CarEnum.TOYOTA))
-        val sj = sjCodecOf[MapHolder[CarEnum, CarEnum]](JsonConfig.withEnumsAsIds(Nil))
+        val sj = sjCodecOf[MapHolder[CarEnum, CarEnum]](SJConfig.withEnumsAsIds(Nil))
         val js = sj.toJson(inst)
         val targetJs = RType.of[CarEnum] match
           case t: co.blocke.scala_reflection.rtypes.JavaEnumRType[?] =>
@@ -76,7 +76,7 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       it("Enum/Enumeration mix of enum as value must work") {
         import Permissions.*
         val inst = MapHolder[Color, Permissions](Map(Color.Red -> Permissions.WRITE, Color.Blue -> Permissions.NONE))
-        val sj = sjCodecOf[MapHolder[Color, Permissions]](JsonConfig.withEnumsAsIds(List("co.blocke.scalajack.json.misc.Color")))
+        val sj = sjCodecOf[MapHolder[Color, Permissions]](SJConfig.withEnumsAsIds(List("co.blocke.scalajack.json.misc.Color")))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":{"0":"WRITE","1":"NONE"}}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -104,7 +104,7 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
         ex.getMessage() shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with name: Bogus")
       }
       it("Enum must break(using id) - bad value") {
-        val sj = sjCodecOf[MapHolder[Color, Color]](JsonConfig.withEnumsAsIds(Nil))
+        val sj = sjCodecOf[MapHolder[Color, Color]](SJConfig.withEnumsAsIds(Nil))
         val js = """{"a":{"0":1,"9":0}}"""
         val ex = intercept[java.util.NoSuchElementException](sj.fromJson(js))
         ex.getMessage() shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with ordinal: 9")

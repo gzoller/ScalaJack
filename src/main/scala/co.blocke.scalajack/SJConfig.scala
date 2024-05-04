@@ -1,12 +1,14 @@
 package co.blocke.scalajack
-package json
 
 import co.blocke.scala_reflection.TypedName
 import co.blocke.scala_reflection.reflect.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import scala.quoted.*
+import scala.util.control.NoStackTrace
 
-class JsonConfig private[scalajack] (
+class ConfigError(msg: String) extends Throwable(msg) with NoStackTrace
+
+class SJConfig private[scalajack] (
     val noneAsNull: Boolean,
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
@@ -19,15 +21,15 @@ class JsonConfig private[scalajack] (
     val _suppressEscapedStrings: Boolean,
     val _suppressTypeHints: Boolean
 ):
-  def withNoneAsNull(): JsonConfig = copy(noneAsNull = true)
-  def withTryFailureHandling(tryPolicy: TryPolicy): JsonConfig = copy(tryFailureHandling = tryPolicy)
-  def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): JsonConfig = copy(eitherLeftHandling = eitherPolicy)
-  def withTypeHintLabel(label: String): JsonConfig = copy(typeHintLabel = label)
-  def withTypeHintPolicy(hintPolicy: TypeHintPolicy): JsonConfig = copy(typeHintPolicy = hintPolicy)
-  def withEnumsAsIds(asIds: List[String]): JsonConfig = copy(enumsAsIds = asIds)
-  def writeNonConstructorFields(): JsonConfig = copy(_writeNonConstructorFields = true)
-  def suppressEscapedStrings(): JsonConfig = copy(_suppressEscapedStrings = true)
-  def suppressTypeHints(): JsonConfig = copy(_suppressTypeHints = true)
+  def withNoneAsNull(): SJConfig = copy(noneAsNull = true)
+  def withTryFailureHandling(tryPolicy: TryPolicy): SJConfig = copy(tryFailureHandling = tryPolicy)
+  def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): SJConfig = copy(eitherLeftHandling = eitherPolicy)
+  def withTypeHintLabel(label: String): SJConfig = copy(typeHintLabel = label)
+  def withTypeHintPolicy(hintPolicy: TypeHintPolicy): SJConfig = copy(typeHintPolicy = hintPolicy)
+  def withEnumsAsIds(asIds: List[String]): SJConfig = copy(enumsAsIds = asIds)
+  def writeNonConstructorFields(): SJConfig = copy(_writeNonConstructorFields = true)
+  def suppressEscapedStrings(): SJConfig = copy(_suppressEscapedStrings = true)
+  def suppressTypeHints(): SJConfig = copy(_suppressTypeHints = true)
 
   private def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -39,7 +41,7 @@ class JsonConfig private[scalajack] (
       _writeNonConstructorFields: Boolean = _writeNonConstructorFields,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
       _suppressTypeHints: Boolean = _suppressTypeHints
-  ): JsonConfig = new JsonConfig(
+  ): SJConfig = new SJConfig(
     noneAsNull,
     tryFailureHandling,
     eitherLeftHandling,
@@ -60,8 +62,8 @@ enum EitherLeftPolicy:
 enum TypeHintPolicy:
   case SIMPLE_CLASSNAME, SCRAMBLE_CLASSNAME, USE_ANNOTATION
 
-object JsonConfig
-    extends JsonConfig(
+object SJConfig
+    extends SJConfig(
       noneAsNull = false,
       tryFailureHandling = TryPolicy.AS_NULL,
       eitherLeftHandling = EitherLeftPolicy.AS_VALUE,
@@ -74,10 +76,10 @@ object JsonConfig
     ):
   import scala.quoted.FromExpr.*
 
-  private[scalajack] given ToExpr[JsonConfig] with {
-    def apply(x: JsonConfig)(using Quotes): Expr[JsonConfig] =
+  private[scalajack] given ToExpr[SJConfig] with {
+    def apply(x: SJConfig)(using Quotes): Expr[SJConfig] =
       '{
-        val jc = JsonConfig
+        val jc = SJConfig
           .withTryFailureHandling(${ Expr(x.tryFailureHandling) })
           .withEitherLeftHandling(${ Expr(x.eitherLeftHandling) })
           .withTypeHintLabel(${ Expr(x.typeHintLabel) })
@@ -103,18 +105,18 @@ object JsonConfig
       }
   }
 
-  private[scalajack] given FromExpr[JsonConfig] with {
+  private[scalajack] given FromExpr[SJConfig] with {
 
     def extract[X: FromExpr](name: String, x: Expr[X])(using Quotes): X =
       import quotes.reflect.*
-      summon[FromExpr[X]].unapply(x).getOrElse(throw JsonConfigError(s"Can't parse $name: ${x.show}, tree: ${x.asTerm}"))
+      summon[FromExpr[X]].unapply(x).getOrElse(throw ConfigError(s"Can't parse $name: ${x.show}, tree: ${x.asTerm}"))
 
-    def unapply(x: Expr[JsonConfig])(using Quotes): Option[JsonConfig] =
+    def unapply(x: Expr[SJConfig])(using Quotes): Option[SJConfig] =
       import quotes.reflect.*
 
       x match
         case '{
-              JsonConfig(
+              SJConfig(
                 $noneAsNullE,
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
@@ -129,7 +131,7 @@ object JsonConfig
             } =>
           try
             Some(
-              JsonConfig(
+              SJConfig(
                 extract("noneAsNull", noneAsNullE),
                 extract("tryFailureHandler", tryFailureHandlerE),
                 extract("eitherLeftHandler", eitherLeftHandlerE),
@@ -146,16 +148,16 @@ object JsonConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ JsonConfig }                                   => Some(JsonConfig)
-        case '{ ($x: JsonConfig).withNoneAsNull() }            => Some(x.valueOrAbort.withNoneAsNull())
-        case '{ ($x: JsonConfig).withTryFailureHandling($v) }  => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEitherLeftHandling($v) }  => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintLabel($v) }       => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withTypeHintPolicy($v) }      => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
-        case '{ ($x: JsonConfig).withEnumsAsIds($v) }          => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: JsonConfig).writeNonConstructorFields() } => Some(x.valueOrAbort.writeNonConstructorFields())
-        case '{ ($x: JsonConfig).suppressEscapedStrings() }    => Some(x.valueOrAbort.suppressEscapedStrings())
-        case '{ ($x: JsonConfig).suppressTypeHints() }         => Some(x.valueOrAbort.suppressTypeHints())
+        case '{ SJConfig }                                   => Some(SJConfig)
+        case '{ ($x: SJConfig).withNoneAsNull() }            => Some(x.valueOrAbort.withNoneAsNull())
+        case '{ ($x: SJConfig).withTryFailureHandling($v) }  => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: SJConfig).withEitherLeftHandling($v) }  => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ ($x: SJConfig).withTypeHintLabel($v) }       => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
+        case '{ ($x: SJConfig).withTypeHintPolicy($v) }      => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ ($x: SJConfig).withEnumsAsIds($v) }          => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
+        case '{ ($x: SJConfig).writeNonConstructorFields() } => Some(x.valueOrAbort.writeNonConstructorFields())
+        case '{ ($x: SJConfig).suppressEscapedStrings() }    => Some(x.valueOrAbort.suppressEscapedStrings())
+        case '{ ($x: SJConfig).suppressTypeHints() }         => Some(x.valueOrAbort.suppressTypeHints())
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

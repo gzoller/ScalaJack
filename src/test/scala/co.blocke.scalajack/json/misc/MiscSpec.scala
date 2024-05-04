@@ -20,7 +20,7 @@ class MiscSpec() extends AnyFunSpec with JsonMatchers:
 on another level.""")
       val sj1 = sjCodecOf[StringHolder]
       val js1 = sj1.toJson(inst)
-      val sj2 = sjCodecOf[StringHolder](JsonConfig.suppressEscapedStrings())
+      val sj2 = sjCodecOf[StringHolder](SJConfig.suppressEscapedStrings())
       val js2 = sj2.toJson(inst)
       js1 should equal("""{"a":"This is a \"strange\" test\non another level."}""")
       js2 should equal("""{"a":"This is a "strange" test
@@ -80,7 +80,7 @@ on another level."}""")
         (Some('a'), None, Some('b'))
       )
       val sj = sjCodecOf[AnyHolder](
-        JsonConfig
+        SJConfig
           .withNoneAsNull()
           .withEitherLeftHandling(EitherLeftPolicy.ERR_MSG_STRING)
           .withTryFailureHandling(TryPolicy.ERR_MSG_STRING)

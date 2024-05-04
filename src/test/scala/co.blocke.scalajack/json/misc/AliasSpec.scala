@@ -36,7 +36,7 @@ class AliasSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Type aliases (opaque types) must be dereferenced (with Option, noneAsNull)") {
         val inst = AliasHolder2[CountX](Some(5), List(Some(1), None, Some(3)), Map("wow" -> None))
-        val sj = sjCodecOf[AliasHolder2[CountX]](JsonConfig.withNoneAsNull())
+        val sj = sjCodecOf[AliasHolder2[CountX]](SJConfig.withNoneAsNull())
         val js = sj.toJson(inst)
         js should matchJson("""{"a":5,"b":[1,null,3],"c":{"wow":null}}""")
         sj.fromJson(js) shouldEqual (inst)

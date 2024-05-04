@@ -32,7 +32,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Complex Either/Option must work (NoneAsNull)") {
         val inst = ComplexEither[Int](Some(Right(None)))
-        val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withNoneAsNull())
+        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withNoneAsNull())
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""") // same output result regardless of noneAsNull setting
         sj.fromJson(js) shouldEqual (ComplexEither(None)) // None here because value existed, but was null with NoneAsNull
@@ -48,14 +48,14 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Complex Either/Option must work (Left-AS_NULL)") {
         val inst = ComplexEither[Int](Some(Left("err")))
-        val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
+        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (ComplexEither(null))
       }
       it("Complex Either/Option must work (Left-AS_NULL, Option nullAsNull)") {
         val inst = ComplexEither[Int](Some(Left("err")))
-        val sj = sjCodecOf[ComplexEither[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL).withNoneAsNull())
+        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL).withNoneAsNull())
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (ComplexEither(None))
@@ -69,14 +69,14 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Either with AS_NULL left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
+        val sj = sjCodecOf[EitherHolder[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null,"b":3}""")
         sj.fromJson(js) shouldEqual (EitherHolder(null, Right(3)))
       }
       it("Either with ERR_MSG_STRING left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
-        val sj = sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.ERR_MSG_STRING))
+        val sj = sjCodecOf[EitherHolder[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.ERR_MSG_STRING))
         val js = sj.toJson(inst)
         js should matchJson("""{"a":"Left Error: 5","b":3}""")
         sj.fromJson(js) shouldEqual (EitherHolder(Right("Left Error: 5"), Right(3)))
@@ -88,7 +88,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
         val inst = EitherHolder[Int](Left(5), Right(3))
         val caught =
           intercept[JsonEitherLeftError] {
-            sjCodecOf[EitherHolder[Int]](JsonConfig.withEitherLeftHandling(EitherLeftPolicy.THROW_EXCEPTION)).toJson(inst)
+            sjCodecOf[EitherHolder[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.THROW_EXCEPTION)).toJson(inst)
           }
         assert(caught.getMessage == "Left Error: 5")
       }

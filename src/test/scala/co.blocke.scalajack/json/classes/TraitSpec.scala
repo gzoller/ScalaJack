@@ -29,7 +29,7 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed trait with modified type hint label must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(25))
-      val sj = sjCodecOf[TraitHolder](JsonConfig.withTypeHintLabel("ref"))
+      val sj = sjCodecOf[TraitHolder](SJConfig.withTypeHintLabel("ref"))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start","b":{"ref":"Fish","species":"Beta","freshwater":false},"c":{"ref":"Miami","temp":101.1},"d":{"ref":"CityRoute","numStreets":25}}""")
       val re = sj.fromJson(js)
@@ -40,7 +40,7 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed trait with type hint policy SCRAMBLE_CLASSNAME label must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(25))
-      val sj = sjCodecOf[TraitHolder](JsonConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
+      val sj = sjCodecOf[TraitHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
       val js = sj.toJson(inst)
       val diff = parseJValue(js).diff(parseJValue("""{"a":"Start","b":{"_hint":"86999-847-46A","species":"Beta","freshwater":false},"c":{"_hint":"13652-857-33B","temp":101.1},"d":{"_hint":"51470-503-54B","numStreets":25}}"""))
       val diffMap = diff.changed.values.asInstanceOf[Map[String, Map[String, ?]]]
@@ -53,7 +53,7 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed trait with type hint policy USE_ANNOTATION label must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(25))
-      val sj = sjCodecOf[TraitHolder](JsonConfig.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
+      val sj = sjCodecOf[TraitHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start","b":{"_hint":"flipper","species":"Beta","freshwater":false},"c":{"_hint":"vice","temp":101.1},"d":{"_hint":"CityRoute","numStreets":25}}""")
       val re = sj.fromJson(js)

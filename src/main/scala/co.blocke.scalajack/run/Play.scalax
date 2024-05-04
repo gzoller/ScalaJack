@@ -2,6 +2,8 @@ package co.blocke.scalajack
 package json
 package run
 
+import ScalaJack.*
+
 case class Well(repo: scala.collection.mutable.Map[String, Int] = scala.collection.mutable.Map.empty[String, Int])
 
 object RunMe extends App:
@@ -10,23 +12,17 @@ object RunMe extends App:
   import co.blocke.scalajack.json.run.Record
   import co.blocke.scala_reflection.*
 
-  given sjPerson: ScalaJack[Person] = sjCodecOf[Person]
-  given sjAm: ScalaJack[Amorphous] = sjCodecOf[Amorphous]
+  given sjValidated: ScalaJack[Validated] = sjCodecOf[Validated]
 
-  println(sjPerson.toJson(Person()))
+  val sj_ok = """{"name":"Mike","xspot":["x","other"],"nada":""}"""
+  val sj_brokenName = """{"name":"","xspot":["x","other"],"nada":""}"""
+  val sj_brokenNada = """{"name":"Mike","xspot":["x","other"],"nada":"boom"}"""
+  val sj_xspot = """{"name":"Mike","xspot":["nintendo","other"],"nada":""}"""
 
-  println(sjAm.toJson(Amorphous(Person())))
-
-  import VehicleClass.*
-  // type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle[? <: VehicleClass]]
-  // given sjPersonX: ScalaJack[ComplexPerson] = sjCodecOf[ComplexPerson]
-  // val inst: ComplexPerson = Employee(Painter(5, Sports(1.2, 'Z')), Car(2))
-  // val js = sjPersonX.toJson(inst)
-  // println(js)
-
-  println(RType.of[ComplexPerson].pretty)
-  given sjPersonX: ScalaJack[ComplexPerson] = sjCodecOf[ComplexPerson]
-  val inst: ComplexPerson = Employee(Painter(5, Sports(1.2, 'Z')), Car(4))
-  val js = sjPersonX.toJson(inst)
-  println(js)
-  println(sjPersonX.fromJson(js))
+  val inst = Validated(NonEmptyString("Mike"), XList(List("x","y")), EmptyString(""))
+  val ok = try( sjValidated.fromJson(sj_xspot) )
+  catch {
+    case jpe: JsonParseError => println(jpe.show)
+  }
+  println(ok)
+  

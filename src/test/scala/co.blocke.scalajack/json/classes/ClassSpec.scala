@@ -35,7 +35,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       inst.hidden_=(true)
       inst.nope_=(false)
       inst.foo = "we'll see"
-      val sj = sjCodecOf[Parent](JsonConfig.writeNonConstructorFields())
+      val sj = sjCodecOf[Parent](SJConfig.writeNonConstructorFields())
       val js = sj.toJson(inst)
       js should matchJson("""{"phase":99,"stuff":["x","y"],"foo":"we'll see","hidden":true}""")
       val re = sj.fromJson(js)
@@ -77,7 +77,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with modified type hint label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](JsonConfig.withTypeHintLabel("ref"))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintLabel("ref"))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start2","b":{"ref":"Fish2","species":"Beta","freshwater":false},"c":{"ref":"Miami2","temp":101.1}}""")
       val re = sj.fromJson(js)
@@ -87,7 +87,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with type hint policy SCRAMBLE_CLASSNAME label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](JsonConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
       val js = sj.toJson(inst)
       val diff = parseJValue(js).diff(parseJValue("""{"a":"Start2","b":{"_hint":"82949-049-49A","species":"Beta","freshwater":false},"c":{"_hint":"53150-867-73B","temp":101.1}}"""))
       val diffMap = diff.changed.values.asInstanceOf[Map[String, Map[String, ?]]]
@@ -99,7 +99,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with type hint policy USE_ANNOTATION label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](JsonConfig.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start2","b":{"_hint":"flipper","species":"Beta","freshwater":false},"c":{"_hint":"vice","temp":101.1}}""")
       val re = sj.fromJson(js)

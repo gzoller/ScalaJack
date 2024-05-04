@@ -28,7 +28,7 @@ libraryDependencies ++= Seq("co.blocke" %% "scalajack" % SJ_VERSION)
 ```
 Now you're good to go! Let's use ScalaJack in your project to serialize/de-serialize a case class object into JSON:
 ```scala
-import co.blocke.scalajack._
+import co.blocke.scalajack.*
 
 case class Person(name: String, age: Int)
 
@@ -83,16 +83,9 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Value Class Support](doc/valueClass.md)
 * [Parameterized Classes](doc/parameterized.md)
 * [Trait Type Hint Customization](doc/typeHint.md)
-* [Custom Type Adapters (custom read/render)](doc/custom.md)
-* [Try and Capture](doc/tryAndCapture.md)
-* [ParseOrElse and Cascading Fallback Parsing](doc/parseOrElse.md)
 * [Null and None treatment](doc/nullAndNone.md)
-* [Externalized Type Hints](doc/externalTypes.md)
 * [NeoType Support](doc/neotype.md)
-* [Filter](doc/filter.md)
 * [Union type](doc/union.md)
-* [Converters](doc/map.md)
-* [ScalaJack Configuration](doc/config.md)
 * [Gimme Speed!](doc/speed.md)
 
 ### Notes:
