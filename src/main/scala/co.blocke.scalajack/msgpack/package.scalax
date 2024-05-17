@@ -1,0 +1,50 @@
+package co.blocke.scalajack
+package msgpack
+
+val MP_NIL: Byte      = 0xc0
+val MP_FALSE: Byte    = 0xc2
+val MP_TRUE: Byte     = 0xc3
+val MP_BIN8: Byte     = 0xc4
+val MP_BIN16: Byte    = 0xc5
+val MP_BIN32: Byte    = 0xc6
+val MP_EXT8: Byte     = 0xc7
+val MP_EXT16: Byte    = 0xc8
+val MP_EXT32: Byte    = 0xc9
+val MP_FLOAT32: Byte  = 0xca
+val MP_FLOAT64: Byte  = 0xcb
+val MP_UINT8: Byte    = 0xcc
+val MP_UINT16: Byte   = 0xcd
+val MP_UINT32: Byte   = 0xce
+val MP_UINT64: Byte   = 0xcf
+val MP_INT8: Byte     = 0xd0
+val MP_INT16: Byte    = 0xd1
+val MP_INT32: Byte    = 0xd2
+val MP_INT64: Byte    = 0xd3
+val MP_FIXEXT1: Byte  = 0xd4
+val MP_FIXEXT2: Byte  = 0xd5
+val MP_FIXEXT4: Byte  = 0xd6
+val MP_FIXEXT8: Byte  = 0xd7
+val MP_FIXEXT16: Byte = 0xd8
+val MP_STR8: Byte     = 0xd9
+val MP_STR16: Byte    = 0xda
+val MP_STR32: Byte    = 0xdb
+val MP_ARR16: Byte    = 0xdc
+val MP_ARR32: Byte    = 0xdd
+val MP_MAP16: Byte    = 0xde
+val MP_MAP32: Byte    = 0xdf
+
+// Masks
+val MP_POS_FIXINT_MASK: Byte = b"10000000"
+val MP_FIXMAP_MASK: Byte     = b"11110000"
+val MP_FIXMAP: Byte          = b"10000000"
+val MP_FIXMAP_VALUE: Byte    = b"00001111"
+val MP_FIXARR_MASK: Byte     = b"11110000"
+val MP_FIXARR: Byte          = b"10010000"
+val MP_FIXARR_VALUE: Byte    = b"00001111"
+val MP_FIXSTR_MASK: Byte     = b"11100000"
+val MP_FIXSTR: Byte          = b"10100000"
+val MP_FIXSTR_VALUE: Byte    = b"00011111"
+val MP_NEGFIXINT_MASK: Byte  = b"11100000"
+val MP_NEGFIXINT: Byte       = b"11100000"
+val MP_NEGFIXINT_VALUE: Byte = b"00011111"
+

@@ -43,6 +43,7 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
+    // extends MsgPack.MsgPackReadingBenchmark
     extends ScalaJackZ.ScalaJackReadingBenchmark
     // with CirceZ.CirceReadingBenchmark
     // extends JsoniterZ.JsoniterReadingBenchmark
@@ -54,6 +55,7 @@ class ReadingBenchmark
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
+    // extends MsgPack.MsgPackWritingBenchmark
     // extends HandTooledWritingBenchmark
     // extends CirceZ.CirceWritingBenchmark
     extends ScalaJackZ.ScalaJackWritingBenchmark

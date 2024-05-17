@@ -1211,10 +1211,9 @@ object JsonCodecMaker:
     // ---------------------------------------------------------------------------------------------
 
     def genReadVal[T: Type](
-        // default: Expr[T], // needed?  This should already be in ref...
         ref: RTypeRef[T],
         in: Expr[JsonSource],
-        inTuple: Boolean = false, // not sure if needed...
+        inTuple: Boolean = false,
         isMapKey: Boolean = false
     )(using Quotes): Expr[T] =
       val methodKey = MethodKey(ref, false)

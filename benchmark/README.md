@@ -1,8 +1,6 @@
 # Performance
 
-JSON serialization benchmarks I found in various project repos often measured (IMO) silly things like how fast 
-a parser could handle a small list of Int.  For this benchmark I used a small, but slightly more representative model.  
-It has some nested objects and collections that make it a more interesting test.
+JSON serialization benchmarks I found in various project repos often measured (IMO) silly things like how fast a parser could handle a small list of Int.  For this benchmark I used a small, but slightly more representative model.  It has some nested objects and collections that make it a more interesting test.
 
 The test is run via jmh.  The JVM is **stock**--not tuned to within an inch of its life, to be a more realistic 
 use case.
@@ -50,13 +48,12 @@ processing using
 sj[Foo](JsonConfig.withSuppressEscapedStrings())
 ```
 Its for when you're 100% sure there's 0 chance of any double-quotes, newlines, tabs, or
-any other non-character/digit unicode special characters in your String values, and you need the
-maximum possible performance.
+any other non-character/digit unicode special characters in your String values that require escaping.  When you need the maximum possible performance.
 
 ### Interpretation
 
-Performance for ScalaJack has been a journey.  ScalaJack is a mature product--over 10 yrs old.
-Long ago it was quite fast vs its competition, but its performance lagged as its peers improved, 
+Performance for ScalaJack has been a journey.  ScalaJack is a mature product--over 10 yrs old!
+Long ago it was quite fast vs its competition, but its performance lagged badly as its peers improved, 
 to the point that it became one of the slower serialization libraries.  ScalaJack 8 changes that!  
 
 I was sampling and testing against a collection of popular serializers for Scala util
@@ -71,23 +68,22 @@ is heavily informed from Jsoniter, so I'll post their licence here:
 
 There are a number of optimizations and design choices I elected not to bring over from
 Jsoniter, in many cases because ScalaJack doesn't need them for its intended feature set.
-Of course ScalaJack utilizes our own macro-driven scala-reflection library to great effect, 
-which Jsoniter does not.
+Of course ScalaJack utilizes our own scala-reflection library to great effect, which Jsoniter does not.
 
-Jsoniter achieves its neck-breaking speed by going deep--very deep into macro code
+Jsoniter achieves its neck-breaking speed by going deep--very deep--into macro code
 generation.  They also use a lot of low-level byte arrays and bitwise operators 
 to improve on the standard library functions everyone else uses.  It works.
 
 ### Technical Notes
 
-Achieving extreme speed for ScalaJack 8 was weeks of learning, trial, error,
+Achieving extreme speed for ScalaJack 8 was months of learning, trial, error,
 and re-writes.  I studied Jsoniter, Circe, ZIO Json, and others to learn optimizations.
 The tough news for anyone wanting to duplicate this kind of performance in your own code 
 is that there isn't one magic trick to achieve maximum performance.  It's a basket 
 of techniques, each achieving small marginal gains that add up, and you must decide when 
 enough is enough for you.  Here's a partial list of learnings incorporated into ScalaJack 8:
 
-* Being careful when using .asInstanceOf[]... in fact try to avoid it wherever possible 
+* Being careful when using .asInstanceOf[]. In fact, try to avoid it wherever possible 
   as it messes up CPU cache, harming performance.  This means a lot of very careful type
   management, and its why you see the RTypeRefs from scala-reflection are now all typed
   in the latest version
@@ -106,16 +102,15 @@ enough is enough for you.  Here's a partial list of learnings incorporated into 
 
 * Be mindful of what code your macros generate!  You can write a macro straight from 
   a blog example and get something working, but you may be disappointed if maximizing runtime 
-  speed is your goal. The generated code might look kludgy. Rework your macros carefully 
-  until the generated code is as smooth as you might write by hand.  
+  speed is your goal. The generated code may look kludgy and have extra cruft in it. Rework your 
+  macros carefully until the generated code is as smooth as you might write by hand.  
 
 After all the performance tunings and learnings, I was able to meet or beat Jsoniter for writing
 speed.  For reading I made a number of very substantial improvements, but there is still a 
 substantial performance gap between Jsoniter's reads and ScalaJack's, and for the life of me I can't
-figure out what's driving those gains!  The generated code is very similar.  Json parsing should
+figure out what's driving that difference.  The generated code is very similar.  Json parsing should
 be similar--in fact in some ways ScalaJack's should be faster.  Although micro-benchmarks indicate
 match/case is significantly slower in generated code than if/than/else, but in practice replacing 
-these with if/else didn't gain ScalaJack a thing--which I find vexing.  Jsoniter has some tricky 
-ByteArrayAccess code that looks very low-level and clever, but when I benchmarked it, the gains 
-seemed nominal to none in my use case.  I dunno--If anyone has any ideas, please drop a comment 
-in the Issues in repo!
+these with if/else didn't gain ScalaJack a thing.  Jsoniter has some tricky ByteArrayAccess code 
+that looks very low-level and clever, but when I benchmarked it, the gains seemed nominal to none 
+in my use case.  I dunno--If anyone has any ideas, please drop a comment in the Issues in repo!
