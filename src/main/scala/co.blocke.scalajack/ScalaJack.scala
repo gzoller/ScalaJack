@@ -6,9 +6,8 @@ import scala.quoted.*
 
 import quoted.Quotes
 import json.*
-import msgpack.*
 
-case class ScalaJack[T](jsonCodec: JsonCodec[T], msgPackCodec: MsgPackCodec[T]): // extends JsonCodec[T] //with YamlCodec with MsgPackCodec
+case class ScalaJack[T](jsonCodec: JsonCodec[T]):
   def fromJson(js: String): T =
     jsonCodec.decodeValue(reading.JsonSource(js))
 
@@ -16,18 +15,6 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T], msgPackCodec: MsgPackCodec[T]):
   def toJson(a: T): String =
     jsonCodec.encodeValue(a, out.clear())
     out.result
-
-  val outArray = new org.msgpack.core.buffer.ArrayBufferOutput()
-  def toMsgPack(a: T): Array[Byte] =
-    outArray.clear()
-    val outMP = org.msgpack.core.MessagePack.newDefaultPacker(outArray)
-    msgPackCodec.encodeValue(a, outMP)
-    outMP.close()
-    outArray.toByteArray
-
-  def fromMsgPack(a: Array[Byte]): T =
-    val inMP = org.msgpack.core.MessagePack.newDefaultUnpacker(a)
-    msgPackCodec.decodeValue(inMP)
 
 // ---------------------------------------
 
@@ -41,9 +28,8 @@ object ScalaJack:
     import quotes.reflect.*
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, SJConfig)
-    val mpCodec = MsgPackCodecMaker.generateCodecFor(classRef, SJConfig)
 
-    '{ ScalaJack($jsonCodec, $mpCodec) }
+    '{ ScalaJack($jsonCodec) }
 
   // ----- Use given JsonConfig
   inline def sjCodecOf[T](inline cfg: SJConfig): ScalaJack[T] = ${ codecOfImplWithConfig[T]('cfg) }
@@ -52,5 +38,4 @@ object ScalaJack:
     val cfg = summon[FromExpr[SJConfig]].unapply(cfgE)
     val classRef = ReflectOnType[T](quotes)(TypeRepr.of[T], true)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
     val jsonCodec = JsonCodecMaker.generateCodecFor(classRef, cfg.getOrElse(SJConfig))
-    val mpCodec = MsgPackCodecMaker.generateCodecFor(classRef, SJConfig)
-    '{ ScalaJack($jsonCodec, $mpCodec) }
+    '{ ScalaJack($jsonCodec) }

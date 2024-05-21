@@ -44,9 +44,9 @@ on another level."}""")
       val sj = sjCodecOf[Validated]
       val js = """{"name":"","xspot":["x","y","z"],"nada":["","",""]}"""
       val msg =
-        """NeoType validation for NonEmptyString failed at position [10]
+        """NeoType validation for NonEmptyString failed at position [9]
             |{"name":"","xspot":["x","y","z"],"nada":["","",""]}
-            |----------^""".stripMargin
+            |---------^""".stripMargin
       val ex = intercept[JsonParseError](sj.fromJson(js))
       ex.show shouldEqual msg
     }

@@ -13,7 +13,7 @@ val compilerOptions = Seq(
 
 val circeVersion = "0.15.0-M1"
 val scalaTestVersion = "3.2.11"
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.4.1"
 
 def priorTo2_13(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -37,14 +37,14 @@ lazy val benchmark = project
     libraryDependencies ++= Seq(
       "org.playframework" %% "play-json" % "3.0.1",
       "io.argonaut" %% "argonaut" % "6.3.9",
-      "co.blocke" %% "scalajack" % "efad12_unknown",
+      "co.blocke" %% "scalajack" % "8.0.0",
       "dev.zio" %% "zio-json" % "0.6.1",
       "org.typelevel" %% "fabric-core" % "1.12.6",
       "org.typelevel" %% "fabric-io" % "1.12.6",
       "org.typelevel" %% "jawn-parser" % "1.3.2",
       "org.typelevel" %% "jawn-ast" % "1.3.2",
-      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.24.5-SNAPSHOT",
-      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.24.5-SNAPSHOT" % "compile-internal",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.28.5",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.28.5" % "compile-internal",
       // "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.24.4",
       // "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.24.4" % "compile-internal",
       // "io.circe" %% "circe-derivation" % "0.15.0-M1",

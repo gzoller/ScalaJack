@@ -183,4 +183,3 @@ val record = Record(
   List(Friend("Jane Smith", 28, "jane.smith@example.com"), Friend("Bob Johnson", 32, "bob.johnson@example.com")),
   List(Pet("Fido", "Dog", 5), Pet("Whiskers", "Cat", 3))
 )
-

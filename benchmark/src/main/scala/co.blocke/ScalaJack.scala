@@ -8,8 +8,6 @@ object ScalaJackZ:
  
     given sj: ScalaJack[co.blocke.Record2] = sjCodecOf[co.blocke.Record2]
 
-    // implicit val blah: ScalaJack[co.blocke.Record2] = sjCodecOf[co.blocke.Record2]
-
     trait ScalaJackReadingBenchmark{
         @Benchmark
         def readRecordScalaJack = sj.fromJson(jsData2)
@@ -18,16 +16,6 @@ object ScalaJackZ:
     trait ScalaJackWritingBenchmark { 
         @Benchmark
         def writeRecordScalaJack = sj.toJson(record)  
-    }
-
-    trait MsgPackReadingBenchmark{
-        @Benchmark
-        def readRecordScalaJack = sj.fromMsgPack(jsData2)
-    }
-
-    trait MsgPackWritingBenchmark { 
-        @Benchmark
-        def writeRecordScalaJack = sj.toMsgPack(record)  
     }
 
     /* 

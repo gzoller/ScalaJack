@@ -43,7 +43,6 @@ trait HandTooledWritingBenchmark {
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class ReadingBenchmark
-    // extends MsgPack.MsgPackReadingBenchmark
     extends ScalaJackZ.ScalaJackReadingBenchmark
     // with CirceZ.CirceReadingBenchmark
     // extends JsoniterZ.JsoniterReadingBenchmark
@@ -55,25 +54,11 @@ class ReadingBenchmark
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
-    // extends MsgPack.MsgPackWritingBenchmark
     // extends HandTooledWritingBenchmark
     // extends CirceZ.CirceWritingBenchmark
+    // extends ScalaJackZ.MsgPackWritingBenchmark
     extends ScalaJackZ.ScalaJackWritingBenchmark
     // extends JsoniterZ.JsoniterWritingBenchmark
     // with ZIOZ.ZIOJsonWritingBenchmark
     // with PlayZ.PlayWritingBenchmark
     // with ArgonautZ.ArgonautWritingBenchmark
-
-
-
-/*  LATEST RUN:
-
-[info] Benchmark                              Mode  Cnt        Score       Error  Units
-[info] ReadingBenchmark.readRecordJsoniter   thrpt   20  1346388.345 ± 17028.863  ops/s
-[info] ReadingBenchmark.readRecordScalaJack  thrpt   20   941679.824 ± 58208.523  ops/s
-[info] ReadingBenchmark.readRecordZIOJson    thrpt   20   590995.917 ±   817.817  ops/s
-[info] ReadingBenchmark.readRecordCirce      thrpt   20   210805.946 ± 32488.564  ops/s
-[info] ReadingBenchmark.readRecordPlay       thrpt   20   198747.067 ±  7253.896  ops/s
-[info] ReadingBenchmark.readRecordArgonaut   thrpt   20   183670.032 ±  8981.485  ops/s
-
- */

@@ -8,7 +8,8 @@ ScalaJack 8 is an all-new ScalaJack serializer implemenation built on Scala 3. F
 using Scala 3.4.1 on JDK 21 LTS version.
 
 ScalaJack is a very fast, seamless serialization engine for unstructured data types designed to require a bare minimum of extra code 
-to serialize a class. ScalaJack supports JSON and MsgPack as part of its focus on over-the-wire data and message/event transport.
+to serialize a class. ScalaJack supports JSON in its focus on over-the-wire data and message/event transport. (We looked at offering MsgPack support, but to our surprise benchmarks
+showed that MsgPack serialization had about 25% slower write performance and 45% slower read performance than JSON, so for now we're sticking with just JSON support.)
 
 Advanced Features:
 
