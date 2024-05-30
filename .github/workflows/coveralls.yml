@@ -1,0 +1,59 @@
+name: Coveralls Publish
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+concurrency:
+  group: ${{ github.workflow }} @ ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        scala: [3.4.2]
+        java: [zulu@21]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - name: Ignore line ending differences in git
+        if: contains(runner.os, 'windows')
+        shell: bash
+        run: git config --global core.autocrlf false
+
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java (zulu@21)
+        id: setup-java-zulu-21
+        if: matrix.java == 'zulu@21'
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 21
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
+        shell: bash
+        run: sbt +update
+
+      - name: Build project
+        run: sbt '++ ${{ matrix.scala }}' coverage test
+
+      - run: sbt '++ ${{ matrix.scala }}' coverageReport
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          git-branch: main
