@@ -1,8 +1,8 @@
 # ScalaJack
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=86400)](https://opensource.org/licenses/MIT)
-
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/co.blocke/scalajack_3/badge.svg)](https://search.maven.org/artifact/co.blocke/scalajack_3/8.0.0/jar)
+[![Coverage Status](https://coveralls.io/repos/github/gzoller/ScalaJack/badge.svg?branch=master)](https://coveralls.io/github/gzoller/ScalaJack?branch=master)
 
 ScalaJack 8 is an all-new ScalaJack serializer implemenation built on Scala 3. For Scala 2.13 ScalaJack, please use the frozen version 6.2.0. ScalaJack 8 is built 
 using Scala 3.4.2 on JDK 21 LTS version. This is done to be as current as possible and also because Scala 3.4.2 provides improvements to code test coverage instrumentation.
