@@ -47,13 +47,13 @@ processing using
 ```scala
 sj[Foo](JsonConfig.withSuppressEscapedStrings())
 ```
-Its for when you're 100% sure there's 0 chance of any double-quotes, newlines, tabs, or
-any other non-character/digit unicode special characters in your String values that require escaping.  When you need the maximum possible performance.
+Its for when you need that absolute maximum performance and you're 100% sure there's 0 chance of any double-quotes, newlines, tabs, or
+any other non-character/digit unicode special characters in your String values that require escaping.
 
 ### Interpretation
 
 Performance for ScalaJack has been a journey.  ScalaJack is a mature product--over 10 yrs old!
-Long ago it was quite fast vs its competition, but its performance lagged badly as its peers improved, 
+Long ago it was quite fast vs its competition, but as its peers improved its performance lagged badly, 
 to the point that it became one of the slower serialization libraries.  ScalaJack 8 changes that!  
 
 I was sampling and testing against a collection of popular serializers for Scala util
