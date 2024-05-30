@@ -1,5 +1,8 @@
+.DS_Store
 out/
-.bsp/
+.vscode/
+.metals/
+.bloop/
 .idea/
 .idea_modules/
 target/
@@ -7,6 +10,8 @@ reports/
 lib_managed/
 src_managed/
 project/boot/
+project/project/
+project/project/target/
 project/plugins/project
 java_pid*.hprof
 *.swp
@@ -16,3 +21,6 @@ tags
 .history
 *~
 wip/
+.dotty-ide*
+_site/
+.bsp/

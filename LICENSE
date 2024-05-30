@@ -1,4 +1,4 @@
-MIT License
+## MIT License
 
 Copyright (c) 2020 Greg Zoller
 
@@ -19,3 +19,25 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## ZIO-Json Attribution
+
+Parts of JSON reading software were used either directly or derived from the 
+[ZIO-Json project](https://github.com/zio/zio-json)
+licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+In most cases, "derived" means removal of features not needed by ScalaJack or
+other changes needed to adapt the code to the ScalaJack ecosystem. Regardless,
+they are credited here as materially the same as those in the ZIO-Json project.
+
+The files used directly or derived are:
+* FastStringBuilder.scala
+* FieldKeyDecoder.scala
+* JsonDecoder.scala
+* JsonParser.scala
+* JsonReader.scala
+* Numbers.scala
+* StringMatrix.scala
+
+The terms, privileges, and restrictions provided by the Apache License 2.0 
+fully apply to these files, where these differ from the MIT license, which
+applies to the rest of ScalaJack's code.
