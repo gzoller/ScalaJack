@@ -245,11 +245,6 @@ case class JsonOutput():
       internal.append('"')
     comma = true
 
-  inline def valueRaw(v: RawJson): Unit =
-    maybeComma()
-    internal.append(v.asInstanceOf[String])
-    comma = true
-
   inline def value(v: java.lang.Boolean): Unit =
     maybeComma()
     if v == null then internal.append("null")

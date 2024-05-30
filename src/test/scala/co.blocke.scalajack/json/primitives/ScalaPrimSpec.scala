@@ -119,6 +119,56 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"s1":"something\b\n\f\r\t\""" + """u2606","s2":"","s3":null}""")
         sj.fromJson(js) shouldEqual inst
       }
+
+      it("Any type for all primitives must work") {
+        val sj = sjCodecOf[AnyShell]
+        val prims: List[(Any, String, Option[Any => String])] = List(
+          (null, """{"a":null}""", None),
+          (scala.math.BigDecimal(5), """{"a":5}""", None),
+          (scala.math.BigInt(5), """{"a":5}""", None),
+          (true, """{"a":true}""", None),
+          (5.toByte, """{"a":5}""", None),
+          ('x', """{"a":"x"}""", Some((c: Any) => c.toString)),
+          (5.0, """{"a":5.0}""", None),
+          (5.0.toFloat, """{"a":5.0}""", None),
+          (5, """{"a":5}""", None),
+          (5L, """{"a":5}""", None),
+          (5.toShort, """{"a":5}""", None),
+          ("foo", """{"a":"foo"}""", None),
+          (java.lang.Boolean.valueOf(true), """{"a":true}""", None),
+          (java.lang.Byte.valueOf(5.toByte), """{"a":5}""", None),
+          (java.lang.Character.valueOf('x'), """{"a":"x"}""", Some((c: Any) => c.toString)),
+          (java.lang.Double.valueOf(5.0), """{"a":5.0}""", None),
+          (java.lang.Float.valueOf(5.0.toFloat), """{"a":5.0}""", None),
+          (java.lang.Integer.valueOf(5), """{"a":5}""", None),
+          (java.lang.Long.valueOf(5), """{"a":5}""", None),
+          (java.lang.Short.valueOf(5.toShort), """{"a":5}""", None),
+          (java.lang.Integer.valueOf(5).asInstanceOf[java.lang.Number], """{"a":5}""", None),
+          (java.time.Duration.ofHours(5), """{"a":"PT5H"}""", Some((c: Any) => c.toString)),
+          (java.time.Instant.ofEpochSecond(1234567), """{"a":"1970-01-15T06:56:07Z"}""", Some((c: Any) => c.toString)),
+          (java.time.LocalDate.of(2024, 3, 15), """{"a":"2024-03-15"}""", Some((c: Any) => c.toString)),
+          (java.time.LocalDateTime.of(2024, 3, 15, 4, 15, 3), """{"a":"2024-03-15T04:15:03"}""", Some((c: Any) => c.toString)),
+          (java.time.LocalTime.of(4, 15, 3), """{"a":"04:15:03"}""", Some((c: Any) => c.toString)),
+          (java.time.MonthDay.of(12, 25), """{"a":"--12-25"}""", Some((c: Any) => c.toString)),
+          (java.time.OffsetDateTime.of(2024, 3, 15, 9, 15, 1, 0, java.time.ZoneOffset.ofHours(5)), """{"a":"2024-03-15T09:15:01+05:00"}""", Some((c: Any) => c.toString)),
+          (java.time.OffsetTime.of(9, 15, 1, 0, java.time.ZoneOffset.ofHours(5)), """{"a":"09:15:01+05:00"}""", Some((c: Any) => c.toString)),
+          (java.time.Period.ofDays(5), """{"a":"P5D"}""", Some((c: Any) => c.toString)),
+          (java.time.Year.of(2024), """{"a":"2024"}""", Some((c: Any) => c.toString)),
+          (java.time.YearMonth.of(2024, 3), """{"a":"2024-03"}""", Some((c: Any) => c.toString)),
+          (java.time.ZoneOffset.ofHours(5), """{"a":"+05:00"}""", Some((c: Any) => c.toString)),
+          (java.time.ZonedDateTime.parse("2007-12-03T10:15:30+01:00"), """{"a":"2007-12-03T10:15:30+01:00"}""", Some((c: Any) => c.toString)),
+          (java.time.ZoneId.of("GMT+2"), """{"a":"GMT+02:00"}""", Some((c: Any) => c.toString))
+        )
+        prims.map { case (v, j, fn) =>
+          val inst = AnyShell(v)
+          val js = sj.toJson(inst)
+          js should matchJson(j)
+          fn match {
+            case Some(f) => sj.fromJson(js) shouldEqual (AnyShell(f(v)))
+            case None    => sj.fromJson(js) shouldEqual inst
+          }
+        }
+      }
     }
 
     // --------------------------------------------------------

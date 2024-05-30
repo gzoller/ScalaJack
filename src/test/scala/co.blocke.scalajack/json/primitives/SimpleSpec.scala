@@ -166,7 +166,7 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
       it("Net types URL and URI must work") {
         val inst = SampleNet(
           null,
-          new URL("https://www.foom.com"),
+          new URI("https://www.foom.com").toURL(),
           null,
           new URI("https://www.foom.com")
         )
@@ -360,7 +360,7 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val ex = intercept[co.blocke.scalajack.json.JsonParseError](sjCodecOf[SampleNet].fromJson(js))
         ex.show shouldEqual msg
         val js2 = """{"u1":null,"u2":"httpwww.foom.com","u3":null,"u4":"https://www.foom.com"}"""
-        the[java.net.MalformedURLException] thrownBy sjCodecOf[SampleNet].fromJson(js2) should have message """no protocol: httpwww.foom.com"""
+        the[java.lang.IllegalArgumentException] thrownBy sjCodecOf[SampleNet].fromJson(js2) should have message """URI is not absolute"""
       }
 
       it("UUID must break") {

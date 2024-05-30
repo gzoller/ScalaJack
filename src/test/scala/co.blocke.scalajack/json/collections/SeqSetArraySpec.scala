@@ -36,6 +36,13 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":["a","b","c"]}""")
         sj.fromJson(js) shouldEqual (inst)
       }
+      it("Mutable Seq of string must work") {
+        val inst = MSeqHolder[String](scala.collection.mutable.ListBuffer("a", "b", "c"))
+        val sj = sjCodecOf[MSeqHolder[String]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":["a","b","c"]}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
       it("Seq of boolean must work") {
         val inst = SeqHolder[Boolean](List(true, false, true))
         val sj = sjCodecOf[SeqHolder[Boolean]]
@@ -103,6 +110,13 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
       it("Set of string must work") {
         val inst = SetHolder[String](HashSet("a", "b", "c"))
         val sj = sjCodecOf[SetHolder[String]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":["a","b","c"]}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
+      it("Mutable Set of string must work") {
+        val inst = MSetHolder[String](scala.collection.mutable.HashSet("a", "b", "c"))
+        val sj = sjCodecOf[MSetHolder[String]]
         val js = sj.toJson(inst)
         js should matchJson("""{"a":["a","b","c"]}""")
         sj.fromJson(js) shouldEqual (inst)
@@ -227,5 +241,28 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":[{"name":"Bob","age",35},{"name":"Sally","age",54}]}""")
         sj.fromJson(js).a.toList shouldEqual (inst.a.toList)
       }
+
+      it("Vector of class must work") {
+        val inst = VectorHolder[Person](Vector(Person("Bob", 35), Person("Sally", 54)))
+        val sj = sjCodecOf[VectorHolder[Person]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":[{"name":"Bob","age",35},{"name":"Sally","age",54}]}""")
+        sj.fromJson(js).a.toList shouldEqual (inst.a.toList)
+      }
+      it("IndexedSeq of class must work") {
+        val inst = IndexedSeqHolder[Person](IndexedSeq(Person("Bob", 35), Person("Sally", 54)))
+        val sj = sjCodecOf[IndexedSeqHolder[Person]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":[{"name":"Bob","age",35},{"name":"Sally","age",54}]}""")
+        sj.fromJson(js).a.toList shouldEqual (inst.a.toList)
+      }
+      it("Iterable of class must work") {
+        val inst = IterableHolder[Person](Seq(Person("Bob", 35), Person("Sally", 54)))
+        val sj = sjCodecOf[IterableHolder[Person]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":[{"name":"Bob","age",35},{"name":"Sally","age",54}]}""")
+        sj.fromJson(js).a.toList shouldEqual (inst.a.toList)
+      }
+
     }
   }

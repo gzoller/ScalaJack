@@ -20,8 +20,6 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T]):
 
 object ScalaJack:
 
-  def apply[A](implicit a: ScalaJack[A]): ScalaJack[A] = a
-
   // ----- Use default JsonConfig
   inline def sjCodecOf[T]: ScalaJack[T] = ${ codecOfImpl[T] }
   def codecOfImpl[T: Type](using Quotes): Expr[ScalaJack[T]] =

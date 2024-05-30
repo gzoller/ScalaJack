@@ -52,6 +52,13 @@ class TrySpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{}""")
         sj.fromJson(js) shouldEqual (inst)
       }
+      it("Try of Either must work (Success)") {
+        val inst = TryHolder[Either[Boolean, Int]](Success(Right(5)))
+        val sj = sjCodecOf[TryHolder[Either[Boolean, Int]]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":5}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
       it("Try w/policy AS_NULL must work (Failure)") {
         val inst = TryHolder[Int](Failure(new Exception("boom")))
         val sj = sjCodecOf[TryHolder[Int]](SJConfig.withTryFailureHandling(TryPolicy.AS_NULL))

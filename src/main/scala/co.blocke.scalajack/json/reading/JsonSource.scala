@@ -3,7 +3,8 @@ package json
 package reading
 
 import scala.annotation.{switch, tailrec}
-import co.blocke.scalajack.json.reading.SafeNumbers.double
+import co.blocke.scalajack.internal.SafeNumbers.double
+import co.blocke.scalajack.internal.UnsafeNumbers
 
 object JsonSource:
   val ull: Array[Char] = "ull".toCharArray

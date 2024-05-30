@@ -10,6 +10,7 @@ import scala.quoted.*
   *       sj[Record]
   *     }
   */
+//$COVERAGE-OFF$3rd party library
 object CodePrinter {
   inline def structure[A](inline value: A) = ${ structureMacro('value) }
 
@@ -30,3 +31,4 @@ object CodePrinter {
     value
   }
 }
+//$COVERAGE-ON$

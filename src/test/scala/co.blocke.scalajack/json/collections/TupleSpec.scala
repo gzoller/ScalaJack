@@ -36,6 +36,13 @@ class TupleSpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":[[1,2],{"a":3,"b":4},[1.23,"X",true]]}""")
         sj.fromJson(js) shouldEqual inst
       }
+      it("Tuple of one element must work") {
+        val inst = TupleOneHolder[Int](Tuple1(15))
+        val sj = sjCodecOf[TupleOneHolder[Int]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":[15]}""")
+        sj.fromJson(js) shouldEqual inst
+      }
     }
 
     describe(colorString("--- Negative Tests ---")) {

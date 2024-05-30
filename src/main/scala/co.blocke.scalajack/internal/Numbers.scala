@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 package co.blocke.scalajack
-package json
-package reading
+package internal
 
 import java.io.*
 import scala.util.control.NoStackTrace
+import json.reading.JsonSource
+import json.*
+
+// $COVERAGE-OFF$3rd party library
 
 /** Total, fast, number parsing.
   *
@@ -834,3 +837,4 @@ object UnsafeNumbers {
   private val longunderflow: Long = Long.MinValue / 10L
   private val longoverflow: Long = Long.MaxValue / 10L
 }
+// $COVERAGE-ON$

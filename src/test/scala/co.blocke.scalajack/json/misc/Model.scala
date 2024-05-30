@@ -34,6 +34,7 @@ case class OptionalHolder[T](
     j: Either[Optional[T], T] // Either of Optional (L)
 )
 
+case class SimpleOptionHolder[T](a: Option[T])
 case class TryHolder[T](a: Try[T])
 case class TryHolder2[T](a: Seq[Try[T]], b: (Try[T], Try[T]))
 

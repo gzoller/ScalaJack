@@ -176,5 +176,12 @@ class OptionSpec() extends AnyFunSpec with JsonMatchers:
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (EitherRecipeJ[Int](null))
       }
+      it("Option of Either should work") {
+        val inst = SimpleOptionHolder[Either[Boolean, Int]](Some(Right(5)))
+        val sj = sjCodecOf[SimpleOptionHolder[Either[Boolean, Int]]]
+        val js = sj.toJson(inst)
+        js should matchJson("""{"a":5}""")
+        sj.fromJson(js) shouldEqual (inst)
+      }
     }
   }

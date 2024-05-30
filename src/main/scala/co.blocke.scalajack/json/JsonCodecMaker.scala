@@ -286,6 +286,22 @@ object JsonCodecMaker:
                     }
               }
 
+            case t: IterableRef[?] =>
+              makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
+                t.elementRef.refType match
+                  case '[e] =>
+                    val tin = in.asInstanceOf[Expr[Iterable[e]]]
+                    '{
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startArray()
+                        $tin.foreach { i =>
+                          ${ genWriteVal('{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                        }
+                        $out.endArray()
+                    }
+              }
+
             case t: SeqRef[?] =>
               makeWriteFn[b](MethodKey(t, false), aE.asInstanceOf[Expr[b]], out) { (in, out) =>
                 t.elementRef.refType match
@@ -791,12 +807,9 @@ object JsonCodecMaker:
             case t: ObjectRef[?] => '{ $out.value(${ Expr(t.name) }) }
 
             case t: AliasRef[?] =>
-              // Special check for RawJson pseudo-type
-              if lastPart(t.definedType) == "RawJson" then '{ $out.valueRaw(${ aE.asExprOf[RawJson] }) }
-              else
-                t.unwrappedType.refType match
-                  case '[e] =>
-                    genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
+              t.unwrappedType.refType match
+                case '[e] =>
+                  genWriteVal[e](aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
 
             // These are here becaue Enums and their various flavors can be Map keys
             // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
@@ -1454,31 +1467,23 @@ object JsonCodecMaker:
             case t: ZoneIdRef         => '{ $in.expectString(java.time.ZoneId.of) }.asExprOf[T]
             case t: ZoneOffsetRef     => '{ $in.expectString(java.time.ZoneOffset.of) }.asExprOf[T]
 
-            case t: URLRef  => '{ $in.expectString((s: String) => new java.net.URL(s)) }.asExprOf[T]
+            case t: URLRef  => '{ $in.expectString((s: String) => new java.net.URI(s).toURL()) }.asExprOf[T]
             case t: URIRef  => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
             case t: UUIDRef => '{ $in.expectString(java.util.UUID.fromString) }.asExprOf[T]
 
             case t: AliasRef[?] =>
-              // Special check for RawJson pseudo-type
-              if lastPart(t.definedType) == "RawJson" then
-                '{
-                  val mark = $in.pos
-                  $in.skipValue()
-                  $in.captureMark(mark)
-                }.asExprOf[T]
-              else
-                t.unwrappedType.refType match
-                  case '[e] =>
-                    '{
-                      ${
-                        genReadVal[e](
-                          t.unwrappedType.asInstanceOf[RTypeRef[e]],
-                          in,
-                          inTuple,
-                          isMapKey
-                        )
-                      }.asInstanceOf[T]
-                    }
+              t.unwrappedType.refType match
+                case '[e] =>
+                  '{
+                    ${
+                      genReadVal[e](
+                        t.unwrappedType.asInstanceOf[RTypeRef[e]],
+                        in,
+                        inTuple,
+                        isMapKey
+                      )
+                    }.asInstanceOf[T]
+                  }
 
             // --------------------
             //  Options...
@@ -1673,15 +1678,6 @@ object JsonCodecMaker:
                         if parsedArray != null then parsedArray.toVector
                         else null
                       }.asExprOf[T]
-                case '[Seq[?]] =>
-                  t.elementRef.refType match
-                    case '[e] =>
-                      val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                      '{
-                        val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
-                        if parsedArray != null then parsedArray.toSeq
-                        else null
-                      }.asExprOf[T]
                 case '[IndexedSeq[?]] =>
                   t.elementRef.refType match
                     case '[e] =>
@@ -1691,13 +1687,13 @@ object JsonCodecMaker:
                         if parsedArray != null then parsedArray.toIndexedSeq
                         else null
                       }.asExprOf[T]
-                case '[Iterable[?]] =>
+                case '[Seq[?]] =>
                   t.elementRef.refType match
                     case '[e] =>
                       val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                       '{
                         val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
-                        if parsedArray != null then parsedArray.toIterable
+                        if parsedArray != null then parsedArray.toSeq
                         else null
                       }.asExprOf[T]
                 // Catch all, with (slightly) slower type coersion to proper Seq flavor
@@ -1710,6 +1706,19 @@ object JsonCodecMaker:
                         if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
                         else null
                       }.asExprOf[T]
+
+            case t: IterableRef[?] =>
+              t.elementRef.refType match
+                case '[e] =>
+                  val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                  val ct = Expr.summon[ClassTag[e]].get
+                  '{
+                    val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](rtypeRef, in, inTuple) })
+                    if parsedArray != null then
+                      implicit val ctt = $ct
+                      parsedArray.asInstanceOf[Iterable[e]]
+                    else null
+                  }.asExprOf[T]
 
             case t: ArrayRef[?] =>
               t.elementRef.refType match
@@ -2080,24 +2089,16 @@ object JsonCodecMaker:
 
                   // make all the tuple terms, accounting for , and ] detection
                   val tupleTerms =
-                    if t.tupleRefs.length == 1 then
-                      t.tupleRefs(0).refType match
+                    t.tupleRefs.zipWithIndex.map { case (tpart, i) =>
+                      tpart.refType match
                         case '[e] =>
-                          List('{
-                            ${ genReadVal[e](t.tupleRefs(0).asInstanceOf[RTypeRef[e]], in, true) }
-                            $in.expectToken(']')
-                          }.asTerm)
-                    else
-                      t.tupleRefs.zipWithIndex.map { case (tpart, i) =>
-                        tpart.refType match
-                          case '[e] =>
-                            if i == 0 then genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true).asTerm
-                            else
-                              '{
-                                $in.expectToken(',')
-                                ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
-                              }.asTerm
-                      }
+                          if i == 0 then genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true).asTerm
+                          else
+                            '{
+                              $in.expectToken(',')
+                              ${ genReadVal[e](tpart.asInstanceOf[RTypeRef[e]], in, true) }
+                            }.asTerm
+                    }
                   '{
                     if $in.expectNull() then null
                     else
