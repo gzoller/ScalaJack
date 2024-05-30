@@ -2,7 +2,7 @@ name: Coveralls Publish
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     tags: ["v*"]
 
 env:
