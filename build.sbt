@@ -14,16 +14,23 @@ val json4sNative = "org.json4s" %% "json4s-native" % "3.6.6"
 val cats = "org.typelevel" %% "cats-core" % "2.0.0"
 val snakeyaml = "org.snakeyaml" % "snakeyaml-engine" % "2.0"
 
+name := "scalajack"
+version := "6.2.0"
+organization := "co.blocke"
+scalaVersion := "2.13.14"
+
 lazy val basicSettings = Seq(
-  resolvers += Resolver.jcenterRepo,
+  name := "scalajack",
+  version := "6.2.0",
   organization := "co.blocke",
   startYear := Some(2015),
-  publishArtifact in (Compile, packageDoc) := false, // disable scaladoc due to bug handling annotations
-  scalaVersion := "2.13.1",
+  //publishArtifact in (Compile, packageDoc) := false, // disable scaladoc due to bug handling annotations
+  scalaVersion := "2.13.14",
   coverageMinimum := 98, // really this should be 96% but mongo isn't quite up to that yet
   coverageFailOnMinimum := true,
   parallelExecution in ThisBuild := false,
   scalacOptions ++= Seq(
+    "-target:jvm-1.8",
     "-feature",
     "-deprecation",
     "-Xlint",
@@ -37,6 +44,40 @@ lazy val basicSettings = Seq(
   ),
   testOptions in Test += Tests.Argument("-oDF")
 )
+
+// Sonatype profile name, usually your group ID
+//publishTo := sonatypePublishToBundle.value
+//sonatypeCredentialHost := "oss.sonatype.org"
+//sonatypeRepository := "https://oss.sonatype.org/service/local"
+credentials += Credentials(Path.userHome / ".sbt" / "1.0" / "sonatype.credentials")
+//credentials += Credentials(Path.userHome / ".sbt" / "1.0" / "sonatype.sbt")
+
+//javaOptions += "-Djavax.net.ssl.trustStore=/path/to/truststore"
+//javaOptions += "-Djavax.net.ssl.trustStorePassword=changeit"
+
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
+publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
+
+//homepage := Some(url("https://github.com/gzoller/ScalaJack"))
+//licenses := List("MIT" -> url("http://opensource.org/licenses/MIT"))
+//developers := List(Developer(id="gzoller",name="Greg Zoller",email="undisclosed@nomail.com",url=url("http://github.com/gzoller")))
+//scmInfo := Some(ScmInfo(url("https://github.com/gzoller/ScalaJack"),"scm:git@github.com:gzoller/ScalaJack.git"))
+
+ThisBuild / homepage := Some(url("https://github.com/gzoller/ScalaJack"))
+ThisBuild / licenses := List("MIT" -> url("http://opensource.org/licenses/MIT"))
+ThisBuild / developers := List(Developer(id="gzoller",name="Greg Zoller",email="undisclosed@nomail.com",url=url("http://github.com/gzoller")))
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/gzoller/ScalaJack"),
+    "scm:git@github.com:gzoller/ScalaJack.git"
+  )
+)
+
+// Signing settings
+useGpg := true
+pgpPublicRing := file(System.getProperty("user.home") + "/.gnupg/pubring.kbx")
+pgpSecretRing := file(System.getProperty("user.home") + "/.gnupg/secring.gpg")
+
 
 // configure prompt to show current project
 shellPrompt := { s =>
@@ -52,11 +93,25 @@ lazy val root = (project in file("."))
 
 val pubSettings = Seq(
   publishMavenStyle := true,
-  bintrayOrganization := Some("blocke"),
-  bintrayReleaseOnPublish in ThisBuild := false,
-  licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
-  bintrayRepository := "releases",
-  bintrayPackageLabels := Seq("scala", "json", "scalajack")
+  organization := "co.blocke",
+  organizationName := "blocke",
+  scmInfo := Some(ScmInfo(url("https://github.com/gzoller/ScalaJack"),"scm:git@github.com:gzoller/ScalaJack.git")),
+  developers := List(Developer(id="gzoller",name="Greg Zoller",email="undisclosed@nomail.com",url=url("http://github.com/gzoller"))),
+  pomIncludeRepository := { _ => false },
+  licenses := List("MIT" -> url("http://opensource.org/licenses/MIT")),
+  publishTo := {
+	val nexus = "https://oss.sonatype.org/"
+        if (isSnapshot.value)
+          Some("snapshost" at nexus + "content/repositories/snapshots")
+        else
+          Some("releases" at nexus + "service/local/staging/deploy/maven2")
+/*
+	if( version.value.trim.endsWith("SNAPSHOT"))
+		Some("snapshots" at nexus + "content/repositories/snapshots")
+	else
+		Some("releases" at nexus + "service/local/staging/deploy/maven2")
+*/
+  }
 )
 
 lazy val scalajack = project
