@@ -21,8 +21,8 @@ inThisBuild(List(
 
 name := "scalajack"
 ThisBuild / organization := "co.blocke"
-ThisBuild / scalaVersion := "3.4.2"
-ThisBuild / githubWorkflowScalaVersions := Seq("3.4.2")
+ThisBuild / scalaVersion := "3.5.2"
+ThisBuild / githubWorkflowScalaVersions := Seq("3.5.2")
 
 lazy val root = project
   .in(file("."))
@@ -38,7 +38,7 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"            %% "scala-reflection"     % "2.0.8",
+      "co.blocke"            %% "scala-reflection"     % "2.0.12",
       "org.apache.commons"   % "commons-text"          % "1.11.0",
       "io.github.kitlangton" %% "neotype"              % "0.0.9",
       "org.scalatest"        %% "scalatest"            % "3.2.17" % Test,
@@ -48,7 +48,7 @@ lazy val root = project
   )
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "21"))
-ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest")
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-20.04")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("main")),
   RefPredicate.StartsWith(Ref.Tag("v"))

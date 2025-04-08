@@ -147,6 +147,25 @@ case class JsonSource(js: CharSequence):
       case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
 
   @tailrec
+  final def parseOrderedMap[K, V](kf: () => K, vf: () => V, acc: scala.collection.mutable.LinkedHashMap[K, V], isFirst: Boolean = true): scala.collection.mutable.LinkedHashMap[K, V] = // initial '{' already consumed
+    readToken() match
+      case '}' => acc
+      case ',' =>
+        val key = kf()
+        expectToken(':')
+        val value = vf()
+        acc(key) = value
+        parseOrderedMap[K, V](kf, vf, acc, false)
+      case _ if isFirst =>
+        backspace()
+        val key = kf()
+        expectToken(':')
+        val value = vf()
+        acc(key) = value
+        parseOrderedMap[K, V](kf, vf, acc, false)
+      case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
+
+  @tailrec
   final def findObjectField(fieldName: String): Option[String] =
     val mark = i
     expectToken('{')
