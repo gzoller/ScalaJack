@@ -27,7 +27,7 @@ jobs:
     name: Build and Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04]
         scala: [3.4.2]
         java: [zulu@21]
     runs-on: ${{ matrix.os }}
@@ -78,7 +78,7 @@ jobs:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04]
         java: [zulu@21]
     runs-on: ${{ matrix.os }}
     steps:
