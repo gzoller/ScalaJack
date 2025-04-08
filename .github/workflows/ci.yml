@@ -27,8 +27,8 @@ jobs:
     name: Build and Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        scala: [3.4.2]
+        os: [ubuntu-20.04]
+        scala: [3.5.2]
         java: [zulu@21]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -78,7 +78,7 @@ jobs:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04]
         java: [zulu@21]
     runs-on: ${{ matrix.os }}
     steps:
@@ -100,12 +100,12 @@ jobs:
         if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
         run: sbt +update
 
-      - name: Download target directories (3.4.2)
+      - name: Download target directories (3.5.2)
         uses: actions/download-artifact@v4
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-3.4.2
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3.5.2
 
-      - name: Inflate target directories (3.4.2)
+      - name: Inflate target directories (3.5.2)
         run: |
           tar xf targets.tar
           rm targets.tar
