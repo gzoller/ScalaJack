@@ -1835,6 +1835,44 @@ object JsonCodecMaker:
             // --------------------
             case t: MapRef[?] =>
               ref.refType match
+                case '[scala.collection.mutable.LinkedHashMap[?, ?]] => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.LinkedHashMap.from(
+                                $in.parseOrderedMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  scala.collection.mutable.LinkedHashMap.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
+                case '[scala.collection.mutable.ListMap[?, ?]] => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.ListMap.from(
+                                $in.parseOrderedMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  scala.collection.mutable.LinkedHashMap.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
                 case '[scala.collection.mutable.HashMap[?, ?]] =>
                   t.elementRef.refType match
                     case '[k] =>
@@ -1873,6 +1911,25 @@ object JsonCodecMaker:
                                 )
                               )
                           }.asExprOf[T]
+                case '[scala.collection.mutable.SeqMap[?, ?]] => // mutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.mutable.SeqMap.from(
+                                $in.parseOrderedMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  scala.collection.mutable.LinkedHashMap.empty[k, v],
+                                  true
+                                )
+                              )
+                          }.asExprOf[T]
                 case '[scala.collection.mutable.Map[?, ?]] => // all other mutable Maps
                   t.elementRef.refType match
                     case '[k] =>
@@ -1893,6 +1950,25 @@ object JsonCodecMaker:
                                   )
                                 )
                                 .to(${ Expr.summon[Factory[(k, v), T]].get })
+                          }.asExprOf[T]
+                case '[scala.collection.immutable.ListMap[?, ?]] => // immutable
+                  t.elementRef.refType match
+                    case '[k] =>
+                      t.elementRef2.refType match
+                        case '[v] =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              scala.collection.immutable.ListMap.from(
+                                $in.parseOrderedMap[k, v](
+                                  () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                  () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                  scala.collection.mutable.LinkedHashMap.empty[k, v],
+                                  true
+                                )
+                              )
                           }.asExprOf[T]
                 case '[scala.collection.immutable.HashMap[?, ?]] => // immutable
                   t.elementRef.refType match
@@ -1924,10 +2000,10 @@ object JsonCodecMaker:
                             else
                               $in.expectToken('{')
                               scala.collection.immutable.SeqMap.from(
-                                $in.parseMap[k, v](
+                                $in.parseOrderedMap[k, v](
                                   () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
                                   () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
-                                  Map.empty[k, v],
+                                  scala.collection.mutable.LinkedHashMap.empty[k, v],
                                   true
                                 )
                               )
@@ -2024,6 +2100,23 @@ object JsonCodecMaker:
                                     () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
                                     () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
                                     Map.empty[k, v],
+                                    true
+                                  )
+                                  .asJava
+                              )
+                          }.asExprOf[T]
+                        case "java.util.LinkedHashMap" =>
+                          testValidMapKey(t.elementRef)
+                          '{
+                            if $in.expectNull() then null
+                            else
+                              $in.expectToken('{')
+                              new java.util.LinkedHashMap(
+                                $in
+                                  .parseOrderedMap[k, v](
+                                    () => ${ genReadVal[k](t.elementRef.asInstanceOf[RTypeRef[k]], in, inTuple, true) },
+                                    () => ${ genReadVal[v](t.elementRef2.asInstanceOf[RTypeRef[v]], in, inTuple) },
+                                    scala.collection.mutable.LinkedHashMap.empty[k, v],
                                     true
                                   )
                                   .asJava
