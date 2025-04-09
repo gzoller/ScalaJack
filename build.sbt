@@ -48,7 +48,7 @@ lazy val root = project
   )
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "21"))
-ThisBuild / githubWorkflowOSes := Seq("ubuntu-20.04")
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("main")),
   RefPredicate.StartsWith(Ref.Tag("v"))
