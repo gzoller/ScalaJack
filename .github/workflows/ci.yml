@@ -116,6 +116,16 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
+      - name: Import GPG key
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+        run: |
+          echo "$PGP_SECRET" | base64 --decode | gpg --batch --import
+          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf
+          echo 'use-agent' >> ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+
       - env:
           CI_SNAPSHOT_RELEASE: +publishSigned
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}

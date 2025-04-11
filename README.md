@@ -88,6 +88,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 
 ### Notes:
 
+* 8.0.3 -- Attempt to fix the frequently-broken CICD pipeline
 * 8.0.2 -- Rebuild on Scala 3.5.2 and support for Maps that preserve insertion order
 * 8.0.0 -- Rebuild on Scala 3.4.2 and deep refactor of ScalaJack 7.0
 * 7.0.3 -- Rebuild on Scala 3.2.1

@@ -55,6 +55,22 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
 )
 
 ThisBuild / githubWorkflowPublish := Seq(
+  // Step 1: Import GPG key into runner's GPG keyring
+  WorkflowStep.Run(
+    name = Some("Import GPG key"),
+    commands = List(
+      "echo \"$PGP_SECRET\" | base64 --decode | gpg --batch --import",
+      "echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf",
+      "echo 'use-agent' >> ~/.gnupg/gpg.conf",
+      "gpgconf --kill gpg-agent",
+      "gpgconf --launch gpg-agent"
+    ),
+    env = Map(
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}"
+    )
+  ),
+
+  // Step 2: Run ci-release as usual
   WorkflowStep.Sbt(
     List("ci-release"),
     env = Map(
