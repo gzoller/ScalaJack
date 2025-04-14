@@ -88,3 +88,10 @@ case class Sports[A, B](thing1: A, thing2: B) extends Hobby[A, B]
 case class Painter[A, B](instrument: A, effort: B) extends Artist[A, B]
 case class Employee[A, B, C, D](who: Artist[C, Hobby[D, A]], org: B) extends PersonX[Artist[C, Hobby[D, A]], B]
 type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle]
+
+sealed trait Machine
+case class Press(name: String, lbs: Int) extends Machine
+case class Lift(name: String, lbs: Int) extends Machine
+case class Drill(name: String, numBits: Int) extends Machine
+case class Swing(name: String, lbs: Option[Int], isBig: Boolean) extends Machine
+case class MachineHolder(m1: Machine, m2: Machine, m3: Machine, m4: Machine)

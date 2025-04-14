@@ -19,17 +19,17 @@ class SJConfig private[scalajack] (
     val enumsAsIds: List[String], // Default: string values.  Nil=all enums as ids, List(...)=specified classes enums as ids
     val _writeNonConstructorFields: Boolean,
     val _suppressEscapedStrings: Boolean,
-    val _suppressTypeHints: Boolean
+    val _preferTypeHints: Boolean
 ):
-  def withNoneAsNull(): SJConfig = copy(noneAsNull = true)
+  def withNoneAsNull: SJConfig = copy(noneAsNull = true)
   def withTryFailureHandling(tryPolicy: TryPolicy): SJConfig = copy(tryFailureHandling = tryPolicy)
   def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): SJConfig = copy(eitherLeftHandling = eitherPolicy)
   def withTypeHintLabel(label: String): SJConfig = copy(typeHintLabel = label)
   def withTypeHintPolicy(hintPolicy: TypeHintPolicy): SJConfig = copy(typeHintPolicy = hintPolicy)
   def withEnumsAsIds(asIds: List[String]): SJConfig = copy(enumsAsIds = asIds)
-  def writeNonConstructorFields(): SJConfig = copy(_writeNonConstructorFields = true)
-  def suppressEscapedStrings(): SJConfig = copy(_suppressEscapedStrings = true)
-  def suppressTypeHints(): SJConfig = copy(_suppressTypeHints = true)
+  def writeNonConstructorFields: SJConfig = copy(_writeNonConstructorFields = true)
+  def suppressEscapedStrings: SJConfig = copy(_suppressEscapedStrings = true)
+  def preferTypeHints: SJConfig = copy(_preferTypeHints = true)
 
   private def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -40,7 +40,7 @@ class SJConfig private[scalajack] (
       enumsAsIds: List[String] = enumsAsIds,
       _writeNonConstructorFields: Boolean = _writeNonConstructorFields,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
-      _suppressTypeHints: Boolean = _suppressTypeHints
+      _preferTypeHints: Boolean = _preferTypeHints
   ): SJConfig = new SJConfig(
     noneAsNull,
     tryFailureHandling,
@@ -50,7 +50,7 @@ class SJConfig private[scalajack] (
     enumsAsIds,
     _writeNonConstructorFields,
     _suppressEscapedStrings,
-    _suppressTypeHints
+    _preferTypeHints
   )
 
 enum TryPolicy:
@@ -72,7 +72,7 @@ object SJConfig
       enumsAsIds = List("-"), // default -> enum as value
       _writeNonConstructorFields = false,
       _suppressEscapedStrings = false,
-      _suppressTypeHints = false
+      _preferTypeHints = false
     ):
   import scala.quoted.FromExpr.*
 
@@ -86,19 +86,19 @@ object SJConfig
           .withTypeHintPolicy(${ Expr(x.typeHintPolicy) })
           .withEnumsAsIds(${ Expr(x.enumsAsIds) })
         val jc2 = ${
-          if x.noneAsNull then '{ jc.withNoneAsNull() }
+          if x.noneAsNull then '{ jc.withNoneAsNull }
           else '{ jc }
         }
         val jc3 = ${
-          if !x._suppressEscapedStrings then '{ jc2.suppressEscapedStrings() }
+          if !x._suppressEscapedStrings then '{ jc2.suppressEscapedStrings }
           else '{ jc2 }
         }
         val jc4 = ${
-          if !x._suppressTypeHints then '{ jc3.suppressTypeHints() }
+          if !x._preferTypeHints then '{ jc3.preferTypeHints }
           else '{ jc3 }
         }
         val jc5 = ${
-          if !x._writeNonConstructorFields then '{ jc4.writeNonConstructorFields() }
+          if !x._writeNonConstructorFields then '{ jc4.writeNonConstructorFields }
           else '{ jc4 }
         }
         jc5
@@ -126,7 +126,7 @@ object SJConfig
                 $enumsAsIdsE,
                 $writeNonConstructorFieldsE,
                 $suppressEscapedStringsE,
-                $suppressTypeHintsE
+                $preferTypeHintsE
               )
             } =>
           try
@@ -140,7 +140,7 @@ object SJConfig
                 extract("enumsAsIds", enumsAsIdsE),
                 extract("_writeNonConstructorFields", writeNonConstructorFieldsE),
                 extract("_suppressEscapedStrings", suppressEscapedStringsE),
-                extract("_suppressTypeHints", suppressTypeHintsE)
+                extract("_preferTypeHints", preferTypeHintsE)
               )
             )
           catch {
@@ -148,16 +148,16 @@ object SJConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ SJConfig }                                   => Some(SJConfig)
-        case '{ ($x: SJConfig).withNoneAsNull() }            => Some(x.valueOrAbort.withNoneAsNull())
-        case '{ ($x: SJConfig).withTryFailureHandling($v) }  => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: SJConfig).withEitherLeftHandling($v) }  => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
-        case '{ ($x: SJConfig).withTypeHintLabel($v) }       => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
-        case '{ ($x: SJConfig).withTypeHintPolicy($v) }      => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
-        case '{ ($x: SJConfig).withEnumsAsIds($v) }          => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: SJConfig).writeNonConstructorFields() } => Some(x.valueOrAbort.writeNonConstructorFields())
-        case '{ ($x: SJConfig).suppressEscapedStrings() }    => Some(x.valueOrAbort.suppressEscapedStrings())
-        case '{ ($x: SJConfig).suppressTypeHints() }         => Some(x.valueOrAbort.suppressTypeHints())
+        case '{ SJConfig }                                  => Some(SJConfig)
+        case '{ ($x: SJConfig).withNoneAsNull }             => Some(x.valueOrAbort.withNoneAsNull)
+        case '{ ($x: SJConfig).withTryFailureHandling($v) } => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: SJConfig).withEitherLeftHandling($v) } => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ ($x: SJConfig).withTypeHintLabel($v) }      => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
+        case '{ ($x: SJConfig).withTypeHintPolicy($v) }     => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ ($x: SJConfig).withEnumsAsIds($v) }         => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
+        case '{ ($x: SJConfig).writeNonConstructorFields }  => Some(x.valueOrAbort.writeNonConstructorFields)
+        case '{ ($x: SJConfig).suppressEscapedStrings }     => Some(x.valueOrAbort.suppressEscapedStrings)
+        case '{ ($x: SJConfig).preferTypeHints }            => Some(x.valueOrAbort.preferTypeHints)
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {

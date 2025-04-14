@@ -166,6 +166,26 @@ case class JsonSource(js: CharSequence):
       case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
 
   @tailrec
+  final def findAllFieldNames(acc: List[String] = List.empty[String]): List[String] =
+    val mark = i
+    expectToken('{')
+    readToken() match
+      case '}' =>
+        i = mark
+        acc
+      case '"' =>
+        val endI = parseString(i)
+        val str = js.subSequence(i, endI).toString
+        i = endI + 1
+        expectToken(':')
+        skipValue()
+        if readToken() == '}' then backspace() // else consume ','
+        findAllFieldNames(acc :+ str)
+      case t =>
+        backspace()
+        throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
+
+  @tailrec
   final def findObjectField(fieldName: String): Option[String] =
     val mark = i
     expectToken('{')

@@ -937,66 +937,35 @@ object JsonCodecMaker:
                         $in.expectString()
                       case _ => throw new JsonParseError("Illegal JSON char while parsing Any value", $in)
                 }.asExprOf[T]
-              )
 
-            case t: Sealable if t.isSealed && !t.childrenAreObject =>
-              // This is a massive side effect: go ahead and generate readers for every sealed child. This doesn't
-              // return anything but (...and here's the side effect) it updates a cache of readers
-              t.sealedChildren.map(kid =>
-                kid.refType match
-                  case '[c] =>
-                    genDecFnBody[c](kid.asInstanceOf[RTypeRef[c]], in)
-              )
               // ZZZ
-              makeReadFn[T](MethodKey(t, false), in)(in =>
-                val hintLabelE = Expr(cfg.typeHintLabel)
-                val classPrefixE = Expr(allButLastPart(t.name))
-                val caseDefs = t.sealedChildren.map { childRef =>
-                  val childNameE = Expr(childRef.name)
-                  cfg.typeHintPolicy match
-                    case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
-                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
-                      CaseDef(
-                        Bind(sym, Typed(Wildcard(), Inferred(TypeRepr.of[String]))),
-                        Some({
-                          val tE = Ref(sym).asExprOf[String]
-                          '{ descramble($tE, lastPart($childNameE).hashCode) }.asTerm
-                        }), {
-                          val methodKey = MethodKey(childRef, false)
-                          readMethodSyms
-                            .get(methodKey)
-                            .map { sym =>
-                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
-                            }
-                            .get
-                            .asTerm
-                        }
-                      )
-                    case TypeHintPolicy.USE_ANNOTATION =>
-                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
-                      val annoOrName =
-                        childRef match
-                          case cr: ClassRef[?] => cr.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(cr.name))
-                          case _               => lastPart(childRef.name)
-                      CaseDef(
-                        Literal(StringConstant(annoOrName)),
-                        None, {
-                          val methodKey = MethodKey(childRef, false)
-                          readMethodSyms
-                            .get(methodKey)
-                            .map { sym =>
-                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
-                            }
-                            .get
-                            .asTerm
-                        }
-                      )
-                    case TypeHintPolicy.SIMPLE_CLASSNAME =>
-                      CaseDef(
-                        Literal(StringConstant(childRef.name)),
-                        None, {
-                          val methodKey = MethodKey(childRef, false)
-                          readMethodSyms
+              val liftedUniqueExpr: Expr[Map[String, List[RTypeRef[?]]]] = liftRTypeRefMap(t.uniqueFields)
+              '{
+                val fields = $in.findAllFieldNames()
+                val hash = UniqueFinder.hashOfStrings(fields)
+                val found = ${ liftedUniqueExpr }.get(hash)
+
+                if found.isEmpty || found.get.size != 1 then
+                  throw JsonParseError("No type hint given for a class that needed one", $in)
+
+                val methodKey = MethodKey(found.get.head, false) // runtime value
+
+                ${
+                  val matchExpr = {
+                    import quotes.reflect.*
+
+                    val branches = readMethodSyms.map { case (mk, sym) =>
+                      val cond = '{ methodKey == MethodKey(${ Expr(mk.ref) }, false) }.asTerm
+                      val rhs = Ref(sym).appliedTo(in.asTerm)
+                      CaseDef(cond, None, rhs)
+                    }.toList
+
+                    Match('{ methodKey }.asTerm, branches).asExprOf[T]
+                  }
+                  matchExpr
+                }
+              }.asExprOf[T]
+
                             .get(methodKey)
                             .map { sym =>
                               Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
@@ -1023,7 +992,6 @@ object JsonCodecMaker:
                   '{
                     if $in.expectNull() then null
                     else
-                      // 1
                       val fields = $in.findAllFieldNames()
                       val pos = fields.indexOf($hintLabelE)
                       if pos >= 0 then
@@ -1042,16 +1010,21 @@ object JsonCodecMaker:
                         val found = ${ liftedUniqueExpr }.get(hash)
                         if found.isEmpty || found.get.size != 1 then throw JsonParseError("No type hint given for a class that needed one", $in)
                         val rt = found.get.head
-
                         ${
-                          // Macro-time: generate a match on `rt` using known lifted read methods
-                          val branches = readMethodExprs.map { case (mk, readerExpr) =>
-                            val cond = '{ rt == ${ Expr(mk.ref) } }.asTerm
-                            val rhs = '{ $readerExpr($in) }.asTerm
-                            CaseDef(cond, None, rhs)
-                          }.toList
+                          // Wrap everything using the same 'using quotes' context
+                          import quotes.reflect.*
 
-                          Match('{ rt }.asTerm, branches).asExprOf[T]
+                          val matchExpr = {
+                            val branches = readMethodSyms.map { case (mk, sym) =>
+                              val cond = '{ MethodKey(rt, false) == MethodKey(${ Expr(mk.ref) }, false) }.asTerm
+                              val rhs = Ref(sym).appliedTo(in.asTerm)
+                              CaseDef(cond, None, rhs)
+                            }.toList
+
+                            Match('{ MethodKey(rt, false) }.asTerm, branches).asExprOf[T]
+                          }
+
+                          matchExpr
                         }
                   }.asExprOf[T]
               )
