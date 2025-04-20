@@ -21,13 +21,41 @@ def ofOptional[T](xs: Optional[Expr[T]])(using Type[T])(using q: Quotes): Expr[O
   if xs.isEmpty then '{ Optional.empty }
   else '{ Optional.of(${ xs.get }) }
 
-def liftRTypeRefMap(map: Map[String, List[RTypeRef[?]]])(using quotes: Quotes): Expr[Map[String, List[RTypeRef[?]]]] =
+def liftStringMap(map: Map[String, String])(using quotes: Quotes): Expr[Map[String, String]] = {
   import quotes.reflect.*
-  val entries: List[Expr[(String, List[RTypeRef[?]])]] =
-    map.toList.map { case (key, valueList) =>
-      val keyExpr = Expr(key)
-      val valueExpr = Expr.ofList(valueList.map(_.expr.asExprOf[RTypeRef[?]]))
-      '{ $keyExpr -> $valueExpr }
+
+  val entries: List[Expr[(String, String)]] = map.toList
+    .map { case (k, v) =>
+      Expr(k) -> Expr(v)
     }
-  val mapExpr = Expr.ofList(entries)
-  '{ Map.from($mapExpr) }
+    .map { case (kExpr, vExpr) =>
+      '{ $kExpr -> $vExpr }
+    }
+  val liftedList = Expr.ofList(entries)
+  '{ Map.from($liftedList) }
+}
+
+def liftStringListMap(map: Map[String, List[String]])(using quotes: Quotes): Expr[Map[String, List[String]]] =
+  import quotes.reflect.*
+
+  val entries: List[Expr[(String, List[String])]] = map.toList.map { case (k, v) =>
+    val keyExpr = Expr(k)
+    val valueExpr = Expr.ofList(v.map(Expr(_)))
+    '{ $keyExpr -> $valueExpr }
+  }
+  val listExpr: Expr[List[(String, List[String])]] = Expr.ofList(entries)
+  '{ Map.from($listExpr) }
+
+def liftStringOptionMap(map: Map[String, Option[String]])(using quotes: Quotes): Expr[Map[String, Option[String]]] =
+  import quotes.reflect.*
+
+  val entries: List[Expr[(String, Option[String])]] = map.toList.map {
+    case (key, Some(value)) => '{ (${ Expr(key) }, Some(${ Expr(value) })) }
+    case (key, None)        => '{ (${ Expr(key) }, None) }
+  }
+  val listExpr: Expr[List[(String, Option[String])]] = Expr.ofList(entries)
+  '{ Map.apply[String, Option[String]]($listExpr*) }
+
+def allUniqueFields(fieldHashMap: Map[String, List[String]]): Option[Map[String, String]] =
+  if fieldHashMap.forall(_._2.size == 1) then Some(fieldHashMap.view.mapValues(_.head).toMap)
+  else None

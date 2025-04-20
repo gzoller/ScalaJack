@@ -165,50 +165,58 @@ case class JsonSource(js: CharSequence):
         parseOrderedMap[K, V](kf, vf, acc, false)
       case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
 
-  @tailrec
-  final def findAllFieldNames(acc: List[String] = List.empty[String]): List[String] =
-    val mark = i
-    expectToken('{')
-    readToken() match
-      case '}' =>
-        i = mark
-        acc
-      case '"' =>
-        val endI = parseString(i)
-        val str = js.subSequence(i, endI).toString
-        i = endI + 1
-        expectToken(':')
-        skipValue()
-        if readToken() == '}' then backspace() // else consume ','
-        findAllFieldNames(acc :+ str)
-      case t =>
-        backspace()
-        throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
-
-  @tailrec
-  final def findObjectField(fieldName: String): Option[String] =
-    val mark = i
-    expectToken('{')
-    readToken() match
-      case '}' =>
-        i = mark
-        None
-      case '"' =>
-        val endI = parseString(i)
-        val str = js.subSequence(i, endI).toString
-        i = endI + 1
-        expectToken(':')
-        if str == fieldName then
-          val found = Some(expectString())
-          i = mark
-          found
-        else
+  final def findAllFieldNames(acc: List[String] = List.empty[String]): List[String] = {
+    @tailrec
+    def loop(acc: List[String]): List[String] =
+      readToken() match
+        case '}' =>
+          acc
+        case '"' =>
+          val endI = parseString(i)
+          val str = js.subSequence(i, endI).toString
+          i = endI + 1
+          expectToken(':')
           skipValue()
           if readToken() == '}' then backspace() // else consume ','
-          findObjectField(fieldName)
-      case t =>
-        backspace()
-        throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
+          loop(acc :+ str)
+        case t =>
+          backspace()
+          throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
+    val mark = i
+    expectToken('{')
+    val res = loop(List.empty[String])
+    i = mark
+    res
+  }
+
+  final def findObjectField(fieldName: String): Option[String] =
+    @tailrec
+    def loop(): Option[String] =
+      readToken() match {
+        case '}' =>
+          None
+        case '"' =>
+          val endI = parseString(i)
+          val str = js.subSequence(i, endI).toString
+          i = endI + 1
+          expectToken(':')
+
+          if str == fieldName then Some(expectString())
+          else
+            skipValue()
+            if readToken() == '}' then
+              backspace()
+              None
+            else loop() // tail-recursive call
+        case t =>
+          backspace()
+          throw JsonParseError(s"Expected either string start '\"' or object end '}' but got '$t'", this)
+      }
+    val mark = i
+    expectToken('{')
+    val res = loop()
+    i = mark
+    res
 
   // Array and Tuple...
   // =======================================================

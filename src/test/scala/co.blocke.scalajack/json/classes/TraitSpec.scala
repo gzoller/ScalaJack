@@ -71,14 +71,61 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Avoiding type hints works properly (no hints unless needed)") {
       val m1 = Press("bigPress", 1000)
-      val m2 = Lift("bigLift", 2000)
+      val m2 = Lift("bigLift", 2000, false)
       val m3 = Drill("bigDrill", 24)
       val m4 = Swing("swingLow", None, true)
       val inst = MachineHolder(m1, m2, m3, m4)
       val sj = sjCodecOf[MachineHolder]
       val js = sj.toJson(inst)
-      // m1 and m2 need the hint--their field signature is identical. m3 and m4 have unique signatures
-      js should matchJson("""{"m1":{"_hint":"Press","name":"bigPress","lbs":1000},"m2":{"_hint":"Lift","name":"bigLift","lbs":2000},"m3":{"name":"bigDrill","numBits":24},"m4":{"name":"swingLow","isBig":true}}""")
-      // TODO: Read this back in!!!
+      js should matchJson("""{"m1":{"name":"bigPress","lbs":1000},"m2":{"name":"bigLift","lbs":2000,"foo":false},"m3":{"name":"bigDrill","numBits":24},"m4":{"name":"swingLow","isBig":true}}""")
+      sj.fromJson(js) shouldEqual (inst)
+    }
+    it("Always generates type hints when needed") {
+      val m1 = Press2("bigPress", Some(1000))
+      val m2 = Lift2("bigLift", None)
+      val m3 = Drill2("bigDrill", None, 3)
+      val inst = MachineHolder2(m1, m2, m3)
+      val sj = sjCodecOf[MachineHolder2]
+      val js = sj.toJson(inst)
+      // Note: m3 didn't need the hint, but m1 and m2 did--and they were generated regardless of a preference not to
+      js should matchJson("""{"m1":{"_hint":"Press2","name":"bigPress","lbs":1000},"m2":{"_hint":"Lift2","name":"bigLift"},"m3":{"name":"bigDrill","numBits":3}}""")
+      sj.fromJson(js) shouldEqual (inst)
+    }
+    it("Fails when a class that needs a hint doesn't have one") {
+      val js = """{"m1":{"_hint":"Press2","name":"bigPress","lbs":1000},"m2":{"name":"bigLift"},"m3":{"name":"bigDrill","numBits":3}}"""
+      val msg =
+        """Class in trait co.blocke.scalajack.json.classes.Machine2 with parsed fields [name] needed a type hint but none was found (ambiguous) at position [59]
+          |...int":"Press2","name":"bigPress","lbs":1000},"m2":{"name":"bigLift"},"m3":{"n...
+          |----------------------------------------------------^""".stripMargin
+      val ex = intercept[JsonParseError](sjCodecOf[MachineHolder2].fromJson(js))
+      ex.show shouldEqual msg
+    }
+    it("Complext test with nested trait and empty unique field") {
+      val a = L0A(5, None, true)
+      val b = L0B(Some("wow"), "abc", None)
+      val c = L0C(Some(3), List(1, 2, 3))
+      val r = L1R("blather", None, a)
+      val s = L1S(123L, "Miguel")
+      val q = L1Q("aaa", 100, b)
+      val x = L1X("bbb", 99, c)
+      val inst = ComplexHolder(r, s, q, x)
+      val sj = sjCodecOf[ComplexHolder]
+      val js = sj.toJson(inst)
+      js should matchJson(
+        """{"c1":{"blather":"blather","l0":{"x":5,"y":true}},"c2":{"id":123,"nombre":"Miguel"},"c3":{"_hint":"L1Q","name":"aaa","age":100,"l0":{"name":"wow","id":"abc"}},"c4":{"_hint":"L1X","name":"bbb","age":99,"l0":{"id":3,"extra":[1,2,3]}}}"""
+      )
+      sj.fromJson(js) shouldEqual (inst)
+
+      /*
+sealed trait Level0
+case class L0A(x: Int, name: Option[String], y: Boolean) extends Level0
+case class L0B(name: Option[String], id: String, blather: Option[String]) extends Level0
+case class L0C(id: Option[Int], extra: List[Int]) extends Level0
+sealed trait Level1 extends Level0
+case class L1R(blather: String, name: Option[String]) extends Level1
+case class L1S(id: Long, nombre: String) extends Level1
+case class L1Q(name: String, age: Int) extends Level1
+case class L1X(name: String, age: Int) extends Level1
+       */
     }
   }

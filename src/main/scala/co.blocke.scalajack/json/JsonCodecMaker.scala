@@ -3,9 +3,8 @@ package json
 
 import writing.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
-import co.blocke.scala_reflection.util.UniqueFinder
-import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
 import co.blocke.scala_reflection.given
 import reading.JsonSource
@@ -268,7 +267,7 @@ object JsonCodecMaker:
 
     // ---------------------------------------------------------------------------------------------
 
-    def genEncFnBody[T](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Boolean = false, inTuple: Boolean = false, isMapKey: Boolean = false)(using Quotes): Expr[Unit] =
+    def genEncFnBody[T: Type](r: RTypeRef[?], aE: Expr[T], out: Expr[JsonOutput], emitDiscriminator: Expr[Boolean] = '{ false }, inTuple: Boolean = false, isMapKey: Boolean = false)(using Quotes): Expr[Unit] =
       r.refType match
         case '[b] =>
           r match
@@ -346,32 +345,31 @@ object JsonCodecMaker:
                   else $out.value($tin.getClass.getName.split('.').last.stripSuffix("$"))
                 }
               else
+                val unique = Unique.findUniqueWithExcluded(t)
                 val cases = t.sealedChildren.map { child =>
                   child.refType match
                     case '[c] =>
                       // Figure out if class fields are unique: If t.uniqueFields(hash) has length 1 and that 1 is this subtype
-                      val renderHint =
+                      val renderHint: Expr[Boolean] =
                         if !cfg._preferTypeHints then
                           child match {
                             case sr: ScalaClassRef[c] =>
-                              t.uniqueFields.get(UniqueFinder.hashOf(sr.fields)) match {
-                                case Some(classList) => !(classList.size == 1 && classList.head.name == sr.name)
-                                case None            => true
-                              }
+                              Expr(unique.needsTypeHint(sr.fields.map(_.name)))
                             case sr: TraitRef[c] =>
-                              t.uniqueFields.get(UniqueFinder.hashOf(sr.fields)) match {
-                                case Some(classList) => !(classList.size == 1 && classList.head.name == sr.name)
-                                case None            => true
-                              }
-                            case _ => true
+                              val fingerprintByClass = unique.fingerprintByClass // Classname->Option[Fingerprint]
+                              val liftedFingerprintByClass = liftStringOptionMap(fingerprintByClass)
+                              '{
+                                val classFingerprint: Option[String] = $liftedFingerprintByClass($aE.getClass.getName)
+                                classFingerprint.isEmpty // no fingerprint = needs hint
+                              }.asExprOf[Boolean]
+                            case _ => '{ true }
                           }
-                        else true
+                        else '{ true }
                       val subtype = TypeRepr.of[c]
                       val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype)
                       CaseDef(Bind(sym, Typed(Wildcard(), Inferred(subtype))), None, genEncFnBody[c](child, Ref(sym).asExprOf[c], out, renderHint).asTerm)
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
-                val matchExpr = Match(aE.asTerm, cases).asExprOf[Unit]
-                matchExpr
+                Match(aE.asTerm, cases).asExprOf[Unit]
 
             // We don't use makeWriteFn here because a value class is basically just a "box" around a simple type
             case t: ScalaClassRef[?] if t.isValueClass =>
@@ -391,6 +389,46 @@ object JsonCodecMaker:
                         val fieldName = changeFieldName(f)
                         maybeWrite[z](fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, cfg)
                   }
+                  // ZZZ -- To block.... (soak this to see if it works then delete old block
+                  val cname: Expr[String] = cfg.typeHintPolicy match
+                    case TypeHintPolicy.SIMPLE_CLASSNAME =>
+                      Expr(lastPart(t.name))
+                    case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
+                      '{ scramble(${ Expr(lastPart(t.name).hashCode) }) }
+                    case TypeHintPolicy.USE_ANNOTATION =>
+                      Expr(
+                        t.annotations
+                          .get("co.blocke.scalajack.TypeHint")
+                          .flatMap(_.get("hintValue"))
+                          .getOrElse(lastPart(t.name))
+                      )
+
+                  val discExpr: Expr[Unit] = '{
+                    $out.label(${ Expr(cfg.typeHintLabel) })
+                    $out.value($cname)
+                  }
+
+                  val discBlock: Expr[Unit] = {
+                    val withDisc: List[Expr[Unit]] = discExpr +: eachField
+                    withDisc match
+                      case Nil      => '{ () }
+                      case x :: Nil => x
+                      case xs       => Expr.block(xs.init, xs.last)
+                  }
+
+                  val noDiscBlock: Expr[Unit] =
+                    eachField match
+                      case Nil      => '{ () }
+                      case x :: Nil => x
+                      case xs       => Expr.block(xs.init, xs.last)
+
+                  // Use quote-level If expression
+                  If(
+                    cond = emitDiscriminator.asTerm,
+                    thenp = discBlock.asTerm,
+                    elsep = noDiscBlock.asTerm
+                  ).asExprOf[Unit]
+                  /* ZZZ
                   if emitDiscriminator then
                     val cname = cfg.typeHintPolicy match
                       case TypeHintPolicy.SIMPLE_CLASSNAME   => Expr(lastPart(t.name))
@@ -404,6 +442,7 @@ object JsonCodecMaker:
                     Expr.block(withDisc.init, withDisc.last)
                   else if eachField.length == 1 then eachField.head
                   else Expr.block(eachField.init, eachField.last)
+                   */
                 }
 
                 if !t.isCaseClass && cfg._writeNonConstructorFields then
@@ -947,7 +986,6 @@ object JsonCodecMaker:
                   case '[c] =>
                     genDecFnBody[c](kid.asInstanceOf[RTypeRef[c]], in)
               )
-              // ZZZ
               makeReadFn[T](MethodKey(t, false), in)(in =>
                 val hintLabelE = Expr(cfg.typeHintLabel)
                 val classPrefixE = Expr(allButLastPart(t.name))
@@ -1019,40 +1057,46 @@ object JsonCodecMaker:
                       }
                   }.asExprOf[T]
                 else
-                  val liftedUniqueExpr: Expr[Map[String, List[RTypeRef[?]]]] = liftRTypeRefMap(t.uniqueFields)
+                  val unique = Unique.findUniqueWithExcluded(t)
+                  val excludeFields = Expr(unique.optionalFields)
+                  val liftedUnique = liftStringMap(unique.simpleUniqueHash)
+                  val tname = Expr(t.name)
+                  val matchCases: List[CaseDef] = t.sealedChildren.flatMap { classRef =>
+                    val methodKey = MethodKey(classRef, false)
+                    readMethodSyms.get(methodKey).map { sym =>
+                      val cond = Literal(StringConstant(classRef.name))
+                      val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[T].asTerm
+                      CaseDef(cond, None, rhs)
+                    }
+                  }
+
                   '{
                     if $in.expectNull() then null
-                    else
-                      // 1
-                      val fields = $in.findAllFieldNames()
-                      val pos = fields.indexOf($hintLabelE)
-                      if pos >= 0 then
-                        // hint exists--use it
-                        val hint = $in.findObjectField($hintLabelE).getOrElse(throw JsonParseError(s"Unable to find type hint for abstract class $$cnameE", $in))
-                        ${
-                          cfg.typeHintPolicy match
-                            case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
-                            case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-                            case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-                        }
-                      else
-                        // ZZZ
-                        val fields = $in.findAllFieldNames()
-                        val hash = UniqueFinder.hashOfStrings(fields)
-                        val found = ${ liftedUniqueExpr }.get(hash)
-                        if found.isEmpty || found.get.size != 1 then throw JsonParseError("No type hint given for a class that needed one", $in)
-                        val rt = found.get.head
-
-                        ${
-                          // Macro-time: generate a match on `rt` using known lifted read methods
-                          val branches = readMethodExprs.map { case (mk, readerExpr) =>
-                            val cond = '{ rt == ${ Expr(mk.ref) } }.asTerm
-                            val rhs = '{ $readerExpr($in) }.asTerm
-                            CaseDef(cond, None, rhs)
-                          }.toList
-
-                          Match('{ rt }.asTerm, branches).asExprOf[T]
-                        }
+                    else {
+                      // 1. See if type hint is present--if so, use it!
+                      $in.findObjectField($hintLabelE) match {
+                        case Some(hint) =>
+                          ${
+                            cfg.typeHintPolicy match
+                              case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+                              case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                              case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                          }
+                        case None =>
+                          // 2. Find all field names
+                          val fields = $in.findAllFieldNames()
+                          // 3. Strip out all excluded (optional) fields and make hash
+                          val fingerprint = Unique.hashOf(fields.filterNot($excludeFields.contains))
+                          // 4. Look up hash
+                          val className = $liftedUnique
+                            .get(fingerprint)
+                            .getOrElse(
+                              // Before admitting failure, it is possible "" is a valid hash key!
+                              $liftedUnique.get("").getOrElse(throw new JsonParseError("Class in trait " + $tname + s" with parsed fields [${fields.mkString(",")}] needed a type hint but none was found (ambiguous)", $in))
+                            )
+                          ${ Match('{ className }.asTerm, matchCases).asExprOf[T] }
+                      }
+                    }
                   }.asExprOf[T]
               )
 
