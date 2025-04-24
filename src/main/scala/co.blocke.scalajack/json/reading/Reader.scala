@@ -16,14 +16,14 @@ import co.blocke.scala_reflection.rtypes.EnumRType
 object Reader:
 
   private def makeReadFn[U: Type](
-                           ctx: CodecBuildContext,
-                           methodKey: TypedName,
-                           in: Expr[JsonSource]
-                         )(f: Expr[JsonSource] => Expr[U]): Expr[U] =
+      ctx: CodecBuildContext,
+      methodKey: TypedName,
+      in: Expr[JsonSource]
+  )(f: Expr[JsonSource] => Expr[U]): Expr[U] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    println("    @ Making reader fn for "+methodKey)
+    println("    @ Making reader fn for " + methodKey)
     val sym =
       ctx.readMethodSyms.getOrElseUpdate(
         methodKey, {
@@ -35,17 +35,20 @@ object Reader:
               _ => TypeRepr.of[U]
             )
           )
-          ctx.readMethodDefs.update(methodKey, DefDef(
-            newSym,
-            params => {
-              val List(List(inParam)) = params
-              Some(f(inParam.asExprOf[JsonSource]).asTerm.changeOwner(newSym))
-            }
-          ))
+          ctx.readMethodDefs.update(
+            methodKey,
+            DefDef(
+              newSym,
+              params => {
+                val List(List(inParam)) = params
+                Some(f(inParam.asExprOf[JsonSource]).asTerm.changeOwner(newSym))
+              }
+            )
+          )
           newSym
         }
       )
-    println("    @ Done making reader fn for "+methodKey)
+    println("    @ Done making reader fn for " + methodKey)
 
     // Populate readerMap for SelfRef lookups (Map[TypedName->reader_fn]). Avoids very nasty recusion/scope issues
     ctx.readerFnMapEntries(methodKey) = '{ (in: JsonSource) => ${ Apply(Ref(sym), List('in.asTerm)).asExprOf[Any] } }
@@ -53,13 +56,12 @@ object Reader:
     // Always apply the function — whether from cache or new
     Apply(Ref(sym), List(in.asTerm)).asExprOf[U]
 
-
   private def makeClassFieldMatrixValDef(
-                                  ctx: CodecBuildContext,
-                                  methodKey: TypedName,
-                                  className: String,
-                                  fieldNames: Array[String]
-                                ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      methodKey: TypedName,
+      className: String,
+      fieldNames: Array[String]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -79,20 +81,18 @@ object Reader:
     )
     '{}
 
-
 // ---------------------------------------------------------------------------------------------
-
 
   private def lrHasOptionChild(lr: LeftRightRef[?]): (String, Language) =
     lr.rightRef match
-      case t: ScalaOptionRef[?] => ("r", Language.Scala)
+      case t: ScalaOptionRef[?]  => ("r", Language.Scala)
       case t: JavaOptionalRef[?] => ("r", Language.Java)
       case t: LeftRightRef[?] =>
         val (recipe, lang) = lrHasOptionChild(t)
         ("r" + recipe, lang)
       case _ =>
         lr.leftRef match
-          case t: ScalaOptionRef[?] => ("l", Language.Scala)
+          case t: ScalaOptionRef[?]  => ("l", Language.Scala)
           case t: JavaOptionalRef[?] => ("l", Language.Java)
           case t: LeftRightRef[?] =>
             val (recipe, lang) = lrHasOptionChild(t)
@@ -101,7 +101,7 @@ object Reader:
 
   private def tryHasOptionChild(t: TryRef[?]): (Boolean, Language) =
     t.tryRef match
-      case o: ScalaOptionRef[?] => (true, Language.Scala)
+      case o: ScalaOptionRef[?]  => (true, Language.Scala)
       case o: JavaOptionalRef[?] => (true, Language.Java)
       case lr: LeftRightRef[?] =>
         val (recipe, lang) = lrHasOptionChild(lr)
@@ -110,33 +110,31 @@ object Reader:
 
   private def testValidMapKey(testRef: RTypeRef[?]): Boolean =
     val isValid = testRef match
-      case _: PrimitiveRef => true
-      case _: TimeRef => true
-      case _: NetRef => true
+      case _: PrimitiveRef                       => true
+      case _: TimeRef                            => true
+      case _: NetRef                             => true
       case c: ScalaClassRef[?] if c.isValueClass => true
-      case _: EnumRef[?] => true
-      case a: AliasRef[?] => testValidMapKey(a.unwrappedType)
+      case _: EnumRef[?]                         => true
+      case a: AliasRef[?]                        => testValidMapKey(a.unwrappedType)
       case t: TraitRef[?] if t.childrenAreObject => true
-      case _ => false
+      case _                                     => false
     if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
     isValid
 
-
   // ---------------------------------------------------------------------------------------------
 
-
   private def genDecFnBody[T: Type](
-                             ctx: CodecBuildContext,
-                             cfg: SJConfig,
-                             r: RTypeRef[?],
-                             in: Expr[JsonSource]
-                           ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      r: RTypeRef[?],
+      in: Expr[JsonSource]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     def typeArgs(tpe: TypeRepr): List[TypeRepr] = tpe match
       case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
-      case _ => Nil
+      case _                        => Nil
 
     val methodKey = r.typedName
     r.refType match // refType is Type[r.R]
@@ -161,7 +159,7 @@ object Reader:
                 else ${ Match('{ $classPrefixE + "." + $in.expectString() }.asTerm, caseDefs).asExprOf[T] }
               }.asExprOf[b]
             )
-            '{()}
+            '{ () }
 
           case t: Sealable if t.isSealed && !t.childrenAreObject =>
             println("!!! In Sealable")
@@ -285,7 +283,7 @@ object Reader:
                   }
                 }.asExprOf[T]
             )
-            '{()}
+            '{ () }
 
           case t: TraitRef[?] =>
             throw JsonUnsupportedType("Non-sealed traits are not supported")
@@ -349,12 +347,12 @@ object Reader:
                             required = required | math.pow(2, oneField.index).toInt // required
                             oneField.fieldRef.unitVal.asTerm
                           else // at least one Option child -> optional
-                            if lang == Language.Scala then '{ None }.asTerm
-                            else '{ java.util.Optional.empty.asInstanceOf[f] }.asTerm
+                          if lang == Language.Scala then '{ None }.asTerm
+                          else '{ java.util.Optional.empty.asInstanceOf[f] }.asTerm
                         case y: TryRef[?] =>
                           tryHasOptionChild(y) match
                             case (true, Language.Scala) => '{ Success(None) }.asTerm
-                            case (true, Language.Java) => '{ Success(java.util.Optional.empty).asInstanceOf[f] }.asTerm
+                            case (true, Language.Java)  => '{ Success(java.util.Optional.empty).asInstanceOf[f] }.asTerm
                             case _ =>
                               required = required | math.pow(2, oneField.index).toInt // required
                               oneField.fieldRef.unitVal.asTerm
@@ -370,7 +368,7 @@ object Reader:
                         case Nil => dvSelectNoTArgs
                         case List(params) if (params.exists(_.isTypeParam)) =>
                           typeArgs(tpe) match
-                            case Nil => ??? // throw JsonParseError("Expected an applied type", ???)
+                            case Nil      => ??? // throw JsonParseError("Expected an applied type", ???)
                             case typeArgs => TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
                         case _ => ??? // fail(s"Default method for ${symbol.name} of class ${tpe.show} have a complex " +
                       (ValDef(sym, Some(dvSelect)), caseDef, fieldSymRef)
@@ -384,7 +382,7 @@ object Reader:
               val primaryConstructor = tpe.classSymbol.get.primaryConstructor
               val constructorNoTypes = Select(New(Inferred(tpe)), primaryConstructor)
               val constructor = typeArgs(tpe) match
-                case Nil => constructorNoTypes
+                case Nil      => constructorNoTypes
                 case typeArgs => TypeApply(constructorNoTypes, typeArgs.map(Inferred(_)))
               val instantiateClass = argss.tail.foldLeft(Apply(constructor, argss.head))((acc, args) => Apply(acc, args))
 
@@ -406,7 +404,7 @@ object Reader:
                         maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
 
                       if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
-                      else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })) , $in )
+                      else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
                   }.asTerm
                 else
                   val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
@@ -443,25 +441,25 @@ object Reader:
                           ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinalNC).asExprOf[Any] }
                           maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSymNCF).asExprOf[StringMatrix] })
                         ${ Ref(instanceSym).asExprOf[T] }
-                      else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })) , $in )
+                      else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
                   }.asTerm
 
               Block(finalVarDefs :+ reqVarDef, parseLoop).asExprOf[b]
             )
-            '{()}
+            '{ () }
 
           case t => throw new ParseError("Not yet implemented: " + t)
 
 // ---------------------------------------------------------------------------------------------
 
   def genReadVal[T: Type](
-                           ctx: CodecBuildContext,
-                           cfg: SJConfig,
-                           ref: RTypeRef[T],
-                           in: Expr[JsonSource],
-                           inTuple: Boolean = false,
-                           isMapKey: Boolean = false
-                         )(using Quotes): Expr[T] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      ref: RTypeRef[T],
+      in: Expr[JsonSource],
+      inTuple: Boolean = false,
+      isMapKey: Boolean = false
+  )(using Quotes): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -479,26 +477,26 @@ object Reader:
               '{
                 $in.expectString() match
                   case null => null
-                  case s => scala.math.BigDecimal(s)
+                  case s    => scala.math.BigDecimal(s)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case s => scala.math.BigDecimal(s)
+                  case s    => scala.math.BigDecimal(s)
               }.asExprOf[T]
           case t: BigIntRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case s => scala.math.BigInt(s)
+                  case s    => scala.math.BigInt(s)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case s => scala.math.BigInt(s)
+                  case s    => scala.math.BigInt(s)
               }.asExprOf[T]
           case t: BooleanRef =>
             if isMapKey then '{ $in.expectString().toBoolean }.asExprOf[T]
@@ -544,26 +542,26 @@ object Reader:
               '{
                 $in.expectString() match
                   case null => null
-                  case n => new java.math.BigDecimal(n)
+                  case n    => new java.math.BigDecimal(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => new java.math.BigDecimal(n)
+                  case n    => new java.math.BigDecimal(n)
               }.asExprOf[T]
           case t: JBigIntegerRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case n => new java.math.BigInteger(n)
+                  case n    => new java.math.BigInteger(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => new java.math.BigInteger(n)
+                  case n    => new java.math.BigInteger(n)
               }.asExprOf[T]
           case t: JBooleanRef =>
             if isMapKey then '{ java.lang.Boolean.valueOf($in.expectString()) }.asExprOf[T]
@@ -573,13 +571,13 @@ object Reader:
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Byte.valueOf(n)
+                  case n    => java.lang.Byte.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Byte.valueOf(n)
+                  case n    => java.lang.Byte.valueOf(n)
               }.asExprOf[T]
           case t: JCharacterRef =>
             '{
@@ -596,65 +594,65 @@ object Reader:
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Double.valueOf(n)
+                  case n    => java.lang.Double.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Double.valueOf(n)
+                  case n    => java.lang.Double.valueOf(n)
               }.asExprOf[T]
           case t: JFloatRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Float.valueOf(n)
+                  case n    => java.lang.Float.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Float.valueOf(n)
+                  case n    => java.lang.Float.valueOf(n)
               }.asExprOf[T]
           case t: JIntegerRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Integer.valueOf(n)
+                  case n    => java.lang.Integer.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Integer.valueOf(n)
+                  case n    => java.lang.Integer.valueOf(n)
               }.asExprOf[T]
           case t: JLongRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Long.valueOf(n)
+                  case n    => java.lang.Long.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Long.valueOf(n)
+                  case n    => java.lang.Long.valueOf(n)
               }.asExprOf[T]
           case t: JShortRef =>
             if isMapKey then
               '{
                 $in.expectString() match
                   case null => null
-                  case n => java.lang.Short.valueOf(n)
+                  case n    => java.lang.Short.valueOf(n)
               }.asExprOf[T]
             else
               '{
                 $in.expectNumberOrNull() match
                   case null => null
-                  case n => java.lang.Short.valueOf(n)
+                  case n    => java.lang.Short.valueOf(n)
               }.asExprOf[T]
           case t: JNumberRef =>
             if isMapKey then
@@ -663,13 +661,13 @@ object Reader:
                   case null => null
                   case n =>
                     scala.math.BigDecimal(n) match {
-                      case d if d.isValidByte => java.lang.Byte.valueOf(d.toByteExact)
-                      case d if d.isValidShort => java.lang.Short.valueOf(d.toShortExact)
-                      case d if d.isValidInt => java.lang.Integer.valueOf(d.toIntExact)
-                      case d if d.isValidLong => java.lang.Long.valueOf(d.toLongExact)
-                      case d if d.isDecimalFloat => java.lang.Float.valueOf(d.toFloat)
+                      case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                      case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                      case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                      case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                      case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
                       case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                      case d => d
+                      case d                      => d
                     }
               }.asExprOf[T]
             else
@@ -678,33 +676,33 @@ object Reader:
                   case null => null
                   case n =>
                     scala.math.BigDecimal(n) match {
-                      case d if d.isValidByte => java.lang.Byte.valueOf(d.toByteExact)
-                      case d if d.isValidShort => java.lang.Short.valueOf(d.toShortExact)
-                      case d if d.isValidInt => java.lang.Integer.valueOf(d.toIntExact)
-                      case d if d.isValidLong => java.lang.Long.valueOf(d.toLongExact)
-                      case d if d.isDecimalFloat => java.lang.Float.valueOf(d.toFloat)
+                      case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                      case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                      case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                      case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                      case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
                       case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                      case d => d
+                      case d                      => d
                     }
               }.asExprOf[T]
 
-          case t: DurationRef => '{ $in.expectString(java.time.Duration.parse) }.asExprOf[T]
-          case t: InstantRef => '{ $in.expectString(java.time.Instant.parse) }.asExprOf[T]
-          case t: LocalDateRef => '{ $in.expectString(java.time.LocalDate.parse) }.asExprOf[T]
-          case t: LocalDateTimeRef => '{ $in.expectString(java.time.LocalDateTime.parse) }.asExprOf[T]
-          case t: LocalTimeRef => '{ $in.expectString(java.time.LocalTime.parse) }.asExprOf[T]
-          case t: MonthDayRef => '{ $in.expectString(java.time.MonthDay.parse) }.asExprOf[T]
+          case t: DurationRef       => '{ $in.expectString(java.time.Duration.parse) }.asExprOf[T]
+          case t: InstantRef        => '{ $in.expectString(java.time.Instant.parse) }.asExprOf[T]
+          case t: LocalDateRef      => '{ $in.expectString(java.time.LocalDate.parse) }.asExprOf[T]
+          case t: LocalDateTimeRef  => '{ $in.expectString(java.time.LocalDateTime.parse) }.asExprOf[T]
+          case t: LocalTimeRef      => '{ $in.expectString(java.time.LocalTime.parse) }.asExprOf[T]
+          case t: MonthDayRef       => '{ $in.expectString(java.time.MonthDay.parse) }.asExprOf[T]
           case t: OffsetDateTimeRef => '{ $in.expectString(java.time.OffsetDateTime.parse) }.asExprOf[T]
-          case t: OffsetTimeRef => '{ $in.expectString(java.time.OffsetTime.parse) }.asExprOf[T]
-          case t: PeriodRef => '{ $in.expectString(java.time.Period.parse) }.asExprOf[T]
-          case t: YearRef => '{ $in.expectString(java.time.Year.parse) }.asExprOf[T]
-          case t: YearMonthRef => '{ $in.expectString(java.time.YearMonth.parse) }.asExprOf[T]
-          case t: ZonedDateTimeRef => '{ $in.expectString(java.time.ZonedDateTime.parse) }.asExprOf[T]
-          case t: ZoneIdRef => '{ $in.expectString(java.time.ZoneId.of) }.asExprOf[T]
-          case t: ZoneOffsetRef => '{ $in.expectString(java.time.ZoneOffset.of) }.asExprOf[T]
+          case t: OffsetTimeRef     => '{ $in.expectString(java.time.OffsetTime.parse) }.asExprOf[T]
+          case t: PeriodRef         => '{ $in.expectString(java.time.Period.parse) }.asExprOf[T]
+          case t: YearRef           => '{ $in.expectString(java.time.Year.parse) }.asExprOf[T]
+          case t: YearMonthRef      => '{ $in.expectString(java.time.YearMonth.parse) }.asExprOf[T]
+          case t: ZonedDateTimeRef  => '{ $in.expectString(java.time.ZonedDateTime.parse) }.asExprOf[T]
+          case t: ZoneIdRef         => '{ $in.expectString(java.time.ZoneId.of) }.asExprOf[T]
+          case t: ZoneOffsetRef     => '{ $in.expectString(java.time.ZoneOffset.of) }.asExprOf[T]
 
-          case t: URLRef => '{ $in.expectString((s: String) => new java.net.URI(s).toURL()) }.asExprOf[T]
-          case t: URIRef => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
+          case t: URLRef  => '{ $in.expectString((s: String) => new java.net.URI(s).toURL()) }.asExprOf[T]
+          case t: URIRef  => '{ $in.expectString((s: String) => new java.net.URI(s)) }.asExprOf[T]
           case t: UUIDRef => '{ $in.expectString(java.util.UUID.fromString) }.asExprOf[T]
 
           case t: AliasRef[?] =>
@@ -1448,7 +1446,7 @@ object Reader:
                 val maxI = Expr(t.tupleRefs.length - 1)
                 val indexedTypes = tpe match
                   case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
-                  case _ => Nil
+                  case _                        => Nil
 
                 // make all the tuple terms, accounting for , and ] detection
                 val tupleTerms =

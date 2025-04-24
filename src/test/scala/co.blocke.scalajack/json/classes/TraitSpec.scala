@@ -119,12 +119,6 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
     }
      */
     it("Self-referencing must work") {
-//      val inst = Person("Greg", 58, List("coding", "woodworking"))
-//      val sj = sjCodecOf[Person]
-//      val json = sj.toJson(inst)
-//      println("[TEST] Final result: " + json)
-//      println(sj.fromJson(json))
-
       val inst = OuterImpl("foo", 55, List(OuterImpl("bar", 100, Nil)))
       val sj = sjCodecOf[Outer]
       val js = sj.toJson(inst)

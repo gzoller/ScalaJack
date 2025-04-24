@@ -41,38 +41,49 @@ object JsonCodecMaker:
     val readerMapExpr: Expr[Map[String, JsonSource => Any]] =
       '{
         Map[String, JsonSource => Any](
-          ${ Expr.ofList(
-            ctx.readerFnMapEntries.toList.map { case (k, v) =>
-              '{ ${ Expr(k.toString) } -> $v }
-            }
-          )
-          } *
+          ${
+            Expr.ofList(
+              ctx.readerFnMapEntries.toList.map { case (k, v) =>
+                '{ ${ Expr(k.toString) } -> $v }
+              }
+            )
+          }*
         )
       }
-
     val readerMapDef = ValDef(
       ctx.readerMapSym,
       Some(readerMapExpr.asTerm)
+    )
+
+    val writerMapExpr: Expr[Map[String, (Any, JsonOutput) => Unit]] =
+      '{
+        Map[String, (Any, JsonOutput) => Unit](
+          ${
+            Expr.ofList(
+              ctx.writerFnMapEntries.toList.map { case (k, v) =>
+                '{ ${ Expr(k.toString) } -> $v }
+              }
+            )
+          }*
+        )
+      }
+    val writerMapDef = ValDef(
+      ctx.writerMapSym,
+      Some(writerMapExpr.asTerm)
     )
 
     val codec = Block(
       // 🧨 This MUST be first — so any methods can reference it
       ctx.classFieldMatrixValDefs.toList ++
 
-        // 🧨 This can reference values above — e.g. function map
         List(readerMapDef) ++
+        List(writerMapDef) ++
 
         // Functions (can reference anything above)
-        ctx.writeMethodDefs ++
+        ctx.writeMethodDefs.values ++
         ctx.readMethodDefs.values.toList,
       codecDef
     ).asExprOf[JsonCodec[T]]
-
-//    val codec = Block(
-//      readerMapDef +:
-//        (ctx.classFieldMatrixValDefs ++ ctx.writeMethodDefs ++ ctx.readMethodDefs.values).toList,
-//      codecDef
-//    ).asExprOf[JsonCodec[T]]
 
     println(s"Codec: ${codec.show}")
     codec
