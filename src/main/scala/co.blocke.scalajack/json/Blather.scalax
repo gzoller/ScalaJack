@@ -1,0 +1,279 @@
+package co.blocke.scalajack
+package json
+
+import writing.*
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import co.blocke.scala_reflection.reflect.ReflectOnType
+import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+import co.blocke.scala_reflection.given
+import reading.JsonSource
+import scala.jdk.CollectionConverters.*
+import scala.quoted.*
+import scala.reflect.ClassTag
+import scala.annotation.{switch, tailrec}
+import scala.collection.Factory
+import scala.util.{Failure, Success, Try}
+import dotty.tools.dotc.ast.Trees.EmptyTree
+import org.apache.commons.text.StringEscapeUtils
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator
+import dotty.tools.dotc.core.TypeComparer.AnyConstantType
+import scala.jdk.CollectionConverters.*
+
+object JsonCodecMaker_Sample:
+
+  def generateCodecFor[T](ref: RTypeRef[T], cfg: SJConfig)(using q: Quotes)(using tt: Type[T]) =
+    import q.reflect.*
+
+    // Cache generated method Symbols + an array of the generated functions (DefDef)
+    case class MethodKey(ref: RTypeRef[?], isNonConstructorFields: Boolean)
+
+    val readMethodSyms = new scala.collection.mutable.HashMap[MethodKey, Symbol]
+    val readMethodDefs = new scala.collection.mutable.ArrayBuffer[DefDef]
+
+    def makeReadFn[U: Type](methodKey: MethodKey, in: Expr[JsonSource])(f: Expr[JsonSource] => Expr[U])(using Quotes)(using Type[JsonSource]): Expr[Unit] =
+      readMethodSyms.getOrElse(
+        methodKey, {
+          val sym = Symbol.newMethod(
+            Symbol.spliceOwner,
+            "r" + readMethodSyms.size,
+            MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[U])
+            //                    (_ => List(input_params,...), _ => resultType)
+          )
+          readMethodSyms.update(methodKey, sym)
+          readMethodDefs += DefDef(
+            sym,
+            params => {
+              val List(List(in)) = params
+              Some(f(in.asExprOf[JsonSource]).asTerm.changeOwner(sym))
+            }
+          )
+        }
+      )
+      '{}
+
+    // ---------------------------------------------------------------------------------------------
+
+    def genDecFnBody[T: Type](r: RTypeRef[?], in: Expr[JsonSource])(using Quotes): Expr[Unit] =
+
+      def typeArgs(tpe: TypeRepr): List[TypeRepr] = tpe match
+        case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
+        case _                        => Nil
+
+      r.refType match // refType is Type[r.R]
+        case '[b] =>
+          r match
+
+            case t: AnyRef =>
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                '{
+                  if $in.expectNull() then null
+                  else
+                    $in.readToken() match
+                      case '[' =>
+                        $in.backspace()
+                        val parsedArray = $in.expectArray[Any](() => ${ genReadVal[Any](AnyRef(), in, false) })
+                        if parsedArray != null then parsedArray.toList
+                        else null
+                      case '{' =>
+                        $in.parseMap[String, Any](
+                          () => ${ genReadVal[String](StringRef(), in, false, true) },
+                          () => ${ genReadVal[Any](AnyRef(), in, false) },
+                          Map.empty[String, Any],
+                          true
+                        )
+                      case 't' | 'f' =>
+                        $in.backspace()
+                        $in.expectBoolean()
+                      case n if n == '-' | n == '+' | n == '.' | (n >= '0' && n <= '9') =>
+                        $in.backspace()
+                        $in.expectNumberOrNull() match
+                          case null => null
+                          case s =>
+                            scala.math.BigDecimal(s) match {
+                              case i if i.isValidInt      => i.toIntExact
+                              case i if i.isValidLong     => i.toLongExact
+                              case d if d.isDecimalDouble => d.toDouble
+                              case d if d.ulp == 1        => d.toBigInt
+                              case d                      => d
+                            }
+                      case '\"' =>
+                        $in.backspace()
+                        $in.expectString()
+                      case _ => throw new JsonParseError("Illegal JSON char while parsing Any value", $in)
+                }.asExprOf[T]
+              )
+
+            case t: Sealable if t.isSealed && !t.childrenAreObject =>
+              // This is a massive side effect: go ahead and generate readers for every sealed child. This doesn't
+              // return anything but (...and here's the side effect) it updates a cache of readers
+              t.sealedChildren.map(kid =>
+                kid.refType match
+                  case '[c] =>
+                    genDecFnBody[c](kid.asInstanceOf[RTypeRef[c]], in)
+              )
+              makeReadFn[T](MethodKey(t, false), in)(in =>
+                val hintLabelE = Expr(cfg.typeHintLabel)
+                val classPrefixE = Expr(allButLastPart(t.name))
+                val caseDefs = t.sealedChildren.map { childRef =>
+                  val childNameE = Expr(childRef.name)
+                  cfg.typeHintPolicy match
+                    case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
+                      CaseDef(
+                        Bind(sym, Typed(Wildcard(), Inferred(TypeRepr.of[String]))),
+                        Some({
+                          val tE = Ref(sym).asExprOf[String]
+                          '{ descramble($tE, lastPart($childNameE).hashCode) }.asTerm
+                        }), {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                    case TypeHintPolicy.USE_ANNOTATION =>
+                      val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
+                      val annoOrName =
+                        childRef match
+                          case cr: ClassRef[?] => cr.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(cr.name))
+                          case _               => lastPart(childRef.name)
+                      CaseDef(
+                        Literal(StringConstant(annoOrName)),
+                        None, {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                    case TypeHintPolicy.SIMPLE_CLASSNAME =>
+                      CaseDef(
+                        Literal(StringConstant(childRef.name)),
+                        None, {
+                          val methodKey = MethodKey(childRef, false)
+                          readMethodSyms
+                            .get(methodKey)
+                            .map { sym =>
+                              Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            }
+                            .get
+                            .asTerm
+                        }
+                      )
+                }
+                if cfg._preferTypeHints then
+                  '{
+                    if $in.expectNull() then null
+                    else
+                      val hint = $in.findObjectField($hintLabelE).getOrElse(throw JsonParseError(s"Unable to find type hint for abstract class $$cnameE", $in))
+                      ${
+                        cfg.typeHintPolicy match
+                          case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+                          case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                          case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                      }
+                  }.asExprOf[T]
+                else
+                  val unique = Unique.findUniqueWithExcluded(t)
+                  val excludeFields = Expr(unique.optionalFields)
+                  val liftedUnique = liftStringMap(unique.simpleUniqueHash)
+                  val tname = Expr(t.name)
+                  val matchCases: List[CaseDef] = t.sealedChildren.flatMap { classRef =>
+                    val methodKey = MethodKey(classRef, false)
+                    readMethodSyms.get(methodKey).map { sym =>
+                      val cond = Literal(StringConstant(classRef.name))
+                      val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[T].asTerm
+                      CaseDef(cond, None, rhs)
+                    }
+                  }
+
+                  '{
+                    if $in.expectNull() then null
+                    else {
+                      // 1. See if type hint is present--if so, use it!
+                      $in.findObjectField($hintLabelE) match {
+                        case Some(hint) =>
+                          ${
+                            cfg.typeHintPolicy match
+                              case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+                              case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                              case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
+                          }
+                        case None =>
+                          // 2. Find all field names
+                          val fields = $in.findAllFieldNames()
+                          // 3. Strip out all excluded (optional) fields and make hash
+                          val fingerprint = Unique.hashOf(fields.filterNot($excludeFields.contains))
+                          // 4. Look up hash
+                          val className = $liftedUnique
+                            .get(fingerprint)
+                            .getOrElse(
+                              // Before admitting failure, it is possible "" is a valid hash key!
+                              $liftedUnique.get("").getOrElse(throw new JsonParseError("Class in trait " + $tname + s" with parsed fields [${fields.mkString(",")}] needed a type hint but none was found (ambiguous)", $in))
+                            )
+                          ${ Match('{ className }.asTerm, matchCases).asExprOf[T] }
+                      }
+                    }
+                  }.asExprOf[T]
+              )
+
+            case t => throw new ParseError("Not yet implemented: " + t)
+
+    // ---------------------------------------------------------------------------------------------
+
+    def genReadVal[T: Type](
+        ref: RTypeRef[T],
+        in: Expr[JsonSource],
+        inTuple: Boolean = false,
+        isMapKey: Boolean = false
+    )(using Quotes): Expr[T] =
+      val methodKey = MethodKey(ref, false)
+      readMethodSyms
+        .get(methodKey)
+        .map { sym => // hit cache first... then match on Ref type
+          Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+        }
+        .getOrElse(
+          ref match
+
+            case t: SelfRefRef[?] =>
+              t.refType match
+                case '[e] =>
+                  val ref = ReflectOnType[e](q)(TypeRepr.of[e])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+                  val key = MethodKey(ref, false)
+                  val sym = readMethodSyms(key)
+                  Ref(sym).appliedTo(in.asTerm).asExprOf[T]
+
+            case _ =>
+              // Classes, traits, etc.
+              genDecFnBody[T](ref, in) // Create a new decoder function (presumably for class, trait, etc)
+              genReadVal(ref, in, inTuple)
+
+          // Just-created function is present now and will be called
+        )
+
+    // ---------------------------------------------------------------------------------------------
+
+    // ================================================================
+    // You've made it this far!  Ok, now we sew everything together.
+    // We generate a codec class and then kick off a deep traversal of
+    // generation from the given root ref (refer waaay back at the top of this fn...).
+    // ================================================================
+    val codecDef = '{
+      new JsonCodec[T] {
+        def encodeValue(in: T, out: JsonOutput): Unit = ???
+        def decodeValue(in: JsonSource): T = ${ genReadVal(ref, 'in) }
+      }
+    }.asTerm
+    val codec = Block((readMethodDefs).toList, codecDef).asExprOf[JsonCodec[T]]
+    // println(s"Codec: ${codec.show}")
+    codec

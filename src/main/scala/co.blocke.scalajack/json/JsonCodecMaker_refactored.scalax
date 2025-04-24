@@ -71,7 +71,6 @@ object JsonCodecMaker:
             Symbol.spliceOwner,
             "r" + readMethodSyms.size,
             MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[U])
-            //                    (_ => List(input_params,...), _ => resultType)
           )
           readMethodSyms.update(methodKey, sym)
           readMethodDefs += DefDef(

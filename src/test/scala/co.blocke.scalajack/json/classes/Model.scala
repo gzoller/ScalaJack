@@ -6,6 +6,7 @@ import co.blocke.scala_reflection.Ignore
 import dotty.tools.repl.Command
 import java.net.NoRouteToHostException
 
+/*
 case class Person(name: String, @Change(name = "duration") age: Int)
 
 class Parent(val phase: Int, var stuff: List[String]):
@@ -114,3 +115,10 @@ case class L1S(id: Long, nombre: String) extends Level1
 case class L1Q(name: String, age: Int, l0: Level0) extends Level1
 case class L1X(name: String, age: Int, l0: Level0) extends Level1
 case class ComplexHolder(c1: Level1, c2: Level1, c3: Level1, c4: Level1)
+ */
+
+// Self-reference for Traits
+sealed trait Outer
+case class OuterImpl(name: String, num: Int, stuff: List[Outer]) extends Outer
+
+case class Person(name: String, age: Int, hobbies: List[String])

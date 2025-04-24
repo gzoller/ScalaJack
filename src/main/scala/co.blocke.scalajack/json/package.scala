@@ -59,3 +59,6 @@ def liftStringOptionMap(map: Map[String, Option[String]])(using quotes: Quotes):
 def allUniqueFields(fieldHashMap: Map[String, List[String]]): Option[Map[String, String]] =
   if fieldHashMap.forall(_._2.size == 1) then Some(fieldHashMap.view.mapValues(_.head).toMap)
   else None
+
+// Support annotation @Change to change field names
+private inline def changeFieldName(fr: FieldInfoRef): String = fr.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(fr.name)

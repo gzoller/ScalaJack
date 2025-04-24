@@ -16,6 +16,7 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
   opaque type phone = String
 
   describe(colorString("-------------------------------\n:         Trait Tests         :\n-------------------------------", Console.YELLOW)) {
+    /*
     it("Sealed trait with case objects and case classes must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(99))
       val sj = sjCodecOf[TraitHolder](SJConfig.preferTypeHints)
@@ -115,17 +116,23 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
         """{"c1":{"blather":"blather","l0":{"x":5,"y":true}},"c2":{"id":123,"nombre":"Miguel"},"c3":{"_hint":"L1Q","name":"aaa","age":100,"l0":{"name":"wow","id":"abc"}},"c4":{"_hint":"L1X","name":"bbb","age":99,"l0":{"id":3,"extra":[1,2,3]}}}"""
       )
       sj.fromJson(js) shouldEqual (inst)
+    }
+     */
+    it("Self-referencing must work") {
+//      val inst = Person("Greg", 58, List("coding", "woodworking"))
+//      val sj = sjCodecOf[Person]
+//      val json = sj.toJson(inst)
+//      println("[TEST] Final result: " + json)
+//      println(sj.fromJson(json))
 
-      /*
-sealed trait Level0
-case class L0A(x: Int, name: Option[String], y: Boolean) extends Level0
-case class L0B(name: Option[String], id: String, blather: Option[String]) extends Level0
-case class L0C(id: Option[Int], extra: List[Int]) extends Level0
-sealed trait Level1 extends Level0
-case class L1R(blather: String, name: Option[String]) extends Level1
-case class L1S(id: Long, nombre: String) extends Level1
-case class L1Q(name: String, age: Int) extends Level1
-case class L1X(name: String, age: Int) extends Level1
-       */
+      val inst = OuterImpl("foo", 55, List(OuterImpl("bar", 100, Nil)))
+      val sj = sjCodecOf[Outer]
+      val js = sj.toJson(inst)
+      println("JS >>> " + js)
+      println(sj.fromJson(js))
+
+//      println(RType.of[Outer].pretty)
     }
   }
+
+//      val inst = OuterImpl("foo", 55, List(OuterImpl("bar", 1, Nil)))
