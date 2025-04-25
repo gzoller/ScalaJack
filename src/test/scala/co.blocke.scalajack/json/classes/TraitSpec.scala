@@ -16,7 +16,6 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
   opaque type phone = String
 
   describe(colorString("-------------------------------\n:         Trait Tests         :\n-------------------------------", Console.YELLOW)) {
-    /*
     it("Sealed trait with case objects and case classes must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(99))
       val sj = sjCodecOf[TraitHolder](SJConfig.preferTypeHints)
@@ -117,16 +116,13 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
       )
       sj.fromJson(js) shouldEqual (inst)
     }
-     */
     it("Self-referencing must work") {
       val inst = OuterImpl("foo", 55, List(OuterImpl("bar", 100, Nil)))
       val sj = sjCodecOf[Outer]
       val js = sj.toJson(inst)
-      println("JS >>> " + js)
-      println(sj.fromJson(js))
-
-//      println(RType.of[Outer].pretty)
+      js should matchJson(
+        """{"name":"foo","num":55,"stuff":[{"name":"bar","num":100,"stuff":[]}]}"""
+      )
+      sj.fromJson(js) shouldEqual (inst)
     }
   }
-
-//      val inst = OuterImpl("foo", 55, List(OuterImpl("bar", 1, Nil)))

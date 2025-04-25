@@ -62,3 +62,16 @@ def allUniqueFields(fieldHashMap: Map[String, List[String]]): Option[Map[String,
 
 // Support annotation @Change to change field names
 private inline def changeFieldName(fr: FieldInfoRef): String = fr.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(fr.name)
+
+def testValidMapKey(testRef: RTypeRef[?]): Boolean =
+  val isValid = testRef match
+    case _: PrimitiveRef                       => true
+    case _: TimeRef                            => true
+    case _: NetRef                             => true
+    case c: ScalaClassRef[?] if c.isValueClass => true
+    case _: EnumRef[?]                         => true
+    case a: AliasRef[?]                        => testValidMapKey(a.unwrappedType)
+    case t: TraitRef[?] if t.childrenAreObject => true
+    case _                                     => false
+  if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
+  isValid

@@ -41,3 +41,5 @@ class CodecBuildContext(using val quotes: Quotes):
     Flags.Lazy,
     Symbol.noSymbol
   )
+
+  var seenSelfRef: Boolean = false // set to true to generate map entries for readers/writers, otherwise they aren't emitted

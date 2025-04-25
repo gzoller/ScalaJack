@@ -23,7 +23,6 @@ object Reader:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    println("    @ Making reader fn for " + methodKey)
     val sym =
       ctx.readMethodSyms.getOrElseUpdate(
         methodKey, {
@@ -48,7 +47,6 @@ object Reader:
           newSym
         }
       )
-    println("    @ Done making reader fn for " + methodKey)
 
     // Populate readerMap for SelfRef lookups (Map[TypedName->reader_fn]). Avoids very nasty recusion/scope issues
     ctx.readerFnMapEntries(methodKey) = '{ (in: JsonSource) => ${ Apply(Ref(sym), List('in.asTerm)).asExprOf[Any] } }
@@ -108,19 +106,6 @@ object Reader:
         (recipe.nonEmpty, lang)
       case _ => (false, Language.Scala)
 
-  private def testValidMapKey(testRef: RTypeRef[?]): Boolean =
-    val isValid = testRef match
-      case _: PrimitiveRef                       => true
-      case _: TimeRef                            => true
-      case _: NetRef                             => true
-      case c: ScalaClassRef[?] if c.isValueClass => true
-      case _: EnumRef[?]                         => true
-      case a: AliasRef[?]                        => testValidMapKey(a.unwrappedType)
-      case t: TraitRef[?] if t.childrenAreObject => true
-      case _                                     => false
-    if !isValid then throw new JsonTypeError(s"For JSON serialization, map keys must be a simple type. ${testRef.name} is too complex.")
-    isValid
-
   // ---------------------------------------------------------------------------------------------
 
   private def genDecFnBody[T: Type](
@@ -140,6 +125,47 @@ object Reader:
     r.refType match // refType is Type[r.R]
       case '[b] =>
         r match
+
+          case t: AnyRef =>
+            makeReadFn[T](ctx, methodKey, in)(in =>
+              '{
+                if $in.expectNull() then null
+                else
+                  $in.readToken() match
+                    case '[' =>
+                      $in.backspace()
+                      val parsedArray = $in.expectArray[Any](() => ${ genReadVal[Any](ctx, cfg, AnyRef(), in, false) })
+                      if parsedArray != null then parsedArray.toList
+                      else null
+                    case '{' =>
+                      $in.parseMap[String, Any](
+                        () => ${ genReadVal[String](ctx, cfg, StringRef(), in, false, true) },
+                        () => ${ genReadVal[Any](ctx, cfg, AnyRef(), in, false) },
+                        Map.empty[String, Any],
+                        true
+                      )
+                    case 't' | 'f' =>
+                      $in.backspace()
+                      $in.expectBoolean()
+                    case n if n == '-' | n == '+' | n == '.' | (n >= '0' && n <= '9') =>
+                      $in.backspace()
+                      $in.expectNumberOrNull() match
+                        case null => null
+                        case s =>
+                          scala.math.BigDecimal(s) match {
+                            case i if i.isValidInt      => i.toIntExact
+                            case i if i.isValidLong     => i.toLongExact
+                            case d if d.isDecimalDouble => d.toDouble
+                            case d if d.ulp == 1        => d.toBigInt
+                            case d                      => d
+                          }
+                    case '\"' =>
+                      $in.backspace()
+                      $in.expectString()
+                    case _ => throw new JsonParseError("Illegal JSON char while parsing Any value", $in)
+              }.asExprOf[T]
+            )
+            '{ () }
 
           case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
             makeReadFn[b](ctx, methodKey, in)(in =>
@@ -162,7 +188,6 @@ object Reader:
             '{ () }
 
           case t: Sealable if t.isSealed && !t.childrenAreObject =>
-            println("!!! In Sealable")
             // This is a massive side effect: go ahead and generate readers for every sealed child. This doesn't
             // return anything but (...and here's the side effect) it updates a cache of readers
             t.sealedChildren.map(kid =>
@@ -285,11 +310,30 @@ object Reader:
             )
             '{ () }
 
+          case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
+            makeReadFn[T](ctx, methodKey, in)(in =>
+              val classPrefixE = Expr(allButLastPart(t.name))
+              val caseDefs = t.sealedChildren.map { childRef =>
+                val nameE = Expr(childRef.name)
+                childRef.refType match
+                  case '[o] =>
+                    CaseDef(
+                      Literal(StringConstant(childRef.name)),
+                      None,
+                      Ref(TypeRepr.of[o].typeSymbol).asExprOf[o].asTerm
+                    )
+              }
+              '{
+                if $in.expectNull() then null
+                else ${ Match('{ $classPrefixE + "." + $in.expectString() }.asTerm, caseDefs).asExprOf[T] }
+              }.asExprOf[T]
+            )
+            '{ () }
+
           case t: TraitRef[?] =>
             throw JsonUnsupportedType("Non-sealed traits are not supported")
 
           case t: ScalaClassRef[?] =>
-            println("!!! In Class")
             makeReadFn[b](ctx, methodKey, in)(in =>
               // Generate vars for each contractor argument, populated with either a "unit" value (eg 0, "") or given default value
               val tpe = TypeRepr.of[b]
@@ -445,6 +489,49 @@ object Reader:
                   }.asTerm
 
               Block(finalVarDefs :+ reqVarDef, parseLoop).asExprOf[b]
+            )
+            '{ () }
+
+          case t: JavaClassRef[?] =>
+            makeReadFn[T](ctx, methodKey, in)(in =>
+              val classNameE = Expr(t.name)
+              val tpe = TypeRepr.of[b]
+              val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
+              val instanceSymRef = Ident(instanceSym.termRef)
+              val nullConst = tpe.classSymbol.get.companionModule.declaredMethods
+                .find(m => m.paramSymss == List(Nil))
+                .getOrElse(
+                  throw JsonTypeError("ScalaJack only supports Java classes that have a zero-argument constructor")
+                )
+              makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), t.fields.sortBy(_.index).map(f => changeFieldName(f)).toArray)
+              val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey).asInstanceOf[Symbol]
+              val caseDefs = t.fields.map(ncf =>
+                ncf.fieldRef.refType match
+                  case '[u] =>
+                    CaseDef(
+                      Literal(IntConstant(ncf.index)),
+                      None,
+                      // Call the setter for this field here...
+                      Apply(
+                        Select.unique(Ref(instanceSym), ncf.asInstanceOf[NonConstructorFieldInfoRef].setterLabel),
+                        List(genReadVal[u](ctx, cfg, ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)
+                      ).asExpr.asTerm
+                    )
+              ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+
+              val parseLoop =
+                '{
+                  var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                  if maybeFieldNum == null then null.asInstanceOf[T]
+                  else
+                    ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[T] }.asTerm).asExprOf[Any] } // _instance = (new instance)
+                    // ${ Assign(instanceSymRef, Apply(Select(New(Inferred(tpe)), nullConst), Nil).asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
+                    while maybeFieldNum.isDefined do
+                      ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
+                      maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                    ${ Ref(instanceSym).asExprOf[T] }
+                }.asTerm
+              Block(List(ValDef(instanceSym, Some('{ null }.asTerm))), parseLoop).asExprOf[T]
             )
             '{ () }
 
@@ -738,6 +825,7 @@ object Reader:
                     if $in.expectNull() then null
                     else ${ ofOption[e](Some(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in))).asExprOf[T] }
                   }.asExprOf[T]
+
           case t: JavaOptionalRef[?] =>
             import quotes.reflect.*
             t.optionParamType.refType match
@@ -863,6 +951,7 @@ object Reader:
                         Apply(Ref(m(0)), List('{ v }.asTerm)).asExpr
                       }
                 }.asExprOf[T]
+
           case t: ScalaEnumerationRef[?] =>
             import quotes.reflect.*
             t.refType match
@@ -893,6 +982,7 @@ object Reader:
                         '{ ${ enumeration }.values.iterator.find(_.id == v).get }.asExprOf[e]
                       }
                 }.asExprOf[T]
+
           case t: JavaEnumRef[?] =>
             import quotes.reflect.*
             t.refType match
@@ -1528,9 +1618,9 @@ object Reader:
                 }
 
           case t: SelfRefRef[?] =>
-            println(s"<<< SelfRefRef found: $methodKey >>>")
             val mapExpr = Ref(ctx.readerMapSym).asExprOf[Map[String, JsonSource => Any]] // Symbol for `val readerMap = Map(...)`
             val keyExpr = Expr(t.typedName.toString)
+            ctx.seenSelfRef = true
             '{
               $mapExpr($keyExpr).apply($in).asInstanceOf[T]
             }

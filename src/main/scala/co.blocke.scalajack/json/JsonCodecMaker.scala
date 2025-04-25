@@ -72,12 +72,15 @@ object JsonCodecMaker:
       Some(writerMapExpr.asTerm)
     )
 
+    val mapDefs =
+      if ctx.seenSelfRef then List(readerMapDef) ++ List(writerMapDef)
+      else Nil
+
     val codec = Block(
       // 🧨 This MUST be first — so any methods can reference it
       ctx.classFieldMatrixValDefs.toList ++
 
-        List(readerMapDef) ++
-        List(writerMapDef) ++
+        mapDefs ++
 
         // Functions (can reference anything above)
         ctx.writeMethodDefs.values ++
@@ -85,5 +88,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-    println(s"Codec: ${codec.show}")
+//    println(s"Codec: ${codec.show}")
     codec

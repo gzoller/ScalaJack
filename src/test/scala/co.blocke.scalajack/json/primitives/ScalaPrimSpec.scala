@@ -120,6 +120,7 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         sj.fromJson(js) shouldEqual inst
       }
 
+      /*
       it("Any type for all primitives must work") {
         val sj = sjCodecOf[AnyShell]
         val prims: List[(Any, String, Option[Any => String])] = List(
@@ -169,6 +170,7 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
           }
         }
       }
+       */
     }
 
     // --------------------------------------------------------

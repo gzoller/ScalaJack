@@ -2,11 +2,11 @@ package co.blocke.scalajack
 package json
 package writing
 
-import co.blocke.scala_reflection.{RType, TypedName}
+import co.blocke.scala_reflection.RType
 import co.blocke.scala_reflection.rtypes.*
-import scala.jdk.CollectionConverters.*
+
 import org.apache.commons.text.StringEscapeUtils
-import org.apache.commons.lang3.text.translate.CharSequenceTranslator
+import scala.annotation.tailrec
 import scala.util.*
 import scala.quoted.*
 
@@ -18,7 +18,7 @@ import scala.quoted.*
 
 object AnyWriter:
 
-  def writeAny(target: Any, out: JsonOutput, cfg: SJConfig, inTuple: Boolean = false): Unit =
+  def writeAny(cfg: SJConfig, target: Any, out: JsonOutput, inTuple: Boolean = false): Unit =
     // val rt = RType.of(target.getClass)
     target match
       case null                        => out.burpNull()
@@ -60,22 +60,22 @@ object AnyWriter:
 
       case v: Array[?] =>
         out.startArray()
-        v.map(e => writeAny(e, out, cfg))
+        v.foreach(e => writeAny(cfg, e, out))
         out.endArray()
 
       case v: Set[?] =>
         out.startArray()
-        v.map(e => writeAny(e, out, cfg))
+        v.foreach(e => writeAny(cfg, e, out))
         out.endArray()
 
       case v: Seq[?] =>
         out.startArray()
-        v.map(e => writeAny(e, out, cfg))
+        v.foreach(e => writeAny(cfg, e, out))
         out.endArray()
 
       case v: Map[?, ?] =>
         out.startObject()
-        v.map { case (k, v) => _okToWrite(k.toString, v, out, cfg) }
+        v.foreach { case (k, v) => _okToWrite(cfg, k.toString, v, out) }
         out.endObject()
 
       case v: Option[?] =>
@@ -83,26 +83,26 @@ object AnyWriter:
           case None =>
             if inTuple then out.burpNull()
             else ()
-          case Some(v2) => writeAny(v2, out, cfg)
+          case Some(v2) => writeAny(cfg, v2, out)
 
       case v: Either[?, ?] =>
         v match
           case Left(_) =>
             if inTuple then out.burpNull()
             else ()
-          case Right(v2) => writeAny(v2, out, cfg)
+          case Right(v2) => writeAny(cfg, v2, out)
 
       case v: Try[?] =>
         v match
           case Failure(_) =>
             if inTuple then out.burpNull()
             else ()
-          case Success(v2) => writeAny(v2, out, cfg)
+          case Success(v2) => writeAny(cfg, v2, out)
 
       case v: Tuple =>
         val varr = v.toArray
         out.startArray()
-        varr.foreach(v2 => writeAny(v2, out, cfg, true))
+        varr.foreach(v2 => writeAny(cfg, v2, out, true))
         out.endArray()
 
       case v =>
@@ -110,41 +110,43 @@ object AnyWriter:
         rt match
           case t: ScalaClassRType[?] =>
             out.startObject()
-            t.fields.map(f =>
+            t.fields.foreach(f =>
               val field = f.asInstanceOf[ScalaFieldInfo]
               val m = v.getClass.getMethod(field.name)
               m.setAccessible(true)
               val fieldValue = m.invoke(v)
               val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
-              _okToWrite(fieldName, fieldValue, out, cfg)
+              _okToWrite(cfg, fieldName, fieldValue, out)
             )
             out.endObject()
           case _ => throw new JsonUnsupportedType("Class " + v.getClass.getName + " not supported for Any type")
 
   // Called by non-Any classes (in JsonCodecMaker) that have Any-typed fields
-  def isOkToWrite(prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput], cfg: SJConfig)(using Quotes): Expr[Unit] =
-    import quotes.reflect.*
+  def isOkToWrite(ctx: CodecBuildContext, cfg: SJConfig, prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput]): Expr[Unit] =
+    given Quotes = ctx.quotes
+    import ctx.quotes.reflect.*
     '{
-      _okToWrite($value, ${ Expr(cfg) }).map { v =>
+      _okToWrite(${ Expr(cfg) }, $value).map { v =>
         $prefix
-        AnyWriter.writeAny(v, $out, ${ Expr(cfg) })
+        AnyWriter.writeAny(${ Expr(cfg) }, v, $out)
       }
     }
 
   // Called for Any-typed classes
-  private def _okToWrite(label: String, value: Any, out: JsonOutput, cfg: SJConfig): Unit =
-    _okToWrite(value, cfg).map { v =>
+  private def _okToWrite(cfg: SJConfig, label: String, value: Any, out: JsonOutput): Unit =
+    _okToWrite(cfg, value).foreach { v =>
       out.label(label)
-      writeAny(v, out, cfg)
+      writeAny(cfg, v, out)
     }
 
-  private def _okToWrite(value: Any, cfg: SJConfig): Option[Any] =
+  @tailrec
+  private def _okToWrite(cfg: SJConfig, value: Any): Option[Any] =
     value match
       case None => if cfg.noneAsNull then Some(null) else None
       case Failure(e) =>
         cfg.tryFailureHandling match
           case TryPolicy.AS_NULL         => Some(null)
-          case TryPolicy.ERR_MSG_STRING  => Some("Try Failure with msg: " + e.getMessage())
+          case TryPolicy.ERR_MSG_STRING  => Some("Try Failure with msg: " + e.getMessage)
           case TryPolicy.THROW_EXCEPTION => throw e
 
       case Left(v) =>
@@ -153,5 +155,5 @@ object AnyWriter:
           case EitherLeftPolicy.AS_NULL         => Some("null")
           case EitherLeftPolicy.ERR_MSG_STRING  => Some("Left Error: " + v.toString)
           case EitherLeftPolicy.THROW_EXCEPTION => throw new JsonEitherLeftError("Left Error: " + v.toString)
-      case Some(v) => _okToWrite(v, cfg)
+      case Some(v) => _okToWrite(cfg, v)
       case _       => Some(value)

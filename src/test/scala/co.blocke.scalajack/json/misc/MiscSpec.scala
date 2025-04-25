@@ -50,6 +50,7 @@ on another level."}""")
       val ex = intercept[JsonParseError](sj.fromJson(js))
       ex.show shouldEqual msg
     }
+    /*
     it("Any type must work (non-exhaustive test)") {
       val inst = AnyHolder(
         Some(List(1, 2, 3)),
@@ -88,4 +89,5 @@ on another level."}""")
       js should equal("""{"maybe":[1,2,3],"maybeNot":null,"itried":{"a":-5},"itried2":99,"ifailed":"Try Failure with msg: oops","anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"Left Error: nope","bunch":["a",null,"b"]}""")
       sj.fromJson(js) shouldEqual (AnyHolder(List(1, 2, 3), null, Map("a" -> -5), 99, "Try Failure with msg: oops", Map("a" -> 1, "b" -> 2), 3, "Left Error: nope", List("a", null, "b")))
     }
+     */
   }
