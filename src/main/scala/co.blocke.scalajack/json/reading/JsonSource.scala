@@ -113,7 +113,7 @@ case class JsonSource(js: CharSequence):
       backspace()
       throw new JsonParseError(s"Expected ',' or '}' but found '$t'", this)
 
-  final def parseObjectKey(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
+  final private def parseObjectKey(fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
     var fi: Int = 0
     var bs: Long = fieldNameMatrix.initial
     var c: Int = here

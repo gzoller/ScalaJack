@@ -84,9 +84,12 @@ object JsonCodecMaker:
 
         // Functions (can reference anything above)
         ctx.writeMethodDefs.values ++
-        ctx.readMethodDefs.values.toList,
+        ctx.readMethodDefs.values.toList ++ {
+          if ctx.seenAnyRef then List(ctx.readAnyDef)
+          else Nil
+        },
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-//    println(s"Codec: ${codec.show}")
+//    if ref.name.contains("Parent") then println(s"Codec: ${codec.show}")
     codec

@@ -38,6 +38,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       val sj = sjCodecOf[Parent](SJConfig.writeNonConstructorFields)
       val js = sj.toJson(inst)
       js should matchJson("""{"phase":99,"stuff":["x","y"],"foo":"we'll see","hidden":true}""")
+      val scrambled = """{"hidden":true,"phase":99,"foo":"we'll see","stuff":["x","y"]}"""
       val re = sj.fromJson(js)
       re.phase shouldEqual (inst.phase)
       re.stuff shouldEqual (inst.stuff)

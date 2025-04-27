@@ -15,6 +15,7 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("---------------------------\n:  Scala Primitive Tests  :\n---------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
+
       it("BigDecimal must work") {
         val inst = SampleBigDecimal(
           BigDecimal(123L),
@@ -120,7 +121,6 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         sj.fromJson(js) shouldEqual inst
       }
 
-      /*
       it("Any type for all primitives must work") {
         val sj = sjCodecOf[AnyShell]
         val prims: List[(Any, String, Option[Any => String])] = List(
@@ -170,7 +170,6 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
           }
         }
       }
-       */
     }
 
     // --------------------------------------------------------

@@ -54,6 +54,7 @@ object Reader:
     // Always apply the function — whether from cache or new
     Apply(Ref(sym), List(in.asTerm)).asExprOf[U]
 
+  // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields
   private def makeClassFieldMatrixValDef(
       ctx: CodecBuildContext,
       methodKey: TypedName,
@@ -125,47 +126,6 @@ object Reader:
     r.refType match // refType is Type[r.R]
       case '[b] =>
         r match
-
-          case t: AnyRef =>
-            makeReadFn[T](ctx, methodKey, in)(in =>
-              '{
-                if $in.expectNull() then null
-                else
-                  $in.readToken() match
-                    case '[' =>
-                      $in.backspace()
-                      val parsedArray = $in.expectArray[Any](() => ${ genReadVal[Any](ctx, cfg, AnyRef(), in, false) })
-                      if parsedArray != null then parsedArray.toList
-                      else null
-                    case '{' =>
-                      $in.parseMap[String, Any](
-                        () => ${ genReadVal[String](ctx, cfg, StringRef(), in, false, true) },
-                        () => ${ genReadVal[Any](ctx, cfg, AnyRef(), in, false) },
-                        Map.empty[String, Any],
-                        true
-                      )
-                    case 't' | 'f' =>
-                      $in.backspace()
-                      $in.expectBoolean()
-                    case n if n == '-' | n == '+' | n == '.' | (n >= '0' && n <= '9') =>
-                      $in.backspace()
-                      $in.expectNumberOrNull() match
-                        case null => null
-                        case s =>
-                          scala.math.BigDecimal(s) match {
-                            case i if i.isValidInt      => i.toIntExact
-                            case i if i.isValidLong     => i.toLongExact
-                            case d if d.isDecimalDouble => d.toDouble
-                            case d if d.ulp == 1        => d.toBigInt
-                            case d                      => d
-                          }
-                    case '\"' =>
-                      $in.backspace()
-                      $in.expectString()
-                    case _ => throw new JsonParseError("Illegal JSON char while parsing Any value", $in)
-              }.asExprOf[T]
-            )
-            '{ () }
 
           case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
             makeReadFn[b](ctx, methodKey, in)(in =>
@@ -419,8 +379,7 @@ object Reader:
                 }
               }
               val reqVarDef = ValDef(reqSym, Some(Literal(IntConstant(totalRequired))))
-              val (varDefs, caseDefs, idents) = together.unzip3
-              val caseDefsWithFinal = caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+              val (varDefs, constructorFieldCaseDefs, idents) = together.unzip3
 
               val argss = List(idents)
               val primaryConstructor = tpe.classSymbol.get.primaryConstructor
@@ -432,19 +391,23 @@ object Reader:
 
               val exprRequired = Expr(required)
 
-              makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), t.fields.map(f => changeFieldName(f)).toArray)
-              val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey)
-
               var finalVarDefs = varDefs
               val parseLoop =
                 if !cfg._writeNonConstructorFields || t.nonConstructorFields.isEmpty then
                   // When we don't care about non-constructor fields
+                  makeClassFieldMatrixValDef(
+                    ctx,
+                    methodKey,
+                    t.name.replaceAll("\\.", "_"),
+                    t.fields.map(f => changeFieldName(f)).toArray
+                  )
+                  val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey) // populated by makeClassFieldMatrix
                   '{
                     var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
                     if maybeFieldNum == null then null.asInstanceOf[T]
                     else
                       while maybeFieldNum.isDefined do
-                        ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                        ${ Match('{ maybeFieldNum.get }.asTerm, constructorFieldCaseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)).asExprOf[Any] }
                         maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
 
                       if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
@@ -455,37 +418,48 @@ object Reader:
                   finalVarDefs = finalVarDefs :+ ValDef(instanceSym, Some('{ null }.asTerm)) // add var _instance=null to gen'ed code
                   val instanceSymRef = Ident(instanceSym.termRef)
                   // When we do care about non-constructor fields
-                  makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), t.nonConstructorFields.sortBy(_.index).map(f => changeFieldName(f)).toArray)
-                  val fieldMatrixSymNCF = ctx.classFieldMatrixSyms(methodKey)
+                  makeClassFieldMatrixValDef(
+                    ctx,
+                    methodKey,
+                    t.name.replaceAll("\\.", "_"),
+                    (t.fields ++ t.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f)).toArray
+                  )
+                  val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey) // populated by makeClassFieldMatrix
                   // New Case/Match for non-constructor fields
-                  val caseDefsWithFinalNC = t.nonConstructorFields.map(ncf =>
-                    ncf.fieldRef.refType match
-                      case '[u] =>
-                        CaseDef(
-                          Literal(IntConstant(ncf.index)),
-                          None,
-                          // Call the setter for this field here...
-                          Apply(Select.unique(Ref(instanceSym), ncf.setterLabel), List(genReadVal[u](ctx, cfg, ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)).asExpr.asTerm
-                        )
-                  ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+                  val caseDefsWithFinalNC = constructorFieldCaseDefs ++
+                    t.nonConstructorFields.map(ncf =>
+                      ncf.fieldRef.refType match
+                        case '[u] =>
+                          CaseDef(
+                            Literal(IntConstant(ncf.index + t.fields.size)),
+                            None,
+                            // Call the setter for this field here...
+                            Apply(Select.unique(Ref(instanceSym), ncf.setterLabel), List(genReadVal[u](ctx, cfg, ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)).asExpr.asTerm
+                          )
+                    ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+                  val numCtorFields = Expr(t.fields.size)
                   '{
-                    val mark = $in.pos
+                    val ncBuffer = scala.collection.mutable.ListBuffer.empty[(Int, Int)] // (fieldNum, position)
                     var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
                     if maybeFieldNum == null then null.asInstanceOf[T]
                     else
                       while maybeFieldNum.isDefined do
-                        ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinal).asExprOf[Any] }
+                        val fieldNum = maybeFieldNum.get
+                        if fieldNum < $numCtorFields then ${ Match('{ fieldNum }.asTerm, caseDefsWithFinalNC).asExprOf[Any] }
+                        else {
+                          ncBuffer += (fieldNum -> $in.pos)
+                          $in.skipValue()
+                        }
                         maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
-
                       if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then
                         ${ Assign(instanceSymRef, instantiateClass.asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
-                        $in.revertToPos(mark) // go back to re-parse object json, this time for non-constructor fields
-                        maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSymNCF).asExprOf[StringMatrix] })
-                        while maybeFieldNum.isDefined do
-                          ${ Match('{ maybeFieldNum.get }.asTerm, caseDefsWithFinalNC).asExprOf[Any] }
-                          maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSymNCF).asExprOf[StringMatrix] })
-                        ${ Ref(instanceSym).asExprOf[T] }
+
+                        ncBuffer.foreach { case (fieldNum, pos) =>
+                          $in.revertToPos(pos)
+                          ${ Match('{ fieldNum }.asTerm, caseDefsWithFinalNC).asExprOf[Any] }
+                        }
                       else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
+                      ${ Ref(instanceSym).asExprOf[b] }
                   }.asTerm
 
               Block(finalVarDefs :+ reqVarDef, parseLoop).asExprOf[b]
@@ -1624,6 +1598,10 @@ object Reader:
             '{
               $mapExpr($keyExpr).apply($in).asInstanceOf[T]
             }
+
+          case t: AnyRef =>
+            ctx.seenAnyRef = true
+            Ref(ctx.readAnySym).appliedTo(in.asTerm).asExprOf[T]
 
           case _ =>
             // Classes, traits, etc.

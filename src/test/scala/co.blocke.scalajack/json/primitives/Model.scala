@@ -54,7 +54,7 @@ case class SampleZoneOffset(z1: ZoneOffset, z2: ZoneOffset)
 // TODO: Missing Year, MonthYear, ZoneId, ZoneOffset, others?
 
 // === Any primitives
-//case class AnyShell(a: Any)
+case class AnyShell(a: Any)
 
 object Size extends Enumeration {
   val Small, Medium, Large = Value

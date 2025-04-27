@@ -124,7 +124,6 @@ object AnyWriter:
   // Called by non-Any classes (in JsonCodecMaker) that have Any-typed fields
   def isOkToWrite(ctx: CodecBuildContext, cfg: SJConfig, prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput]): Expr[Unit] =
     given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
     '{
       _okToWrite(${ Expr(cfg) }, $value).map { v =>
         $prefix
@@ -136,7 +135,7 @@ object AnyWriter:
   private def _okToWrite(cfg: SJConfig, label: String, value: Any, out: JsonOutput): Unit =
     _okToWrite(cfg, value).foreach { v =>
       out.label(label)
-      writeAny(cfg, v, out)
+      AnyWriter.writeAny(cfg, v, out)
     }
 
   @tailrec

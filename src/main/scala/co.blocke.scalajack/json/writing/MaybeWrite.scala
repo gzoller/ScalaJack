@@ -7,7 +7,7 @@ import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RType, RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.EnumRType
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object MaybeWrite:
 
@@ -32,16 +32,15 @@ object MaybeWrite:
       out
     )
 
-
   def maybeWriteMap[K: Type, V: Type](
-                                               ctx: CodecBuildContext,
-                                               cfg: SJConfig,
-                                               keyE: Expr[K],
-                                               valueE: Expr[V],
-                                               keyRef: RTypeRef[K],
-                                               valueRef: RTypeRef[V],
-                                               out: Expr[JsonOutput]
-                                             ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      keyE: Expr[K],
+      valueE: Expr[V],
+      keyRef: RTypeRef[K],
+      valueRef: RTypeRef[V],
+      out: Expr[JsonOutput]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     keyRef.refType match
@@ -59,41 +58,37 @@ object MaybeWrite:
           out
         )
 
-
-  private def handleOptional[O[_] : Type, T: Type](
-                                                    ctx: CodecBuildContext,
-                                                    cfg: SJConfig,
-                                                    prefix: Expr[Unit],
-                                                    optionExpr: Expr[O[T]],
-                                                    paramRef: RTypeRef[T],
-                                                    out: Expr[JsonOutput],
-                                                    isEmpty: Expr[O[T] => Boolean],
-                                                    get: Expr[O[T] => T]
-                                                  ): Expr[Unit] =
+  private def handleOptional[O[_]: Type, T: Type](
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      prefix: Expr[Unit],
+      optionExpr: Expr[O[T]],
+      paramRef: RTypeRef[T],
+      out: Expr[JsonOutput],
+      isEmpty: Expr[O[T] => Boolean],
+      get: Expr[O[T] => T]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     if !cfg.noneAsNull then
       '{
-        if !$isEmpty($optionExpr) then
-          ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
       }
     else
       '{
-        if !$isEmpty($optionExpr) then
-          ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
         else
           $prefix; $out.burpNull()
       }
 
-
   private def handleTry[T: Type](
-                                  ctx: CodecBuildContext,
-                                  cfg: SJConfig,
-                                  prefix: Expr[Unit],
-                                  tryExpr: Expr[Try[T]],
-                                  paramRef: RTypeRef[T],
-                                  out: Expr[JsonOutput]
-                                ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      prefix: Expr[Unit],
+      tryExpr: Expr[Try[T]],
+      paramRef: RTypeRef[T],
+      out: Expr[JsonOutput]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -102,22 +97,21 @@ object MaybeWrite:
         case Failure(v) =>
           ${
             cfg.tryFailureHandling match
-              case TryPolicy.AS_NULL => '{ $prefix ; $out.burpNull() }
-              case TryPolicy.ERR_MSG_STRING => '{ $prefix ; $out.value("Try Failure with msg: " + v.getMessage) }
+              case TryPolicy.AS_NULL         => '{ $prefix; $out.burpNull() }
+              case TryPolicy.ERR_MSG_STRING  => '{ $prefix; $out.value("Try Failure with msg: " + v.getMessage) }
               case TryPolicy.THROW_EXCEPTION => '{ throw v }
           }
         case Success(v) => ${ _maybeWrite[T](ctx, cfg, prefix, '{ v }, paramRef, out) }
     }
 
-
   private def handleLR[T: Type](
-                                 ctx: CodecBuildContext,
-                                 cfg: SJConfig,
-                                 t: LeftRightRef[?],
-                                 aE: Expr[T],
-                                 out: Expr[JsonOutput],
-                                 prefix: Expr[Unit]
-                               ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      t: LeftRightRef[?],
+      aE: Expr[T],
+      out: Expr[JsonOutput],
+      prefix: Expr[Unit]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -193,20 +187,19 @@ object MaybeWrite:
                             ${ _maybeWrite[lt](ctx, cfg, prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
                     }
 
-
   // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
   // Affected types: Option, java.util.Optional, Left/Right, Try/Failure
   // Returns Expr[Unit] containing either the original phrase (if ok to write) or the phrase
   // prepended with the type-appropriate runtime check.  This may seem like drama, but the idea
   // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
   private def _maybeWrite[T: Type](
-                            ctx: CodecBuildContext,
-                            cfg: SJConfig,
-                            prefix: Expr[Unit],
-                            aE: Expr[T],
-                            ref: RTypeRef[T],
-                            out: Expr[JsonOutput]
-                          ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      prefix: Expr[Unit],
+      aE: Expr[T],
+      ref: RTypeRef[T],
+      out: Expr[JsonOutput]
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     ref match

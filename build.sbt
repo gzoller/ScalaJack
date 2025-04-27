@@ -39,11 +39,11 @@ lazy val root = project
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
       "co.blocke"            %% "scala-reflection"     % "2.0.12",  //"unique_5d25df", /
-      "org.apache.commons"   % "commons-text"          % "1.11.0",
-      "io.github.kitlangton" %% "neotype"              % "0.0.9",
-      "org.scalatest"        %% "scalatest"            % "3.2.17" % Test,
-      "org.json4s"           %% "json4s-core"          % "4.0.6" % Test,
-      "org.json4s"           %% "json4s-native"        % "4.0.6" % Test
+      "org.apache.commons"   % "commons-text"          % "1.13.1",
+      "io.github.kitlangton" %% "neotype"              % "0.3.23",
+      "org.scalatest"        %% "scalatest"            % "3.2.19" % Test,
+      "org.json4s"           %% "json4s-core"          % "4.0.7" % Test,
+      "org.json4s"           %% "json4s-native"        % "4.0.7" % Test
     )
   )
 

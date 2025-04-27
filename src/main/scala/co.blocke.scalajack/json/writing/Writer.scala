@@ -734,7 +734,8 @@ object Writer:
                     val baseTypeRef = ReflectOnType.apply(ctx.quotes)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
                     genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out)
 
-          case t: AnyRef => '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
+          case t: AnyRef =>
+            '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
 
           case t: SelfRefRef[?] =>
             val mapExpr = Ref(ctx.writerMapSym).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
