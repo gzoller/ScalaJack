@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/gzoller/ScalaJack/badge.svg?branch=master)](https://coveralls.io/github/gzoller/ScalaJack?branch=master)
 
 ScalaJack 8 is an all-new ScalaJack serializer implemenation built on Scala 3. For Scala 2.13 ScalaJack, please use the frozen version 6.2.0. ScalaJack 8 is built 
-using Scala 3.4.2 on JDK 21 LTS version. This is done to be as current as possible and also because Scala 3.4.2 provides improvements to code test coverage instrumentation.
+using Scala 3.5.2 on JDK 21 LTS version. This is done to be as current as possible and also because Scala 3.5.2 provides improvements to code test coverage instrumentation.
 
 ScalaJack is a very fast, seamless serialization engine for non-schema data designed to require a bare minimum of extra code 
 to serialize a class. ScalaJack currently only supports JSON, however when we looked at adding MsgPack support to our great surprise benchmarks
