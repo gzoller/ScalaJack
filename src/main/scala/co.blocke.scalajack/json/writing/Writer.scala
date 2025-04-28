@@ -88,70 +88,6 @@ object Writer:
     r.refType match
       case '[b] =>
         r match
-          case t: ArrayRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[e] =>
-                  val tin = in.asInstanceOf[Expr[Array[e]]]
-                  '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
-                  }
-            }
-
-          case t: IterableRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[e] =>
-                  val tin = in.asInstanceOf[Expr[Iterable[e]]]
-                  '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
-                  }
-            }
-
-          case t: SeqRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[e] =>
-                  val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Seq[e]] else in.asExprOf[Seq[e]]
-                  '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
-                  }
-            }
-
-          case t: SetRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[e] =>
-                  val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Set[e]] else in.asExprOf[Set[e]]
-                  '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $out.startArray()
-                      $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
-                  }
-            }
-
           // Basically sealed traits...
           case t: Sealable if t.isSealed =>
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
@@ -296,122 +232,6 @@ object Writer:
                 }
             }
 
-          case t: MapRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[k] =>
-                  t.elementRef2.refType match
-                    case '[v] =>
-                      val tin = if t.isMutable then in.asExprOf[scala.collection.mutable.Map[k, v]] else in.asExprOf[Map[k, v]]
-                      '{
-                        if $tin == null then $out.burpNull()
-                        else
-                          $out.startObject()
-                          $tin.foreach { case (key, value) =>
-                            ${
-                              (t.elementRef, t.elementRef2) match
-                                case (aliasK: AliasRef[?], aliasV: AliasRef[?]) =>
-                                  aliasK.unwrappedType.refType match
-                                    case '[ak] =>
-                                      aliasV.unwrappedType.refType match
-                                        case '[av] =>
-                                          testValidMapKey(aliasK.unwrappedType)
-                                          MaybeWrite.maybeWriteMap[ak, av](
-                                            ctx,
-                                            cfg,
-                                            '{ key.asInstanceOf[ak] },
-                                            '{ value.asInstanceOf[av] },
-                                            aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
-                                            aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
-                                            out
-                                          )
-                                case (_, aliasV: AliasRef[?]) =>
-                                  aliasV.unwrappedType.refType match
-                                    case '[av] =>
-                                      testValidMapKey(t.elementRef)
-                                      MaybeWrite.maybeWriteMap[k, av](
-                                        ctx,
-                                        cfg,
-                                        '{ key }.asExprOf[k],
-                                        '{ value.asInstanceOf[av] },
-                                        t.elementRef.asInstanceOf[RTypeRef[k]],
-                                        aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
-                                        out
-                                      )
-                                case (aliasK: AliasRef[?], _) =>
-                                  aliasK.unwrappedType.refType match
-                                    case '[ak] =>
-                                      testValidMapKey(aliasK.unwrappedType)
-                                      MaybeWrite.maybeWriteMap[ak, v](
-                                        ctx,
-                                        cfg,
-                                        '{ key.asInstanceOf[ak] },
-                                        '{ value }.asExprOf[v],
-                                        aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
-                                        t.elementRef2.asInstanceOf[RTypeRef[v]],
-                                        out
-                                      )
-                                case (_, _) =>
-                                  testValidMapKey(t.elementRef)
-                                  MaybeWrite.maybeWriteMap[k, v](
-                                    ctx,
-                                    cfg,
-                                    '{ key },
-                                    '{ value }.asExprOf[v],
-                                    t.elementRef.asInstanceOf[RTypeRef[k]],
-                                    t.elementRef2.asInstanceOf[RTypeRef[v]],
-                                    out
-                                  )
-                            }
-                          }
-                          $out.endObject()
-                      }
-            }
-
-          case t: JavaCollectionRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[e] =>
-                  val tin = '{ $in.asInstanceOf[java.util.Collection[?]] }
-                  '{
-                    if $tin == null then $out.burpNull()
-                    else
-                      $out.startArray()
-                      $tin.toArray.foreach { elem =>
-                        ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
-                      }
-                      $out.endArray()
-                  }
-            }
-
-          case t: JavaMapRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              t.elementRef.refType match
-                case '[k] =>
-                  t.elementRef2.refType match
-                    case '[v] =>
-                      val tin = in.asExprOf[java.util.Map[k, v]]
-                      '{
-                        if $tin == null then $out.burpNull()
-                        else
-                          $out.startObject()
-                          $tin.asScala.foreach { case (key, value) =>
-                            ${
-                              MaybeWrite.maybeWriteMap[k, v](
-                                ctx,
-                                cfg,
-                                '{ key },
-                                '{ value }.asExprOf[v],
-                                t.elementRef.asInstanceOf[RTypeRef[k]],
-                                t.elementRef2.asInstanceOf[RTypeRef[v]],
-                                out
-                              )
-                            }
-                          }
-                          $out.endObject()
-                      }
-            }
-
           case t: JavaClassRef[?] =>
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               t.refType match
@@ -452,145 +272,6 @@ object Writer:
             }
 
           case t: TraitRef[?] => throw JsonUnsupportedType("Non-sealed traits are not supported")
-
-          // No makeWriteFn here--Option is just a wrapper to the real thingy
-          case t: ScalaOptionRef[?] =>
-            t.optionParamType.refType match
-              case '[e] =>
-                val tin = aE.asExprOf[b]
-                '{
-                  $tin match
-                    case null => $out.burpNull()
-                    case None =>
-                      ${
-                        if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
-                        else '{ () }
-                      }
-                    case Some(v) =>
-                      val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
-                }
-
-          case t: JavaOptionalRef[?] =>
-            t.optionParamType.refType match
-              case '[e] =>
-                val tin = aE.asExprOf[b]
-                '{
-                  $tin.asInstanceOf[java.util.Optional[e]] match
-                    case null => $out.burpNull()
-                    case o if o.isEmpty =>
-                      ${
-                        if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
-                        else '{ () }
-                      }
-                    case o =>
-                      val vv = o.get().asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
-                }
-
-          // No makeWriteFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
-          case t: LeftRightRef[?] =>
-            val tin = aE.asExprOf[b]
-            t.leftRef.refType match
-              case '[lt] =>
-                t.rightRef.refType match
-                  case '[rt] =>
-                    // This is a close parallel with maybeWrite handling of Either.  If the Either is a field in a class or
-                    // Map, the maybeWrite logic applies--because we need to not write both the Either value AND the field label.
-                    // If the Either is part of a tuple, Seq, etc., then this logic applies.
-                    if t.lrkind == LRKind.EITHER then
-                      cfg.eitherLeftHandling match
-                        case EitherLeftPolicy.AS_VALUE =>
-                          '{
-                            if $tin == null then $out.burpNull()
-                            else
-                              $tin match
-                                case Left(v) =>
-                                  ${ genWriteVal[lt](ctx, cfg, '{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
-                                case Right(v) =>
-                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                          }
-                        case EitherLeftPolicy.AS_NULL =>
-                          '{
-                            if $tin == null then $out.burpNull()
-                            else
-                              $tin match
-                                case Left(v) => $out.burpNull()
-                                case Right(v) =>
-                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                          }
-                        case EitherLeftPolicy.ERR_MSG_STRING =>
-                          '{
-                            if $tin == null then $out.burpNull()
-                            else
-                              $tin match
-                                case Left(v) => $out.value("Left Error: " + v.toString)
-                                case Right(v) =>
-                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                          }
-                        case EitherLeftPolicy.THROW_EXCEPTION =>
-                          '{
-                            if $tin == null then $out.burpNull()
-                            else
-                              $tin match
-                                case Left(v) => throw new JsonEitherLeftError("Left Error: " + v.toString)
-                                case Right(v) =>
-                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                          }
-                    else
-                      '{
-                        $out.mark()
-                        scala.util.Try {
-                          ${ genWriteVal[rt](ctx, cfg, '{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
-                        } match
-                          case scala.util.Success(_) => () // do nothing further--write to out already happened
-                          case scala.util.Failure(_) =>
-                            $out.revert()
-                            ${ genWriteVal[lt](ctx, cfg, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
-                      }
-
-          // No makeWriteFn here.  Try is just a wrapper
-          case t: TryRef[?] =>
-            t.tryRef.refType match
-              case '[e] =>
-                val tin = aE.asExprOf[scala.util.Try[e]]
-                '{
-                  if $tin == null then $out.burpNull()
-                  else
-                    $tin match
-                      case scala.util.Success(v) =>
-                        ${ genWriteVal[e](ctx, cfg, '{ v }.asInstanceOf[Expr[e]], t.tryRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
-                      case scala.util.Failure(v) =>
-                        ${
-                          cfg.tryFailureHandling match
-                            case _ if inTuple              => '{ $out.burpNull() }
-                            case TryPolicy.AS_NULL         => '{ $out.burpNull() }
-                            case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage) }
-                            case TryPolicy.THROW_EXCEPTION => '{ throw v }
-                        }
-                }
-
-          case t: TupleRef[?] =>
-            makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
-              '{
-                if $in == null then $out.burpNull()
-                else
-                  $out.startArray()
-                  ${
-                    // Note: Don't use maybeWrite here... Tuples are fixed-length.  We need to write
-                    // something for every position, so write null for None or other "bad" values
-                    val elementsE = t.tupleRefs.zipWithIndex.map { case (ref, i) =>
-                      ref.refType match
-                        case '[e] =>
-                          val fieldValue = Select.unique(in.asTerm, "_" + (i + 1)).asExprOf[e]
-                          genWriteVal[e](ctx, cfg, fieldValue, ref.asInstanceOf[RTypeRef[e]], out, inTuple = true)
-                    }
-                    if elementsE.size == 1 then elementsE.head
-                    else Expr.block(elementsE.init, elementsE.last)
-                  }
-                  $out.endArray()
-              }
-            }
 
           case t => throw new JsonUnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
 
@@ -709,6 +390,62 @@ object Writer:
               case '[e] =>
                 genWriteVal[e](ctx, cfg, aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
 
+          case t: ArrayRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = aE.asInstanceOf[Expr[Array[e]]]
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    $tin.foreach { i =>
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                    }
+                    $out.endArray()
+                }
+
+          case t: IterableRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = aE.asInstanceOf[Expr[Iterable[e]]]
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    $tin.foreach { i =>
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                    }
+                    $out.endArray()
+                }
+
+          case t: SeqRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Seq[e]] else aE.asExprOf[Seq[e]]
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    $tin.foreach { i =>
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                    }
+                    $out.endArray()
+                }
+
+          case t: SetRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Set[e]] else aE.asExprOf[Set[e]]
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    $tin.foreach { i =>
+                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                    }
+                    $out.endArray()
+                }
+
           // These are here becaue Enums and their various flavors can be Map keys
           // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
           case t: EnumRef[?] =>
@@ -722,6 +459,254 @@ object Writer:
               if isMapKey then '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // stringified id
               else '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get) } // int value of id
             else '{ if $aE == null then $out.burpNull() else $out.value($aE.toString) }
+
+          // No makeWriteFn here--Option is just a wrapper to the real thingy
+          case t: ScalaOptionRef[?] =>
+            t.optionParamType.refType match
+              case '[e] =>
+                val tin = aE.asExprOf[T]
+                '{
+                  $tin match
+                    case null => $out.burpNull()
+                    case None =>
+                      ${
+                        if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
+                        else '{ () }
+                      }
+                    case Some(v) =>
+                      val vv = v.asInstanceOf[e]
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                }
+
+          case t: JavaOptionalRef[?] =>
+            t.optionParamType.refType match
+              case '[e] =>
+                val tin = aE.asExprOf[T]
+                '{
+                  $tin.asInstanceOf[java.util.Optional[e]] match
+                    case null => $out.burpNull()
+                    case o if o.isEmpty =>
+                      ${
+                        if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
+                        else '{ () }
+                      }
+                    case o =>
+                      val vv = o.get().asInstanceOf[e]
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                }
+
+          // No makeWriteFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
+          case t: LeftRightRef[?] =>
+            val tin = aE.asExprOf[T]
+            t.leftRef.refType match
+              case '[lt] =>
+                t.rightRef.refType match
+                  case '[rt] =>
+                    // This is a close parallel with maybeWrite handling of Either.  If the Either is a field in a class or
+                    // Map, the maybeWrite logic applies--because we need to not write both the Either value AND the field label.
+                    // If the Either is part of a tuple, Seq, etc., then this logic applies.
+                    if t.lrkind == LRKind.EITHER then
+                      cfg.eitherLeftHandling match
+                        case EitherLeftPolicy.AS_VALUE =>
+                          '{
+                            if $tin == null then $out.burpNull()
+                            else
+                              $tin match
+                                case Left(v) =>
+                                  ${ genWriteVal[lt](ctx, cfg, '{ v.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
+                                case Right(v) =>
+                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
+                          }
+                        case EitherLeftPolicy.AS_NULL =>
+                          '{
+                            if $tin == null then $out.burpNull()
+                            else
+                              $tin match
+                                case Left(v) => $out.burpNull()
+                                case Right(v) =>
+                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
+                          }
+                        case EitherLeftPolicy.ERR_MSG_STRING =>
+                          '{
+                            if $tin == null then $out.burpNull()
+                            else
+                              $tin match
+                                case Left(v) => $out.value("Left Error: " + v.toString)
+                                case Right(v) =>
+                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
+                          }
+                        case EitherLeftPolicy.THROW_EXCEPTION =>
+                          '{
+                            if $tin == null then $out.burpNull()
+                            else
+                              $tin match
+                                case Left(v) => throw new JsonEitherLeftError("Left Error: " + v.toString)
+                                case Right(v) =>
+                                  ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
+                          }
+                    else
+                      '{
+                        $out.mark()
+                        scala.util.Try {
+                          ${ genWriteVal[rt](ctx, cfg, '{ $tin.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
+                        } match
+                          case scala.util.Success(_) => () // do nothing further--write to out already happened
+                          case scala.util.Failure(_) =>
+                            $out.revert()
+                            ${ genWriteVal[lt](ctx, cfg, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out, inTuple = inTuple) }
+                      }
+
+          // No makeWriteFn here.  Try is just a wrapper
+          case t: TryRef[?] =>
+            t.tryRef.refType match
+              case '[e] =>
+                val tin = aE.asExprOf[scala.util.Try[e]]
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $tin match
+                      case scala.util.Success(v) =>
+                        ${ genWriteVal[e](ctx, cfg, '{ v }.asInstanceOf[Expr[e]], t.tryRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
+                      case scala.util.Failure(v) =>
+                        ${
+                          cfg.tryFailureHandling match
+                            case _ if inTuple              => '{ $out.burpNull() }
+                            case TryPolicy.AS_NULL         => '{ $out.burpNull() }
+                            case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage) }
+                            case TryPolicy.THROW_EXCEPTION => '{ throw v }
+                        }
+                }
+
+          case t: MapRef[?] =>
+            t.elementRef.refType match
+              case '[k] =>
+                t.elementRef2.refType match
+                  case '[v] =>
+                    val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Map[k, v]] else aE.asExprOf[Map[k, v]]
+                    '{
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startObject()
+                        $tin.foreach { case (key, value) =>
+                          ${
+                            (t.elementRef, t.elementRef2) match
+                              case (aliasK: AliasRef[?], aliasV: AliasRef[?]) =>
+                                aliasK.unwrappedType.refType match
+                                  case '[ak] =>
+                                    aliasV.unwrappedType.refType match
+                                      case '[av] =>
+                                        testValidMapKey(aliasK.unwrappedType)
+                                        MaybeWrite.maybeWriteMap[ak, av](
+                                          ctx,
+                                          cfg,
+                                          '{ key.asInstanceOf[ak] },
+                                          '{ value.asInstanceOf[av] },
+                                          aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
+                                          aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
+                                          out
+                                        )
+                              case (_, aliasV: AliasRef[?]) =>
+                                aliasV.unwrappedType.refType match
+                                  case '[av] =>
+                                    testValidMapKey(t.elementRef)
+                                    MaybeWrite.maybeWriteMap[k, av](
+                                      ctx,
+                                      cfg,
+                                      '{ key }.asExprOf[k],
+                                      '{ value.asInstanceOf[av] },
+                                      t.elementRef.asInstanceOf[RTypeRef[k]],
+                                      aliasV.unwrappedType.asInstanceOf[RTypeRef[av]],
+                                      out
+                                    )
+                              case (aliasK: AliasRef[?], _) =>
+                                aliasK.unwrappedType.refType match
+                                  case '[ak] =>
+                                    testValidMapKey(aliasK.unwrappedType)
+                                    MaybeWrite.maybeWriteMap[ak, v](
+                                      ctx,
+                                      cfg,
+                                      '{ key.asInstanceOf[ak] },
+                                      '{ value }.asExprOf[v],
+                                      aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
+                                      t.elementRef2.asInstanceOf[RTypeRef[v]],
+                                      out
+                                    )
+                              case (_, _) =>
+                                testValidMapKey(t.elementRef)
+                                MaybeWrite.maybeWriteMap[k, v](
+                                  ctx,
+                                  cfg,
+                                  '{ key },
+                                  '{ value }.asExprOf[v],
+                                  t.elementRef.asInstanceOf[RTypeRef[k]],
+                                  t.elementRef2.asInstanceOf[RTypeRef[v]],
+                                  out
+                                )
+                          }
+                        }
+                        $out.endObject()
+                    }
+
+          case t: JavaCollectionRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = '{ $aE.asInstanceOf[java.util.Collection[?]] }
+                '{
+                  if $tin == null then $out.burpNull()
+                  else
+                    $out.startArray()
+                    $tin.toArray.foreach { elem =>
+                      ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                    }
+                    $out.endArray()
+                }
+
+          case t: JavaMapRef[?] =>
+            t.elementRef.refType match
+              case '[k] =>
+                t.elementRef2.refType match
+                  case '[v] =>
+                    val tin = aE.asExprOf[java.util.Map[k, v]]
+                    '{
+                      if $tin == null then $out.burpNull()
+                      else
+                        $out.startObject()
+                        $tin.asScala.foreach { case (key, value) =>
+                          ${
+                            MaybeWrite.maybeWriteMap[k, v](
+                              ctx,
+                              cfg,
+                              '{ key },
+                              '{ value }.asExprOf[v],
+                              t.elementRef.asInstanceOf[RTypeRef[k]],
+                              t.elementRef2.asInstanceOf[RTypeRef[v]],
+                              out
+                            )
+                          }
+                        }
+                        $out.endObject()
+                    }
+
+          case t: TupleRef[?] =>
+            val in = aE.asExprOf[T]
+            '{
+              if $in == null then $out.burpNull()
+              else
+                $out.startArray()
+                ${
+                  // Note: Don't use maybeWrite here... Tuples are fixed-length.  We need to write
+                  // something for every position, so write null for None or other "bad" values
+                  val elementsE = t.tupleRefs.zipWithIndex.map { case (ref, i) =>
+                    ref.refType match
+                      case '[e] =>
+                        val fieldValue = Select.unique(in.asTerm, "_" + (i + 1)).asExprOf[e]
+                        genWriteVal[e](ctx, cfg, fieldValue, ref.asInstanceOf[RTypeRef[e]], out, inTuple = true)
+                  }
+                  if elementsE.size == 1 then elementsE.head
+                  else Expr.block(elementsE.init, elementsE.last)
+                }
+                $out.endArray()
+            }
 
           // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
           // the argument of method validate$retainedBody.  It happened to have the correctly-typed parameter.
