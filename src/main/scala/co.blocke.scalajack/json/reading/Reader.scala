@@ -18,8 +18,9 @@ object Reader:
   private def makeReadFn[U: Type](
       ctx: CodecBuildContext,
       methodKey: TypedName,
-      in: Expr[JsonSource]
-  )(f: Expr[JsonSource] => Expr[U]): Expr[U] =
+      in: Expr[JsonSource],
+      fieldMatrixOpt: Option[Expr[StringMatrix]]
+  )(f: (Expr[JsonSource], Expr[StringMatrix]) => Expr[U]): Expr[U] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -29,8 +30,8 @@ object Reader:
           val newSym = Symbol.newMethod(
             Symbol.spliceOwner,
             "r" + ctx.readMethodSyms.size,
-            MethodType(List("in"))(
-              _ => List(TypeRepr.of[JsonSource]),
+            MethodType(List("in", "fieldMatrix"))(
+              _ => List(TypeRepr.of[JsonSource], TypeRepr.of[StringMatrix]),
               _ => TypeRepr.of[U]
             )
           )
@@ -39,8 +40,17 @@ object Reader:
             DefDef(
               newSym,
               params => {
-                val List(List(inParam)) = params
-                Some(f(inParam.asExprOf[JsonSource]).asTerm.changeOwner(newSym))
+                val List(List(inParam, fieldMatrixParam)) = params
+
+                val fieldMatrix: Expr[StringMatrix] =
+                  fieldMatrixOpt.getOrElse(fieldMatrixParam.asExprOf[StringMatrix])
+
+                Some(
+                  f(
+                    inParam.asExprOf[JsonSource],
+                    fieldMatrix
+                  ).asTerm.changeOwner(newSym)
+                )
               }
             )
           )
@@ -48,11 +58,25 @@ object Reader:
         }
       )
 
-    // Populate readerMap for SelfRef lookups (Map[TypedName->reader_fn]). Avoids very nasty recusion/scope issues
-    ctx.readerFnMapEntries(methodKey) = '{ (in: JsonSource) => ${ Apply(Ref(sym), List('in.asTerm)).asExprOf[Any] } }
+    // 🌟 Corrected reader map entry:
+    ctx.readerFnMapEntries(methodKey) = '{ (in: JsonSource) =>
+      ${
+        fieldMatrixOpt match
+          case Some(fm) =>
+            Apply(Ref(sym), List('in.asTerm, fm.asTerm)).asExprOf[Any]
+          case None =>
+            Apply(Ref(sym), List('in.asTerm, '{ new StringMatrix(Array("_")) }.asTerm)).asExprOf[Any]
+      }
+    }
 
-    // Always apply the function — whether from cache or new
-    Apply(Ref(sym), List(in.asTerm)).asExprOf[U]
+    // 🌟 Corrected direct call:
+    fieldMatrixOpt match
+      case Some(fm) =>
+        Apply(Ref(sym), List(in.asTerm, fm.asTerm)).asExprOf[U]
+      case None =>
+        Apply(Ref(sym), List(in.asTerm, '{ new StringMatrix(Array("_")) }.asTerm)).asExprOf[U]
+
+  // ---------------------------------------------------------------------------------------------
 
   // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields
   private def makeClassFieldMatrixValDef(
@@ -107,6 +131,26 @@ object Reader:
         (recipe.nonEmpty, lang)
       case _ => (false, Language.Scala)
 
+  private def fieldMatrixExprOf(
+      ctx: CodecBuildContext,
+      methodKey: TypedName,
+      ref: RTypeRef[?]
+  ): Option[Expr[StringMatrix]] =
+    given Quotes = ctx.quotes
+    import ctx.quotes.reflect.*
+    ref match
+      case _: ScalaClassRef[?] | _: JavaClassRef[?] =>
+        ctx.classFieldMatrixSyms.get(methodKey) match
+          case Some(sym) =>
+            Some(Ref(sym).asExprOf[StringMatrix])
+          case None =>
+            Some('{ new StringMatrix(Array("_")) }) // <-- if symbol missing, use empty matrix!
+      case _ =>
+        None
+
+  private def forceFieldMatrix(fieldMatrixOpt: Option[Expr[StringMatrix]])(using Quotes): Expr[StringMatrix] =
+    fieldMatrixOpt.getOrElse('{ co.blocke.scalajack.json.StringMatrix(Array("_")) })
+
   // ---------------------------------------------------------------------------------------------
 
   private def genDecFnBody[T: Type](
@@ -128,7 +172,7 @@ object Reader:
         r match
 
           case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
-            makeReadFn[b](ctx, methodKey, in)(in =>
+            makeReadFn[b](ctx, methodKey, in, None)((in, fieldMatrix) =>
               val classPrefixE = Expr(allButLastPart(t.name))
               val caseDefs = t.sealedChildren.map { childRef =>
                 val nameE = Expr(childRef.name)
@@ -155,7 +199,7 @@ object Reader:
                 case '[c] =>
                   genDecFnBody[c](ctx, cfg, kid.asInstanceOf[RTypeRef[c]], in)
             )
-            makeReadFn[T](ctx, methodKey, in)(in =>
+            makeReadFn[T](ctx, methodKey, in, None)((in, fieldMatrix) =>
               val hintLabelE = Expr(cfg.typeHintLabel)
               val classPrefixE = Expr(allButLastPart(t.name))
               val caseDefs = t.sealedChildren.map { childRef =>
@@ -173,7 +217,13 @@ object Reader:
                         ctx.readMethodSyms
                           .get(methodKey)
                           .map { sym =>
-                            Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            Apply(
+                              Ref(sym),
+                              List(
+                                in.asTerm,
+                                forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
+                              )
+                            ).asExprOf[T]
                           }
                           .get
                           .asTerm
@@ -192,7 +242,13 @@ object Reader:
                         ctx.readMethodSyms
                           .get(methodKey)
                           .map { sym =>
-                            Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            Apply(
+                              Ref(sym),
+                              List(
+                                in.asTerm,
+                                forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
+                              )
+                            ).asExprOf[T]
                           }
                           .get
                           .asTerm
@@ -206,7 +262,13 @@ object Reader:
                         ctx.readMethodSyms
                           .get(methodKey)
                           .map { sym =>
-                            Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+                            Apply(
+                              Ref(sym),
+                              List(
+                                in.asTerm,
+                                forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
+                              )
+                            ).asExprOf[T]
                           }
                           .get
                           .asTerm
@@ -234,7 +296,7 @@ object Reader:
                   val methodKey = classRef.typedName
                   ctx.readMethodSyms.get(methodKey).map { sym =>
                     val cond = Literal(StringConstant(classRef.name))
-                    val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[T].asTerm
+                    val rhs = Apply(Ref(sym), List(in.asTerm, forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, classRef)).asTerm)).asExprOf[T].asTerm
                     CaseDef(cond, None, rhs)
                   }
                 }
@@ -271,7 +333,7 @@ object Reader:
             '{ () }
 
           case t: Sealable if t.isSealed && t.childrenAreObject => // case objects
-            makeReadFn[T](ctx, methodKey, in)(in =>
+            makeReadFn[T](ctx, methodKey, in, None)((in, fieldMatrix) =>
               val classPrefixE = Expr(allButLastPart(t.name))
               val caseDefs = t.sealedChildren.map { childRef =>
                 val nameE = Expr(childRef.name)
@@ -294,7 +356,27 @@ object Reader:
             throw JsonUnsupportedType("Non-sealed traits are not supported")
 
           case t: ScalaClassRef[?] =>
-            makeReadFn[b](ctx, methodKey, in)(in =>
+            // 1. Precompute field matrix
+            val fullFieldList =
+              if !cfg._writeNonConstructorFields || t.nonConstructorFields.isEmpty then t.fields.map(f => changeFieldName(f)).toArray
+              else (t.fields ++ t.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f)).toArray
+
+            // Then pre-build the StringMatrix
+            if fullFieldList.nonEmpty then
+              makeClassFieldMatrixValDef(
+                ctx,
+                methodKey,
+                t.name.replaceAll("\\.", "_"),
+                fullFieldList
+              )
+
+            // 2. Then safely fetch it
+            val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey)
+            val fieldMatrixExpr = Ref(fieldMatrixSym).asExprOf[StringMatrix]
+
+            // 3. Now you can call makeReadFn
+            makeReadFn[b](ctx, methodKey, in, Some(fieldMatrixExpr))((in, fieldMatrix) =>
+
               // Generate vars for each contractor argument, populated with either a "unit" value (eg 0, "") or given default value
               val tpe = TypeRepr.of[b]
               val classCompanion = tpe.typeSymbol.companionClass
@@ -394,21 +476,13 @@ object Reader:
               var finalVarDefs = varDefs
               val parseLoop =
                 if !cfg._writeNonConstructorFields || t.nonConstructorFields.isEmpty then
-                  // When we don't care about non-constructor fields
-                  makeClassFieldMatrixValDef(
-                    ctx,
-                    methodKey,
-                    t.name.replaceAll("\\.", "_"),
-                    t.fields.map(f => changeFieldName(f)).toArray
-                  )
-                  val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey) // populated by makeClassFieldMatrix
                   '{
-                    var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                    var maybeFieldNum = $in.expectFirstObjectField($fieldMatrix)
                     if maybeFieldNum == null then null.asInstanceOf[T]
                     else
                       while maybeFieldNum.isDefined do
                         ${ Match('{ maybeFieldNum.get }.asTerm, constructorFieldCaseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)).asExprOf[Any] }
-                        maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                        maybeFieldNum = $in.expectObjectField($fieldMatrix)
 
                       if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then ${ instantiateClass.asExprOf[T] }
                       else throw new JsonParseError("Missing required field(s) " + ${ allFieldNames }(Integer.numberOfTrailingZeros(${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired })), $in)
@@ -417,14 +491,6 @@ object Reader:
                   val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
                   finalVarDefs = finalVarDefs :+ ValDef(instanceSym, Some('{ null }.asTerm)) // add var _instance=null to gen'ed code
                   val instanceSymRef = Ident(instanceSym.termRef)
-                  // When we do care about non-constructor fields
-                  makeClassFieldMatrixValDef(
-                    ctx,
-                    methodKey,
-                    t.name.replaceAll("\\.", "_"),
-                    (t.fields ++ t.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f)).toArray
-                  )
-                  val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey) // populated by makeClassFieldMatrix
                   // New Case/Match for non-constructor fields
                   val caseDefsWithFinalNC = constructorFieldCaseDefs ++
                     t.nonConstructorFields.map(ncf =>
@@ -440,7 +506,7 @@ object Reader:
                   val numCtorFields = Expr(t.fields.size)
                   '{
                     val ncBuffer = scala.collection.mutable.ListBuffer.empty[(Int, Int)] // (fieldNum, position)
-                    var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                    var maybeFieldNum = $in.expectFirstObjectField($fieldMatrix)
                     if maybeFieldNum == null then null.asInstanceOf[T]
                     else
                       while maybeFieldNum.isDefined do
@@ -450,7 +516,7 @@ object Reader:
                           ncBuffer += (fieldNum -> $in.pos)
                           $in.skipValue()
                         }
-                        maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                        maybeFieldNum = $in.expectObjectField($fieldMatrix)
                       if (${ Ref(reqSym).asExprOf[Int] } & ${ exprRequired }) == 0 then
                         ${ Assign(instanceSymRef, instantiateClass.asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
 
@@ -467,7 +533,12 @@ object Reader:
             '{ () }
 
           case t: JavaClassRef[?] =>
-            makeReadFn[T](ctx, methodKey, in)(in =>
+            val fieldsArray = t.fields.sortBy(_.index).map(f => changeFieldName(f)).toArray
+            if fieldsArray.nonEmpty then makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), fieldsArray)
+
+            val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey).asInstanceOf[Symbol]
+            val fieldMatrixExpr = Ref(fieldMatrixSym).asExprOf[StringMatrix]
+            makeReadFn[T](ctx, methodKey, in, Some(fieldMatrixExpr))((in, fieldMatrix) =>
               val classNameE = Expr(t.name)
               val tpe = TypeRepr.of[b]
               val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
@@ -477,8 +548,6 @@ object Reader:
                 .getOrElse(
                   throw JsonTypeError("ScalaJack only supports Java classes that have a zero-argument constructor")
                 )
-              makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), t.fields.sortBy(_.index).map(f => changeFieldName(f)).toArray)
-              val fieldMatrixSym = ctx.classFieldMatrixSyms(methodKey).asInstanceOf[Symbol]
               val caseDefs = t.fields.map(ncf =>
                 ncf.fieldRef.refType match
                   case '[u] =>
@@ -495,14 +564,15 @@ object Reader:
 
               val parseLoop =
                 '{
-                  var maybeFieldNum = $in.expectFirstObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                  var maybeFieldNum = $in.expectFirstObjectField($fieldMatrix)
                   if maybeFieldNum == null then null.asInstanceOf[T]
                   else
                     ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[T] }.asTerm).asExprOf[Any] } // _instance = (new instance)
                     // ${ Assign(instanceSymRef, Apply(Select(New(Inferred(tpe)), nullConst), Nil).asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
                     while maybeFieldNum.isDefined do
                       ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
-                      maybeFieldNum = $in.expectObjectField(${ Ref(fieldMatrixSym).asExprOf[StringMatrix] })
+                      maybeFieldNum = $in.expectObjectField($fieldMatrix)
+
                     ${ Ref(instanceSym).asExprOf[T] }
                 }.asTerm
               Block(List(ValDef(instanceSym, Some('{ null }.asTerm))), parseLoop).asExprOf[T]
@@ -527,8 +597,14 @@ object Reader:
     val methodKey = ref.typedName
     ctx.readMethodSyms
       .get(methodKey)
-      .map { sym => // hit cache first... then match on Ref type
-        Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+      .map { sym =>
+        Apply(
+          Ref(sym),
+          List(
+            in.asTerm,
+            forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, ref)).asTerm
+          )
+        ).asExprOf[T]
       }
       .getOrElse(
         ref match

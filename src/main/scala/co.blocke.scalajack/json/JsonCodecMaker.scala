@@ -91,5 +91,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-//    if ref.name.contains("Parent") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("Person") then println(s"Codec: ${codec.show}")
     codec
