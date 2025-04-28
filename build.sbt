@@ -7,6 +7,12 @@ inThisBuild(List(
   organization := "co.blocke",
   homepage := Some(url("https://github.com/gzoller/ScalaJack")),
   licenses := List("MIT" -> url("https://opensource.org/licenses/MIT")),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/gzoller/ScalaJack"),
+      "scm:git:git@github.com:gzoller/ScalaJack.git"
+    )
+  ),
   developers := List(
     Developer(
       "gzoller",
@@ -14,7 +20,8 @@ inThisBuild(List(
       "gzoller@blocke.co",
       url("http://www.blocke.co")
     )
-  )
+  ),
+  publishTo := Some("Sonatype OSS Central" at "https://s01.oss.sonatype.org/content/repositories/releases/")
   //coverageMinimumStmtTotal    := 92,
   //coverageFailOnMinimum       := true
 ))
