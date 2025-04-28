@@ -92,7 +92,8 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
         val inst = VehicleHolder(Car(4, "Red"), null, Map("a" -> Truck(18)))
         val sj = sjCodecOf[VehicleHolder]
         val js = sj.toJson(inst)
-        js should matchJson("""{"f":{"_hint":"Car","numberOfWheels":4,"color":"Red"},"f2":null,"f4":{"a":{"_hint":"Truck","numberOfWheels":18}}}""")
+        // Note: no type hints needed! You can force them with sjCodecOf[VehicleHolder](SJConfig.preferTypeHints)
+        js should matchJson("""{"f":{"numberOfWheels":4,"color":"Red"},"f2":null,"f4":{"a":{"numberOfWheels":18}}}""")
         sj.fromJson(js) shouldEqual (inst)
       }
     }
@@ -101,13 +102,13 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
         val sj = sjCodecOf[MapHolder[Color, Color]]
         val js = """{"a":{"Red":"Bogus","Green":"Red"}}"""
         val ex = intercept[java.lang.IllegalArgumentException](sj.fromJson(js))
-        ex.getMessage() shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with name: Bogus")
+        ex.getMessage shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with name: Bogus")
       }
       it("Enum must break(using id) - bad value") {
         val sj = sjCodecOf[MapHolder[Color, Color]](SJConfig.withEnumsAsIds(Nil))
         val js = """{"a":{"0":1,"9":0}}"""
         val ex = intercept[java.util.NoSuchElementException](sj.fromJson(js))
-        ex.getMessage() shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with ordinal: 9")
+        ex.getMessage shouldEqual ("enum co.blocke.scalajack.json.misc.Color has no case with ordinal: 9")
       }
     }
   }

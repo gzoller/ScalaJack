@@ -32,7 +32,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Complex Either/Option must work (NoneAsNull)") {
         val inst = ComplexEither[Int](Some(Right(None)))
-        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withNoneAsNull())
+        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withNoneAsNull)
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""") // same output result regardless of noneAsNull setting
         sj.fromJson(js) shouldEqual (ComplexEither(None)) // None here because value existed, but was null with NoneAsNull
@@ -55,7 +55,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       }
       it("Complex Either/Option must work (Left-AS_NULL, Option nullAsNull)") {
         val inst = ComplexEither[Int](Some(Left("err")))
-        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL).withNoneAsNull())
+        val sj = sjCodecOf[ComplexEither[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.AS_NULL).withNoneAsNull)
         val js = sj.toJson(inst)
         js should matchJson("""{"a":null}""")
         sj.fromJson(js) shouldEqual (ComplexEither(None))

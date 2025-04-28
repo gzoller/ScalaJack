@@ -88,3 +88,33 @@ case class Sports[A, B](thing1: A, thing2: B) extends Hobby[A, B]
 case class Painter[A, B](instrument: A, effort: B) extends Artist[A, B]
 case class Employee[A, B, C, D](who: Artist[C, Hobby[D, A]], org: B) extends PersonX[Artist[C, Hobby[D, A]], B]
 type ComplexPerson = PersonX[Artist[Int, Hobby[Double, Char]], Vehicle]
+
+sealed trait Machine
+case class Press(name: String, lbs: Int) extends Machine
+case class Lift(name: String, lbs: Int, foo: Boolean) extends Machine
+case class Drill(name: String, numBits: Int) extends Machine
+case class Swing(name: String, lbs: Option[Int], isBig: Boolean) extends Machine
+case class MachineHolder(m1: Machine, m2: Machine, m3: Machine, m4: Machine)
+
+// These should always generate a type hint!
+sealed trait Machine2
+case class Press2(name: String, lbs: Option[Int]) extends Machine2
+case class Lift2(name: String, lbs: Option[Int]) extends Machine2
+case class Drill2(name: String, lbs: Option[Int], numBits: Int) extends Machine2
+case class MachineHolder2(m1: Machine2, m2: Machine2, m3: Machine2)
+
+// Unique field key of "" and complex (nested) trait
+sealed trait Level0
+case class L0A(x: Int, name: Option[String], y: Boolean) extends Level0
+case class L0B(name: Option[String], id: String, blather: Option[String]) extends Level0
+case class L0C(id: Option[Int], extra: List[Int]) extends Level0
+sealed trait Level1
+case class L1R(blather: String, name: Option[String], l0: Level0) extends Level1
+case class L1S(id: Long, nombre: String) extends Level1
+case class L1Q(name: String, age: Int, l0: Level0) extends Level1
+case class L1X(name: String, age: Int, l0: Level0) extends Level1
+case class ComplexHolder(c1: Level1, c2: Level1, c3: Level1, c4: Level1)
+
+// Self-reference for Traits
+sealed trait Outer
+case class OuterImpl(name: String, num: Int, stuff: List[Outer]) extends Outer

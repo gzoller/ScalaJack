@@ -35,9 +35,10 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       inst.hidden_=(true)
       inst.nope_=(false)
       inst.foo = "we'll see"
-      val sj = sjCodecOf[Parent](SJConfig.writeNonConstructorFields())
+      val sj = sjCodecOf[Parent](SJConfig.writeNonConstructorFields)
       val js = sj.toJson(inst)
       js should matchJson("""{"phase":99,"stuff":["x","y"],"foo":"we'll see","hidden":true}""")
+      val scrambled = """{"hidden":true,"phase":99,"foo":"we'll see","stuff":["x","y"]}"""
       val re = sj.fromJson(js)
       re.phase shouldEqual (inst.phase)
       re.stuff shouldEqual (inst.stuff)
@@ -69,7 +70,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
       val sj = sjCodecOf[AbstractClassHolder]
       val js = sj.toJson(inst)
-      js should matchJson("""{"a":"Start2","b":{"_hint":"Fish2","species":"Beta","freshwater":false},"c":{"_hint":"Miami2","temp":101.1}}""")
+      js should matchJson("""{"a":"Start2","b":{"species":"Beta","freshwater":false},"c":{"temp":101.1}}""")
       val re = sj.fromJson(js)
       re.a shouldEqual (inst.a)
       re.b shouldEqual (inst.b)
@@ -77,7 +78,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with modified type hint label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintLabel("ref"))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.preferTypeHints.withTypeHintLabel("ref"))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start2","b":{"ref":"Fish2","species":"Beta","freshwater":false},"c":{"ref":"Miami2","temp":101.1}}""")
       val re = sj.fromJson(js)
@@ -87,11 +88,11 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with type hint policy SCRAMBLE_CLASSNAME label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.preferTypeHints.withTypeHintPolicy(TypeHintPolicy.SCRAMBLE_CLASSNAME))
       val js = sj.toJson(inst)
       val diff = parseJValue(js).diff(parseJValue("""{"a":"Start2","b":{"_hint":"82949-049-49A","species":"Beta","freshwater":false},"c":{"_hint":"53150-867-73B","temp":101.1}}"""))
       val diffMap = diff.changed.values.asInstanceOf[Map[String, Map[String, ?]]]
-      assert(diffMap("b").contains("_hint") && diffMap("c").contains("_hint") == true) // ie only the scrambled _hint values are different
+      assert(diffMap("b").contains("_hint") && diffMap("c").contains("_hint")) // ie only the scrambled _hint values are different
       val re = sj.fromJson(js)
       re.a shouldEqual (inst.a)
       re.b shouldEqual (inst.b)
@@ -99,7 +100,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with type hint policy USE_ANNOTATION label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](SJConfig.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
+      val sj = sjCodecOf[AbstractClassHolder](SJConfig.preferTypeHints.withTypeHintPolicy(TypeHintPolicy.USE_ANNOTATION))
       val js = sj.toJson(inst)
       js should matchJson("""{"a":"Start2","b":{"_hint":"flipper","species":"Beta","freshwater":false},"c":{"_hint":"vice","temp":101.1}}""")
       val re = sj.fromJson(js)
@@ -111,7 +112,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       val inst = AbstractClassHolder2(Thing2(15L, "wow"))
       val sj = sjCodecOf[AbstractClassHolder2[Long]]
       val js = sj.toJson(inst)
-      js should matchJson("""{"a":{"_hint":"Thing2","t":15,"s":"wow"}}""")
+      js should matchJson("""{"a":{"t":15,"s":"wow"}}""")
       val re = sj.fromJson(js)
       re.a.asInstanceOf[Thing2[Long]].t shouldEqual (15L)
       re.a.asInstanceOf[Thing2[Long]].s shouldEqual ("wow")
@@ -120,7 +121,7 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       val inst: AThing[Long] = Thing2(99L, "ok")
       val sj = sjCodecOf[AThing[Long]]
       val js = sj.toJson(inst)
-      js should matchJson("""{"_hint":"Thing2","t":99,"s":"ok"}""")
+      js should matchJson("""{"t":99,"s":"ok"}""")
       val re = sj.fromJson(js)
       re.asInstanceOf[Thing2[Long]].t shouldEqual (99L)
       re.asInstanceOf[Thing2[Long]].s shouldEqual ("ok")
@@ -141,9 +142,9 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       val js = sj.toJson(inst)
       js should matchJson("""{"address":"123 Main St","name":"John Doe"}""")
       val re = sj.fromJson(js)
-      re.getName() shouldEqual ("John Doe")
-      re.getAge() shouldEqual (0)
-      re.getAddress() shouldEqual ("123 Main St")
+      re.getName shouldEqual ("John Doe")
+      re.getAge shouldEqual (0)
+      re.getAddress shouldEqual ("123 Main St")
     }
     it("Java class value is null") {
       val inst: SampleClass = null

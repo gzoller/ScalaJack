@@ -88,6 +88,10 @@ This means you will be doing more re-compiling with macro-based code than you wo
 
 ### Notes:
 
+* 8.1.0 -- New!
+    * Reduce need for type hints for seal trait classes (set SJConfig.preferTypeHints to force type hints)
+    * Self-references work: case class Person(name: String, age: Int, supervisor: Option[Person])
+    * Write performance tweaks
 * 8.0.3 -- Attempt to fix the frequently-broken CICD pipeline
 * 8.0.2 -- Rebuild on Scala 3.5.2 and support for Maps that preserve insertion order
 * 8.0.0 -- Rebuild on Scala 3.4.2 and deep refactor of ScalaJack 7.0
