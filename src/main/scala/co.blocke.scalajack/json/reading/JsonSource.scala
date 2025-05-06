@@ -308,7 +308,7 @@ case class JsonSource(js: CharSequence):
         buf.append(c)
         expectEncodedString(buf)
 
-  def expectString[T](parseFn: String => T): T =
+  def expectStringWithFn[T](parseFn: String => T): T =
     expectString() match
       case s: String => parseFn(s)
       case null      => null.asInstanceOf[T]

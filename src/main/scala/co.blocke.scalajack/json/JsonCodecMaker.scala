@@ -34,26 +34,22 @@ object JsonCodecMaker:
     val codecDef = '{ // FIXME: generate a type class instance using `ClassDef.apply` and `Symbol.newClass` calls after graduating from experimental API: https://www.scala-lang.org/blog/2022/06/21/scala-3.1.3-released.html
       new JsonCodec[T] {
         def encodeValue(in: T, out: JsonOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out) }
-        def decodeValue(in: JsonSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in) }
+        def decodeValue(in: JsonSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in).asExprOf[T] }
       }
     }.asTerm
 
-    val readerMapExpr: Expr[Map[String, JsonSource => Any]] =
-      '{
-        Map[String, JsonSource => Any](
-          ${
-            Expr.ofList(
-              ctx.readerFnMapEntries.toList.map { case (k, v) =>
-                '{ ${ Expr(k.toString) } -> $v }
-              }
-            )
-          }*
-        )
-      }
-    val readerMapDef = ValDef(
-      ctx.readerMapSym,
-      Some(readerMapExpr.asTerm)
-    )
+    val readerMapValDef = {
+      val entries: List[Expr[(String, JsonSource => Any)]] =
+        ctx.readerFnMap.collect { case (key, RealReader(fnExpr, _)) =>
+          val widened = fnExpr.asExprOf[JsonSource => Any]
+          '{ ${ Expr(key.toString) } -> $widened }
+        }.toList
+
+      val mapExpr: Expr[Map[String, JsonSource => Any]] =
+        '{ Map.from[String, JsonSource => Any](${ Expr.ofList(entries) }) }
+
+      ValDef(ctx.readerMapSym, Some(mapExpr.asTerm))
+    }
 
     val writerMapExpr: Expr[Map[String, (Any, JsonOutput) => Unit]] =
       '{
@@ -73,13 +69,12 @@ object JsonCodecMaker:
     )
 
     val mapDefs =
-      if ctx.seenSelfRef then List(readerMapDef) ++ List(writerMapDef)
+      if ctx.seenSelfRef then List(readerMapValDef) ++ List(writerMapDef)
       else Nil
 
     val codec = Block(
       // 🧨 This MUST be first — so any methods can reference it
-      ctx.classFieldMatrixValDefs.toList ++
-
+      ctx.classFieldMatrixValDefs.values.toList ++
         mapDefs ++
 
         // Functions (can reference anything above)
@@ -91,5 +86,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-//    if ref.name.contains("Person") then println(s"Codec: ${codec.show}")
+    if ref.name.contains("AbstractClassHolder") then println(s"Codec: ${codec.show}")
     codec
