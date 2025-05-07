@@ -125,14 +125,4 @@ class TraitSpec() extends AnyFunSpec with JsonMatchers:
       )
       sj.fromJson(js) shouldEqual (inst)
     }
-    it("Foo") {
-      val inst = RefinedSegmentSpec("Foo", "cFoo", None, "", true, Nil, List("a"))
-      val sj = sjCodecOf[RefinedSingleOrLoopSegmentSpec]
-      val js = sj.toJson(inst)
-      // 01234567890123456789012345678901234567890123456789012345678901234567890
-      // {"name":"Foo","canonicalName":"cFoo","description":"","required":true,"assertions":[],"fields":["a"]}
-      println(js)
-      println(sj.fromJson(js))
-      println("Done")
-    }
   }

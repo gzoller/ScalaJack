@@ -256,12 +256,9 @@ object Helpers:
       val excludeFields = Expr(unique.optionalFields)
       val liftedUnique = liftStringMap(unique.simpleUniqueHash)
 
-      var doit = false
-      if traitRef.name.contains("RefinedSingleOrLoopSegmentSpec") then {
-        println("Unique: " + unique)
-        doit = true
-      }
-      val doitE = Expr(doit)
+//      if traitRef.name.contains("RefinedSingleOrLoopSegmentSpec") then {
+//        println("Unique: " + unique)
+//      }
 
       val matchCases: List[CaseDef] = traitRef.sealedChildren.flatMap { classRef =>
         val methodKey = classRef.typedName
@@ -272,6 +269,8 @@ object Helpers:
           CaseDef(cond, None, rhs)
         }
       }
+
+      val cname = Expr(traitRef.name)
 
       '{
         if $in.expectNull() then null
@@ -290,9 +289,7 @@ object Helpers:
               val fields = $in.findAllFieldNames()
               // 3. Strip out all excluded (optional) fields and make hash
               val fingerprint = Unique.hashOf(fields.filterNot($excludeFields.contains))
-              if $doitE then
-                println("Fingerprint: " + fingerprint)
-                println("UniqueMap: " + $liftedUnique)
+
               // 4. Look up hash
               val className = $liftedUnique
                 .get(fingerprint)

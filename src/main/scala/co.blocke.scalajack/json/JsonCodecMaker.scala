@@ -105,5 +105,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-    if ref.name.contains("RefinedDocumentSpec") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("RefinedDocumentSpec") then println(s"Codec: ${codec.show}")
     codec

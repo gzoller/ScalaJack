@@ -119,34 +119,3 @@ case class ComplexHolder(c1: Level1, c2: Level1, c3: Level1, c4: Level1)
 sealed trait Outer
 case class OuterImpl(name: String, num: Int, stuff: List[Outer]) extends Outer
 
-sealed trait RefinedSingleOrLoopSegmentSpec:
-  val name: String
-  val canonicalName: String
-  val humanName: Option[String]
-  val description: String
-  val required: Boolean
-  val assertions: List[String]
-
-case class RefinedSegmentSpec(
-    name: String, // initially canonical name but may be renamed
-    canonicalName: String, // name used in the canonical spec
-    humanName: Option[String],
-    description: String,
-    required: Boolean,
-    assertions: List[String],
-    fields: List[String]
-) extends RefinedSingleOrLoopSegmentSpec
-
-case class RefinedLoopSpec(
-    name: String, // initially canonical name but may be renamed
-    canonicalName: String, // name used in the canonical spec
-    humanName: Option[String],
-    description: String,
-    required: Boolean,
-    assertions: List[String],
-    fields: List[String],
-    minRepeats: Option[Int],
-    maxRepeats: Option[Int],
-    body: List[RefinedSingleOrLoopSegmentSpec], // may be empty
-    nested: Option[RefinedLoopSpec] = None // if present this is an HL loop
-) extends RefinedSingleOrLoopSegmentSpec
