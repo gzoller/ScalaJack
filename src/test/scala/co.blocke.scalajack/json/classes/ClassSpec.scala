@@ -68,17 +68,14 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
     }
     it("Sealed abstract class with case objects and case classes must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
-      val sj = sjCodecOf[AbstractClassHolder](SJConfig.preferTypeHints) // TODO: Kill the prefer hints!
+      val sj = sjCodecOf[AbstractClassHolder]
       val js = sj.toJson(inst)
-      println("JS: " + js)
-      js should matchJson("""{"a":"Start2","b":{"_hint":"Fish2","species":"Beta","freshwater":false},"c":{"_hint":"Miami2","temp":101.1}}""")
-//      js should matchJson("""{"a":"Start2","b":{"species":"Beta","freshwater":false},"c":{"temp":101.1}}""")
+      js should matchJson("""{"a":"Start2","b":{"species":"Beta","freshwater":false},"c":{"temp":101.1}}""")
       val re = sj.fromJson(js)
       re.a shouldEqual (inst.a)
       re.b shouldEqual (inst.b)
       (re.c.asInstanceOf[Miami2].temp == inst.c.asInstanceOf[Miami2].temp) shouldEqual (true)
     }
-    /*
     it("Sealed abstract class with modified type hint label must work") {
       val inst = AbstractClassHolder(Start2, Fish2("Beta", false), Miami2(101.1))
       val sj = sjCodecOf[AbstractClassHolder](SJConfig.preferTypeHints.withTypeHintLabel("ref"))
@@ -129,7 +126,6 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       re.asInstanceOf[Thing2[Long]].t shouldEqual (99L)
       re.asInstanceOf[Thing2[Long]].s shouldEqual ("ok")
     }
-     */
     it("Self-referencing class must work (bonus: parameterized self-referencing class)") {
       val inst = Empl("abc123", 5, Empl("xyz11", -1, null, Nil), List(Empl("tru777", 0, null, Nil), Empl("pop9", 9, null, Nil)))
       val sj = sjCodecOf[Empl[Int]]
@@ -137,7 +133,6 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       js should matchJson("""{"id":"abc123","data":5,"boss":{"id":"xyz11","data":-1,"boss":null,"coworkers":[]},"coworkers":[{"id":"tru777","data":0,"boss":null,"coworkers":[]},{"id":"pop9","data":9,"boss":null,"coworkers":[]}]}""")
       sj.fromJson(js) shouldEqual (inst)
     }
-    /*
     it("Java classes must work") {
       val inst = new SampleClass()
       inst.setName("John Doe")
@@ -175,5 +170,4 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       js shouldEqual ("""null""")
       sj.fromJson(js) shouldEqual (inst)
     }
-     */
   }

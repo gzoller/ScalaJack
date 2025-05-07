@@ -9,15 +9,15 @@ import co.blocke.scala_reflection.RTypeRef
 object FieldCaseGenerator:
 
   def generateConstructorFieldCases(
-                                     ctx: CodecBuildContext,
-                                     cfg: SJConfig,
-                                     classRef: ScalaClassRef[?],
-                                     reqSym: ctx.quotes.reflect.Symbol,
-                                     fieldSymbols: Map[Int, ctx.quotes.reflect.Symbol],
-                                     in: Expr[JsonSource]
-                                   ): List[ctx.quotes.reflect.CaseDef] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      classRef: ScalaClassRef[?],
+      reqSym: ctx.quotes.reflect.Symbol,
+      fieldSymbols: Map[Int, ctx.quotes.reflect.Symbol],
+      in: Expr[JsonSource]
+  ): List[ctx.quotes.reflect.CaseDef] =
     given Quotes = ctx.quotes
-    import ctx.quotes.reflect.* //{ Symbol as RSymbol, *, given }
+    import ctx.quotes.reflect.* // { Symbol as RSymbol, *, given }
 
     classRef.fields.map { field =>
       field.fieldRef.refType match
@@ -28,15 +28,20 @@ object FieldCaseGenerator:
           val fieldRef = Ref(varSym)
 
           val caseBody = field.fieldRef match {
-            case _: OptionRef[?] =>
+            case _: OptionRef[?] | _: AnyRef =>
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+
+            case t: LeftRightRef[?] if t.hasOptionChild.isDefined =>
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+
+            case t: TryRef[?] if t.hasOptionChild.isDefined =>
               Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
             case _ =>
               '{
                 if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
                   ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
                   ${ Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
-                else
-                  throw new JsonParseError("Duplicate field " + $fieldName, $in)
+                else throw new JsonParseError("Duplicate field " + $fieldName, $in)
               }.asTerm
           }
 

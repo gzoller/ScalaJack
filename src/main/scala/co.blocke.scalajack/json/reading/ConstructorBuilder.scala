@@ -6,10 +6,10 @@ import scala.quoted.*
 
 object ConstructorBuilder:
   def buildClassInstantiationExpr(
-                                   ctx: CodecBuildContext,
-                                   tpe: ctx.quotes.reflect.TypeRepr,
-                                   fieldArgs: List[ctx.quotes.reflect.Term]
-                                 ): ctx.quotes.reflect.Term =
+      ctx: CodecBuildContext,
+      tpe: ctx.quotes.reflect.TypeRepr,
+      fieldArgs: List[ctx.quotes.reflect.Term]
+  ): ctx.quotes.reflect.Term =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 

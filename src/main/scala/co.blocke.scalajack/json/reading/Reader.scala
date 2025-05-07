@@ -35,126 +35,54 @@ object Reader:
       if !ctx.readerFnMap.contains(methodKey) then
         ref match
           case t: Sealable if t.isSealed && t.childrenAreObject =>
-            val readerExpr: Expr[(JsonSource) => T] =
-              Helpers.generateReaderBodyForCaseObjects[T](ctx, t.sealedChildren, t.name)
-            registerReaderDef(methodKey, readerExpr)
+            val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+              val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+              Helpers.generateReaderBodyForCaseObjects[T](
+                ctx,
+                t.sealedChildren,
+                t.name,
+                inExpr
+              )
+            }
+            registerReaderDef(methodKey, bodyExprMaker)
 
           case t: Sealable if t.isSealed && !t.childrenAreObject =>
-            // Define a method symbol for the generated reader
-            val methodSym = Symbol.newMethod(
-              Symbol.spliceOwner,
-              "r" + ctx.readMethodDefs.size,
-              MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T])
-            )
-
-            // Register method symbol and placeholder in the context
-            ctx.readMethodSyms(methodKey) = methodSym
-            ctx.readerFnMap(methodKey) = Placeholder()
-
-            // Build the method body within DefDef (hygienically)
-            ctx.readMethodDefs(methodKey) = DefDef(
-              methodSym,
-              { case List(List(inParam)) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-                val hintLabelExpr: Expr[String] = Expr(cfg.typeHintLabel)
-
-                // Generate match cases for all sealed children
-                val cases = t.sealedChildren.collect {
-                  case child if !child.name.contains("$") =>
-                    val childKey = child.typedName
-
-                    val readerCall = ctx.readerFnMap(childKey) match
-                      case RealReader(_, _) =>
-                        val readerSym = ctx.readMethodSyms(childKey)
-                        Apply(Ref(readerSym), List(inExpr.asTerm))
-
-                      case Placeholder() =>
-                        Apply(makeReaderStub(childKey).asTerm, List(inExpr.asTerm))
-
-                    CaseDef(Literal(StringConstant(child.name)), None, readerCall)
-                }
-
-                val dispatch = Match(
-                  Apply(
-                    Select.unique(inExpr.asTerm, "findObjectField"),
-                    List(hintLabelExpr.asTerm)
-                  ),
-                  cases :+ CaseDef(
-                    Wildcard(),
-                    None,
-                    '{ throw new JsonParseError("Unknown _hint value for sealed trait", $inExpr) }.asTerm
-                  )
-                )
-
-                Some(dispatch)
-              }
-            )
-
-            // Register lambda-based indirection (used for SelfRef or lazy calls)
-            val lambdaExpr: Expr[JsonSource => T] =
-              '{ (in: JsonSource) => ${ Ref(methodSym).appliedTo('in.asTerm).asExprOf[T] } }
-
-            ctx.readerFnMap(methodKey) = RealReader(lambdaExpr, Type.of[T])
+            val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+              val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+              Helpers.generateReaderBodyForSealedTraits[T](
+                ctx,
+                cfg,
+                t,
+                inExpr
+              )
+            }
+            registerReaderDef(methodKey, bodyExprMaker)
 
           case t: ScalaClassRef[?] =>
-            // STEP 1: Define method symbol (just like you have)
-            val sym = Symbol.newMethod(
-              Symbol.spliceOwner,
-              "r" + ctx.readMethodDefs.size,
-              MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T])
-            )
-
-            // STEP 2: Register method symbol and placeholder
-            ctx.readMethodSyms(methodKey) = sym
-            ctx.readerFnMap(methodKey) = Placeholder()
-
-            // STEP 3: Register method body DefDef
-            ctx.readMethodDefs(methodKey) = DefDef(
-              sym,
-              { case List(List(inParam)) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-                val body = Helpers.generateReaderBodyForScalaClass[T](
-                  ctx,
-                  cfg,
-                  methodKey,
-                  t,
-                  inExpr
-                )
-                Some(body.asTerm.changeOwner(sym))
-              }
-            )
-
-            // STEP 4: Register RealReader as lambda (not applied!)
-            val lambdaExpr: Expr[JsonSource => T] =
-              Lambda(
-                owner = Symbol.spliceOwner,
-                tpe = MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T]),
-                rhsFn = { case (owner, List(inVal)) =>
-                  Apply(Ref(sym), List(Ref(inVal.symbol)))
-                }
-              ).asExprOf[JsonSource => T]
-
-            ctx.readerFnMap(methodKey) = RealReader(
-              lambdaExpr,
-              Type.of[T]
-            )
+            val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+              val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+              Helpers.generateReaderBodyForScalaClass[T](
+                ctx,
+                cfg,
+                methodKey,
+                t,
+                inExpr
+              )
+            }
+            registerReaderDef(methodKey, bodyExprMaker)
 
           case t: JavaClassRef[?] =>
-            Helpers.prebuildFieldMatrixForClass(ctx, methodKey, t, true)
-            val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
-            val readerExpr = '{ (inJS: JsonSource) =>
-              ${
-                Helpers.generateReaderBodyForJavaClass[T](
-                  ctx,
-                  cfg,
-                  methodKey,
-                  t,
-                  'inJS,
-                  fieldMatrixExpr
-                )
-              }
+            val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+              val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+              Helpers.generateReaderBodyForJavaClass[T](
+                ctx,
+                cfg,
+                methodKey,
+                t,
+                inExpr
+              )
             }
-            registerReaderDef(methodKey, readerExpr)
+            registerReaderDef(methodKey, bodyExprMaker)
 
           case t: TraitRef[?] =>
             throw JsonUnsupportedType("Non-sealed traits are not supported")
@@ -164,48 +92,44 @@ object Reader:
 
     def registerReaderDef(
         methodKey: TypedName,
-        readerExpr: Expr[(JsonSource) => T]
+        readerBodyExpr: Tree => Expr[T]
     ): Unit =
-      // === 1. Reserve method symbol
-      val sym = Symbol.newMethod(
+      // STEP 1: Define method symbol (just like you have)
+      val methodSym = Symbol.newMethod(
         Symbol.spliceOwner,
         "r" + ctx.readMethodDefs.size,
-        MethodType(List("in"))(
-          _ => List(TypeRepr.of[JsonSource]),
-          _ => TypeRepr.of[T]
-          //            TypeRepr.of(using Type[T]).asType match
-          //              case '[t] => TypeRepr.of[t]
-        )
+        MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T])
       )
 
-      // === 2. Register sym and placeholder
-      ctx.readMethodSyms(methodKey) = sym
+      // STEP 2: Register method symbol and placeholder
+      ctx.readMethodSyms(methodKey) = methodSym
       ctx.readerFnMap(methodKey) = Placeholder()
 
-      // === 3. Register DefDef
+      // STEP 3: Build and register method body DefDef (hygienically)
       ctx.readMethodDefs(methodKey) = DefDef(
-        sym,
-        { case List(List(inParam)) =>
-          Some(
-            '{ $readerExpr(${ inParam.asExprOf[JsonSource] }) }.asTerm.changeOwner(sym)
-          )
+        methodSym,
+        {
+          case List(List(inParam)) =>
+            val body = readerBodyExpr(inParam)
+            Some(body.asTerm.changeOwner(methodSym))
+          case other =>
+            throw new JsonTypeError(s"Macro failure. Unexpected parameter structure in DefDef: $other")
         }
       )
 
-      // === 4. Register RealReader
+      // STEP 4: Register RealReader as lambda (not applied!) (used for SelfRef or lazy calls)
       val lambdaExpr: Expr[JsonSource => T] =
         Lambda(
           owner = Symbol.spliceOwner,
           tpe = MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T]),
-          rhsFn = { case (owner, List(inValDef)) =>
-            Apply(Ref(sym), List(Ref(inValDef.symbol)))
+          rhsFn = {
+            case (owner, List(inVal)) =>
+              Apply(Ref(methodSym), List(Ref(inVal.symbol)))
+            case other =>
+              throw new JsonTypeError(s"Macro failure. Unexpected lambda params in JsonSource => T: : $other")
           }
         ).asExprOf[JsonSource => T]
-
-      ctx.readerFnMap(methodKey) = RealReader(
-        lambdaExpr,
-        Type.of[T]
-      )
+      ctx.readerFnMap(methodKey) = RealReader(lambdaExpr, Type.of[T])
 
     //      Build a compiler-safe stub for use when a function is still being generated.
     //      For example, it generates something like this:
@@ -224,11 +148,6 @@ object Reader:
 
     val methodKey = ref.typedName
     ref match
-//          case t: SelfRefRef[?] =>
-//            ctx.seenSelfRef = true
-//            MakeReadFn.makeReadFn[T](ctx, cfg, methodKey, t, in) { in =>
-//              '{ readerMap(${ Expr(t.typedName.toString) }).apply($in).asInstanceOf[T] }
-//            }
 
       // First cover all primitive and simple types...
       case t: BigDecimalRef =>
@@ -460,21 +379,25 @@ object Reader:
       case t: ZoneIdRef         => '{ $in.expectStringWithFn(java.time.ZoneId.of) }.asExprOf[T]
       case t: ZoneOffsetRef     => '{ $in.expectStringWithFn(java.time.ZoneOffset.of) }.asExprOf[T]
 
-      case t: URLRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s).toURL()) }.asExprOf[T]
+      case t: URLRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s).toURL) }.asExprOf[T]
       case t: URIRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s)) }.asExprOf[T]
       case t: UUIDRef => '{ $in.expectStringWithFn(java.util.UUID.fromString) }.asExprOf[T]
 
       case t: AliasRef[?] =>
         t.unwrappedType.refType match
           case '[e] =>
-            genReadVal[e](
-              ctx,
-              cfg,
-              t.unwrappedType.asInstanceOf[RTypeRef[e]],
-              in,
-              inTuple,
-              isMapKey
-            ).asExprOf[T]
+            '{
+              ${
+                genReadVal[e](
+                  ctx,
+                  cfg,
+                  t.unwrappedType.asInstanceOf[RTypeRef[e]],
+                  in,
+                  inTuple,
+                  isMapKey
+                )
+              }.asInstanceOf[T]
+            }
 
       // --------------------
       //  Options...
