@@ -38,7 +38,7 @@ object JsonCodecMaker:
       }
     }.asTerm
 
-    val readerMapValDef = {
+    val readerMapDefDef = {
       val entries: List[Expr[(String, JsonSource => Any)]] =
         ctx.readerFnMap.collect { case (key, RealReader(fnExpr, _)) =>
           val widened = fnExpr.asExprOf[JsonSource => Any]
@@ -48,28 +48,47 @@ object JsonCodecMaker:
       val mapExpr: Expr[Map[String, JsonSource => Any]] =
         '{ Map.from[String, JsonSource => Any](${ Expr.ofList(entries) }) }
 
-      ValDef(ctx.readerMapSym, Some(mapExpr.asTerm))
+      DefDef(
+        ctx.readerMapSym,
+        { case List(List()) =>
+          Some(mapExpr.asTerm)
+        }
+      )
     }
+//    val readerMapValDef = {
+//      val entries: List[Expr[(String, JsonSource => Any)]] =
+//        ctx.readerFnMap.collect { case (key, RealReader(fnExpr, _)) =>
+//          val widened = fnExpr.asExprOf[JsonSource => Any]
+//          '{ ${ Expr(key.toString) } -> $widened }
+//        }.toList
+//
+//      val mapExpr: Expr[Map[String, JsonSource => Any]] =
+//        '{ Map.from[String, JsonSource => Any](${ Expr.ofList(entries) }) }
+//
+//      ValDef(ctx.readerMapSym, Some(mapExpr.asTerm))
+//    }
 
     val writerMapExpr: Expr[Map[String, (Any, JsonOutput) => Unit]] =
       '{
-        Map[String, (Any, JsonOutput) => Unit](
-          ${
-            Expr.ofList(
-              ctx.writerFnMapEntries.toList.map { case (k, v) =>
-                '{ ${ Expr(k.toString) } -> $v }
-              }
-            )
-          }*
-        )
+        Map.from[String, (Any, JsonOutput) => Unit](${
+          Expr.ofList(
+            ctx.writerFnMapEntries.toList.map { case (k, v) =>
+              '{ ${ Expr(k.toString) } -> $v }
+            }
+          )
+        })
       }
-    val writerMapDef = ValDef(
+//    val writerMapDef = ValDef(
+//      ctx.writerMapSym,
+//      Some(writerMapExpr.asTerm)
+//    )
+    val writerMapDefDef = DefDef(
       ctx.writerMapSym,
-      Some(writerMapExpr.asTerm)
+      { case List(List()) => Some(writerMapExpr.asTerm) }
     )
 
     val mapDefs =
-      if ctx.seenSelfRef then List(readerMapValDef) ++ List(writerMapDef)
+      if ctx.seenSelfRef then List(readerMapDefDef, writerMapDefDef)
       else Nil
 
     val codec = Block(

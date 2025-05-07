@@ -723,11 +723,12 @@ object Writer:
             '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
 
           case t: SelfRefRef[?] =>
-            val mapExpr = Ref(ctx.writerMapSym).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
+            val mapExpr = Apply(Ref(ctx.writerMapSym), Nil).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
             val keyExpr = Expr(t.typedName.toString)
             ctx.seenSelfRef = true
             '{
-              $mapExpr($keyExpr).apply($aE, $out)
+              val fn: Map[String, (Any, JsonOutput) => Unit] = $mapExpr
+              fn($keyExpr).apply($aE, $out)
             }
 
           // Everything else...

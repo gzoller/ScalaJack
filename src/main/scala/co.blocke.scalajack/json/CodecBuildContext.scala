@@ -25,13 +25,18 @@ class CodecBuildContext(using val quotes: Quotes):
   val writerFnMapEntries: mutable.HashMap[TypedName, Expr[(Any, JsonOutput) => Unit]] = mutable.HashMap.empty
 
   // Symbol for the generated `lazy val writerMap`, which maps canonical class names to writer functions
-  val writerMapSym: Symbol = Symbol.newVal(
+  val writerMapSym: Symbol = Symbol.newMethod(
     Symbol.spliceOwner,
     "writerMap",
-    TypeRepr.of[Map[String, (Any, JsonOutput) => Unit]],
-    Flags.Lazy,
-    Symbol.noSymbol
+    MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Map[String, (Any, JsonOutput) => Unit]])
   )
+//  val writerMapSym: Symbol = Symbol.newVal(
+//    Symbol.spliceOwner,
+//    "writerMap",
+//    TypeRepr.of[Map[String, (Any, JsonOutput) => Unit]],
+//    Flags.Lazy,
+//    Symbol.noSymbol
+//  )
 
   // ---------- Reading Support ----------
 
@@ -53,13 +58,18 @@ class CodecBuildContext(using val quotes: Quotes):
   val readerFnMap: mutable.HashMap[TypedName, reading.ReaderEntry] = mutable.HashMap.empty
 
   // Symbol for the generated `lazy val readerMap`, which maps canonical class names to reader functions
-  val readerMapSym: Symbol = Symbol.newVal(
+  val readerMapSym: Symbol = Symbol.newMethod(
     Symbol.spliceOwner,
     "readerMap",
-    TypeRepr.of[Map[String, JsonSource => Any]],
-    Flags.Lazy,
-    Symbol.noSymbol
+    MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Map[String, JsonSource => Any]])
   )
+//  val readerMapSym: Symbol = Symbol.newVal(
+//    Symbol.spliceOwner,
+//    "readerMap",
+//    TypeRepr.of[Map[String, JsonSource => Any]],
+//    Flags.Lazy,
+//    Symbol.noSymbol
+//  )
 
   // ---------- Special Type Handling ----------
 

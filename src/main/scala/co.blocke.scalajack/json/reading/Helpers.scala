@@ -89,7 +89,7 @@ object Helpers:
         MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
       )
       ctx.classFieldMatrixSyms(methodKey) = sym
-      ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case Nil => Some('{ new StringMatrix(Array("_")) }.asTerm) }))
+      ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case List(List()) => Some('{ new StringMatrix(Array("_")) }.asTerm) }))
 //      ctx.classFieldMatrixValDefs += (methodKey -> ValDef(sym, Some('{ new StringMatrix(Array.empty[String]) }.asTerm)))
 
   // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields

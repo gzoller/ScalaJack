@@ -1275,11 +1275,21 @@ object Reader:
                 out.asExprOf[T]
           case Placeholder() => '{ ${ makeReaderStub(methodKey) }($in) }.asExprOf[T]
 
+//          case t: SelfRefRef[?] =>
+//            val mapExpr = Apply(Ref(ctx.writerMapSym), Nil).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
+//            val keyExpr = Expr(t.typedName.toString)
+//            ctx.seenSelfRef = true
+//            '{
+//              val fn: Map[String, (Any, JsonOutput) => Unit] = $mapExpr
+//              fn($keyExpr).apply($aE, $out)
+//            }
+//
       case t: SelfRefRef[?] =>
-        val readerMapExpr = Ref(ctx.readerMapSym).asExprOf[Map[String, JsonSource => Any]]
+        val readerMapExpr = Apply(Ref(ctx.readerMapSym), Nil).asExprOf[Map[String, JsonSource => Any]]
         val classNameExpr = Expr(methodKey.toString) // this should match the key used in readerMap generation
         '{
-          $readerMapExpr($classNameExpr)($in).asInstanceOf[T]
+          val fn: Map[String, JsonSource => Any] = $readerMapExpr
+          fn($classNameExpr)($in).asInstanceOf[T]
         }
 
       case t: AnyRef =>
