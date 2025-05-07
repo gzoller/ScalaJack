@@ -40,7 +40,7 @@ object Helpers:
   private def forceFieldMatrix(fieldMatrixOpt: Option[Expr[StringMatrix]])(using Quotes): Expr[StringMatrix] =
     fieldMatrixOpt.getOrElse('{ co.blocke.scalajack.json.StringMatrix(Array("_")) })
 
-  def prebuildFieldMatrixForClass(
+  private def prebuildFieldMatrixForClass(
       ctx: CodecBuildContext,
       methodKey: TypedName,
       t: RTypeRef[?],
@@ -64,7 +64,7 @@ object Helpers:
         Symbol.spliceOwner,
         "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
         TypeRepr.of[StringMatrix],
-        Flags.Private,
+        Flags.Lazy,
         Symbol.noSymbol
       )
       ctx.classFieldMatrixSyms(methodKey) = sym
@@ -86,7 +86,7 @@ object Helpers:
         Symbol.spliceOwner,
         "__" + className.replaceAll("\\.", "_") + "_fields",
         TypeRepr.of[StringMatrix],
-        Flags.Private,
+        Flags.Lazy,
         Symbol.noSymbol
       )
     )
