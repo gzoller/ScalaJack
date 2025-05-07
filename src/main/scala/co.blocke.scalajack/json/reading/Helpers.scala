@@ -31,14 +31,30 @@ object Helpers:
       case _: ScalaClassRef[?] | _: JavaClassRef[?] =>
         ctx.classFieldMatrixSyms.get(methodKey) match
           case Some(sym) =>
-            Some(Ref(sym).asExprOf[StringMatrix])
+            Some(Apply(Ref(sym), Nil).asExprOf[StringMatrix])
           case None =>
-            Some('{ new StringMatrix(Array("_")) }) // <-- if symbol missing, use empty matrix!
+            Some('{ new StringMatrix(Array("_")) }) // fallback
       case _ =>
         None
+//  private def fieldMatrixExprOf(
+//      ctx: CodecBuildContext,
+//      methodKey: TypedName,
+//      ref: RTypeRef[?]
+//  ): Option[Expr[StringMatrix]] =
+//    given Quotes = ctx.quotes
+//    import ctx.quotes.reflect.*
+//    ref match
+//      case _: ScalaClassRef[?] | _: JavaClassRef[?] =>
+//        ctx.classFieldMatrixSyms.get(methodKey) match
+//          case Some(sym) =>
+//            Some(Ref(sym).asExprOf[StringMatrix])
+//          case None =>
+//            Some('{ new StringMatrix(Array("_")) }) // <-- if symbol missing, use empty matrix!
+//      case _ =>
+//        None
 
   private def forceFieldMatrix(fieldMatrixOpt: Option[Expr[StringMatrix]])(using Quotes): Expr[StringMatrix] =
-    fieldMatrixOpt.getOrElse('{ co.blocke.scalajack.json.StringMatrix(Array("_")) })
+    fieldMatrixOpt.getOrElse('{ new StringMatrix(Array("_")) })
 
   private def prebuildFieldMatrixForClass(
       ctx: CodecBuildContext,
@@ -60,15 +76,21 @@ object Helpers:
     if fieldsArray.nonEmpty then makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), fieldsArray)
     else
       // If there are no fields at all, still register a dummy empty StringMatrix
-      val sym = Symbol.newVal(
+//      val sym = Symbol.newMethod(
+//        Symbol.spliceOwner,
+//        "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
+//        TypeRepr.of[StringMatrix],
+//        Flags.Lazy,
+//        Symbol.noSymbol
+//      )
+      val sym = Symbol.newMethod(
         Symbol.spliceOwner,
         "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
-        TypeRepr.of[StringMatrix],
-        Flags.Lazy,
-        Symbol.noSymbol
+        MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
       )
       ctx.classFieldMatrixSyms(methodKey) = sym
-      ctx.classFieldMatrixValDefs += (methodKey -> ValDef(sym, Some('{ new StringMatrix(Array.empty[String]) }.asTerm)))
+      ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case Nil => Some('{ new StringMatrix(Array("_")) }.asTerm) }))
+//      ctx.classFieldMatrixValDefs += (methodKey -> ValDef(sym, Some('{ new StringMatrix(Array.empty[String]) }.asTerm)))
 
   // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields
   private def makeClassFieldMatrixValDef(
@@ -82,20 +104,33 @@ object Helpers:
 
     val sym = ctx.classFieldMatrixSyms.getOrElseUpdate(
       methodKey,
-      Symbol.newVal(
+      Symbol.newMethod(
         Symbol.spliceOwner,
         "__" + className.replaceAll("\\.", "_") + "_fields",
-        TypeRepr.of[StringMatrix],
-        Flags.Lazy,
-        Symbol.noSymbol
+        MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
       )
+//      Symbol.newMethod(
+//        Symbol.spliceOwner,
+//        "__" + className.replaceAll("\\.", "_") + "_fields",
+//        TypeRepr.of[StringMatrix],
+//        Flags.Lazy,
+//        Symbol.noSymbol
+//      )
     )
 
     val namesArrayExpr = Varargs(fieldNames.toSeq.map(Expr(_)))
     val namesArray = '{ Array[String]($namesArrayExpr*) }
 
     // 🧨 ONLY create ValDef and save it -- DO NOT insert it anywhere else yet
-    ctx.classFieldMatrixValDefs(methodKey) = ValDef(sym, Some('{ new StringMatrix($namesArray) }.asTerm))
+//    ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case Nil => Some('{ new StringMatrix(Array.empty[String]) }.asTerm) }))
+    ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(
+      sym,
+      { case List(Nil) =>
+        val matrixExpr: Expr[StringMatrix] = '{ StringMatrix(if $namesArray == null || $namesArray.isEmpty then Array("_") else $namesArray) }
+        Some(matrixExpr.asTerm)
+      }
+    ))
+//    ctx.classFieldMatrixValDefs(methodKey) = ValDef(sym, Some('{ new StringMatrix($namesArray) }.asTerm))
 
   // ----------------------------------------------------------------------
 // Helper functions for types we're generating functions for (keeps main code cleaner)
@@ -282,7 +317,8 @@ object Helpers:
 
     // Prebuild matrix for constructor fields only
     prebuildFieldMatrixForClass(ctx, methodKey, classRef, true)
-    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -341,7 +377,8 @@ object Helpers:
 
     // Prebuild matrix including constructor + non-constructor fields
     prebuildFieldMatrixForClass(ctx, methodKey, classRef, false)
-    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -435,7 +472,8 @@ object Helpers:
 
     // Prebuild matrix including constructor + non-constructor fields
     prebuildFieldMatrixForClass(ctx, methodKey, classRef, false)
-    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
+    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
 
     classRef.refType match // refType is Type[r.R]
       case '[b] =>

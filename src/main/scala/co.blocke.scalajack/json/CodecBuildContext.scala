@@ -45,7 +45,8 @@ class CodecBuildContext(using val quotes: Quotes):
   val classFieldMatrixSyms: mutable.HashMap[TypedName, Symbol] = mutable.HashMap.empty
 
   // Stores the actual ValDefs of those StringMatrix values used in generated deserialization logic
-  val classFieldMatrixValDefs: mutable.HashMap[TypedName, ValDef] = mutable.HashMap.empty
+  val classFieldMatrixDefDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
+//  val classFieldMatrixValDefs: mutable.HashMap[TypedName, ValDef] = mutable.HashMap.empty
 
   // Maps TypedName → ReaderEntry (a wrapper for a generated reader function)
   // Used for resolving recursive/self-referencing types at code-gen time

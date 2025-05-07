@@ -74,7 +74,7 @@ object JsonCodecMaker:
 
     val codec = Block(
       // 🧨 This MUST be first — so any methods can reference it
-      ctx.classFieldMatrixValDefs.values.toList ++
+      ctx.classFieldMatrixDefDefs.values.toList ++
         mapDefs ++
 
         // Functions (can reference anything above)
