@@ -7,8 +7,6 @@ import scala.util.Success
 import co.blocke.scala_reflection.Language
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 
-import scala.annotation.tailrec
-
 /*
 	1.	A ValDef for each constructor field (the backing var _fieldname) with an appropriate default value (from Scala’s default param or inferred from the type).
 	2.	A Term (Ref) referencing that symbol, used later to instantiate the class.

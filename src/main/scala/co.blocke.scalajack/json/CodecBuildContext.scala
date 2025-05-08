@@ -3,8 +3,7 @@ package json
 
 import scala.quoted.*
 import scala.collection.mutable
-import co.blocke.scala_reflection.{RTypeRef, TypedName}
-import writing.JsonOutput
+import co.blocke.scala_reflection.TypedName
 import reading.JsonSource
 
 class CodecBuildContext(using val quotes: Quotes):

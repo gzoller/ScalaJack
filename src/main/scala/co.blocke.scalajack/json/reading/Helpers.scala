@@ -3,16 +3,11 @@ package json
 package reading
 
 import scala.quoted.*
-import scala.util.{Failure, Success, Try}
-import scala.collection.Factory
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
 
-import co.blocke.scala_reflection.given
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scala_reflection.{RType, RTypeRef, TypedName}
-import co.blocke.scala_reflection.reflect.ReflectOnType
-import co.blocke.scala_reflection.rtypes.EnumRType
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
 
 sealed trait ReaderEntry
 case class Placeholder() extends ReaderEntry
@@ -49,92 +44,8 @@ object Helpers:
     }
     ValDef(valSym, Some(matrixExpr.asTerm))
 
-//    val namesArrayExpr = Expr(fieldNames) //Varargs(fieldNames.map(Expr(_)))
-//  val namesArray = '{ Array[String]($namesArrayExpr *) }
-
-  /*
-  private def fieldMatrixExprOf(
-      ctx: CodecBuildContext,
-      methodKey: TypedName,
-      ref: RTypeRef[?]
-  ): Option[Expr[StringMatrix]] =
-    given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
-    ref match
-      case _: ScalaClassRef[?] | _: JavaClassRef[?] =>
-        ctx.classFieldMatrixSyms.get(methodKey) match
-          case Some(sym) =>
-            Some(Apply(Ref(sym), Nil).asExprOf[StringMatrix])
-          case None =>
-            Some('{ new StringMatrix(Array("_")) }) // fallback
-      case _ =>
-        None
-
-  private def forceFieldMatrix(fieldMatrixOpt: Option[Expr[StringMatrix]])(using Quotes): Expr[StringMatrix] =
-    fieldMatrixOpt.getOrElse('{ new StringMatrix(Array("_")) })
-
-  private def prebuildFieldMatrixForClass(
-      ctx: CodecBuildContext,
-      methodKey: TypedName,
-      t: RTypeRef[?],
-      onlyConstructorFields: Boolean = true
-  ): Unit =
-    given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
-
-    val fieldsArray =
-      t match
-        case s: ScalaClassRef[?] =>
-          if onlyConstructorFields then s.fields.map(f => changeFieldName(f)).toArray
-          else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f)).toArray
-        case j: JavaClassRef[?] =>
-          j.fields.sortBy(_.index).map(f => changeFieldName(f)).toArray
-
-    if fieldsArray.nonEmpty then makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), fieldsArray)
-    else
-      // If there are no fields at all, still register a dummy empty StringMatrix
-      val sym = Symbol.newMethod(
-        Symbol.spliceOwner,
-        "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
-        MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
-      )
-      ctx.classFieldMatrixSyms(methodKey) = sym
-      ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case List(List()) => Some('{ new StringMatrix(Array("_")) }.asTerm) }))
-
-  // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields
-  private def makeClassFieldMatrixValDef(
-      ctx: CodecBuildContext,
-      methodKey: TypedName,
-      className: String,
-      fieldNames: Array[String]
-  ): Unit =
-    given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
-
-    val sym = ctx.classFieldMatrixSyms.getOrElseUpdate(
-      methodKey,
-      Symbol.newMethod(
-        Symbol.spliceOwner,
-        "__" + className.replaceAll("\\.", "_") + "_fields",
-        MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
-      )
-    )
-
-    val namesArrayExpr = Varargs(fieldNames.toSeq.map(Expr(_)))
-    val namesArray = '{ Array[String]($namesArrayExpr*) }
-
-    // 🧨 ONLY create DefDef and save it -- DO NOT insert it anywhere else yet
-    ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(
-      sym,
-      { case List(Nil) =>
-        val matrixExpr: Expr[StringMatrix] = '{ StringMatrix(if $namesArray == null || $namesArray.isEmpty then Array("_") else $namesArray) }
-        Some(matrixExpr.asTerm)
-      }
-    ))
-   */
-
   // ----------------------------------------------------------------------
-// Helper functions for types we're generating functions for (keeps main code cleaner)
+  // Helper functions for types we're generating functions for (keeps main code cleaner)
 
   def generateReaderBodyForCaseObjects[T: Type](
       ctx: CodecBuildContext,
@@ -190,7 +101,6 @@ object Helpers:
     val caseDefs = traitRef.sealedChildren.map { childRef =>
       val childNameE = Expr(childRef.name)
       val methodKey = childRef.typedName
-//      val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
 
       cfg.typeHintPolicy match
         case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
@@ -261,7 +171,6 @@ object Helpers:
         val methodKey = classRef.typedName
         ctx.readMethodSyms.get(methodKey).map { sym =>
           val cond = Literal(StringConstant(classRef.name))
-//          val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, classRef)).asTerm
           val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
           CaseDef(cond, None, rhs)
         }

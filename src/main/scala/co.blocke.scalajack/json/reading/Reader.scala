@@ -3,15 +3,13 @@ package json
 package reading
 
 import scala.quoted.*
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import scala.collection.Factory
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scala_reflection.{RType, RTypeRef, TypedName}
-import co.blocke.scala_reflection.reflect.ReflectOnType
-import co.blocke.scala_reflection.rtypes.EnumRType
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
 
 object Reader:
 
@@ -128,33 +126,6 @@ object Reader:
 
       // Always apply the function
       Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
-
-      // STEP 4: Register RealReader as lambda (not applied!) (used for SelfRef or lazy calls)
-//      val lambdaExpr: Expr[JsonSource => T] =
-//        Lambda(
-//          owner = Symbol.spliceOwner,
-//          tpe = MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[T]),
-//          rhsFn = {
-//            case (owner, List(inVal)) =>
-//              Apply(Ref(methodSym), List(Ref(inVal.symbol)))
-//            case other =>
-//              throw new JsonTypeError(s"Macro failure. Unexpected lambda params in JsonSource => T: : $other")
-//          }
-//        ).asExprOf[JsonSource => T]
-//      ctx.readerFnMap(methodKey) = RealReader(lambdaExpr, Type.of[T])
-
-    //      Build a compiler-safe stub for use when a function is still being generated.
-    //      For example, it generates something like this:
-    //        (in: JsonSource) => readerMap("co.blocke.Foo.child")(in)
-    //      If we do things right tho--this is never called because its replaced by a "real" function.
-//    def makeReaderStub(key: TypedName): Expr[JsonSource => T] =
-//      val mapRef = Ref(ctx.readerMapSym)
-//      val keyExpr = Expr(key.toString)
-//      val readerMapExpr = mapRef.asExprOf[Map[String, JsonSource => Any]]
-//
-//      '{ (in: JsonSource) =>
-//        $readerMapExpr($keyExpr)(in).asInstanceOf[T]
-//      }
 
     // ---------------------------
 

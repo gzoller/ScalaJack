@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json
 
-import scala.util.Failure
 import scala.quoted.{Expr, Quotes, Type}
 import java.util.Optional
 import co.blocke.scala_reflection.reflect.rtypeRefs.*

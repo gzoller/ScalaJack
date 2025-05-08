@@ -4,9 +4,7 @@ package writing
 
 import scala.quoted.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scala_reflection.{RType, RTypeRef, TypedName}
-import co.blocke.scala_reflection.reflect.ReflectOnType
-import co.blocke.scala_reflection.rtypes.EnumRType
+import co.blocke.scala_reflection.RTypeRef
 import scala.util.{Failure, Success, Try}
 
 object MaybeWrite:
