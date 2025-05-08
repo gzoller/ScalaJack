@@ -38,24 +38,7 @@ object JsonCodecMaker:
       }
     }.asTerm
 
-    val readerMapDefDef = {
-      val entries: List[Expr[(String, JsonSource => Any)]] =
-        ctx.readerFnMap.collect { case (key, RealReader(fnExpr, _)) =>
-          val widened = fnExpr.asExprOf[JsonSource => Any]
-          '{ ${ Expr(key.toString) } -> $widened }
-        }.toList
-
-      val mapExpr: Expr[Map[String, JsonSource => Any]] =
-        '{ Map.from[String, JsonSource => Any](${ Expr.ofList(entries) }) }
-
-      DefDef(
-        ctx.readerMapSym,
-        { case List(List()) =>
-          Some(mapExpr.asTerm)
-        }
-      )
-    }
-//    val readerMapValDef = {
+//    val readerMapDefDef = {
 //      val entries: List[Expr[(String, JsonSource => Any)]] =
 //        ctx.readerFnMap.collect { case (key, RealReader(fnExpr, _)) =>
 //          val widened = fnExpr.asExprOf[JsonSource => Any]
@@ -65,39 +48,25 @@ object JsonCodecMaker:
 //      val mapExpr: Expr[Map[String, JsonSource => Any]] =
 //        '{ Map.from[String, JsonSource => Any](${ Expr.ofList(entries) }) }
 //
-//      ValDef(ctx.readerMapSym, Some(mapExpr.asTerm))
+//      DefDef(
+//        ctx.readerMapSym,
+//        { case List(List()) =>
+//          Some(mapExpr.asTerm)
+//        }
+//      )
 //    }
-
-    val writerMapExpr: Expr[Map[String, (Any, JsonOutput) => Unit]] =
-      '{
-        Map.from[String, (Any, JsonOutput) => Unit](${
-          Expr.ofList(
-            ctx.writerFnMapEntries.toList.map { case (k, v) =>
-              '{ ${ Expr(k.toString) } -> $v }
-            }
-          )
-        })
-      }
-//    val writerMapDef = ValDef(
-//      ctx.writerMapSym,
-//      Some(writerMapExpr.asTerm)
-//    )
-    val writerMapDefDef = DefDef(
-      ctx.writerMapSym,
-      { case List(List()) => Some(writerMapExpr.asTerm) }
-    )
-
-    val mapDefs =
-      if ctx.seenSelfRef then List(readerMapDefDef, writerMapDefDef)
-      else Nil
+//
+//    val mapDefs =
+//      if ctx.seenSelfRef then List(readerMapDefDef)
+//      else Nil
 
     val codec = Block(
       // 🧨 This MUST be first — so any methods can reference it
-      ctx.classFieldMatrixDefDefs.values.toList ++
-        mapDefs ++
+//      ctx.classFieldMatrixDefDefs.values.toList ++
+//        mapDefs ++
 
-        // Functions (can reference anything above)
-        ctx.writeMethodDefs.values ++
+      // Functions (can reference anything above)
+      ctx.writeMethodDefs.values.toList ++
         ctx.readMethodDefs.values.toList ++ {
           if ctx.seenAnyRef then List(ctx.readAnyDef)
           else Nil
@@ -105,5 +74,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-//    if ref.name.contains("RefinedDocumentSpec") then println(s"Codec: ${codec.show}")
+    if ref.name.contains("Outer") then println(s"Codec: ${codec.show}")
     codec

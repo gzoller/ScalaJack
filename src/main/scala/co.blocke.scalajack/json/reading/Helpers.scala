@@ -20,6 +20,39 @@ case class RealReader[T](expr: Expr[JsonSource => T], tpe: Type[T]) extends Read
 
 object Helpers:
 
+  private def generateFieldMatrixVal(
+      ctx: CodecBuildContext,
+      methodKey: TypedName,
+      t: RTypeRef[?],
+      onlyConstructorFields: Boolean = true
+  ): ctx.quotes.reflect.ValDef =
+    given Quotes = ctx.quotes
+    import ctx.quotes.reflect.*
+
+    val valSym = Symbol.newVal(
+      Symbol.spliceOwner,
+      "__fieldMatrix",
+      TypeRepr.of[StringMatrix],
+      Flags.EmptyFlags,
+      Symbol.noSymbol
+    )
+    val fieldNames =
+      t match
+        case s: ScalaClassRef[?] =>
+          if onlyConstructorFields then s.fields.map(f => changeFieldName(f))
+          else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f))
+        case j: JavaClassRef[?] =>
+          j.fields.sortBy(_.index).map(f => changeFieldName(f))
+    val namesArrayExpr = Expr(fieldNames.toArray)
+    val matrixExpr = '{
+      StringMatrix(if $namesArrayExpr.isEmpty then Array("_") else $namesArrayExpr)
+    }
+    ValDef(valSym, Some(matrixExpr.asTerm))
+
+//    val namesArrayExpr = Expr(fieldNames) //Varargs(fieldNames.map(Expr(_)))
+//  val namesArray = '{ Array[String]($namesArrayExpr *) }
+
+  /*
   private def fieldMatrixExprOf(
       ctx: CodecBuildContext,
       methodKey: TypedName,
@@ -36,22 +69,6 @@ object Helpers:
             Some('{ new StringMatrix(Array("_")) }) // fallback
       case _ =>
         None
-//  private def fieldMatrixExprOf(
-//      ctx: CodecBuildContext,
-//      methodKey: TypedName,
-//      ref: RTypeRef[?]
-//  ): Option[Expr[StringMatrix]] =
-//    given Quotes = ctx.quotes
-//    import ctx.quotes.reflect.*
-//    ref match
-//      case _: ScalaClassRef[?] | _: JavaClassRef[?] =>
-//        ctx.classFieldMatrixSyms.get(methodKey) match
-//          case Some(sym) =>
-//            Some(Ref(sym).asExprOf[StringMatrix])
-//          case None =>
-//            Some('{ new StringMatrix(Array("_")) }) // <-- if symbol missing, use empty matrix!
-//      case _ =>
-//        None
 
   private def forceFieldMatrix(fieldMatrixOpt: Option[Expr[StringMatrix]])(using Quotes): Expr[StringMatrix] =
     fieldMatrixOpt.getOrElse('{ new StringMatrix(Array("_")) })
@@ -76,13 +93,6 @@ object Helpers:
     if fieldsArray.nonEmpty then makeClassFieldMatrixValDef(ctx, methodKey, t.name.replaceAll("\\.", "_"), fieldsArray)
     else
       // If there are no fields at all, still register a dummy empty StringMatrix
-//      val sym = Symbol.newMethod(
-//        Symbol.spliceOwner,
-//        "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
-//        TypeRepr.of[StringMatrix],
-//        Flags.Lazy,
-//        Symbol.noSymbol
-//      )
       val sym = Symbol.newMethod(
         Symbol.spliceOwner,
         "__" + methodKey.toString.replaceAll("\\.", "_") + "_fields",
@@ -90,7 +100,6 @@ object Helpers:
       )
       ctx.classFieldMatrixSyms(methodKey) = sym
       ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case List(List()) => Some('{ new StringMatrix(Array("_")) }.asTerm) }))
-//      ctx.classFieldMatrixValDefs += (methodKey -> ValDef(sym, Some('{ new StringMatrix(Array.empty[String]) }.asTerm)))
 
   // This makes a val in the generated code mapping class -> StringMatrix used to rapidly parse fields
   private def makeClassFieldMatrixValDef(
@@ -109,20 +118,12 @@ object Helpers:
         "__" + className.replaceAll("\\.", "_") + "_fields",
         MethodType(Nil)(_ => Nil, _ => TypeRepr.of[StringMatrix])
       )
-//      Symbol.newMethod(
-//        Symbol.spliceOwner,
-//        "__" + className.replaceAll("\\.", "_") + "_fields",
-//        TypeRepr.of[StringMatrix],
-//        Flags.Lazy,
-//        Symbol.noSymbol
-//      )
     )
 
     val namesArrayExpr = Varargs(fieldNames.toSeq.map(Expr(_)))
     val namesArray = '{ Array[String]($namesArrayExpr*) }
 
-    // 🧨 ONLY create ValDef and save it -- DO NOT insert it anywhere else yet
-//    ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(sym, { case Nil => Some('{ new StringMatrix(Array.empty[String]) }.asTerm) }))
+    // 🧨 ONLY create DefDef and save it -- DO NOT insert it anywhere else yet
     ctx.classFieldMatrixDefDefs += (methodKey -> DefDef(
       sym,
       { case List(Nil) =>
@@ -130,7 +131,7 @@ object Helpers:
         Some(matrixExpr.asTerm)
       }
     ))
-//    ctx.classFieldMatrixValDefs(methodKey) = ValDef(sym, Some('{ new StringMatrix($namesArray) }.asTerm))
+   */
 
   // ----------------------------------------------------------------------
 // Helper functions for types we're generating functions for (keeps main code cleaner)
@@ -189,7 +190,7 @@ object Helpers:
     val caseDefs = traitRef.sealedChildren.map { childRef =>
       val childNameE = Expr(childRef.name)
       val methodKey = childRef.typedName
-      val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
+//      val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, childRef)).asTerm
 
       cfg.typeHintPolicy match
         case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
@@ -256,21 +257,15 @@ object Helpers:
       val excludeFields = Expr(unique.optionalFields)
       val liftedUnique = liftStringMap(unique.simpleUniqueHash)
 
-//      if traitRef.name.contains("RefinedSingleOrLoopSegmentSpec") then {
-//        println("Unique: " + unique)
-//      }
-
       val matchCases: List[CaseDef] = traitRef.sealedChildren.flatMap { classRef =>
         val methodKey = classRef.typedName
         ctx.readMethodSyms.get(methodKey).map { sym =>
           val cond = Literal(StringConstant(classRef.name))
-          val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, classRef)).asTerm
+//          val fieldMatrix = forceFieldMatrix(fieldMatrixExprOf(ctx, methodKey, classRef)).asTerm
           val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
           CaseDef(cond, None, rhs)
         }
       }
-
-      val cname = Expr(traitRef.name)
 
       '{
         if $in.expectNull() then null
@@ -323,9 +318,8 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix for constructor fields only
-    prebuildFieldMatrixForClass(ctx, methodKey, classRef, true)
-//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
-    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef)
+    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -348,7 +342,7 @@ object Helpers:
     val requiredMaskExpr = Expr(requiredMask)
 
     val parseLogic: Term = '{
-      var maybeFieldNum = $in.expectFirstObjectField($fieldMatrixExpr)
+      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
       if maybeFieldNum == null then null
       else
         while maybeFieldNum.isDefined do
@@ -358,7 +352,7 @@ object Helpers:
               caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
             ).asExprOf[Any]
           }
-          maybeFieldNum = $in.expectObjectField($fieldMatrixExpr)
+          maybeFieldNum = $in.expectObjectField($matrixRef)
 
         if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
         else
@@ -370,7 +364,7 @@ object Helpers:
           )
     }.asTerm
 
-    Block(varDefs :+ reqVarDef, parseLogic).asExprOf[T]
+    Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]
 
   private def generateReaderBodyWithNonCtor[T: Type](
       ctx: CodecBuildContext,
@@ -383,9 +377,8 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    prebuildFieldMatrixForClass(ctx, methodKey, classRef, false)
-//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
-    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef, false)
+    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -435,7 +428,7 @@ object Helpers:
     val parseLogic: Term =
       '{
         val ncBuffer = scala.collection.mutable.ListBuffer.empty[(Int, Int)]
-        var maybeFieldNum = $in.expectFirstObjectField($fieldMatrixExpr)
+        var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
 
         if maybeFieldNum == null then null.asInstanceOf[T]
         else
@@ -449,7 +442,7 @@ object Helpers:
               ncBuffer += ((foundFieldNum, $in.pos))
               $in.skipValue()
             }
-            maybeFieldNum = $in.expectObjectField($fieldMatrixExpr)
+            maybeFieldNum = $in.expectObjectField($matrixRef)
 
           if ($reqRefExpr & $requiredMaskExpr) == 0 then
             ${ Assign(Ref(instanceSym), instantiateExpr.asTerm).asExprOf[Unit] }
@@ -465,7 +458,10 @@ object Helpers:
           else throw new JsonParseError("Missing required field(s) " + $missingFieldExpr, $in)
       }.asTerm
 
-    Block(varDefs ++ List(instanceValDef, reqVarDef), parseLogic).asExprOf[T]
+    Block(
+      List(fieldMatrixVal) ++ varDefs ++ List(instanceValDef, reqVarDef),
+      parseLogic
+    ).asExprOf[T]
 
   def generateReaderBodyForJavaClass[T: Type](
       ctx: CodecBuildContext,
@@ -478,9 +474,8 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    prebuildFieldMatrixForClass(ctx, methodKey, classRef, false)
-//    val fieldMatrixExpr = Ref(ctx.classFieldMatrixSyms(methodKey)).asExprOf[StringMatrix]
-    val fieldMatrixExpr = Apply(Ref(ctx.classFieldMatrixSyms(methodKey)), Nil).asExprOf[StringMatrix]
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef, false)
+    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     classRef.refType match // refType is Type[r.R]
       case '[b] =>
@@ -509,15 +504,20 @@ object Helpers:
 
         val parseLoop =
           '{
-            var maybeFieldNum = $in.expectFirstObjectField($fieldMatrixExpr)
+            var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
             if maybeFieldNum == null then null
             else
               ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[b] }.asTerm).asExprOf[Any] } // _instance = (new instance)
-              // ${ Assign(instanceSymRef, Apply(Select(New(Inferred(tpe)), nullConst), Nil).asExpr.asTerm).asExprOf[Unit] } // _instance = (new instance)
               while maybeFieldNum.isDefined do
                 ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
-                maybeFieldNum = $in.expectObjectField($fieldMatrixExpr)
+                maybeFieldNum = $in.expectObjectField($matrixRef)
 
               ${ Ref(instanceSym).asExprOf[Any] }
           }.asTerm
-        Block(List(ValDef(instanceSym, Some('{ null }.asTerm))), parseLoop).asExprOf[T]
+        Block(
+          List(
+            fieldMatrixVal,
+            ValDef(instanceSym, Some('{ null }.asTerm))
+          ),
+          parseLoop
+        ).asExprOf[T]

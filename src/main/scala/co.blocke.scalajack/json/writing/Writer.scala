@@ -13,9 +13,24 @@ import scala.annotation.tailrec
 
 object Writer:
 
-  // Fantastic Dark Magic here--lifted from Jasoniter.  Props!  This thing will create a DefDef, and a Symbol to it.
-  // The Symbol will let you call the generated function later from other macro-generated code.  The goal is to use
-  // generated functions to create cleaner/faster macro code than what straight quotes/splices would create unaided.
+  private def makeWriteFnSymbol[U: Type](
+      ctx: CodecBuildContext,
+      methodKey: TypedName
+  ): Unit =
+    given Quotes = ctx.quotes
+    import ctx.quotes.reflect.*
+    ctx.writeMethodSyms.getOrElseUpdate(
+      methodKey,
+      Symbol.newMethod(
+        Symbol.spliceOwner,
+        "w" + ctx.writeMethodSyms.size,
+        MethodType(List("in", "out"))(
+          _ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]),
+          _ => TypeRepr.of[Unit]
+        )
+      )
+    )
+
   private def makeWriteFn[U: Type](
       ctx: CodecBuildContext,
       methodKey: TypedName,
@@ -25,40 +40,20 @@ object Writer:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    val sym =
-      ctx.writeMethodSyms.getOrElseUpdate(
-        methodKey, {
-          val newSym = Symbol.newMethod(
-            Symbol.spliceOwner,
-            "w" + ctx.writeMethodSyms.size,
-            MethodType(List("in", "out"))(
-              _ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]),
-              _ => TypeRepr.of[Unit]
-            )
-          )
-          ctx.writeMethodDefs.update(
-            methodKey,
-            DefDef(
-              newSym,
-              params => {
-                val List(List(in, out)) = params
-                Some(f(in.asExprOf[U], out.asExprOf[JsonOutput]).asTerm.changeOwner(newSym))
-              }
-            )
-          )
-          newSym
+    val writeMethodSym = ctx.writeMethodSyms.getOrElse(methodKey, throw new JsonTypeError(s"Missing write fn symbol for $methodKey"))
+    ctx.writeMethodDefs.update(
+      methodKey,
+      DefDef(
+        writeMethodSym,
+        params => {
+          val List(List(in, out)) = params
+          Some(f(in.asExprOf[U], out.asExprOf[JsonOutput]).asTerm.changeOwner(writeMethodSym))
         }
       )
-
-    // Populate writerMap for SelfRef support
-    ctx.writerFnMapEntries(methodKey) = '{ (in: Any, out: JsonOutput) =>
-      ${
-        Apply(Ref(sym), List('{ in.asInstanceOf[U] }.asTerm, 'out.asTerm)).asExprOf[Unit]
-      }
-    }
+    )
 
     // Always apply the function
-    Apply(Ref(sym), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
+    Apply(Ref(writeMethodSym), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
 
 // ---------------------------------------------------------------------------------------------
 
@@ -90,6 +85,7 @@ object Writer:
         r match
           // Basically sealed traits...
           case t: Sealable if t.isSealed =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               if t.childrenAreObject then
                 '{
@@ -137,6 +133,7 @@ object Writer:
                 genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, isMapKey = isMapKey)
 
           case t: ScalaClassRef[?] =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               val body = {
                 val eachField = t.fields.map { f =>
@@ -185,21 +182,6 @@ object Writer:
                   thenp = discBlock.asTerm,
                   elsep = noDiscBlock.asTerm
                 ).asExprOf[Unit]
-                /* ZZZ
-                if emitDiscriminator then
-                  val cname = cfg.typeHintPolicy match
-                    case TypeHintPolicy.SIMPLE_CLASSNAME   => Expr(lastPart(t.name))
-                    case TypeHintPolicy.SCRAMBLE_CLASSNAME => '{ scramble(${ Expr(lastPart(t.name).hashCode) }) }
-                    case TypeHintPolicy.USE_ANNOTATION =>
-                      Expr(t.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(t.name)))
-                  val withDisc = '{
-                    $out.label(${ Expr(cfg.typeHintLabel) })
-                    $out.value($cname)
-                  } +: eachField
-                  Expr.block(withDisc.init, withDisc.last)
-                else if eachField.length == 1 then eachField.head
-                else Expr.block(eachField.init, eachField.last)
-                 */
               }
 
               if !t.isCaseClass && cfg._writeNonConstructorFields then
@@ -233,6 +215,7 @@ object Writer:
             }
 
           case t: JavaClassRef[?] =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               t.refType match
                 case '[p] =>
@@ -723,13 +706,14 @@ object Writer:
             '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
 
           case t: SelfRefRef[?] =>
-            val mapExpr = Apply(Ref(ctx.writerMapSym), Nil).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
-            val keyExpr = Expr(t.typedName.toString)
-            ctx.seenSelfRef = true
-            '{
-              val fn: Map[String, (Any, JsonOutput) => Unit] = $mapExpr
-              fn($keyExpr).apply($aE, $out)
-            }
+            val sym = ctx.writeMethodSyms.getOrElse(
+              t.typedName,
+              throw new JsonTypeError(s"Missing writer symbol for SelfRef: ${t.typedName}")
+            )
+            Apply(
+              Ref(sym),
+              List(aE.asTerm, out.asTerm)
+            ).asExprOf[Unit]
 
           // Everything else...
           // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")

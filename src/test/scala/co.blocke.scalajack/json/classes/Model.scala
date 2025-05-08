@@ -118,4 +118,3 @@ case class ComplexHolder(c1: Level1, c2: Level1, c3: Level1, c4: Level1)
 // Self-reference for Traits
 sealed trait Outer
 case class OuterImpl(name: String, num: Int, stuff: List[Outer]) extends Outer
-
