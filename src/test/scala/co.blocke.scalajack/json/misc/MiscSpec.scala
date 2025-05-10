@@ -7,10 +7,14 @@ import co.blocke.scala_reflection.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
+
 import scala.util.*
 import TestUtil.*
+import reading.JsonSource
+import writing.JsonOutput
 
 import java.util.UUID
+import scala.util.matching.Regex
 
 class MiscSpec() extends AnyFunSpec with JsonMatchers:
 
@@ -87,5 +91,22 @@ on another level."}""")
       val js = sj.toJson(inst)
       js should equal("""{"maybe":[1,2,3],"maybeNot":null,"itried":{"a":-5},"itried2":99,"ifailed":"Try Failure with msg: oops","anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"Left Error: nope","bunch":["a",null,"b"]}""")
       sj.fromJson(js) shouldEqual (AnyHolder(List(1, 2, 3), null, Map("a" -> -5), 99, "Try Failure with msg: oops", Map("a" -> 1, "b" -> 2), 3, "Left Error: nope", List("a", null, "b")))
+    }
+    it("User-supplied 'given' JsonCodec overrides must work") {
+      // case class PhoneNumber(countryCode: Int, areaCode: Int, prefix: Int, rest: Int)
+      given JsonCodec[PhoneNumber] = new JsonCodec[PhoneNumber] {
+        val phoneRegex: Regex = raw"\+(\d) \((\d{3})\) (\d{3})-(\d{4})".r
+        def encodeValue(in: PhoneNumber, out: JsonOutput): Unit = out.value(s"+${in.countryCode} (${in.areaCode}) ${in.prefix}-${in.rest}")
+        def decodeValue(in: JsonSource): PhoneNumber =
+          in.expectString() match {
+            case phoneRegex(country, area, prefix, line) => PhoneNumber(country.toInt, area.toInt, prefix.toInt, line.toInt)
+            case _                                       => throw new Exception("boom")
+          }
+      }
+      val sj = sjCodecOf[PhoneHolder]
+      val inst = PhoneHolder("Dude", PhoneNumber(1, 123, 456, 7890))
+      val js = sj.toJson(inst)
+      js should equal("""{"me":"Dude","phone":"+1 (123) 456-7890"}""")
+      sj.fromJson(js) shouldEqual inst
     }
   }

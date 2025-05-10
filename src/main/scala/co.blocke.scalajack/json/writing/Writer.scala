@@ -717,5 +717,9 @@ object Writer:
 
           // Everything else...
           // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-          case _ => genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey)
+          case _ =>
+            Expr.summon[JsonCodec[T]] match {
+              case Some(userOverride) => '{ ${ userOverride }.encodeValue($aE, $out) }
+              case None               => genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey)
+            }
       )

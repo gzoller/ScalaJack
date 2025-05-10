@@ -116,6 +116,9 @@ case class Car(numberOfWheels: Int, color: String) extends Vehicle
 case class Plane(numberOfEngines: Int) extends Vehicle
 case class VehicleHolder(f: Vehicle, f2: Vehicle, f4: Map[String, Vehicle])
 
+case class PhoneNumber(countryCode: Int, areaCode: Int, prefix: Int, rest: Int)
+case class PhoneHolder(me: String, phone: PhoneNumber)
+
 /*
 
 TODO: FUTURE

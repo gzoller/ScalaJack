@@ -42,71 +42,75 @@ object Reader:
         methodKey: TypedName,
         ref: RTypeRef[T]
     ): Expr[T] =
-      ref match
-        case t: Sealable if t.isSealed && t.childrenAreObject =>
-          makeReadFnSym[T](methodKey)
-          val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-            val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-            Helpers.generateReaderBodyForCaseObjects[T](
-              ctx,
-              t.sealedChildren,
-              t.name,
-              inExpr
-            )
-          }
-          registerReaderDef(methodKey, bodyExprMaker)
+      Expr.summon[JsonCodec[T]] match {
+        case Some(userOverride) => '{ ${ userOverride }.decodeValue($in) }
+        case None =>
+          ref match
+            case t: Sealable if t.isSealed && t.childrenAreObject =>
+              makeReadFnSym[T](methodKey)
+              val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                Helpers.generateReaderBodyForCaseObjects[T](
+                  ctx,
+                  t.sealedChildren,
+                  t.name,
+                  inExpr
+                )
+              }
+              registerReaderDef(methodKey, bodyExprMaker)
 
-        case t: Sealable if t.isSealed && !t.childrenAreObject =>
-          makeReadFnSym[T](methodKey)
-          t.sealedChildren.foreach { child =>
-            child.refType match
-              case '[c] =>
-                genReadVal[c](ctx, cfg, child.asInstanceOf[RTypeRef[c]], in, inTuple, isMapKey)
-          }
-          val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-            val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-            Helpers.generateReaderBodyForSealedTraits[T](
-              ctx,
-              cfg,
-              t,
-              inExpr
-            )
-          }
-          registerReaderDef(methodKey, bodyExprMaker)
+            case t: Sealable if t.isSealed && !t.childrenAreObject =>
+              makeReadFnSym[T](methodKey)
+              t.sealedChildren.foreach { child =>
+                child.refType match
+                  case '[c] =>
+                    genReadVal[c](ctx, cfg, child.asInstanceOf[RTypeRef[c]], in, inTuple, isMapKey)
+              }
+              val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                Helpers.generateReaderBodyForSealedTraits[T](
+                  ctx,
+                  cfg,
+                  t,
+                  inExpr
+                )
+              }
+              registerReaderDef(methodKey, bodyExprMaker)
 
-        case t: ScalaClassRef[?] =>
-          makeReadFnSym[T](methodKey)
-          val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-            val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-            Helpers.generateReaderBodyForScalaClass[T](
-              ctx,
-              cfg,
-              methodKey,
-              t,
-              inExpr
-            )
-          }
-          registerReaderDef(methodKey, bodyExprMaker)
+            case t: ScalaClassRef[?] =>
+              makeReadFnSym[T](methodKey)
+              val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                Helpers.generateReaderBodyForScalaClass[T](
+                  ctx,
+                  cfg,
+                  methodKey,
+                  t,
+                  inExpr
+                )
+              }
+              registerReaderDef(methodKey, bodyExprMaker)
 
-        case t: JavaClassRef[?] =>
-          makeReadFnSym[T](methodKey)
-          val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-            val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
-            Helpers.generateReaderBodyForJavaClass[T](
-              ctx,
-              cfg,
-              methodKey,
-              t,
-              inExpr
-            )
-          }
-          registerReaderDef(methodKey, bodyExprMaker)
+            case t: JavaClassRef[?] =>
+              makeReadFnSym[T](methodKey)
+              val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
+                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                Helpers.generateReaderBodyForJavaClass[T](
+                  ctx,
+                  cfg,
+                  methodKey,
+                  t,
+                  inExpr
+                )
+              }
+              registerReaderDef(methodKey, bodyExprMaker)
 
-        case t: TraitRef[?] =>
-          throw JsonUnsupportedType("Non-sealed traits are not supported")
+            case t: TraitRef[?] =>
+              throw JsonUnsupportedType("Non-sealed traits are not supported")
 
-        case t => // Should Never Happen(tm)
-          throw JsonUnsupportedType("Unsupported type: " + t.name)
+            case t => // Should Never Happen(tm)
+              throw JsonUnsupportedType("Unsupported type: " + t.name)
+      }
 
     def registerReaderDef(
         methodKey: TypedName,
