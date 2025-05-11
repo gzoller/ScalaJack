@@ -90,6 +90,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 ### Notes:
 
 * 8.1.0 -- New!
+    * Added ability to have user-provided custom codecs
     * Reduce need for type hints for seal trait classes (set SJConfig.preferTypeHints to force type hints)
     * Self-references work: case class Person(name: String, age: Int, supervisor: Option[Person])
     * Write performance tweaks
