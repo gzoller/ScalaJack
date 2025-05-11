@@ -7,10 +7,7 @@ import co.blocke.scala_reflection.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
-import scala.util.*
 import TestUtil.*
-
-import java.util.UUID
 
 class ClassSpec() extends AnyFunSpec with JsonMatchers:
   opaque type phone = String
@@ -44,6 +41,11 @@ class ClassSpec() extends AnyFunSpec with JsonMatchers:
       re.stuff shouldEqual (inst.stuff)
       re.foo shouldEqual (inst.foo)
       re.hidden shouldEqual (inst.hidden)
+      val re2 = sj.fromJson(scrambled)
+      re2.phase shouldEqual (inst.phase)
+      re2.stuff shouldEqual (inst.stuff)
+      re2.foo shouldEqual (inst.foo)
+      re2.hidden shouldEqual (inst.hidden)
     }
     it("Block non-constructor fields of class must work") {
       val inst = Parent(99, List("x", "y"))

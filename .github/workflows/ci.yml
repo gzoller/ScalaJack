@@ -9,9 +9,9 @@ name: Continuous Integration
 
 on:
   pull_request:
-    branches: ['**']
+    branches: ['**', '!update/**', '!pr/**']
   push:
-    branches: ['**']
+    branches: ['**', '!update/**', '!pr/**']
     tags: [v*]
 
 env:
@@ -27,45 +27,49 @@ jobs:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         scala: [3.5.2]
-        java: [zulu@21]
+        java: [temurin@21]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
-      - name: Checkout current branch (full)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Ignore line ending differences in git
+        if: contains(runner.os, 'windows')
+        shell: bash
+        run: bash -c 'git config --global core.autocrlf false'
 
-      - name: Setup sbt
-        uses: sbt/setup-sbt@v1
-
-      - name: Setup Java (zulu@21)
-        id: setup-java-zulu-21
-        if: matrix.java == 'zulu@21'
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: 21
-          cache: sbt
 
-      - name: sbt update
-        if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
-        run: sbt +update
+      - uses: actions/checkout@v4
+
+      - uses: coursier/setup-action@v1
+
+      - name: Install sbt
+        shell: bash
+        run: |
+          cs install sbt
+          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
+          sbt sbtVersion
 
       - name: Check that workflows are up to date
+        shell: bash
         run: sbt githubWorkflowCheck
 
-      - name: Build project
+      - name: Test
+        shell: bash
         run: sbt '++ ${{ matrix.scala }}' test
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        shell: bash
         run: mkdir -p target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        shell: bash
         run: tar cf targets.tar target project/target
 
       - name: Upload target directories
@@ -82,29 +86,27 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        java: [zulu@21]
+        java: [temurin@21]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout current branch (full)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Ignore line ending differences in git
+        if: contains(runner.os, 'windows')
+        run: bash -c 'git config --global core.autocrlf false'
 
-      - name: Setup sbt
-        uses: sbt/setup-sbt@v1
-
-      - name: Setup Java (zulu@21)
-        id: setup-java-zulu-21
-        if: matrix.java == 'zulu@21'
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: 21
-          cache: sbt
 
-      - name: sbt update
-        if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
-        run: sbt +update
+      - uses: actions/checkout@v4
+
+      - uses: coursier/setup-action@v1
+
+      - name: Install sbt
+        run: |
+          cs install sbt
+          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
+          sbt sbtVersion
 
       - name: Download target directories (3.5.2)
         uses: actions/download-artifact@v4
@@ -116,15 +118,22 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Import GPG key
+      - name: Import signing key
+        if: env.PGP_SECRET != '' && env.PGP_PASSPHRASE == ''
         env:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        run: echo $PGP_SECRET | base64 -d -i - | gpg --import
+
+      - name: Import signing key and strip passphrase
+        if: env.PGP_SECRET != '' && env.PGP_PASSPHRASE != ''
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
         run: |
-          echo "$PGP_SECRET" | base64 --decode | gpg --batch --import
-          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf
-          echo 'use-agent' >> ~/.gnupg/gpg.conf
-          gpgconf --kill gpg-agent
-          gpgconf --launch gpg-agent
+          echo "$PGP_SECRET" | base64 -d -i - > /tmp/signing-key.gpg
+          echo "$PGP_PASSPHRASE" | gpg --pinentry-mode loopback --passphrase-fd 0 --import /tmp/signing-key.gpg
+          (echo "$PGP_PASSPHRASE"; echo; echo) | gpg --command-fd 0 --pinentry-mode loopback --change-passphrase $(gpg --list-secret-keys --with-colons 2> /dev/null | grep '^sec:' | cut --delimiter ':' --fields 5 | tail -n 1)
 
       - env:
           CI_SNAPSHOT_RELEASE: +publishSigned
@@ -133,3 +142,36 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
         run: sbt ci-release
+
+  dependency-submission:
+    name: Submit Dependencies
+    if: github.event.repository.fork == false && github.event_name != 'pull_request'
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: [temurin@21]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Ignore line ending differences in git
+        if: contains(runner.os, 'windows')
+        run: bash -c 'git config --global core.autocrlf false'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/checkout@v4
+
+      - uses: coursier/setup-action@v1
+
+      - name: Install sbt
+        run: |
+          cs install sbt
+          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
+          sbt sbtVersion
+
+      - name: Submit Dependencies
+        uses: scalacenter/sbt-dependency-submission@v2
+        with:
+          configs-ignore: test scala-tool scala-doc-tool test-internal

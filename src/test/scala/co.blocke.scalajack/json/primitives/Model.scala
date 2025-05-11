@@ -51,7 +51,6 @@ case class SampleYearMonth(y1: YearMonth, y2: YearMonth)
 case class SampleZonedDateTime(o1: ZonedDateTime, o2: ZonedDateTime)
 case class SampleZoneId(z1: ZoneId, z2: ZoneId)
 case class SampleZoneOffset(z1: ZoneOffset, z2: ZoneOffset)
-// TODO: Missing Year, MonthYear, ZoneId, ZoneOffset, others?
 
 // === Any primitives
 case class AnyShell(a: Any)

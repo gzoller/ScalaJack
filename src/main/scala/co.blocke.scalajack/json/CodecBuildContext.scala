@@ -3,55 +3,45 @@ package json
 
 import scala.quoted.*
 import scala.collection.mutable
-import co.blocke.scala_reflection.{RTypeRef, TypedName}
-import writing.JsonOutput
+import co.blocke.scala_reflection.TypedName
 import reading.JsonSource
 
 class CodecBuildContext(using val quotes: Quotes):
   import quotes.reflect.*
 
+  // Tracks which TypedNames (i.e. classes with generic parameters) we've already processed
   val seenBefore: mutable.Map[TypedName, Boolean] = mutable.Map.empty
 
+  // ---------- Writing Support ----------
+
+  // Holds symbols of emitted writer methods for each type (used to avoid regenerating)
   val writeMethodSyms: mutable.HashMap[TypedName, quotes.reflect.Symbol] = mutable.HashMap.empty
+
+  // Holds method definitions (DefDef) for writer functions per TypedName
   val writeMethodDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
 
+  // ---------- Reading Support ----------
+
+  // Holds symbols of emitted reader methods for each type (used to avoid regenerating)
   val readMethodSyms: mutable.HashMap[TypedName, Symbol] = mutable.HashMap.empty
+
+  // Holds method definitions (DefDef) for reader functions per TypedName
   val readMethodDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
 
-  val writerFnMapEntries: mutable.HashMap[TypedName, Expr[(Any, JsonOutput) => Unit]] = mutable.HashMap.empty
+  // ---------- Special Type Handling ----------
 
-  val writerMapSym: Symbol = Symbol.newVal(
-    Symbol.spliceOwner,
-    "writerMap",
-    TypeRepr.of[Map[String, (Any, JsonOutput) => Unit]],
-    Flags.Lazy,
-    Symbol.noSymbol
-  )
-
-  // Used by Reader -- for val defs
-  val classFieldMatrixSyms: mutable.HashMap[TypedName, Symbol] = mutable.HashMap.empty
-  val classFieldMatrixValDefs: mutable.ArrayBuffer[ValDef] = mutable.ArrayBuffer.empty
-
-  val readerFnMapEntries: mutable.HashMap[TypedName, Expr[JsonSource => Any]] = mutable.HashMap.empty
-
-  val readerMapSym: Symbol = Symbol.newVal(
-    Symbol.spliceOwner,
-    "readerMap",
-    TypeRepr.of[Map[String, JsonSource => Any]],
-    Flags.Lazy,
-    Symbol.noSymbol
-  )
-
-  var seenSelfRef: Boolean = false // set to true to generate map entries for readers/writers, otherwise they aren't emitted
-
+  // Whether a field of type `Any` was seen (used to decide if readAny() should be emitted)
   var seenAnyRef: Boolean = false
 
+  // Symbol for the special method `readAny(in: JsonSource): Any`
+  // This gets generated if any `Any`-typed fields appear in the model
   val readAnySym: Symbol = Symbol.newMethod(
     Symbol.spliceOwner,
     "readAny",
     MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[Any])
   )
 
+  // The actual implementation of `readAny`, which handles all valid JSON types dynamically
   val readAnyDef: DefDef = DefDef(
     readAnySym,
     {

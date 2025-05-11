@@ -1,8 +1,5 @@
 package co.blocke.scalajack
 
-import co.blocke.scala_reflection.TypedName
-import co.blocke.scala_reflection.reflect.*
-import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import scala.quoted.*
 import scala.util.control.NoStackTrace
 
@@ -74,7 +71,6 @@ object SJConfig
       _suppressEscapedStrings = false,
       _preferTypeHints = false
     ):
-  import scala.quoted.FromExpr.*
 
   private[scalajack] given ToExpr[SJConfig] with {
     def apply(x: SJConfig)(using Quotes): Expr[SJConfig] =
@@ -112,8 +108,6 @@ object SJConfig
       summon[FromExpr[X]].unapply(x).getOrElse(throw ConfigError(s"Can't parse $name: ${x.show}, tree: ${x.asTerm}"))
 
     def unapply(x: Expr[SJConfig])(using Quotes): Option[SJConfig] =
-      import quotes.reflect.*
-
       x match
         case '{
               SJConfig(
@@ -187,7 +181,6 @@ object SJConfig
 
   private[scalajack] given FromExpr[TryPolicy] with {
     def unapply(x: Expr[TryPolicy])(using Quotes): Option[TryPolicy] =
-      import quotes.reflect.*
       x match
         case '{ TryPolicy.AS_NULL }         => Some(TryPolicy.AS_NULL)
         case '{ TryPolicy.ERR_MSG_STRING }  => Some(TryPolicy.ERR_MSG_STRING)
@@ -196,7 +189,6 @@ object SJConfig
 
   private[scalajack] given FromExpr[EitherLeftPolicy] with {
     def unapply(x: Expr[EitherLeftPolicy])(using Quotes): Option[EitherLeftPolicy] =
-      import quotes.reflect.*
       x match
         case '{ EitherLeftPolicy.AS_VALUE }        => Some(EitherLeftPolicy.AS_VALUE)
         case '{ EitherLeftPolicy.AS_NULL }         => Some(EitherLeftPolicy.AS_NULL)
@@ -206,7 +198,6 @@ object SJConfig
 
   private[scalajack] given FromExpr[TypeHintPolicy] with {
     def unapply(x: Expr[TypeHintPolicy])(using Quotes): Option[TypeHintPolicy] =
-      import quotes.reflect.*
       x match
         case '{ TypeHintPolicy.SIMPLE_CLASSNAME }   => Some(TypeHintPolicy.SIMPLE_CLASSNAME)
         case '{ TypeHintPolicy.SCRAMBLE_CLASSNAME } => Some(TypeHintPolicy.SCRAMBLE_CLASSNAME)

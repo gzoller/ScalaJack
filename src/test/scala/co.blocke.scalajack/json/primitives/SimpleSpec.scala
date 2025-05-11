@@ -126,7 +126,7 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
       }
 
       it("Year must work") {
-        val inst = SampleYear(Year.of(Year.MAX_VALUE), Year.of(Year.MIN_VALUE), Year.parse("2020"), null)
+        val inst = SampleYear(Year.of((Year.MAX_VALUE)), Year.of((Year.MIN_VALUE)), Year.parse("2020"), null)
         val sj = sjCodecOf[SampleYear]
         val js = sj.toJson(inst)
         js should matchJson("""{"y1":"999999999","y2":"-999999999","y3":"2020","y4":null}""")
@@ -213,9 +213,6 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         ex.show shouldEqual msg
 
         val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}"""
-        val msg2 = """Failed to parse Duration from input 'bogus'
-                    |{"d1":"PT0S","d2":"bogus","d3":null}
-                    |------------------------^""".stripMargin
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text cannot be parsed to a Duration"""
       }
 

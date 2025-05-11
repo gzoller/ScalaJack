@@ -5,17 +5,30 @@ package writing
 import scala.quoted.*
 import scala.jdk.CollectionConverters.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scala_reflection.{RType, RTypeRef, TypedName}
+import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
 
-import scala.annotation.tailrec
-
 object Writer:
 
-  // Fantastic Dark Magic here--lifted from Jasoniter.  Props!  This thing will create a DefDef, and a Symbol to it.
-  // The Symbol will let you call the generated function later from other macro-generated code.  The goal is to use
-  // generated functions to create cleaner/faster macro code than what straight quotes/splices would create unaided.
+  private def makeWriteFnSymbol[U: Type](
+      ctx: CodecBuildContext,
+      methodKey: TypedName
+  ): Unit =
+    given Quotes = ctx.quotes
+    import ctx.quotes.reflect.*
+    val _ = ctx.writeMethodSyms.getOrElseUpdate(
+      methodKey,
+      Symbol.newMethod(
+        Symbol.spliceOwner,
+        "w" + ctx.writeMethodSyms.size,
+        MethodType(List("in", "out"))(
+          _ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]),
+          _ => TypeRepr.of[Unit]
+        )
+      )
+    )
+
   private def makeWriteFn[U: Type](
       ctx: CodecBuildContext,
       methodKey: TypedName,
@@ -25,40 +38,20 @@ object Writer:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    val sym =
-      ctx.writeMethodSyms.getOrElseUpdate(
-        methodKey, {
-          val newSym = Symbol.newMethod(
-            Symbol.spliceOwner,
-            "w" + ctx.writeMethodSyms.size,
-            MethodType(List("in", "out"))(
-              _ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]),
-              _ => TypeRepr.of[Unit]
-            )
-          )
-          ctx.writeMethodDefs.update(
-            methodKey,
-            DefDef(
-              newSym,
-              params => {
-                val List(List(in, out)) = params
-                Some(f(in.asExprOf[U], out.asExprOf[JsonOutput]).asTerm.changeOwner(newSym))
-              }
-            )
-          )
-          newSym
+    val writeMethodSym = ctx.writeMethodSyms.getOrElse(methodKey, throw new JsonTypeError(s"Missing write fn symbol for $methodKey"))
+    ctx.writeMethodDefs.update(
+      methodKey,
+      DefDef(
+        writeMethodSym,
+        params => {
+          val List(List(in, out)) = params
+          Some(f(in.asExprOf[U], out.asExprOf[JsonOutput]).asTerm.changeOwner(writeMethodSym))
         }
       )
-
-    // Populate writerMap for SelfRef support
-    ctx.writerFnMapEntries(methodKey) = '{ (in: Any, out: JsonOutput) =>
-      ${
-        Apply(Ref(sym), List('{ in.asInstanceOf[U] }.asTerm, 'out.asTerm)).asExprOf[Unit]
-      }
-    }
+    )
 
     // Always apply the function
-    Apply(Ref(sym), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
+    Apply(Ref(writeMethodSym), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
 
 // ---------------------------------------------------------------------------------------------
 
@@ -90,6 +83,7 @@ object Writer:
         r match
           // Basically sealed traits...
           case t: Sealable if t.isSealed =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               if t.childrenAreObject then
                 '{
@@ -122,7 +116,7 @@ object Writer:
                       CaseDef(
                         Bind(sym, Typed(Wildcard(), Inferred(subtype))),
                         None,
-                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint).asTerm
+                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint, inTuple = inTuple, isMapKey = isMapKey).asTerm
                       )
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 Match(in.asTerm, cases).asExprOf[Unit]
@@ -134,9 +128,10 @@ object Writer:
             theField.refType match
               case '[e] =>
                 val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
-                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, isMapKey = isMapKey)
+                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey)
 
           case t: ScalaClassRef[?] =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               val body = {
                 val eachField = t.fields.map { f =>
@@ -185,21 +180,6 @@ object Writer:
                   thenp = discBlock.asTerm,
                   elsep = noDiscBlock.asTerm
                 ).asExprOf[Unit]
-                /* ZZZ
-                if emitDiscriminator then
-                  val cname = cfg.typeHintPolicy match
-                    case TypeHintPolicy.SIMPLE_CLASSNAME   => Expr(lastPart(t.name))
-                    case TypeHintPolicy.SCRAMBLE_CLASSNAME => '{ scramble(${ Expr(lastPart(t.name).hashCode) }) }
-                    case TypeHintPolicy.USE_ANNOTATION =>
-                      Expr(t.annotations.get("co.blocke.scalajack.TypeHint").flatMap(_.get("hintValue")).getOrElse(lastPart(t.name)))
-                  val withDisc = '{
-                    $out.label(${ Expr(cfg.typeHintLabel) })
-                    $out.value($cname)
-                  } +: eachField
-                  Expr.block(withDisc.init, withDisc.last)
-                else if eachField.length == 1 then eachField.head
-                else Expr.block(eachField.init, eachField.last)
-                 */
               }
 
               if !t.isCaseClass && cfg._writeNonConstructorFields then
@@ -233,6 +213,7 @@ object Writer:
             }
 
           case t: JavaClassRef[?] =>
+            makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
               t.refType match
                 case '[p] =>
@@ -399,7 +380,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -413,7 +394,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -427,7 +408,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -441,7 +422,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -475,7 +456,7 @@ object Writer:
                       }
                     case Some(v) =>
                       val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                 }
 
           case t: JavaOptionalRef[?] =>
@@ -485,14 +466,14 @@ object Writer:
                 '{
                   $tin.asInstanceOf[java.util.Optional[e]] match
                     case null => $out.burpNull()
-                    case o if o.isEmpty =>
+                    case o if !o.isPresent =>
                       ${
                         if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
                         else '{ () }
                       }
                     case o =>
                       val vv = o.get().asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                 }
 
           // No makeWriteFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
@@ -656,7 +637,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.toArray.foreach { elem =>
-                      ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -717,20 +698,26 @@ object Writer:
                 tt.tpe.asType match
                   case '[u] =>
                     val baseTypeRef = ReflectOnType.apply(ctx.quotes)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-                    genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out)
+                    genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out, inTuple = inTuple)
 
           case t: AnyRef =>
             '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
 
           case t: SelfRefRef[?] =>
-            val mapExpr = Ref(ctx.writerMapSym).asExprOf[Map[String, (Any, JsonOutput) => Unit]]
-            val keyExpr = Expr(t.typedName.toString)
-            ctx.seenSelfRef = true
-            '{
-              $mapExpr($keyExpr).apply($aE, $out)
-            }
+            val sym = ctx.writeMethodSyms.getOrElse(
+              t.typedName,
+              throw new JsonTypeError(s"Missing writer symbol for SelfRef: ${t.typedName}")
+            )
+            Apply(
+              Ref(sym),
+              List(aE.asTerm, out.asTerm)
+            ).asExprOf[Unit]
 
           // Everything else...
           // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
-          case _ => genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey)
+          case _ =>
+            Expr.summon[JsonCodec[T]] match {
+              case Some(userOverride) => '{ ${ userOverride }.encodeValue($aE, $out) }
+              case None               => genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey)
+            }
       )

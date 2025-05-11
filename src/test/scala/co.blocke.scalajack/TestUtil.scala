@@ -1,11 +1,6 @@
 package co.blocke.scalajack
 
-// import munit.internal.console
-
 object TestUtil {
-
-  // inline def describe(message: String, color: String = Console.MAGENTA): Unit = TestingConsole.out.println(s"$color$message${Console.RESET}")
-  // inline def pending = describe("   << Test Pending (below) >>", Console.YELLOW)
 
   inline def colorString(str: String, color: String = Console.MAGENTA): String =
     str.split("\n").map(s => s"$color$s${Console.RESET}").mkString("\n")

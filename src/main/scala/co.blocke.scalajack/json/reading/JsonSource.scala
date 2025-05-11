@@ -3,7 +3,6 @@ package json
 package reading
 
 import scala.annotation.{switch, tailrec}
-import co.blocke.scalajack.internal.SafeNumbers.double
 import co.blocke.scalajack.internal.UnsafeNumbers
 
 object JsonSource:
@@ -308,27 +307,32 @@ case class JsonSource(js: CharSequence):
         buf.append(c)
         expectEncodedString(buf)
 
-  def expectString[T](parseFn: String => T): T =
+  def expectStringWithFn[T](parseFn: String => T): T =
     expectString() match
       case s: String => parseFn(s)
       case null      => null.asInstanceOf[T]
 
-  @tailrec
-  final def parseString(pos: Int): Int =
-    if pos + 3 < max then // Based on SWAR routine of JSON string parsing: https://github.com/sirthias/borer/blob/fde9d1ce674d151b0fee1dd0c2565020c3f6633a/core/src/main/scala/io/bullet/borer/json/JsonParser.scala#L456
-      val bs = (js.charAt(pos)) | (js.charAt(pos + 1) << 8) | (js.charAt(pos + 2) << 16) | js.charAt(pos + 3) << 24
-      val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
-      if mask != 0 then {
-        val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
-        if (bs >> (offset << 3)).toByte == '"' then pos + offset
-        else -1 // special char found
-      } else parseString(pos + 4)
-    else if pos == max then throw new Exception("Unterminated string value")
+  final private def parseString(pos: Int): Int =
+    if js.charAt(pos) == '"' then pos // empty string: "" → return index of closing quote
     else
-      val b = js.charAt(pos)
-      if b == '"' then pos
-      else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
-      else parseString(pos + 1)
+      @tailrec
+      def loop(p: Int): Int =
+        if p + 3 < max then
+          val bs = js.charAt(p) | (js.charAt(p + 1) << 8) | (js.charAt(p + 2) << 16) | (js.charAt(p + 3) << 24)
+          val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
+          if mask != 0 then
+            val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
+            if ((bs >>> (offset << 3)) & 0xff).toByte == '"' then p + offset
+            else -1 // special char found
+          else loop(p + 4)
+        else if p == max then throw new Exception("Unterminated string value")
+        else
+          val b = js.charAt(p)
+          if b == '"' then p
+          else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
+          else loop(p + 1)
+
+      loop(pos)
 
   // Boolean...
   // =======================================================
@@ -372,7 +376,7 @@ case class JsonSource(js: CharSequence):
       c
     else BUFFER_EXCEEDED
 
-  inline def readChars(
+  private inline def readChars(
       expect: Array[Char],
       errMsg: String
   ): Unit =
@@ -450,7 +454,7 @@ case class JsonSource(js: CharSequence):
   // Skip things...
   // =======================================================
 
-  inline def skipWS(): Unit =
+  private inline def skipWS(): Unit =
     while (here == ' ' || here == '\n' || (here | 0x4) == '\r' || here == '\t') && i < max do i += 1
     if i == max then throw new JsonParseError("Unexpected end of buffer", this)
 
@@ -462,7 +466,6 @@ case class JsonSource(js: CharSequence):
       case '{' => skipObjectValue()
       case '[' => skipArrayValue()
       case '"' =>
-        i += 1
         val endI = parseString(i)
         i = endI + 1
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' =>
@@ -471,12 +474,12 @@ case class JsonSource(js: CharSequence):
     }
 
   @tailrec
-  final def skipNumber(): Unit =
+  final private def skipNumber(): Unit =
     if !isNumber(readChar()) then backspace()
     else skipNumber()
 
   @tailrec
-  final def skipArrayValue(k: Int = 0): Unit =
+  final private def skipArrayValue(k: Int = 0): Unit =
     readChar() match
       case ']' if k == 0 => ()
       case '"' =>
@@ -487,7 +490,7 @@ case class JsonSource(js: CharSequence):
       case _   => skipArrayValue(k)
 
   @tailrec
-  final def skipObjectValue(k: Int = 0): Unit =
+  final private def skipObjectValue(k: Int = 0): Unit =
     readChar() match
       case '}' if k == 0 => ()
       case '"' =>

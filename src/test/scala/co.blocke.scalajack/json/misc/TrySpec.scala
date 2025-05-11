@@ -11,8 +11,6 @@ import scala.util.*
 import java.util.Optional
 import TestUtil.*
 
-import java.util.UUID
-
 class TrySpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-------------------------------\n:          Try Tests          :\n-------------------------------", Console.YELLOW)) {

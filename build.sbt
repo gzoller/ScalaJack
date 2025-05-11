@@ -1,5 +1,8 @@
-import org.typelevel.sbt.gha.JavaSpec.Distribution.Zulu
+import org.typelevel.sbt.gha.JavaSpec.Distribution
+import xerial.sbt.Sonatype.sonatypeCentralHost
 import scoverage.ScoverageKeys._
+
+disablePlugins(TypelevelMimaPlugin) // we use our own versioning for now via gitflow-packager
 
 lazy val isCI = sys.env.get("CI").contains("true")
 
@@ -20,8 +23,7 @@ inThisBuild(List(
       "gzoller@blocke.co",
       url("http://www.blocke.co")
     )
-  ),
-  publishTo := Some("Sonatype OSS Central" at "https://s01.oss.sonatype.org/content/repositories/releases/")
+  )
   //coverageMinimumStmtTotal    := 92,
   //coverageFailOnMinimum       := true
 ))
@@ -29,7 +31,11 @@ inThisBuild(List(
 name := "scalajack"
 ThisBuild / organization := "co.blocke"
 ThisBuild / scalaVersion := "3.5.2"
+ThisBuild / versionScheme := Some("semver-spec")
 ThisBuild / githubWorkflowScalaVersions := Seq("3.5.2")
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Distribution.Temurin, "21"))
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest", "windows-latest")
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 
 lazy val root = project
   .in(file("."))
@@ -45,7 +51,7 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"            %% "scala-reflection"     % "2.0.12",  //"unique_5d25df", /
+      "co.blocke"            %% "scala-reflection"     % "2.0.13",
       "org.apache.commons"   % "commons-text"          % "1.13.1",
       "io.github.kitlangton" %% "neotype"              % "0.3.23",
       "org.scalatest"        %% "scalatest"            % "3.2.19" % Test,
@@ -54,30 +60,41 @@ lazy val root = project
     )
   )
 
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Zulu, "21"))
-ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("main")),
   RefPredicate.StartsWith(Ref.Tag("v"))
 )
 
-ThisBuild / githubWorkflowPublish := Seq(
-  // Step 1: Import GPG key into runner's GPG keyring
+ThisBuild / githubWorkflowJobSetup := Seq(
   WorkflowStep.Run(
-    name = Some("Import GPG key"),
-    commands = List(
-      "echo \"$PGP_SECRET\" | base64 --decode | gpg --batch --import",
-      "echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf",
-      "echo 'use-agent' >> ~/.gnupg/gpg.conf",
-      "gpgconf --kill gpg-agent",
-      "gpgconf --launch gpg-agent"
-    ),
-    env = Map(
-      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}"
+    name = Some("Ignore line ending differences in git"),
+    cond = Some("contains(runner.os, 'windows')"),
+    commands = List("bash -c 'git config --global core.autocrlf false'")
+  ),
+  WorkflowStep.Use(
+    UseRef.Public("actions", "setup-java", "v4"),
+    params = Map(
+      "distribution" -> "temurin",
+      "java-version" -> "21"
     )
   ),
+  WorkflowStep.Use(
+    UseRef.Public("actions", "checkout", "v4")
+  ),
+  WorkflowStep.Use(
+    UseRef.Public("coursier", "setup-action", "v1")
+  ),
+  WorkflowStep.Run(
+    name = Some("Install sbt"),
+    commands = List(
+      "cs install sbt",
+      "echo \"$HOME/.local/share/coursier/bin\" >> $GITHUB_PATH",
+      "sbt sbtVersion"
+    )
+  )
+)
 
-  // Step 2: Run ci-release as usual
+ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
     List("ci-release"),
     env = Map(
@@ -94,23 +111,18 @@ ThisBuild / githubWorkflowPublish := Seq(
 // Settings
 //==========================
 lazy val settings = Seq(
-  javacOptions ++= Seq("-source", "11", "-target", "11"),
+  javacOptions ++= Seq("--release", "21"),
   scalacOptions ++= compilerOptions
 )
 
 lazy val compilerOptions = Seq(
-  "-unchecked",
-  "-feature",
   "-language:implicitConversions",
-  "-deprecation",
   // "-explain",'
   "-coverage-exclude-files",
   ".*SJConfig.*",
   "-coverage-exclude-classlikes",
   ".*internal.*",
   "-coverage-exclude-classlikes",
-  ".*AnyWriter",
-  "-encoding",
-  "utf8"
+  ".*AnyWriter"
 )
 

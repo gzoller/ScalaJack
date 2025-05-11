@@ -10,8 +10,6 @@ import org.scalatest.*
 import scala.util.*
 import TestUtil.*
 
-import java.util.UUID
-
 class LRSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-------------------------------\n:         Either Tests        :\n-------------------------------", Console.YELLOW)) {

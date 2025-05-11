@@ -84,6 +84,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Null and None treatment](doc/nullAndNone.md)
 * [NeoType Support](doc/neotype.md)
 * [Union type](doc/union.md)
+* [Custom Codecs (overrides)](doc/customCodec.md)
 * [Gimme Speed!](benchmark/README.md)
 
 ### Notes:

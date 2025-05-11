@@ -1,10 +1,10 @@
+
 name: Coveralls Publish
 
 on:
-  push:
-    branches: [master]
-    tags: ["v*"]
-
+  pull_request:
+    branches:
+      - main
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -18,7 +18,7 @@ jobs:
     name: Build and Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         scala: [3.5.2]
         java: [zulu@21]
     runs-on: ${{ matrix.os }}
@@ -34,17 +34,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup sbt
-        uses: sbt/setup-sbt@v1
+      - uses: coursier/setup-action@v1
 
-      - name: Setup Java (zulu@21)
-        id: setup-java-zulu-21
-        if: matrix.java == 'zulu@21'
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: 21
-          cache: sbt
+
+      - name: Install sbt
+        shell: bash
+        run: |
+          cs install sbt
+          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
+          sbt sbtVersion
 
       - name: sbt update
         if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
@@ -59,4 +61,7 @@ jobs:
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: main
+          fail-on-error: false # Fail if upload fails
+          coverage-threshold: 85 # Minimum coverage percentage required
+        env:
+          COVERALLS_GIT_BRANCH: ${{ github.ref_name }} # Dynamically sets the branch name

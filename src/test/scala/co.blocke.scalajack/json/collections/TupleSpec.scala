@@ -3,13 +3,10 @@ package json
 package collections
 
 import ScalaJack.*
-import co.blocke.scala_reflection.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
 import TestUtil.*
-
-import java.util.UUID
 
 class TupleSpec() extends AnyFunSpec with JsonMatchers:
 

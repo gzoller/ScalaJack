@@ -8,6 +8,7 @@ package json
 // ScalaJack: Removal of ZIO's original aliases feature for speed--we don't need this.
 //
 final class StringMatrix(val xs: Array[String]) {
+//  println("StringMatrix: " + xs.toList.mkString(",") + "!")
   require(xs.forall(_.nonEmpty))
   require(xs.nonEmpty)
   require(xs.length < 64)

@@ -1,14 +1,11 @@
 package co.blocke.scalajack
 
-import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scalajack.json.writing.JsonOutput
 
 import scala.quoted.*
 import quoted.Quotes
 import json.*
-
-import scala.collection.mutable
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T]):
   def fromJson(js: String): T =

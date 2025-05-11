@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package json
 
-import scala.util.Failure
 import scala.quoted.{Expr, Quotes, Type}
 import java.util.Optional
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
@@ -11,19 +10,15 @@ val BUFFER_EXCEEDED: Char = 7 // Old "BELL" ASCII value, used as a marker when w
 val END_OF_STRING: Char = 3
 
 def ofOption[T](xs: Option[Expr[T]])(using Type[T])(using q: Quotes): Expr[Option[T]] =
-  import q.reflect.*
   if xs.isEmpty then '{ None }
   else '{ Some(${ xs.get }) }
 
 // Java variant of ofOption
 def ofOptional[T](xs: Optional[Expr[T]])(using Type[T])(using q: Quotes): Expr[Optional[T]] =
-  import q.reflect.*
-  if xs.isEmpty then '{ Optional.empty }
-  else '{ Optional.of(${ xs.get }) }
+  if xs.isPresent then '{ Optional.of(${ xs.get }) }
+  else '{ Optional.empty }
 
 def liftStringMap(map: Map[String, String])(using quotes: Quotes): Expr[Map[String, String]] = {
-  import quotes.reflect.*
-
   val entries: List[Expr[(String, String)]] = map.toList
     .map { case (k, v) =>
       Expr(k) -> Expr(v)
@@ -36,8 +31,6 @@ def liftStringMap(map: Map[String, String])(using quotes: Quotes): Expr[Map[Stri
 }
 
 def liftStringListMap(map: Map[String, List[String]])(using quotes: Quotes): Expr[Map[String, List[String]]] =
-  import quotes.reflect.*
-
   val entries: List[Expr[(String, List[String])]] = map.toList.map { case (k, v) =>
     val keyExpr = Expr(k)
     val valueExpr = Expr.ofList(v.map(Expr(_)))
@@ -47,8 +40,6 @@ def liftStringListMap(map: Map[String, List[String]])(using quotes: Quotes): Exp
   '{ Map.from($listExpr) }
 
 def liftStringOptionMap(map: Map[String, Option[String]])(using quotes: Quotes): Expr[Map[String, Option[String]]] =
-  import quotes.reflect.*
-
   val entries: List[Expr[(String, Option[String])]] = map.toList.map {
     case (key, Some(value)) => '{ (${ Expr(key) }, Some(${ Expr(value) })) }
     case (key, None)        => '{ (${ Expr(key) }, None) }

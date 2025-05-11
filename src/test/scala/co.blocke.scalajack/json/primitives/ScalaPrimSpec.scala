@@ -5,7 +5,6 @@ package primitives
 import ScalaJack.*
 import co.blocke.scala_reflection.*
 import scala.math.BigDecimal
-import java.util.UUID
 import TestUtil.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
@@ -15,7 +14,6 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("---------------------------\n:  Scala Primitive Tests  :\n---------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
-
       it("BigDecimal must work") {
         val inst = SampleBigDecimal(
           BigDecimal(123L),
