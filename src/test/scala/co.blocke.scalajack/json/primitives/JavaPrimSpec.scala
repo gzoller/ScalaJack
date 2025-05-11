@@ -204,13 +204,13 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '3' at position [15]
           |{"c1":"Z","c2":3,"c3":null}
           |---------------^""".stripMargin
-        val ex = intercept[JsonParseError](sjCodecOf[SampleJChar].fromJson(js))
+        val ex = intercept[JsonParseError](sj.fromJson(js))
         ex.show shouldEqual msg
         val js2 = """{"c1":"Z","c2":"","c3":null}"""
         val msg2 = """Character value expected but empty string found in json at position [15]
           |{"c1":"Z","c2":"","c3":null}
           |---------------^""".stripMargin
-        val ex2 = intercept[JsonParseError](sjCodecOf[SampleJChar].fromJson(js2))
+        val ex2 = intercept[JsonParseError](sj.fromJson(js2))
         ex2.show shouldEqual msg2
       }
 
@@ -274,15 +274,15 @@ class JavaPrimSpec() extends AnyFunSpec with JsonMatchers:
       }
 
       it("Short must break") {
-        val sj = sjCodecOf[SampleJByte]
+        val sj = sjCodecOf[SampleJShort]
         val js = """{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
         val msg = """Expected a numerical value or null here at position [6]
             |{"s1":false,"s2":-32768,"s3":0,"s4":123,"s5":null}
             |------^""".stripMargin
-        val ex = intercept[JsonParseError](sjCodecOf[SampleJShort].fromJson(js))
+        val ex = intercept[JsonParseError](sj.fromJson(js))
         ex.show shouldEqual msg
         val js2 = """{"s1":2.3,"s2":-32768,"s3":0,"s4":123,"s5":null}"""
-        the[java.lang.NumberFormatException] thrownBy sjCodecOf[SampleJShort].fromJson(js2) should have message "For input string: \"2.3\""
+        the[java.lang.NumberFormatException] thrownBy sj.fromJson(js2) should have message "For input string: \"2.3\""
       }
     }
   }

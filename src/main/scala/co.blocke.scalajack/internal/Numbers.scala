@@ -16,7 +16,6 @@
 package co.blocke.scalajack
 package internal
 
-import java.io.*
 import scala.util.control.NoStackTrace
 import json.reading.JsonSource
 import json.*
@@ -107,7 +106,7 @@ object SafeNumbers {
     } else
       {
         val s = new java.lang.StringBuilder(24)
-        if bits < 0 then s.append('-')
+        if bits < 0 then { s.append('-'); () }
         if x == 0.0f then s.append('0').append('.').append('0')
         else {
           var e = ieeeExponent - 1075
@@ -175,7 +174,7 @@ object SafeNumbers {
             while {
               exp += 1
               exp != 0
-            } do s.append('0')
+            } do { s.append('0'); () }
             s.append(dv)
             var i = s.length - 1
             while s.charAt(i) == '0' do i -= 1
@@ -204,7 +203,7 @@ object SafeNumbers {
     } else
       {
         val s = new java.lang.StringBuilder(16)
-        if bits < 0 then s.append('-')
+        if bits < 0 then { s.append('-'); () }
         if x == 0.0f then s.append('0').append('.').append('0')
         else {
           var e = ieeeExponent - 150
@@ -269,7 +268,7 @@ object SafeNumbers {
             while {
               exp += 1
               exp != 0
-            } do s.append('0')
+            } do { s.append('0'); () }
             s.append(dv)
             var i = s.length - 1
             while s.charAt(i) == '0' do i -= 1
@@ -815,7 +814,7 @@ object UnsafeNumbers {
         if sig > 0 || current != '0' then push_sig()
         // overflowed...
         if dot < 0 then throw JsonParseError("Read buffer exceeded", in)
-        advance()
+        val _ = advance()
       }
     }
 

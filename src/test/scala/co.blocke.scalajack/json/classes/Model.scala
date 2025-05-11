@@ -3,8 +3,6 @@ package json
 package classes
 
 import co.blocke.scala_reflection.Ignore
-import dotty.tools.repl.Command
-import java.net.NoRouteToHostException
 
 case class Person(name: String, @Change(name = "duration") age: Int)
 

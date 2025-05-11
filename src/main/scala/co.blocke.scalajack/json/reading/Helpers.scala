@@ -17,7 +17,6 @@ object Helpers:
 
   private def generateFieldMatrixVal(
       ctx: CodecBuildContext,
-      methodKey: TypedName,
       t: RTypeRef[?],
       onlyConstructorFields: Boolean = true
   ): ctx.quotes.reflect.ValDef =
@@ -213,13 +212,12 @@ object Helpers:
       classRef: ScalaClassRef[?],
       in: Expr[JsonSource]
   ): Expr[T] =
-    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, methodKey, classRef, in)
-    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, methodKey, classRef, in)
+    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
+    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
 
   private def generateReaderBodySimple[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      methodKey: TypedName,
       classRef: ScalaClassRef[?],
       in: Expr[JsonSource]
   ): Expr[T] =
@@ -227,7 +225,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix for constructor fields only
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef)
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef)
     val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
@@ -278,7 +276,6 @@ object Helpers:
   private def generateReaderBodyWithNonCtor[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      methodKey: TypedName,
       classRef: ScalaClassRef[?],
       in: Expr[JsonSource]
   ): Expr[T] =
@@ -286,7 +283,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef, false)
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef, false)
     val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
@@ -297,7 +294,6 @@ object Helpers:
 
     val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
     val instanceValDef = ValDef(instanceSym, Some('{ null }.asTerm))
-    val instanceRef = Ref(instanceSym).asExprOf[T]
 
     val constructorCaseDefs = FieldCaseGenerator.generateConstructorFieldCases(
       ctx,
@@ -383,7 +379,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, methodKey, classRef, false)
+    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef, false)
     val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
 
     classRef.refType match // refType is Type[r.R]
@@ -392,7 +388,7 @@ object Helpers:
         val tpe = TypeRepr.of[b]
         val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[b], Flags.Mutable, Symbol.noSymbol)
         val instanceSymRef = Ident(instanceSym.termRef)
-        val nullConst = tpe.classSymbol.get.companionModule.declaredMethods
+        tpe.classSymbol.get.companionModule.declaredMethods
           .find(m => m.paramSymss == List(Nil))
           .getOrElse(
             throw JsonTypeError("ScalaJack only supports Java classes that have a zero-argument constructor")

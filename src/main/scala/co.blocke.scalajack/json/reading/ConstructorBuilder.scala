@@ -10,7 +10,6 @@ object ConstructorBuilder:
       tpe: ctx.quotes.reflect.TypeRepr,
       fieldArgs: List[ctx.quotes.reflect.Term]
   ): ctx.quotes.reflect.Term =
-    given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     val classSymbol = tpe.classSymbol.get

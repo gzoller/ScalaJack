@@ -18,7 +18,6 @@ object MaybeWrite:
 
   def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput])(using Quotes): Expr[Unit] =
     given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
 
     val labelE = Expr(label)
     _maybeWrite[T](
@@ -88,7 +87,6 @@ object MaybeWrite:
       out: Expr[JsonOutput]
   ): Expr[Unit] =
     given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
 
     '{
       $tryExpr match
@@ -111,7 +109,6 @@ object MaybeWrite:
       prefix: Expr[Unit]
   ): Expr[Unit] =
     given Quotes = ctx.quotes
-    import ctx.quotes.reflect.*
 
     t match
       case t if t.lrkind == LRKind.EITHER =>
@@ -211,7 +208,7 @@ object MaybeWrite:
         t.optionParamType.refType match
           case '[e] =>
             val tin = aE.asExprOf[java.util.Optional[e]]
-            handleOptional[java.util.Optional, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: java.util.Optional[e]) => o.isEmpty }, '{ (o: java.util.Optional[e]) => o.get })
+            handleOptional[java.util.Optional, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: java.util.Optional[e]) => !o.isPresent }, '{ (o: java.util.Optional[e]) => o.get })
 
       case t: TryRef[?] =>
         t.tryRef.refType match

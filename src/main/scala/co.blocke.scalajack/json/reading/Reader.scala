@@ -29,7 +29,7 @@ object Reader:
     def makeReadFnSym[S: Type](
         methodKey: TypedName
     ): Unit =
-      ctx.readMethodSyms.getOrElseUpdate(
+      val _ = ctx.readMethodSyms.getOrElseUpdate(
         methodKey,
         Symbol.newMethod(
           Symbol.spliceOwner,
@@ -390,7 +390,6 @@ object Reader:
       //  Options...
       // --------------------
       case t: ScalaOptionRef[?] =>
-        import quotes.reflect.*
         t.optionParamType.refType match
           case '[e] =>
             if cfg.noneAsNull || inTuple then
@@ -405,7 +404,6 @@ object Reader:
               }.asExprOf[T]
 
       case t: JavaOptionalRef[?] =>
-        import quotes.reflect.*
         t.optionParamType.refType match
           case '[e] =>
             if cfg.noneAsNull || inTuple then
@@ -646,12 +644,9 @@ object Reader:
         t.elementRef.refType match
           case '[e] =>
             val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-            val ct = Expr.summon[ClassTag[e]].get
             '{
               val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-              if parsedArray != null then
-                implicit val ctt = $ct
-                parsedArray.asInstanceOf[Iterable[e]]
+              if parsedArray != null then parsedArray.asInstanceOf[Iterable[e]]
               else null
             }.asExprOf[T]
 
@@ -1110,7 +1105,6 @@ object Reader:
         t.refType match
           case '[tt] =>
             val tpe = TypeRepr.of[tt]
-            val maxI = Expr(t.tupleRefs.length - 1)
             val indexedTypes = tpe match
               case AppliedType(_, typeArgs) => typeArgs.map(_.dealias)
               case _                        => Nil
@@ -1175,7 +1169,6 @@ object Reader:
       // --------------------
       case t: NeoTypeRef[?] => // in Quotes context
         val module = Symbol.requiredModule(t.typedName.toString)
-        val myMake = module.methodMember("make").head
         val tm = Ref(module)
         t.wrappedTypeRef.refType match
           case '[e] =>

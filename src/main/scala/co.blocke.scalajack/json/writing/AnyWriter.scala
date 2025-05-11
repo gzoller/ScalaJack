@@ -125,7 +125,7 @@ object AnyWriter:
   def isOkToWrite(ctx: CodecBuildContext, cfg: SJConfig, prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput]): Expr[Unit] =
     given Quotes = ctx.quotes
     '{
-      _okToWrite(${ Expr(cfg) }, $value).map { v =>
+      val _ = _okToWrite(${ Expr(cfg) }, $value).map { v =>
         $prefix
         AnyWriter.writeAny(${ Expr(cfg) }, v, $out)
       }

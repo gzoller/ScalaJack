@@ -11,8 +11,6 @@ import scala.util.*
 import java.util.Optional
 import TestUtil.*
 
-import java.util.UUID
-
 class OptionSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-------------------------------\n:         Option Tests        :\n-------------------------------", Console.YELLOW)) {

@@ -9,8 +9,6 @@ import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
 
-import scala.annotation.tailrec
-
 object Writer:
 
   private def makeWriteFnSymbol[U: Type](
@@ -19,7 +17,7 @@ object Writer:
   ): Unit =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
-    ctx.writeMethodSyms.getOrElseUpdate(
+    val _ = ctx.writeMethodSyms.getOrElseUpdate(
       methodKey,
       Symbol.newMethod(
         Symbol.spliceOwner,
@@ -118,7 +116,7 @@ object Writer:
                       CaseDef(
                         Bind(sym, Typed(Wildcard(), Inferred(subtype))),
                         None,
-                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint).asTerm
+                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint, inTuple = inTuple, isMapKey = isMapKey).asTerm
                       )
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 Match(in.asTerm, cases).asExprOf[Unit]
@@ -130,7 +128,7 @@ object Writer:
             theField.refType match
               case '[e] =>
                 val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
-                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, isMapKey = isMapKey)
+                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey)
 
           case t: ScalaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
@@ -382,7 +380,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -396,7 +394,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -410,7 +408,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -424,7 +422,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -458,7 +456,7 @@ object Writer:
                       }
                     case Some(v) =>
                       val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                 }
 
           case t: JavaOptionalRef[?] =>
@@ -468,14 +466,14 @@ object Writer:
                 '{
                   $tin.asInstanceOf[java.util.Optional[e]] match
                     case null => $out.burpNull()
-                    case o if o.isEmpty =>
+                    case o if !o.isPresent =>
                       ${
                         if cfg.noneAsNull || inTuple then '{ $out.burpNull() }
                         else '{ () }
                       }
                     case o =>
                       val vv = o.get().asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                 }
 
           // No makeWriteFn here.  All LeftRight types (Either, Union, Intersection) are just type wrappers
@@ -639,7 +637,7 @@ object Writer:
                   else
                     $out.startArray()
                     $tin.toArray.foreach { elem =>
-                      ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out) }
+                      ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
                     $out.endArray()
                 }
@@ -700,7 +698,7 @@ object Writer:
                 tt.tpe.asType match
                   case '[u] =>
                     val baseTypeRef = ReflectOnType.apply(ctx.quotes)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-                    genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out)
+                    genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out, inTuple = inTuple)
 
           case t: AnyRef =>
             '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }

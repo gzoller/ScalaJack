@@ -213,9 +213,6 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         ex.show shouldEqual msg
 
         val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}"""
-        val msg2 = """Failed to parse Duration from input 'bogus'
-                    |{"d1":"PT0S","d2":"bogus","d3":null}
-                    |------------------------^""".stripMargin
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text cannot be parsed to a Duration"""
       }
 

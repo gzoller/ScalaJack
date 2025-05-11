@@ -13,7 +13,6 @@ import TestUtil.*
 import reading.JsonSource
 import writing.JsonOutput
 
-import java.util.UUID
 import scala.util.matching.Regex
 
 class MiscSpec() extends AnyFunSpec with JsonMatchers:

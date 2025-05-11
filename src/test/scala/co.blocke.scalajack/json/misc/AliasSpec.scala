@@ -7,10 +7,7 @@ import co.blocke.scala_reflection.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
-import scala.util.*
 import TestUtil.*
-
-import java.util.UUID
 
 class AliasSpec() extends AnyFunSpec with JsonMatchers:
   opaque type Count = Int
