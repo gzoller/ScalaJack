@@ -114,7 +114,6 @@ object SJConfig
                 $noneAsNullE,
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
-                // $undefinedFieldHandlingE,
                 $typeHintLabelE,
                 $typeHintPolicyE,
                 $enumsAsIdsE,

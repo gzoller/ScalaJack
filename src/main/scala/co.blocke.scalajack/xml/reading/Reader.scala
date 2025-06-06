@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json
+package xml
 package reading
 
 import scala.quoted.*
@@ -8,49 +8,51 @@ import scala.collection.Factory
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
 import internal.CodecBuildContext
-
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import co.blocke.scalajack
 
 object Reader:
 
   def genReadVal[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      ref: RTypeRef[T],
-      in: Expr[JsonSource],
-      inTuple: Boolean = false,
-      isMapKey: Boolean = false
-  ): Expr[T] =
+                           ctx: CodecBuildContext,
+                           cfg: SJConfig,
+                           ref: RTypeRef[T],
+                           in: Expr[XmlSource],
+                           inTuple: Boolean = false,
+                           isMapKey: Boolean = false,
+                           entryLabel: Option[String] = None
+                         ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     // ------------------< Helpers
 
     def makeReadFnSym[S: Type](
-        methodKey: TypedName
-    ): Unit =
+                                methodKey: TypedName
+                              ): Unit =
       val _ = ctx.readMethodSyms.getOrElseUpdate(
         methodKey,
         Symbol.newMethod(
           Symbol.spliceOwner,
           "r" + ctx.readMethodSyms.size,
-          MethodType(List("in"))(_ => List(TypeRepr.of[JsonSource]), _ => TypeRepr.of[S])
+          MethodType(List("in"))(_ => List(TypeRepr.of[XmlSource]), _ => TypeRepr.of[S])
         )
       )
 
     def makeReadFn(
-        methodKey: TypedName,
-        ref: RTypeRef[T]
-    ): Expr[T] =
-      Expr.summon[JsonCodec[T]] match {
+                    methodKey: TypedName,
+                    ref: RTypeRef[T]
+                  ): Expr[T] =
+      Expr.summon[XmlCodec[T]] match {
         case Some(userOverride) => '{ ${ userOverride }.decodeValue($in) }
         case None =>
           ref match
+            /*
             case t: Sealable if t.isSealed && t.childrenAreObject =>
               makeReadFnSym[T](methodKey)
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                val inExpr = Ref(inParam.symbol).asExprOf[XmlSource]
                 Helpers.generateReaderBodyForCaseObjects[T](
                   ctx,
                   t.sealedChildren,
@@ -68,7 +70,7 @@ object Reader:
                     genReadVal[c](ctx, cfg, child.asInstanceOf[RTypeRef[c]], in, inTuple, isMapKey)
               }
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                val inExpr = Ref(inParam.symbol).asExprOf[XmlSource]
                 Helpers.generateReaderBodyForSealedTraits[T](
                   ctx,
                   cfg,
@@ -77,11 +79,12 @@ object Reader:
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
+             */
 
             case t: ScalaClassRef[?] =>
               makeReadFnSym[T](methodKey)
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                val inExpr = Ref(inParam.symbol).asExprOf[XmlSource]
                 Helpers.generateReaderBodyForScalaClass[T](
                   ctx,
                   cfg,
@@ -92,6 +95,7 @@ object Reader:
               }
               registerReaderDef(methodKey, bodyExprMaker)
 
+              /*
             case t: JavaClassRef[?] =>
               makeReadFnSym[T](methodKey)
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
@@ -105,6 +109,7 @@ object Reader:
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
+               */
 
             case t: TraitRef[?] =>
               throw UnsupportedType("Non-sealed traits are not supported")
@@ -114,9 +119,9 @@ object Reader:
       }
 
     def registerReaderDef(
-        methodKey: TypedName,
-        readerBodyExpr: Tree => Expr[T]
-    ): Expr[T] =
+                           methodKey: TypedName,
+                           readerBodyExpr: Tree => Expr[T]
+                         ): Expr[T] =
       val readMethodSym = ctx.readMethodSyms.getOrElse(methodKey, throw new TypeError(s"Missing read fn symbol for $methodKey"))
       ctx.readMethodDefs(methodKey) = DefDef(
         readMethodSym,
@@ -139,70 +144,56 @@ object Reader:
 
       // First cover all primitive and simple types...
       case t: BigDecimalRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case s    => scala.math.BigDecimal(s)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case s    => scala.math.BigDecimal(s)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(s => scala.math.BigDecimal(s)).getOrElse(null)
+        }.asExprOf[T]
       case t: BigIntRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case s    => scala.math.BigInt(s)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case s    => scala.math.BigInt(s)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(s => scala.math.BigInt(s)).getOrElse(null)
+        }.asExprOf[T]
       case t: BooleanRef =>
-        if isMapKey then '{ $in.expectString().toBoolean }.asExprOf[T]
-        else '{ $in.expectBoolean() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toBoolean).getOrElse(throw new ParseError("Booleans cannot be null"))
+        }.asExprOf[T]
       case t: ByteRef =>
-        if isMapKey then '{ $in.expectString().toInt.toByte }.asExprOf[T]
-        else '{ $in.expectInt().toByte }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toInt.toByte).getOrElse(throw new ParseError("Bytes cannot be null"))
+        }.asExprOf[T]
       case t: CharRef =>
         '{
-          $in.expectString() match
-            case null =>
-              $in.backspace()
-              $in.backspace()
-              $in.backspace()
-              $in.backspace()
-              throw JsonParseError("Char value cannot be null", $in)
-            case "" =>
-              $in.backspace()
-              $in.backspace()
-              throw JsonParseError("Char value expected but empty string found in json", $in)
-            case c => c.charAt(0)
+          $in.expectSimpleValue() match {
+            case Some("null") => throw ParseError("Char value cannot be null")
+            case Some("")     => throw ParseError("Char value expected but empty string found in xml")
+            case None         => throw ParseError("Char value cannot be null")
+            case Some(c)      => c.charAt(0)
+          }
         }.asExprOf[T]
       case t: DoubleRef =>
-        if isMapKey then '{ $in.expectString().toDouble }.asExprOf[T]
-        else '{ $in.expectDouble() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toDouble ).getOrElse(throw new ParseError("Doubles cannot be null"))
+        }.asExprOf[T]
       case t: FloatRef =>
-        if isMapKey then '{ $in.expectString().toFloat }.asExprOf[T]
-        else '{ $in.expectFloat() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toFloat ).getOrElse(throw new ParseError("Floats cannot be null"))
+        }.asExprOf[T]
       case t: IntRef =>
-        if isMapKey then '{ $in.expectString().toInt }.asExprOf[T]
-        else '{ $in.expectInt() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toInt ).getOrElse(throw new ParseError("Ints cannot be null"))
+        }.asExprOf[T]
       case t: LongRef =>
-        if isMapKey then '{ $in.expectString().toLong }.asExprOf[T]
-        else '{ $in.expectLong() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toLong ).getOrElse(throw new ParseError("Longs cannot be null"))
+        }.asExprOf[T]
       case t: ShortRef =>
-        if isMapKey then '{ $in.expectString().toShort }.asExprOf[T]
-        else '{ $in.expectInt().toShort }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(_.toShort ).getOrElse(throw new ParseError("Shorts cannot be null"))
+        }.asExprOf[T]
       case t: StringRef =>
-        '{ $in.expectString() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().getOrElse(null)
+        }.asExprOf[T]
 
+        /*
       case t: JBigDecimalRef =>
         if isMapKey then
           '{
@@ -351,7 +342,9 @@ object Reader:
                   case d                      => d
                 }
           }.asExprOf[T]
+        */
 
+      /*
       case t: DurationRef       => '{ $in.expectStringWithFn(java.time.Duration.parse) }.asExprOf[T]
       case t: InstantRef        => '{ $in.expectStringWithFn(java.time.Instant.parse) }.asExprOf[T]
       case t: LocalDateRef      => '{ $in.expectStringWithFn(java.time.LocalDate.parse) }.asExprOf[T]
@@ -370,6 +363,7 @@ object Reader:
       case t: URLRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s).toURL) }.asExprOf[T]
       case t: URIRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s)) }.asExprOf[T]
       case t: UUIDRef => '{ $in.expectStringWithFn(java.util.UUID.fromString) }.asExprOf[T]
+        */
 
       case t: AliasRef[?] =>
         t.unwrappedType.refType match
@@ -390,6 +384,7 @@ object Reader:
       // --------------------
       //  Options...
       // --------------------
+            /*
       case t: ScalaOptionRef[?] =>
         t.optionParamType.refType match
           case '[e] =>
@@ -493,10 +488,12 @@ object Reader:
 
       case t: LeftRightRef[?] if t.lrkind == LRKind.INTERSECTION =>
         throw TypeError("Intersection types currently unsupported by ScalaJack")
+            */
 
       // --------------------
       //  Enumerations...
       // --------------------
+            /*
       case t: ScalaEnumRef[?] =>
         import quotes.reflect.*
         t.refType match
@@ -588,6 +585,7 @@ object Reader:
                     Apply(Ref(m(0)), List('{ $valuesE(v) }.asTerm)).asExpr
                   }
             }.asExprOf[T]
+            */
 
       // --------------------
       //  Collections...
@@ -598,11 +596,14 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val entryLabelE = Expr(entryLabel.getOrElse(throw new ParseError("No entry label specified for Seq")))
                 '{
-                  val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
                   if parsedArray != null then parsedArray.toList
                   else null
                 }.asExprOf[T]
+                
+            /*
           case '[Vector[?]] =>
             t.elementRef.refType match
               case '[e] =>
@@ -640,7 +641,9 @@ object Reader:
                   if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
                   else null
                 }.asExprOf[T]
+            */
 
+/*
       case t: IterableRef[?] =>
         t.elementRef.refType match
           case '[e] =>
@@ -673,10 +676,12 @@ object Reader:
               if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Set[T] here
               else null
             }.asExprOf[T]
+            */
 
       // --------------------
       //  Java Collections...
       // --------------------
+            /*
       case t: JavaCollectionRef[?] =>
         t.elementRef.refType match
           case '[e] =>
@@ -760,10 +765,12 @@ object Reader:
                         .asExprOf[T]
                     }
                 }.asExprOf[T]
+            */
 
       // --------------------
       //  Maps...
       // --------------------
+            /*
       case t: MapRef[?] =>
         ref.refType match
           case '[scala.collection.mutable.LinkedHashMap[?, ?]] => // immutable
@@ -975,10 +982,12 @@ object Reader:
                           )
                           .to(${ Expr.summon[Factory[(k, v), T]].get })
                     }.asExprOf[T]
+            */
 
       // --------------------
       //  Java Maps...
       // --------------------
+                    /*
       case t: JavaMapRef[?] =>
         t.elementRef.refType match
           case '[k] =>
@@ -1097,10 +1106,12 @@ object Reader:
                             .asExprOf[T]
                         }
                     }.asExprOf[T]
+                    */
 
       // --------------------
       //  Tuples...
       // --------------------
+                    /*
       case t: TupleRef[?] =>
         import quotes.reflect.*
         t.refType match
@@ -1132,10 +1143,12 @@ object Reader:
                 $in.expectToken(']')
                 tv
             }.asExprOf[T]
+                    */
 
       // --------------------
       //  Try...
       // --------------------
+        /*
       case t: TryRef[?] =>
         t.tryRef.refType match
           case '[e] =>
@@ -1187,6 +1200,7 @@ object Reader:
                   $in.backspace()
                   throw JsonParseError("NeoType validation for " + $tnameE + " failed", $in)
             }.asExprOf[T]
+                    */
 
       // --------------------
       //  Classes 'n Traits (all get passed off to MakeReadFn.makeReadFn()

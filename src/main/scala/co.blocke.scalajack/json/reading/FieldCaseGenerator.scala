@@ -5,6 +5,7 @@ package reading
 import scala.quoted.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
+import internal.CodecBuildContext
 
 object FieldCaseGenerator:
 

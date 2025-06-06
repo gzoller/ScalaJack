@@ -4,6 +4,7 @@ package writing
 
 import co.blocke.scala_reflection.RType
 import co.blocke.scala_reflection.rtypes.*
+import internal.CodecBuildContext
 
 import org.apache.commons.text.StringEscapeUtils
 import scala.annotation.tailrec
@@ -115,11 +116,11 @@ object AnyWriter:
               val m = v.getClass.getMethod(field.name)
               m.setAccessible(true)
               val fieldValue = m.invoke(v)
-              val fieldName = f.annotations.get("co.blocke.scalajack.Change").flatMap(_.get("name")).getOrElse(f.name)
+              val fieldName = f.annotations.get("co.blocke.scalajack.jsLabel").flatMap(_.get("name")).getOrElse(f.name)
               _okToWrite(cfg, fieldName, fieldValue, out)
             )
             out.endObject()
-          case _ => throw new JsonUnsupportedType("Class " + v.getClass.getName + " not supported for Any type")
+          case _ => throw new UnsupportedType("Class " + v.getClass.getName + " not supported for Any type")
 
   // Called by non-Any classes (in JsonCodecMaker) that have Any-typed fields
   def isOkToWrite(ctx: CodecBuildContext, cfg: SJConfig, prefix: Expr[Unit], value: Expr[Any], out: Expr[JsonOutput]): Expr[Unit] =
@@ -153,6 +154,6 @@ object AnyWriter:
           case EitherLeftPolicy.AS_VALUE        => Some(v)
           case EitherLeftPolicy.AS_NULL         => Some("null")
           case EitherLeftPolicy.ERR_MSG_STRING  => Some("Left Error: " + v.toString)
-          case EitherLeftPolicy.THROW_EXCEPTION => throw new JsonEitherLeftError("Left Error: " + v.toString)
+          case EitherLeftPolicy.THROW_EXCEPTION => throw new EitherLeftError("Left Error: " + v.toString)
       case Some(v) => _okToWrite(cfg, v)
       case _       => Some(value)

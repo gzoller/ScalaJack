@@ -1,26 +1,26 @@
 package co.blocke.scalajack
-package json
+package xml
 package reading
 
 import scala.quoted.*
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
+import internal.*
+
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
-import co.blocke.scalajack.internal.FieldDefaultBuilder
-import internal.*
 
 sealed trait ReaderEntry
 case class Placeholder() extends ReaderEntry
-case class RealReader[T](expr: Expr[JsonSource => T], tpe: Type[T]) extends ReaderEntry
+case class RealReader[T](expr: Expr[XmlSource => T], tpe: Type[T]) extends ReaderEntry
 
 object Helpers:
 
   private def generateFieldMatrixVal(
-      ctx: CodecBuildContext,
-      t: RTypeRef[?],
-      onlyConstructorFields: Boolean = true
-  ): ctx.quotes.reflect.ValDef =
+                                      ctx: CodecBuildContext,
+                                      t: RTypeRef[?],
+                                      onlyConstructorFields: Boolean = true
+                                    ): ctx.quotes.reflect.ValDef =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -47,12 +47,13 @@ object Helpers:
   // ----------------------------------------------------------------------
   // Helper functions for types we're generating functions for (keeps main code cleaner)
 
+  /*
   def generateReaderBodyForCaseObjects[T: Type](
-      ctx: CodecBuildContext,
-      children: List[RTypeRef[?]],
-      parentTypeName: String,
-      in: Expr[JsonSource]
-  ): Expr[T] =
+                                                 ctx: CodecBuildContext,
+                                                 children: List[RTypeRef[?]],
+                                                 parentTypeName: String,
+                                                 in: Expr[XmlSource]
+                                               ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -70,22 +71,24 @@ object Helpers:
     }
 
     '{
-      if $in.expectNull() then null
-      else
-        ${
-          Match(
-            '{ $classPrefixExpr + "." + $in.expectString() }.asTerm,
-            caseDefs
-          ).asExprOf[T]
-        }
+      $in.getFieldValue match {
+        case None | Some("") => null
+        case Some(v) =>
+          ${
+            Match(
+              '{ $classPrefixExpr + "." + $v }.asTerm,
+              caseDefs
+            ).asExprOf[T]
+          }
+      }
     }.asExprOf[T]
 
   def generateReaderBodyForSealedTraits[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      traitRef: Sealable,
-      in: Expr[JsonSource]
-  ): Expr[T] =
+                                                  ctx: CodecBuildContext,
+                                                  cfg: SJConfig,
+                                                  traitRef: Sealable,
+                                                  in: Expr[XmlSource]
+                                                ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -206,22 +209,25 @@ object Helpers:
         }
       }.asExprOf[T]
 
+   */
+
   def generateReaderBodyForScalaClass[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      methodKey: TypedName,
-      classRef: ScalaClassRef[?],
-      in: Expr[JsonSource]
-  ): Expr[T] =
-    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
-    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
+                                                ctx: CodecBuildContext,
+                                                cfg: SJConfig,
+                                                methodKey: TypedName,
+                                                classRef: ScalaClassRef[?],
+                                                in: Expr[XmlSource]
+                                              ): Expr[T] =
+    generateReaderBodySimple[T](ctx, cfg, classRef, in)
+//    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
+//    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
 
   private def generateReaderBodySimple[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      classRef: ScalaClassRef[?],
-      in: Expr[JsonSource]
-  ): Expr[T] =
+                                                 ctx: CodecBuildContext,
+                                                 cfg: SJConfig,
+                                                 classRef: ScalaClassRef[?],
+                                                 in: Expr[XmlSource]
+                                               ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -246,40 +252,67 @@ object Helpers:
       .buildClassInstantiationExpr(ctx, TypeRepr.of[T], idents)
       .asExprOf[T]
 
-    val reqRefExpr = Ref(reqSym).asExprOf[Int]
-    val requiredMaskExpr = Expr(requiredMask)
+    val reqRefExpr = Ref(reqSym).asExprOf[Int]  // bitmap of fields set so far
+    val requiredMaskExpr = Expr(requiredMask)  // mask of required fields
+
+    val xmlClassNameE = Expr(classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(classRef.name.split("\\.").last))
 
     val parseLogic: Term = '{
-      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
-      if maybeFieldNum == null then null
-      else
-        while maybeFieldNum.isDefined do
-          ${
-            Match(
-              '{ maybeFieldNum.get }.asTerm,
-              caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
-            ).asExprOf[Any]
-          }
-          maybeFieldNum = $in.expectObjectField($matrixRef)
+      $in.expectObjectStart($xmlClassNameE) match {
+        case None => throw new ParseError("Expected element "+$xmlClassNameE+" but something else was found.")
+        case Some(attrs) =>
+          // TODO: process attributes
 
-        if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
-        else
-          throw new JsonParseError(
-            "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
+          // process fields
+          var maybeField = $in.expectObjectField
+          while maybeField.isDefined do
+            maybeField match {
+              case Some((fieldName, fieldAttrs)) =>
+                val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
+                ${
+                  Match(
+                    '{ maybeFieldNum }.asTerm,
+                    caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+                  ).asExprOf[Any]
+                }
+                if !$in.expectObjectEnd(fieldName) then
+                  throw new ParseError("Element close for label "+fieldName+" not found.")
+                maybeField = $in.expectObjectField
+            }
+
+          if !$in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label "+$xmlClassNameE+" not found.")
+          if ($reqRefExpr & $requiredMaskExpr) == 0 then
+            $instantiateExpr
+          else
+            throw new ParseError(
+              "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
               Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
-            ),
-            $in
-          )
+            ))
+      }
+
+//      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
+//      if maybeFieldNum == null then null
+//      else
+//        while maybeFieldNum.isDefined do
+//          ${
+//            Match(
+//              '{ maybeFieldNum.get }.asTerm,
+//              caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+//            ).asExprOf[Any]
+//          }
+//          maybeFieldNum = $in.expectObjectField($matrixRef)
+
     }.asTerm
 
     Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]
 
+  /*
   private def generateReaderBodyWithNonCtor[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      classRef: ScalaClassRef[?],
-      in: Expr[JsonSource]
-  ): Expr[T] =
+                                                      ctx: CodecBuildContext,
+                                                      cfg: SJConfig,
+                                                      classRef: ScalaClassRef[?],
+                                                      in: Expr[XmlSource]
+                                                    ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -370,12 +403,12 @@ object Helpers:
     ).asExprOf[T]
 
   def generateReaderBodyForJavaClass[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      methodKey: TypedName,
-      classRef: JavaClassRef[?],
-      in: Expr[JsonSource]
-  ): Expr[T] =
+                                               ctx: CodecBuildContext,
+                                               cfg: SJConfig,
+                                               methodKey: TypedName,
+                                               classRef: JavaClassRef[?],
+                                               in: Expr[XmlSource]
+                                             ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -427,3 +460,4 @@ object Helpers:
           ),
           parseLoop
         ).asExprOf[T]
+    */

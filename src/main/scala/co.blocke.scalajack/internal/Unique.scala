@@ -1,5 +1,4 @@
-package co.blocke.scalajack
-package json
+package co.blocke.scalajack.internal
 
 import co.blocke.scala_reflection.RTypeRef
 import co.blocke.scala_reflection.reflect.rtypeRefs.*

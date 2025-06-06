@@ -1,6 +1,4 @@
-package co.blocke.scalajack
-package json
-package reading
+package co.blocke.scalajack.internal
 
 import scala.quoted.*
 

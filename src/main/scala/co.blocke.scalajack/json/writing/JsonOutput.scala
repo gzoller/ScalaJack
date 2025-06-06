@@ -2,6 +2,8 @@ package co.blocke.scalajack
 package json
 package writing
 
+import co.blocke.scalajack.internal.FastStringBuilder
+
 import java.time.format.DateTimeFormatter.*
 
 /** Wrapper around a (Fast)StringBuilder that offers support for primitive types,
@@ -84,7 +86,7 @@ case class JsonOutput():
   // (saparate vs a param for speed), for use in Map/Json object keys.
   inline def valueStringified(v: scala.math.BigDecimal): Unit =
     maybeComma()
-    if v == null then throw new JsonNullKeyValue("Key values may not be null")
+    if v == null then throw new NullKeyValue("Key values may not be null")
     else
       internal.append('"')
       internal.append(v.toString)
@@ -99,7 +101,7 @@ case class JsonOutput():
 
   inline def valueStringified(v: scala.math.BigInt): Unit =
     maybeComma()
-    if v == null then throw new JsonNullKeyValue("Key values may not be null")
+    if v == null then throw new NullKeyValue("Key values may not be null")
     else
       internal.append('"')
       internal.append(v.toString)
@@ -114,7 +116,7 @@ case class JsonOutput():
 
   inline def valueStringified(v: java.math.BigDecimal): Unit =
     maybeComma()
-    if v == null then throw new JsonNullKeyValue("Key values may not be null")
+    if v == null then throw new NullKeyValue("Key values may not be null")
     else
       internal.append('"')
       internal.append(v.toString)
@@ -129,7 +131,7 @@ case class JsonOutput():
 
   inline def valueStringified(v: java.math.BigInteger): Unit =
     maybeComma()
-    if v == null then throw new JsonNullKeyValue("Key values may not be null")
+    if v == null then throw new NullKeyValue("Key values may not be null")
     else
       internal.append('"')
       internal.append(v.toString)

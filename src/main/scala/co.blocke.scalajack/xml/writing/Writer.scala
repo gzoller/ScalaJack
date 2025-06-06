@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json
+package xml
 package writing
 
 import scala.quoted.*
@@ -13,9 +13,9 @@ import internal.*
 object Writer:
 
   private def makeWriteFnSymbol[U: Type](
-      ctx: CodecBuildContext,
-      methodKey: TypedName
-  ): Unit =
+                                          ctx: CodecBuildContext,
+                                          methodKey: TypedName
+                                        ): Unit =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
     val _ = ctx.writeMethodSyms.getOrElseUpdate(
@@ -24,29 +24,29 @@ object Writer:
         Symbol.spliceOwner,
         "w" + ctx.writeMethodSyms.size,
         MethodType(List("in", "out"))(
-          _ => List(TypeRepr.of[U], TypeRepr.of[JsonOutput]),
+          _ => List(TypeRepr.of[U], TypeRepr.of[XmlOutput]),
           _ => TypeRepr.of[Unit]
         )
       )
     )
 
   private def makeWriteFn[U: Type](
-      ctx: CodecBuildContext,
-      methodKey: TypedName,
-      arg: Expr[U],
-      out: Expr[JsonOutput]
-  )(f: (Expr[U], Expr[JsonOutput]) => Expr[Unit]): Expr[Unit] =
+                                    ctx: CodecBuildContext,
+                                    methodKey: TypedName,
+                                    arg: Expr[U],
+                                    out: Expr[XmlOutput]
+                                  )(f: (Expr[U], Expr[XmlOutput]) => Expr[Unit]): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    val writeMethodSym = ctx.writeMethodSyms.getOrElse(methodKey, throw new TypeError(s"Missing write fn symbol for $methodKey"))
+    val writeMethodSym = ctx.writeMethodSyms.getOrElse(methodKey, throw new XmlTypeError(s"Missing write fn symbol for $methodKey"))
     ctx.writeMethodDefs.update(
       methodKey,
       DefDef(
         writeMethodSym,
         params => {
           val List(List(in, out)) = params
-          Some(f(in.asExprOf[U], out.asExprOf[JsonOutput]).asTerm.changeOwner(writeMethodSym))
+          Some(f(in.asExprOf[U], out.asExprOf[XmlOutput]).asTerm.changeOwner(writeMethodSym))
         }
       )
     )
@@ -54,27 +54,27 @@ object Writer:
     // Always apply the function
     Apply(Ref(writeMethodSym), List(arg.asTerm, out.asTerm)).asExprOf[Unit]
 
-// ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
 
-//  Writing (encoding) JSON is accomplished with two functions: genEncFnBody() and genWriteVal(). The former is the primary entry for writing some
-//  JSON. As part of writing it is common to write a value, for example the elements of a list. genWriteVal() handles this tedium, including recursively
-//  calling genEncFnBody() if needed for more complex object.s
+  //  Writing (encoding) XML is accomplished with two functions: genEncFnBody() and genWriteVal(). The former is the primary entry for writing some
+  //  XML. As part of writing it is common to write a value, for example the elements of a list. genWriteVal() handles this tedium, including recursively
+  //  calling genEncFnBody() if needed for more complex object.s
 
-// ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
 
   // So why 2 functions for writing? It boils down to this:
   // If, in the generated output code, you need a function generated to read something (typically a complex thing)
   // you call genEncFnBody, otherwise call genWriteVal, which generates inline writing code.
   private def genEncFnBody[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      r: RTypeRef[?],
-      aE: Expr[T],
-      out: Expr[JsonOutput],
-      emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
-      inTuple: Boolean = false,
-      isMapKey: Boolean = false
-  ): Expr[Unit] =
+                                     ctx: CodecBuildContext,
+                                     cfg: SJConfig,
+                                     r: RTypeRef[?],
+                                     aE: Expr[T],
+                                     out: Expr[XmlOutput],
+                                     emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
+                                     inTuple: Boolean = false,
+                                     isMapKey: Boolean = false
+                                   ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -89,7 +89,7 @@ object Writer:
               if t.childrenAreObject then
                 '{
                   if $in == null then $out.burpNull()
-                  else $out.value($in.getClass.getName.split('.').last.stripSuffix("$"))
+                  else $out.emitValue($in.getClass.getName.split('.').last.stripSuffix("$"))
                 }
               else
                 val unique = Unique.findUniqueWithExcluded(t)
@@ -124,12 +124,14 @@ object Writer:
             }
 
           // We don't use makeWriteFn here because a value class is basically just a "box" around a simple type
+            /*
           case t: ScalaClassRef[?] if t.isValueClass =>
             val theField = t.fields.head.fieldRef
             theField.refType match
               case '[e] =>
                 val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
                 genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey)
+            */
 
           case t: ScalaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
@@ -140,9 +142,12 @@ object Writer:
                     case '[z] =>
                       val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
                       val fieldName = changeFieldName(f)
-                      MaybeWrite.maybeWrite[z](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out)
+                      val entryLabel = f.annotations
+                        .get("co.blocke.scalajack.xmlEntryLabel")
+                        .flatMap(_.get("name"))
+                        .getOrElse("entry")
+                      MaybeWrite.maybeWriteField[z](ctx, cfg, Expr(fieldName), fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, Some(fieldName), Some(entryLabel))
                 }
-                // ZZZ -- To block.... (soak this to see if it works then delete old block
                 val cname: Expr[String] = cfg.typeHintPolicy match
                   case TypeHintPolicy.SIMPLE_CLASSNAME =>
                     Expr(lastPart(t.name))
@@ -157,8 +162,11 @@ object Writer:
                     )
 
                 val discExpr: Expr[Unit] = '{
-                  $out.label(${ Expr(cfg.typeHintLabel) })
-                  $out.value($cname)
+                  $out.openElement(${ Expr(cfg.typeHintLabel) })
+                  $out.attribute("name")
+                  $out.emitValue($cname)
+                  $out.closeAttribute()
+                  $out.closeElementEmpty()
                 }
 
                 val discBlock: Expr[Unit] = {
@@ -183,13 +191,14 @@ object Writer:
                 ).asExprOf[Unit]
               }
 
+              val className = Expr(t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(t.name.split("\\.").last))
               if !t.isCaseClass && cfg._writeNonConstructorFields then
                 val eachField = t.nonConstructorFields.map { f =>
                   f.fieldRef.refType match
                     case '[e] =>
                       val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
                       val fieldName = changeFieldName(f)
-                      MaybeWrite.maybeWrite[e](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
+                      MaybeWrite.maybeWriteField[e](ctx, cfg, Expr(fieldName), fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
                 }
                 val subBody = eachField.length match
                   case 0 => '{}
@@ -198,18 +207,18 @@ object Writer:
                 '{
                   if $in == null then $out.burpNull()
                   else
-                    $out.startObject()
+                    $out.startElement($className)
                     $body
                     $subBody
-                    $out.endObject()
+                    $out.endElement($className)
                 }
               else
                 '{
                   if $in == null then $out.burpNull()
                   else
-                    $out.startObject()
+                    $out.startElement($className)
                     $body
-                    $out.endObject()
+                    $out.endElement($className)
                 }
             }
 
@@ -222,10 +231,11 @@ object Writer:
                   val tin = in.asExprOf[b]
                   var fieldRefs = t.fields.asInstanceOf[List[NonConstructorFieldInfoRef]]
                   val sref = ReflectOnType[String](ctx.quotes)(TypeRepr.of[String])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
+                  val className = Expr(t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(t.name))
                   '{
                     if $tin == null then $out.burpNull()
                     else
-                      $out.startObject()
+                      $out.startElement($className)
                       val rt = $rtype
                       rt.fields.foreach { f =>
                         val field = f.asInstanceOf[NonConstructorFieldInfo]
@@ -238,36 +248,39 @@ object Writer:
                           fieldRefs = fieldRefs.tail
                           ref.fieldRef.refType match
                             case '[e] =>
-                              MaybeWrite.maybeWriteMap[String, e](
+                              MaybeWrite.maybeWriteField[e](
                                 ctx,
                                 cfg,
                                 '{ fieldName },
                                 '{ fieldValue.asInstanceOf[e] },
-                                sref,
                                 ref.fieldRef.asInstanceOf[RTypeRef[e]],
                                 out
                               )
                         }
                       }
-                      $out.endObject()
+                      $out.endElement($className)
                   }
             }
 
-          case t: TraitRef[?] => throw UnsupportedType("Non-sealed traits are not supported")
+          case t: TraitRef[?] => throw XmlUnsupportedType("Non-sealed traits are not supported")
 
-          case t => throw new UnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
+          case t => throw new XmlUnsupportedType("Type represented by " + t.name + " is unsupported for XML writes")
 
   // ---------------------------------------------------------------------------------------------
 
   def genWriteVal[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      aE: Expr[T],
-      ref: RTypeRef[T],
-      out: Expr[JsonOutput],
-      inTuple: Boolean = false,
-      isMapKey: Boolean = false // only primitive or primitive-equiv types can be Map keys
-  ): Expr[Unit] =
+                            ctx: CodecBuildContext,
+                            cfg: SJConfig,
+                            aE: Expr[T],
+                            ref: RTypeRef[T],
+                            out: Expr[XmlOutput],
+                            inTuple: Boolean = false,
+                            isMapKey: Boolean = false, // only primitive or primitive-equiv types can be Map keys
+                            prefix: Expr[Unit],
+                            postfix: Expr[Unit],
+                            fieldName: Option[String] = None,
+                            entryLabel: Option[String] = None
+                          ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -281,92 +294,87 @@ object Writer:
         ref match
           // First cover all primitive and simple types...
           case t: BigDecimalRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
-            else '{ $out.value(${ aE.asExprOf[scala.math.BigDecimal] }) }
+            '{ $out.emitValue(${ aE.asExprOf[scala.math.BigDecimal] }.toString) }
           case t: BigIntRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigInt] }) }
-            else '{ $out.value(${ aE.asExprOf[scala.math.BigInt] }) }
+            '{ $out.emitValue(${ aE.asExprOf[scala.math.BigInt] }.toString) }
           case t: BooleanRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Boolean] }) }
-            else '{ $out.value(${ aE.asExprOf[Boolean] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Boolean] }.toString) }
           case t: ByteRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Byte] }) }
-            else '{ $out.value(${ aE.asExprOf[Byte] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Byte] }.toString) }
           case t: CharRef =>
-            '{ $out.value(${ aE.asExprOf[Char] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Char] }.toString) }
           case t: DoubleRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Double] }) }
-            else '{ $out.value(${ aE.asExprOf[Double] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Double] }.toString) }
           case t: FloatRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Float] }) }
-            else '{ $out.value(${ aE.asExprOf[Float] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Float] }.toString) }
           case t: IntRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Int] }) }
-            else '{ $out.value(${ aE.asExprOf[Int] }) }
+            '{
+              $prefix
+              $out.emitValue(${ aE.asExprOf[Int] }.toString)
+              $postfix
+            }
           case t: LongRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Long] }) }
-            else '{ $out.value(${ aE.asExprOf[Long] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Long] }.toString) }
           case t: ShortRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[Short] }) }
-            else '{ $out.value(${ aE.asExprOf[Short] }) }
+            '{ $out.emitValue(${ aE.asExprOf[Short] }.toString) }
 
           case t: StringRef =>
-            if cfg._suppressEscapedStrings then '{ $out.value(${ aE.asExprOf[String] }) }
-            else '{ $out.valueEscaped(${ aE.asExprOf[String] }) }
+            // TODO: Make this work. Right now it emits the same thing, effectively ignoring the setting
+            if cfg._suppressEscapedStrings then '{
+              $prefix
+              $out.emitValue(${ aE.asExprOf[String] })
+              $postfix
+            }
+            else '{
+              $prefix
+              $out.emitValue(${ aE.asExprOf[String] })
+              $postfix
+            }
 
           case t: JBigDecimalRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigDecimal] }) }
-            else '{ $out.value(${ aE.asExprOf[java.math.BigDecimal] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.math.BigDecimal] }.toString) }
           case t: JBigIntegerRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.math.BigInteger] }) }
-            else '{ $out.value(${ aE.asExprOf[java.math.BigInteger] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.math.BigInteger] }.toString) }
           case t: JBooleanRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Boolean] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Boolean] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Boolean] }.toString) }
           case t: JByteRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Byte] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Byte] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Byte] }.toString) }
           case t: JCharacterRef =>
-            '{ $out.value(${ aE.asExprOf[java.lang.Character] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Character] }.toString) }
           case t: JDoubleRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Double] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Double] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Double] }.toString) }
           case t: JFloatRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Float] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Float] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Float] }.toString) }
           case t: JIntegerRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Integer] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Integer] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Integer] }.toString) }
           case t: JLongRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Long] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Long] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Long] }.toString) }
           case t: JShortRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Short] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Short] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Short] }.toString) }
           case t: JNumberRef =>
-            if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[java.lang.Number] }) }
-            else '{ $out.value(${ aE.asExprOf[java.lang.Number] }) }
+            '{ $out.emitValue(${ aE.asExprOf[java.lang.Number] }.toString) }
 
-          case t: DurationRef       => '{ $out.value(${ aE.asExprOf[java.time.Duration] }) }
-          case t: InstantRef        => '{ $out.value(${ aE.asExprOf[java.time.Instant] }) }
-          case t: LocalDateRef      => '{ $out.value(${ aE.asExprOf[java.time.LocalDate] }) }
-          case t: LocalDateTimeRef  => '{ $out.value(${ aE.asExprOf[java.time.LocalDateTime] }) }
-          case t: LocalTimeRef      => '{ $out.value(${ aE.asExprOf[java.time.LocalTime] }) }
-          case t: MonthDayRef       => '{ $out.value(${ aE.asExprOf[java.time.MonthDay] }) }
-          case t: OffsetDateTimeRef => '{ $out.value(${ aE.asExprOf[java.time.OffsetDateTime] }) }
-          case t: OffsetTimeRef     => '{ $out.value(${ aE.asExprOf[java.time.OffsetTime] }) }
-          case t: PeriodRef         => '{ $out.value(${ aE.asExprOf[java.time.Period] }) }
-          case t: YearRef           => '{ $out.value(${ aE.asExprOf[java.time.Year] }) }
-          case t: YearMonthRef      => '{ $out.value(${ aE.asExprOf[java.time.YearMonth] }) }
-          case t: ZonedDateTimeRef  => '{ $out.value(${ aE.asExprOf[java.time.ZonedDateTime] }) }
-          case t: ZoneIdRef         => '{ $out.value(${ aE.asExprOf[java.time.ZoneId] }) }
-          case t: ZoneOffsetRef     => '{ $out.value(${ aE.asExprOf[java.time.ZoneOffset] }) }
+          case t: DurationRef       => '{ $out.emitValue(${ aE.asExprOf[java.time.Duration] }.toString) }
+          case t: InstantRef        => '{ $out.emitValue(${ aE.asExprOf[java.time.Instant] }.toString) }
+          case t: LocalDateRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalDate] }.toString) }
+          case t: LocalDateTimeRef  => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalDateTime] }.toString) }
+          case t: LocalTimeRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalTime] }.toString) }
+          case t: MonthDayRef       => '{ $out.emitValue(${ aE.asExprOf[java.time.MonthDay] }.toString) }
+          case t: OffsetDateTimeRef => '{ $out.emitValue(${ aE.asExprOf[java.time.OffsetDateTime] }.toString) }
+          case t: OffsetTimeRef     => '{ $out.emitValue(${ aE.asExprOf[java.time.OffsetTime] }.toString) }
+          case t: PeriodRef         => '{ $out.emitValue(${ aE.asExprOf[java.time.Period] }.toString) }
+          case t: YearRef           => '{ $out.emitValue(${ aE.asExprOf[java.time.Year] }.toString) }
+          case t: YearMonthRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.YearMonth] }.toString) }
+          case t: ZonedDateTimeRef  => '{ $out.emitValue(${ aE.asExprOf[java.time.ZonedDateTime] }.toString) }
+          case t: ZoneIdRef         => '{ $out.emitValue(${ aE.asExprOf[java.time.ZoneId] }.toString) }
+          case t: ZoneOffsetRef     => '{ $out.emitValue(${ aE.asExprOf[java.time.ZoneOffset] }.toString) }
 
-          case t: URLRef       => '{ $out.value(${ aE.asExprOf[java.net.URL] }) }
-          case t: URIRef       => '{ $out.value(${ aE.asExprOf[java.net.URI] }) }
-          case t: UUIDRef      => '{ $out.value(${ aE.asExprOf[java.util.UUID] }) }
-          case t: ObjectRef[?] => '{ $out.value(${ Expr(t.name) }) }
+          case t: URLRef       => '{ $out.emitValue(${ aE.asExprOf[java.net.URL] }.toString) }
+          case t: URIRef       => '{ $out.emitValue(${ aE.asExprOf[java.net.URI] }.toString) }
+          case t: UUIDRef      => '{ $out.emitValue(${ aE.asExprOf[java.util.UUID] }.toString) }
+          case t: ObjectRef[?] => '{ $out.emitValue(${ Expr(t.name) }) }
 
+          /*
           case t: AliasRef[?] =>
             t.unwrappedType.refType match
               case '[e] =>
@@ -376,59 +384,75 @@ object Writer:
             t.elementRef.refType match
               case '[e] =>
                 val tin = aE.asInstanceOf[Expr[Array[e]]]
+                val label = collectionLabel.getOrElse(throw new XmlTypeError("Array collection label not supplied"))
+                val labelE = Expr(label)
                 '{
                   if $tin == null then $out.burpNull()
                   else
-                    $out.startArray()
+                    $out.startElement($labelE)
                     $tin.foreach { i =>
                       ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
-                    $out.endArray()
+                    $out.endElement($labelE)
                 }
 
           case t: IterableRef[?] =>
             t.elementRef.refType match
               case '[e] =>
                 val tin = aE.asInstanceOf[Expr[Iterable[e]]]
+                val label = collectionLabel.getOrElse(throw new XmlTypeError("Iteration collection label not supplied"))
+                val labelE = Expr(label)
                 '{
                   if $tin == null then $out.burpNull()
                   else
-                    $out.startArray()
+                    $out.startElement($labelE)
                     $tin.foreach { i =>
                       ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
-                    $out.endArray()
+                    $out.endElement($labelE)
                 }
+           */
 
           case t: SeqRef[?] =>
             t.elementRef.refType match
               case '[e] =>
                 val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Seq[e]] else aE.asExprOf[Seq[e]]
+                val entryLabelE = entryLabel.map(e => Expr(e)).getOrElse(throw new XmlTypeError("Seq entry label not supplied"))
+                val labelE = Expr(fieldName.getOrElse(throw new XmlTypeError("Seq collection label not supplied")))
+                val pprefix = '{
+                  $out.startElement($entryLabelE)
+                }
+                val ppostfix = '{
+                  $out.endElement($entryLabelE)
+                }
                 '{
                   if $tin == null then $out.burpNull()
                   else
-                    $out.startArray()
+                    $prefix
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix) }
                     }
-                    $out.endArray()
+                    $postfix
                 }
 
+            /*
           case t: SetRef[?] =>
             t.elementRef.refType match
               case '[e] =>
                 val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Set[e]] else aE.asExprOf[Set[e]]
+                val label = collectionLabel.getOrElse(throw new XmlTypeError("Set collection label not supplied"))
+                val labelE = Expr(label)
                 '{
                   if $tin == null then $out.burpNull()
                   else
-                    $out.startArray()
+                    $out.startElement($labelE)
                     $tin.foreach { i =>
                       ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
-                    $out.endArray()
+                    $out.endElement($labelE)
                 }
 
-          // These are here becaue Enums and their various flavors can be Map keys
+          // These are here because Enums and their various flavors can be Map keys
           // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
           case t: EnumRef[?] =>
             val enumAsId = cfg.enumsAsIds match
@@ -438,9 +462,9 @@ object Writer:
               case _                             => false
             val rtype = t.expr
             if enumAsId then
-              if isMapKey then '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // stringified id
-              else '{ $out.value($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get) } // int value of id
-            else '{ if $aE == null then $out.burpNull() else $out.value($aE.toString) }
+              if isMapKey then '{ $out.emitValue($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // stringified id
+              else '{ $out.emitValue($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // int value of id
+            else '{ if $aE == null then $out.burpNull() else $out.emitValue($aE.toString) }
 
           // No makeWriteFn here--Option is just a wrapper to the real thingy
           case t: ScalaOptionRef[?] =>
@@ -513,7 +537,7 @@ object Writer:
                             if $tin == null then $out.burpNull()
                             else
                               $tin match
-                                case Left(v) => $out.value("Left Error: " + v.toString)
+                                case Left(v) => $out.emitValue("Left Error: " + v.toString)
                                 case Right(v) =>
                                   ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                           }
@@ -522,7 +546,7 @@ object Writer:
                             if $tin == null then $out.burpNull()
                             else
                               $tin match
-                                case Left(v) => throw new EitherLeftError("Left Error: " + v.toString)
+                                case Left(v) => throw new XmlEitherLeftError("Left Error: " + v.toString)
                                 case Right(v) =>
                                   ${ genWriteVal[rt](ctx, cfg, '{ v.asInstanceOf[rt] }, t.rightRef.asInstanceOf[RTypeRef[rt]], out, inTuple = inTuple) }
                           }
@@ -554,10 +578,11 @@ object Writer:
                           cfg.tryFailureHandling match
                             case _ if inTuple              => '{ $out.burpNull() }
                             case TryPolicy.AS_NULL         => '{ $out.burpNull() }
-                            case TryPolicy.ERR_MSG_STRING  => '{ $out.value("Try Failure with msg: " + v.getMessage) }
+                            case TryPolicy.ERR_MSG_STRING  => '{ $out.emitValue("Try Failure with msg: " + v.getMessage) }
                             case TryPolicy.THROW_EXCEPTION => '{ throw v }
                         }
                 }
+                */
 
           case t: MapRef[?] =>
             t.elementRef.refType match
@@ -565,10 +590,13 @@ object Writer:
                 t.elementRef2.refType match
                   case '[v] =>
                     val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Map[k, v]] else aE.asExprOf[Map[k, v]]
+                    val label = fieldName.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
+                    val labelE = Expr(label)
+                    val entryLabelE = entryLabel.map(e => Expr(e)).getOrElse(throw new XmlTypeError("Map entry label not supplied"))
                     '{
                       if $tin == null then $out.burpNull()
                       else
-                        $out.startObject()
+                        $out.startElement($labelE)
                         $tin.foreach { case (key, value) =>
                           ${
                             (t.elementRef, t.elementRef2) match
@@ -578,9 +606,11 @@ object Writer:
                                     aliasV.unwrappedType.refType match
                                       case '[av] =>
                                         testValidMapKey(aliasK.unwrappedType)
-                                        MaybeWrite.maybeWriteMap[ak, av](
+                                        MaybeWrite.maybeWriteMapEntry[ak, av](
                                           ctx,
                                           cfg,
+                                          labelE,
+                                          entryLabelE,
                                           '{ key.asInstanceOf[ak] },
                                           '{ value.asInstanceOf[av] },
                                           aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
@@ -591,9 +621,11 @@ object Writer:
                                 aliasV.unwrappedType.refType match
                                   case '[av] =>
                                     testValidMapKey(t.elementRef)
-                                    MaybeWrite.maybeWriteMap[k, av](
+                                    MaybeWrite.maybeWriteMapEntry[k, av](
                                       ctx,
                                       cfg,
+                                      labelE,
+                                      entryLabelE,
                                       '{ key }.asExprOf[k],
                                       '{ value.asInstanceOf[av] },
                                       t.elementRef.asInstanceOf[RTypeRef[k]],
@@ -604,9 +636,11 @@ object Writer:
                                 aliasK.unwrappedType.refType match
                                   case '[ak] =>
                                     testValidMapKey(aliasK.unwrappedType)
-                                    MaybeWrite.maybeWriteMap[ak, v](
+                                    MaybeWrite.maybeWriteMapEntry[ak, v](
                                       ctx,
                                       cfg,
+                                      labelE,
+                                      entryLabelE,
                                       '{ key.asInstanceOf[ak] },
                                       '{ value }.asExprOf[v],
                                       aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
@@ -615,9 +649,11 @@ object Writer:
                                     )
                               case (_, _) =>
                                 testValidMapKey(t.elementRef)
-                                MaybeWrite.maybeWriteMap[k, v](
+                                MaybeWrite.maybeWriteMapEntry[k, v](
                                   ctx,
                                   cfg,
+                                  labelE,
+                                  entryLabelE,
                                   '{ key },
                                   '{ value }.asExprOf[v],
                                   t.elementRef.asInstanceOf[RTypeRef[k]],
@@ -626,21 +662,24 @@ object Writer:
                                 )
                           }
                         }
-                        $out.endObject()
+                        $out.endElement($labelE)
                     }
 
+            /*
           case t: JavaCollectionRef[?] =>
             t.elementRef.refType match
               case '[e] =>
+                val label = collectionLabel.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
+                val labelE = Expr(label)
                 val tin = '{ $aE.asInstanceOf[java.util.Collection[?]] }
                 '{
                   if $tin == null then $out.burpNull()
                   else
-                    $out.startArray()
+                    $out.startElement($labelE)
                     $tin.toArray.foreach { elem =>
                       ${ genWriteVal(ctx, cfg, '{ elem.asInstanceOf[e] }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
                     }
-                    $out.endArray()
+                    $out.endElement($labelE)
                 }
 
           case t: JavaMapRef[?] =>
@@ -648,16 +687,20 @@ object Writer:
               case '[k] =>
                 t.elementRef2.refType match
                   case '[v] =>
+                    val label = collectionLabel.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
+                    val labelE = Expr(label)
+                    val entryLabelE = Expr("entry")
                     val tin = aE.asExprOf[java.util.Map[k, v]]
                     '{
                       if $tin == null then $out.burpNull()
                       else
-                        $out.startObject()
+                        $out.startElement($labelE)
                         $tin.asScala.foreach { case (key, value) =>
                           ${
-                            MaybeWrite.maybeWriteMap[k, v](
+                            MaybeWrite.maybeWriteMapEntry[k, v](
                               ctx,
                               cfg,
+                              entryLabelE,
                               '{ key },
                               '{ value }.asExprOf[v],
                               t.elementRef.asInstanceOf[RTypeRef[k]],
@@ -666,15 +709,17 @@ object Writer:
                             )
                           }
                         }
-                        $out.endObject()
+                        $out.endElement($labelE)
                     }
 
           case t: TupleRef[?] =>
             val in = aE.asExprOf[T]
+            val label = collectionLabel.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
+            val labelE = Expr(label)
             '{
               if $in == null then $out.burpNull()
               else
-                $out.startArray()
+                $out.startElement($labelE)
                 ${
                   // Note: Don't use maybeWrite here... Tuples are fixed-length.  We need to write
                   // something for every position, so write null for None or other "bad" values
@@ -687,7 +732,7 @@ object Writer:
                   if elementsE.size == 1 then elementsE.head
                   else Expr.block(elementsE.init, elementsE.last)
                 }
-                $out.endArray()
+                $out.endElement($labelE)
             }
 
           // NeoType is a bit of a puzzle-box.  To get the correct underlying base type, I had to dig into
@@ -700,9 +745,11 @@ object Writer:
                   case '[u] =>
                     val baseTypeRef = ReflectOnType.apply(ctx.quotes)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
                     genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out, inTuple = inTuple)
+             */
 
-          case t: AnyRef =>
-            '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
+// TODO
+//          case t: AnyRef =>
+//            '{ AnyWriter.writeAny(${ Expr(cfg) }, $aE, $out) }
 
           case t: SelfRefRef[?] =>
             val sym = ctx.writeMethodSyms.getOrElse(
@@ -717,8 +764,13 @@ object Writer:
           // Everything else...
           // case _ if isStringified => throw new JsonIllegalKeyType("Non-primitive/non-simple types cannot be map keys")
           case _ =>
-            Expr.summon[JsonCodec[T]] match {
+            Expr.summon[XmlCodec[T]] match {
               case Some(userOverride) => '{ ${ userOverride }.encodeValue($aE, $out) }
-              case None               => genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey)
+              case None               =>
+                '{
+                  $prefix
+                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey) }
+                  $postfix
+                }
             }
       )

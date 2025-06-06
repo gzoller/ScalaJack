@@ -3,7 +3,7 @@ package json
 package reading
 
 import scala.annotation.{switch, tailrec}
-import co.blocke.scalajack.internal.UnsafeNumbers
+import co.blocke.scalajack.internal.{FastStringBuilder, StringMatrix, UnsafeNumbers}
 
 object JsonSource:
   val ull: Array[Char] = "ull".toCharArray
@@ -125,8 +125,7 @@ case class JsonSource(js: CharSequence):
     i += 1
     bs = fieldNameMatrix.exact(bs, fi)
     if readToken() != ':' then throw new JsonParseError(s"Expected ':' field separator but found $here", this)
-    val ret = fieldNameMatrix.first(bs)
-    ret
+    fieldNameMatrix.first(bs)
 
   @tailrec
   final def parseMap[K, V](kf: () => K, vf: () => V, acc: Map[K, V], isFirst: Boolean = true): Map[K, V] = // initial '{' already consumed

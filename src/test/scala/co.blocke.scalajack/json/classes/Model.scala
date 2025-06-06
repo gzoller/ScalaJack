@@ -4,7 +4,7 @@ package classes
 
 import co.blocke.scala_reflection.Ignore
 
-case class Person(name: String, @Change(name = "duration") age: Int)
+case class Person(name: String, @jsLabel("duration") age: Int)
 
 class Parent(val phase: Int, var stuff: List[String]):
   private var _hidden: Boolean = false

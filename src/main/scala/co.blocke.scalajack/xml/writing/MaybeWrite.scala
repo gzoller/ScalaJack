@@ -1,12 +1,12 @@
 package co.blocke.scalajack
-package json
+package xml
 package writing
 
+import internal.CodecBuildContext
 import scala.quoted.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
 import scala.util.{Failure, Success, Try}
-import internal.CodecBuildContext
 
 object MaybeWrite:
 
@@ -17,76 +17,130 @@ object MaybeWrite:
   // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
   //
 
-  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput])(using Quotes): Expr[Unit] =
+//  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, labelE: Expr[String], aE: Expr[T], ref: RTypeRef[T], out: Expr[XmlOutput])(using Quotes): Expr[Unit] =
+//    given Quotes = ctx.quotes
+//
+//    _maybeWrite[T](
+//      ctx,
+//      cfg,
+//      labelE,
+//      aE,
+//      ref,
+//      out
+//    )
+
+  def maybeWriteField[V: Type](
+                            ctx: CodecBuildContext,
+                            cfg: SJConfig,
+                            fieldNameE: Expr[String],
+                            valueE: Expr[V],
+                            valueRef: RTypeRef[V],
+                            out: Expr[XmlOutput],
+                            fieldLabel: Option[String] = None,
+                            entryLabel: Option[String] = None,
+                          ): Expr[Unit] =
     given Quotes = ctx.quotes
 
-    val labelE = Expr(label)
-    _maybeWrite[T](
+    _maybeWrite[V](
       ctx,
       cfg,
-      '{ $out.label($labelE) },
-      aE,
-      ref,
-      out
+      '{
+        $out.startElement($fieldNameE)
+      },
+      valueE,
+      valueRef,
+      '{
+        $out.endElement($fieldNameE)
+      },
+      out,
+      fieldLabel,
+      entryLabel
     )
 
-  def maybeWriteMap[K: Type, V: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      keyE: Expr[K],
-      valueE: Expr[V],
-      keyRef: RTypeRef[K],
-      valueRef: RTypeRef[V],
-      out: Expr[JsonOutput]
-  ): Expr[Unit] =
+
+  def maybeWriteMapEntry[K: Type, V: Type](
+                                       ctx: CodecBuildContext,
+                                       cfg: SJConfig,
+                                       mapElementLabelE: Expr[String],
+                                       entryLabelE: Expr[String],
+                                       keyE: Expr[K],
+                                       valueE: Expr[V],
+                                       keyRef: RTypeRef[K],
+                                       valueRef: RTypeRef[V],
+                                       out: Expr[XmlOutput]
+                                     ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     keyRef.refType match
       case '[k] =>
+        val pprefix = '{
+          $out.openElement($entryLabelE)
+          $out.attribute("key")
+        }
+        val ppostfix ='{
+          $out.closeAttribute()
+          $out.closeElement()
+        }
         _maybeWrite[V](
           ctx,
           cfg,
-          '{
-            $out.maybeComma()
-            ${ Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true) }
-            $out.colon()
-          },
+          Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true, pprefix, ppostfix),
           valueE,
           valueRef,
+          '{
+            $out.endElement($entryLabelE)
+          },
           out
         )
 
   private def handleOptional[O[_]: Type, T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      prefix: Expr[Unit],
-      optionExpr: Expr[O[T]],
-      paramRef: RTypeRef[T],
-      out: Expr[JsonOutput],
-      isEmpty: Expr[O[T] => Boolean],
-      get: Expr[O[T] => T]
-  ): Expr[Unit] =
+                                                   ctx: CodecBuildContext,
+                                                   cfg: SJConfig,
+                                                   prefix: Expr[Unit],
+                                                   optionExpr: Expr[O[T]],
+                                                   paramRef: RTypeRef[T],
+                                                   out: Expr[XmlOutput],
+                                                   postfix: Expr[Unit],
+                                                   isEmpty: Expr[O[T] => Boolean],
+                                                   get: Expr[O[T] => T]
+                                                 ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     if !cfg.noneAsNull then
       '{
-        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, postfix, out) }
       }
     else
       '{
-        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, out) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, prefix, '{ $get($optionExpr) }, paramRef, postfix, out) }
         else
           $prefix; $out.burpNull()
       }
 
+  /*
+
+      Maybe write:
+
+      <map>  <- has wrapper
+        <entry "key">value</entry>
+      </map>
+
+      <list> <- has wrapper
+        <item>foo</item>
+      <list>
+
+      <class...>
+
+      <field>value</field>
+
   private def handleTry[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      prefix: Expr[Unit],
-      tryExpr: Expr[Try[T]],
-      paramRef: RTypeRef[T],
-      out: Expr[JsonOutput]
-  ): Expr[Unit] =
+                                  ctx: CodecBuildContext,
+                                  cfg: SJConfig,
+                                  prefix: Expr[Unit],
+                                  tryExpr: Expr[Try[T]],
+                                  paramRef: RTypeRef[T],
+                                  out: Expr[JsonOutput]
+                                ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     '{
@@ -101,14 +155,15 @@ object MaybeWrite:
         case Success(v) => ${ _maybeWrite[T](ctx, cfg, prefix, '{ v }, paramRef, out) }
     }
 
+
   private def handleLR[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      t: LeftRightRef[?],
-      aE: Expr[T],
-      out: Expr[JsonOutput],
-      prefix: Expr[Unit]
-  ): Expr[Unit] =
+                                 ctx: CodecBuildContext,
+                                 cfg: SJConfig,
+                                 t: LeftRightRef[?],
+                                 aE: Expr[T],
+                                 out: Expr[JsonOutput],
+                                 prefix: Expr[Unit]
+                               ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     t match
@@ -182,6 +237,7 @@ object MaybeWrite:
                             $out.revert()
                             ${ _maybeWrite[lt](ctx, cfg, prefix, '{ $tin.asInstanceOf[lt] }, t.leftRef.asInstanceOf[RTypeRef[lt]], out) }
                     }
+    */
 
   // Tests whether we should write something or not--mainly in the case of Option, or wrapped Option
   // Affected types: Option, java.util.Optional, Left/Right, Try/Failure
@@ -189,13 +245,16 @@ object MaybeWrite:
   // prepended with the type-appropriate runtime check.  This may seem like drama, but the idea
   // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
   private def _maybeWrite[T: Type](
-      ctx: CodecBuildContext,
-      cfg: SJConfig,
-      prefix: Expr[Unit],
-      aE: Expr[T],
-      ref: RTypeRef[T],
-      out: Expr[JsonOutput]
-  ): Expr[Unit] =
+                                    ctx: CodecBuildContext,
+                                    cfg: SJConfig,
+                                    prefix: Expr[Unit],
+                                    aE: Expr[T],
+                                    ref: RTypeRef[T],
+                                    postfix: Expr[Unit],
+                                    out: Expr[XmlOutput],
+                                    fieldLabel: Option[String] = None,
+                                    entryLabel: Option[String] = None,
+                                  ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     ref match
@@ -203,14 +262,15 @@ object MaybeWrite:
         t.optionParamType.refType match
           case '[e] =>
             val tin = aE.asExprOf[Option[e]]
-            handleOptional[Option, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: Option[e]) => o.isEmpty }, '{ (o: Option[e]) => o.get })
+            handleOptional[Option, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, postfix, '{ (o: Option[e]) => o.isEmpty }, '{ (o: Option[e]) => o.get })
 
       case t: JavaOptionalRef[?] =>
         t.optionParamType.refType match
           case '[e] =>
             val tin = aE.asExprOf[java.util.Optional[e]]
-            handleOptional[java.util.Optional, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: java.util.Optional[e]) => !o.isPresent }, '{ (o: java.util.Optional[e]) => o.get })
+            handleOptional[java.util.Optional, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, postfix, '{ (o: java.util.Optional[e]) => !o.isPresent }, '{ (o: java.util.Optional[e]) => o.get })
 
+        /*
       case t: TryRef[?] =>
         t.tryRef.refType match
           case '[e] =>
@@ -225,14 +285,17 @@ object MaybeWrite:
                 t.rightRef.refType match
                   case '[rt] =>
                     handleLR(ctx, cfg, t, aE, out, prefix)
+            */
 
-      case t: AnyRef =>
-        AnyWriter.isOkToWrite(ctx, cfg, prefix, aE, out)
+//      case t: AnyRef =>
+//        AnyWriter.isOkToWrite(ctx, cfg, prefix, aE, out)
 
       case _ =>
         ref.refType match
           case '[u] =>
-            '{
-              $prefix
-              ${ Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out) }
-            }
+            Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out, false, false, prefix, postfix, fieldLabel, entryLabel)
+//            '{
+//              $prefix
+//              ${ Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out) }
+//              $postfix
+//            }

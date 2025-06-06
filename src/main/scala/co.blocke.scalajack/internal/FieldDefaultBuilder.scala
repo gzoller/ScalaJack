@@ -1,11 +1,11 @@
-package co.blocke.scalajack
-package json
-package reading
+package co.blocke.scalajack.internal
+
+import co.blocke.scala_reflection.Language
+import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import co.blocke.scalajack.TypeError
 
 import scala.quoted.*
 import scala.util.Success
-import co.blocke.scala_reflection.Language
-import co.blocke.scala_reflection.reflect.rtypeRefs.*
 
 /*
 	1.	A ValDef for each constructor field (the backing var _fieldname) with an appropriate default value (from Scala’s default param or inferred from the type).
@@ -106,10 +106,10 @@ object FieldDefaultBuilder:
         val applied = methodSymbol.paramSymss match
           case Nil => dvSelectNoTArgs
           case List(params) if params.exists(_.isTypeParam) =>
-            if typeArgs.isEmpty then throw new JsonTypeError("Expected applied type for: " + tpe.show)
+            if typeArgs.isEmpty then throw new TypeError("Expected applied type for: " + tpe.show)
             TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
           case _ =>
-            throw new JsonTypeError(s"Default method for field `${field.name}` has unsupported parameter shape.")
+            throw new TypeError(s"Default method for field `${field.name}` has unsupported parameter shape.")
         applied.asExprOf[f]
 
     // === Generate field symbols and default ValDefs

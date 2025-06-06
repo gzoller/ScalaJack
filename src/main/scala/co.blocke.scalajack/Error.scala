@@ -1,19 +1,20 @@
 package co.blocke.scalajack
-package json
+
+import co.blocke.scalajack.json.reading
 
 import scala.util.control.NoStackTrace
 
-class JsonIllegalKeyType(msg: String) extends Throwable(msg) with NoStackTrace
-class JsonNullKeyValue(msg: String) extends Throwable(msg) with NoStackTrace
-class JsonUnsupportedType(msg: String) extends Throwable(msg) with NoStackTrace
-class JsonEitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
-class JsonIllegalCharacterError(msg: String) extends Throwable(msg) with NoStackTrace
+class IllegalKeyType(msg: String) extends Throwable(msg) with NoStackTrace
+class NullKeyValue(msg: String) extends Throwable(msg) with NoStackTrace
+class UnsupportedType(msg: String) extends Throwable(msg) with NoStackTrace
+class EitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
+class IllegalCharacterError(msg: String) extends Throwable(msg) with NoStackTrace
 
 class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
   val show: String = ""
 
 // Thrown at compile-time only!
-case class JsonTypeError(override val msg: String) extends ParseError(msg) with NoStackTrace:
+case class TypeError(override val msg: String) extends ParseError(msg) with NoStackTrace:
   override val show: String = ""
 
 // Thrown at runtime only!
