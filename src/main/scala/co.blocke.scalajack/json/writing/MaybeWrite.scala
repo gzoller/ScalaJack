@@ -6,7 +6,7 @@ import scala.quoted.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
 import scala.util.{Failure, Success, Try}
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 
 object MaybeWrite:
 

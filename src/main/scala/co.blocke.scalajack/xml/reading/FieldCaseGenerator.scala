@@ -5,18 +5,18 @@ package reading
 import scala.quoted.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 
 object FieldCaseGenerator:
 
   def generateConstructorFieldCases(
-                                     ctx: CodecBuildContext,
-                                     cfg: SJConfig,
-                                     classRef: ScalaClassRef[?],
-                                     reqSym: ctx.quotes.reflect.Symbol,
-                                     fieldSymbols: Map[Int, ctx.quotes.reflect.Symbol],
-                                     in: Expr[XmlSource]
-                                   ): List[ctx.quotes.reflect.CaseDef] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      classRef: ScalaClassRef[?],
+      reqSym: ctx.quotes.reflect.Symbol,
+      fieldSymbols: Map[Int, ctx.quotes.reflect.Symbol],
+      in: Expr[XmlSource]
+  ): List[ctx.quotes.reflect.CaseDef] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.* // { Symbol as RSymbol, *, given }
 

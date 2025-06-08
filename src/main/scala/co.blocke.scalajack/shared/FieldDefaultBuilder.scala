@@ -1,4 +1,4 @@
-package co.blocke.scalajack.internal
+package co.blocke.scalajack.shared
 
 import co.blocke.scala_reflection.Language
 import co.blocke.scala_reflection.reflect.rtypeRefs.*

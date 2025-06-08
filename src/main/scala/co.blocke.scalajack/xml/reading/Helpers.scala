@@ -5,7 +5,7 @@ package reading
 import scala.quoted.*
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
-import internal.*
+import shared.*
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
@@ -17,10 +17,10 @@ case class RealReader[T](expr: Expr[XmlSource => T], tpe: Type[T]) extends Reade
 object Helpers:
 
   private def generateFieldMatrixVal(
-                                      ctx: CodecBuildContext,
-                                      t: RTypeRef[?],
-                                      onlyConstructorFields: Boolean = true
-                                    ): ctx.quotes.reflect.ValDef =
+      ctx: CodecBuildContext,
+      t: RTypeRef[?],
+      onlyConstructorFields: Boolean = true
+  ): ctx.quotes.reflect.ValDef =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -212,22 +212,22 @@ object Helpers:
    */
 
   def generateReaderBodyForScalaClass[T: Type](
-                                                ctx: CodecBuildContext,
-                                                cfg: SJConfig,
-                                                methodKey: TypedName,
-                                                classRef: ScalaClassRef[?],
-                                                in: Expr[XmlSource]
-                                              ): Expr[T] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      methodKey: TypedName,
+      classRef: ScalaClassRef[?],
+      in: Expr[XmlSource]
+  ): Expr[T] =
     generateReaderBodySimple[T](ctx, cfg, classRef, in)
 //    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
 //    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
 
   private def generateReaderBodySimple[T: Type](
-                                                 ctx: CodecBuildContext,
-                                                 cfg: SJConfig,
-                                                 classRef: ScalaClassRef[?],
-                                                 in: Expr[XmlSource]
-                                               ): Expr[T] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      classRef: ScalaClassRef[?],
+      in: Expr[XmlSource]
+  ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -252,14 +252,14 @@ object Helpers:
       .buildClassInstantiationExpr(ctx, TypeRepr.of[T], idents)
       .asExprOf[T]
 
-    val reqRefExpr = Ref(reqSym).asExprOf[Int]  // bitmap of fields set so far
-    val requiredMaskExpr = Expr(requiredMask)  // mask of required fields
+    val reqRefExpr = Ref(reqSym).asExprOf[Int] // bitmap of fields set so far
+    val requiredMaskExpr = Expr(requiredMask) // mask of required fields
 
     val xmlClassNameE = Expr(classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(classRef.name.split("\\.").last))
 
     val parseLogic: Term = '{
       $in.expectObjectStart($xmlClassNameE) match {
-        case None => throw new ParseError("Expected element "+$xmlClassNameE+" but something else was found.")
+        case None        => throw new ParseError("Expected element " + $xmlClassNameE + " but something else was found.")
         case Some(attrs) =>
           // TODO: process attributes
 
@@ -275,19 +275,18 @@ object Helpers:
                     caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
                   ).asExprOf[Any]
                 }
-                if !$in.expectObjectEnd(fieldName) then
-                  throw new ParseError("Element close for label "+fieldName+" not found.")
+                if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
                 maybeField = $in.expectObjectField
             }
 
-          if !$in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label "+$xmlClassNameE+" not found.")
-          if ($reqRefExpr & $requiredMaskExpr) == 0 then
-            $instantiateExpr
+          if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
+          if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
           else
             throw new ParseError(
               "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-              Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
-            ))
+                Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+              )
+            )
       }
 
 //      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
@@ -460,4 +459,4 @@ object Helpers:
           ),
           parseLoop
         ).asExprOf[T]
-    */
+   */

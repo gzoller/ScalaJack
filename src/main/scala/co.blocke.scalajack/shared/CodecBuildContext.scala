@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package internal
+package shared
 
 import scala.quoted.*
 import scala.collection.mutable

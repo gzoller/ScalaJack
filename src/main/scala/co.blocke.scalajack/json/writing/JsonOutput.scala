@@ -2,7 +2,7 @@ package co.blocke.scalajack
 package json
 package writing
 
-import co.blocke.scalajack.internal.FastStringBuilder
+import co.blocke.scalajack.shared.FastStringBuilder
 
 import java.time.format.DateTimeFormatter.*
 

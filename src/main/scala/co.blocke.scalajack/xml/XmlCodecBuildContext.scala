@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package xml
 
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 import scala.quoted.*
 import scala.collection.mutable
 import co.blocke.scala_reflection.TypedName

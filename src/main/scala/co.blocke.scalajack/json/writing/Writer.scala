@@ -8,7 +8,7 @@ import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
-import internal.*
+import shared.*
 
 object Writer:
 

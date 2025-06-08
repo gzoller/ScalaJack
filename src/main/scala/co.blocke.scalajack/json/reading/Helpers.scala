@@ -7,8 +7,8 @@ import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
-import co.blocke.scalajack.internal.FieldDefaultBuilder
-import internal.*
+import co.blocke.scalajack.shared.FieldDefaultBuilder
+import shared.*
 
 sealed trait ReaderEntry
 case class Placeholder() extends ReaderEntry

@@ -7,7 +7,7 @@ import scala.util.{Failure, Success}
 import scala.collection.Factory
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}

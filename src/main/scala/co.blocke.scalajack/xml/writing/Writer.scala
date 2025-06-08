@@ -8,14 +8,14 @@ import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
-import internal.*
+import shared.*
 
 object Writer:
 
   private def makeWriteFnSymbol[U: Type](
-                                          ctx: CodecBuildContext,
-                                          methodKey: TypedName
-                                        ): Unit =
+      ctx: CodecBuildContext,
+      methodKey: TypedName
+  ): Unit =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
     val _ = ctx.writeMethodSyms.getOrElseUpdate(
@@ -31,11 +31,11 @@ object Writer:
     )
 
   private def makeWriteFn[U: Type](
-                                    ctx: CodecBuildContext,
-                                    methodKey: TypedName,
-                                    arg: Expr[U],
-                                    out: Expr[XmlOutput]
-                                  )(f: (Expr[U], Expr[XmlOutput]) => Expr[Unit]): Expr[Unit] =
+      ctx: CodecBuildContext,
+      methodKey: TypedName,
+      arg: Expr[U],
+      out: Expr[XmlOutput]
+  )(f: (Expr[U], Expr[XmlOutput]) => Expr[Unit]): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -66,15 +66,15 @@ object Writer:
   // If, in the generated output code, you need a function generated to read something (typically a complex thing)
   // you call genEncFnBody, otherwise call genWriteVal, which generates inline writing code.
   private def genEncFnBody[T: Type](
-                                     ctx: CodecBuildContext,
-                                     cfg: SJConfig,
-                                     r: RTypeRef[?],
-                                     aE: Expr[T],
-                                     out: Expr[XmlOutput],
-                                     emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
-                                     inTuple: Boolean = false,
-                                     isMapKey: Boolean = false
-                                   ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      r: RTypeRef[?],
+      aE: Expr[T],
+      out: Expr[XmlOutput],
+      emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
+      inTuple: Boolean = false,
+      isMapKey: Boolean = false
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -124,14 +124,14 @@ object Writer:
             }
 
           // We don't use makeWriteFn here because a value class is basically just a "box" around a simple type
-            /*
+          /*
           case t: ScalaClassRef[?] if t.isValueClass =>
             val theField = t.fields.head.fieldRef
             theField.refType match
               case '[e] =>
                 val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
                 genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey)
-            */
+           */
 
           case t: ScalaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
@@ -269,18 +269,18 @@ object Writer:
   // ---------------------------------------------------------------------------------------------
 
   def genWriteVal[T: Type](
-                            ctx: CodecBuildContext,
-                            cfg: SJConfig,
-                            aE: Expr[T],
-                            ref: RTypeRef[T],
-                            out: Expr[XmlOutput],
-                            inTuple: Boolean = false,
-                            isMapKey: Boolean = false, // only primitive or primitive-equiv types can be Map keys
-                            prefix: Expr[Unit],
-                            postfix: Expr[Unit],
-                            fieldName: Option[String] = None,
-                            entryLabel: Option[String] = None
-                          ): Expr[Unit] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      aE: Expr[T],
+      ref: RTypeRef[T],
+      out: Expr[XmlOutput],
+      inTuple: Boolean = false,
+      isMapKey: Boolean = false, // only primitive or primitive-equiv types can be Map keys
+      prefix: Expr[Unit],
+      postfix: Expr[Unit],
+      fieldName: Option[String] = None,
+      entryLabel: Option[String] = None
+  ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -320,16 +320,23 @@ object Writer:
 
           case t: StringRef =>
             // TODO: Make this work. Right now it emits the same thing, effectively ignoring the setting
-            if cfg._suppressEscapedStrings then '{
-              $prefix
-              $out.emitValue(${ aE.asExprOf[String] })
-              $postfix
-            }
-            else '{
-              $prefix
-              $out.emitValue(${ aE.asExprOf[String] })
-              $postfix
-            }
+            val labelE = Expr(fieldName.getOrElse(throw new XmlTypeError("String field label not supplied")))
+            if cfg._suppressEscapedStrings then
+              '{
+                if $aE == "" then $out.emptyElement($labelE)
+                else
+                  $prefix
+                  $out.emitValue(${ aE.asExprOf[String] })
+                  $postfix
+              }
+            else
+              '{
+                if $aE == "" then $out.emptyElement($labelE)
+                else
+                  $prefix
+                  $out.emitValue(${ aE.asExprOf[String] })
+                  $postfix
+              }
 
           case t: JBigDecimalRef =>
             '{ $out.emitValue(${ aE.asExprOf[java.math.BigDecimal] }.toString) }
@@ -427,6 +434,7 @@ object Writer:
                 }
                 '{
                   if $tin == null then $out.burpNull()
+                  else if $tin.isEmpty then $out.emptyElement($labelE)
                   else
                     $prefix
                     $tin.foreach { i =>
@@ -435,7 +443,7 @@ object Writer:
                     $postfix
                 }
 
-            /*
+          /*
           case t: SetRef[?] =>
             t.elementRef.refType match
               case '[e] =>
@@ -465,6 +473,7 @@ object Writer:
               if isMapKey then '{ $out.emitValue($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // stringified id
               else '{ $out.emitValue($rtype.asInstanceOf[EnumRType[?]].ordinal($aE.toString).get.toString) } // int value of id
             else '{ if $aE == null then $out.burpNull() else $out.emitValue($aE.toString) }
+           */
 
           // No makeWriteFn here--Option is just a wrapper to the real thingy
           case t: ScalaOptionRef[?] =>
@@ -481,9 +490,10 @@ object Writer:
                       }
                     case Some(v) =>
                       val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, prefix, postfix, entryLabel) }
                 }
 
+          /*
           case t: JavaOptionalRef[?] =>
             t.optionParamType.refType match
               case '[e] =>
@@ -582,7 +592,7 @@ object Writer:
                             case TryPolicy.THROW_EXCEPTION => '{ throw v }
                         }
                 }
-                */
+           */
 
           case t: MapRef[?] =>
             t.elementRef.refType match
@@ -592,7 +602,7 @@ object Writer:
                     val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Map[k, v]] else aE.asExprOf[Map[k, v]]
                     val label = fieldName.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
                     val labelE = Expr(label)
-                    val entryLabelE = entryLabel.map(e => Expr(e)).getOrElse(throw new XmlTypeError("Map entry label not supplied"))
+                    val _entryLabel = entryLabel.getOrElse(throw new XmlTypeError("Map entry label not supplied"))
                     '{
                       if $tin == null then $out.burpNull()
                       else
@@ -609,8 +619,8 @@ object Writer:
                                         MaybeWrite.maybeWriteMapEntry[ak, av](
                                           ctx,
                                           cfg,
-                                          labelE,
-                                          entryLabelE,
+                                          label,
+                                          _entryLabel,
                                           '{ key.asInstanceOf[ak] },
                                           '{ value.asInstanceOf[av] },
                                           aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
@@ -624,8 +634,8 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[k, av](
                                       ctx,
                                       cfg,
-                                      labelE,
-                                      entryLabelE,
+                                      label,
+                                      _entryLabel,
                                       '{ key }.asExprOf[k],
                                       '{ value.asInstanceOf[av] },
                                       t.elementRef.asInstanceOf[RTypeRef[k]],
@@ -639,8 +649,8 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[ak, v](
                                       ctx,
                                       cfg,
-                                      labelE,
-                                      entryLabelE,
+                                      label,
+                                      _entryLabel,
                                       '{ key.asInstanceOf[ak] },
                                       '{ value }.asExprOf[v],
                                       aliasK.unwrappedType.asInstanceOf[RTypeRef[ak]],
@@ -652,8 +662,8 @@ object Writer:
                                 MaybeWrite.maybeWriteMapEntry[k, v](
                                   ctx,
                                   cfg,
-                                  labelE,
-                                  entryLabelE,
+                                  label,
+                                  _entryLabel,
                                   '{ key },
                                   '{ value }.asExprOf[v],
                                   t.elementRef.asInstanceOf[RTypeRef[k]],
@@ -665,7 +675,7 @@ object Writer:
                         $out.endElement($labelE)
                     }
 
-            /*
+          /*
           case t: JavaCollectionRef[?] =>
             t.elementRef.refType match
               case '[e] =>
@@ -745,7 +755,7 @@ object Writer:
                   case '[u] =>
                     val baseTypeRef = ReflectOnType.apply(ctx.quotes)(tt.tpe)(using scala.collection.mutable.Map.empty[TypedName, Boolean])
                     genWriteVal[u](ctx, cfg, '{ $aE.asInstanceOf[u] }, baseTypeRef.asInstanceOf[RTypeRef[u]], out, inTuple = inTuple)
-             */
+           */
 
 // TODO
 //          case t: AnyRef =>
@@ -766,7 +776,7 @@ object Writer:
           case _ =>
             Expr.summon[XmlCodec[T]] match {
               case Some(userOverride) => '{ ${ userOverride }.encodeValue($aE, $out) }
-              case None               =>
+              case None =>
                 '{
                   $prefix
                   ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey) }

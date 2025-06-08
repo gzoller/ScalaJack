@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 package json
 
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 import scala.quoted.*
 import reading.JsonSource
 

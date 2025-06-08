@@ -5,7 +5,7 @@ import writing.*
 import reading.*
 import co.blocke.scala_reflection.RTypeRef
 import scala.quoted.*
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 
 object XmlCodecMaker:
 
@@ -28,9 +28,9 @@ object XmlCodecMaker:
       // Functions (can reference anything above)
       ctx.writeMethodDefs.values.toList ++
         ctx.readMethodDefs.values.toList ++ {
-        if ctx.seenAnyRef then List(ctx.readAnyDef)
-        else Nil
-      },
+          if ctx.seenAnyRef then List(ctx.readAnyDef)
+          else Nil
+        },
       codecDef
     ).asExprOf[XmlCodec[T]]
 

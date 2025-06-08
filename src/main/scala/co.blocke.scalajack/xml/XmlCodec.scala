@@ -8,4 +8,3 @@ trait XmlCodec[A] {
   def encodeValue(in: A, out: XmlOutput): Unit
   def decodeValue(in: XmlSource): A
 }
-

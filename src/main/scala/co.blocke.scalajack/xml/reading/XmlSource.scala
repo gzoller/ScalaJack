@@ -4,15 +4,15 @@ package reading
 
 import com.ctc.wstx.stax.WstxInputFactory
 import java.io.StringReader
-import javax.xml.stream.events.{Characters, Attribute, StartElement, XMLEvent}
-import scala.jdk.CollectionConverters._
-import internal.StringMatrix
+import javax.xml.stream.events.{Attribute, Characters, StartElement, XMLEvent}
+import scala.jdk.CollectionConverters.*
+import shared.StringMatrix
 
 case class XmlSource(rawXML: String):
 
-  private val xmlEventSrc = (new WstxInputFactory()).createXMLEventReader( new StringReader(rawXML) )
+  private val xmlEventSrc = (new WstxInputFactory()).createXMLEventReader(new StringReader(rawXML))
 
-  def expectObjectStart(label: String): Option[Map[String,String]] = // (self-closed, attributes)
+  def expectObjectStart(label: String): Option[Map[String, String]] = // (self-closed, attributes)
     if xmlEventSrc.hasNext() then
       if xmlEventSrc.peek().isStartDocument then xmlEventSrc.nextEvent() // skip
       val e = xmlEventSrc.nextEvent()
@@ -24,8 +24,11 @@ case class XmlSource(rawXML: String):
           val attrs = se.getAttributes.asScala.map(_.asInstanceOf[Attribute]).toList
           val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
           Some(attrMap)
-    else
-      None
+    else None
+
+  def nextIsEmpty: Boolean =
+    val ahead = xmlEventSrc.peek()
+    ahead == null || ahead.asInstanceOf[XMLEvent].isEndElement()
 
   def expectObjectEnd(label: String): Boolean =
     var found = false
@@ -34,10 +37,9 @@ case class XmlSource(rawXML: String):
       if e.isEndElement && e.asEndElement.getName.getLocalPart == label then found = true
     found
 
-  def expectObjectField: Option[(String, Map[String,String])] =
+  def expectObjectField: Option[(String, Map[String, String])] =
     val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
-    if ahead == null || !ahead.isStartElement then
-      None
+    if ahead == null || !ahead.isStartElement then None
     else
       val se = xmlEventSrc.nextEvent().asStartElement()
       val label = se.getName.getLocalPart
@@ -45,12 +47,10 @@ case class XmlSource(rawXML: String):
       val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
       Some((label, attrMap))
 
-  def expectSimpleValue(): Option[String] =  // <foo>simple value</foo>
+  def expectSimpleValue(): Option[String] = // <foo>simple value</foo>
     val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
-    if ahead == null || !ahead.isCharacters then
-      None
-    else
-      Some(xmlEventSrc.nextEvent().asCharacters().getData)
+    if ahead == null || !ahead.isCharacters then None
+    else Some(xmlEventSrc.nextEvent().asCharacters().getData)
 
 //  def expectEntryValue(entryLabel: String): Boolean =
 //    val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
@@ -78,13 +78,11 @@ case class XmlSource(rawXML: String):
     var done = false
     while !done do
       val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
-      if ahead == null || !ahead.isStartElement then
-        done = true
+      if ahead == null || !ahead.isStartElement then done = true
       else
         val se = xmlEventSrc.nextEvent().asStartElement()
-        if se.getName.getLocalPart != entryLabel then
-          throw new ParseError("Expected entry element for " + entryLabel + " not found")
-        seq.append( f() )
+        if se.getName.getLocalPart != entryLabel then throw new ParseError("Expected entry element for " + entryLabel + " not found")
+        seq.append(f())
         expectObjectEnd(entryLabel)
         ()
     seq

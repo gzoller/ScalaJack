@@ -3,7 +3,7 @@ package json
 
 import writing.*
 import reading.*
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 import co.blocke.scala_reflection.RTypeRef
 import reading.JsonSource
 import scala.quoted.*

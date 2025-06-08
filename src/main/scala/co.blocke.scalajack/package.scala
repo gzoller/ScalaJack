@@ -1,7 +1,9 @@
 package co.blocke.scalajack
 
+import scala.quoted.{Expr, Quotes, Type}
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
+import java.util.Optional
 
 inline def lastPart(n: String) = n.split('.').last.stripSuffix("$")
 inline def allButLastPart(n: String) =
@@ -39,6 +41,15 @@ def liftStringOptionMap(map: Map[String, Option[String]])(using quotes: Quotes):
   }
   val listExpr: Expr[List[(String, Option[String])]] = Expr.ofList(entries)
   '{ Map.apply[String, Option[String]]($listExpr*) }
+
+def ofOption[T](xs: Option[Expr[T]])(using Type[T])(using q: Quotes): Expr[Option[T]] =
+  if xs.isEmpty then '{ None }
+  else '{ Some(${ xs.get }) }
+
+// Java variant of ofOption
+def ofOptional[T](xs: Optional[Expr[T]])(using Type[T])(using q: Quotes): Expr[Optional[T]] =
+  if xs.isPresent then '{ Optional.of(${ xs.get }) }
+  else '{ Optional.empty }
 
 def testValidMapKey(testRef: RTypeRef[?]): Boolean =
   val isValid = testRef match

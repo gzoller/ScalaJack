@@ -4,7 +4,7 @@ package writing
 
 import co.blocke.scala_reflection.RType
 import co.blocke.scala_reflection.rtypes.*
-import internal.CodecBuildContext
+import shared.CodecBuildContext
 
 import org.apache.commons.text.StringEscapeUtils
 import scala.annotation.tailrec

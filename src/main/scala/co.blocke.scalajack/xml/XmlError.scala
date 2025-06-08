@@ -1,7 +1,6 @@
 package co.blocke.scalajack
 package xml
 
-
 import scala.util.control.NoStackTrace
 
 //class JsonIllegalKeyType(msg: String) extends Throwable(msg) with NoStackTrace
@@ -29,4 +28,3 @@ case class XmlTypeError(override val msg: String) extends ParseError(msg) with N
 //      case ep => ("..." + js.substring(ep - 49, ep + 27) + "...", 52)
 //    }
 //    msg + s" at position [${context.pos}]" + "\n" + clip.replaceAll("[\n\t]", "~") + "\n" + ("-" * dashes) + "^"
-
