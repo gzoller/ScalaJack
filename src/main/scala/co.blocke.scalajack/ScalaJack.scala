@@ -55,9 +55,9 @@ object ScalaJack:
     val jsonCodec = JsonCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
     '{ ScalaJack($jsonCodec) }
 
-  //-----------------------
+  // -----------------------
   //         XML
-  //-----------------------
+  // -----------------------
 
   // ----- Use default XmlConfig
   inline def sjXmlCodecOf[T]: ScalaJackXML[T] = ${ xmlCodecOfImpl[T] }
