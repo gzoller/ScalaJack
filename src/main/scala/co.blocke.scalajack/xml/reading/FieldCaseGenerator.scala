@@ -42,7 +42,6 @@ object FieldCaseGenerator:
               Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, field.name, entryLabel).asTerm).asExprOf[Unit].asTerm
             case _ =>
               '{
-                println("Found field " + $fieldName)
                 if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
                   ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
                   ${ Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, field.name, entryLabel).asTerm).asExprOf[Unit] }

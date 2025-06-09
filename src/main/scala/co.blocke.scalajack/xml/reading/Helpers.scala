@@ -271,6 +271,7 @@ object Helpers:
             maybeField match {
               case Some((fieldName, fieldAttrs)) =>
                 val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
+                println("Field num: " + maybeFieldNum)
                 ${
                   Match(
                     '{ maybeFieldNum }.asTerm,

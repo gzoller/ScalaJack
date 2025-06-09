@@ -61,6 +61,7 @@ case class XmlSource(rawXML: String):
     else
       val se = xmlEventSrc.nextEvent().asStartElement()
       val label = se.getName.getLocalPart
+      println(">>> Read field label " + label)
       val attrs = se.getAttributes.asScala.map(_.asInstanceOf[Attribute]).toList
       val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
       Some((label, attrMap))
