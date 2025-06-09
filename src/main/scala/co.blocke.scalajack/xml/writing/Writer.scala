@@ -145,60 +145,28 @@ object Writer:
                       val entryLabel = f.annotations
                         .get("co.blocke.scalajack.xmlEntryLabel")
                         .flatMap(_.get("name"))
-                        .getOrElse("entry")
-                      MaybeWrite.maybeWriteField[z](ctx, cfg, Expr(fieldName), fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, Some(fieldName), Some(entryLabel))
+                      MaybeWrite.maybeWriteField[z](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, entryLabel)
                 }
-                val cname: Expr[String] = cfg.typeHintPolicy match
-                  case TypeHintPolicy.SIMPLE_CLASSNAME =>
-                    Expr(lastPart(t.name))
-                  case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
-                    '{ scramble(${ Expr(lastPart(t.name).hashCode) }) }
-                  case TypeHintPolicy.USE_ANNOTATION =>
-                    Expr(
-                      t.annotations
-                        .get("co.blocke.scalajack.TypeHint")
-                        .flatMap(_.get("hintValue"))
-                        .getOrElse(lastPart(t.name))
-                    )
-
-                val discExpr: Expr[Unit] = '{
-                  $out.openElement(${ Expr(cfg.typeHintLabel) })
-                  $out.attribute("name")
-                  $out.emitValue($cname)
-                  $out.closeAttribute()
-                  $out.closeElementEmpty()
-                }
-
-                val discBlock: Expr[Unit] = {
-                  val withDisc: List[Expr[Unit]] = discExpr +: eachField
-                  withDisc match
-                    case Nil      => '{ () }
-                    case x :: Nil => x
-                    case xs       => Expr.block(xs.init, xs.last)
-                }
-
                 val noDiscBlock: Expr[Unit] =
                   eachField match
                     case Nil      => '{ () }
                     case x :: Nil => x
                     case xs       => Expr.block(xs.init, xs.last)
 
-                // Use quote-level If expression
-                If(
-                  cond = emitDiscriminator.asTerm,
-                  thenp = discBlock.asTerm,
-                  elsep = noDiscBlock.asTerm
-                ).asExprOf[Unit]
-              }
+                noDiscBlock.asTerm
+
+                // Unlike JSON, we don't worry about type hints here. The actual type is emitted in the XML label for the object, so it becomes the hint!
+              }.asExprOf[Unit]
 
               val className = Expr(t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(t.name.split("\\.").last))
+
               if !t.isCaseClass && cfg._writeNonConstructorFields then
                 val eachField = t.nonConstructorFields.map { f =>
                   f.fieldRef.refType match
                     case '[e] =>
                       val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
                       val fieldName = changeFieldName(f)
-                      MaybeWrite.maybeWriteField[e](ctx, cfg, Expr(fieldName), fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
+                      MaybeWrite.maybeWriteField[e](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
                 }
                 val subBody = eachField.length match
                   case 0 => '{}
@@ -222,6 +190,7 @@ object Writer:
                 }
             }
 
+          /*
           case t: JavaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
@@ -251,7 +220,7 @@ object Writer:
                               MaybeWrite.maybeWriteField[e](
                                 ctx,
                                 cfg,
-                                '{ fieldName },
+                                "", // TBD <- Should be fieldName but its at the wrong level!
                                 '{ fieldValue.asInstanceOf[e] },
                                 ref.fieldRef.asInstanceOf[RTypeRef[e]],
                                 out
@@ -261,6 +230,7 @@ object Writer:
                       $out.endElement($className)
                   }
             }
+           */
 
           case t: TraitRef[?] => throw XmlUnsupportedType("Non-sealed traits are not supported")
 
@@ -278,7 +248,7 @@ object Writer:
       isMapKey: Boolean = false, // only primitive or primitive-equiv types can be Map keys
       prefix: Expr[Unit],
       postfix: Expr[Unit],
-      fieldName: Option[String] = None,
+      fieldName: String,
       entryLabel: Option[String] = None
   ): Expr[Unit] =
     given Quotes = ctx.quotes
@@ -320,7 +290,7 @@ object Writer:
 
           case t: StringRef =>
             // TODO: Make this work. Right now it emits the same thing, effectively ignoring the setting
-            val labelE = Expr(fieldName.getOrElse(throw new XmlTypeError("String field label not supplied")))
+            val labelE = Expr(fieldName)
             if cfg._suppressEscapedStrings then
               '{
                 if $aE == "" then $out.emptyElement($labelE)
@@ -424,21 +394,35 @@ object Writer:
             t.elementRef.refType match
               case '[e] =>
                 val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Seq[e]] else aE.asExprOf[Seq[e]]
-                val entryLabelE = entryLabel.map(e => Expr(e)).getOrElse(throw new XmlTypeError("Seq entry label not supplied"))
-                val labelE = Expr(fieldName.getOrElse(throw new XmlTypeError("Seq collection label not supplied")))
-                val pprefix = '{
-                  $out.startElement($entryLabelE)
-                }
-                val ppostfix = '{
-                  $out.endElement($entryLabelE)
-                }
+                val entryLabelE = entryLabel.map(e => Expr(e))
+                val labelE = Expr(fieldName)
+
+                // If entryLabel not defined then we use "naked" lists: no wrapping...just repeating elements named w/fieldName
+                val pprefix =
+                  if entryLabel.isDefined then
+                    '{
+                      $out.startElement(${ entryLabelE.get })
+                    }
+                  else
+                    '{
+                      $out.startElement(${ labelE })
+                    }
+                val ppostfix =
+                  if entryLabel.isDefined then
+                    '{
+                      $out.endElement(${ entryLabelE.get })
+                    }
+                  else
+                    '{
+                      $out.endElement(${ labelE })
+                    }
                 '{
                   if $tin == null then $out.burpNull()
                   else if $tin.isEmpty then $out.emptyElement($labelE)
                   else
                     $prefix
                     $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix) }
+                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix, fieldName) }
                     }
                     $postfix
                 }
@@ -490,7 +474,7 @@ object Writer:
                       }
                     case Some(v) =>
                       val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, prefix, postfix, entryLabel) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, prefix, postfix, fieldName, entryLabel) }
                 }
 
           /*
@@ -600,8 +584,7 @@ object Writer:
                 t.elementRef2.refType match
                   case '[v] =>
                     val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Map[k, v]] else aE.asExprOf[Map[k, v]]
-                    val label = fieldName.getOrElse(throw new XmlTypeError("Map collection label not supplied"))
-                    val labelE = Expr(label)
+                    val labelE = Expr(fieldName)
                     val _entryLabel = entryLabel.getOrElse(throw new XmlTypeError("Map entry label not supplied"))
                     '{
                       if $tin == null then $out.burpNull()
@@ -619,7 +602,7 @@ object Writer:
                                         MaybeWrite.maybeWriteMapEntry[ak, av](
                                           ctx,
                                           cfg,
-                                          label,
+                                          fieldName,
                                           _entryLabel,
                                           '{ key.asInstanceOf[ak] },
                                           '{ value.asInstanceOf[av] },
@@ -634,7 +617,7 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[k, av](
                                       ctx,
                                       cfg,
-                                      label,
+                                      fieldName,
                                       _entryLabel,
                                       '{ key }.asExprOf[k],
                                       '{ value.asInstanceOf[av] },
@@ -649,7 +632,7 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[ak, v](
                                       ctx,
                                       cfg,
-                                      label,
+                                      fieldName,
                                       _entryLabel,
                                       '{ key.asInstanceOf[ak] },
                                       '{ value }.asExprOf[v],
@@ -662,7 +645,7 @@ object Writer:
                                 MaybeWrite.maybeWriteMapEntry[k, v](
                                   ctx,
                                   cfg,
-                                  label,
+                                  fieldName,
                                   _entryLabel,
                                   '{ key },
                                   '{ value }.asExprOf[v],

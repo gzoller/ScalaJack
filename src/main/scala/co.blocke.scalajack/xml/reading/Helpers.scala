@@ -82,16 +82,19 @@ object Helpers:
           }
       }
     }.asExprOf[T]
+   */
 
   def generateReaderBodyForSealedTraits[T: Type](
-                                                  ctx: CodecBuildContext,
-                                                  cfg: SJConfig,
-                                                  traitRef: Sealable,
-                                                  in: Expr[XmlSource]
-                                                ): Expr[T] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      traitRef: Sealable,
+      in: Expr[XmlSource]
+  ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
+    '{ null }.asExprOf[T]
+    /*
     val hintLabelE = Expr(cfg.typeHintLabel)
     val named = traitRef match {
       case t: TraitRef[?] => t.name
@@ -208,8 +211,7 @@ object Helpers:
           }
         }
       }.asExprOf[T]
-
-   */
+     */
 
   def generateReaderBodyForScalaClass[T: Type](
       ctx: CodecBuildContext,
@@ -288,19 +290,6 @@ object Helpers:
               )
             )
       }
-
-//      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
-//      if maybeFieldNum == null then null
-//      else
-//        while maybeFieldNum.isDefined do
-//          ${
-//            Match(
-//              '{ maybeFieldNum.get }.asTerm,
-//              caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
-//            ).asExprOf[Any]
-//          }
-//          maybeFieldNum = $in.expectObjectField($matrixRef)
-
     }.asTerm
 
     Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]

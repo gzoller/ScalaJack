@@ -19,8 +19,8 @@ object XmlCodecMaker:
     // ================================================================
     val codecDef = '{
       new XmlCodec[T] {
-        def encodeValue(in: T, out: XmlOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out, false, false, '{}, '{}) }
-        def decodeValue(in: XmlSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in).asExprOf[T] }
+        def encodeValue(in: T, out: XmlOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out, false, false, '{}, '{}, "") }
+        def decodeValue(in: XmlSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in, false, false, "").asExprOf[T] }
       }
     }.asTerm
 

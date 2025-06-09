@@ -9,7 +9,8 @@ case class Ball(size: Int)
 case class Person(
     name: String,
     @xmlLabel("duration") age: Int,
-    @xmlEntryLabel("bop") mine: List[Ball]
+    @xmlEntryLabel("boo") mine: List[Int],
+    pet: Animal
 ) //, @xmlEntryLabel("bip")items: Map[String,Int])
 
 /*
@@ -23,3 +24,8 @@ So at this point we have:
 Next:
  * Option (empty elements)
  */
+
+sealed trait Animal:
+  val legs: Int
+
+case class Dog(legs: Int, food: String) extends Animal

@@ -32,28 +32,43 @@ object MaybeWrite:
   def maybeWriteField[V: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      fieldNameE: Expr[String],
+      fieldName: String,
       valueE: Expr[V],
       valueRef: RTypeRef[V],
       out: Expr[XmlOutput],
-      fieldLabel: Option[String] = None,
       entryLabel: Option[String] = None
   ): Expr[Unit] =
     given Quotes = ctx.quotes
 
+    // Collections are special. Normally we print <field>...</field> and let the call to _maybeWrite supply the innards.
+    // For collections tho, it isn't guaranteed we emit the wrapper <field>. So don't emit anything and pass responsibility
+    // for wrapping, or not, to _maybeWrite.
+    val (prefix, postfix) = valueRef match {
+      case _: CollectionRef[?] if entryLabel.isEmpty =>
+        (
+          '{ () },
+          '{ () }
+        )
+      case _ =>
+        val fieldNameE = Expr(fieldName)
+        (
+          '{
+            $out.startElement($fieldNameE)
+          },
+          '{
+            $out.endElement($fieldNameE)
+          }
+        )
+    }
     _maybeWrite[V](
       ctx,
       cfg,
       valueE,
       valueRef,
       out,
-      fieldLabel,
-      '{
-        $out.startElement($fieldNameE)
-      },
-      '{
-        $out.endElement($fieldNameE)
-      },
+      fieldName,
+      prefix,
+      postfix,
       entryLabel
     )
 
@@ -87,8 +102,8 @@ object MaybeWrite:
           valueE,
           valueRef,
           out,
-          Some(mapElementLabel),
-          Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true, pprefix, ppostfix),
+          mapElementLabel,
+          Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true, pprefix, ppostfix, mapElementLabel),
           '{
             $out.endElement($entryLabelE)
           },
@@ -105,7 +120,7 @@ object MaybeWrite:
       get: Expr[O[T] => T],
       prefix: Expr[Unit],
       postfix: Expr[Unit],
-      fieldLabel: Option[String],
+      fieldLabel: String,
       entryLabel: Option[String]
   ): Expr[Unit] =
     given Quotes = ctx.quotes
@@ -254,7 +269,7 @@ object MaybeWrite:
       aE: Expr[T],
       ref: RTypeRef[T],
       out: Expr[XmlOutput],
-      fieldLabel: Option[String] = None,
+      fieldLabel: String,
       prefix: Expr[Unit],
       postfix: Expr[Unit],
       entryLabel: Option[String] = None
@@ -322,8 +337,3 @@ object MaybeWrite:
         ref.refType match
           case '[u] =>
             Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out, false, false, prefix, postfix, fieldLabel, entryLabel)
-//            '{
-//              $prefix
-//              ${ Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out) }
-//              $postfix
-//            }

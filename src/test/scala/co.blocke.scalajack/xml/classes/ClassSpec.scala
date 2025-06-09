@@ -14,8 +14,9 @@ class ClassSpec() extends AnyFunSpec:
 
   describe(colorString("-------------------------------\n:      XML Class Tests        :\n-------------------------------", Console.YELLOW)) {
     it("Simple case class must work (with field renaming)") {
-      val inst = Person("", 34, Nil) // List(Ball(5), Ball(6), Ball(7))) // , Map("a"->1,"b"->2,"c"->3))
-      val sj = sjXmlCodecOf[Person]
+      val inst = Person("", 34, List(1, 2, 3), Dog(3, "kibble")) // , Map("a"->1,"b"->2,"c"->3))
+//      val inst = Person("", 34, List(Ball(5), Ball(6), Ball(7)), Dog(3, "kibble")) // , Map("a"->1,"b"->2,"c"->3))
+      val sj = sjXmlCodecOf[Person](SJConfig.preferTypeHints)
       val xml = sj.toXml(inst)
       println(xml)
       val x = sj.fromXml(xml)
