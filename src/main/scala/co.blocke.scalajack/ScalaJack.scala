@@ -55,25 +55,25 @@ object ScalaJack:
     val jsonCodec = JsonCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
     '{ ScalaJack($jsonCodec) }
 
-//-----------------------
-//         XML
-//-----------------------
+  //-----------------------
+  //         XML
+  //-----------------------
 
-// ----- Use default XmlConfig
-inline def sjXmlCodecOf[T]: ScalaJackXML[T] = ${ xmlCodecOfImpl[T] }
-private def xmlCodecOfImpl[T: Type](using q: Quotes): Expr[ScalaJackXML[T]] =
-  val ctx = new XmlCodecBuildContext()
-  import ctx.quotes.reflect.*
-  val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
-  val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, SJConfig)
-  '{ ScalaJackXML($xmlCodec) }
+  // ----- Use default XmlConfig
+  inline def sjXmlCodecOf[T]: ScalaJackXML[T] = ${ xmlCodecOfImpl[T] }
+  private def xmlCodecOfImpl[T: Type](using q: Quotes): Expr[ScalaJackXML[T]] =
+    val ctx = new XmlCodecBuildContext()
+    import ctx.quotes.reflect.*
+    val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
+    val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, SJConfig)
+    '{ ScalaJackXML($xmlCodec) }
 
-// ----- Use given JsonConfig
-inline def sjXmlCodecOf[T](inline cfg: SJConfig): ScalaJackXML[T] = ${ xmlCodecOfImplWithConfig[T]('cfg) }
-private def xmlCodecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using q: Quotes): Expr[ScalaJackXML[T]] =
-  val ctx = new XmlCodecBuildContext()
-  import ctx.quotes.reflect.*
-  val cfg = summon[FromExpr[SJConfig]].unapply(cfgE)
-  val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
-  val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
-  '{ ScalaJackXML($xmlCodec) }
+  // ----- Use given JsonConfig
+  inline def sjXmlCodecOf[T](inline cfg: SJConfig): ScalaJackXML[T] = ${ xmlCodecOfImplWithConfig[T]('cfg) }
+  private def xmlCodecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using q: Quotes): Expr[ScalaJackXML[T]] =
+    val ctx = new XmlCodecBuildContext()
+    import ctx.quotes.reflect.*
+    val cfg = summon[FromExpr[SJConfig]].unapply(cfgE)
+    val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
+    val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
+    '{ ScalaJackXML($xmlCodec) }
