@@ -30,7 +30,7 @@ case class ScalaJackXML[T](xmlCodec: XmlCodec[T]):
 
 // ---------------------------------------
 
-object ScalaJack:
+object ScalaJack {
 
   // -----------------------
   //         JSON
@@ -38,6 +38,7 @@ object ScalaJack:
 
   // ----- Use default JsonConfig
   inline def sjCodecOf[T]: ScalaJack[T] = ${ codecOfImpl[T] }
+
   private def codecOfImpl[T: Type](using q: Quotes): Expr[ScalaJack[T]] =
     val ctx = new JsonCodecBuildContext()
     import ctx.quotes.reflect.*
@@ -47,6 +48,7 @@ object ScalaJack:
 
   // ----- Use given JsonConfig
   inline def sjCodecOf[T](inline cfg: SJConfig): ScalaJack[T] = ${ codecOfImplWithConfig[T]('cfg) }
+
   private def codecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using q: Quotes): Expr[ScalaJack[T]] =
     val ctx = new JsonCodecBuildContext()
     import ctx.quotes.reflect.*
@@ -61,6 +63,7 @@ object ScalaJack:
 
   // ----- Use default XmlConfig
   inline def sjXmlCodecOf[T]: ScalaJackXML[T] = ${ xmlCodecOfImpl[T] }
+
   private def xmlCodecOfImpl[T: Type](using q: Quotes): Expr[ScalaJackXML[T]] =
     val ctx = new XmlCodecBuildContext()
     import ctx.quotes.reflect.*
@@ -70,6 +73,7 @@ object ScalaJack:
 
   // ----- Use given JsonConfig
   inline def sjXmlCodecOf[T](inline cfg: SJConfig): ScalaJackXML[T] = ${ xmlCodecOfImplWithConfig[T]('cfg) }
+
   private def xmlCodecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using q: Quotes): Expr[ScalaJackXML[T]] =
     val ctx = new XmlCodecBuildContext()
     import ctx.quotes.reflect.*
@@ -77,3 +81,5 @@ object ScalaJack:
     val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
     val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
     '{ ScalaJackXML($xmlCodec) }
+
+}
