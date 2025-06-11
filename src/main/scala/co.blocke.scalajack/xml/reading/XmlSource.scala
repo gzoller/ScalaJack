@@ -152,21 +152,33 @@ case class XmlSource(rawXML: String):
             if isEndMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
             else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
           case InputMode.STRUCT => // consume end element for entryLabel
+            println("---$$$ " + showElement(xmlEventSrc.peek()))
             if isEndMatch(xmlEventSrc.peek(), entryLabel) then
-              if isStartMatch(xmlEventSrc.peek(1), entryLabel) then
+              skipWS()
+              println("---$$$2 " + showElement(xmlEventSrc.peek(1)))
+              if isStartMatch(peekNextAfterWS(1), entryLabel) then
                 xmlEventSrc.nextEvent() // consume end element
-                xmlEventSrc.nextEvent() // pre-consume start element
+                skipWS()
+                xmlEventSrc.nextEvent()
+                println("---$$$3 " + showElement(xmlEventSrc.peek()))
               else done = true
             else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
           case _ => // end already consumed for other cases
         }
 
     println("FINSIHED: " + seq)
+    println("Next up: " + showElement(xmlEventSrc.peek()))
     seq
 
-/*
-    <foo><bar>...</bar></foo>
-    <foo><bar>...</bar></foo>
-    <foo><bar>...</bar></foo>
-    <blah/>
- */
+  private def peekNextAfterWS(i: Int): XMLEvent =
+    xmlEventSrc.peek(i) match {
+      case e if e.isCharacters && e.asCharacters.isWhiteSpace => xmlEventSrc.peek(i + 1)
+      case e                                                  => e
+    }
+
+  private def showElement(e: XMLEvent): String =
+    e match {
+      case y if e.isStartElement => "Start::" + e.asStartElement.getName.getLocalPart
+      case y if e.isEndElement   => "End::" + e.asEndElement.getName.getLocalPart
+      case _                     => "unknown"
+    }

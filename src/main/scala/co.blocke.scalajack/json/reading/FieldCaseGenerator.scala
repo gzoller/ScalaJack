@@ -23,7 +23,7 @@ object FieldCaseGenerator:
     classRef.fields.map { field =>
       field.fieldRef.refType match
         case '[f] =>
-          val reqBit = Expr(1 << field.index)
+          val reqBit = Expr(1L << field.index)
           val fieldName = Expr(field.name)
           val varSym = fieldSymbols(field.index)
           val fieldRef = Ref(varSym)
@@ -39,8 +39,8 @@ object FieldCaseGenerator:
               Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
             case _ =>
               '{
-                if (${ Ref(reqSym).asExprOf[Int] } & $reqBit) != 0 then
-                  ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Int] } ^ $reqBit }.asTerm).asExprOf[Unit] }
+                if (${ Ref(reqSym).asExprOf[Long] } & $reqBit) != 0 then
+                  ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Long] } ^ $reqBit }.asTerm).asExprOf[Unit] }
                   ${ Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
                 else throw new JsonParseError("Duplicate field " + $fieldName, $in)
               }.asTerm

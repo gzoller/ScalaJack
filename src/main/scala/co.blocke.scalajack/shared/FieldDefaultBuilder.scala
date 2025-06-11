@@ -30,14 +30,14 @@ object FieldDefaultBuilder:
   def generateDefaults[T: Type](
       ctx: CodecBuildContext,
       classRef: ScalaClassRef[?]
-  ): (List[ctx.quotes.reflect.ValDef], List[ctx.quotes.reflect.Term], ctx.quotes.reflect.ValDef, Int, Map[Int, ctx.quotes.reflect.Symbol]) =
+  ): (List[ctx.quotes.reflect.ValDef], List[ctx.quotes.reflect.Term], ctx.quotes.reflect.ValDef, Long, Map[Int, ctx.quotes.reflect.Symbol]) =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     val tpe = TypeRepr.of[T]
     val classSymbol = tpe.typeSymbol
     val classCompanion = Ref(classSymbol.companionModule)
-    var requiredMask: Int = 0
+    var requiredMask: Long = 0
 
     // Extract type arguments (e.g., for generic classes like Foo[A, B])
     // These are used when applying default value methods that are type-parameterized.
@@ -67,7 +67,7 @@ object FieldDefaultBuilder:
               case None        => ("", Language.Scala)
             }
             if optionRecipe.isEmpty then
-              requiredMask |= (1 << idx)
+              requiredMask |= (1L << idx)
               field.fieldRef.unitVal.asExprOf[f]
             else
               val recipeExpr = Expr(optionRecipe)
@@ -83,7 +83,7 @@ object FieldDefaultBuilder:
               case None        => ("", Language.Scala)
             }
             if optionRecipe.isEmpty then
-              requiredMask |= (1 << idx)
+              requiredMask |= (1L << idx)
               field.fieldRef.unitVal.asExprOf[f]
             else if lang == Language.Scala then '{ None }.asExprOf[f]
             else '{ java.util.Optional.empty.asInstanceOf[f] }
@@ -93,12 +93,12 @@ object FieldDefaultBuilder:
               case Some(Language.Scala) => '{ Success(None) }.asExprOf[f]
               case Some(Language.Java)  => '{ Success(java.util.Optional.empty).asInstanceOf[f] }
               case _ =>
-                requiredMask |= (1 << idx)
+                requiredMask |= (1L << idx)
                 field.fieldRef.unitVal.asExprOf[f]
             }
 
           case _ =>
-            requiredMask |= (1 << idx)
+            requiredMask |= (1L << idx)
             field.fieldRef.unitVal.asExprOf[f]
       else
         val methodSymbol = dvMembers.head
@@ -125,7 +125,7 @@ object FieldDefaultBuilder:
     }
 
     val (valDefs, idents) = fieldResults.unzip
-    val reqSym = Symbol.newVal(Symbol.spliceOwner, "_req", TypeRepr.of[Int], Flags.Mutable, Symbol.noSymbol)
-    val reqVarDef = ValDef(reqSym, Some(Literal(IntConstant(requiredMask))))
+    val reqSym = Symbol.newVal(Symbol.spliceOwner, "_req", TypeRepr.of[Long], Flags.Mutable, Symbol.noSymbol)
+    val reqVarDef = ValDef(reqSym, Some(Literal(LongConstant(requiredMask))))
 
     (valDefs, idents, reqVarDef, requiredMask, symbolMap.toMap)

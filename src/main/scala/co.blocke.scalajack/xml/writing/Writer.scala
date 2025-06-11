@@ -163,13 +163,26 @@ object Writer:
                 // Unlike JSON, we don't worry about type hints here. The actual type is emitted in the XML label for the object, so it becomes the hint!
               }.asExprOf[Unit]
 
-              val className = Expr(
-                t.annotations
-                  .get("co.blocke.scalajack.xmlLabel")
-                  .flatMap(_.get("name"))
-                  .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
-                  .getOrElse(lastPart(t.name))
-              )
+              val className =
+                if isStruct then
+                  val n = t.annotations
+                    .get("co.blocke.scalajack.xmlLabel")
+                    .flatMap(_.get("name"))
+                    .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
+                    .getOrElse(lastPart(t.name))
+                  println(s"Class ${t.name} resolved: $n")
+                  Expr(
+                    n
+                  )
+                else
+                  val n = t.annotations
+                    .get("co.blocke.scalajack.xmlLabel")
+                    .flatMap(_.get("name"))
+                    .getOrElse(lastPart(t.name))
+                  println(s"Non-Struct Class ${t.name} resolved: $n")
+                  Expr(
+                    n
+                  )
 
               if !t.isCaseClass && cfg._writeNonConstructorFields then
                 val eachField = t.nonConstructorFields.map { f =>
@@ -417,7 +430,7 @@ object Writer:
                     else if $tin.isEmpty then $out.emptyElement($labelE)
                     else
                       $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField) }
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField, isStruct = isStruct) }
                       }
                   }
                 else
@@ -768,7 +781,7 @@ object Writer:
               case None =>
                 '{
                   $prefix
-                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField) }
+                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField, isStruct = isStruct) }
                   $postfix
                 }
             }

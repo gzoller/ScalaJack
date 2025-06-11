@@ -15,8 +15,8 @@ case class Person(
 //    @xmlStruct asStruct: List[Ball],
 //    @xmlStruct pet: Animal,
 //    oneBall: Ball,
-    @xmlStruct @xmlLabel("boing") ball: Ball,
-    @xmlStruct @xmlLabel("zoom") road: List[Car]
+    @xmlStruct @xmlLabel("zoom") road: List[Car],
+    @xmlStruct @xmlLabel("boing") ball: Ball
 //    dunno: Option[Ball],
 //    @xmlStruct kinda: Option[Ball]
 //    dunno2: Option[List[Ball]],
@@ -73,7 +73,7 @@ case class Invoice810(
     @xmlStruct @xmlLabel("_CREDITMEMO") creditmemo: CreditMemo,
     @xmlStruct @xmlLabel("_ADDRESS") address: List[Address],
     @xmlStruct @xmlLabel("_TAX") tax: Tax,
-    @xmlStruct @xmlLabel("_USERDEF") userdef: Userdef,
+    @xmlStruct @xmlLabel("_USERDEF") userdef: List[Userdef],
     @xmlStruct @xmlLabel("_ITEM") item: List[Item]
 )
 
@@ -124,7 +124,7 @@ case class Address(
     phone: String,
     fax: String,
     email: String,
-    @xmlLabel("_USERDEF") userdef: List[Userdef]
+    @xmlStruct @xmlLabel("_USERDEF") userdef: List[Userdef]
 )
 
 case class Userdef(
@@ -145,11 +145,11 @@ case class Item(
     recid: String,
     lineno: Double,
     itemid: String,
-    custitemid: String,
+    cusitemid: String,
     itemdesc: String,
     itemdesc2: String,
     price: Double,
-    extendedpricce: Double,
+    extendedprice: Double,
     taxable: String,
     taxflag: String,
     extendedtaxamount: String,
@@ -163,9 +163,9 @@ case class Item(
     shipdate: String,
     qtyreturntostk: String,
     reasoncd: String,
-    @xmlLabel("_MESSAGE") message: List[Message],
-    @xmlLabel("_USERDEF") userdef: List[Userdef],
-    @xmlLabel("_ITEMTAX") itemtax: ItemTax
+    @xmlStruct @xmlLabel("_MESSAGE") message: List[Message],
+    @xmlStruct @xmlLabel("_USERDEF") userdef: List[Userdef],
+    @xmlStruct @xmlLabel("_ITEMTAX") itemtax: ItemTax
 )
 
 case class ItemTax(

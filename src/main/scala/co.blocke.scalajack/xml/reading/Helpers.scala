@@ -264,10 +264,10 @@ object Helpers:
       methodKey: TypedName,
       classRef: ScalaClassRef[?],
       in: Expr[XmlSource],
-      fieldLabel: String,
+      parentField: Option[FieldInfoRef],
       isStruct: Boolean
   ): Expr[T] =
-    generateReaderBodySimple[T](ctx, cfg, classRef, in, fieldLabel, isStruct)
+    generateReaderBodySimple[T](ctx, cfg, classRef, in, parentField, isStruct)
 //    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
 //    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
 
@@ -276,7 +276,7 @@ object Helpers:
       cfg: SJConfig,
       classRef: ScalaClassRef[?],
       in: Expr[XmlSource],
-      fieldLabel: String,
+      parentField: Option[FieldInfoRef],
       isStruct: Boolean
   ): Expr[T] =
     given Quotes = ctx.quotes
@@ -303,10 +303,10 @@ object Helpers:
       .buildClassInstantiationExpr(ctx, TypeRepr.of[T], idents)
       .asExprOf[T]
 
-    val reqRefExpr = Ref(reqSym).asExprOf[Int] // bitmap of fields set so far
+    val reqRefExpr = Ref(reqSym).asExprOf[Long] // bitmap of fields set so far
     val requiredMaskExpr = Expr(requiredMask) // mask of required fields
 
-    println(s"^^ Class ${classRef.name} field $fieldLabel")
+    println(s"^^ Class ${classRef.name} field ${parentField.map(_.name).getOrElse("unknown")}")
     val xmlClassNameE = Expr(
       classRef.annotations
         .get("co.blocke.scalajack.xmlLabel")
@@ -344,7 +344,7 @@ object Helpers:
           else
             throw new ParseError(
               "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-                Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+                java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
               )
             )
         }.asTerm
@@ -359,7 +359,7 @@ object Helpers:
           else
             throw new ParseError(
               "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-                Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+                java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
               )
             )
         }.asTerm

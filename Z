@@ -1,0 +1,2281 @@
+[info] welcome to sbt 1.10.11 (Homebrew Java 23.0.2)
+[info] loading settings for project scalajack-build from metals.sbt, plugins.sbt...
+[info] loading project definition from /Users/gzoller/me/git/ScalaJack/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to scalajack (in build file:/Users/gzoller/me/git/ScalaJack/)
+[info] scalafmt: Formatting 1 Scala sources (/Users/gzoller/me/git/ScalaJack)...
+[info] compiling 9 Scala sources to /Users/gzoller/me/git/ScalaJack/target/scala-3.5.2/classes ...
+[warn] -- [E175] Potential Issue Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:76:31 
+[warn] 76 |          xmlEventSrc.nextEvent()
+[warn]    |          ^^^^^^^^^^^^^^^^^^^^^^^
+[warn]    |       discarded non-Unit value of type javax.xml.stream.events.XMLEvent
+[warn] -- [E175] Potential Issue Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:48:70 
+[warn] 48 |      if xmlEventSrc.peek().isStartDocument then xmlEventSrc.nextEvent() // skip
+[warn]    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^
+[warn]    |       discarded non-Unit value of type javax.xml.stream.events.XMLEvent
+[warn] -- [E175] Potential Issue Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:101:53 
+[warn] 101 |    if xmlEventSrc.hasNext then xmlEventSrc.nextEvent() // skip Characters event
+[warn]     |                                ^^^^^^^^^^^^^^^^^^^^^^^
+[warn]     |     discarded non-Unit value of type javax.xml.stream.events.XMLEvent
+[warn] -- [E175] Potential Issue Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:152:84 
+[warn] 152 |            if isEndMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
+[warn]     |                                                               ^^^^^^^^^^^^^^^^^^^^^^^
+[warn]     |     discarded non-Unit value of type javax.xml.stream.events.XMLEvent
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Helpers.scala:139:30 
+[warn] 139 |    import ctx.quotes.reflect.*
+[warn]     |                              ^
+[warn]     |                              unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Helpers.scala:353:14 
+[warn] 353 |          val attrs = $in.expectObjectStart($xmlClassNameE)
+[warn]     |              ^^^^^
+[warn]     |              unused local definition
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Reader.scala:6:19 
+[warn] 6 |import scala.util.{Failure, Success}
+[warn]   |                   ^^^^^^^
+[warn]   |                   unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Reader.scala:6:28 
+[warn] 6 |import scala.util.{Failure, Success}
+[warn]   |                            ^^^^^^^
+[warn]   |                            unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Reader.scala:7:24 
+[warn] 7 |import scala.collection.Factory
+[warn]   |                        ^^^^^^^
+[warn]   |                        unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Reader.scala:8:21 
+[warn] 8 |import scala.reflect.ClassTag
+[warn]   |                     ^^^^^^^^
+[warn]   |                     unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/Reader.scala:9:38 
+[warn] 9 |import scala.jdk.CollectionConverters.*
+[warn]   |                                      ^
+[warn]   |                                      unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:8:43 
+[warn] 8 |import javax.xml.stream.events.{Attribute, Characters, StartElement, XMLEvent}
+[warn]   |                                           ^^^^^^^^^^
+[warn]   |                                           unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/reading/XmlSource.scala:8:55 
+[warn] 8 |import javax.xml.stream.events.{Attribute, Characters, StartElement, XMLEvent}
+[warn]   |                                                       ^^^^^^^^^^^^
+[warn]   |                                                       unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/MaybeWrite.scala:9:19 
+[warn] 9 |import scala.util.{Failure, Success, Try}
+[warn]   |                   ^^^^^^^
+[warn]   |                   unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/MaybeWrite.scala:9:28 
+[warn] 9 |import scala.util.{Failure, Success, Try}
+[warn]   |                            ^^^^^^^
+[warn]   |                            unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/MaybeWrite.scala:9:37 
+[warn] 9 |import scala.util.{Failure, Success, Try}
+[warn]   |                                     ^^^
+[warn]   |                                     unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:6:38 
+[warn] 6 |import scala.jdk.CollectionConverters.*
+[warn]   |                                      ^
+[warn]   |                                      unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:9:42 
+[warn] 9 |import co.blocke.scala_reflection.reflect.ReflectOnType
+[warn]   |                                          ^^^^^^^^^^^^^
+[warn]   |                                          unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:10:42 
+[warn] 10 |import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+[warn]    |                                          ^^^^^^^^^
+[warn]    |                                          unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:10:53 
+[warn] 10 |import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+[warn]    |                                                     ^^^^^^^^^^^^^^
+[warn]    |                                                     unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:10:69 
+[warn] 10 |import co.blocke.scala_reflection.rtypes.{EnumRType, JavaClassRType, NonConstructorFieldInfo}
+[warn]    |                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+[warn]    |                                                           unused import
+[warn] -- [E198] Unused Symbol Warning: /Users/gzoller/me/git/ScalaJack/src/main/scala/co.blocke.scalajack/xml/writing/Writer.scala:74:6 
+[warn] 74 |      emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
+[warn]    |      ^^^^^^^^^^^^^^^^^
+[warn]    |      unused explicit parameter
+[warn] 22 warnings found
+[info] done compiling
+[info] compiling 26 Scala sources and 2 Java sources to /Users/gzoller/me/git/ScalaJack/target/scala-3.5.2/test-classes ...
+& Field: name isStruct? false  entryLabel? None
+& Field: duration isStruct? false  entryLabel? None
+& Field: zoom isStruct? true  entryLabel? None
+& Field: make isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Car resolved: zoom
+& Field: boing isStruct? true  entryLabel? None
+& Field: size isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Ball resolved: boing
+Non-Struct Class co.blocke.scalajack.xml.classes.Person resolved: dude
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.Ball field name ball
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> boing), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: boing
+F: Some(boing)
+@@@ Field Matrix Field Names: List(name, duration, zoom, boing)
+>>> Gen for co.blocke.scalajack.xml.classes.Person
+       GEN cases for field name, isStruct? false
+       GEN cases for field duration, isStruct? false
+       GEN cases for field zoom, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Car isStruct? true
+@@@ Field Matrix Field Names: List(make)
+>>> Gen for co.blocke.scalajack.xml.classes.Car
+       GEN cases for field make, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Car field road
+(parse logic for co.blocke.scalajack.xml.classes.Car isStruct? true
+       GEN cases for field boing, isStruct? true
+@@@ Field Matrix Field Names: List(size)
+>>> Gen for co.blocke.scalajack.xml.classes.Ball
+       GEN cases for field size, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Ball field ball
+(parse logic for co.blocke.scalajack.xml.classes.Ball isStruct? true
+^^ Class co.blocke.scalajack.xml.classes.Person field unknown
+(parse logic for co.blocke.scalajack.xml.classes.Person isStruct? false
+& Field: TYPE isStruct? false  entryLabel? None
+& Field: recid isStruct? false  entryLabel? None
+& Field: invoiceno isStruct? false  entryLabel? None
+& Field: invoicedate isStruct? false  entryLabel? None
+& Field: orderno isStruct? false  entryLabel? None
+& Field: ordertype isStruct? false  entryLabel? None
+& Field: orderdate isStruct? false  entryLabel? None
+& Field: purchaseorderno isStruct? false  entryLabel? None
+& Field: cusno isStruct? false  entryLabel? None
+& Field: division isStruct? false  entryLabel? None
+& Field: department isStruct? false  entryLabel? None
+& Field: shipdate isStruct? false  entryLabel? None
+& Field: canceldate isStruct? false  entryLabel? None
+& Field: collect isStruct? false  entryLabel? None
+& Field: bolno isStruct? false  entryLabel? None
+& Field: iscreditmemo isStruct? false  entryLabel? None
+& Field: miscamount isStruct? false  entryLabel? None
+& Field: freightamount isStruct? false  entryLabel? None
+& Field: totinvoiceamount isStruct? false  entryLabel? None
+& Field: tottaxableamount isStruct? false  entryLabel? None
+& Field: totsalesamount isStruct? false  entryLabel? None
+& Field: totcartons isStruct? false  entryLabel? None
+& Field: totweight isStruct? false  entryLabel? None
+& Field: lineitemtotal isStruct? false  entryLabel? None
+& Field: _CARRIER isStruct? true  entryLabel? None
+& Field: carrierid isStruct? false  entryLabel? None
+& Field: carrierdesc isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Carrier resolved: _CARRIER
+& Field: _MESSAGE isStruct? true  entryLabel? None
+& Field: TYPE isStruct? false  entryLabel? None
+& Field: message isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Message resolved: _MESSAGE
+& Field: _TERMS isStruct? true  entryLabel? None
+& Field: id isStruct? false  entryLabel? None
+& Field: desc isStruct? false  entryLabel? None
+& Field: duedays isStruct? false  entryLabel? None
+& Field: discountdays isStruct? false  entryLabel? None
+& Field: discountpercent isStruct? false  entryLabel? None
+& Field: discountdate isStruct? false  entryLabel? None
+& Field: datedue isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Terms resolved: _TERMS
+& Field: _CURRENCY isStruct? true  entryLabel? None
+& Field: currencycode isStruct? false  entryLabel? None
+& Field: currencyrate isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Currency resolved: _CURRENCY
+& Field: _CREDITMEMO isStruct? true  entryLabel? None
+& Field: origordtype isStruct? false  entryLabel? None
+& Field: origordno isStruct? false  entryLabel? None
+& Field: origorddate isStruct? false  entryLabel? None
+& Field: applytono isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.CreditMemo resolved: _CREDITMEMO
+& Field: _ADDRESS isStruct? true  entryLabel? None
+& Field: TYPE isStruct? false  entryLabel? None
+& Field: id isStruct? false  entryLabel? None
+& Field: name isStruct? false  entryLabel? None
+& Field: add1 isStruct? false  entryLabel? None
+& Field: add2 isStruct? false  entryLabel? None
+& Field: add3 isStruct? false  entryLabel? None
+& Field: city isStruct? false  entryLabel? None
+& Field: state isStruct? false  entryLabel? None
+& Field: zip isStruct? false  entryLabel? None
+& Field: country isStruct? false  entryLabel? None
+& Field: contact isStruct? false  entryLabel? None
+& Field: phone isStruct? false  entryLabel? None
+& Field: fax isStruct? false  entryLabel? None
+& Field: email isStruct? false  entryLabel? None
+& Field: _USERDEF isStruct? true  entryLabel? None
+& Field: TYPE isStruct? false  entryLabel? None
+& Field: userdef isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Userdef resolved: _USERDEF
+Class co.blocke.scalajack.xml.classes.Address resolved: _ADDRESS
+& Field: _TAX isStruct? true  entryLabel? None
+& Field: taxsched isStruct? false  entryLabel? None
+& Field: taxcode isStruct? false  entryLabel? None
+& Field: taxableamount isStruct? false  entryLabel? None
+& Field: taxamt isStruct? false  entryLabel? None
+& Field: taxpercent isStruct? false  entryLabel? None
+& Field: taxstate isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.Tax resolved: _TAX
+& Field: _USERDEF isStruct? true  entryLabel? None
+& Field: _ITEM isStruct? true  entryLabel? None
+& Field: recid isStruct? false  entryLabel? None
+& Field: lineno isStruct? false  entryLabel? None
+& Field: itemid isStruct? false  entryLabel? None
+& Field: custitemid isStruct? false  entryLabel? None
+& Field: itemdesc isStruct? false  entryLabel? None
+& Field: itemdesc2 isStruct? false  entryLabel? None
+& Field: price isStruct? false  entryLabel? None
+& Field: extendedpricce isStruct? false  entryLabel? None
+& Field: taxable isStruct? false  entryLabel? None
+& Field: taxflag isStruct? false  entryLabel? None
+& Field: extendedtaxamount isStruct? false  entryLabel? None
+& Field: qtyord isStruct? false  entryLabel? None
+& Field: qtytoship isStruct? false  entryLabel? None
+& Field: uom isStruct? false  entryLabel? None
+& Field: requestdate isStruct? false  entryLabel? None
+& Field: promisedate isStruct? false  entryLabel? None
+& Field: requestedshipdate isStruct? false  entryLabel? None
+& Field: pickdate isStruct? false  entryLabel? None
+& Field: shipdate isStruct? false  entryLabel? None
+& Field: qtyreturntostk isStruct? false  entryLabel? None
+& Field: reasoncd isStruct? false  entryLabel? None
+& Field: _MESSAGE isStruct? true  entryLabel? None
+& Field: _USERDEF isStruct? true  entryLabel? None
+& Field: _ITEMTAX isStruct? true  entryLabel? None
+& Field: taxableamt isStruct? false  entryLabel? None
+& Field: taxamount isStruct? false  entryLabel? None
+& Field: taxsched isStruct? false  entryLabel? None
+& Field: taxcd isStruct? false  entryLabel? None
+Class co.blocke.scalajack.xml.classes.ItemTax resolved: _ITEMTAX
+Class co.blocke.scalajack.xml.classes.Item resolved: _ITEM
+Non-Struct Class co.blocke.scalajack.xml.classes.Invoice810 resolved: _DOC
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.Carrier field name carrier
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _CARRIER), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _CARRIER
+F: Some(_CARRIER)
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.Terms field name terms
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _TERMS), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _TERMS
+F: Some(_TERMS)
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.Currency field name currency
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _CURRENCY), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _CURRENCY
+F: Some(_CURRENCY)
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.CreditMemo field name creditmemo
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _CREDITMEMO), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _CREDITMEMO
+F: Some(_CREDITMEMO)
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.Tax field name tax
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _TAX), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _TAX
+F: Some(_TAX)
+@@@ Field Matrix Field Names: List(TYPE, recid, invoiceno, invoicedate, orderno, ordertype, orderdate, purchaseorderno, cusno, division, department, shipdate, canceldate, collect, bolno, iscreditmemo, miscamount, freightamount, totinvoiceamount, tottaxableamount, totsalesamount, totcartons, totweight, lineitemtotal, _CARRIER, _MESSAGE, _TERMS, _CURRENCY, _CREDITMEMO, _ADDRESS, _TAX, _USERDEF, _ITEM)
+>>> Gen for co.blocke.scalajack.xml.classes.Invoice810
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field recid, isStruct? false
+       GEN cases for field invoiceno, isStruct? false
+       GEN cases for field invoicedate, isStruct? false
+       GEN cases for field orderno, isStruct? false
+       GEN cases for field ordertype, isStruct? false
+       GEN cases for field orderdate, isStruct? false
+       GEN cases for field purchaseorderno, isStruct? false
+       GEN cases for field cusno, isStruct? false
+       GEN cases for field division, isStruct? false
+       GEN cases for field department, isStruct? false
+       GEN cases for field shipdate, isStruct? false
+       GEN cases for field canceldate, isStruct? false
+       GEN cases for field collect, isStruct? false
+       GEN cases for field bolno, isStruct? false
+       GEN cases for field iscreditmemo, isStruct? false
+       GEN cases for field miscamount, isStruct? false
+       GEN cases for field freightamount, isStruct? false
+       GEN cases for field totinvoiceamount, isStruct? false
+       GEN cases for field tottaxableamount, isStruct? false
+       GEN cases for field totsalesamount, isStruct? false
+       GEN cases for field totcartons, isStruct? false
+       GEN cases for field totweight, isStruct? false
+       GEN cases for field lineitemtotal, isStruct? false
+       GEN cases for field _CARRIER, isStruct? true
+@@@ Field Matrix Field Names: List(carrierid, carrierdesc)
+>>> Gen for co.blocke.scalajack.xml.classes.Carrier
+       GEN cases for field carrierid, isStruct? false
+       GEN cases for field carrierdesc, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Carrier field carrier
+(parse logic for co.blocke.scalajack.xml.classes.Carrier isStruct? true
+       GEN cases for field _MESSAGE, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Message isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, message)
+>>> Gen for co.blocke.scalajack.xml.classes.Message
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field message, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Message field message
+(parse logic for co.blocke.scalajack.xml.classes.Message isStruct? true
+       GEN cases for field _TERMS, isStruct? true
+@@@ Field Matrix Field Names: List(id, desc, duedays, discountdays, discountpercent, discountdate, datedue)
+>>> Gen for co.blocke.scalajack.xml.classes.Terms
+       GEN cases for field id, isStruct? false
+       GEN cases for field desc, isStruct? false
+       GEN cases for field duedays, isStruct? false
+       GEN cases for field discountdays, isStruct? false
+       GEN cases for field discountpercent, isStruct? false
+       GEN cases for field discountdate, isStruct? false
+       GEN cases for field datedue, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Terms field terms
+(parse logic for co.blocke.scalajack.xml.classes.Terms isStruct? true
+       GEN cases for field _CURRENCY, isStruct? true
+@@@ Field Matrix Field Names: List(currencycode, currencyrate)
+>>> Gen for co.blocke.scalajack.xml.classes.Currency
+       GEN cases for field currencycode, isStruct? false
+       GEN cases for field currencyrate, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Currency field currency
+(parse logic for co.blocke.scalajack.xml.classes.Currency isStruct? true
+       GEN cases for field _CREDITMEMO, isStruct? true
+@@@ Field Matrix Field Names: List(origordtype, origordno, origorddate, applytono)
+>>> Gen for co.blocke.scalajack.xml.classes.CreditMemo
+       GEN cases for field origordtype, isStruct? false
+       GEN cases for field origordno, isStruct? false
+       GEN cases for field origorddate, isStruct? false
+       GEN cases for field applytono, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.CreditMemo field creditmemo
+(parse logic for co.blocke.scalajack.xml.classes.CreditMemo isStruct? true
+       GEN cases for field _ADDRESS, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Address isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, id, name, add1, add2, add3, city, state, zip, country, contact, phone, fax, email, _USERDEF)
+>>> Gen for co.blocke.scalajack.xml.classes.Address
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field id, isStruct? false
+       GEN cases for field name, isStruct? false
+       GEN cases for field add1, isStruct? false
+       GEN cases for field add2, isStruct? false
+       GEN cases for field add3, isStruct? false
+       GEN cases for field city, isStruct? false
+       GEN cases for field state, isStruct? false
+       GEN cases for field zip, isStruct? false
+       GEN cases for field country, isStruct? false
+       GEN cases for field contact, isStruct? false
+       GEN cases for field phone, isStruct? false
+       GEN cases for field fax, isStruct? false
+       GEN cases for field email, isStruct? false
+       GEN cases for field _USERDEF, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Userdef isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, userdef)
+>>> Gen for co.blocke.scalajack.xml.classes.Userdef
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field userdef, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Userdef field userdef
+(parse logic for co.blocke.scalajack.xml.classes.Userdef isStruct? true
+^^ Class co.blocke.scalajack.xml.classes.Address field address
+(parse logic for co.blocke.scalajack.xml.classes.Address isStruct? true
+       GEN cases for field _TAX, isStruct? true
+@@@ Field Matrix Field Names: List(taxsched, taxcode, taxableamount, taxamt, taxpercent, taxstate)
+>>> Gen for co.blocke.scalajack.xml.classes.Tax
+       GEN cases for field taxsched, isStruct? false
+       GEN cases for field taxcode, isStruct? false
+       GEN cases for field taxableamount, isStruct? false
+       GEN cases for field taxamt, isStruct? false
+       GEN cases for field taxpercent, isStruct? false
+       GEN cases for field taxstate, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Tax field tax
+(parse logic for co.blocke.scalajack.xml.classes.Tax isStruct? true
+       GEN cases for field _USERDEF, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Userdef isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, userdef)
+>>> Gen for co.blocke.scalajack.xml.classes.Userdef
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field userdef, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Userdef field userdef
+(parse logic for co.blocke.scalajack.xml.classes.Userdef isStruct? true
+       GEN cases for field _ITEM, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Item isStruct? true
+
+-------------------------
+    Carrier: co.blocke.scalajack.xml.classes.ItemTax field name itemtax
+        Annos: Map()
+        Field Annos: Map(co.blocke.scalajack.xmlLabel -> Map(name -> _ITEMTAX), co.blocke.scalajack.xmlStruct -> Map())
+
+-------------------------
+X: _ITEMTAX
+F: Some(_ITEMTAX)
+@@@ Field Matrix Field Names: List(recid, lineno, itemid, custitemid, itemdesc, itemdesc2, price, extendedpricce, taxable, taxflag, extendedtaxamount, qtyord, qtytoship, uom, requestdate, promisedate, requestedshipdate, pickdate, shipdate, qtyreturntostk, reasoncd, _MESSAGE, _USERDEF, _ITEMTAX)
+>>> Gen for co.blocke.scalajack.xml.classes.Item
+       GEN cases for field recid, isStruct? false
+       GEN cases for field lineno, isStruct? false
+       GEN cases for field itemid, isStruct? false
+       GEN cases for field custitemid, isStruct? false
+       GEN cases for field itemdesc, isStruct? false
+       GEN cases for field itemdesc2, isStruct? false
+       GEN cases for field price, isStruct? false
+       GEN cases for field extendedpricce, isStruct? false
+       GEN cases for field taxable, isStruct? false
+       GEN cases for field taxflag, isStruct? false
+       GEN cases for field extendedtaxamount, isStruct? false
+       GEN cases for field qtyord, isStruct? false
+       GEN cases for field qtytoship, isStruct? false
+       GEN cases for field uom, isStruct? false
+       GEN cases for field requestdate, isStruct? false
+       GEN cases for field promisedate, isStruct? false
+       GEN cases for field requestedshipdate, isStruct? false
+       GEN cases for field pickdate, isStruct? false
+       GEN cases for field shipdate, isStruct? false
+       GEN cases for field qtyreturntostk, isStruct? false
+       GEN cases for field reasoncd, isStruct? false
+       GEN cases for field _MESSAGE, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Message isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, message)
+>>> Gen for co.blocke.scalajack.xml.classes.Message
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field message, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Message field message
+(parse logic for co.blocke.scalajack.xml.classes.Message isStruct? true
+       GEN cases for field _USERDEF, isStruct? true
+           Seq gen for rtype co.blocke.scalajack.xml.classes.Userdef isStruct? true
+@@@ Field Matrix Field Names: List(TYPE, userdef)
+>>> Gen for co.blocke.scalajack.xml.classes.Userdef
+       GEN cases for field TYPE, isStruct? false
+       GEN cases for field userdef, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.Userdef field userdef
+(parse logic for co.blocke.scalajack.xml.classes.Userdef isStruct? true
+       GEN cases for field _ITEMTAX, isStruct? true
+@@@ Field Matrix Field Names: List(taxableamt, taxamount, taxsched, taxcd)
+>>> Gen for co.blocke.scalajack.xml.classes.ItemTax
+       GEN cases for field taxableamt, isStruct? false
+       GEN cases for field taxamount, isStruct? false
+       GEN cases for field taxsched, isStruct? false
+       GEN cases for field taxcd, isStruct? false
+^^ Class co.blocke.scalajack.xml.classes.ItemTax field itemtax
+(parse logic for co.blocke.scalajack.xml.classes.ItemTax isStruct? true
+^^ Class co.blocke.scalajack.xml.classes.Item field item
+(parse logic for co.blocke.scalajack.xml.classes.Item isStruct? true
+^^ Class co.blocke.scalajack.xml.classes.Invoice810 field unknown
+(parse logic for co.blocke.scalajack.xml.classes.Invoice810 isStruct? false
+Codec: {
+  def w0(in: co.blocke.scalajack.xml.classes.Invoice810, out: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (in.==(null)) out.burpNull() else {
+    out.startElement("_DOC")
+    out.startElement("TYPE")
+    if (in.type.==("")) out.emptyElement("type") else out.emitValue(in.type)
+    out.endElement("TYPE")
+    out.startElement("recid")
+    if (in.recid.==("")) out.emptyElement("recid") else out.emitValue(in.recid)
+    out.endElement("recid")
+    out.startElement("invoiceno")
+    if (in.invoiceno.==("")) out.emptyElement("invoiceno") else out.emitValue(in.invoiceno)
+    out.endElement("invoiceno")
+    out.startElement("invoicedate")
+    if (in.invoicedate.==("")) out.emptyElement("invoicedate") else out.emitValue(in.invoicedate)
+    out.endElement("invoicedate")
+    out.startElement("orderno")
+    if (in.orderno.==("")) out.emptyElement("orderno") else out.emitValue(in.orderno)
+    out.endElement("orderno")
+    out.startElement("ordertype")
+    if (in.ordertype.==("")) out.emptyElement("ordertype") else out.emitValue(in.ordertype)
+    out.endElement("ordertype")
+    out.startElement("orderdate")
+    if (in.orderdate.==("")) out.emptyElement("orderdate") else out.emitValue(in.orderdate)
+    out.endElement("orderdate")
+    out.startElement("purchaseorderno")
+    if (in.purchaseorderno.==("")) out.emptyElement("purchaseorderno") else out.emitValue(in.purchaseorderno)
+    out.endElement("purchaseorderno")
+    out.startElement("cusno")
+    if (in.cusno.==("")) out.emptyElement("cusno") else out.emitValue(in.cusno)
+    out.endElement("cusno")
+    out.startElement("division")
+    if (in.division.==("")) out.emptyElement("division") else out.emitValue(in.division)
+    out.endElement("division")
+    out.startElement("department")
+    if (in.department.==("")) out.emptyElement("department") else out.emitValue(in.department)
+    out.endElement("department")
+    out.startElement("shipdate")
+    if (in.shipdate.==("")) out.emptyElement("shipdate") else out.emitValue(in.shipdate)
+    out.endElement("shipdate")
+    out.startElement("canceldate")
+    if (in.canceldate.==("")) out.emptyElement("canceldate") else out.emitValue(in.canceldate)
+    out.endElement("canceldate")
+    out.startElement("collect")
+    if (in.collect.==("")) out.emptyElement("collect") else out.emitValue(in.collect)
+    out.endElement("collect")
+    out.startElement("bolno")
+    if (in.bolno.==("")) out.emptyElement("bolno") else out.emitValue(in.bolno)
+    out.endElement("bolno")
+    out.startElement("iscreditmemo")
+    if (in.iscreditmemo.==("")) out.emptyElement("iscreditmemo") else out.emitValue(in.iscreditmemo)
+    out.endElement("iscreditmemo")
+    out.startElement("miscamount")
+    out.emitValue(in.miscamount.toString())
+    out.endElement("miscamount")
+    out.startElement("freightamount")
+    out.emitValue(in.freightamount.toString())
+    out.endElement("freightamount")
+    out.startElement("totinvoiceamount")
+    out.emitValue(in.totinvoiceamount.toString())
+    out.endElement("totinvoiceamount")
+    out.startElement("tottaxableamount")
+    out.emitValue(in.tottaxableamount.toString())
+    out.endElement("tottaxableamount")
+    out.startElement("totsalesamount")
+    out.emitValue(in.totsalesamount.toString())
+    out.endElement("totsalesamount")
+    out.startElement("totcartons")
+    out.emitValue(in.totcartons.toString())
+    out.endElement("totcartons")
+    out.startElement("totweight")
+    out.emitValue(in.totweight.toString())
+    out.endElement("totweight")
+    out.startElement("lineitemtotal")
+    out.emitValue(in.lineitemtotal.toString())
+    out.endElement("lineitemtotal")
+    w1(in.carrier, out)
+    if (in.message.==(null)) out.burpNull() else if (in.message.isEmpty) out.emptyElement("message") else in.message.foreach[scala.Unit](((i: co.blocke.scalajack.xml.classes.Message) => {
+      w2(i, out)
+      ()
+    }))
+    w3(in.terms, out)
+    w4(in.currency, out)
+    w5(in.creditmemo, out)
+    if (in.address.==(null)) out.burpNull() else if (in.address.isEmpty) out.emptyElement("address") else in.address.foreach[scala.Unit](((`i₂`: co.blocke.scalajack.xml.classes.Address) => {
+      w6(`i₂`, out)
+      ()
+    }))
+    w8(in.tax, out)
+    if (in.userdef.==(null)) out.burpNull() else if (in.userdef.isEmpty) out.emptyElement("userdef") else in.userdef.foreach[scala.Unit](((`i₃`: co.blocke.scalajack.xml.classes.Userdef) => w7(`i₃`, out)))
+    if (in.item.==(null)) out.burpNull() else if (in.item.isEmpty) out.emptyElement("item") else in.item.foreach[scala.Unit](((`i₄`: co.blocke.scalajack.xml.classes.Item) => {
+      w9(`i₄`, out)
+      ()
+    }))
+    out.endElement("_DOC")
+  }
+  def w5(`in₂`: co.blocke.scalajack.xml.classes.CreditMemo, `out₂`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₂`.==(null)) `out₂`.burpNull() else {
+    `out₂`.startElement("_CREDITMEMO")
+    `out₂`.startElement("origordtype")
+    if (`in₂`.origordtype.==("")) `out₂`.emptyElement("origordtype") else `out₂`.emitValue(`in₂`.origordtype)
+    `out₂`.endElement("origordtype")
+    `out₂`.startElement("origordno")
+    if (`in₂`.origordno.==("")) `out₂`.emptyElement("origordno") else `out₂`.emitValue(`in₂`.origordno)
+    `out₂`.endElement("origordno")
+    `out₂`.startElement("origorddate")
+    if (`in₂`.origorddate.==("")) `out₂`.emptyElement("origorddate") else `out₂`.emitValue(`in₂`.origorddate)
+    `out₂`.endElement("origorddate")
+    `out₂`.startElement("applytono")
+    `out₂`.emitValue(`in₂`.applytono.toString())
+    `out₂`.endElement("applytono")
+    `out₂`.endElement("_CREDITMEMO")
+  }
+  def w9(`in₃`: co.blocke.scalajack.xml.classes.Item, `out₃`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₃`.==(null)) `out₃`.burpNull() else {
+    `out₃`.startElement("_ITEM")
+    `out₃`.startElement("recid")
+    if (`in₃`.recid.==("")) `out₃`.emptyElement("recid") else `out₃`.emitValue(`in₃`.recid)
+    `out₃`.endElement("recid")
+    `out₃`.startElement("lineno")
+    `out₃`.emitValue(`in₃`.lineno.toString())
+    `out₃`.endElement("lineno")
+    `out₃`.startElement("itemid")
+    if (`in₃`.itemid.==("")) `out₃`.emptyElement("itemid") else `out₃`.emitValue(`in₃`.itemid)
+    `out₃`.endElement("itemid")
+    `out₃`.startElement("custitemid")
+    if (`in₃`.custitemid.==("")) `out₃`.emptyElement("custitemid") else `out₃`.emitValue(`in₃`.custitemid)
+    `out₃`.endElement("custitemid")
+    `out₃`.startElement("itemdesc")
+    if (`in₃`.itemdesc.==("")) `out₃`.emptyElement("itemdesc") else `out₃`.emitValue(`in₃`.itemdesc)
+    `out₃`.endElement("itemdesc")
+    `out₃`.startElement("itemdesc2")
+    if (`in₃`.itemdesc2.==("")) `out₃`.emptyElement("itemdesc2") else `out₃`.emitValue(`in₃`.itemdesc2)
+    `out₃`.endElement("itemdesc2")
+    `out₃`.startElement("price")
+    `out₃`.emitValue(`in₃`.price.toString())
+    `out₃`.endElement("price")
+    `out₃`.startElement("extendedpricce")
+    `out₃`.emitValue(`in₃`.extendedpricce.toString())
+    `out₃`.endElement("extendedpricce")
+    `out₃`.startElement("taxable")
+    if (`in₃`.taxable.==("")) `out₃`.emptyElement("taxable") else `out₃`.emitValue(`in₃`.taxable)
+    `out₃`.endElement("taxable")
+    `out₃`.startElement("taxflag")
+    if (`in₃`.taxflag.==("")) `out₃`.emptyElement("taxflag") else `out₃`.emitValue(`in₃`.taxflag)
+    `out₃`.endElement("taxflag")
+    `out₃`.startElement("extendedtaxamount")
+    if (`in₃`.extendedtaxamount.==("")) `out₃`.emptyElement("extendedtaxamount") else `out₃`.emitValue(`in₃`.extendedtaxamount)
+    `out₃`.endElement("extendedtaxamount")
+    `out₃`.startElement("qtyord")
+    `out₃`.emitValue(`in₃`.qtyord.toString())
+    `out₃`.endElement("qtyord")
+    `out₃`.startElement("qtytoship")
+    `out₃`.emitValue(`in₃`.qtytoship.toString())
+    `out₃`.endElement("qtytoship")
+    `out₃`.startElement("uom")
+    if (`in₃`.uom.==("")) `out₃`.emptyElement("uom") else `out₃`.emitValue(`in₃`.uom)
+    `out₃`.endElement("uom")
+    `out₃`.startElement("requestdate")
+    if (`in₃`.requestdate.==("")) `out₃`.emptyElement("requestdate") else `out₃`.emitValue(`in₃`.requestdate)
+    `out₃`.endElement("requestdate")
+    `out₃`.startElement("promisedate")
+    if (`in₃`.promisedate.==("")) `out₃`.emptyElement("promisedate") else `out₃`.emitValue(`in₃`.promisedate)
+    `out₃`.endElement("promisedate")
+    `out₃`.startElement("requestedshipdate")
+    if (`in₃`.requestedshipdate.==("")) `out₃`.emptyElement("requestedshipdate") else `out₃`.emitValue(`in₃`.requestedshipdate)
+    `out₃`.endElement("requestedshipdate")
+    `out₃`.startElement("pickdate")
+    if (`in₃`.pickdate.==("")) `out₃`.emptyElement("pickdate") else `out₃`.emitValue(`in₃`.pickdate)
+    `out₃`.endElement("pickdate")
+    `out₃`.startElement("shipdate")
+    if (`in₃`.shipdate.==("")) `out₃`.emptyElement("shipdate") else `out₃`.emitValue(`in₃`.shipdate)
+    `out₃`.endElement("shipdate")
+    `out₃`.startElement("qtyreturntostk")
+    if (`in₃`.qtyreturntostk.==("")) `out₃`.emptyElement("qtyreturntostk") else `out₃`.emitValue(`in₃`.qtyreturntostk)
+    `out₃`.endElement("qtyreturntostk")
+    `out₃`.startElement("reasoncd")
+    if (`in₃`.reasoncd.==("")) `out₃`.emptyElement("reasoncd") else `out₃`.emitValue(`in₃`.reasoncd)
+    `out₃`.endElement("reasoncd")
+    if (`in₃`.message.==(null)) `out₃`.burpNull() else if (`in₃`.message.isEmpty) `out₃`.emptyElement("message") else `in₃`.message.foreach[scala.Unit](((`i₅`: co.blocke.scalajack.xml.classes.Message) => w2(`i₅`, `out₃`)))
+    if (`in₃`.userdef.==(null)) `out₃`.burpNull() else if (`in₃`.userdef.isEmpty) `out₃`.emptyElement("userdef") else `in₃`.userdef.foreach[scala.Unit](((`i₆`: co.blocke.scalajack.xml.classes.Userdef) => w7(`i₆`, `out₃`)))
+    w10(`in₃`.itemtax, `out₃`)
+    `out₃`.endElement("_ITEM")
+  }
+  def w10(`in₄`: co.blocke.scalajack.xml.classes.ItemTax, `out₄`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₄`.==(null)) `out₄`.burpNull() else {
+    `out₄`.startElement("_ITEMTAX")
+    `out₄`.startElement("taxableamt")
+    `out₄`.emitValue(`in₄`.taxableamt.toString())
+    `out₄`.endElement("taxableamt")
+    `out₄`.startElement("taxamount")
+    `out₄`.emitValue(`in₄`.taxamount.toString())
+    `out₄`.endElement("taxamount")
+    `out₄`.startElement("taxsched")
+    if (`in₄`.taxsched.==("")) `out₄`.emptyElement("taxsched") else `out₄`.emitValue(`in₄`.taxsched)
+    `out₄`.endElement("taxsched")
+    `out₄`.startElement("taxcd")
+    if (`in₄`.taxcd.==("")) `out₄`.emptyElement("taxcd") else `out₄`.emitValue(`in₄`.taxcd)
+    `out₄`.endElement("taxcd")
+    `out₄`.endElement("_ITEMTAX")
+  }
+  def w8(`in₅`: co.blocke.scalajack.xml.classes.Tax, `out₅`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₅`.==(null)) `out₅`.burpNull() else {
+    `out₅`.startElement("_TAX")
+    `out₅`.startElement("taxsched")
+    if (`in₅`.taxsched.==("")) `out₅`.emptyElement("taxsched") else `out₅`.emitValue(`in₅`.taxsched)
+    `out₅`.endElement("taxsched")
+    `out₅`.startElement("taxcode")
+    if (`in₅`.taxcode.==("")) `out₅`.emptyElement("taxcode") else `out₅`.emitValue(`in₅`.taxcode)
+    `out₅`.endElement("taxcode")
+    `out₅`.startElement("taxableamount")
+    `out₅`.emitValue(`in₅`.taxableamount.toString())
+    `out₅`.endElement("taxableamount")
+    `out₅`.startElement("taxamt")
+    `out₅`.emitValue(`in₅`.taxamt.toString())
+    `out₅`.endElement("taxamt")
+    `out₅`.startElement("taxpercent")
+    `out₅`.emitValue(`in₅`.taxpercent.toString())
+    `out₅`.endElement("taxpercent")
+    `out₅`.startElement("taxstate")
+    if (`in₅`.taxstate.==("")) `out₅`.emptyElement("taxstate") else `out₅`.emitValue(`in₅`.taxstate)
+    `out₅`.endElement("taxstate")
+    `out₅`.endElement("_TAX")
+  }
+  def w4(`in₆`: co.blocke.scalajack.xml.classes.Currency, `out₆`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₆`.==(null)) `out₆`.burpNull() else {
+    `out₆`.startElement("_CURRENCY")
+    `out₆`.startElement("currencycode")
+    if (`in₆`.currencycode.==("")) `out₆`.emptyElement("currencycode") else `out₆`.emitValue(`in₆`.currencycode)
+    `out₆`.endElement("currencycode")
+    `out₆`.startElement("currencyrate")
+    `out₆`.emitValue(`in₆`.currencyrate.toString())
+    `out₆`.endElement("currencyrate")
+    `out₆`.endElement("_CURRENCY")
+  }
+  def w7(`in₇`: co.blocke.scalajack.xml.classes.Userdef, `out₇`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₇`.==(null)) `out₇`.burpNull() else {
+    `out₇`.startElement("_USERDEF")
+    `out₇`.startElement("TYPE")
+    if (`in₇`.type.==("")) `out₇`.emptyElement("type") else `out₇`.emitValue(`in₇`.type)
+    `out₇`.endElement("TYPE")
+    `out₇`.startElement("userdef")
+    if (`in₇`.userdef.==("")) `out₇`.emptyElement("userdef") else `out₇`.emitValue(`in₇`.userdef)
+    `out₇`.endElement("userdef")
+    `out₇`.endElement("_USERDEF")
+  }
+  def w1(`in₈`: co.blocke.scalajack.xml.classes.Carrier, `out₈`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₈`.==(null)) `out₈`.burpNull() else {
+    `out₈`.startElement("_CARRIER")
+    `out₈`.startElement("carrierid")
+    if (`in₈`.carrierid.==("")) `out₈`.emptyElement("carrierid") else `out₈`.emitValue(`in₈`.carrierid)
+    `out₈`.endElement("carrierid")
+    `out₈`.startElement("carrierdesc")
+    if (`in₈`.carrierdesc.==("")) `out₈`.emptyElement("carrierdesc") else `out₈`.emitValue(`in₈`.carrierdesc)
+    `out₈`.endElement("carrierdesc")
+    `out₈`.endElement("_CARRIER")
+  }
+  def w6(`in₉`: co.blocke.scalajack.xml.classes.Address, `out₉`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₉`.==(null)) `out₉`.burpNull() else {
+    `out₉`.startElement("_ADDRESS")
+    `out₉`.startElement("TYPE")
+    if (`in₉`.type.==("")) `out₉`.emptyElement("type") else `out₉`.emitValue(`in₉`.type)
+    `out₉`.endElement("TYPE")
+    `out₉`.startElement("id")
+    if (`in₉`.id.==("")) `out₉`.emptyElement("id") else `out₉`.emitValue(`in₉`.id)
+    `out₉`.endElement("id")
+    `out₉`.startElement("name")
+    if (`in₉`.name.==("")) `out₉`.emptyElement("name") else `out₉`.emitValue(`in₉`.name)
+    `out₉`.endElement("name")
+    `out₉`.startElement("add1")
+    if (`in₉`.add1.==("")) `out₉`.emptyElement("add1") else `out₉`.emitValue(`in₉`.add1)
+    `out₉`.endElement("add1")
+    `out₉`.startElement("add2")
+    if (`in₉`.add2.==("")) `out₉`.emptyElement("add2") else `out₉`.emitValue(`in₉`.add2)
+    `out₉`.endElement("add2")
+    `out₉`.startElement("add3")
+    if (`in₉`.add3.==("")) `out₉`.emptyElement("add3") else `out₉`.emitValue(`in₉`.add3)
+    `out₉`.endElement("add3")
+    `out₉`.startElement("city")
+    if (`in₉`.city.==("")) `out₉`.emptyElement("city") else `out₉`.emitValue(`in₉`.city)
+    `out₉`.endElement("city")
+    `out₉`.startElement("state")
+    if (`in₉`.state.==("")) `out₉`.emptyElement("state") else `out₉`.emitValue(`in₉`.state)
+    `out₉`.endElement("state")
+    `out₉`.startElement("zip")
+    if (`in₉`.zip.==("")) `out₉`.emptyElement("zip") else `out₉`.emitValue(`in₉`.zip)
+    `out₉`.endElement("zip")
+    `out₉`.startElement("country")
+    if (`in₉`.country.==("")) `out₉`.emptyElement("country") else `out₉`.emitValue(`in₉`.country)
+    `out₉`.endElement("country")
+    `out₉`.startElement("contact")
+    if (`in₉`.contact.==("")) `out₉`.emptyElement("contact") else `out₉`.emitValue(`in₉`.contact)
+    `out₉`.endElement("contact")
+    `out₉`.startElement("phone")
+    if (`in₉`.phone.==("")) `out₉`.emptyElement("phone") else `out₉`.emitValue(`in₉`.phone)
+    `out₉`.endElement("phone")
+    `out₉`.startElement("fax")
+    if (`in₉`.fax.==("")) `out₉`.emptyElement("fax") else `out₉`.emitValue(`in₉`.fax)
+    `out₉`.endElement("fax")
+    `out₉`.startElement("email")
+    if (`in₉`.email.==("")) `out₉`.emptyElement("email") else `out₉`.emitValue(`in₉`.email)
+    `out₉`.endElement("email")
+    if (`in₉`.userdef.==(null)) `out₉`.burpNull() else if (`in₉`.userdef.isEmpty) `out₉`.emptyElement("userdef") else `in₉`.userdef.foreach[scala.Unit](((`i₇`: co.blocke.scalajack.xml.classes.Userdef) => {
+      w7(`i₇`, `out₉`)
+      ()
+    }))
+    `out₉`.endElement("_ADDRESS")
+  }
+  def w3(`in₁₀`: co.blocke.scalajack.xml.classes.Terms, `out₁₀`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₁₀`.==(null)) `out₁₀`.burpNull() else {
+    `out₁₀`.startElement("_TERMS")
+    `out₁₀`.startElement("id")
+    if (`in₁₀`.id.==("")) `out₁₀`.emptyElement("id") else `out₁₀`.emitValue(`in₁₀`.id)
+    `out₁₀`.endElement("id")
+    `out₁₀`.startElement("desc")
+    if (`in₁₀`.desc.==("")) `out₁₀`.emptyElement("desc") else `out₁₀`.emitValue(`in₁₀`.desc)
+    `out₁₀`.endElement("desc")
+    `out₁₀`.startElement("duedays")
+    `out₁₀`.emitValue(`in₁₀`.duedays.toString())
+    `out₁₀`.endElement("duedays")
+    `out₁₀`.startElement("discountdays")
+    `out₁₀`.emitValue(`in₁₀`.discountdays.toString())
+    `out₁₀`.endElement("discountdays")
+    `out₁₀`.startElement("discountpercent")
+    `out₁₀`.emitValue(`in₁₀`.discountpercent.toString())
+    `out₁₀`.endElement("discountpercent")
+    `out₁₀`.startElement("discountdate")
+    if (`in₁₀`.discountdate.==("")) `out₁₀`.emptyElement("discountdate") else `out₁₀`.emitValue(`in₁₀`.discountdate)
+    `out₁₀`.endElement("discountdate")
+    `out₁₀`.startElement("datedue")
+    if (`in₁₀`.datedue.==("")) `out₁₀`.emptyElement("datedue") else `out₁₀`.emitValue(`in₁₀`.datedue)
+    `out₁₀`.endElement("datedue")
+    `out₁₀`.endElement("_TERMS")
+  }
+  def w2(`in₁₁`: co.blocke.scalajack.xml.classes.Message, `out₁₁`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = if (`in₁₁`.==(null)) `out₁₁`.burpNull() else {
+    `out₁₁`.startElement("_MESSAGE")
+    `out₁₁`.startElement("TYPE")
+    if (`in₁₁`.type.==("")) `out₁₁`.emptyElement("type") else `out₁₁`.emitValue(`in₁₁`.type)
+    `out₁₁`.endElement("TYPE")
+    `out₁₁`.startElement("message")
+    if (`in₁₁`.message.==("")) `out₁₁`.emptyElement("message") else `out₁₁`.emitValue(`in₁₁`.message)
+    `out₁₁`.endElement("message")
+    `out₁₁`.endElement("_MESSAGE")
+  }
+  def r0(`in₁₂`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Invoice810 = {
+    val __fieldMatrix: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("TYPE", "recid", "invoiceno", "invoicedate", "orderno", "ordertype", "orderdate", "purchaseorderno", "cusno", "division", "department", "shipdate", "canceldate", "collect", "bolno", "iscreditmemo", "miscamount", "freightamount", "totinvoiceamount", "tottaxableamount", "totsalesamount", "totcartons", "totweight", "lineitemtotal", "_CARRIER", "_MESSAGE", "_TERMS", "_CURRENCY", "_CREDITMEMO", "_ADDRESS", "_TAX", "_USERDEF", "_ITEM")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("TYPE", "recid", "invoiceno", "invoicedate", "orderno", "ordertype", "orderdate", "purchaseorderno", "cusno", "division", "department", "shipdate", "canceldate", "collect", "bolno", "iscreditmemo", "miscamount", "freightamount", "totinvoiceamount", "tottaxableamount", "totsalesamount", "totcartons", "totweight", "lineitemtotal", "_CARRIER", "_MESSAGE", "_TERMS", "_CURRENCY", "_CREDITMEMO", "_ADDRESS", "_TAX", "_USERDEF", "_ITEM")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var _type: java.lang.String = ""
+    var _recid: java.lang.String = ""
+    var _invoiceno: java.lang.String = ""
+    var _invoicedate: java.lang.String = ""
+    var _orderno: java.lang.String = ""
+    var _ordertype: java.lang.String = ""
+    var _orderdate: java.lang.String = ""
+    var _purchaseorderno: java.lang.String = ""
+    var _cusno: java.lang.String = ""
+    var _division: java.lang.String = ""
+    var _department: java.lang.String = ""
+    var _shipdate: java.lang.String = ""
+    var _canceldate: java.lang.String = ""
+    var _collect: java.lang.String = ""
+    var _bolno: java.lang.String = ""
+    var _iscreditmemo: java.lang.String = ""
+    var _miscamount: scala.Double = 0.0
+    var _freightamount: scala.Double = 0.0
+    var _totinvoiceamount: scala.Double = 0.0
+    var _tottaxableamount: scala.Double = 0.0
+    var _totsalesamount: scala.Double = 0.0
+    var _totcartons: scala.Int = 0
+    var _totweight: scala.Double = 0.0
+    var _lineitemtotal: scala.Int = 0
+    var _carrier: co.blocke.scalajack.xml.classes.Carrier = null.asInstanceOf[co.blocke.scalajack.xml.classes.Carrier]
+    var _message: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Message] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Message]]
+    var _terms: co.blocke.scalajack.xml.classes.Terms = null.asInstanceOf[co.blocke.scalajack.xml.classes.Terms]
+    var _currency: co.blocke.scalajack.xml.classes.Currency = null.asInstanceOf[co.blocke.scalajack.xml.classes.Currency]
+    var _creditmemo: co.blocke.scalajack.xml.classes.CreditMemo = null.asInstanceOf[co.blocke.scalajack.xml.classes.CreditMemo]
+    var _address: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Address] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Address]]
+    var _tax: co.blocke.scalajack.xml.classes.Tax = null.asInstanceOf[co.blocke.scalajack.xml.classes.Tax]
+    var _userdef: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef]]
+    var _item: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Item] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Item]]
+    var _req: scala.Int = -1
+    val attrs: scala.collection.immutable.Map[java.lang.String, java.lang.String] = `in₁₂`.expectObjectStart("_DOC")
+    var maybeField: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₂`.expectObjectField
+    while (maybeField.isDefined) maybeField match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val maybeFieldNum: scala.Int = `in₁₂`.identifyFieldNum(fieldName, __fieldMatrix)
+        scala.Predef.println("Field num: ".+(maybeFieldNum))
+        maybeFieldNum match {
+          case 0 =>
+            if (_req.&(1).!=(0)) {
+              _req = _req.^(1)
+              _type = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("TYPE"))
+          case 1 =>
+            if (_req.&(2).!=(0)) {
+              _req = _req.^(2)
+              _recid = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("recid"))
+          case 2 =>
+            if (_req.&(4).!=(0)) {
+              _req = _req.^(4)
+              _invoiceno = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("invoiceno"))
+          case 3 =>
+            if (_req.&(8).!=(0)) {
+              _req = _req.^(8)
+              _invoicedate = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("invoicedate"))
+          case 4 =>
+            if (_req.&(16).!=(0)) {
+              _req = _req.^(16)
+              _orderno = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("orderno"))
+          case 5 =>
+            if (_req.&(32).!=(0)) {
+              _req = _req.^(32)
+              _ordertype = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("ordertype"))
+          case 6 =>
+            if (_req.&(64).!=(0)) {
+              _req = _req.^(64)
+              _orderdate = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("orderdate"))
+          case 7 =>
+            if (_req.&(128).!=(0)) {
+              _req = _req.^(128)
+              _purchaseorderno = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("purchaseorderno"))
+          case 8 =>
+            if (_req.&(256).!=(0)) {
+              _req = _req.^(256)
+              _cusno = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("cusno"))
+          case 9 =>
+            if (_req.&(512).!=(0)) {
+              _req = _req.^(512)
+              _division = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("division"))
+          case 10 =>
+            if (_req.&(1024).!=(0)) {
+              _req = _req.^(1024)
+              _department = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("department"))
+          case 11 =>
+            if (_req.&(2048).!=(0)) {
+              _req = _req.^(2048)
+              _shipdate = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("shipdate"))
+          case 12 =>
+            if (_req.&(4096).!=(0)) {
+              _req = _req.^(4096)
+              _canceldate = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("canceldate"))
+          case 13 =>
+            if (_req.&(8192).!=(0)) {
+              _req = _req.^(8192)
+              _collect = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("collect"))
+          case 14 =>
+            if (_req.&(16384).!=(0)) {
+              _req = _req.^(16384)
+              _bolno = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("bolno"))
+          case 15 =>
+            if (_req.&(32768).!=(0)) {
+              _req = _req.^(32768)
+              _iscreditmemo = `in₁₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("iscreditmemo"))
+          case 16 =>
+            if (_req.&(65536).!=(0)) {
+              _req = _req.^(65536)
+              _miscamount = `in₁₂`.expectSimpleValue().map[scala.Double](((_$5: java.lang.String) => scala.Predef.augmentString(_$5).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("miscamount"))
+          case 17 =>
+            if (_req.&(131072).!=(0)) {
+              _req = _req.^(131072)
+              _freightamount = `in₁₂`.expectSimpleValue().map[scala.Double](((`_$5₂`: java.lang.String) => scala.Predef.augmentString(`_$5₂`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("freightamount"))
+          case 18 =>
+            if (_req.&(262144).!=(0)) {
+              _req = _req.^(262144)
+              _totinvoiceamount = `in₁₂`.expectSimpleValue().map[scala.Double](((`_$5₃`: java.lang.String) => scala.Predef.augmentString(`_$5₃`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("totinvoiceamount"))
+          case 19 =>
+            if (_req.&(524288).!=(0)) {
+              _req = _req.^(524288)
+              _tottaxableamount = `in₁₂`.expectSimpleValue().map[scala.Double](((`_$5₄`: java.lang.String) => scala.Predef.augmentString(`_$5₄`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("tottaxableamount"))
+          case 20 =>
+            if (_req.&(1048576).!=(0)) {
+              _req = _req.^(1048576)
+              _totsalesamount = `in₁₂`.expectSimpleValue().map[scala.Double](((`_$5₅`: java.lang.String) => scala.Predef.augmentString(`_$5₅`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("totsalesamount"))
+          case 21 =>
+            if (_req.&(2097152).!=(0)) {
+              _req = _req.^(2097152)
+              _totcartons = `in₁₂`.expectSimpleValue().map[scala.Int](((_$7: java.lang.String) => scala.Predef.augmentString(_$7).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("totcartons"))
+          case 22 =>
+            if (_req.&(4194304).!=(0)) {
+              _req = _req.^(4194304)
+              _totweight = `in₁₂`.expectSimpleValue().map[scala.Double](((`_$5₆`: java.lang.String) => scala.Predef.augmentString(`_$5₆`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("totweight"))
+          case 23 =>
+            if (_req.&(8388608).!=(0)) {
+              _req = _req.^(8388608)
+              _lineitemtotal = `in₁₂`.expectSimpleValue().map[scala.Int](((`_$7₂`: java.lang.String) => scala.Predef.augmentString(`_$7₂`).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("lineitemtotal"))
+          case 24 =>
+            if (_req.&(16777216).!=(0)) {
+              _req = _req.^(16777216)
+              _carrier = r1(`in₁₂`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_CARRIER"))
+          case 25 =>
+            if (_req.&(33554432).!=(0)) {
+              _req = _req.^(33554432)
+              _message = {
+                val parsedArray: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Message] = `in₁₂`.expectArray[co.blocke.scalajack.xml.classes.Message]("_MESSAGE", (() => r2(`in₁₂`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (parsedArray.!=(null)) parsedArray.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_MESSAGE"))
+          case 26 =>
+            if (_req.&(67108864).!=(0)) {
+              _req = _req.^(67108864)
+              _terms = r3(`in₁₂`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_TERMS"))
+          case 27 =>
+            if (_req.&(134217728).!=(0)) {
+              _req = _req.^(134217728)
+              _currency = r4(`in₁₂`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_CURRENCY"))
+          case 28 =>
+            if (_req.&(268435456).!=(0)) {
+              _req = _req.^(268435456)
+              _creditmemo = r5(`in₁₂`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_CREDITMEMO"))
+          case 29 =>
+            if (_req.&(536870912).!=(0)) {
+              _req = _req.^(536870912)
+              _address = {
+                val `parsedArray₂`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Address] = `in₁₂`.expectArray[co.blocke.scalajack.xml.classes.Address]("_ADDRESS", (() => r6(`in₁₂`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₂`.!=(null)) `parsedArray₂`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_ADDRESS"))
+          case 30 =>
+            if (_req.&(1073741824).!=(0)) {
+              _req = _req.^(1073741824)
+              _tax = r8(`in₁₂`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_TAX"))
+          case 31 =>
+            if (_req.&(-2147483648).!=(0)) {
+              _req = _req.^(-2147483648)
+              _userdef = {
+                val `parsedArray₃`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Userdef] = `in₁₂`.expectArray[co.blocke.scalajack.xml.classes.Userdef]("_USERDEF", (() => r7(`in₁₂`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₃`.!=(null)) `parsedArray₃`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_USERDEF"))
+          case 32 =>
+            if (_req.&(1).!=(0)) {
+              _req = _req.^(1)
+              _item = {
+                val `parsedArray₄`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Item] = `in₁₂`.expectArray[co.blocke.scalajack.xml.classes.Item]("_ITEM", (() => r9(`in₁₂`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₄`.!=(null)) `parsedArray₄`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_ITEM"))
+          case _ =>
+            `in₁₂`.skipValue()
+        }
+        if (`in₁₂`.expectObjectEnd(fieldName).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(fieldName).+(" not found.")) else ()
+        maybeField = `in₁₂`.expectObjectField
+    }
+    if (`in₁₂`.expectObjectEnd("_DOC").unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+("_DOC").+(" not found.")) else ()
+    if (_req.&(-1).==(0)) new co.blocke.scalajack.xml.classes.Invoice810(_type, _recid, _invoiceno, _invoicedate, _orderno, _ordertype, _orderdate, _purchaseorderno, _cusno, _division, _department, _shipdate, _canceldate, _collect, _bolno, _iscreditmemo, _miscamount, _freightamount, _totinvoiceamount, _tottaxableamount, _totsalesamount, _totcartons, _totweight, _lineitemtotal, _carrier, _message, _terms, _currency, _creditmemo, _address, _tax, _userdef, _item) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("type", "recid", "invoiceno", "invoicedate", "orderno", "ordertype", "orderdate", "purchaseorderno", "cusno", "division", "department", "shipdate", "canceldate", "collect", "bolno", "iscreditmemo", "miscamount", "freightamount", "totinvoiceamount", "tottaxableamount", "totsalesamount", "totcartons", "totweight", "lineitemtotal", "carrier", "message", "terms", "currency", "creditmemo", "address", "tax", "userdef", "item").apply(java.lang.Integer.numberOfTrailingZeros(_req.&(-1)))))
+  }
+  def r5(`in₁₃`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.CreditMemo = {
+    val `__fieldMatrix₂`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("origordtype", "origordno", "origorddate", "applytono")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("origordtype", "origordno", "origorddate", "applytono")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var _origordtype: java.lang.String = ""
+    var _origordno: java.lang.String = ""
+    var _origorddate: java.lang.String = ""
+    var _applytono: scala.Int = 0
+    var `_req₂`: scala.Int = 15
+    var `maybeField₂`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₃`.expectObjectField
+    while (`maybeField₂`.isDefined) `maybeField₂` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₂`: scala.Int = `in₁₃`.identifyFieldNum(`fieldName₂`, `__fieldMatrix₂`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₂`))
+        `maybeFieldNum₂` match {
+          case 0 =>
+            if (`_req₂`.&(1).!=(0)) {
+              `_req₂` = `_req₂`.^(1)
+              _origordtype = `in₁₃`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("origordtype"))
+          case 1 =>
+            if (`_req₂`.&(2).!=(0)) {
+              `_req₂` = `_req₂`.^(2)
+              _origordno = `in₁₃`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("origordno"))
+          case 2 =>
+            if (`_req₂`.&(4).!=(0)) {
+              `_req₂` = `_req₂`.^(4)
+              _origorddate = `in₁₃`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("origorddate"))
+          case 3 =>
+            if (`_req₂`.&(8).!=(0)) {
+              `_req₂` = `_req₂`.^(8)
+              _applytono = `in₁₃`.expectSimpleValue().map[scala.Int](((`_$7₃`: java.lang.String) => scala.Predef.augmentString(`_$7₃`).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("applytono"))
+          case _ =>
+            `in₁₃`.skipValue()
+        }
+        if (`in₁₃`.expectObjectEnd(`fieldName₂`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₂`).+(" not found.")) else ()
+        `maybeField₂` = `in₁₃`.expectObjectField
+    }
+    if (`_req₂`.&(15).==(0)) new co.blocke.scalajack.xml.classes.CreditMemo(_origordtype, _origordno, _origorddate, _applytono) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("origordtype", "origordno", "origorddate", "applytono").apply(java.lang.Integer.numberOfTrailingZeros(`_req₂`.&(15)))))
+  }
+  def r9(`in₁₄`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Item = {
+    val `__fieldMatrix₃`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("recid", "lineno", "itemid", "custitemid", "itemdesc", "itemdesc2", "price", "extendedpricce", "taxable", "taxflag", "extendedtaxamount", "qtyord", "qtytoship", "uom", "requestdate", "promisedate", "requestedshipdate", "pickdate", "shipdate", "qtyreturntostk", "reasoncd", "_MESSAGE", "_USERDEF", "_ITEMTAX")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("recid", "lineno", "itemid", "custitemid", "itemdesc", "itemdesc2", "price", "extendedpricce", "taxable", "taxflag", "extendedtaxamount", "qtyord", "qtytoship", "uom", "requestdate", "promisedate", "requestedshipdate", "pickdate", "shipdate", "qtyreturntostk", "reasoncd", "_MESSAGE", "_USERDEF", "_ITEMTAX")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_recid₂`: java.lang.String = ""
+    var _lineno: scala.Double = 0.0
+    var _itemid: java.lang.String = ""
+    var _custitemid: java.lang.String = ""
+    var _itemdesc: java.lang.String = ""
+    var _itemdesc2: java.lang.String = ""
+    var _price: scala.Double = 0.0
+    var _extendedpricce: scala.Double = 0.0
+    var _taxable: java.lang.String = ""
+    var _taxflag: java.lang.String = ""
+    var _extendedtaxamount: java.lang.String = ""
+    var _qtyord: scala.Double = 0.0
+    var _qtytoship: scala.Double = 0.0
+    var _uom: java.lang.String = ""
+    var _requestdate: java.lang.String = ""
+    var _promisedate: java.lang.String = ""
+    var _requestedshipdate: java.lang.String = ""
+    var _pickdate: java.lang.String = ""
+    var `_shipdate₂`: java.lang.String = ""
+    var _qtyreturntostk: java.lang.String = ""
+    var _reasoncd: java.lang.String = ""
+    var `_message₂`: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Message] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Message]]
+    var `_userdef₂`: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef]]
+    var _itemtax: co.blocke.scalajack.xml.classes.ItemTax = null.asInstanceOf[co.blocke.scalajack.xml.classes.ItemTax]
+    var `_req₃`: scala.Int = 16777215
+    var `maybeField₃`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₄`.expectObjectField
+    while (`maybeField₃`.isDefined) `maybeField₃` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₃`: scala.Int = `in₁₄`.identifyFieldNum(`fieldName₃`, `__fieldMatrix₃`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₃`))
+        `maybeFieldNum₃` match {
+          case 0 =>
+            if (`_req₃`.&(1).!=(0)) {
+              `_req₃` = `_req₃`.^(1)
+              `_recid₂` = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("recid"))
+          case 1 =>
+            if (`_req₃`.&(2).!=(0)) {
+              `_req₃` = `_req₃`.^(2)
+              _lineno = `in₁₄`.expectSimpleValue().map[scala.Double](((`_$5₇`: java.lang.String) => scala.Predef.augmentString(`_$5₇`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("lineno"))
+          case 2 =>
+            if (`_req₃`.&(4).!=(0)) {
+              `_req₃` = `_req₃`.^(4)
+              _itemid = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("itemid"))
+          case 3 =>
+            if (`_req₃`.&(8).!=(0)) {
+              `_req₃` = `_req₃`.^(8)
+              _custitemid = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("custitemid"))
+          case 4 =>
+            if (`_req₃`.&(16).!=(0)) {
+              `_req₃` = `_req₃`.^(16)
+              _itemdesc = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("itemdesc"))
+          case 5 =>
+            if (`_req₃`.&(32).!=(0)) {
+              `_req₃` = `_req₃`.^(32)
+              _itemdesc2 = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("itemdesc2"))
+          case 6 =>
+            if (`_req₃`.&(64).!=(0)) {
+              `_req₃` = `_req₃`.^(64)
+              _price = `in₁₄`.expectSimpleValue().map[scala.Double](((`_$5₈`: java.lang.String) => scala.Predef.augmentString(`_$5₈`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("price"))
+          case 7 =>
+            if (`_req₃`.&(128).!=(0)) {
+              `_req₃` = `_req₃`.^(128)
+              _extendedpricce = `in₁₄`.expectSimpleValue().map[scala.Double](((`_$5₉`: java.lang.String) => scala.Predef.augmentString(`_$5₉`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("extendedpricce"))
+          case 8 =>
+            if (`_req₃`.&(256).!=(0)) {
+              `_req₃` = `_req₃`.^(256)
+              _taxable = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxable"))
+          case 9 =>
+            if (`_req₃`.&(512).!=(0)) {
+              `_req₃` = `_req₃`.^(512)
+              _taxflag = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxflag"))
+          case 10 =>
+            if (`_req₃`.&(1024).!=(0)) {
+              `_req₃` = `_req₃`.^(1024)
+              _extendedtaxamount = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("extendedtaxamount"))
+          case 11 =>
+            if (`_req₃`.&(2048).!=(0)) {
+              `_req₃` = `_req₃`.^(2048)
+              _qtyord = `in₁₄`.expectSimpleValue().map[scala.Double](((`_$5₁₀`: java.lang.String) => scala.Predef.augmentString(`_$5₁₀`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("qtyord"))
+          case 12 =>
+            if (`_req₃`.&(4096).!=(0)) {
+              `_req₃` = `_req₃`.^(4096)
+              _qtytoship = `in₁₄`.expectSimpleValue().map[scala.Double](((`_$5₁₁`: java.lang.String) => scala.Predef.augmentString(`_$5₁₁`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("qtytoship"))
+          case 13 =>
+            if (`_req₃`.&(8192).!=(0)) {
+              `_req₃` = `_req₃`.^(8192)
+              _uom = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("uom"))
+          case 14 =>
+            if (`_req₃`.&(16384).!=(0)) {
+              `_req₃` = `_req₃`.^(16384)
+              _requestdate = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("requestdate"))
+          case 15 =>
+            if (`_req₃`.&(32768).!=(0)) {
+              `_req₃` = `_req₃`.^(32768)
+              _promisedate = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("promisedate"))
+          case 16 =>
+            if (`_req₃`.&(65536).!=(0)) {
+              `_req₃` = `_req₃`.^(65536)
+              _requestedshipdate = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("requestedshipdate"))
+          case 17 =>
+            if (`_req₃`.&(131072).!=(0)) {
+              `_req₃` = `_req₃`.^(131072)
+              _pickdate = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("pickdate"))
+          case 18 =>
+            if (`_req₃`.&(262144).!=(0)) {
+              `_req₃` = `_req₃`.^(262144)
+              `_shipdate₂` = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("shipdate"))
+          case 19 =>
+            if (`_req₃`.&(524288).!=(0)) {
+              `_req₃` = `_req₃`.^(524288)
+              _qtyreturntostk = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("qtyreturntostk"))
+          case 20 =>
+            if (`_req₃`.&(1048576).!=(0)) {
+              `_req₃` = `_req₃`.^(1048576)
+              _reasoncd = `in₁₄`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("reasoncd"))
+          case 21 =>
+            if (`_req₃`.&(2097152).!=(0)) {
+              `_req₃` = `_req₃`.^(2097152)
+              `_message₂` = {
+                val `parsedArray₅`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Message] = `in₁₄`.expectArray[co.blocke.scalajack.xml.classes.Message]("_MESSAGE", (() => r2(`in₁₄`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₅`.!=(null)) `parsedArray₅`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_MESSAGE"))
+          case 22 =>
+            if (`_req₃`.&(4194304).!=(0)) {
+              `_req₃` = `_req₃`.^(4194304)
+              `_userdef₂` = {
+                val `parsedArray₆`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Userdef] = `in₁₄`.expectArray[co.blocke.scalajack.xml.classes.Userdef]("_USERDEF", (() => r7(`in₁₄`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₆`.!=(null)) `parsedArray₆`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_USERDEF"))
+          case 23 =>
+            if (`_req₃`.&(8388608).!=(0)) {
+              `_req₃` = `_req₃`.^(8388608)
+              _itemtax = r10(`in₁₄`)
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_ITEMTAX"))
+          case _ =>
+            `in₁₄`.skipValue()
+        }
+        if (`in₁₄`.expectObjectEnd(`fieldName₃`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₃`).+(" not found.")) else ()
+        `maybeField₃` = `in₁₄`.expectObjectField
+    }
+    if (`_req₃`.&(16777215).==(0)) new co.blocke.scalajack.xml.classes.Item(`_recid₂`, _lineno, _itemid, _custitemid, _itemdesc, _itemdesc2, _price, _extendedpricce, _taxable, _taxflag, _extendedtaxamount, _qtyord, _qtytoship, _uom, _requestdate, _promisedate, _requestedshipdate, _pickdate, `_shipdate₂`, _qtyreturntostk, _reasoncd, `_message₂`, `_userdef₂`, _itemtax) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("recid", "lineno", "itemid", "custitemid", "itemdesc", "itemdesc2", "price", "extendedpricce", "taxable", "taxflag", "extendedtaxamount", "qtyord", "qtytoship", "uom", "requestdate", "promisedate", "requestedshipdate", "pickdate", "shipdate", "qtyreturntostk", "reasoncd", "message", "userdef", "itemtax").apply(java.lang.Integer.numberOfTrailingZeros(`_req₃`.&(16777215)))))
+  }
+  def r10(`in₁₅`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.ItemTax = {
+    val `__fieldMatrix₄`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("taxableamt", "taxamount", "taxsched", "taxcd")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("taxableamt", "taxamount", "taxsched", "taxcd")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var _taxableamt: scala.Double = 0.0
+    var _taxamount: scala.Double = 0.0
+    var _taxsched: java.lang.String = ""
+    var _taxcd: java.lang.String = ""
+    var `_req₄`: scala.Int = 15
+    var `maybeField₄`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₅`.expectObjectField
+    while (`maybeField₄`.isDefined) `maybeField₄` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₄`: scala.Int = `in₁₅`.identifyFieldNum(`fieldName₄`, `__fieldMatrix₄`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₄`))
+        `maybeFieldNum₄` match {
+          case 0 =>
+            if (`_req₄`.&(1).!=(0)) {
+              `_req₄` = `_req₄`.^(1)
+              _taxableamt = `in₁₅`.expectSimpleValue().map[scala.Double](((`_$5₁₂`: java.lang.String) => scala.Predef.augmentString(`_$5₁₂`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxableamt"))
+          case 1 =>
+            if (`_req₄`.&(2).!=(0)) {
+              `_req₄` = `_req₄`.^(2)
+              _taxamount = `in₁₅`.expectSimpleValue().map[scala.Double](((`_$5₁₃`: java.lang.String) => scala.Predef.augmentString(`_$5₁₃`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxamount"))
+          case 2 =>
+            if (`_req₄`.&(4).!=(0)) {
+              `_req₄` = `_req₄`.^(4)
+              _taxsched = `in₁₅`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxsched"))
+          case 3 =>
+            if (`_req₄`.&(8).!=(0)) {
+              `_req₄` = `_req₄`.^(8)
+              _taxcd = `in₁₅`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxcd"))
+          case _ =>
+            `in₁₅`.skipValue()
+        }
+        if (`in₁₅`.expectObjectEnd(`fieldName₄`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₄`).+(" not found.")) else ()
+        `maybeField₄` = `in₁₅`.expectObjectField
+    }
+    if (`_req₄`.&(15).==(0)) new co.blocke.scalajack.xml.classes.ItemTax(_taxableamt, _taxamount, _taxsched, _taxcd) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("taxableamt", "taxamount", "taxsched", "taxcd").apply(java.lang.Integer.numberOfTrailingZeros(`_req₄`.&(15)))))
+  }
+  def r8(`in₁₆`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Tax = {
+    val `__fieldMatrix₅`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("taxsched", "taxcode", "taxableamount", "taxamt", "taxpercent", "taxstate")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("taxsched", "taxcode", "taxableamount", "taxamt", "taxpercent", "taxstate")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_taxsched₂`: java.lang.String = ""
+    var _taxcode: java.lang.String = ""
+    var _taxableamount: scala.Double = 0.0
+    var _taxamt: scala.Double = 0.0
+    var _taxpercent: scala.Double = 0.0
+    var _taxstate: java.lang.String = ""
+    var `_req₅`: scala.Int = 63
+    var `maybeField₅`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₆`.expectObjectField
+    while (`maybeField₅`.isDefined) `maybeField₅` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₅`: scala.Int = `in₁₆`.identifyFieldNum(`fieldName₅`, `__fieldMatrix₅`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₅`))
+        `maybeFieldNum₅` match {
+          case 0 =>
+            if (`_req₅`.&(1).!=(0)) {
+              `_req₅` = `_req₅`.^(1)
+              `_taxsched₂` = `in₁₆`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxsched"))
+          case 1 =>
+            if (`_req₅`.&(2).!=(0)) {
+              `_req₅` = `_req₅`.^(2)
+              _taxcode = `in₁₆`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxcode"))
+          case 2 =>
+            if (`_req₅`.&(4).!=(0)) {
+              `_req₅` = `_req₅`.^(4)
+              _taxableamount = `in₁₆`.expectSimpleValue().map[scala.Double](((`_$5₁₄`: java.lang.String) => scala.Predef.augmentString(`_$5₁₄`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxableamount"))
+          case 3 =>
+            if (`_req₅`.&(8).!=(0)) {
+              `_req₅` = `_req₅`.^(8)
+              _taxamt = `in₁₆`.expectSimpleValue().map[scala.Double](((`_$5₁₅`: java.lang.String) => scala.Predef.augmentString(`_$5₁₅`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxamt"))
+          case 4 =>
+            if (`_req₅`.&(16).!=(0)) {
+              `_req₅` = `_req₅`.^(16)
+              _taxpercent = `in₁₆`.expectSimpleValue().map[scala.Double](((`_$5₁₆`: java.lang.String) => scala.Predef.augmentString(`_$5₁₆`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxpercent"))
+          case 5 =>
+            if (`_req₅`.&(32).!=(0)) {
+              `_req₅` = `_req₅`.^(32)
+              _taxstate = `in₁₆`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("taxstate"))
+          case _ =>
+            `in₁₆`.skipValue()
+        }
+        if (`in₁₆`.expectObjectEnd(`fieldName₅`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₅`).+(" not found.")) else ()
+        `maybeField₅` = `in₁₆`.expectObjectField
+    }
+    if (`_req₅`.&(63).==(0)) new co.blocke.scalajack.xml.classes.Tax(`_taxsched₂`, _taxcode, _taxableamount, _taxamt, _taxpercent, _taxstate) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("taxsched", "taxcode", "taxableamount", "taxamt", "taxpercent", "taxstate").apply(java.lang.Integer.numberOfTrailingZeros(`_req₅`.&(63)))))
+  }
+  def r4(`in₁₇`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Currency = {
+    val `__fieldMatrix₆`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("currencycode", "currencyrate")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("currencycode", "currencyrate")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var _currencycode: java.lang.String = ""
+    var _currencyrate: scala.Double = 0.0
+    var `_req₆`: scala.Int = 3
+    var `maybeField₆`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₇`.expectObjectField
+    while (`maybeField₆`.isDefined) `maybeField₆` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₆`: scala.Int = `in₁₇`.identifyFieldNum(`fieldName₆`, `__fieldMatrix₆`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₆`))
+        `maybeFieldNum₆` match {
+          case 0 =>
+            if (`_req₆`.&(1).!=(0)) {
+              `_req₆` = `_req₆`.^(1)
+              _currencycode = `in₁₇`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("currencycode"))
+          case 1 =>
+            if (`_req₆`.&(2).!=(0)) {
+              `_req₆` = `_req₆`.^(2)
+              _currencyrate = `in₁₇`.expectSimpleValue().map[scala.Double](((`_$5₁₇`: java.lang.String) => scala.Predef.augmentString(`_$5₁₇`).toDouble)).getOrElse[scala.Double](throw new co.blocke.scalajack.xml.ParseError("Doubles cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("currencyrate"))
+          case _ =>
+            `in₁₇`.skipValue()
+        }
+        if (`in₁₇`.expectObjectEnd(`fieldName₆`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₆`).+(" not found.")) else ()
+        `maybeField₆` = `in₁₇`.expectObjectField
+    }
+    if (`_req₆`.&(3).==(0)) new co.blocke.scalajack.xml.classes.Currency(_currencycode, _currencyrate) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("currencycode", "currencyrate").apply(java.lang.Integer.numberOfTrailingZeros(`_req₆`.&(3)))))
+  }
+  def r7(`in₁₈`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Userdef = {
+    val `__fieldMatrix₇`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("TYPE", "userdef")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("TYPE", "userdef")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_type₂`: java.lang.String = ""
+    var `_userdef₃`: java.lang.String = ""
+    var `_req₇`: scala.Int = 3
+    var `maybeField₇`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₈`.expectObjectField
+    while (`maybeField₇`.isDefined) `maybeField₇` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₇`: scala.Int = `in₁₈`.identifyFieldNum(`fieldName₇`, `__fieldMatrix₇`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₇`))
+        `maybeFieldNum₇` match {
+          case 0 =>
+            if (`_req₇`.&(1).!=(0)) {
+              `_req₇` = `_req₇`.^(1)
+              `_type₂` = `in₁₈`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("TYPE"))
+          case 1 =>
+            if (`_req₇`.&(2).!=(0)) {
+              `_req₇` = `_req₇`.^(2)
+              `_userdef₃` = `in₁₈`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("userdef"))
+          case _ =>
+            `in₁₈`.skipValue()
+        }
+        if (`in₁₈`.expectObjectEnd(`fieldName₇`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₇`).+(" not found.")) else ()
+        `maybeField₇` = `in₁₈`.expectObjectField
+    }
+    if (`_req₇`.&(3).==(0)) new co.blocke.scalajack.xml.classes.Userdef(`_type₂`, `_userdef₃`) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("type", "userdef").apply(java.lang.Integer.numberOfTrailingZeros(`_req₇`.&(3)))))
+  }
+  def r1(`in₁₉`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Carrier = {
+    val `__fieldMatrix₈`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("carrierid", "carrierdesc")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("carrierid", "carrierdesc")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var _carrierid: java.lang.String = ""
+    var _carrierdesc: java.lang.String = ""
+    var `_req₈`: scala.Int = 3
+    var `maybeField₈`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₁₉`.expectObjectField
+    while (`maybeField₈`.isDefined) `maybeField₈` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₈`: scala.Int = `in₁₉`.identifyFieldNum(`fieldName₈`, `__fieldMatrix₈`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₈`))
+        `maybeFieldNum₈` match {
+          case 0 =>
+            if (`_req₈`.&(1).!=(0)) {
+              `_req₈` = `_req₈`.^(1)
+              _carrierid = `in₁₉`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("carrierid"))
+          case 1 =>
+            if (`_req₈`.&(2).!=(0)) {
+              `_req₈` = `_req₈`.^(2)
+              _carrierdesc = `in₁₉`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("carrierdesc"))
+          case _ =>
+            `in₁₉`.skipValue()
+        }
+        if (`in₁₉`.expectObjectEnd(`fieldName₈`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₈`).+(" not found.")) else ()
+        `maybeField₈` = `in₁₉`.expectObjectField
+    }
+    if (`_req₈`.&(3).==(0)) new co.blocke.scalajack.xml.classes.Carrier(_carrierid, _carrierdesc) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("carrierid", "carrierdesc").apply(java.lang.Integer.numberOfTrailingZeros(`_req₈`.&(3)))))
+  }
+  def r6(`in₂₀`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Address = {
+    val `__fieldMatrix₉`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("TYPE", "id", "name", "add1", "add2", "add3", "city", "state", "zip", "country", "contact", "phone", "fax", "email", "_USERDEF")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("TYPE", "id", "name", "add1", "add2", "add3", "city", "state", "zip", "country", "contact", "phone", "fax", "email", "_USERDEF")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_type₃`: java.lang.String = ""
+    var _id: java.lang.String = ""
+    var _name: java.lang.String = ""
+    var _add1: java.lang.String = ""
+    var _add2: java.lang.String = ""
+    var _add3: java.lang.String = ""
+    var _city: java.lang.String = ""
+    var _state: java.lang.String = ""
+    var _zip: java.lang.String = ""
+    var _country: java.lang.String = ""
+    var _contact: java.lang.String = ""
+    var _phone: java.lang.String = ""
+    var _fax: java.lang.String = ""
+    var _email: java.lang.String = ""
+    var `_userdef₄`: scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef] = null.asInstanceOf[scala.collection.immutable.List[co.blocke.scalajack.xml.classes.Userdef]]
+    var `_req₉`: scala.Int = 32767
+    var `maybeField₉`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₂₀`.expectObjectField
+    while (`maybeField₉`.isDefined) `maybeField₉` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₉`: scala.Int = `in₂₀`.identifyFieldNum(`fieldName₉`, `__fieldMatrix₉`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₉`))
+        `maybeFieldNum₉` match {
+          case 0 =>
+            if (`_req₉`.&(1).!=(0)) {
+              `_req₉` = `_req₉`.^(1)
+              `_type₃` = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("TYPE"))
+          case 1 =>
+            if (`_req₉`.&(2).!=(0)) {
+              `_req₉` = `_req₉`.^(2)
+              _id = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("id"))
+          case 2 =>
+            if (`_req₉`.&(4).!=(0)) {
+              `_req₉` = `_req₉`.^(4)
+              _name = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("name"))
+          case 3 =>
+            if (`_req₉`.&(8).!=(0)) {
+              `_req₉` = `_req₉`.^(8)
+              _add1 = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("add1"))
+          case 4 =>
+            if (`_req₉`.&(16).!=(0)) {
+              `_req₉` = `_req₉`.^(16)
+              _add2 = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("add2"))
+          case 5 =>
+            if (`_req₉`.&(32).!=(0)) {
+              `_req₉` = `_req₉`.^(32)
+              _add3 = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("add3"))
+          case 6 =>
+            if (`_req₉`.&(64).!=(0)) {
+              `_req₉` = `_req₉`.^(64)
+              _city = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("city"))
+          case 7 =>
+            if (`_req₉`.&(128).!=(0)) {
+              `_req₉` = `_req₉`.^(128)
+              _state = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("state"))
+          case 8 =>
+            if (`_req₉`.&(256).!=(0)) {
+              `_req₉` = `_req₉`.^(256)
+              _zip = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("zip"))
+          case 9 =>
+            if (`_req₉`.&(512).!=(0)) {
+              `_req₉` = `_req₉`.^(512)
+              _country = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("country"))
+          case 10 =>
+            if (`_req₉`.&(1024).!=(0)) {
+              `_req₉` = `_req₉`.^(1024)
+              _contact = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("contact"))
+          case 11 =>
+            if (`_req₉`.&(2048).!=(0)) {
+              `_req₉` = `_req₉`.^(2048)
+              _phone = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("phone"))
+          case 12 =>
+            if (`_req₉`.&(4096).!=(0)) {
+              `_req₉` = `_req₉`.^(4096)
+              _fax = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("fax"))
+          case 13 =>
+            if (`_req₉`.&(8192).!=(0)) {
+              `_req₉` = `_req₉`.^(8192)
+              _email = `in₂₀`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("email"))
+          case 14 =>
+            if (`_req₉`.&(16384).!=(0)) {
+              `_req₉` = `_req₉`.^(16384)
+              `_userdef₄` = {
+                val `parsedArray₇`: scala.collection.mutable.ListBuffer[co.blocke.scalajack.xml.classes.Userdef] = `in₂₀`.expectArray[co.blocke.scalajack.xml.classes.Userdef]("_USERDEF", (() => r7(`in₂₀`)), co.blocke.scalajack.xml.reading.InputMode.STRUCT)
+                if (`parsedArray₇`.!=(null)) `parsedArray₇`.toList else null
+              }
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("_USERDEF"))
+          case _ =>
+            `in₂₀`.skipValue()
+        }
+        if (`in₂₀`.expectObjectEnd(`fieldName₉`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₉`).+(" not found.")) else ()
+        `maybeField₉` = `in₂₀`.expectObjectField
+    }
+    if (`_req₉`.&(32767).==(0)) new co.blocke.scalajack.xml.classes.Address(`_type₃`, _id, _name, _add1, _add2, _add3, _city, _state, _zip, _country, _contact, _phone, _fax, _email, `_userdef₄`) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("type", "id", "name", "add1", "add2", "add3", "city", "state", "zip", "country", "contact", "phone", "fax", "email", "userdef").apply(java.lang.Integer.numberOfTrailingZeros(`_req₉`.&(32767)))))
+  }
+  def r3(`in₂₁`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Terms = {
+    val `__fieldMatrix₁₀`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("id", "desc", "duedays", "discountdays", "discountpercent", "discountdate", "datedue")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("id", "desc", "duedays", "discountdays", "discountpercent", "discountdate", "datedue")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_id₂`: java.lang.String = ""
+    var _desc: java.lang.String = ""
+    var _duedays: scala.Int = 0
+    var _discountdays: scala.Int = 0
+    var _discountpercent: scala.Int = 0
+    var _discountdate: java.lang.String = ""
+    var _datedue: java.lang.String = ""
+    var `_req₁₀`: scala.Int = 127
+    var `maybeField₁₀`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₂₁`.expectObjectField
+    while (`maybeField₁₀`.isDefined) `maybeField₁₀` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₁₀`: scala.Int = `in₂₁`.identifyFieldNum(`fieldName₁₀`, `__fieldMatrix₁₀`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₁₀`))
+        `maybeFieldNum₁₀` match {
+          case 0 =>
+            if (`_req₁₀`.&(1).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(1)
+              `_id₂` = `in₂₁`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("id"))
+          case 1 =>
+            if (`_req₁₀`.&(2).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(2)
+              _desc = `in₂₁`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("desc"))
+          case 2 =>
+            if (`_req₁₀`.&(4).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(4)
+              _duedays = `in₂₁`.expectSimpleValue().map[scala.Int](((`_$7₄`: java.lang.String) => scala.Predef.augmentString(`_$7₄`).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("duedays"))
+          case 3 =>
+            if (`_req₁₀`.&(8).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(8)
+              _discountdays = `in₂₁`.expectSimpleValue().map[scala.Int](((`_$7₅`: java.lang.String) => scala.Predef.augmentString(`_$7₅`).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("discountdays"))
+          case 4 =>
+            if (`_req₁₀`.&(16).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(16)
+              _discountpercent = `in₂₁`.expectSimpleValue().map[scala.Int](((`_$7₆`: java.lang.String) => scala.Predef.augmentString(`_$7₆`).toInt)).getOrElse[scala.Int](throw new co.blocke.scalajack.xml.ParseError("Ints cannot be null"))
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("discountpercent"))
+          case 5 =>
+            if (`_req₁₀`.&(32).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(32)
+              _discountdate = `in₂₁`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("discountdate"))
+          case 6 =>
+            if (`_req₁₀`.&(64).!=(0)) {
+              `_req₁₀` = `_req₁₀`.^(64)
+              _datedue = `in₂₁`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("datedue"))
+          case _ =>
+            `in₂₁`.skipValue()
+        }
+        if (`in₂₁`.expectObjectEnd(`fieldName₁₀`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₁₀`).+(" not found.")) else ()
+        `maybeField₁₀` = `in₂₁`.expectObjectField
+    }
+    if (`_req₁₀`.&(127).==(0)) new co.blocke.scalajack.xml.classes.Terms(`_id₂`, _desc, _duedays, _discountdays, _discountpercent, _discountdate, _datedue) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("id", "desc", "duedays", "discountdays", "discountpercent", "discountdate", "datedue").apply(java.lang.Integer.numberOfTrailingZeros(`_req₁₀`.&(127)))))
+  }
+  def r2(`in₂₂`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Message = {
+    val `__fieldMatrix₁₁`: co.blocke.scalajack.shared.StringMatrix = new co.blocke.scalajack.shared.StringMatrix(if (scala.Predef.refArrayOps[java.lang.String](scala.Array.apply[java.lang.String]("TYPE", "message")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String]))).isEmpty) scala.Array.apply[java.lang.String]("_")(scala.reflect.ClassTag.apply[java.lang.String](classOf[java.lang.String])) else scala.Array.apply[java.lang.String]("TYPE", "message")(scala.reflect.ClassTag.apply[java.lang.String](scala.Predef.classOf[java.lang.String])))
+    var `_type₄`: java.lang.String = ""
+    var `_message₃`: java.lang.String = ""
+    var `_req₁₁`: scala.Int = 3
+    var `maybeField₁₁`: scala.Option[scala.Tuple2[java.lang.String, scala.collection.immutable.Map[java.lang.String, java.lang.String]]] = `in₂₂`.expectObjectField
+    while (`maybeField₁₁`.isDefined) `maybeField₁₁` match {
+      case scala.Some(scala.Tuple2(fieldName, fieldAttrs)) =>
+        val `maybeFieldNum₁₁`: scala.Int = `in₂₂`.identifyFieldNum(`fieldName₁₁`, `__fieldMatrix₁₁`)
+        scala.Predef.println("Field num: ".+(`maybeFieldNum₁₁`))
+        `maybeFieldNum₁₁` match {
+          case 0 =>
+            if (`_req₁₁`.&(1).!=(0)) {
+              `_req₁₁` = `_req₁₁`.^(1)
+              `_type₄` = `in₂₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("TYPE"))
+          case 1 =>
+            if (`_req₁₁`.&(2).!=(0)) {
+              `_req₁₁` = `_req₁₁`.^(2)
+              `_message₃` = `in₂₂`.expectSimpleValue().getOrElse[java.lang.String]("")
+            } else throw new co.blocke.scalajack.xml.ParseError("Duplicate field ".+("message"))
+          case _ =>
+            `in₂₂`.skipValue()
+        }
+        if (`in₂₂`.expectObjectEnd(`fieldName₁₁`).unary_!) throw new co.blocke.scalajack.xml.ParseError("Element close for label ".+(`fieldName₁₁`).+(" not found.")) else ()
+        `maybeField₁₁` = `in₂₂`.expectObjectField
+    }
+    if (`_req₁₁`.&(3).==(0)) new co.blocke.scalajack.xml.classes.Message(`_type₄`, `_message₃`) else throw new co.blocke.scalajack.xml.ParseError("Missing required field(s) ".+(scala.List.apply[java.lang.String]("type", "message").apply(java.lang.Integer.numberOfTrailingZeros(`_req₁₁`.&(3)))))
+  }
+  final class $anon() extends co.blocke.scalajack.xml.XmlCodec[co.blocke.scalajack.xml.classes.Invoice810] {
+    def encodeValue(`in₂₃`: co.blocke.scalajack.xml.classes.Invoice810, `out₁₂`: co.blocke.scalajack.xml.writing.XmlOutput): scala.Unit = {
+      w0(`in₂₃`, `out₁₂`)
+      ()
+    }
+    def decodeValue(`in₂₄`: co.blocke.scalajack.xml.reading.XmlSource): co.blocke.scalajack.xml.classes.Invoice810 = r0(`in₂₄`)
+  }
+
+  (new $anon(): co.blocke.scalajack.xml.XmlCodec[co.blocke.scalajack.xml.classes.Invoice810])
+}
+[warn] -- [E029] Pattern Match Exhaustivity Warning: /Users/gzoller/me/git/ScalaJack/src/test/scala/co.blocke.scalajack/xml/classes/ClassSpec.scala:33:35 
+[warn]  33 |      val sj = sjXmlCodecOf[Person](SJConfig.preferTypeHints)
+[warn]     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[warn]     |               match may not be exhaustive.
+[warn]     |
+[warn]     |               It would fail on pattern case: None
+[warn]     |---------------------------------------------------------------------------
+[warn]     |Inline stack trace
+[warn]     |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+[warn]     |This location contains code that was inlined from Helpers.scala:323
+[warn] 323 |        maybeField match {
+[warn]     |        ^^^^^^^^^^
+[warn]     |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+[warn]     |This location contains code that was inlined from Helpers.scala:323
+[warn] 321 |      var maybeField = $in.expectObjectField
+[warn]     |      ^
+[warn] 322 |      while maybeField.isDefined do
+[warn] 323 |        maybeField match {
+[warn] 324 |          case Some((fieldName, fieldAttrs)) =>
+[warn] 325 |            val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
+[warn] 326 |            println("Field num: " + maybeFieldNum)
+[warn] 327 |            ${
+[warn] 328 |              Match(
+[warn] 329 |                '{ maybeFieldNum }.asTerm,
+[warn] 330 |                caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+[warn] 331 |              ).asExprOf[Any]
+[warn] 332 |            }
+[warn] 333 |            if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
+[warn] 334 |            maybeField = $in.expectObjectField
+[warn] 335 |        }
+[warn]      ---------------------------------------------------------------------------
+[warn]     |
+[warn]     | longer explanation available when compiling with `-explain`
+[warn] one warning found
+[info] done compiling
+<dude><name/><duration>34</duration><zoom><make>Porsche</make></zoom><zoom><make>Ferrari</make></zoom><boing><size>1</size></boing></dude>
+HERE (SD)
+>>> Read field label name
+Field num: 0
+>>> Read field label duration
+Field num: 1
+>>> Read field label zoom
+Field num: 2
+>>> Expecting array with label zoom naked? STRUCT
+begin parsing thingy: make
+>>> Read field label make
+Field num: 0
+MID: ListBuffer(Car(Porsche))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::zoom
+---$$$2 Start::zoom
+---$$$3 Start::make
+begin parsing thingy: make
+>>> Read field label make
+Field num: 0
+MID: ListBuffer(Car(Porsche), Car(Ferrari))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::zoom
+---$$$2 Start::boing
+FINSIHED: ListBuffer(Car(Porsche), Car(Ferrari))
+Next up: End::zoom
+>>> Read field label boing
+Field num: 3
+>>> Read field label size
+Field num: 0
+Person(,34,List(Car(Porsche), Car(Ferrari)),Ball(1))
+HERE (SD)
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label recid
+Field num: 1
+>>> Read field label invoiceno
+Field num: 2
+>>> Read field label invoicedate
+Field num: 3
+>>> Read field label orderno
+Field num: 4
+>>> Read field label ordertype
+Field num: 5
+>>> Read field label orderdate
+Field num: 6
+>>> Read field label purchaseorderno
+Field num: 7
+>>> Read field label cusno
+Field num: 8
+>>> Read field label division
+Field num: 9
+>>> Read field label department
+Field num: 10
+>>> Read field label shipdate
+Field num: 11
+>>> Read field label canceldate
+Field num: 12
+>>> Read field label collect
+Field num: 13
+>>> Read field label bolno
+Field num: 14
+>>> Read field label iscreditmemo
+Field num: 15
+>>> Read field label miscamount
+Field num: 16
+>>> Read field label freightamount
+Field num: 17
+>>> Read field label totinvoiceamount
+Field num: 18
+>>> Read field label tottaxableamount
+Field num: 19
+>>> Read field label totsalesamount
+Field num: 20
+>>> Read field label totcartons
+Field num: 21
+>>> Read field label totweight
+Field num: 22
+>>> Read field label lineitemtotal
+Field num: 23
+>>> Read field label _CARRIER
+Field num: 24
+>>> Read field label carrierid
+Field num: 0
+>>> Read field label carrierdesc
+Field num: 1
+>>> Read field label _MESSAGE
+Field num: 25
+>>> Expecting array with label _MESSAGE naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label message
+Field num: 1
+MID: ListBuffer(Message(shippinginstructions1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_MESSAGE
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label message
+Field num: 1
+MID: ListBuffer(Message(shippinginstructions1,), Message(shippinginstructions2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_MESSAGE
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label message
+Field num: 1
+MID: ListBuffer(Message(shippinginstructions1,), Message(shippinginstructions2,), Message(comment1,7897898))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_MESSAGE
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label message
+Field num: 1
+MID: ListBuffer(Message(shippinginstructions1,), Message(shippinginstructions2,), Message(comment1,7897898), Message(comment2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_MESSAGE
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label message
+Field num: 1
+MID: ListBuffer(Message(shippinginstructions1,), Message(shippinginstructions2,), Message(comment1,7897898), Message(comment2,), Message(comment3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_MESSAGE
+---$$$2 unknown
+FINSIHED: ListBuffer(Message(shippinginstructions1,), Message(shippinginstructions2,), Message(comment1,7897898), Message(comment2,), Message(comment3,))
+Next up: End::_MESSAGE
+>>> Read field label _TERMS
+Field num: 26
+>>> Read field label id
+Field num: 0
+>>> Read field label desc
+Field num: 1
+>>> Read field label duedays
+Field num: 2
+>>> Read field label discountdays
+Field num: 3
+>>> Read field label discountpercent
+Field num: 4
+>>> Read field label discountdate
+Field num: 5
+>>> Read field label datedue
+Field num: 6
+>>> Read field label _CURRENCY
+Field num: 27
+>>> Read field label currencycode
+Field num: 0
+>>> Read field label currencyrate
+Field num: 1
+>>> Read field label _CREDITMEMO
+Field num: 28
+>>> Read field label origordtype
+Field num: 0
+>>> Read field label origordno
+Field num: 1
+>>> Read field label origorddate
+Field num: 2
+>>> Read field label applytono
+Field num: 3
+>>> Read field label _ADDRESS
+Field num: 29
+>>> Expecting array with label _ADDRESS naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label id
+Field num: 1
+>>> Read field label name
+Field num: 2
+>>> Read field label add1
+Field num: 3
+>>> Read field label add2
+Field num: 4
+>>> Read field label add3
+Field num: 5
+>>> Read field label city
+Field num: 6
+>>> Read field label state
+Field num: 7
+>>> Read field label zip
+Field num: 8
+>>> Read field label country
+Field num: 9
+>>> Read field label contact
+Field num: 10
+>>> Read field label phone
+Field num: 11
+>>> Read field label fax
+Field num: 12
+>>> Read field label email
+Field num: 13
+>>> Read field label _USERDEF
+Field num: 14
+>>> Expecting array with label _USERDEF naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+FINSIHED: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Next up: End::_USERDEF
+MID: ListBuffer(Address(billto,270400,PFG Customized Mckinney,245 Castle Heights Avenue North,,,Lebanon,TN,37087,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_ADDRESS
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label id
+Field num: 1
+>>> Read field label name
+Field num: 2
+>>> Read field label add1
+Field num: 3
+>>> Read field label add2
+Field num: 4
+>>> Read field label add3
+Field num: 5
+>>> Read field label city
+Field num: 6
+>>> Read field label state
+Field num: 7
+>>> Read field label zip
+Field num: 8
+>>> Read field label country
+Field num: 9
+>>> Read field label contact
+Field num: 10
+>>> Read field label phone
+Field num: 11
+>>> Read field label fax
+Field num: 12
+>>> Read field label email
+Field num: 13
+>>> Read field label _USERDEF
+Field num: 14
+>>> Expecting array with label _USERDEF naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+FINSIHED: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Next up: End::_USERDEF
+MID: ListBuffer(Address(billto,270400,PFG Customized Mckinney,245 Castle Heights Avenue North,,,Lebanon,TN,37087,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipto,7897898,AlternateName,418 Power House DriveAddress2,,,McKinney,TX,75071,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_ADDRESS
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label id
+Field num: 1
+>>> Read field label name
+Field num: 2
+>>> Read field label add1
+Field num: 3
+>>> Read field label add2
+Field num: 4
+>>> Read field label add3
+Field num: 5
+>>> Read field label city
+Field num: 6
+>>> Read field label state
+Field num: 7
+>>> Read field label zip
+Field num: 8
+>>> Read field label country
+Field num: 9
+>>> Read field label contact
+Field num: 10
+>>> Read field label phone
+Field num: 11
+>>> Read field label fax
+Field num: 12
+>>> Read field label email
+Field num: 13
+>>> Read field label _USERDEF
+Field num: 14
+>>> Expecting array with label _USERDEF naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+FINSIHED: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Next up: End::_USERDEF
+MID: ListBuffer(Address(billto,270400,PFG Customized Mckinney,245 Castle Heights Avenue North,,,Lebanon,TN,37087,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipto,7897898,AlternateName,418 Power House DriveAddress2,,,McKinney,TX,75071,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipfr,CHW,Cockrell Hill Warehouse,1001 N. Cockrell Hill Road,,,Dallas,TX,75211,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_ADDRESS
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label id
+Field num: 1
+>>> Read field label name
+Field num: 2
+>>> Read field label add1
+Field num: 3
+>>> Read field label add2
+Field num: 4
+>>> Read field label add3
+Field num: 5
+>>> Read field label city
+Field num: 6
+>>> Read field label state
+Field num: 7
+>>> Read field label zip
+Field num: 8
+>>> Read field label country
+Field num: 9
+>>> Read field label contact
+Field num: 10
+>>> Read field label phone
+Field num: 11
+>>> Read field label fax
+Field num: 12
+>>> Read field label email
+Field num: 13
+>>> Read field label _USERDEF
+Field num: 14
+>>> Expecting array with label _USERDEF naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+FINSIHED: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Next up: End::_USERDEF
+MID: ListBuffer(Address(billto,270400,PFG Customized Mckinney,245 Castle Heights Avenue North,,,Lebanon,TN,37087,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipto,7897898,AlternateName,418 Power House DriveAddress2,,,McKinney,TX,75071,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipfr,CHW,Cockrell Hill Warehouse,1001 N. Cockrell Hill Road,,,Dallas,TX,75211,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(altadr,7897898,,,,,,,,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_ADDRESS
+---$$$2 unknown
+FINSIHED: ListBuffer(Address(billto,270400,PFG Customized Mckinney,245 Castle Heights Avenue North,,,Lebanon,TN,37087,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipto,7897898,AlternateName,418 Power House DriveAddress2,,,McKinney,TX,75071,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(shipfr,CHW,Cockrell Hill Warehouse,1001 N. Cockrell Hill Road,,,Dallas,TX,75211,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))), Address(altadr,7897898,,,,,,,,,,,,,List(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))))
+Next up: End::_ADDRESS
+>>> Read field label _TAX
+Field num: 30
+>>> Read field label taxsched
+Field num: 0
+>>> Read field label taxcode
+Field num: 1
+>>> Read field label taxableamount
+Field num: 2
+>>> Read field label taxamt
+Field num: 3
+>>> Read field label taxpercent
+Field num: 4
+>>> Read field label taxstate
+Field num: 5
+>>> Read field label _USERDEF
+Field num: 31
+>>> Expecting array with label _USERDEF naked? STRUCT
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+---$$$3 unknown
+begin parsing thingy: TYPE
+>>> Read field label TYPE
+Field num: 0
+>>> Read field label userdef
+Field num: 1
+MID: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Array element read over... next: org.codehaus.stax2.ri.evt.EndElementEventImpl
+---$$$ End::_USERDEF
+---$$$2 unknown
+FINSIHED: ListBuffer(Userdef(user1,), Userdef(user2,), Userdef(user3,), Userdef(user4,), Userdef(user5,))
+Next up: End::_USERDEF
+>>> Read field label _ITEM
+Field num: 32
+[info] ClassSpec:
+[info] -------------------------------
+[info] :      XML Class Tests        :
+[info] -------------------------------
+[info] - Simple case class must work (with field renaming)
+[info] - works *** FAILED ***
+[info]   co.blocke.scalajack.xml.ParseError: Duplicate field _ITEM
+[info]   ...
+[info] Run completed in 159 milliseconds.
+[info] Total number of tests run: 2
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 1, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[error] Failed tests:
+[error] 	co.blocke.scalajack.xml.classes.ClassSpec
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 20 s, completed Jun 11, 2025, 5:43:14 PM

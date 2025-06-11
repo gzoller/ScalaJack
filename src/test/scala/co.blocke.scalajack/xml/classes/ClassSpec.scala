@@ -22,8 +22,8 @@ class ClassSpec() extends AnyFunSpec:
 //        List(Ball(5), Ball(6), Ball(7)),
 //        List(Ball(5), Ball(6), Ball(7)),
 //        Dog(3, "kibble"),
-        Ball(1),
-        List(Car("Porsche"), Car("Ferrari"))
+        List(Car("Porsche"), Car("Ferrari")),
+        Ball(1)
 //        Ball(2),
 //        Some(Ball(3)),
 //        Some(Ball(4))
@@ -40,67 +40,15 @@ class ClassSpec() extends AnyFunSpec:
       //      sj.fromJson(js) shouldEqual (inst)
     }
 
-    /*
-<dude>
-	<name/>
-	<duration>34</duration>
-	<normal>   <- Normal/canonical with xmlEntryLabel (item)
-		<item>
-			<Ball>
-				<size>5</size>
-			</Ball>
-		</item>
-		<item>
-			<Ball>
-				<size>6</size>
-			</Ball>
-		</item>
-		<item>
-			<Ball>
-				<size>7</size>
-			</Ball>
-		</item>
-	</normal>
-	<Ball>
-		<size>5</size>
-	</Ball>
-	<Ball>
-		<size>6</size>
-	</Ball>
-	<Ball>
-		<size>7</size>
-	</Ball>
-	<Ball>
-		<size>5</size>
-	</Ball>
-	<Ball>
-		<size>6</size>
-	</Ball>
-	<Ball>
-		<size>7</size>
-	</Ball>
-	<pet>
-		<Dog>
-			<legs>3</legs>
-			<food>kibble</food>
-		</Dog>
-	</pet>
-	<Ball>
-		<size>1</size>
-	</Ball>
-	<Ball>
-		<size>2</size>
-	</Ball>
-</dude>
-     */
-
-    /*
     it("works") {
       val sj = sjXmlCodecOf[Invoice810]
       val x = sj.fromXml(foo)
       println(x)
+      val sj2 = sjCodecOf[Invoice810]
+      val js = sj2.toJson(x)
+      println("-------------")
+      println(js)
     }
-     */
   }
 
   val foo = """<_DOC>
@@ -147,7 +95,7 @@ class ClassSpec() extends AnyFunSpec:
               |
               |	<_MESSAGE>
               |		<TYPE>comment1</TYPE>
-              |		<messsage>7897898</messsage>
+              |		<message>7897898</message>
               |	</_MESSAGE>
               |
               |
@@ -447,7 +395,7 @@ class ClassSpec() extends AnyFunSpec:
               |
               |		<_MESSAGE>
               |			<TYPE>comment1</TYPE>
-              |			<messsage>7897898</messsage>
+              |			<message>7897898</message>
               |		</_MESSAGE>
               |
               |
@@ -526,7 +474,7 @@ class ClassSpec() extends AnyFunSpec:
               |
               |		<_MESSAGE>
               |			<TYPE>comment1</TYPE>
-              |			<messsage>7897898</messsage>
+              |			<message>7897898</message>
               |		</_MESSAGE>
               |
               |
@@ -607,7 +555,7 @@ class ClassSpec() extends AnyFunSpec:
               |
               |		<_MESSAGE>
               |			<TYPE>comment1</TYPE>
-              |			<messsage>7897898</messsage>
+              |			<message>7897898</message>
               |		</_MESSAGE>
               |
               |
@@ -687,7 +635,7 @@ class ClassSpec() extends AnyFunSpec:
               |
               |		<_MESSAGE>
               |			<TYPE>comment1</TYPE>
-              |			<messsage>7897898</messsage>
+              |			<message>7897898</message>
               |		</_MESSAGE>
               |
               |

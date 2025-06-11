@@ -21,7 +21,7 @@ object Reader:
       in: Expr[XmlSource],
       inTuple: Boolean = false,
       isMapKey: Boolean = false,
-      fieldName: String,
+      parentField: Option[FieldInfoRef],
       entryLabel: Option[String] = None,
       isStruct: Boolean = false
   ): Expr[T] =
@@ -75,7 +75,7 @@ object Reader:
               t.sealedChildren.foreach { child =>
                 child.refType match
                   case '[c] =>
-                    genReadVal[c](ctx, cfg, child.asInstanceOf[RTypeRef[c]], in, inTuple, isMapKey, fieldName)
+                    genReadVal[c](ctx, cfg, child.asInstanceOf[RTypeRef[c]], in, inTuple, isMapKey, parentField)
               }
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
                 val inExpr = Ref(inParam.symbol).asExprOf[XmlSource]
@@ -98,7 +98,7 @@ object Reader:
                   methodKey,
                   t,
                   inExpr,
-                  fieldName,
+                  parentField,
                   isStruct
                 )
               }
@@ -386,7 +386,7 @@ object Reader:
                   in,
                   inTuple,
                   isMapKey,
-                  fieldName,
+                  parentField,
                   entryLabel
                 )
               }.asInstanceOf[T]
@@ -401,12 +401,12 @@ object Reader:
             if cfg.noneAsNull || inTuple then
               '{
                 if $in.nextIsEmpty then None
-                else Some(${ genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, fieldName, entryLabel).asExprOf[e] })
+                else Some(${ genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, parentField, entryLabel).asExprOf[e] })
               }.asExprOf[T]
             else
               '{
                 if $in.nextIsEmpty then null
-                else ${ ofOption[e](Some(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, fieldName, entryLabel).asExprOf[e])) }
+                else ${ ofOption[e](Some(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, parentField, entryLabel).asExprOf[e])) }
               }.asExprOf[T]
 
       /*
@@ -607,24 +607,30 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
                 val (modeE, entryLabelE) = (entryLabel, isStruct) match {
-                  case (None, false)    => (Expr(InputMode.NAKED), Expr(fieldName))
+                  case (None, false)    => (Expr(InputMode.NAKED), Expr(f.name))
                   case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
                   case (_, true) =>
                     rtypeRef match {
                       case c: ClassRef[?] =>
-                        val elementLabel = c.annotations
-                          .get("co.blocke.scalajack.xmlLabel")
-                          .flatMap(_.get("name"))
-                          // TODO: ZZZ put parentField annotation lookup here!
-                          .getOrElse(lastPart(c.name))
+                        val elementLabel =
+                          c.annotations
+                            .get("co.blocke.scalajack.xmlLabel")
+                            .flatMap(_.get("name"))
+                            .orElse(
+                              f.annotations
+                                .get("co.blocke.scalajack.xmlLabel")
+                                .flatMap(_.get("name"))
+                            )
+                            .getOrElse(lastPart(c.name))
                         (Expr(InputMode.STRUCT), Expr(elementLabel))
-                      case _ => throw new ParseError(s"Field $fieldName marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
+                      case _ => throw new ParseError(s"Field ${f.name} marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
                     }
                 }
                 println("           Seq gen for rtype " + rtypeRef.name + " isStruct? " + isStruct)
                 '{
-                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, fieldName, entryLabel, isStruct).asExprOf[e] }, $modeE)
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toList
                   else null
                 }.asExprOf[T]
