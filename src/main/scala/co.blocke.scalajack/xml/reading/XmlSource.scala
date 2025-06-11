@@ -9,6 +9,9 @@ import javax.xml.stream.events.{Attribute, Characters, StartElement, XMLEvent}
 import scala.jdk.CollectionConverters.*
 import shared.StringMatrix
 
+enum InputMode:
+  case NORMAL, NAKED, STRUCT
+
 // Wrapper for XMLEventReader to buffer input so we can look ahead 2 events...something the original API can't do.
 class BufferedXMLEventReader(delegate: XMLEventReader):
   private val buffer = scala.collection.mutable.Queue.empty[XMLEvent]
@@ -29,34 +32,57 @@ class BufferedXMLEventReader(delegate: XMLEventReader):
 case class XmlSource(rawXML: String):
 
   private val xmlEventSrc = new BufferedXMLEventReader((new WstxInputFactory()).createXMLEventReader(new StringReader(rawXML)))
+//  while xmlEventSrc.hasNext do {
+//    val evt = xmlEventSrc.nextEvent()
+//    println(s"${evt.getEventType} → $evt")
+//  }
 
-  def expectObjectStart(label: String): Option[Map[String, String]] = // (self-closed, attributes)
+  def expectObjectStart(label: String): Map[String, String] = // (self-closed, attributes)
+    skipWS()
+    xmlEventSrc.peek() match {
+      case p if p.isStartElement  => println("HERE (SE): " + p.asStartElement.getName.getLocalPart + " for label " + label)
+      case p if p.isStartDocument => println("HERE (SD)")
+      case p                      => println("HERE (something else): " + p.getClass.getName)
+    }
     if xmlEventSrc.hasNext then
       if xmlEventSrc.peek().isStartDocument then xmlEventSrc.nextEvent() // skip
       val e = xmlEventSrc.nextEvent()
-      if !e.isStartElement then None
+      if !e.isStartElement then throw new ParseError(s"Expected start element $label but the next element wasn't a start element.")
       else
         val se = e.asStartElement()
-        if se.getName.getLocalPart != label then None // wrong object found
+        if se.getName.getLocalPart != label then throw new ParseError(s"Expected start element $label but start element ${se.getName.getLocalPart} was found instead.")
         else
           val attrs = se.getAttributes.asScala.map(_.asInstanceOf[Attribute]).toList
           val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
-          Some(attrMap)
-    else None
+          attrMap
+    else throw new ParseError(s"Expected start element $label but there were no more elements to be read.")
 
   def nextIsEmpty: Boolean =
     val ahead = xmlEventSrc.peek()
-    ahead == null || ahead.asInstanceOf[XMLEvent].isEndElement
+    ahead == null || ahead.isEndElement
 
   def expectObjectEnd(label: String): Boolean =
     var found = false
     while xmlEventSrc.hasNext && !found do
       val e = xmlEventSrc.nextEvent()
-      if e.isEndElement && e.asEndElement.getName.getLocalPart == label then found = true
+      if e.isEndElement && (e.asEndElement.getName.getLocalPart == label) then found = true
     found
 
+  inline def skipWS() =
+    var skippedWS = false
+    while !skippedWS do
+      xmlEventSrc.peek() match {
+        case p if p.isCharacters && p.asCharacters.isWhiteSpace =>
+          xmlEventSrc.nextEvent()
+        case p if p.isStartElement =>
+          skippedWS = true
+        case p =>
+          skippedWS = true
+      }
+
   def expectObjectField: Option[(String, Map[String, String])] =
-    val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
+    skipWS()
+    val ahead = xmlEventSrc.peek()
     if ahead == null || !ahead.isStartElement then None
     else
       val se = xmlEventSrc.nextEvent().asStartElement()
@@ -67,7 +93,7 @@ case class XmlSource(rawXML: String):
       Some((label, attrMap))
 
   def expectSimpleValue(): Option[String] = // <foo>simple value</foo>
-    val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
+    val ahead = xmlEventSrc.peek()
     if ahead == null || !ahead.isCharacters then None
     else Some(xmlEventSrc.nextEvent().asCharacters().getData)
 
@@ -84,24 +110,63 @@ case class XmlSource(rawXML: String):
     bs = fieldNameMatrix.exact(bs, fi)
     fieldNameMatrix.first(bs)
 
+  private inline def isStartMatch(e: XMLEvent, tag: String): Boolean =
+    e != null && e.isStartElement && e.asStartElement().getName.getLocalPart == tag
+  private inline def isEndMatch(e: XMLEvent, tag: String): Boolean =
+    e != null && e.isEndElement && e.asEndElement().getName.getLocalPart == tag
+
   // For naked arrays (unwrapped) the first start element has already been consumed, and we must specifically
-  // leave the last end element unread
-  def expectArray[E](entryLabel: String, f: () => E, isNaked: Boolean = false): scala.collection.mutable.ListBuffer[E] =
+  // leave the last end element unread.
+  // We have 3 cases:
+  // 1. Entries wrapped with entryLabel tags + NORMAL -> consume entryLabel and parse object with f()
+  // 2. Entries wrapped with entryLabel tags + NAKED -> don't consume entryLabel: parse object with f() (entryLabel part of the object)
+  // 3. Entries wrapped with entryLabel tags + STRUCT -> presume entry label already consumed
+  def expectArray[E](entryLabel: String, f: () => E, mode: InputMode): scala.collection.mutable.ListBuffer[E] =
     val seq = scala.collection.mutable.ListBuffer.empty[E]
     var done = false
 
-    // If !isNaked, test and consume the expected StartElement. Now the 2 cases are on equal footing to start...
-    if !isNaked then
-      val ahead = xmlEventSrc.peek().asInstanceOf[XMLEvent]
-      if ahead == null || !ahead.isStartElement || (ahead.isStartElement && ahead.asStartElement().getName.getLocalPart != entryLabel) then done = true
-      else xmlEventSrc.nextEvent()
+    println(">>> Expecting array with label " + entryLabel + " naked? " + mode)
 
     while !done do
-      seq.append(f())
-      if isNaked && !(xmlEventSrc.peek(1).isStartElement && xmlEventSrc.peek(1).asStartElement().getName.getLocalPart == entryLabel) then done = true
-      else
-        if !expectObjectEnd(entryLabel) then throw new ParseError("Expected entry element for " + entryLabel + " not found")
-        val ahead = xmlEventSrc.peek()
-        if ahead == null || !ahead.isStartElement || (ahead.isStartElement && ahead.asStartElement().getName.getLocalPart != entryLabel) then done = true
-        else xmlEventSrc.nextEvent()
+      mode match {
+        case InputMode.NORMAL => // consume start element for entryLabel
+          if isStartMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
+          else done = true
+        case InputMode.NAKED => // don't consume entryLabel element
+          if !isStartMatch(xmlEventSrc.peek(), entryLabel) then done = true
+        case _ =>
+      }
+
+      if !done then
+        // Read list item
+        skipWS()
+        println("begin parsing thingy: " + xmlEventSrc.peek().asStartElement().getName.getLocalPart)
+        seq.append(f())
+        println("MID: " + seq)
+        skipWS()
+
+        // Process end element
+        println("Array element read over... next: " + xmlEventSrc.peek().getClass.getName)
+        mode match {
+          case InputMode.NORMAL => // consume end element for entryLabel
+            if isEndMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
+            else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
+          case InputMode.STRUCT => // consume end element for entryLabel
+            if isEndMatch(xmlEventSrc.peek(), entryLabel) then
+              if isStartMatch(xmlEventSrc.peek(1), entryLabel) then
+                xmlEventSrc.nextEvent() // consume end element
+                xmlEventSrc.nextEvent() // pre-consume start element
+              else done = true
+            else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
+          case _ => // end already consumed for other cases
+        }
+
+    println("FINSIHED: " + seq)
     seq
+
+/*
+    <foo><bar>...</bar></foo>
+    <foo><bar>...</bar></foo>
+    <foo><bar>...</bar></foo>
+    <blah/>
+ */

@@ -22,12 +22,18 @@ object Reader:
       inTuple: Boolean = false,
       isMapKey: Boolean = false,
       fieldName: String,
-      entryLabel: Option[String] = None
+      entryLabel: Option[String] = None,
+      isStruct: Boolean = false
   ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     // ------------------< Helpers
+    given ToExpr[InputMode] with
+      def apply(x: InputMode)(using Quotes): Expr[InputMode] = x match
+        case InputMode.NORMAL => '{ InputMode.NORMAL }
+        case InputMode.NAKED  => '{ InputMode.NAKED }
+        case InputMode.STRUCT => '{ InputMode.STRUCT }
 
     def makeReadFnSym[S: Type](
         methodKey: TypedName
@@ -91,7 +97,9 @@ object Reader:
                   cfg,
                   methodKey,
                   t,
-                  inExpr
+                  inExpr,
+                  fieldName,
+                  isStruct
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
@@ -599,11 +607,24 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                val (isNakedE, entryLabelE) =
-                  if entryLabel.isDefined then (Expr(false), Expr(entryLabel.get))
-                  else (Expr(true), Expr(fieldName))
+                val (modeE, entryLabelE) = (entryLabel, isStruct) match {
+                  case (None, false)    => (Expr(InputMode.NAKED), Expr(fieldName))
+                  case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
+                  case (_, true) =>
+                    rtypeRef match {
+                      case c: ClassRef[?] =>
+                        val elementLabel = c.annotations
+                          .get("co.blocke.scalajack.xmlLabel")
+                          .flatMap(_.get("name"))
+                          // TODO: ZZZ put parentField annotation lookup here!
+                          .getOrElse(lastPart(c.name))
+                        (Expr(InputMode.STRUCT), Expr(elementLabel))
+                      case _ => throw new ParseError(s"Field $fieldName marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
+                    }
+                }
+                println("           Seq gen for rtype " + rtypeRef.name + " isStruct? " + isStruct)
                 '{
-                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, fieldName).asExprOf[e] }, $isNakedE)
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, fieldName, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toList
                   else null
                 }.asExprOf[T]

@@ -29,27 +29,31 @@ object MaybeWrite:
 //      out
 //    )
 
+  //                      val fieldName = changeFieldName(f)
   def maybeWriteField[V: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      fieldName: String,
+      parentField: FieldInfoRef,
       valueE: Expr[V],
       valueRef: RTypeRef[V],
       out: Expr[XmlOutput],
-      entryLabel: Option[String] = None
+      entryLabel: Option[String] = None,
+      isStruct: Boolean = false
   ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     // Collections are special. Normally we print <field>...</field> and let the call to _maybeWrite supply the innards.
     // For collections tho, it isn't guaranteed we emit the wrapper <field>. So don't emit anything and pass responsibility
     // for wrapping, or not, to _maybeWrite.
-    val (prefix, postfix) = valueRef match {
-      case _: CollectionRef[?] if entryLabel.isEmpty =>
+    val fieldName = changeFieldName(parentField)
+    println(s"& Field: $fieldName isStruct? $isStruct  entryLabel? $entryLabel")
+    val (prefix, postfix) =
+      if isStruct then // no field wrapper for structs
         (
           '{ () },
           '{ () }
         )
-      case _ =>
+      else
         val fieldNameE = Expr(fieldName)
         (
           '{
@@ -59,23 +63,24 @@ object MaybeWrite:
             $out.endElement($fieldNameE)
           }
         )
-    }
+
     _maybeWrite[V](
       ctx,
       cfg,
       valueE,
       valueRef,
       out,
-      fieldName,
+      parentField,
       prefix,
       postfix,
-      entryLabel
+      entryLabel,
+      isStruct
     )
 
   def maybeWriteMapEntry[K: Type, V: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      mapElementLabel: String,
+      parentField: FieldInfoRef,
       entryLabel: String,
       keyE: Expr[K],
       valueE: Expr[V],
@@ -102,8 +107,8 @@ object MaybeWrite:
           valueE,
           valueRef,
           out,
-          mapElementLabel,
-          Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true, pprefix, ppostfix, mapElementLabel),
+          parentField,
+          Writer.genWriteVal(ctx, cfg, keyE.asExprOf[k], keyRef.asInstanceOf[RTypeRef[k]], out, false, true, pprefix, ppostfix, Some(parentField)),
           '{
             $out.endElement($entryLabelE)
           },
@@ -120,18 +125,19 @@ object MaybeWrite:
       get: Expr[O[T] => T],
       prefix: Expr[Unit],
       postfix: Expr[Unit],
-      fieldLabel: String,
-      entryLabel: Option[String]
+      parentField: FieldInfoRef,
+      entryLabel: Option[String],
+      isStruct: Boolean
   ): Expr[Unit] =
     given Quotes = ctx.quotes
 
     if !cfg.noneAsNull then
       '{
-        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, '{ $get($optionExpr) }, paramRef, out, fieldLabel, prefix, postfix, entryLabel) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, '{ $get($optionExpr) }, paramRef, out, parentField, prefix, postfix, entryLabel, isStruct) }
       }
     else
       '{
-        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, '{ $get($optionExpr) }, paramRef, out, fieldLabel, prefix, postfix, entryLabel) }
+        if ! $isEmpty($optionExpr) then ${ _maybeWrite[T](ctx, cfg, '{ $get($optionExpr) }, paramRef, out, parentField, prefix, postfix, entryLabel, isStruct) }
         else
           $prefix; $out.burpNull()
       }
@@ -269,10 +275,11 @@ object MaybeWrite:
       aE: Expr[T],
       ref: RTypeRef[T],
       out: Expr[XmlOutput],
-      fieldLabel: String,
+      parentField: FieldInfoRef,
       prefix: Expr[Unit],
       postfix: Expr[Unit],
-      entryLabel: Option[String] = None
+      entryLabel: Option[String] = None,
+      isStruct: Boolean = false
   ): Expr[Unit] =
     given Quotes = ctx.quotes
 
@@ -291,8 +298,9 @@ object MaybeWrite:
               '{ (o: Option[e]) => o.get },
               prefix,
               postfix,
-              fieldLabel,
-              entryLabel
+              parentField,
+              entryLabel,
+              isStruct
             )
 
       case t: JavaOptionalRef[?] =>
@@ -309,8 +317,9 @@ object MaybeWrite:
               '{ (o: java.util.Optional[e]) => o.get },
               prefix,
               postfix,
-              fieldLabel,
-              entryLabel
+              parentField,
+              entryLabel,
+              isStruct
             )
 
       /*
@@ -336,4 +345,8 @@ object MaybeWrite:
       case _ =>
         ref.refType match
           case '[u] =>
-            Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out, false, false, prefix, postfix, fieldLabel, entryLabel)
+            '{
+              $prefix
+              ${ Writer.genWriteVal[u](ctx, cfg, aE.asExprOf[u], ref.asInstanceOf[RTypeRef[u]], out, false, false, '{ () }, '{ () }, Some(parentField), entryLabel, isStruct) }
+              $postfix
+            }

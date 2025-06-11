@@ -16,6 +16,50 @@ case class RealReader[T](expr: Expr[XmlSource => T], tpe: Type[T]) extends Reade
 
 object Helpers:
 
+  // Resolved field name will be one of:
+  //  * Native field name
+  //  * Renamed with @xmlLabel
+  //  * Native (or retnamed) class name in the case of @xmlStruct
+  // NOTE: If we ever deprecate @xmlStruct then eliminate resolveFieldName and replace with changeFieldName in generateFieldMatrixVal
+  private def resolveFieldName(f: FieldInfoRef): String =
+    val isStruct = f.annotations.contains("co.blocke.scalajack.xmlStruct")
+    f.fieldRef match {
+      case c: ClassRef[?] if isStruct =>
+        println("\n-------------------------")
+        println("    Carrier: " + c.name + " field name " + f.name)
+        println(
+          "        Annos: " + c.annotations
+        )
+        println(
+          "        Field Annos: " + f.annotations
+        )
+        println("\n-------------------------")
+        val x = c.annotations
+          .get("co.blocke.scalajack.xmlLabel")
+          .flatMap(_.get("name"))
+          .orElse(f.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+          .getOrElse(lastPart(c.name))
+        println("X: " + x)
+        println("F: " + f.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+        x
+      case c: CollectionRef[?] if isStruct =>
+        c.elementRef match {
+          case d: ClassRef[?] =>
+            d.annotations
+              .get("co.blocke.scalajack.xmlLabel")
+              .flatMap(_.get("name"))
+              .orElse(f.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+              .getOrElse(lastPart(d.name))
+//            d.annotations
+//              .get("co.blocke.scalajack.xmlLabel")
+//              .flatMap(_.get("name"))
+//              .getOrElse(lastPart(d.name))
+          case _ => throw new ParseError(s"Illegal use of @xmlStruct on a field that is not a class (or collection of class)")
+        }
+      case _ =>
+        changeFieldName(f)
+    }
+
   private def generateFieldMatrixVal(
       ctx: CodecBuildContext,
       t: RTypeRef[?],
@@ -34,10 +78,11 @@ object Helpers:
     val fieldNames =
       t match
         case s: ScalaClassRef[?] =>
-          if onlyConstructorFields then s.fields.map(f => changeFieldName(f))
-          else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f))
+          if onlyConstructorFields then s.fields.map(f => resolveFieldName(f))
+          else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => resolveFieldName(f))
         case j: JavaClassRef[?] =>
-          j.fields.sortBy(_.index).map(f => changeFieldName(f))
+          j.fields.sortBy(_.index).map(f => resolveFieldName(f))
+    println("@@@ Field Matrix Field Names: " + fieldNames)
     val namesArrayExpr = Expr(fieldNames.toArray)
     val matrixExpr = '{
       StringMatrix(if $namesArrayExpr.isEmpty then Array("_") else $namesArrayExpr)
@@ -218,9 +263,11 @@ object Helpers:
       cfg: SJConfig,
       methodKey: TypedName,
       classRef: ScalaClassRef[?],
-      in: Expr[XmlSource]
+      in: Expr[XmlSource],
+      fieldLabel: String,
+      isStruct: Boolean
   ): Expr[T] =
-    generateReaderBodySimple[T](ctx, cfg, classRef, in)
+    generateReaderBodySimple[T](ctx, cfg, classRef, in, fieldLabel, isStruct)
 //    if !cfg._writeNonConstructorFields || classRef.nonConstructorFields.isEmpty then Helpers.generateReaderBodySimple[T](ctx, cfg, classRef, in)
 //    else Helpers.generateReaderBodyWithNonCtor[T](ctx, cfg, classRef, in)
 
@@ -228,7 +275,9 @@ object Helpers:
       ctx: CodecBuildContext,
       cfg: SJConfig,
       classRef: ScalaClassRef[?],
-      in: Expr[XmlSource]
+      in: Expr[XmlSource],
+      fieldLabel: String,
+      isStruct: Boolean
   ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
@@ -257,30 +306,53 @@ object Helpers:
     val reqRefExpr = Ref(reqSym).asExprOf[Int] // bitmap of fields set so far
     val requiredMaskExpr = Expr(requiredMask) // mask of required fields
 
-    val xmlClassNameE = Expr(classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(classRef.name.split("\\.").last))
+    println(s"^^ Class ${classRef.name} field $fieldLabel")
+    val xmlClassNameE = Expr(
+      classRef.annotations
+        .get("co.blocke.scalajack.xmlLabel")
+        .flatMap(_.get("name"))
+        .getOrElse(
+          lastPart(classRef.name)
+        )
+    )
 
-    val parseLogic: Term = '{
-      $in.expectObjectStart($xmlClassNameE) match {
-        case None        => throw new ParseError("Expected element " + $xmlClassNameE + " but something else was found.")
-        case Some(attrs) =>
-          // TODO: process attributes
-
-          // process fields
-          var maybeField = $in.expectObjectField
-          while maybeField.isDefined do
-            maybeField match {
-              case Some((fieldName, fieldAttrs)) =>
-                val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
-                println("Field num: " + maybeFieldNum)
-                ${
-                  Match(
-                    '{ maybeFieldNum }.asTerm,
-                    caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
-                  ).asExprOf[Any]
-                }
-                if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
-                maybeField = $in.expectObjectField
+    val parseLogicBody = '{
+      // process fields
+      var maybeField = $in.expectObjectField
+      while maybeField.isDefined do
+        maybeField match {
+          case Some((fieldName, fieldAttrs)) =>
+            val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
+            println("Field num: " + maybeFieldNum)
+            ${
+              Match(
+                '{ maybeFieldNum }.asTerm,
+                caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+              ).asExprOf[Any]
             }
+            if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
+            maybeField = $in.expectObjectField
+        }
+    }
+
+    println("(parse logic for " + classRef.name + " isStruct? " + isStruct)
+    val parseLogic: Term =
+      if isStruct then
+        '{
+          $parseLogicBody
+          if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
+          else
+            throw new ParseError(
+              "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
+                Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+              )
+            )
+        }.asTerm
+      else
+        '{
+          val attrs = $in.expectObjectStart($xmlClassNameE)
+          // TODO: process attributes
+          $parseLogicBody
 
           if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
           if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
@@ -290,8 +362,7 @@ object Helpers:
                 Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
               )
             )
-      }
-    }.asTerm
+        }.asTerm
 
     Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]
 

@@ -19,7 +19,7 @@ object XmlCodecMaker:
     // ================================================================
     val codecDef = '{
       new XmlCodec[T] {
-        def encodeValue(in: T, out: XmlOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out, false, false, '{}, '{}, "") }
+        def encodeValue(in: T, out: XmlOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out, false, false, '{}, '{}, None) }
         def decodeValue(in: XmlSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in, false, false, "").asExprOf[T] }
       }
     }.asTerm
@@ -34,5 +34,5 @@ object XmlCodecMaker:
       codecDef
     ).asExprOf[XmlCodec[T]]
 
-    //    if ref.name.contains("Outer") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("Person") then println(s"Codec: ${codec.show}")
     codec

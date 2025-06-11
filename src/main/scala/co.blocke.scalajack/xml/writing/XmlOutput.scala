@@ -8,33 +8,43 @@ class XmlOutput():
   val internal: FastStringBuilder = new FastStringBuilder()
 
   private var justClosed: Boolean = false
-  private var savePoint: Int = 0
+  private var justWroteEmpty: Boolean = false
+  private var savePoint: Int = -1
 
   def result: String = internal.result
 
   def clear(): XmlOutput =
     internal.clear()
     justClosed = false
-    savePoint = 0
+    justWroteEmpty = false
+    savePoint = -1
     this
 
   def mark(): Unit =
     savePoint = internal.length
 
   def revert(): Unit = // delete everything after the set savePoint
-    internal.setLength(savePoint)
+    if savePoint >= 0 then
+      internal.setLength(savePoint)
+      savePoint = -1
 
   inline def startElement(label: String): Unit =
+    mark()
     internal.append(s"<$label>")
     justClosed = false
+    justWroteEmpty = false
 
   inline def endElement(label: String): Unit =
-    internal.append(s"</$label>")
-    justClosed = true
+    if !justWroteEmpty then
+      internal.append(s"</$label>")
+      justClosed = true
+    justWroteEmpty = false
 
   inline def emptyElement(label: String): Unit =
+    revert()
     internal.append(s"<$label/>")
     justClosed = true
+    justWroteEmpty = true
 
   inline def emitValue(v: String): Unit =
     if v == "" && internal.peekBack().contains('>') then
@@ -58,11 +68,15 @@ class XmlOutput():
   inline def closeElement(): Unit =
     if !justClosed then internal.append(">")
     justClosed = false
+    justWroteEmpty = false
 
   inline def closeElementEmpty(): Unit =
     if !justClosed then internal.append("/>")
+    justClosed = false
+    justWroteEmpty = false
 
   // Not idiomatic XML to output "null", but too much surgery to fix. Nulls should be anomalous in Scala anyway!
   inline def burpNull(): Unit =
     internal.append("null")
     justClosed = false
+    justWroteEmpty = false

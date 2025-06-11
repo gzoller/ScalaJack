@@ -73,7 +73,9 @@ object Writer:
       out: Expr[XmlOutput],
       emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
       inTuple: Boolean = false,
-      isMapKey: Boolean = false
+      isMapKey: Boolean = false,
+      isStruct: Boolean = false,
+      parentField: Option[FieldInfoRef]
   ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
@@ -117,7 +119,7 @@ object Writer:
                       CaseDef(
                         Bind(sym, Typed(Wildcard(), Inferred(subtype))),
                         None,
-                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint, inTuple = inTuple, isMapKey = isMapKey).asTerm
+                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField).asTerm
                       )
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 Match(in.asTerm, cases).asExprOf[Unit]
@@ -141,11 +143,14 @@ object Writer:
                   f.fieldRef.refType match
                     case '[z] =>
                       val fieldValue = Select.unique(in.asTerm, f.name).asExprOf[z]
-                      val fieldName = changeFieldName(f)
                       val entryLabel = f.annotations
                         .get("co.blocke.scalajack.xmlEntryLabel")
                         .flatMap(_.get("name"))
-                      MaybeWrite.maybeWriteField[z](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, entryLabel)
+                      val isStruct = f.annotations.contains("co.blocke.scalajack.xmlStruct")
+                      // entryLabel == None -> is naked
+                      // isStruct == true -> is struct
+                      // isStruct supersedes is naked
+                      MaybeWrite.maybeWriteField[z](ctx, cfg, f, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out, entryLabel, isStruct)
                 }
                 val noDiscBlock: Expr[Unit] =
                   eachField match
@@ -158,15 +163,20 @@ object Writer:
                 // Unlike JSON, we don't worry about type hints here. The actual type is emitted in the XML label for the object, so it becomes the hint!
               }.asExprOf[Unit]
 
-              val className = Expr(t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(t.name.split("\\.").last))
+              val className = Expr(
+                t.annotations
+                  .get("co.blocke.scalajack.xmlLabel")
+                  .flatMap(_.get("name"))
+                  .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
+                  .getOrElse(lastPart(t.name))
+              )
 
               if !t.isCaseClass && cfg._writeNonConstructorFields then
                 val eachField = t.nonConstructorFields.map { f =>
                   f.fieldRef.refType match
                     case '[e] =>
                       val fieldValue = Select.unique(in.asTerm, f.getterLabel).asExprOf[e]
-                      val fieldName = changeFieldName(f)
-                      MaybeWrite.maybeWriteField[e](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
+                      MaybeWrite.maybeWriteField[e](ctx, cfg, f, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[e]], out)
                 }
                 val subBody = eachField.length match
                   case 0 => '{}
@@ -248,8 +258,9 @@ object Writer:
       isMapKey: Boolean = false, // only primitive or primitive-equiv types can be Map keys
       prefix: Expr[Unit],
       postfix: Expr[Unit],
-      fieldName: String,
-      entryLabel: Option[String] = None
+      parentField: Option[FieldInfoRef],
+      entryLabel: Option[String] = None,
+      isStruct: Boolean = false
   ): Expr[Unit] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
@@ -290,23 +301,12 @@ object Writer:
 
           case t: StringRef =>
             // TODO: Make this work. Right now it emits the same thing, effectively ignoring the setting
-            val labelE = Expr(fieldName)
-            if cfg._suppressEscapedStrings then
-              '{
-                if $aE == "" then $out.emptyElement($labelE)
-                else
-                  $prefix
-                  $out.emitValue(${ aE.asExprOf[String] })
-                  $postfix
-              }
-            else
-              '{
-                if $aE == "" then $out.emptyElement($labelE)
-                else
-                  $prefix
-                  $out.emitValue(${ aE.asExprOf[String] })
-                  $postfix
-              }
+            val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for StringRef"))
+            val labelE = Expr(f.name)
+            '{
+              if $aE == "" then $out.emptyElement($labelE)
+              else $out.emitValue(${ aE.asExprOf[String] })
+            }
 
           case t: JBigDecimalRef =>
             '{ $out.emitValue(${ aE.asExprOf[java.math.BigDecimal] }.toString) }
@@ -395,7 +395,8 @@ object Writer:
               case '[e] =>
                 val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Seq[e]] else aE.asExprOf[Seq[e]]
                 val entryLabelE = entryLabel.map(e => Expr(e))
-                val labelE = Expr(fieldName)
+                val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for StringRef"))
+                val labelE = Expr(f.name)
 
                 // If entryLabel not defined then we use "naked" lists: no wrapping...just repeating elements named w/fieldName
                 val pprefix =
@@ -403,29 +404,33 @@ object Writer:
                     '{
                       $out.startElement(${ entryLabelE.get })
                     }
-                  else
-                    '{
-                      $out.startElement(${ labelE })
-                    }
+                  else '{ () }
                 val ppostfix =
                   if entryLabel.isDefined then
                     '{
                       $out.endElement(${ entryLabelE.get })
                     }
-                  else
-                    '{
-                      $out.endElement(${ labelE })
-                    }
-                '{
-                  if $tin == null then $out.burpNull()
-                  else if $tin.isEmpty then $out.emptyElement($labelE)
-                  else
-                    $prefix
-                    $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix, fieldName) }
-                    }
-                    $postfix
-                }
+                  else '{ () }
+                if isStruct then
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else if $tin.isEmpty then $out.emptyElement($labelE)
+                    else
+                      $tin.foreach { i =>
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField) }
+                      }
+                  }
+                else
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else if $tin.isEmpty then $out.emptyElement($labelE)
+                    else
+                      $prefix
+                      $tin.foreach { i =>
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix, parentField) }
+                      }
+                      $postfix
+                  }
 
           /*
           case t: SetRef[?] =>
@@ -474,7 +479,7 @@ object Writer:
                       }
                     case Some(v) =>
                       val vv = v.asInstanceOf[e]
-                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, prefix, postfix, fieldName, entryLabel) }
+                      ${ genWriteVal[e](ctx, cfg, '{ vv }, t.optionParamType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, prefix, postfix, parentField, entryLabel, isStruct) }
                 }
 
           /*
@@ -584,7 +589,8 @@ object Writer:
                 t.elementRef2.refType match
                   case '[v] =>
                     val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Map[k, v]] else aE.asExprOf[Map[k, v]]
-                    val labelE = Expr(fieldName)
+                    val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for StringRef"))
+                    val labelE = Expr(f.name)
                     val _entryLabel = entryLabel.getOrElse(throw new XmlTypeError("Map entry label not supplied"))
                     '{
                       if $tin == null then $out.burpNull()
@@ -602,7 +608,7 @@ object Writer:
                                         MaybeWrite.maybeWriteMapEntry[ak, av](
                                           ctx,
                                           cfg,
-                                          fieldName,
+                                          f,
                                           _entryLabel,
                                           '{ key.asInstanceOf[ak] },
                                           '{ value.asInstanceOf[av] },
@@ -617,7 +623,7 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[k, av](
                                       ctx,
                                       cfg,
-                                      fieldName,
+                                      f,
                                       _entryLabel,
                                       '{ key }.asExprOf[k],
                                       '{ value.asInstanceOf[av] },
@@ -632,7 +638,7 @@ object Writer:
                                     MaybeWrite.maybeWriteMapEntry[ak, v](
                                       ctx,
                                       cfg,
-                                      fieldName,
+                                      f,
                                       _entryLabel,
                                       '{ key.asInstanceOf[ak] },
                                       '{ value }.asExprOf[v],
@@ -645,7 +651,7 @@ object Writer:
                                 MaybeWrite.maybeWriteMapEntry[k, v](
                                   ctx,
                                   cfg,
-                                  fieldName,
+                                  f,
                                   _entryLabel,
                                   '{ key },
                                   '{ value }.asExprOf[v],
@@ -762,7 +768,7 @@ object Writer:
               case None =>
                 '{
                   $prefix
-                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey) }
+                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField) }
                   $postfix
                 }
             }
