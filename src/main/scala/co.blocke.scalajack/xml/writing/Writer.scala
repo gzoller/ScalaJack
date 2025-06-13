@@ -170,7 +170,7 @@ object Writer:
                     .flatMap(_.get("name"))
                     .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
                     .getOrElse(lastPart(t.name))
-                  println(s"Class ${t.name} resolved: $n")
+//                  println(s"Class ${t.name} resolved: $n")
                   Expr(
                     n
                   )
@@ -179,7 +179,7 @@ object Writer:
                     .get("co.blocke.scalajack.xmlLabel")
                     .flatMap(_.get("name"))
                     .getOrElse(lastPart(t.name))
-                  println(s"Non-Struct Class ${t.name} resolved: $n")
+//                  println(s"Non-Struct Class ${t.name} resolved: $n")
                   Expr(
                     n
                   )

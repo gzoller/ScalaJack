@@ -39,11 +39,11 @@ case class XmlSource(rawXML: String):
 
   def expectObjectStart(label: String): Map[String, String] = // (self-closed, attributes)
     skipWS()
-    xmlEventSrc.peek() match {
-      case p if p.isStartElement  => println("HERE (SE): " + p.asStartElement.getName.getLocalPart + " for label " + label)
-      case p if p.isStartDocument => println("HERE (SD)")
-      case p                      => println("HERE (something else): " + p.getClass.getName)
-    }
+//    xmlEventSrc.peek() match {
+//      case p if p.isStartElement  => println("HERE (SE): " + p.asStartElement.getName.getLocalPart + " for label " + label)
+//      case p if p.isStartDocument => println("HERE (SD)")
+//      case p                      => println("HERE (something else): " + p.getClass.getName)
+//    }
     if xmlEventSrc.hasNext then
       if xmlEventSrc.peek().isStartDocument then xmlEventSrc.nextEvent() // skip
       val e = xmlEventSrc.nextEvent()
@@ -87,7 +87,7 @@ case class XmlSource(rawXML: String):
     else
       val se = xmlEventSrc.nextEvent().asStartElement()
       val label = se.getName.getLocalPart
-      println(">>> Read field label " + label)
+//      println(">>> Read field label " + label)
       val attrs = se.getAttributes.asScala.map(_.asInstanceOf[Attribute]).toList
       val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
       Some((label, attrMap))
@@ -133,6 +133,7 @@ case class XmlSource(rawXML: String):
           if isStartMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
           else done = true
         case InputMode.NAKED => // don't consume entryLabel element
+          println("HERE: " + showElement(xmlEventSrc.peek()))
           if !isStartMatch(xmlEventSrc.peek(), entryLabel) then done = true
         case _ =>
       }
@@ -146,28 +147,28 @@ case class XmlSource(rawXML: String):
         skipWS()
 
         // Process end element
-        println("Array element read over... next: " + xmlEventSrc.peek().getClass.getName)
+//        println("Array element read over... next: " + xmlEventSrc.peek().getClass.getName)
         mode match {
           case InputMode.NORMAL => // consume end element for entryLabel
             if isEndMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
             else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
           case InputMode.STRUCT => // consume end element for entryLabel
-            println("---$$$ " + showElement(xmlEventSrc.peek()))
+//            println("---$$$ " + showElement(xmlEventSrc.peek()))
             if isEndMatch(xmlEventSrc.peek(), entryLabel) then
               skipWS()
-              println("---$$$2 " + showElement(xmlEventSrc.peek(1)))
+//              println("---$$$2 " + showElement(xmlEventSrc.peek(1)))
               if isStartMatch(peekNextAfterWS(1), entryLabel) then
                 xmlEventSrc.nextEvent() // consume end element
                 skipWS()
                 xmlEventSrc.nextEvent()
-                println("---$$$3 " + showElement(xmlEventSrc.peek()))
+//                println("---$$$3 " + showElement(xmlEventSrc.peek()))
               else done = true
             else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
           case _ => // end already consumed for other cases
         }
 
     println("FINSIHED: " + seq)
-    println("Next up: " + showElement(xmlEventSrc.peek()))
+//    println("Next up: " + showElement(xmlEventSrc.peek()))
     seq
 
   private def peekNextAfterWS(i: Int): XMLEvent =

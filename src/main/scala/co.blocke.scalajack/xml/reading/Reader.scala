@@ -609,7 +609,22 @@ object Reader:
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
                 val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
                 val (modeE, entryLabelE) = (entryLabel, isStruct) match {
-                  case (None, false)    => (Expr(InputMode.NAKED), Expr(f.name))
+                  case (None, false) =>
+                    rtypeRef match {
+                      case c: ClassRef[?] =>
+                        val elementLabel =
+                          c.annotations
+                            .get("co.blocke.scalajack.xmlLabel")
+                            .flatMap(_.get("name"))
+                            .orElse(
+                              f.annotations
+                                .get("co.blocke.scalajack.xmlLabel")
+                                .flatMap(_.get("name"))
+                            )
+                            .getOrElse(lastPart(c.name))
+                        (Expr(InputMode.NAKED), Expr(elementLabel))
+                      case _ => throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
+                    }
                   case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
                   case (_, true) =>
                     rtypeRef match {
@@ -628,7 +643,7 @@ object Reader:
                       case _ => throw new ParseError(s"Field ${f.name} marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
                     }
                 }
-                println("           Seq gen for rtype " + rtypeRef.name + " isStruct? " + isStruct)
+//                println("           Seq gen for rtype " + rtypeRef.name + " isStruct? " + isStruct)
                 '{
                   val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toList

@@ -46,7 +46,7 @@ object MaybeWrite:
     // For collections tho, it isn't guaranteed we emit the wrapper <field>. So don't emit anything and pass responsibility
     // for wrapping, or not, to _maybeWrite.
     val fieldName = changeFieldName(parentField)
-    println(s"& Field: $fieldName isStruct? $isStruct  entryLabel? $entryLabel")
+//    println(s"& Field: $fieldName isStruct? $isStruct  entryLabel? $entryLabel")
     val (prefix, postfix) =
       if isStruct then // no field wrapper for structs
         (

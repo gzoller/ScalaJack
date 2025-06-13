@@ -20,7 +20,7 @@ object FieldCaseGenerator:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.* // { Symbol as RSymbol, *, given }
 
-    println(">>> Gen for " + classRef.name)
+//    println(">>> Gen for " + classRef.name)
     classRef.fields.map { field =>
       field.fieldRef.refType match
         case '[f] =>
@@ -33,7 +33,7 @@ object FieldCaseGenerator:
             .get("co.blocke.scalajack.xmlEntryLabel")
             .flatMap(_.get("name"))
           val isStruct = field.annotations.contains("co.blocke.scalajack.xmlStruct")
-          println(s"       GEN cases for field $resolvedFieldName, isStruct? $isStruct")
+//          println(s"       GEN cases for field $resolvedFieldName, isStruct? $isStruct")
 
           val caseBody = field.fieldRef match {
             case _: OptionRef[?] | _: AnyRef =>
