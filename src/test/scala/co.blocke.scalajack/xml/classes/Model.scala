@@ -24,28 +24,21 @@ case class Child(name: String, age: Int, override val phase: Int) extends Parent
 case class Params[X, Y](a: List[X], b: Option[Y])
 
 sealed trait Command
-
 case object Start extends Command
-
 case object Stop extends Command
 
 sealed trait Animal
-
 @TypeHint(hintValue = "bowow")
 case class Dog(name: String, numLegs: Int) extends Animal
-
 @TypeHint(hintValue = "flipper")
 case class Fish(species: String, freshwater: Boolean) extends Animal
 
 sealed trait City
-
 class Dallas(val pop: Int) extends City
-
 @TypeHint(hintValue = "vice")
 class Miami(val temp: Double) extends City
 
 sealed trait Route
-
 class CityRoute(val numStreets: Int) extends Route
 // Testing indirection. In real-world scenario all your sealed trait's classes
 // must be defined in one file. Implementation classes like CityRouteImpl could
@@ -54,37 +47,35 @@ class CityRoute(val numStreets: Int) extends Route
 case class TraitHolder(a: Command, b: Animal, c: City, d: Route)
 
 sealed abstract class Command2
-
 case object Start2 extends Command2
-
 case object Stop2 extends Command2
 
 sealed abstract class Animal2
-
 @TypeHint(hintValue = "bowow")
 case class Dog2(name: String, numLegs: Int) extends Animal2
-
 @TypeHint(hintValue = "flipper")
 case class Fish2(species: String, freshwater: Boolean) extends Animal2
 
 sealed abstract class City2
-
 class Dallas2(val pop: Int) extends City2
-
 @TypeHint(hintValue = "vice")
 class Miami2(val temp: Double) extends City2
 
 sealed abstract class AThing[T]
-
 class Thing1[T](val t: T) extends AThing[T]
-
 class Thing2[T](val t: T, val s: String) extends AThing[T]
 
 case class AbstractClassHolder(a: Command2, b: Animal2, c: City2)
 
 case class AbstractClassHolder2[P](a: AThing[P])
 
-case class Empl[T](id: String, data: T, boss: Empl[T], coworkers: List[Empl[T]])
+case class Empl[T](id: String, data: T, boss: Empl[T], @xmlEntryLabel("one") coworkers: List[Empl[T]])
+
+// Value class
+class Email(val value: String) extends AnyVal {
+  def domain: String = value.split("@").last
+}
+case class ValueClassHolder(id: Int, email: Email)
 
 object VehicleClass extends Enumeration {
   type VehicleClass = Value

@@ -85,13 +85,12 @@ object Helpers:
   // ----------------------------------------------------------------------
   // Helper functions for types we're generating functions for (keeps main code cleaner)
 
-  /*
   def generateReaderBodyForCaseObjects[T: Type](
-                                                 ctx: CodecBuildContext,
-                                                 children: List[RTypeRef[?]],
-                                                 parentTypeName: String,
-                                                 in: Expr[XmlSource]
-                                               ): Expr[T] =
+      ctx: CodecBuildContext,
+      children: List[RTypeRef[?]],
+      parentTypeName: String,
+      in: Expr[XmlSource]
+  ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -109,147 +108,65 @@ object Helpers:
     }
 
     '{
-      $in.getFieldValue match {
-        case None | Some("") => null
-        case Some(v) =>
+      $in.expectSimpleValue() match {
+        case None | Some("") | Some("null") => null
+        case Some(v: String) =>
           ${
             Match(
-              '{ $classPrefixExpr + "." + $v }.asTerm,
+              '{ $classPrefixExpr + "." + v }.asTerm,
               caseDefs
             ).asExprOf[T]
           }
       }
     }.asExprOf[T]
-   */
 
   def generateReaderBodyForSealedTraits[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
       traitRef: Sealable,
-      in: Expr[XmlSource]
+      in: Expr[XmlSource],
+      parentField: Option[FieldInfoRef],
+      isStruct: Boolean
   ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    '{ null }.asExprOf[T]
-    /*
     val hintLabelE = Expr(cfg.typeHintLabel)
-    val named = traitRef match {
-      case t: TraitRef[?] => t.name
-      case t: ClassRef[?] => t.name // should never happen
-      case _              => "unknown" // should never happen
-    }
-    val tname = Expr(named)
-    val classPrefixE = Expr(allButLastPart(named))
+    val xmlClassNameE = Expr(
+      parentField
+        .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+        .orElse(
+          traitRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
+        )
+        .getOrElse(lastPart(traitRef.name))
+    )
 
     val caseDefs = traitRef.sealedChildren.map { childRef =>
-      val childNameE = Expr(childRef.name)
+      val childLabel =
+        parentField
+          .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+          .orElse(
+            childRef.asInstanceOf[Sealable].annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
+          )
+          .getOrElse(lastPart(childRef.name))
       val methodKey = childRef.typedName
-
-      cfg.typeHintPolicy match
-        case TypeHintPolicy.SCRAMBLE_CLASSNAME =>
-          val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, TypeRepr.of[String])
-          CaseDef(
-            Bind(sym, Typed(Wildcard(), Inferred(TypeRepr.of[String]))),
-            Some({
-              val tE = Ref(sym).asExprOf[String]
-              '{ descramble($tE, lastPart($childNameE).hashCode) }.asTerm
-            }),
-            ctx.readMethodSyms
-              .get(methodKey)
-              .map { sym =>
-                Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
-              }
-              .get
-          )
-        case TypeHintPolicy.USE_ANNOTATION =>
-          val annoOrName = childRef match
-            case cr: ClassRef[?] =>
-              cr.annotations
-                .get("co.blocke.scalajack.TypeHint")
-                .flatMap(_.get("hintValue"))
-                .getOrElse(lastPart(cr.name))
-            case _ => lastPart(childRef.name)
-          CaseDef(
-            Literal(StringConstant(annoOrName)),
-            None,
-            ctx.readMethodSyms
-              .get(methodKey)
-              .map { sym =>
-                Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
-              }
-              .get
-          )
-
-        case TypeHintPolicy.SIMPLE_CLASSNAME =>
-          CaseDef(
-            Literal(StringConstant(childRef.name)),
-            None,
-            ctx.readMethodSyms
-              .get(methodKey)
-              .map { sym =>
-                Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
-              }
-              .get
-          )
+      CaseDef(
+        Literal(StringConstant(childLabel)),
+        None,
+        ctx.readMethodSyms
+          .get(methodKey)
+          .map { sym =>
+            Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
+          }
+          .get
+      )
     }
+    val traitE = Expr(traitRef.name)
 
-    if cfg._preferTypeHints then
-      '{
-        if $in.expectNull() then null
-        else
-          val hint = $in.findObjectField($hintLabelE).getOrElse(throw JsonParseError(s"Unable to find type hint for abstract class $$cnameE", $in))
-          ${
-            cfg.typeHintPolicy match
-              case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
-              case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-              case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-          }
-      }.asExprOf[T]
-    else
-      val unique = Unique.findUniqueWithExcluded(traitRef)
-      val excludeFields = Expr(unique.optionalFields)
-      val liftedUnique = liftStringMap(unique.simpleUniqueHash)
-
-      val matchCases: List[CaseDef] = traitRef.sealedChildren.flatMap { classRef =>
-        val methodKey = classRef.typedName
-        ctx.readMethodSyms.get(methodKey).map { sym =>
-          val cond = Literal(StringConstant(classRef.name))
-          val rhs = Apply(Ref(sym), List(in.asTerm)).asExprOf[Any].asTerm
-          CaseDef(cond, None, rhs)
-        }
-      }
-
-      '{
-        if $in.expectNull() then null
-        else {
-          // 1. See if type hint is present--if so, use it!
-          $in.findObjectField($hintLabelE) match {
-            case Some(hint) =>
-              ${
-                cfg.typeHintPolicy match
-                  case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
-                  case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-                  case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
-              }
-            case None =>
-              // 2. Find all field names
-              val fields = $in.findAllFieldNames()
-              // 3. Strip out all excluded (optional) fields and make hash
-              val fingerprint = Unique.hashOf(fields.filterNot($excludeFields.contains))
-
-              // 4. Look up hash
-              val className = $liftedUnique
-                .get(fingerprint)
-                .getOrElse(
-                  // Before admitting failure, it is possible "" is a valid hash key!
-                  $liftedUnique.get("").getOrElse(throw new JsonParseError("Class in trait " + $tname + s" with parsed fields [${fields.mkString(",")}] needed a type hint but none was found (ambiguous)", $in))
-                )
-              ${ Match('{ className }.asTerm, matchCases).asExprOf[T] }
-          }
-        }
-      }.asExprOf[T]
-     */
+    '{
+      if $in.isNull then null
+      else ${ Match('{ $in.peekObjectStart }.asTerm, caseDefs).asExprOf[T] }
+    }.asExprOf[T]
 
   def generateReaderBodyForScalaClass[T: Type](
       ctx: CodecBuildContext,
@@ -300,12 +217,12 @@ object Helpers:
 
 //    println(s"^^ Class ${classRef.name} field ${parentField.map(_.name).getOrElse("unknown")}")
     val xmlClassNameE = Expr(
-      classRef.annotations
-        .get("co.blocke.scalajack.xmlLabel")
-        .flatMap(_.get("name"))
-        .getOrElse(
-          lastPart(classRef.name)
+      parentField
+        .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+        .orElse(
+          classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
         )
+        .getOrElse(lastPart(classRef.name))
     )
 
     val parseLogicBody = '{
@@ -319,12 +236,12 @@ object Helpers:
             ${
               Match(
                 '{ maybeFieldNum }.asTerm,
-                caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
+                caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue(fieldName) }.asTerm)
               ).asExprOf[Any]
             }
             if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
             maybeField = $in.expectObjectField
-          case None => $in.skipValue()
+          case None => throw new ParseError("Unexpected XML element or end-of-document encountered")
         }
     }
 
@@ -343,18 +260,20 @@ object Helpers:
         }.asTerm
       else
         '{
-          val attrs = $in.expectObjectStart($xmlClassNameE)
-          // TODO: process attributes
-          $parseLogicBody
-
-          if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
-          if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
+          if $in.isNull then null
           else
-            throw new ParseError(
-              "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-                java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+            val attrs = $in.expectObjectStart($xmlClassNameE)
+            // TODO: process attributes
+            $parseLogicBody
+
+            if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
+            if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
+            else
+              throw new ParseError(
+                "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
+                  java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+                )
               )
-            )
         }.asTerm
 
     Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]
@@ -405,9 +324,6 @@ object Helpers:
           )
     }
 
-    val constructorCases = constructorCaseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
-    val nonConstructorCases = nonCtorCases :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
-
     val instantiateExpr = ConstructorBuilder
       .buildClassInstantiationExpr(ctx, TypeRepr.of[T], idents)
       .asExprOf[T]
@@ -419,12 +335,12 @@ object Helpers:
       '{ $ctorFieldNamesExpr(java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)) }
 
     val xmlClassNameE = Expr(
-      classRef.annotations
-        .get("co.blocke.scalajack.xmlLabel")
-        .flatMap(_.get("name"))
-        .getOrElse(
-          lastPart(classRef.name)
+      parentField
+        .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+        .orElse(
+          classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
         )
+        .getOrElse(lastPart(classRef.name))
     )
 
     val parseLogicBody =
@@ -437,52 +353,53 @@ object Helpers:
               val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
               if maybeFieldNum >= 0 && maybeFieldNum < ${ Expr(classRef.fields.size) } && !isInstantiated then
                 ${
-                  Match('{ maybeFieldNum }.asTerm, constructorCases).asExprOf[Any]
+                  Match(
+                    '{ maybeFieldNum }.asTerm,
+                    constructorCaseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue(fieldName) }.asTerm)
+                  ).asExprOf[Any]
                 }
+                if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
               else if maybeFieldNum >= 0 && maybeFieldNum < ${ Expr(classRef.fields.size) } && isInstantiated then throw new ParseError("XML elements are ordered. Constructor fields must precede non-constructor fields in order.")
-              else if maybeFieldNum < 0 then $in.skipValue() // unknown field ignored
+              else if maybeFieldNum < 0 then $in.skipValue(fieldName) // unknown field ignored
               else
                 if !isInstantiated then
                   if ($reqRefExpr & $requiredMaskExpr) == 0 then
                     ${ Assign(Ref(instanceSym), instantiateExpr.asTerm).asExprOf[Unit] }
                     isInstantiated = true
                   else throw new ParseError("Missing required field(s) " + $missingFieldExpr)
+//                println("Non CTOR Match " + maybeFieldNum)
                 ${
-                  Match('{ maybeFieldNum }.asTerm, nonConstructorCases).asExprOf[Any]
+                  Match(
+                    '{ maybeFieldNum }.asTerm,
+                    nonCtorCases :+ CaseDef(Wildcard(), None, '{ $in.skipValue(fieldName) }.asTerm)
+                  ).asExprOf[Any]
                 }
+                if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
             case None =>
-              $in.skipValue()
+              throw new ParseError("Unexpected XML element or end-of-document encountered")
           }
           maybeField = $in.expectObjectField
-        ${ Ref(instanceSym).asExprOf[T] }
+
+        if !isInstantiated then
+          if ($reqRefExpr & $requiredMaskExpr) == 0 then ${ Assign(Ref(instanceSym), instantiateExpr.asTerm).asExprOf[Unit] }
+          else throw new ParseError("Missing required field(s) " + $missingFieldExpr)
       }
 
     val parseLogic: Term =
       if isStruct then
         '{
           $parseLogicBody
-          if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
-          else
-            throw new ParseError(
-              "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-                java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
-              )
-            )
+          ${ Ref(instanceSym).asExprOf[T] }
         }.asTerm
       else
         '{
-          val attrs = $in.expectObjectStart($xmlClassNameE)
-          // TODO: process attributes
-          $parseLogicBody
-
-          if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
-          if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
+          if $in.isNull then null
           else
-            throw new ParseError(
-              "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-                java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
-              )
-            )
+            val attrs = $in.expectObjectStart($xmlClassNameE)
+            // TODO: process attributes
+            $parseLogicBody
+            if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
+            ${ Ref(instanceSym).asExprOf[T] }
         }.asTerm
 
     Block(
@@ -490,14 +407,15 @@ object Helpers:
       parseLogic
     ).asExprOf[T]
 
-/*
   def generateReaderBodyForJavaClass[T: Type](
-                                               ctx: CodecBuildContext,
-                                               cfg: SJConfig,
-                                               methodKey: TypedName,
-                                               classRef: JavaClassRef[?],
-                                               in: Expr[XmlSource]
-                                             ): Expr[T] =
+      ctx: CodecBuildContext,
+      cfg: SJConfig,
+      methodKey: TypedName,
+      classRef: JavaClassRef[?],
+      in: Expr[XmlSource],
+      parentField: Option[FieldInfoRef],
+      isStruct: Boolean
+  ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -525,28 +443,65 @@ object Helpers:
                 // Call the setter for this field here...
                 Apply(
                   Select.unique(Ref(instanceSym), ncf.asInstanceOf[NonConstructorFieldInfoRef].setterLabel),
-                  List(Reader.genReadVal[u](ctx, cfg, ncf.fieldRef.asInstanceOf[RTypeRef[u]], in).asTerm)
+                  List(Reader.genReadVal[u](ctx, cfg, ncf.fieldRef.asInstanceOf[RTypeRef[u]], in, parentField = parentField, isStruct = isStruct).asTerm)
                 ).asExpr.asTerm
               )
-        ) :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm) // skip values of unrecognized fields
+        )
 
-        val parseLoop =
+        val xmlClassNameE = Expr(
+          parentField
+            .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+            .orElse(
+              classRef.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
+            )
+            .getOrElse(lastPart(classRef.name))
+        )
+
+        val parseLogicBody =
           '{
-            var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
-            if maybeFieldNum == null then null
-            else
-              ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[b] }.asTerm).asExprOf[Any] } // _instance = (new instance)
-              while maybeFieldNum.isDefined do
-                ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
-                maybeFieldNum = $in.expectObjectField($matrixRef)
+            var maybeField = $in.expectObjectField
+            while maybeField.isDefined do
+              maybeField match {
+                case Some((fieldName, fieldAttrs)) =>
+                  val maybeFieldNum = $in.identifyFieldNum(fieldName, $matrixRef)
+                  if maybeFieldNum >= 0 && maybeFieldNum < ${ Expr(classRef.fields.size) } then
+                    ${
+                      Match(
+                        '{ maybeFieldNum }.asTerm,
+                        caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue(fieldName) }.asTerm)
+                      ).asExprOf[Any]
+                    }
+                    if ! $in.expectObjectEnd(fieldName) then throw new ParseError("Element close for label " + fieldName + " not found.")
+                  else $in.skipValue(fieldName) // unknown field ignored
+                case None =>
+                  throw new ParseError("Unexpected XML element or end-of-document encountered")
+              }
+              maybeField = $in.expectObjectField
+          }
 
+        val parseLogic: Term =
+          if isStruct then
+            '{
+              ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[b] }.asTerm).asExprOf[Any] } // _instance = (new instance)
+              $parseLogicBody
               ${ Ref(instanceSym).asExprOf[Any] }
-          }.asTerm
+            }.asTerm
+          else
+            '{
+              if $in.isNull then null
+              else
+                ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[b] }.asTerm).asExprOf[Any] } // _instance = (new instance)
+                val attrs = $in.expectObjectStart($xmlClassNameE)
+                // TODO: process attributes
+                $parseLogicBody
+                if ! $in.expectObjectEnd($xmlClassNameE) then throw new ParseError("Element close for label " + $xmlClassNameE + " not found.")
+                ${ Ref(instanceSym).asExprOf[Any] }
+            }.asTerm
+
         Block(
           List(
             fieldMatrixVal,
             ValDef(instanceSym, Some('{ null }.asTerm))
           ),
-          parseLoop
+          parseLogic
         ).asExprOf[T]
- */

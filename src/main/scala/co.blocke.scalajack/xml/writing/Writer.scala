@@ -71,7 +71,6 @@ object Writer:
       r: RTypeRef[?],
       aE: Expr[T],
       out: Expr[XmlOutput],
-      emitDiscriminator: Expr[Boolean], // caller must pass this default ==> '{ false },
       inTuple: Boolean = false,
       isMapKey: Boolean = false,
       isStruct: Boolean = false,
@@ -94,46 +93,27 @@ object Writer:
                   else $out.emitValue($in.getClass.getName.split('.').last.stripSuffix("$"))
                 }
               else
-                val unique = Unique.findUniqueWithExcluded(t)
                 val cases = t.sealedChildren.map { child =>
                   child.refType match
                     case '[c] =>
-                      // Figure out if class fields are unique: If t.uniqueFields(hash) has length 1 and that 1 is this subtype
-                      val renderHint: Expr[Boolean] =
-                        if !cfg._preferTypeHints then
-                          child match {
-                            case sr: ScalaClassRef[c] =>
-                              Expr(unique.needsTypeHint(sr.fields.map(_.name)))
-                            case sr: TraitRef[c] =>
-                              val fingerprintByClass = unique.fingerprintByClass // Classname->Option[Fingerprint]
-                              val liftedFingerprintByClass = liftStringOptionMap(fingerprintByClass)
-                              '{
-                                val classFingerprint: Option[String] = $liftedFingerprintByClass($aE.getClass.getName)
-                                classFingerprint.isEmpty // no fingerprint = needs hint
-                              }.asExprOf[Boolean]
-                            case _ => '{ true }
-                          }
-                        else '{ true }
                       val subtype = TypeRepr.of[c]
                       val sym = Symbol.newBind(Symbol.spliceOwner, "t", Flags.EmptyFlags, subtype)
                       CaseDef(
                         Bind(sym, Typed(Wildcard(), Inferred(subtype))),
                         None,
-                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, renderHint, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField).asTerm
+                        genEncFnBody[c](ctx, cfg, child, Ref(sym).asExprOf[c], out, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField).asTerm
                       )
                 } :+ CaseDef(Literal(NullConstant()), None, '{ $out.burpNull() }.asTerm)
                 Match(in.asTerm, cases).asExprOf[Unit]
             }
 
           // We don't use makeWriteFn here because a value class is basically just a "box" around a simple type
-          /*
           case t: ScalaClassRef[?] if t.isValueClass =>
             val theField = t.fields.head.fieldRef
             theField.refType match
               case '[e] =>
                 val fieldValue = Select.unique(aE.asTerm, t.fields.head.name).asExprOf[e]
-                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey)
-           */
+                genWriteVal(ctx, cfg, fieldValue, theField.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, isMapKey = isMapKey, '{ () }, '{ () }, parentField)
 
           case t: ScalaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
@@ -163,26 +143,15 @@ object Writer:
                 // Unlike JSON, we don't worry about type hints here. The actual type is emitted in the XML label for the object, so it becomes the hint!
               }.asExprOf[Unit]
 
-              val className =
-                if isStruct then
-                  val n = t.annotations
-                    .get("co.blocke.scalajack.xmlLabel")
-                    .flatMap(_.get("name"))
-                    .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
-                    .getOrElse(lastPart(t.name))
-//                  println(s"Class ${t.name} resolved: $n")
-                  Expr(
-                    n
+              val className = Expr(
+                parentField
+                  .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+                  .orElse(
+                    t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
                   )
-                else
-                  val n = t.annotations
-                    .get("co.blocke.scalajack.xmlLabel")
-                    .flatMap(_.get("name"))
-                    .getOrElse(lastPart(t.name))
-//                  println(s"Non-Struct Class ${t.name} resolved: $n")
-                  Expr(
-                    n
-                  )
+                  .getOrElse(lastPart(t.name))
+              )
+              //                  println(s"Class ${t.name} resolved: $n")
 
               if !t.isCaseClass && cfg._writeNonConstructorFields then
                 val eachField = t.nonConstructorFields.map { f =>
@@ -213,7 +182,6 @@ object Writer:
                 }
             }
 
-          /*
           case t: JavaClassRef[?] =>
             makeWriteFnSymbol(ctx, methodKey)
             makeWriteFn[b](ctx, methodKey, aE.asInstanceOf[Expr[b]], out) { (in, out) =>
@@ -223,37 +191,59 @@ object Writer:
                   val tin = in.asExprOf[b]
                   var fieldRefs = t.fields.asInstanceOf[List[NonConstructorFieldInfoRef]]
                   val sref = ReflectOnType[String](ctx.quotes)(TypeRepr.of[String])(using scala.collection.mutable.Map.empty[TypedName, Boolean])
-                  val className = Expr(t.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")).getOrElse(t.name))
+                  val className =
+                    if isStruct then
+                      val n = t.annotations
+                        .get("co.blocke.scalajack.xmlLabel")
+                        .flatMap(_.get("name"))
+                        .orElse(parentField.flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))))
+                        .getOrElse(lastPart(t.name))
+                      //                  println(s"Class ${t.name} resolved: $n")
+                      Expr(n)
+                    else
+                      val n = t.annotations
+                        .get("co.blocke.scalajack.xmlLabel")
+                        .flatMap(_.get("name"))
+                        .getOrElse(lastPart(t.name))
+                      //                  println(s"Non-Struct Class ${t.name} resolved: $n")
+                      Expr(n)
+
+                  val zippedFields = fieldRefs.map(f => (f, f.getterLabel))
+                  val fieldExprs: List[Expr[Unit]] = zippedFields.map { (ref, methodName) =>
+                    ref.fieldRef.refType match
+                      case '[e] =>
+                        val entryLabel = ref.annotations.get("co.blocke.scalajack.xmlEntryLabel").flatMap(_.get("name"))
+                        val isStruct = ref.annotations.contains("co.blocke.scalajack.xmlStruct")
+                        val getterExpr = Expr(methodName)
+                        '{
+                          val m = $tin.getClass.getMethod($getterExpr)
+                          m.setAccessible(true)
+                          val fieldValue = m.invoke($tin).asInstanceOf[e]
+                          ${
+                            MaybeWrite.maybeWriteField[e](
+                              ctx,
+                              cfg,
+                              ref,
+                              '{
+                                fieldValue
+                              },
+                              ref.fieldRef.asInstanceOf[RTypeRef[e]],
+                              out,
+                              entryLabel,
+                              isStruct
+                            )
+                          }
+                        }
+                  }
+                  val body: Expr[Unit] = fieldExprs.reduce((a, b) => '{ $a; $b })
                   '{
-                    if $tin == null then $out.burpNull()
+                    if $in == null then $out.burpNull()
                     else
                       $out.startElement($className)
-                      val rt = $rtype
-                      rt.fields.foreach { f =>
-                        val field = f.asInstanceOf[NonConstructorFieldInfo]
-                        val m = $tin.getClass.getMethod(field.getterLabel)
-                        m.setAccessible(true)
-                        val fieldValue = m.invoke($tin)
-                        val fieldName = field.annotations.get("co.blocke.scalajack.jsLabel").flatMap(_.get("name")).getOrElse(f.name)
-                        ${
-                          val ref = fieldRefs.head
-                          fieldRefs = fieldRefs.tail
-                          ref.fieldRef.refType match
-                            case '[e] =>
-                              MaybeWrite.maybeWriteField[e](
-                                ctx,
-                                cfg,
-                                "", // TBD <- Should be fieldName but its at the wrong level!
-                                '{ fieldValue.asInstanceOf[e] },
-                                ref.fieldRef.asInstanceOf[RTypeRef[e]],
-                                out
-                              )
-                        }
-                      }
+                      $body
                       $out.endElement($className)
                   }
             }
-           */
 
           case t: TraitRef[?] => throw XmlUnsupportedType("Non-sealed traits are not supported")
 
@@ -302,11 +292,7 @@ object Writer:
           case t: FloatRef =>
             '{ $out.emitValue(${ aE.asExprOf[Float] }.toString) }
           case t: IntRef =>
-            '{
-              $prefix
-              $out.emitValue(${ aE.asExprOf[Int] }.toString)
-              $postfix
-            }
+            '{ $out.emitValue(${ aE.asExprOf[Int] }.toString) }
           case t: LongRef =>
             '{ $out.emitValue(${ aE.asExprOf[Long] }.toString) }
           case t: ShortRef =>
@@ -408,7 +394,7 @@ object Writer:
               case '[e] =>
                 val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Seq[e]] else aE.asExprOf[Seq[e]]
                 val entryLabelE = entryLabel.map(e => Expr(e))
-                val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for StringRef"))
+                val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for SeqRef"))
                 val labelE = Expr(f.name)
 
                 // If entryLabel not defined then we use "naked" lists: no wrapping...just repeating elements named w/fieldName
@@ -440,28 +426,56 @@ object Writer:
                     else
                       $prefix
                       $tin.foreach { i =>
-                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, pprefix, ppostfix, parentField) }
+                        $pprefix
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField) }
+                        $ppostfix
+                      }
+                      $postfix
+                  }
+
+          case t: SetRef[?] =>
+            t.elementRef.refType match
+              case '[e] =>
+                val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Set[e]] else aE.asExprOf[Set[e]]
+                val entryLabelE = entryLabel.map(e => Expr(e))
+                val f = parentField.getOrElse(throw new ParseError("Required parentField is empty for SeqRef"))
+                val labelE = Expr(f.name)
+                val pprefix =
+                  if entryLabel.isDefined then
+                    '{
+                      $out.startElement(${ entryLabelE.get })
+                    }
+                  else '{ () }
+                val ppostfix =
+                  if entryLabel.isDefined then
+                    '{
+                      $out.endElement(${ entryLabelE.get })
+                    }
+                  else '{ () }
+                if isStruct then
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else if $tin.isEmpty then $out.emptyElement($labelE)
+                    else
+                      $tin.foreach { i =>
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField, isStruct = isStruct) }
+                      }
+                  }
+                else
+                  '{
+                    if $tin == null then $out.burpNull()
+                    else if $tin.isEmpty then $out.emptyElement($labelE)
+                    else
+                      $prefix
+                      $tin.foreach { i =>
+                        $pprefix
+                        ${ genWriteVal(ctx, cfg, '{ i }, t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple, false, '{ () }, '{ () }, parentField) }
+                        $ppostfix
                       }
                       $postfix
                   }
 
           /*
-          case t: SetRef[?] =>
-            t.elementRef.refType match
-              case '[e] =>
-                val tin = if t.isMutable then aE.asExprOf[scala.collection.mutable.Set[e]] else aE.asExprOf[Set[e]]
-                val label = collectionLabel.getOrElse(throw new XmlTypeError("Set collection label not supplied"))
-                val labelE = Expr(label)
-                '{
-                  if $tin == null then $out.burpNull()
-                  else
-                    $out.startElement($labelE)
-                    $tin.foreach { i =>
-                      ${ genWriteVal(ctx, cfg, '{ i }.asExprOf[e], t.elementRef.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple) }
-                    }
-                    $out.endElement($labelE)
-                }
-
           // These are here because Enums and their various flavors can be Map keys
           // (EnumRef handles: Scala 3 enum, Scala 2 Enumeration, Java Enumeration)
           case t: EnumRef[?] =>
@@ -781,7 +795,7 @@ object Writer:
               case None =>
                 '{
                   $prefix
-                  ${ genEncFnBody(ctx, cfg, ref, aE, out, '{ false }, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField, isStruct = isStruct) }
+                  ${ genEncFnBody(ctx, cfg, ref, aE, out, inTuple = inTuple, isMapKey = isMapKey, parentField = parentField, isStruct = isStruct) }
                   $postfix
                 }
             }

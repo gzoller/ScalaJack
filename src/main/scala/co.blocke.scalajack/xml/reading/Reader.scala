@@ -55,7 +55,6 @@ object Reader:
         case Some(userOverride) => '{ ${ userOverride }.decodeValue($in) }
         case None =>
           ref match
-            /*
             case t: Sealable if t.isSealed && t.childrenAreObject =>
               makeReadFnSym[T](methodKey)
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
@@ -68,7 +67,6 @@ object Reader:
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
-             */
 
             case t: Sealable if t.isSealed && !t.childrenAreObject =>
               makeReadFnSym[T](methodKey)
@@ -83,7 +81,9 @@ object Reader:
                   ctx,
                   cfg,
                   t,
-                  inExpr
+                  inExpr,
+                  parentField,
+                  isStruct
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
@@ -104,21 +104,21 @@ object Reader:
               }
               registerReaderDef(methodKey, bodyExprMaker)
 
-            /*
             case t: JavaClassRef[?] =>
               makeReadFnSym[T](methodKey)
               val bodyExprMaker: Tree => Expr[T] = { (inParam: Tree) =>
-                val inExpr = Ref(inParam.symbol).asExprOf[JsonSource]
+                val inExpr = Ref(inParam.symbol).asExprOf[XmlSource]
                 Helpers.generateReaderBodyForJavaClass[T](
                   ctx,
                   cfg,
                   methodKey,
                   t,
-                  inExpr
+                  inExpr,
+                  parentField,
+                  isStruct
                 )
               }
               registerReaderDef(methodKey, bodyExprMaker)
-             */
 
             case t: TraitRef[?] =>
               throw UnsupportedType("Non-sealed traits are not supported")
@@ -145,6 +145,44 @@ object Reader:
 
       // Always apply the function
       Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
+
+    def getMode(rtypeRef: RTypeRef[?]): (Expr[InputMode], Expr[String]) =
+      val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
+      (entryLabel, isStruct) match {
+        case (None, false) =>
+          rtypeRef match {
+            case c: ClassRef[?] =>
+              val elementLabel =
+                c.annotations
+                  .get("co.blocke.scalajack.xmlLabel")
+                  .flatMap(_.get("name"))
+                  .orElse(
+                    f.annotations
+                      .get("co.blocke.scalajack.xmlLabel")
+                      .flatMap(_.get("name"))
+                  )
+                  .getOrElse(lastPart(c.name))
+              (Expr(InputMode.NAKED), Expr(elementLabel))
+            case _ => throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
+          }
+        case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
+        case (_, true) =>
+          rtypeRef match {
+            case c: ClassRef[?] =>
+              val elementLabel =
+                c.annotations
+                  .get("co.blocke.scalajack.xmlLabel")
+                  .flatMap(_.get("name"))
+                  .orElse(
+                    f.annotations
+                      .get("co.blocke.scalajack.xmlLabel")
+                      .flatMap(_.get("name"))
+                  )
+                  .getOrElse(lastPart(c.name))
+              (Expr(InputMode.STRUCT), Expr(elementLabel))
+            case _ => throw new ParseError(s"Field ${f.name} marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
+          }
+      }
 
     // ---------------------------
 
@@ -202,156 +240,67 @@ object Reader:
           $in.expectSimpleValue().getOrElse("")
         }.asExprOf[T]
 
-      /*
       case t: JBigDecimalRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => new java.math.BigDecimal(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => new java.math.BigDecimal(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(s => new java.math.BigDecimal(s)).getOrElse(null)
+        }.asExprOf[T]
       case t: JBigIntegerRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => new java.math.BigInteger(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => new java.math.BigInteger(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(s => new java.math.BigInteger(s)).getOrElse(null)
+        }.asExprOf[T]
       case t: JBooleanRef =>
-        if isMapKey then '{ java.lang.Boolean.valueOf($in.expectString()) }.asExprOf[T]
-        else '{ $in.expectJavaBoolean() }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(s => java.lang.Boolean.valueOf(s)).getOrElse(throw new ParseError("Booleans cannot be null"))
+        }.asExprOf[T]
       case t: JByteRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Byte.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Byte.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Byte.valueOf(n)).getOrElse(throw new ParseError("Bytes cannot be null"))
+        }.asExprOf[T]
       case t: JCharacterRef =>
         '{
-          val c = $in.expectString()
-          if c == null then null
-          else if c.length == 0 then
-            $in.backspace()
-            $in.backspace()
-            throw JsonParseError("Character value expected but empty string found in json", $in)
-          else java.lang.Character.valueOf(c.charAt(0))
+          $in.expectSimpleValue() match {
+            case Some("null") => throw ParseError("Char value cannot be null")
+            case Some("")     => throw ParseError("Char value expected but empty string found in xml")
+            case None         => throw ParseError("Char value cannot be null")
+            case Some(c)      => java.lang.Character.valueOf(c.charAt(0))
+          }
         }.asExprOf[T]
       case t: JDoubleRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Double.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Double.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Double.valueOf(n)).getOrElse(throw new ParseError("Doubles cannot be null"))
+        }.asExprOf[T]
       case t: JFloatRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Float.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Float.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Float.valueOf(n)).getOrElse(throw new ParseError("Floats cannot be null"))
+        }.asExprOf[T]
       case t: JIntegerRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Integer.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Integer.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Integer.valueOf(n)).getOrElse(throw new ParseError("Ints cannot be null"))
+        }.asExprOf[T]
       case t: JLongRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Long.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Long.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Long.valueOf(n)).getOrElse(throw new ParseError("Longs cannot be null"))
+        }.asExprOf[T]
       case t: JShortRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n    => java.lang.Short.valueOf(n)
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n    => java.lang.Short.valueOf(n)
-          }.asExprOf[T]
+        '{
+          $in.expectSimpleValue().map(n => java.lang.Short.valueOf(n)).getOrElse(throw new ParseError("Shorts cannot be null"))
+        }.asExprOf[T]
       case t: JNumberRef =>
-        if isMapKey then
-          '{
-            $in.expectString() match
-              case null => null
-              case n =>
-                scala.math.BigDecimal(n) match {
-                  case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
-                  case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
-                  case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
-                  case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
-                  case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
-                  case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                  case d                      => d
-                }
-          }.asExprOf[T]
-        else
-          '{
-            $in.expectNumberOrNull() match
-              case null => null
-              case n =>
-                scala.math.BigDecimal(n) match {
-                  case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
-                  case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
-                  case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
-                  case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
-                  case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
-                  case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
-                  case d                      => d
-                }
-          }.asExprOf[T]
-       */
+        '{
+          $in.expectSimpleValue().map {
+            case null => null
+            case n =>
+              scala.math.BigDecimal(n) match {
+                case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
+                case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
+                case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
+                case d if d.isValidLong     => java.lang.Long.valueOf(d.toLongExact)
+                case d if d.isDecimalFloat  => java.lang.Float.valueOf(d.toFloat)
+                case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
+                case d                      => d
+              }
+          }
+        }.asExprOf[T]
 
       /*
       case t: DurationRef       => '{ $in.expectStringWithFn(java.time.Duration.parse) }.asExprOf[T]
@@ -409,21 +358,21 @@ object Reader:
                 else ${ ofOption[e](Some(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, parentField, entryLabel).asExprOf[e])) }
               }.asExprOf[T]
 
-      /*
       case t: JavaOptionalRef[?] =>
         t.optionParamType.refType match
           case '[e] =>
             if cfg.noneAsNull || inTuple then
               '{
-                if $in.expectNull() then java.util.Optional.empty
-                else java.util.Optional.of(${ genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in).asExprOf[e] })
+                if $in.nextIsEmpty then java.util.Optional.empty
+                else java.util.Optional.of(${ genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, parentField, entryLabel).asExprOf[e] })
               }.asExprOf[T]
             else
               '{
-                if $in.expectNull() then null
-                else ${ ofOptional[e](java.util.Optional.of(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in).asExprOf[e])) }
+                if $in.nextIsEmpty then null
+                else ${ ofOptional[e](java.util.Optional.of(genReadVal[e](ctx, cfg, t.optionParamType.asInstanceOf[RTypeRef[e]], in, inTuple, isMapKey, parentField, entryLabel).asExprOf[e])) }
               }.asExprOf[T]
 
+      /*
       case t: LeftRightRef[?] if t.lrkind == LRKind.EITHER =>
         import quotes.reflect.*
         t.leftRef.refType match
@@ -607,56 +556,20 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
-                val (modeE, entryLabelE) = (entryLabel, isStruct) match {
-                  case (None, false) =>
-                    rtypeRef match {
-                      case c: ClassRef[?] =>
-                        val elementLabel =
-                          c.annotations
-                            .get("co.blocke.scalajack.xmlLabel")
-                            .flatMap(_.get("name"))
-                            .orElse(
-                              f.annotations
-                                .get("co.blocke.scalajack.xmlLabel")
-                                .flatMap(_.get("name"))
-                            )
-                            .getOrElse(lastPart(c.name))
-                        (Expr(InputMode.NAKED), Expr(elementLabel))
-                      case _ => throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
-                    }
-                  case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
-                  case (_, true) =>
-                    rtypeRef match {
-                      case c: ClassRef[?] =>
-                        val elementLabel =
-                          c.annotations
-                            .get("co.blocke.scalajack.xmlLabel")
-                            .flatMap(_.get("name"))
-                            .orElse(
-                              f.annotations
-                                .get("co.blocke.scalajack.xmlLabel")
-                                .flatMap(_.get("name"))
-                            )
-                            .getOrElse(lastPart(c.name))
-                        (Expr(InputMode.STRUCT), Expr(elementLabel))
-                      case _ => throw new ParseError(s"Field ${f.name} marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
-                    }
-                }
+                val (modeE, entryLabelE) = getMode(rtypeRef)
 //                println("           Seq gen for rtype " + rtypeRef.name + " isStruct? " + isStruct)
                 '{
                   val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toList
                   else null
                 }.asExprOf[T]
-
-      /*
           case '[Vector[?]] =>
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val (modeE, entryLabelE) = getMode(rtypeRef)
                 '{
-                  val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toVector
                   else null
                 }.asExprOf[T]
@@ -664,8 +577,9 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val (modeE, entryLabelE) = getMode(rtypeRef)
                 '{
-                  val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toIndexedSeq
                   else null
                 }.asExprOf[T]
@@ -673,8 +587,9 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val (modeE, entryLabelE) = getMode(rtypeRef)
                 '{
-                  val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.toSeq
                   else null
                 }.asExprOf[T]
@@ -683,12 +598,12 @@ object Reader:
             t.elementRef.refType match
               case '[e] =>
                 val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                val (modeE, entryLabelE) = getMode(rtypeRef)
                 '{
-                  val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
+                  val parsedArray = $in.expectArray[e]($entryLabelE, () => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple, false, parentField, entryLabel, isStruct).asExprOf[e] }, $modeE)
                   if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
                   else null
                 }.asExprOf[T]
-       */
 
       /*
       case t: IterableRef[?] =>
@@ -1210,6 +1125,7 @@ object Reader:
                   throw JsonParseError("Unsuccessful attempt to read Try type with failure: " + t.getMessage, $in)
               }
             }.asExprOf[T]
+       */
 
       // --------------------
       //  Value Class...
@@ -1222,9 +1138,10 @@ object Reader:
               case '[f] =>
                 val tpe = TypeRepr.of[e]
                 val constructor = Select(New(Inferred(tpe)), tpe.classSymbol.get.primaryConstructor)
-                val arg = genReadVal[f](ctx, cfg, theField.asInstanceOf[RTypeRef[f]], in, isMapKey = isMapKey).asTerm
+                val arg = genReadVal[f](ctx, cfg, theField.asInstanceOf[RTypeRef[f]], in, inTuple, isMapKey, parentField, entryLabel, isStruct).asTerm
                 Apply(constructor, List(arg)).asExprOf[T]
 
+      /*
       // --------------------
       //  NeoType...
       // --------------------

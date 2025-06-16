@@ -57,6 +57,15 @@ case class XmlSource(rawXML: String):
           attrMap
     else throw new ParseError(s"Expected start element $label but there were no more elements to be read.")
 
+  def peekObjectStart: String =
+    skipWS()
+    if xmlEventSrc.peek().isStartDocument then xmlEventSrc.nextEvent() // skip
+    if xmlEventSrc.hasNext then
+      val e = xmlEventSrc.peek()
+      if !e.isStartElement then throw new ParseError(s"Expected some start element but the next element wasn't a start element.")
+      else e.asStartElement.getName.getLocalPart
+    else throw new ParseError(s"Expected some start element but there were no more elements to be read.")
+
   def nextIsEmpty: Boolean =
     val ahead = xmlEventSrc.peek()
     ahead == null || ahead.isEndElement
@@ -69,16 +78,8 @@ case class XmlSource(rawXML: String):
     found
 
   inline def skipWS() =
-    var skippedWS = false
-    while !skippedWS do
-      xmlEventSrc.peek() match {
-        case p if p.isCharacters && p.asCharacters.isWhiteSpace =>
-          xmlEventSrc.nextEvent()
-        case p if p.isStartElement =>
-          skippedWS = true
-        case p =>
-          skippedWS = true
-      }
+    val n = xmlEventSrc.peek()
+    if n.isCharacters && n.asCharacters.isWhiteSpace then xmlEventSrc.nextEvent()
 
   def expectObjectField: Option[(String, Map[String, String])] =
     skipWS()
@@ -90,6 +91,7 @@ case class XmlSource(rawXML: String):
 //      println(">>> Read field label " + label)
       val attrs = se.getAttributes.asScala.map(_.asInstanceOf[Attribute]).toList
       val attrMap = attrs.map(a => a.getName.getLocalPart -> a.getValue).toMap
+//      println("Object Field Found: " + label)
       Some((label, attrMap))
 
   def expectSimpleValue(): Option[String] = // <foo>simple value</foo>
@@ -97,8 +99,9 @@ case class XmlSource(rawXML: String):
     if ahead == null || !ahead.isCharacters then None
     else Some(xmlEventSrc.nextEvent().asCharacters().getData)
 
-  def skipValue(): Unit =
-    if xmlEventSrc.hasNext then xmlEventSrc.nextEvent() // skip Characters event
+  def skipValue(endLabel: String): Unit =
+    while xmlEventSrc.hasNext && !isEndMatch(xmlEventSrc.peek(), endLabel) do xmlEventSrc.nextEvent() // skip Characters event
+    if xmlEventSrc.hasNext then xmlEventSrc.nextEvent() // skip end element
 
   def identifyFieldNum(nameFound: String, fieldNameMatrix: StringMatrix): Int = // returns index of field name or -1 if not found
     var fi: Int = 0
@@ -125,15 +128,15 @@ case class XmlSource(rawXML: String):
     val seq = scala.collection.mutable.ListBuffer.empty[E]
     var done = false
 
-    println(">>> Expecting array with label " + entryLabel + " naked? " + mode)
+//    println(">>> Expecting array with label " + entryLabel + " naked? " + mode)
 
     while !done do
       mode match {
         case InputMode.NORMAL => // consume start element for entryLabel
-          if isStartMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
+          if isStartMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent() // skip entry wrapper
           else done = true
         case InputMode.NAKED => // don't consume entryLabel element
-          println("HERE: " + showElement(xmlEventSrc.peek()))
+//          println("HERE: " + showElement(xmlEventSrc.peek()))
           if !isStartMatch(xmlEventSrc.peek(), entryLabel) then done = true
         case _ =>
       }
@@ -141,9 +144,9 @@ case class XmlSource(rawXML: String):
       if !done then
         // Read list item
         skipWS()
-        println("begin parsing thingy: " + xmlEventSrc.peek().asStartElement().getName.getLocalPart)
+//        println("begin parsing thingy: " + xmlEventSrc.peek().asStartElement().getName.getLocalPart)
         seq.append(f())
-        println("MID: " + seq)
+//        println("MID: " + seq)
         skipWS()
 
         // Process end element
@@ -167,9 +170,16 @@ case class XmlSource(rawXML: String):
           case _ => // end already consumed for other cases
         }
 
-    println("FINSIHED: " + seq)
+//    println("FINSIHED: " + seq)
 //    println("Next up: " + showElement(xmlEventSrc.peek()))
     seq
+
+  def isNull: Boolean =
+    val p = xmlEventSrc.peek()
+    if p.isCharacters && p.asCharacters.getData == "null" then
+      xmlEventSrc.nextEvent() // skip null
+      true
+    else false
 
   private def peekNextAfterWS(i: Int): XMLEvent =
     xmlEventSrc.peek(i) match {
@@ -179,7 +189,9 @@ case class XmlSource(rawXML: String):
 
   private def showElement(e: XMLEvent): String =
     e match {
-      case y if e.isStartElement => "Start::" + e.asStartElement.getName.getLocalPart
-      case y if e.isEndElement   => "End::" + e.asEndElement.getName.getLocalPart
-      case _                     => "unknown"
+      case y if e.isStartElement  => "Start::" + e.asStartElement.getName.getLocalPart
+      case y if e.isEndElement    => "End::" + e.asEndElement.getName.getLocalPart
+      case y if e.isCharacters    => "Characters::" + e.asCharacters.getData
+      case y if e.isStartDocument => "Start Document"
+      case _                      => "unknown"
     }

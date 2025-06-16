@@ -51,7 +51,7 @@ lazy val root = project
     Test / parallelExecution := false,
     scalafmtOnCompile := !isCI,
     libraryDependencies ++= Seq(
-      "co.blocke"            %% "scala-reflection"     % "2.0.14",
+      "co.blocke"            %% "scala-reflection"     % "2.0.16",
       "org.apache.commons"   % "commons-text"          % "1.13.1",
       "io.github.kitlangton" %% "neotype"              % "0.3.23",
       "com.fasterxml.woodstox" % "woodstox-core"       % "7.1.1",
