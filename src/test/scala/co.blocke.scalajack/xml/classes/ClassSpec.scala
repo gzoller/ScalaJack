@@ -161,18 +161,19 @@ class ClassSpec() extends AnyFunSpec:
       //      js should matchJson("""{"name":"Bob","duration":34}""")
       //      sj.fromJson(js) shouldEqual (inst)
     }
+     */
 
     it("works") {
+//      println(foo)
       val sj = sjXmlCodecOf[Invoice810]
       val x = sj.fromXml(foo)
 //      println(x)
       val sj2 = sjCodecOf[Invoice810]
       val js = sj2.toJson(x)
       println("-------------")
-      println(js)
+//      println(js)
 //      println(x.toX12)
     }
-     */
   }
 
   val foo = """<_DOC>

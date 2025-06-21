@@ -34,5 +34,5 @@ object XmlCodecMaker:
       codecDef
     ).asExprOf[XmlCodec[T]]
 
-//    if ref.name.contains("AbstractClassHolder") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("Outer") then println(s"Codec: ${codec.show}")
     codec

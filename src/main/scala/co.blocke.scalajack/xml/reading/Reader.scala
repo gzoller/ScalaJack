@@ -9,6 +9,7 @@ import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
 import shared.CodecBuildContext
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import co.blocke.scala_reflection.reflect.ReflectOnType
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
 import co.blocke.scalajack
 
@@ -146,7 +147,7 @@ object Reader:
       // Always apply the function
       Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
 
-    def getMode(rtypeRef: RTypeRef[?]): (Expr[InputMode], Expr[String]) =
+    def getMode(rtypeRef: RTypeRef[?]): (Expr[InputMode], Expr[List[String]]) =
       val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
       (entryLabel, isStruct) match {
         case (None, false) =>
@@ -162,10 +163,59 @@ object Reader:
                       .flatMap(_.get("name"))
                   )
                   .getOrElse(lastPart(c.name))
-              (Expr(InputMode.NAKED), Expr(elementLabel))
-            case _ => throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
+              (Expr(InputMode.NAKED), Expr(List(elementLabel)))
+            case c: Sealable =>
+//              val elementLabel =
+//                c.annotations
+//                  .get("co.blocke.scalajack.xmlLabel")
+//                  .flatMap(_.get("name"))
+//                  .orElse(
+//                    f.annotations
+//                      .get("co.blocke.scalajack.xmlLabel")
+//                      .flatMap(_.get("name"))
+//                  )
+//                  .getOrElse(lastPart(c.name))
+              val labels = c.sealedChildren.map(child => Helpers.sealedChildName(child.asInstanceOf[Sealable], parentField): String)
+              (Expr(InputMode.NAKED), Expr(labels)) // GWZ
+            case c: SelfRefRef[?] =>
+              c.refType match {
+                case '[f] =>
+                  ReflectOnType[f](ctx.quotes)(TypeRepr.of[f], true)(using ctx.seenBefore) match {
+                    case d: ClassRef[?] =>
+                      val elementLabel =
+                        d.annotations
+                          .get("co.blocke.scalajack.xmlLabel")
+                          .flatMap(_.get("name"))
+                          .orElse(
+                            f.annotations
+                              .get("co.blocke.scalajack.xmlLabel")
+                              .flatMap(_.get("name"))
+                          )
+                          .getOrElse(lastPart(c.name))
+                      (Expr(InputMode.NAKED), Expr(List(elementLabel)))
+                    case d: Sealable =>
+//                      val elementLabel =
+//                        d.annotations
+//                          .get("co.blocke.scalajack.xmlLabel")
+//                          .flatMap(_.get("name"))
+//                          .orElse(
+//                            f.annotations
+//                              .get("co.blocke.scalajack.xmlLabel")
+//                              .flatMap(_.get("name"))
+//                          )
+//                          .getOrElse(lastPart(c.name))
+                      val labels = d.sealedChildren.map(child => Helpers.sealedChildName(child.asInstanceOf[Sealable], parentField): String)
+                      (Expr(InputMode.NAKED), Expr(labels))
+                  }
+                case x =>
+                  println("THERE: " + x.getClass.getName)
+                  throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
+              }
+            case x =>
+              println("HERE: " + x.getClass.getName)
+              throw new ParseError(s"Field ${f.name} is a primitive value--requires @xmlEntryLabel")
           }
-        case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(e))
+        case (Some(e), false) => (Expr(InputMode.NORMAL), Expr(List(e)))
         case (_, true) =>
           rtypeRef match {
             case c: ClassRef[?] =>
@@ -179,7 +229,7 @@ object Reader:
                       .flatMap(_.get("name"))
                   )
                   .getOrElse(lastPart(c.name))
-              (Expr(InputMode.STRUCT), Expr(elementLabel))
+              (Expr(InputMode.STRUCT), Expr(List(elementLabel)))
             case _ => throw new ParseError(s"Field ${f.name} marked with @xmlStruct that is not a class type--requires @xmlEntryLabel")
           }
       }

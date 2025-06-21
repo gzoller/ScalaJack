@@ -113,10 +113,14 @@ case class XmlSource(rawXML: String):
     bs = fieldNameMatrix.exact(bs, fi)
     fieldNameMatrix.first(bs)
 
-  private inline def isStartMatch(e: XMLEvent, tag: String): Boolean =
-    e != null && e.isStartElement && e.asStartElement().getName.getLocalPart == tag
+  private inline def isStartMatch(e: XMLEvent, tags: List[String]): Option[String] =
+    if e != null && e.isStartElement then tags.find(_ == e.asStartElement().getName.getLocalPart)
+    else None
   private inline def isEndMatch(e: XMLEvent, tag: String): Boolean =
     e != null && e.isEndElement && e.asEndElement().getName.getLocalPart == tag
+  private inline def isEndMatch(e: XMLEvent): Option[String] =
+    if e != null && e.isEndElement then Some(e.asEndElement().getName.getLocalPart)
+    else None
 
   // For naked arrays (unwrapped) the first start element has already been consumed, and we must specifically
   // leave the last end element unread.
@@ -124,21 +128,34 @@ case class XmlSource(rawXML: String):
   // 1. Entries wrapped with entryLabel tags + NORMAL -> consume entryLabel and parse object with f()
   // 2. Entries wrapped with entryLabel tags + NAKED -> don't consume entryLabel: parse object with f() (entryLabel part of the object)
   // 3. Entries wrapped with entryLabel tags + STRUCT -> presume entry label already consumed
-  def expectArray[E](entryLabel: String, f: () => E, mode: InputMode): scala.collection.mutable.ListBuffer[E] =
+  def expectArray[E](entryLabels: List[String], f: () => E, mode: InputMode): scala.collection.mutable.ListBuffer[E] =
     val seq = scala.collection.mutable.ListBuffer.empty[E]
     var done = false
 
-//    println(">>> Expecting array with label " + entryLabel + " naked? " + mode)
+//    println(">>> Expecting array with label " + entryLabels + " naked? " + mode)
 
     while !done do
-      mode match {
+      skipWS()
+      val endLabel = mode match {
         case InputMode.NORMAL => // consume start element for entryLabel
-          if isStartMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent() // skip entry wrapper
-          else done = true
+          isStartMatch(xmlEventSrc.peek(), entryLabels) match {
+            case Some(e) =>
+              xmlEventSrc.nextEvent() // skip entry wrapper
+              e
+            case None =>
+              done = true
+              ""
+          }
         case InputMode.NAKED => // don't consume entryLabel element
-//          println("HERE: " + showElement(xmlEventSrc.peek()))
-          if !isStartMatch(xmlEventSrc.peek(), entryLabel) then done = true
+          isStartMatch(xmlEventSrc.peek(), entryLabels) match {
+            case Some(e) =>
+              e
+            case None =>
+              done = true
+              ""
+          }
         case _ =>
+          "" // alreadh consumed entryLabel before calling expectArray for Struct mode
       }
 
       if !done then
@@ -153,20 +170,24 @@ case class XmlSource(rawXML: String):
 //        println("Array element read over... next: " + xmlEventSrc.peek().getClass.getName)
         mode match {
           case InputMode.NORMAL => // consume end element for entryLabel
-            if isEndMatch(xmlEventSrc.peek(), entryLabel) then xmlEventSrc.nextEvent()
-            else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
+            if isEndMatch(xmlEventSrc.peek(), endLabel) then xmlEventSrc.nextEvent()
+            else throw new ParseError("Expeced required end element for " + endLabel + " not found")
           case InputMode.STRUCT => // consume end element for entryLabel
 //            println("---$$$ " + showElement(xmlEventSrc.peek()))
-            if isEndMatch(xmlEventSrc.peek(), entryLabel) then
-              skipWS()
-//              println("---$$$2 " + showElement(xmlEventSrc.peek(1)))
-              if isStartMatch(peekNextAfterWS(1), entryLabel) then
-                xmlEventSrc.nextEvent() // consume end element
+            isEndMatch(xmlEventSrc.peek()) match {
+              case Some(e) if entryLabels.contains(e) =>
+//                println("Found Struct end: " + e)
                 skipWS()
-                xmlEventSrc.nextEvent()
-//                println("---$$$3 " + showElement(xmlEventSrc.peek()))
-              else done = true
-            else throw new ParseError("Expeced required end element for " + entryLabel + " not found")
+                //              println("---$$$2 " + showElement(xmlEventSrc.peek(1)))
+                val lookAhead = peekNextAfterWS(1)
+                if isStartMatch(lookAhead, entryLabels).isDefined then
+                  xmlEventSrc.nextEvent() // consume end element
+                  skipWS()
+                  xmlEventSrc.nextEvent()
+                //                println("---$$$3 " + showElement(xmlEventSrc.peek()))
+                else done = true
+              case _ => throw new ParseError("Expeced required end element for " + endLabel + " not found")
+            }
           case _ => // end already consumed for other cases
         }
 

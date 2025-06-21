@@ -133,7 +133,7 @@ case class MachineHolder2(m1: Machine2, m2: Machine2, m3: Machine2)
 sealed trait Level0
 case class L0A(x: Int, name: Option[String], y: Boolean) extends Level0
 case class L0B(name: Option[String], id: String, blather: Option[String]) extends Level0
-case class L0C(id: Option[Int], extra: List[Int]) extends Level0
+case class L0C(id: Option[Int], @xmlEntryLabel("locItem") extra: List[Int]) extends Level0
 
 sealed trait Level1
 case class L1R(blather: String, name: Option[String], l0: Level0) extends Level1

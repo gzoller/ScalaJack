@@ -120,6 +120,14 @@ object Helpers:
       }
     }.asExprOf[T]
 
+  def sealedChildName(childRef: Sealable, parentField: Option[FieldInfoRef]): String =
+    parentField
+      .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
+      .orElse(
+        childRef.asInstanceOf[Sealable].annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
+      )
+      .getOrElse(lastPart(childRef.name))
+
   def generateReaderBodyForSealedTraits[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
@@ -131,7 +139,6 @@ object Helpers:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    val hintLabelE = Expr(cfg.typeHintLabel)
     val xmlClassNameE = Expr(
       parentField
         .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
@@ -142,13 +149,7 @@ object Helpers:
     )
 
     val caseDefs = traitRef.sealedChildren.map { childRef =>
-      val childLabel =
-        parentField
-          .flatMap(_.annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name")))
-          .orElse(
-            childRef.asInstanceOf[Sealable].annotations.get("co.blocke.scalajack.xmlLabel").flatMap(_.get("name"))
-          )
-          .getOrElse(lastPart(childRef.name))
+      val childLabel = sealedChildName(childRef.asInstanceOf[Sealable], parentField)
       val methodKey = childRef.typedName
       CaseDef(
         Literal(StringConstant(childLabel)),
@@ -161,7 +162,6 @@ object Helpers:
           .get
       )
     }
-    val traitE = Expr(traitRef.name)
 
     '{
       if $in.isNull then null
