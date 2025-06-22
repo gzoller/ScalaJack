@@ -147,6 +147,24 @@ object Reader:
       // Always apply the function
       Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
 
+    def parseSimpleType(typeName: Expr[String], parse: Expr[String] => Expr[T], canBeNull: Expr[Boolean] = Expr(true)): Expr[T] =
+      '{
+        val raw = $in.expectSimpleValue()
+        raw match
+          case Some("null") =>
+            if $canBeNull then null.asInstanceOf[T]
+            else throw new ParseError($typeName + " not allowed to have a null value")
+          case Some(s) if $canBeNull && s == "" =>
+            throw new ParseError($typeName + " does not allow empty \"\" values")
+          case Some(s) =>
+            try ${ parse('s) }
+            catch
+              case e: Exception =>
+                throw new ParseError("Can't parse " + $typeName + ": '" + s + "'")
+          case None =>
+            throw new ParseError("Expected a value for " + $typeName + " but found nothing")
+      }.asExprOf[T]
+
     def getMode(rtypeRef: RTypeRef[?]): (Expr[InputMode], Expr[List[String]]) =
       val f = parentField.getOrElse(throw new ParseError("Required parent field not supplied for SeqRef"))
       (entryLabel, isStruct) match {
@@ -240,107 +258,48 @@ object Reader:
     ref match
 
       // First cover all primitive and simple types...
-      case t: BigDecimalRef =>
-        '{
-          $in.expectSimpleValue().map(s => scala.math.BigDecimal(s)).getOrElse(null)
-        }.asExprOf[T]
-      case t: BigIntRef =>
-        '{
-          $in.expectSimpleValue().map(s => scala.math.BigInt(s)).getOrElse(null)
-        }.asExprOf[T]
-      case t: BooleanRef =>
-        '{
-          $in.expectSimpleValue().map(_.toBoolean).getOrElse(throw new ParseError("Booleans cannot be null"))
-        }.asExprOf[T]
-      case t: ByteRef =>
-        '{
-          $in.expectSimpleValue().map(_.toInt.toByte).getOrElse(throw new ParseError("Bytes cannot be null"))
-        }.asExprOf[T]
-      case t: CharRef =>
-        '{
-          $in.expectSimpleValue() match {
-            case Some("null") => throw ParseError("Char value cannot be null")
-            case Some("")     => throw ParseError("Char value expected but empty string found in xml")
-            case None         => throw ParseError("Char value cannot be null")
-            case Some(c)      => c.charAt(0)
-          }
-        }.asExprOf[T]
-      case t: DoubleRef =>
-        '{
-          $in.expectSimpleValue().map(_.toDouble).getOrElse(throw new ParseError("Doubles cannot be null"))
-        }.asExprOf[T]
-      case t: FloatRef =>
-        '{
-          $in.expectSimpleValue().map(_.toFloat).getOrElse(throw new ParseError("Floats cannot be null"))
-        }.asExprOf[T]
-      case t: IntRef =>
-        '{
-          $in.expectSimpleValue().map(_.toInt).getOrElse(throw new ParseError("Ints cannot be null"))
-        }.asExprOf[T]
-      case t: LongRef =>
-        '{
-          $in.expectSimpleValue().map(_.toLong).getOrElse(throw new ParseError("Longs cannot be null"))
-        }.asExprOf[T]
-      case t: ShortRef =>
-        '{
-          $in.expectSimpleValue().map(_.toShort).getOrElse(throw new ParseError("Shorts cannot be null"))
-        }.asExprOf[T]
+      case t: BigDecimalRef => parseSimpleType(Expr("BigDecimal (Scala)"), s => '{ scala.math.BigDecimal($s) })
+      case t: BigIntRef     => parseSimpleType(Expr("BigInt (Scala)"), s => '{ scala.math.BigInt($s) })
+      case t: BooleanRef    => parseSimpleType(Expr("Boolean"), s => '{ $s.toBoolean }, Expr(false))
+      case t: ByteRef       => parseSimpleType(Expr("Byte"), s => '{ $s.toByte }, Expr(false))
+      case t: CharRef       => parseSimpleType(Expr("Char"), s => '{ $s.charAt(0) }, Expr(false))
+      case t: DoubleRef     => parseSimpleType(Expr("Double"), s => '{ $s.toDouble }, Expr(false))
+      case t: FloatRef      => parseSimpleType(Expr("Float"), s => '{ $s.toFloat }, Expr(false))
+      case t: IntRef        => parseSimpleType(Expr("Int"), s => '{ $s.toInt }, Expr(false))
+      case t: LongRef       => parseSimpleType(Expr("Long"), s => '{ $s.toLong }, Expr(false))
+      case t: ShortRef      => parseSimpleType(Expr("Short"), s => '{ $s.toShort }, Expr(false))
       case t: StringRef =>
         '{
-          $in.expectSimpleValue().getOrElse("")
-        }.asExprOf[T]
-
-      case t: JBigDecimalRef =>
-        '{
-          $in.expectSimpleValue().map(s => new java.math.BigDecimal(s)).getOrElse(null)
-        }.asExprOf[T]
-      case t: JBigIntegerRef =>
-        '{
-          $in.expectSimpleValue().map(s => new java.math.BigInteger(s)).getOrElse(null)
-        }.asExprOf[T]
-      case t: JBooleanRef =>
-        '{
-          $in.expectSimpleValue().map(s => java.lang.Boolean.valueOf(s)).getOrElse(throw new ParseError("Booleans cannot be null"))
-        }.asExprOf[T]
-      case t: JByteRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Byte.valueOf(n)).getOrElse(throw new ParseError("Bytes cannot be null"))
-        }.asExprOf[T]
-      case t: JCharacterRef =>
-        '{
-          $in.expectSimpleValue() match {
-            case Some("null") => throw ParseError("Char value cannot be null")
-            case Some("")     => throw ParseError("Char value expected but empty string found in xml")
-            case None         => throw ParseError("Char value cannot be null")
-            case Some(c)      => java.lang.Character.valueOf(c.charAt(0))
+          $in.expectSimpleValue().getOrElse("") match {
+            case "null" => null.asInstanceOf[T]
+            case s      => s
           }
         }.asExprOf[T]
-      case t: JDoubleRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Double.valueOf(n)).getOrElse(throw new ParseError("Doubles cannot be null"))
-        }.asExprOf[T]
-      case t: JFloatRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Float.valueOf(n)).getOrElse(throw new ParseError("Floats cannot be null"))
-        }.asExprOf[T]
-      case t: JIntegerRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Integer.valueOf(n)).getOrElse(throw new ParseError("Ints cannot be null"))
-        }.asExprOf[T]
-      case t: JLongRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Long.valueOf(n)).getOrElse(throw new ParseError("Longs cannot be null"))
-        }.asExprOf[T]
-      case t: JShortRef =>
-        '{
-          $in.expectSimpleValue().map(n => java.lang.Short.valueOf(n)).getOrElse(throw new ParseError("Shorts cannot be null"))
-        }.asExprOf[T]
+
+      case t: JBigDecimalRef => parseSimpleType(Expr("BigDecimal (Java)"), s => '{ new java.math.BigDecimal($s) })
+      case t: JBigIntegerRef => parseSimpleType(Expr("BigInteger (Java)"), s => '{ new java.math.BigInteger($s) })
+      case t: JBooleanRef    => parseSimpleType(Expr("Boolean (Java)"), s => '{ java.lang.Boolean.valueOf($s) })
+      case t: JByteRef       => parseSimpleType(Expr("Byte (Java)"), s => '{ java.lang.Byte.valueOf($s) })
+      case t: JCharacterRef =>
+        parseSimpleType(
+          Expr("Char (Java)"),
+          s =>
+            '{
+              if $s == "" then throw new ParseError("Char (Java) does not allow empty \"\" values")
+              else java.lang.Character.valueOf($s.charAt(0))
+            }
+        )
+      case t: JDoubleRef  => parseSimpleType(Expr("Double (Java)"), s => '{ java.lang.Double.valueOf($s) })
+      case t: JFloatRef   => parseSimpleType(Expr("Float (Java)"), s => '{ java.lang.Float.valueOf($s) })
+      case t: JIntegerRef => parseSimpleType(Expr("Integer (Java)"), s => '{ java.lang.Integer.valueOf($s) })
+      case t: JLongRef    => parseSimpleType(Expr("Long (Java)"), s => '{ java.lang.Long.valueOf($s) })
+      case t: JShortRef   => parseSimpleType(Expr("Short (Java)"), s => '{ java.lang.Short.valueOf($s) })
       case t: JNumberRef =>
-        '{
-          $in.expectSimpleValue().map {
-            case null => null
-            case n =>
-              scala.math.BigDecimal(n) match {
+        parseSimpleType(
+          Expr("Number (Java)"),
+          s =>
+            '{
+              scala.math.BigDecimal($s) match {
                 case d if d.isValidByte     => java.lang.Byte.valueOf(d.toByteExact)
                 case d if d.isValidShort    => java.lang.Short.valueOf(d.toShortExact)
                 case d if d.isValidInt      => java.lang.Integer.valueOf(d.toIntExact)
@@ -349,29 +308,27 @@ object Reader:
                 case d if d.isDecimalDouble => java.lang.Double.valueOf(d.toDouble)
                 case d                      => d
               }
-          }
-        }.asExprOf[T]
+            }
+        )
 
-      /*
-      case t: DurationRef       => '{ $in.expectStringWithFn(java.time.Duration.parse) }.asExprOf[T]
-      case t: InstantRef        => '{ $in.expectStringWithFn(java.time.Instant.parse) }.asExprOf[T]
-      case t: LocalDateRef      => '{ $in.expectStringWithFn(java.time.LocalDate.parse) }.asExprOf[T]
-      case t: LocalDateTimeRef  => '{ $in.expectStringWithFn(java.time.LocalDateTime.parse) }.asExprOf[T]
-      case t: LocalTimeRef      => '{ $in.expectStringWithFn(java.time.LocalTime.parse) }.asExprOf[T]
-      case t: MonthDayRef       => '{ $in.expectStringWithFn(java.time.MonthDay.parse) }.asExprOf[T]
-      case t: OffsetDateTimeRef => '{ $in.expectStringWithFn(java.time.OffsetDateTime.parse) }.asExprOf[T]
-      case t: OffsetTimeRef     => '{ $in.expectStringWithFn(java.time.OffsetTime.parse) }.asExprOf[T]
-      case t: PeriodRef         => '{ $in.expectStringWithFn(java.time.Period.parse) }.asExprOf[T]
-      case t: YearRef           => '{ $in.expectStringWithFn(java.time.Year.parse) }.asExprOf[T]
-      case t: YearMonthRef      => '{ $in.expectStringWithFn(java.time.YearMonth.parse) }.asExprOf[T]
-      case t: ZonedDateTimeRef  => '{ $in.expectStringWithFn(java.time.ZonedDateTime.parse) }.asExprOf[T]
-      case t: ZoneIdRef         => '{ $in.expectStringWithFn(java.time.ZoneId.of) }.asExprOf[T]
-      case t: ZoneOffsetRef     => '{ $in.expectStringWithFn(java.time.ZoneOffset.of) }.asExprOf[T]
+      case t: DurationRef       => parseSimpleType(Expr("Duration"), s => '{ java.time.Duration.parse($s) })
+      case t: InstantRef        => parseSimpleType(Expr("Instant"), s => '{ java.time.Instant.parse($s) })
+      case t: LocalDateRef      => parseSimpleType(Expr("LocalDate"), s => '{ java.time.LocalDate.parse($s) })
+      case t: LocalDateTimeRef  => parseSimpleType(Expr("LocalDateTime"), s => '{ java.time.LocalDateTime.parse($s) })
+      case t: LocalTimeRef      => parseSimpleType(Expr("LocalTime"), s => '{ java.time.LocalTime.parse($s) })
+      case t: MonthDayRef       => parseSimpleType(Expr("MonthDay"), s => '{ java.time.MonthDay.parse($s) })
+      case t: OffsetDateTimeRef => parseSimpleType(Expr("OffsetDateTime"), s => '{ java.time.OffsetDateTime.parse($s) })
+      case t: OffsetTimeRef     => parseSimpleType(Expr("OffsetTime"), s => '{ java.time.OffsetTime.parse($s) })
+      case t: PeriodRef         => parseSimpleType(Expr("Period"), s => '{ java.time.Period.parse($s) })
+      case t: YearRef           => parseSimpleType(Expr("Year"), s => '{ java.time.Year.parse($s) })
+      case t: YearMonthRef      => parseSimpleType(Expr("YearMonth"), s => '{ java.time.YearMonth.parse($s) })
+      case t: ZonedDateTimeRef  => parseSimpleType(Expr("ZonedDateTime"), s => '{ java.time.ZonedDateTime.parse($s) })
+      case t: ZoneIdRef         => parseSimpleType(Expr("ZoneId"), s => '{ java.time.ZoneId.of($s) })
+      case t: ZoneOffsetRef     => parseSimpleType(Expr("ZoneOffset"), s => '{ java.time.ZoneOffset.of($s) })
 
-      case t: URLRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s).toURL) }.asExprOf[T]
-      case t: URIRef  => '{ $in.expectStringWithFn((s: String) => new java.net.URI(s)) }.asExprOf[T]
-      case t: UUIDRef => '{ $in.expectStringWithFn(java.util.UUID.fromString) }.asExprOf[T]
-       */
+      case t: URLRef  => parseSimpleType(Expr("URL"), s => '{ new java.net.URI($s).toURL })
+      case t: URIRef  => parseSimpleType(Expr("URI"), s => '{ new java.net.URI($s) })
+      case t: UUIDRef => parseSimpleType(Expr("UUID"), s => '{ java.util.UUID.fromString($s) })
 
       case t: AliasRef[?] =>
         t.unwrappedType.refType match

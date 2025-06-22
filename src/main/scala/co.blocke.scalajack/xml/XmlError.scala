@@ -9,8 +9,8 @@ class XmlUnsupportedType(msg: String) extends Throwable(msg) with NoStackTrace
 class XmlEitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
 //class JsonIllegalCharacterError(msg: String) extends Throwable(msg) with NoStackTrace
 
-class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
-  val show: String = ""
+//class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
+//  val show: String = ""
 
 // Thrown at compile-time only!
 case class XmlTypeError(override val msg: String) extends ParseError(msg) with NoStackTrace:

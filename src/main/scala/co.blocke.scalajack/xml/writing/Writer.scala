@@ -278,9 +278,17 @@ object Writer:
         ref match
           // First cover all primitive and simple types...
           case t: BigDecimalRef =>
-            '{ $out.emitValue(${ aE.asExprOf[scala.math.BigDecimal] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[scala.math.BigDecimal] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: BigIntRef =>
-            '{ $out.emitValue(${ aE.asExprOf[scala.math.BigInt] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[scala.math.BigInt] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: BooleanRef =>
             '{ $out.emitValue(${ aE.asExprOf[Boolean] }.toString) }
           case t: ByteRef =>
@@ -308,46 +316,90 @@ object Writer:
             }
 
           case t: JBigDecimalRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.math.BigDecimal] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.math.BigDecimal] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JBigIntegerRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.math.BigInteger] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.math.BigInteger] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JBooleanRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Boolean] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Boolean] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JByteRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Byte] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Byte] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JCharacterRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Character] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Character] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JDoubleRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Double] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Double] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JFloatRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Float] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Float] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JIntegerRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Integer] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Integer] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JLongRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Long] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Long] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JShortRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Short] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Short] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
           case t: JNumberRef =>
-            '{ $out.emitValue(${ aE.asExprOf[java.lang.Number] }.toString) }
+            '{
+              val value = ${ aE.asExprOf[java.lang.Number] }
+              if value == null then $out.emitValue("null")
+              else $out.emitValue(value.toString)
+            }
 
-          case t: DurationRef       => '{ $out.emitValue(${ aE.asExprOf[java.time.Duration] }.toString) }
-          case t: InstantRef        => '{ $out.emitValue(${ aE.asExprOf[java.time.Instant] }.toString) }
-          case t: LocalDateRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalDate] }.toString) }
-          case t: LocalDateTimeRef  => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalDateTime] }.toString) }
-          case t: LocalTimeRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.LocalTime] }.toString) }
-          case t: MonthDayRef       => '{ $out.emitValue(${ aE.asExprOf[java.time.MonthDay] }.toString) }
-          case t: OffsetDateTimeRef => '{ $out.emitValue(${ aE.asExprOf[java.time.OffsetDateTime] }.toString) }
-          case t: OffsetTimeRef     => '{ $out.emitValue(${ aE.asExprOf[java.time.OffsetTime] }.toString) }
-          case t: PeriodRef         => '{ $out.emitValue(${ aE.asExprOf[java.time.Period] }.toString) }
-          case t: YearRef           => '{ $out.emitValue(${ aE.asExprOf[java.time.Year] }.toString) }
-          case t: YearMonthRef      => '{ $out.emitValue(${ aE.asExprOf[java.time.YearMonth] }.toString) }
-          case t: ZonedDateTimeRef  => '{ $out.emitValue(${ aE.asExprOf[java.time.ZonedDateTime] }.toString) }
-          case t: ZoneIdRef         => '{ $out.emitValue(${ aE.asExprOf[java.time.ZoneId] }.toString) }
-          case t: ZoneOffsetRef     => '{ $out.emitValue(${ aE.asExprOf[java.time.ZoneOffset] }.toString) }
+          case t: DurationRef       => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.Duration] }).map(_.toString).getOrElse("null")) }
+          case t: InstantRef        => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.Instant] }).map(_.toString).getOrElse("null")) }
+          case t: LocalDateRef      => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.LocalDate] }).map(_.toString).getOrElse("null")) }
+          case t: LocalDateTimeRef  => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.LocalDateTime] }).map(_.toString).getOrElse("null")) }
+          case t: LocalTimeRef      => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.LocalTime] }).map(_.toString).getOrElse("null")) }
+          case t: MonthDayRef       => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.MonthDay] }).map(_.toString).getOrElse("null")) }
+          case t: OffsetDateTimeRef => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.OffsetDateTime] }).map(_.toString).getOrElse("null")) }
+          case t: OffsetTimeRef     => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.OffsetTime] }).map(_.toString).getOrElse("null")) }
+          case t: PeriodRef         => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.Period] }).map(_.toString).getOrElse("null")) }
+          case t: YearRef           => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.Year] }).map(_.toString).getOrElse("null")) }
+          case t: YearMonthRef      => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.YearMonth] }).map(_.toString).getOrElse("null")) }
+          case t: ZonedDateTimeRef  => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.ZonedDateTime] }).map(_.toString).getOrElse("null")) }
+          case t: ZoneIdRef         => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.ZoneId] }).map(_.toString).getOrElse("null")) }
+          case t: ZoneOffsetRef     => '{ $out.emitValue(Option(${ aE.asExprOf[java.time.ZoneOffset] }).map(_.toString).getOrElse("null")) }
 
-          case t: URLRef       => '{ $out.emitValue(${ aE.asExprOf[java.net.URL] }.toString) }
-          case t: URIRef       => '{ $out.emitValue(${ aE.asExprOf[java.net.URI] }.toString) }
-          case t: UUIDRef      => '{ $out.emitValue(${ aE.asExprOf[java.util.UUID] }.toString) }
+          case t: URLRef       => '{ $out.emitValue(Option(${ aE.asExprOf[java.net.URL] }).map(_.toString).getOrElse("null")) }
+          case t: URIRef       => '{ $out.emitValue(Option(${ aE.asExprOf[java.net.URI] }).map(_.toString).getOrElse("null")) }
+          case t: UUIDRef      => '{ $out.emitValue(Option(${ aE.asExprOf[java.util.UUID] }).map(_.toString).getOrElse("null")) }
           case t: ObjectRef[?] => '{ $out.emitValue(${ Expr(t.name) }) }
 
           /*

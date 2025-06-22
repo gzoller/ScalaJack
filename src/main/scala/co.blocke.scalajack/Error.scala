@@ -11,7 +11,7 @@ class EitherLeftError(msg: String) extends Throwable(msg) with NoStackTrace
 class IllegalCharacterError(msg: String) extends Throwable(msg) with NoStackTrace
 
 class ParseError(val msg: String) extends Throwable(msg) with NoStackTrace:
-  val show: String = ""
+  val show: String = msg
 
 // Thrown at compile-time only!
 case class TypeError(override val msg: String) extends ParseError(msg) with NoStackTrace:

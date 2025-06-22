@@ -51,6 +51,7 @@ class XmlOutput():
       internal.backspace()
       internal.append("/>")
       justClosed = true
+    else if v == null then internal.append("null")
     else internal.append(v)
 
   // For elements w/attributes
