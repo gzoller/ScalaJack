@@ -35,5 +35,5 @@ object JsonCodecMaker:
       codecDef
     ).asExprOf[JsonCodec[T]]
 
-//    if ref.name.contains("Outer") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("VehicleHolder") then println(s"Codec: ${codec.show}")
     codec

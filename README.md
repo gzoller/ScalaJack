@@ -82,6 +82,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Parameterized Classes](doc/parameterized.md)
 * [Trait Type Hint Customization](doc/typeHint.md)
 * [Null and None treatment](doc/nullAndNone.md)
+* [Raw JSON Support](doc/raw.md)
 * [NeoType Support](doc/neotype.md)
 * [Union type](doc/union.md)
 * [Custom Codecs (overrides)](doc/customCodec.md)

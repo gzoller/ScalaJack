@@ -64,3 +64,6 @@ def testValidMapKey(testRef: RTypeRef[?]): Boolean =
     case _                                     => false
   if !isValid then throw new TypeError(s"For JSON or XML serialization, map keys must be a simple type. ${testRef.name} is too complex.")
   isValid
+
+trait JsonDefault[T]:
+  def default: T

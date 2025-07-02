@@ -1,4 +1,5 @@
-package co.blocke.scalajack.shared
+package co.blocke.scalajack
+package shared
 
 import co.blocke.scala_reflection.Language
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
@@ -96,6 +97,14 @@ object FieldDefaultBuilder:
                 requiredMask |= (1L << idx)
                 field.fieldRef.unitVal.asExprOf[f]
             }
+
+          case a: AliasRef[?] =>
+            requiredMask |= (1L << idx)
+            Expr.summon[JsonDefault[f]] match
+              case Some(defaultExpr) =>
+                '{ $defaultExpr.default }.asExprOf[f] // safe Expr[T]
+              case None =>
+                throw new TypeError(s"No default value found for type ${a.name}. Consider providing a given JsonDefault.")
 
           case _ =>
             requiredMask |= (1L << idx)

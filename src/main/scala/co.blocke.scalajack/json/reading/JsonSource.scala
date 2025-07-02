@@ -333,6 +333,12 @@ case class JsonSource(js: CharSequence):
 
       loop(pos)
 
+  def readRawJson(): String =
+    val here = i
+    readToken() // consume first '{'
+    skipObjectValue()
+    js.subSequence(here, i).toString
+
   // Boolean...
   // =======================================================
 

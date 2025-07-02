@@ -208,11 +208,11 @@ case class XmlSource(rawXML: String):
       case e                                                  => e
     }
 
-  private def showElement(e: XMLEvent): String =
-    e match {
-      case y if e.isStartElement  => "Start::" + e.asStartElement.getName.getLocalPart
-      case y if e.isEndElement    => "End::" + e.asEndElement.getName.getLocalPart
-      case y if e.isCharacters    => "Characters::" + e.asCharacters.getData
-      case y if e.isStartDocument => "Start Document"
-      case _                      => "unknown"
-    }
+//  private def showElement(e: XMLEvent): String =
+//    e match {
+//      case y if e.isStartElement  => "Start::" + e.asStartElement.getName.getLocalPart
+//      case y if e.isEndElement    => "End::" + e.asEndElement.getName.getLocalPart
+//      case y if e.isCharacters    => "Characters::" + e.asCharacters.getData
+//      case y if e.isStartDocument => "Start Document"
+//      case _                      => "unknown"
+//    }

@@ -15,7 +15,7 @@ import java.util.UUID
 
 class SimpleSpec() extends AnyFunSpec:
 
-  describe(colorString("-----------------------\n:  Simple Type Tests  :\n-----------------------", Console.YELLOW)) {
+  describe(colorString("-----------------------\n:  Simple Type (XML)  :\n-----------------------", Console.YELLOW)) {
 
     describe(colorString("+++ Positive Tests +++")) {
 

@@ -7,6 +7,8 @@ import co.blocke.scala_reflection.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.*
+import Raw.*
+import Raw.given
 
 import scala.util.*
 import TestUtil.*
@@ -106,6 +108,16 @@ on another level."}""")
       val inst = PhoneHolder("Dude", PhoneNumber(1, 123, 456, 7890))
       val js = sj.toJson(inst)
       js should equal("""{"me":"Dude","phone":"+1 (123) 456-7890"}""")
+      sj.fromJson(js) shouldEqual inst
+    }
+    it("JsonRaw must work") {
+      val sj = sjCodecOf[RawHolder]
+      val payload: JsonRaw = Raw("""{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]}""")
+      val inst = RawHolder("aaa", 3, payload, List(payload, payload))
+      val js = sj.toJson(inst)
+      js should equal(
+        """{"id":"aaa","count":3,"oneBlob":{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]},"items":[{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]},{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]}]}"""
+      )
       sj.fromJson(js) shouldEqual inst
     }
   }

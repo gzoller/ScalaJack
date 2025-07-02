@@ -74,6 +74,12 @@ case class JsonOutput():
     internal.append('"')
     internal.append(':')
 
+  // WARNING: Presumes s is a well-formed JSON string!
+  inline def rawJsonValue(s: String): Unit =
+    maybeComma()
+    internal.append(s)
+    comma = true
+
   // ----------------------- Primitive/Simple type support
 
   inline def value(v: scala.math.BigDecimal): Unit =

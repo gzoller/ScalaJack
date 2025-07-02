@@ -12,7 +12,7 @@ import TestUtil.*
 class TraitSpec() extends AnyFunSpec:
   opaque type phone = String
 
-  describe(colorString("-------------------------------\n:         Trait Tests         :\n-------------------------------", Console.YELLOW)) {
+  describe(colorString("-------------------------------\n:       XML Trait Tests       :\n-------------------------------", Console.YELLOW)) {
     it("Sealed trait with case objects and case classes must work") {
       val inst = TraitHolder(Start, Fish("Beta", false), Miami(101.1), CityRouteImpl(99))
       val sj = sjXmlCodecOf[TraitHolder]
