@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package co.blocke.scalajack
-package internal
+package shared
 
 import scala.util.control.NoStackTrace
 import json.reading.JsonSource

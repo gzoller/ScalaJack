@@ -5,10 +5,10 @@ If you are using ScalaJack with 3rd party JSON you may be in a situation where y
   
 ```scala
 case  class  MapFactor(
-  @Change(name = "foo_bar") fooBar:String,
-  @Change(name = "a_b") thingy: Long,
+  @jsLabel("foo_bar") fooBar:String,
+  @jsLabel("a_b") thingy: Long,
   count: Int,
-  @Change(name = "big_mac") bigMac:String
+  @jsLabel("big_mac") bigMac:String
 )
 ```
 If you serialize an instance of this class to JSON you'd get something like:

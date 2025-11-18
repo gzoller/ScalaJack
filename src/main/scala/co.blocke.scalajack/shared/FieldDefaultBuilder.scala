@@ -1,11 +1,11 @@
 package co.blocke.scalajack
-package json
-package reading
+package shared
+
+import co.blocke.scala_reflection.Language
+import co.blocke.scala_reflection.reflect.rtypeRefs.*
 
 import scala.quoted.*
 import scala.util.Success
-import co.blocke.scala_reflection.Language
-import co.blocke.scala_reflection.reflect.rtypeRefs.*
 
 /*
 	1.	A ValDef for each constructor field (the backing var _fieldname) with an appropriate default value (from Scala’s default param or inferred from the type).
@@ -30,14 +30,14 @@ object FieldDefaultBuilder:
   def generateDefaults[T: Type](
       ctx: CodecBuildContext,
       classRef: ScalaClassRef[?]
-  ): (List[ctx.quotes.reflect.ValDef], List[ctx.quotes.reflect.Term], ctx.quotes.reflect.ValDef, Int, Map[Int, ctx.quotes.reflect.Symbol]) =
+  ): (List[ctx.quotes.reflect.ValDef], List[ctx.quotes.reflect.Term], ctx.quotes.reflect.ValDef, Long, Map[Int, ctx.quotes.reflect.Symbol]) =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
     val tpe = TypeRepr.of[T]
     val classSymbol = tpe.typeSymbol
     val classCompanion = Ref(classSymbol.companionModule)
-    var requiredMask: Int = 0
+    var requiredMask: Long = 0
 
     // Extract type arguments (e.g., for generic classes like Foo[A, B])
     // These are used when applying default value methods that are type-parameterized.
@@ -67,7 +67,7 @@ object FieldDefaultBuilder:
               case None        => ("", Language.Scala)
             }
             if optionRecipe.isEmpty then
-              requiredMask |= (1 << idx)
+              requiredMask |= (1L << idx)
               field.fieldRef.unitVal.asExprOf[f]
             else
               val recipeExpr = Expr(optionRecipe)
@@ -83,7 +83,7 @@ object FieldDefaultBuilder:
               case None        => ("", Language.Scala)
             }
             if optionRecipe.isEmpty then
-              requiredMask |= (1 << idx)
+              requiredMask |= (1L << idx)
               field.fieldRef.unitVal.asExprOf[f]
             else if lang == Language.Scala then '{ None }.asExprOf[f]
             else '{ java.util.Optional.empty.asInstanceOf[f] }
@@ -93,12 +93,20 @@ object FieldDefaultBuilder:
               case Some(Language.Scala) => '{ Success(None) }.asExprOf[f]
               case Some(Language.Java)  => '{ Success(java.util.Optional.empty).asInstanceOf[f] }
               case _ =>
-                requiredMask |= (1 << idx)
+                requiredMask |= (1L << idx)
                 field.fieldRef.unitVal.asExprOf[f]
             }
 
+          case a: AliasRef[?] =>
+            requiredMask |= (1L << idx)
+            Expr.summon[JsonDefault[f]] match
+              case Some(defaultExpr) =>
+                '{ $defaultExpr.default }.asExprOf[f] // safe Expr[T]
+              case None =>
+                throw new TypeError(s"No default value found for type ${a.name}. Consider providing a given JsonDefault.")
+
           case _ =>
-            requiredMask |= (1 << idx)
+            requiredMask |= (1L << idx)
             field.fieldRef.unitVal.asExprOf[f]
       else
         val methodSymbol = dvMembers.head
@@ -106,10 +114,10 @@ object FieldDefaultBuilder:
         val applied = methodSymbol.paramSymss match
           case Nil => dvSelectNoTArgs
           case List(params) if params.exists(_.isTypeParam) =>
-            if typeArgs.isEmpty then throw new JsonTypeError("Expected applied type for: " + tpe.show)
+            if typeArgs.isEmpty then throw new TypeError("Expected applied type for: " + tpe.show)
             TypeApply(dvSelectNoTArgs, typeArgs.map(Inferred(_)))
           case _ =>
-            throw new JsonTypeError(s"Default method for field `${field.name}` has unsupported parameter shape.")
+            throw new TypeError(s"Default method for field `${field.name}` has unsupported parameter shape.")
         applied.asExprOf[f]
 
     // === Generate field symbols and default ValDefs
@@ -125,7 +133,7 @@ object FieldDefaultBuilder:
     }
 
     val (valDefs, idents) = fieldResults.unzip
-    val reqSym = Symbol.newVal(Symbol.spliceOwner, "_req", TypeRepr.of[Int], Flags.Mutable, Symbol.noSymbol)
-    val reqVarDef = ValDef(reqSym, Some(Literal(IntConstant(requiredMask))))
+    val reqSym = Symbol.newVal(Symbol.spliceOwner, "_req", TypeRepr.of[Long], Flags.Mutable, Symbol.noSymbol)
+    val reqVarDef = ValDef(reqSym, Some(Literal(LongConstant(requiredMask))))
 
     (valDefs, idents, reqVarDef, requiredMask, symbolMap.toMap)

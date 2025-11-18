@@ -1,15 +1,14 @@
 package co.blocke.scalajack
-package json
+package xml
 package writing
 
 import co.blocke.scala_reflection.RType
 import co.blocke.scala_reflection.rtypes.*
-import shared.CodecBuildContext
-
 import org.apache.commons.text.StringEscapeUtils
+
 import scala.annotation.tailrec
-import scala.util.*
 import scala.quoted.*
+import scala.util.*
 
 /** Writing an Any-typed value is a hot mess.  You don't know until runtime exactly what the target object will actually
   * be, so all the compile-time macro magic will be useless.  It is 100% runtime, so it will be much slower as well.
@@ -19,45 +18,44 @@ import scala.quoted.*
 
 object AnyWriter:
 
-  def writeAny(cfg: SJConfig, target: Any, out: JsonOutput, inTuple: Boolean = false): Unit =
+  def writeAny(cfg: SJConfig, target: Any, out: XmlOutput, inTuple: Boolean = false): Unit =
     // val rt = RType.of(target.getClass)
     target match
       case null                        => out.burpNull()
-      case v: BigDecimal               => out.value(v)
-      case v: BigInt                   => out.value(v)
-      case v: Boolean                  => out.value(v)
-      case v: Byte                     => out.value(v)
-      case v: Char                     => out.value(v)
-      case v: Double                   => out.value(v)
-      case v: Float                    => out.value(v)
-      case v: Int                      => out.value(v)
-      case v: Long                     => out.value(v)
-      case v: Short                    => out.value(v)
-      case v: String                   => out.value(StringEscapeUtils.escapeJson(v))
-      case v: java.lang.Boolean        => out.value(v)
-      case v: java.lang.Byte           => out.value(v)
-      case v: java.lang.Character      => out.value(v)
-      case v: java.lang.Double         => out.value(v)
-      case v: java.lang.Float          => out.value(v)
-      case v: java.lang.Integer        => out.value(v)
-      case v: java.lang.Long           => out.value(v)
-      case v: java.lang.Short          => out.value(v)
-      case v: java.lang.Number         => out.value(v)
-      case v: java.time.Duration       => out.value(v)
-      case v: java.time.Instant        => out.value(v)
-      case v: java.time.LocalDate      => out.value(v)
-      case v: java.time.LocalDateTime  => out.value(v)
-      case v: java.time.LocalTime      => out.value(v)
-      case v: java.time.MonthDay       => out.value(v)
-      case v: java.time.OffsetDateTime => out.value(v)
-      case v: java.time.OffsetTime     => out.value(v)
-      case v: java.time.Period         => out.value(v)
-      case v: java.time.Year           => out.value(v)
-      case v: java.time.YearMonth      => out.value(v)
-      case v: java.time.ZoneOffset     => out.value(v)
-      case v: java.time.ZonedDateTime  => out.value(v)
-      case v: java.time.ZoneId         => out.value(v)
-      case v: java.util.UUID           => out.value(v)
+      case v: BigDecimal               => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: BigInt                   => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: Boolean                  => out.emitValue(v.toString)
+      case v: Byte                     => out.emitValue(v.toString)
+      case v: Char                     => out.emitValue(v.toString)
+      case v: Double                   => out.emitValue(v.toString)
+      case v: Float                    => out.emitValue(v.toString)
+      case v: Int                      => out.emitValue(v.toString)
+      case v: Long                     => out.emitValue(v.toString)
+      case v: Short                    => out.emitValue(v.toString)
+      case v: String                   => if v == null then out.emitValue("null") else out.emitValue(v)
+      case v: java.lang.Boolean        => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Byte           => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Character      => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Double         => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Float          => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Integer        => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Long           => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Short          => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.lang.Number         => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.Duration       => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.Instant        => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.LocalDate      => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.LocalDateTime  => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.LocalTime      => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.MonthDay       => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.OffsetDateTime => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.OffsetTime     => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.Year           => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.YearMonth      => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.ZoneOffset     => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.ZonedDateTime  => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.time.ZoneId         => if v == null then out.emitValue("null") else out.emitValue(v.toString)
+      case v: java.util.UUID           => if v == null then out.emitValue("null") else out.emitValue(v.toString)
 
       case v: Array[?] =>
         out.startArray()
