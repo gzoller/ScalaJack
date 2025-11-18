@@ -1,6 +1,6 @@
 package co.blocke.scalajack
 
-import scala.quoted.{Expr, Quotes, Type}
+import scala.quoted.Type
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.RTypeRef
 import java.util.Optional

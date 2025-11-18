@@ -26,11 +26,16 @@ case class Person(name: String, age: Int)
 // File2.scala
 import co.blocke.scalajack.*
 
-given sjPerson: ScalaJack[Person] = sjCodecOf[Person] // create a re-usable Person codec
+given sjPerson: ScalaJack[Person] = ScalaJack.sjCodecOf[Person] // create a re-usable Person codec
 ...
 val inst = Person("Mike",34)
 val js = sjPerson.toJson(inst) // """{"name":"Mike","age":34}"""
 sjPerson.fromJson(js) // re-constitutes original Person
+
+// Auto-generates a List[Person] capability
+val people = List(Person("Sally",31),inst)
+val jsList = sjPerson.toJsonList(people) // """{"name":"Sally","age":31},{"name":"Mike","age":34}]"""
+sjPerson.fromJsonList(jsList) // re-constitutes people
 ```
 Couldn't be simpler!
 
@@ -87,10 +92,13 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Union type](doc/union.md)
 * [Custom Codecs (overrides)](doc/customCodec.md)
 * [Gimme Speed!](benchmark/README.md)
-
+s
 ### Notes:
 
-* 8.1.0 -- New!
+* 8.1.1
+    * JSON raw (unparsed json blob) support -- e.g. for payloads
+    * When creating codec for Foo, auto-gen a codec for List[Foo] as well (toJsonList()/fromJsonList())
+* 8.1.0
     * Added ability to have user-provided custom codecs
     * Reduce need for type hints for seal trait classes (set SJConfig.preferTypeHints to force type hints)
     * Self-references work: case class Person(name: String, age: Int, supervisor: Option[Person])

@@ -264,5 +264,19 @@ class SeqSetArraySpec() extends AnyFunSpec with JsonMatchers:
         sj.fromJson(js).a.toList shouldEqual (inst.a.toList)
       }
 
+      it("List[T] must serialize and deserialize using the auto-generated list codec") {
+        val people = List(Person("Bob", 35), Person("Sally", 54))
+        val sj = sjCodecOf[Person]
+        val js = sj.toJsonList(people)
+        js should matchJson(
+          """[
+            |  {"name":"Bob","age":35},
+            |  {"name":"Sally","age":54}
+            |]""".stripMargin
+        )
+        val roundTrip = sj.fromJsonList(js)
+        roundTrip shouldEqual people
+      }
+
     }
   }

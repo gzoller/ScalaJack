@@ -3,7 +3,6 @@ package shared
 
 import co.blocke.scala_reflection.Language
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scalajack.TypeError
 
 import scala.quoted.*
 import scala.util.Success

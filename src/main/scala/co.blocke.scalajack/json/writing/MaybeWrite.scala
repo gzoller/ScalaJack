@@ -203,13 +203,22 @@ object MaybeWrite:
         t.optionParamType.refType match
           case '[e] =>
             val tin = aE.asExprOf[Option[e]]
-            handleOptional[Option, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: Option[e]) => o.isEmpty }, '{ (o: Option[e]) => o.get })
+            handleOptional[Option, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: Option[e]) => o == null || o.isEmpty }, '{ (o: Option[e]) => o.get })
 
       case t: JavaOptionalRef[?] =>
         t.optionParamType.refType match
           case '[e] =>
             val tin = aE.asExprOf[java.util.Optional[e]]
-            handleOptional[java.util.Optional, e](ctx, cfg, prefix, tin, t.optionParamType.asInstanceOf[RTypeRef[e]], out, '{ (o: java.util.Optional[e]) => !o.isPresent }, '{ (o: java.util.Optional[e]) => o.get })
+            handleOptional[java.util.Optional, e](
+              ctx,
+              cfg,
+              prefix,
+              tin,
+              t.optionParamType.asInstanceOf[RTypeRef[e]],
+              out,
+              '{ (o: java.util.Optional[e]) => o == null || !o.isPresent },
+              '{ (o: java.util.Optional[e]) => o.get }
+            )
 
       case t: TryRef[?] =>
         t.tryRef.refType match
