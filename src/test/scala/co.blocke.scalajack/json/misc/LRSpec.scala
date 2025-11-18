@@ -85,7 +85,7 @@ class LRSpec() extends AnyFunSpec with JsonMatchers:
       it("Either with THROW_EXCEPTION left policy must work") {
         val inst = EitherHolder[Int](Left(5), Right(3))
         val caught =
-          intercept[JsonEitherLeftError] {
+          intercept[EitherLeftError] {
             sjCodecOf[EitherHolder[Int]](SJConfig.withEitherLeftHandling(EitherLeftPolicy.THROW_EXCEPTION)).toJson(inst)
           }
         assert(caught.getMessage == "Left Error: 5")

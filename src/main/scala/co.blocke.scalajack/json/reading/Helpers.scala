@@ -5,9 +5,9 @@ package reading
 import scala.quoted.*
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters.*
-
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
 import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import shared.*
 
 sealed trait ReaderEntry
 case class Placeholder() extends ReaderEntry
@@ -245,7 +245,7 @@ object Helpers:
       .buildClassInstantiationExpr(ctx, TypeRepr.of[T], idents)
       .asExprOf[T]
 
-    val reqRefExpr = Ref(reqSym).asExprOf[Int]
+    val reqRefExpr = Ref(reqSym).asExprOf[Long]
     val requiredMaskExpr = Expr(requiredMask)
 
     val parseLogic: Term = '{
@@ -265,7 +265,7 @@ object Helpers:
         else
           throw new JsonParseError(
             "Missing required field(s) " + ${ Expr(classRef.fields.map(_.name)) }(
-              Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
+              java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)
             ),
             $in
           )
@@ -289,7 +289,7 @@ object Helpers:
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
     val reqSym = reqVarDef.symbol
-    val reqRefExpr = Ref(reqSym).asExprOf[Int]
+    val reqRefExpr = Ref(reqSym).asExprOf[Long]
     val requiredMaskExpr = Expr(requiredMask)
 
     val instanceSym = Symbol.newVal(Symbol.spliceOwner, "_instance", TypeRepr.of[T], Flags.Mutable, Symbol.noSymbol)
@@ -328,7 +328,7 @@ object Helpers:
       Expr(classRef.fields.map(_.name))
 
     val missingFieldExpr =
-      '{ $ctorFieldNamesExpr(Integer.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)) }
+      '{ $ctorFieldNamesExpr(java.lang.Long.numberOfTrailingZeros($reqRefExpr & $requiredMaskExpr)) }
 
     val parseLogic: Term =
       '{
@@ -391,7 +391,7 @@ object Helpers:
         tpe.classSymbol.get.companionModule.declaredMethods
           .find(m => m.paramSymss == List(Nil))
           .getOrElse(
-            throw JsonTypeError("ScalaJack only supports Java classes that have a zero-argument constructor")
+            throw TypeError("ScalaJack only supports Java classes that have a zero-argument constructor")
           )
         val caseDefs = classRef.fields.map(ncf =>
           ncf.fieldRef.refType match

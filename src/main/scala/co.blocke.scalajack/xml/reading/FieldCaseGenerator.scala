@@ -1,5 +1,5 @@
 package co.blocke.scalajack
-package json
+package xml
 package reading
 
 import scala.quoted.*
@@ -15,34 +15,41 @@ object FieldCaseGenerator:
       classRef: ScalaClassRef[?],
       reqSym: ctx.quotes.reflect.Symbol,
       fieldSymbols: Map[Int, ctx.quotes.reflect.Symbol],
-      in: Expr[JsonSource]
+      in: Expr[XmlSource]
   ): List[ctx.quotes.reflect.CaseDef] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.* // { Symbol as RSymbol, *, given }
 
+//    println(">>> Gen for " + classRef.name)
     classRef.fields.map { field =>
       field.fieldRef.refType match
         case '[f] =>
           val reqBit = Expr(1L << field.index)
-          val fieldName = Expr(field.name)
+          val resolvedFieldName = changeFieldName(field)
+          val fieldName = Expr(resolvedFieldName)
           val varSym = fieldSymbols(field.index)
           val fieldRef = Ref(varSym)
+          val entryLabel = field.annotations
+            .get("co.blocke.scalajack.xmlEntryLabel")
+            .flatMap(_.get("name"))
+          val isStruct = field.annotations.contains("co.blocke.scalajack.xmlStruct")
+//          println(s"       GEN cases for field $resolvedFieldName, isStruct? $isStruct")
 
           val caseBody = field.fieldRef match {
             case _: OptionRef[?] | _: AnyRef =>
-              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, Some(field), entryLabel, isStruct).asTerm).asExprOf[Unit].asTerm
 
             case t: LeftRightRef[?] if t.hasOptionChild.isDefined =>
-              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, Some(field), entryLabel, isStruct).asTerm).asExprOf[Unit].asTerm
 
             case t: TryRef[?] if t.hasOptionChild.isDefined =>
-              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, Some(field), entryLabel, isStruct).asTerm).asExprOf[Unit].asTerm
             case _ =>
               '{
                 if (${ Ref(reqSym).asExprOf[Long] } & $reqBit) != 0 then
                   ${ Assign(Ref(reqSym), '{ ${ Ref(reqSym).asExprOf[Long] } ^ $reqBit }.asTerm).asExprOf[Unit] }
-                  ${ Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit] }
-                else throw new JsonParseError("Duplicate field " + $fieldName, $in)
+                  ${ Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in, false, false, Some(field), entryLabel, isStruct).asTerm).asExprOf[Unit] }
+                else throw new ParseError("Duplicate field " + $fieldName)
               }.asTerm
           }
 

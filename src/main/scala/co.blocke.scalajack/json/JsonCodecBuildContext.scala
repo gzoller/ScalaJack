@@ -1,37 +1,12 @@
 package co.blocke.scalajack
 package json
 
+import shared.CodecBuildContext
 import scala.quoted.*
-import scala.collection.mutable
-import co.blocke.scala_reflection.TypedName
 import reading.JsonSource
 
-class CodecBuildContext(using val quotes: Quotes):
+class JsonCodecBuildContext(using override val quotes: Quotes) extends CodecBuildContext:
   import quotes.reflect.*
-
-  // Tracks which TypedNames (i.e. classes with generic parameters) we've already processed
-  val seenBefore: mutable.Map[TypedName, Boolean] = mutable.Map.empty
-
-  // ---------- Writing Support ----------
-
-  // Holds symbols of emitted writer methods for each type (used to avoid regenerating)
-  val writeMethodSyms: mutable.HashMap[TypedName, quotes.reflect.Symbol] = mutable.HashMap.empty
-
-  // Holds method definitions (DefDef) for writer functions per TypedName
-  val writeMethodDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
-
-  // ---------- Reading Support ----------
-
-  // Holds symbols of emitted reader methods for each type (used to avoid regenerating)
-  val readMethodSyms: mutable.HashMap[TypedName, Symbol] = mutable.HashMap.empty
-
-  // Holds method definitions (DefDef) for reader functions per TypedName
-  val readMethodDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
-
-  // ---------- Special Type Handling ----------
-
-  // Whether a field of type `Any` was seen (used to decide if readAny() should be emitted)
-  var seenAnyRef: Boolean = false
 
   // Symbol for the special method `readAny(in: JsonSource): Any`
   // This gets generated if any `Any`-typed fields appear in the model
@@ -89,6 +64,6 @@ class CodecBuildContext(using val quotes: Quotes):
           }.asTerm.changeOwner(readAnySym)
         )
       case other =>
-        throw new JsonTypeError(s"Unexpected method parameters: $other")
+        throw new TypeError(s"Unexpected method parameters: $other")
     }
   )

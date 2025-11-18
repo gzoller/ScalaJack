@@ -1,5 +1,6 @@
-package co.blocke.scalajack
-package json
+package co.blocke.scalajack.shared
+
+import co.blocke.scalajack.IllegalCharacterError
 
 import java.nio.CharBuffer
 import java.util.Arrays
@@ -25,6 +26,12 @@ final class FastStringBuilder(initial: Int = 16) {
     if i == chars.length then chars = Arrays.copyOf(chars, chars.length * 2)
     chars(i) = c
     i += 1
+
+  def peekBack(): Option[Char] =
+    if i > 0 then Some(chars(i - 1)) else None
+
+  def backspace(): Unit =
+    if i > 0 then i -= 1
 
   final private val escapedChars: Array[Byte] = Array(
     -1, -1, -1, -1, -1, -1, -1, -1, 98, 116, 110, -1, 102, 114, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -62,7 +69,7 @@ final class FastStringBuilder(initial: Int = 16) {
             ch2 = s.charAt(from + 1).toInt
             (ch2 & 0xfc00) != 0xdc00
           }
-        then throw new JsonIllegalCharacterError("Illegal encoded text character in string value: " + ch2)
+        then throw new IllegalCharacterError("Illegal encoded text character in string value: " + ch2)
         appendEscapedUnicode(ch2.toChar)
 
   def append(s: String): Unit =

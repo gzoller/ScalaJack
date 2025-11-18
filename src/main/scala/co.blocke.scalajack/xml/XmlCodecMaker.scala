@@ -1,16 +1,15 @@
 package co.blocke.scalajack
-package json
+package xml
 
 import writing.*
 import reading.*
-import shared.CodecBuildContext
 import co.blocke.scala_reflection.RTypeRef
-import reading.JsonSource
 import scala.quoted.*
+import shared.CodecBuildContext
 
-object JsonCodecMaker:
+object XmlCodecMaker:
 
-  def generateCodecFor[T](ctx: CodecBuildContext, ref: RTypeRef[T], cfg: SJConfig)(using Type[T]): Expr[JsonCodec[T]] =
+  def generateCodecFor[T](ctx: CodecBuildContext, ref: RTypeRef[T], cfg: SJConfig)(using Type[T]): Expr[XmlCodec[T]] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
@@ -18,10 +17,10 @@ object JsonCodecMaker:
     // We generate a codec class and then kick off a deep traversal of
     // generation from the given root ref (refer waaay back at the top of this fn...).
     // ================================================================
-    val codecDef = '{ // FIXME: generate a type class instance using `ClassDef.apply` and `Symbol.newClass` calls after graduating from experimental API: https://www.scala-lang.org/blog/2022/06/21/scala-3.1.3-released.html
-      new JsonCodec[T] {
-        def encodeValue(in: T, out: JsonOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out) }
-        def decodeValue(in: JsonSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in).asExprOf[T] }
+    val codecDef = '{
+      new XmlCodec[T] {
+        def encodeValue(in: T, out: XmlOutput): Unit = ${ Writer.genWriteVal(ctx, cfg, 'in, ref, 'out, false, false, '{}, '{}, None) }
+        def decodeValue(in: XmlSource): T = ${ Reader.genReadVal(ctx, cfg, ref, 'in, false, false, None).asExprOf[T] }
       }
     }.asTerm
 
@@ -33,7 +32,7 @@ object JsonCodecMaker:
           else Nil
         },
       codecDef
-    ).asExprOf[JsonCodec[T]]
+    ).asExprOf[XmlCodec[T]]
 
-//    if ref.name.contains("VehicleHolder") then println(s"Codec: ${codec.show}")
+//    if ref.name.contains("Outer") then println(s"Codec: ${codec.show}")
     codec

@@ -209,8 +209,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '2' at position [18]
                   |{"d1":"PT0S","d2":21,"d3":null}
                   |------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
 
         val js2 = """{"d1":"PT0S","d2":"bogus","d3":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text cannot be parsed to a Duration"""
@@ -224,8 +224,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
           """Expected a String value but got 'f' at position [34]
                   |{"i1":"1970-01-01T00:00:00Z","i2":false,"i3":"-1000000000-01-01T00:00:00Z","i...
                   |----------------------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
 
         val js2 =
           """{"i1":"1970-01-01T00:00:00Z","i2":"bogus","i3":"-1000000000-01-01T00:00:00Z","i4":"2007-12-03T10:15:30Z","i5":null}"""
@@ -240,8 +240,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
           """Expected a String value but got '-' at position [6]
                   |{"d1":-1,"d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d4":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 =
           """{"d1":"bogus","d2":"-999999999-01-01T00:00:00","d3":"2007-12-03T10:15:30","d1":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'bogus' could not be parsed at index 0"""
@@ -254,8 +254,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '-' at position [6]
                   |{"d1":-1,"d2":"-999999999-01-01","d3":"2007-12-03","d4":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 =
           """{"d1":"bogus","d2":"-999999999-01-01","d3":"2007-12-03","d4":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'bogus' could not be parsed at index 0"""
@@ -269,8 +269,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
           """Expected a String value but got 'f' at position [80]
                   |...:"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":false,"d6":null}
                   |----------------------------------------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 =
           """{"d1":"23:59:59.999999999","d2":"00:00:00","d3":"00:00:00","d4":"12:00:00","d5":"Bogus","d6":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'Bogus' could not be parsed at index 0"""
@@ -282,8 +282,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '2' at position [6]
                   |{"m1":25,"m2":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"m1":"R-07-01","m2":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'R-07-01' could not be parsed at index 0"""
       }
@@ -296,8 +296,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
           """Expected a String value but got '2' at position [55]
                   |..."+999999999-12-31T23:59:59.999999999-18:00","o2":2,"o3":"2007-12-03T10:15:30...
                   |----------------------------------------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 =
           """{"o1":"+999999999-12-31T23:59:59.999999999-18:00","o2":"-999999999-01T00:00:00+18:00","o3":"2007-12-03T10:15:30+01:00","o4":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text '-999999999-01T00:00:00+18:00' could not be parsed at index 13"""
@@ -311,8 +311,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
           """Expected a String value but got 'f' at position [38]
                   |{"o1":"23:59:59.999999999-18:00","o2":false,"o3":"10:15:30+01:00","o4":null}
                   |--------------------------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 =
           """{"o1":"23:59:59.999999999-18:00","o2":"00:00:00:00+18:00","o3":"10:15:30+01:00","o4":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text '00:00:00:00+18:00' could not be parsed at index 8"""
@@ -324,8 +324,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '5' at position [17]
                   |{"p1":"P0D","p2":5,"p3":null}
                   |-----------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"p1":"P0D","p2":"bogus","p3":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text cannot be parsed to a Period"""
       }
@@ -336,8 +336,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '5' at position [23]
                   |{"y1":"999999999","y2":5,"y3":"2020","y4":null}
                   |-----------------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"y1":"999999999","y2":"bogus","y3":"2020","y4":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'bogus' could not be parsed at index 0"""
       }
@@ -348,8 +348,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got 't' at position [6]
                   |{"y1":true,"y2":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"y1":"bogus","y2":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text 'bogus' could not be parsed at index 0"""
       }
@@ -360,8 +360,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '-' at position [6]
                   |{"z1":-3,"z2":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"z1":"Mars/Puerto_Rico","z2":null}"""
         the[java.time.zone.ZoneRulesException] thrownBy sj.fromJson(js2) should have message """Unknown time-zone ID: Mars/Puerto_Rico"""
       }
@@ -372,8 +372,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got 't' at position [6]
                   |{"o1":true,"o2":null}
                   |------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"o1":"2007-12-03T10:15:30+01:00 Earth","o2":null}"""
         the[java.time.format.DateTimeParseException] thrownBy sj.fromJson(js2) should have message """Text '2007-12-03T10:15:30+01:00 Earth' could not be parsed, unparsed text found at index 25"""
       }
@@ -384,8 +384,8 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '1' at position [16]
                   |{"u1":null,"u2":13,"u3":null,"u4":"https://www.foom.com"}
                   |----------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"u1":null,"u2":"httpwww.foom.com","u3":null,"u4":"https://www.foom.com"}"""
         the[java.lang.IllegalArgumentException] thrownBy sj.fromJson(js2) should have message """URI is not absolute"""
       }
@@ -396,10 +396,11 @@ class SimpleSpec() extends AnyFunSpec with JsonMatchers:
         val msg = """Expected a String value but got '[' at position [16]
                   |{"u1":null,"u2":[1,2,3]}
                   |----------------^""".stripMargin
-        val ex = intercept[co.blocke.scalajack.json.JsonParseError](sj.fromJson(js))
-        ex.show shouldEqual msg
+        val ex = intercept[co.blocke.scalajack.ParseError](sj.fromJson(js))
+        ex.show.shouldEqual(msg)
         val js2 = """{"u1":null,"u2":"bogus"}"""
         the[java.lang.IllegalArgumentException] thrownBy sj.fromJson(js2) should have message """Invalid UUID string: bogus"""
       }
+
     }
   }

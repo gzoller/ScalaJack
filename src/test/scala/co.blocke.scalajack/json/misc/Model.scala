@@ -119,6 +119,9 @@ case class VehicleHolder(f: Vehicle, f2: Vehicle, f4: Map[String, Vehicle])
 case class PhoneNumber(countryCode: Int, areaCode: Int, prefix: Int, rest: Int)
 case class PhoneHolder(me: String, phone: PhoneNumber)
 
+import Raw.JsonRaw
+case class RawHolder(id: String, count: Int, oneBlob: JsonRaw, items: List[JsonRaw])
+
 /*
 
 TODO: FUTURE

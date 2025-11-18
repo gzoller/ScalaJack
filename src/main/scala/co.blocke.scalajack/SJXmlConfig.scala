@@ -1,11 +1,8 @@
 package co.blocke.scalajack
 
 import scala.quoted.*
-import scala.util.control.NoStackTrace
 
-class ConfigError(msg: String) extends Throwable(msg) with NoStackTrace
-
-class SJConfig private[scalajack] (
+class SJXmlConfig private[scalajack] (
     val noneAsNull: Boolean,
     val tryFailureHandling: TryPolicy,
     val eitherLeftHandling: EitherLeftPolicy,
@@ -16,17 +13,21 @@ class SJConfig private[scalajack] (
     val enumsAsIds: List[String], // Default: string values.  Nil=all enums as ids, List(...)=specified classes enums as ids
     val _writeNonConstructorFields: Boolean,
     val _suppressEscapedStrings: Boolean,
-    val _preferTypeHints: Boolean
+    val _preferTypeHints: Boolean,
+
+    // XML-specific
+    val _fieldsAsAttributes: Boolean
 ):
-  def withNoneAsNull: SJConfig = copy(noneAsNull = true)
-  def withTryFailureHandling(tryPolicy: TryPolicy): SJConfig = copy(tryFailureHandling = tryPolicy)
-  def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): SJConfig = copy(eitherLeftHandling = eitherPolicy)
-  def withTypeHintLabel(label: String): SJConfig = copy(typeHintLabel = label)
-  def withTypeHintPolicy(hintPolicy: TypeHintPolicy): SJConfig = copy(typeHintPolicy = hintPolicy)
-  def withEnumsAsIds(asIds: List[String]): SJConfig = copy(enumsAsIds = asIds)
-  def writeNonConstructorFields: SJConfig = copy(_writeNonConstructorFields = true)
-  def suppressEscapedStrings: SJConfig = copy(_suppressEscapedStrings = true)
-  def preferTypeHints: SJConfig = copy(_preferTypeHints = true)
+  def withNoneAsNull: SJXmlConfig = copy(noneAsNull = true)
+  def withTryFailureHandling(tryPolicy: TryPolicy): SJXmlConfig = copy(tryFailureHandling = tryPolicy)
+  def withEitherLeftHandling(eitherPolicy: EitherLeftPolicy): SJXmlConfig = copy(eitherLeftHandling = eitherPolicy)
+  def withTypeHintLabel(label: String): SJXmlConfig = copy(typeHintLabel = label)
+  def withTypeHintPolicy(hintPolicy: TypeHintPolicy): SJXmlConfig = copy(typeHintPolicy = hintPolicy)
+  def withEnumsAsIds(asIds: List[String]): SJXmlConfig = copy(enumsAsIds = asIds)
+  def writeNonConstructorFields: SJXmlConfig = copy(_writeNonConstructorFields = true)
+  def suppressEscapedStrings: SJXmlConfig = copy(_suppressEscapedStrings = true)
+  def preferTypeHints: SJXmlConfig = copy(_preferTypeHints = true)
+  def fieldsAsAttributes: SJXmlConfig = copy(_fieldsAsAttributes = true)
 
   private def copy(
       noneAsNull: Boolean = noneAsNull,
@@ -37,8 +38,9 @@ class SJConfig private[scalajack] (
       enumsAsIds: List[String] = enumsAsIds,
       _writeNonConstructorFields: Boolean = _writeNonConstructorFields,
       _suppressEscapedStrings: Boolean = _suppressEscapedStrings,
-      _preferTypeHints: Boolean = _preferTypeHints
-  ): SJConfig = new SJConfig(
+      _preferTypeHints: Boolean = _preferTypeHints,
+      _fieldsAsAttributes: Boolean = _fieldsAsAttributes
+  ): SJXmlConfig = new SJXmlConfig(
     noneAsNull,
     tryFailureHandling,
     eitherLeftHandling,
@@ -47,20 +49,12 @@ class SJConfig private[scalajack] (
     enumsAsIds,
     _writeNonConstructorFields,
     _suppressEscapedStrings,
-    _preferTypeHints
+    _preferTypeHints,
+    _fieldsAsAttributes
   )
 
-enum TryPolicy:
-  case AS_NULL, ERR_MSG_STRING, THROW_EXCEPTION
-
-enum EitherLeftPolicy:
-  case AS_VALUE, AS_NULL, ERR_MSG_STRING, THROW_EXCEPTION
-
-enum TypeHintPolicy:
-  case SIMPLE_CLASSNAME, SCRAMBLE_CLASSNAME, USE_ANNOTATION
-
-object SJConfig
-    extends SJConfig(
+object SJXmlConfig
+    extends SJXmlConfig(
       noneAsNull = false,
       tryFailureHandling = TryPolicy.AS_NULL,
       eitherLeftHandling = EitherLeftPolicy.AS_VALUE,
@@ -69,13 +63,14 @@ object SJConfig
       enumsAsIds = List("-"), // default -> enum as value
       _writeNonConstructorFields = false,
       _suppressEscapedStrings = false,
-      _preferTypeHints = false
+      _preferTypeHints = false,
+      _fieldsAsAttributes = false
     ):
 
-  private[scalajack] given ToExpr[SJConfig] with {
-    def apply(x: SJConfig)(using Quotes): Expr[SJConfig] =
+  private[scalajack] given ToExpr[SJXmlConfig] with {
+    def apply(x: SJXmlConfig)(using Quotes): Expr[SJXmlConfig] =
       '{
-        val jc = SJConfig
+        val jc = SJXmlConfig
           .withTryFailureHandling(${ Expr(x.tryFailureHandling) })
           .withEitherLeftHandling(${ Expr(x.eitherLeftHandling) })
           .withTypeHintLabel(${ Expr(x.typeHintLabel) })
@@ -97,20 +92,24 @@ object SJConfig
           if !x._writeNonConstructorFields then '{ jc4.writeNonConstructorFields }
           else '{ jc4 }
         }
-        jc5
+        val jc6 = ${
+          if !x._fieldsAsAttributes then '{ jc5.fieldsAsAttributes }
+          else '{ jc5 }
+        }
+        jc6
       }
   }
 
-  private[scalajack] given FromExpr[SJConfig] with {
+  private[scalajack] given FromExpr[SJXmlConfig] with {
 
     def extract[X: FromExpr](name: String, x: Expr[X])(using Quotes): X =
       import quotes.reflect.*
       summon[FromExpr[X]].unapply(x).getOrElse(throw ConfigError(s"Can't parse $name: ${x.show}, tree: ${x.asTerm}"))
 
-    def unapply(x: Expr[SJConfig])(using Quotes): Option[SJConfig] =
+    def unapply(x: Expr[SJXmlConfig])(using Quotes): Option[SJXmlConfig] =
       x match
         case '{
-              SJConfig(
+              SJXmlConfig(
                 $noneAsNullE,
                 $tryFailureHandlerE,
                 $eitherLeftHandlerE,
@@ -119,12 +118,13 @@ object SJConfig
                 $enumsAsIdsE,
                 $writeNonConstructorFieldsE,
                 $suppressEscapedStringsE,
-                $preferTypeHintsE
+                $preferTypeHintsE,
+                $fieldsAsAttributesE
               )
             } =>
           try
             Some(
-              SJConfig(
+              SJXmlConfig(
                 extract("noneAsNull", noneAsNullE),
                 extract("tryFailureHandler", tryFailureHandlerE),
                 extract("eitherLeftHandler", eitherLeftHandlerE),
@@ -133,7 +133,8 @@ object SJConfig
                 extract("enumsAsIds", enumsAsIdsE),
                 extract("_writeNonConstructorFields", writeNonConstructorFieldsE),
                 extract("_suppressEscapedStrings", suppressEscapedStringsE),
-                extract("_preferTypeHints", preferTypeHintsE)
+                extract("_preferTypeHints", preferTypeHintsE),
+                extract("_fieldsAsAttributes", fieldsAsAttributesE)
               )
             )
           catch {
@@ -141,16 +142,17 @@ object SJConfig
               println("ERROR: " + x.getMessage)
               None
           }
-        case '{ SJConfig }                                  => Some(SJConfig)
-        case '{ ($x: SJConfig).withNoneAsNull }             => Some(x.valueOrAbort.withNoneAsNull)
-        case '{ ($x: SJConfig).withTryFailureHandling($v) } => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
-        case '{ ($x: SJConfig).withEitherLeftHandling($v) } => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
-        case '{ ($x: SJConfig).withTypeHintLabel($v) }      => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
-        case '{ ($x: SJConfig).withTypeHintPolicy($v) }     => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
-        case '{ ($x: SJConfig).withEnumsAsIds($v) }         => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
-        case '{ ($x: SJConfig).writeNonConstructorFields }  => Some(x.valueOrAbort.writeNonConstructorFields)
-        case '{ ($x: SJConfig).suppressEscapedStrings }     => Some(x.valueOrAbort.suppressEscapedStrings)
-        case '{ ($x: SJConfig).preferTypeHints }            => Some(x.valueOrAbort.preferTypeHints)
+        case '{ SJXmlConfig }                                  => Some(SJXmlConfig)
+        case '{ ($x: SJXmlConfig).withNoneAsNull }             => Some(x.valueOrAbort.withNoneAsNull)
+        case '{ ($x: SJXmlConfig).withTryFailureHandling($v) } => Some(x.valueOrAbort.withTryFailureHandling(v.valueOrAbort))
+        case '{ ($x: SJXmlConfig).withEitherLeftHandling($v) } => Some(x.valueOrAbort.withEitherLeftHandling(v.valueOrAbort))
+        case '{ ($x: SJXmlConfig).withTypeHintLabel($v) }      => Some(x.valueOrAbort.withTypeHintLabel(v.valueOrAbort))
+        case '{ ($x: SJXmlConfig).withTypeHintPolicy($v) }     => Some(x.valueOrAbort.withTypeHintPolicy(v.valueOrAbort))
+        case '{ ($x: SJXmlConfig).withEnumsAsIds($v) }         => Some(x.valueOrAbort.withEnumsAsIds(v.valueOrAbort))
+        case '{ ($x: SJXmlConfig).writeNonConstructorFields }  => Some(x.valueOrAbort.writeNonConstructorFields)
+        case '{ ($x: SJXmlConfig).suppressEscapedStrings }     => Some(x.valueOrAbort.suppressEscapedStrings)
+        case '{ ($x: SJXmlConfig).preferTypeHints }            => Some(x.valueOrAbort.preferTypeHints)
+        case '{ ($x: SJXmlConfig).fieldsAsAttributes }         => Some(x.valueOrAbort.fieldsAsAttributes)
   }
 
   private[scalajack] given ToExpr[TryPolicy] with {
@@ -202,30 +204,3 @@ object SJConfig
         case '{ TypeHintPolicy.SCRAMBLE_CLASSNAME } => Some(TypeHintPolicy.SCRAMBLE_CLASSNAME)
         case '{ TypeHintPolicy.USE_ANNOTATION }     => Some(TypeHintPolicy.USE_ANNOTATION)
   }
-
-  /*
-  Here's how we use Quotes to get default values from a class...def
-
-          // Constructor argument list, preloaded with optional 'None' values and any default values specified
-        val preloaded = Expr
-          .ofList(r.fields.map { f =>
-            val scalaF = f.asInstanceOf[ScalaFieldInfoRef]
-            if scalaF.defaultValueAccessorName.isDefined then
-              r.refType match
-                case '[t] =>
-                  val tpe = TypeRepr.of[t].widen
-                  val sym = tpe.typeSymbol
-                  val companionBody = sym.companionClass.tree.asInstanceOf[ClassDef].body
-                  val companion = Ref(sym.companionModule)
-                  companionBody
-                    .collect {
-                      case defaultMethod @ DefDef(name, _, _, _) if name.startsWith("$lessinit$greater$default$" + (f.index + 1)) =>
-                        companion.select(defaultMethod.symbol).appliedToTypes(tpe.typeArgs).asExpr
-                    }
-                    .headOption
-                    .getOrElse(Expr(null.asInstanceOf[Boolean]))
-            else if scalaF.fieldRef.isInstanceOf[OptionRef[_]] then Expr(None)
-            else Expr(null.asInstanceOf[Int])
-          })
-
-   */
