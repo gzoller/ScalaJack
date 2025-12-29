@@ -531,7 +531,7 @@ case class JsonSource(js: CharSequence):
           skipEncodedString()
           i += 1
         } else i = endI + 1
-        skipArrayValue(k)
+        skipObjectValue(k)
       case '}' => skipObjectValue(k - 1)
       case '{' => skipObjectValue(k + 1)
       case _   => skipObjectValue(k)

@@ -29,12 +29,6 @@ import scala.annotation.*
 import scala.quoted.{Expr, Quotes}
 case class jsLabel(name: String) extends StaticAnnotation
 
-// XML Support
-case class xmlLabel(name: String) extends StaticAnnotation // rename a field
-case class xmlEntryLabel(name: String) extends StaticAnnotation // label for Map entries
-case class xmlAsAttribute() extends StaticAnnotation
-case class xmlStruct() extends StaticAnnotation // remove field wrapper -- Don't use this! Horrible, invalid XML!
-
 def liftStringOptionMap(map: Map[String, Option[String]])(using quotes: Quotes): Expr[Map[String, Option[String]]] =
   val entries: List[Expr[(String, Option[String])]] = map.toList.map {
     case (key, Some(value)) => '{ (${ Expr(key) }, Some(${ Expr(value) })) }

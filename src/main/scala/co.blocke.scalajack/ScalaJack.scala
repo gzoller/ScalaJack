@@ -6,7 +6,6 @@ import co.blocke.scalajack.json.writing.JsonOutput
 import scala.quoted.*
 import quoted.Quotes
 import json.*
-import xml.*
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
@@ -25,16 +24,6 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
   def fromJsonList(js: String): List[T] =
     listCodec.decodeValue(json.reading.JsonSource(js))
-
-case class ScalaJackXML[T](xmlCodec: XmlCodec[T]):
-  def fromXml(x: String): T =
-    xmlCodec.decodeValue(xml.reading.XmlSource(x))
-
-  val out: xml.writing.XmlOutput = xml.writing.XmlOutput()
-
-  def toXml(a: T): String =
-    xmlCodec.encodeValue(a, out.clear())
-    out.result
 
 // ---------------------------------------
 
@@ -81,30 +70,4 @@ object ScalaJack {
           val buf = in.expectArray(() => $elemCodec.decodeValue(in))
           if buf == null then null else buf.toList
     }
-
-  // -----------------------
-  //         XML
-  // -----------------------
-
-  // ----- Use default XmlConfig
-  inline def sjXmlCodecOf[T]: ScalaJackXML[T] = ${ xmlCodecOfImpl[T] }
-
-  private def xmlCodecOfImpl[T: Type](using q: Quotes): Expr[ScalaJackXML[T]] =
-    val ctx = new XmlCodecBuildContext()
-    import ctx.quotes.reflect.*
-    val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
-    val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, SJConfig)
-    '{ ScalaJackXML($xmlCodec) }
-
-  // ----- Use given JsonConfig
-  inline def sjXmlCodecOf[T](inline cfg: SJConfig): ScalaJackXML[T] = ${ xmlCodecOfImplWithConfig[T]('cfg) }
-
-  private def xmlCodecOfImplWithConfig[T: Type](cfgE: Expr[SJConfig])(using q: Quotes): Expr[ScalaJackXML[T]] =
-    val ctx = new XmlCodecBuildContext()
-    import ctx.quotes.reflect.*
-    val cfg = summon[FromExpr[SJConfig]].unapply(cfgE)
-    val classRef = ReflectOnType[T](ctx.quotes)(TypeRepr.of[T], true)(using ctx.seenBefore)
-    val xmlCodec = XmlCodecMaker.generateCodecFor(ctx, classRef, cfg.getOrElse(SJConfig))
-    '{ ScalaJackXML($xmlCodec) }
-
 }
