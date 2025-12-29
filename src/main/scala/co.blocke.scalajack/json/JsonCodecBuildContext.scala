@@ -5,7 +5,9 @@ import shared.CodecBuildContext
 import scala.quoted.*
 import reading.JsonSource
 
-class JsonCodecBuildContext(using override val quotes: Quotes) extends CodecBuildContext:
+final class JsonCodecBuildContext(using q: Quotes) extends CodecBuildContext:
+  override val quotes: Quotes = q
+
   import quotes.reflect.*
 
   // Symbol for the special method `readAny(in: JsonSource): Any`

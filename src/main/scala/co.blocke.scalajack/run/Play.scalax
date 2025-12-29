@@ -4,12 +4,10 @@ package run
 
 import ScalaJack.*
 
-case class Well(repo: scala.collection.mutable.Map[String, Int] = scala.collection.mutable.Map.empty[String, Int])
-
 object RunMe extends App:
 
-  import ScalaJack.*
-
-  given sj: ScalaJack[Pet] = sjCodecOf[Pet]
+//  given sj: ScalaJack[IngestRequest] = sjCodecOf[IngestRequest]
+//
+//  println(sj.fromJson(js))
 
   println("ok")
