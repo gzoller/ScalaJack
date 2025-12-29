@@ -70,6 +70,7 @@ case class JsonSource(js: CharSequence):
         expectInt()
       case t if t == '"' =>
         val endI = parseString(i)
+        if endI < 0 then throw JsonParseError("Expected valid enumeration value or null here", this)
         val str = js.subSequence(i, endI).toString
         i = endI + 1
         str
@@ -472,7 +473,8 @@ case class JsonSource(js: CharSequence):
       case '[' => skipArrayValue()
       case '"' =>
         val endI = parseString(i)
-        i = endI + 1
+        if endI < 0 then skipEncodedString()
+        else i = endI + 1
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' =>
         skipNumber()
       case c => throw JsonParseError(s"Unexpected '$c'", this)
@@ -484,11 +486,36 @@ case class JsonSource(js: CharSequence):
     else skipNumber()
 
   @tailrec
+  final private def skipEncodedString(): Unit =
+    readChar() match
+      case '"' => () // end of string
+
+      case '\\' =>
+        readChar() match
+          case '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' =>
+            skipEncodedString()
+
+          case 'u' =>
+            // skip 4 hex chars
+            i += 4
+            skipEncodedString()
+
+          case _ =>
+            skipEncodedString()
+
+      case _ =>
+        skipEncodedString()
+
+  @tailrec
   final private def skipArrayValue(k: Int = 0): Unit =
     readChar() match
       case ']' if k == 0 => ()
       case '"' =>
-        i = parseString(i) + 1
+        val endI = parseString(i)
+        if endI < 0 then {
+          skipEncodedString()
+          i += 1
+        } else i = endI + 1
         skipArrayValue(k)
       case ']' => skipArrayValue(k - 1)
       case '[' => skipArrayValue(k + 1)
@@ -499,7 +526,11 @@ case class JsonSource(js: CharSequence):
     readChar() match
       case '}' if k == 0 => ()
       case '"' =>
-        i = parseString(i) + 1
+        val endI = parseString(i)
+        if endI < 0 then {
+          skipEncodedString()
+          i += 1
+        } else i = endI + 1
         skipObjectValue(k)
       case '}' => skipObjectValue(k - 1)
       case '{' => skipObjectValue(k + 1)

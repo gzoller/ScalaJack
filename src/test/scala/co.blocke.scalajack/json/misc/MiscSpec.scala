@@ -120,4 +120,15 @@ on another level."}""")
       )
       sj.fromJson(js) shouldEqual inst
     }
+    it("ScalaJackSyntax must work") {
+      import ScalaJackSyntax.*
+      given ScalaJack[RawHolder] = ScalaJack.sjCodecOf[RawHolder]
+      val payload: JsonRaw = Raw("""{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]}""")
+      val inst = RawHolder("aaa", 3, payload, List(payload, payload))
+      val js = inst.toJson
+      js should equal(
+        """{"id":"aaa","count":3,"oneBlob":{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]},"items":[{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]},{"maybe":[1,2,3],"itried":{"a":-5},"itried2":99,"ifailed":null,"anymap":{"a":1,"b":2},"whichOneR":3,"whichOneL":"nope","bunch":["a",null,"b"]}]}"""
+      )
+      js.fromJson[RawHolder] shouldEqual inst
+    }
   }

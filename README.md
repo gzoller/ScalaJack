@@ -95,6 +95,8 @@ This means you will be doing more re-compiling with macro-based code than you wo
 s
 ### Notes:
 
+=======
+* 8.1.2 -- Provide ScalaJackSyntax for nicer aesthetics
 * 8.1.1
     * JSON raw (unparsed json blob) support -- e.g. for payloads
     * When creating codec for Foo, auto-gen a codec for List[Foo] as well (toJsonList()/fromJsonList())
