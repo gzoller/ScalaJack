@@ -162,7 +162,7 @@ object Helpers:
           }
       }.asExprOf[T]
     else
-      val unique = Unique.findUniqueWithExcluded(traitRef)
+      val unique = Unique.findUniqueWithExcluded(traitRef)(ctx)
       val excludeFields = Expr(unique.optionalFields)
       val liftedUnique = liftStringMap(unique.simpleUniqueHash)
 
