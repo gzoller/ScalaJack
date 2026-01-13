@@ -2,6 +2,7 @@ package co.blocke.scalajack.shared
 
 import co.blocke.scala_reflection.RTypeRef
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
+import scala.quoted.*
 
 case class Unique(fingerprints: Map[String, List[ScalaClassRef[?]]], optionalFields: Set[String]):
   // If your hash (key) is not in the map--it can't be uniquely identified (ie needs a type hint)
@@ -32,13 +33,30 @@ case class Unique(fingerprints: Map[String, List[ScalaClassRef[?]]], optionalFie
 object Unique:
   // Given a TraitRef, analyze all child classes (and any descendant traits!) to extract field "fingerprints"
   // that uniquely identify classes (and those that cannot be so uniquely identified!).
-  def findUniqueWithExcluded(inTrait: Sealable): Unique = {
+//  def findUniqueWithExcluded(inTrait: Sealable): Unique = {
+  def findUniqueWithExcluded(inTrait: Sealable)(ctx: CodecBuildContext): Unique = {
+    implicit val q = ctx.quotes
+    import q.reflect.*
+
     // Helper to recursively extract all ClassSpec instances from any ClassLike structure
     def collectSpecs(nodes: List[RTypeRef[?]]): List[ScalaClassRef[?]] =
       nodes.flatMap {
-        case cs: ScalaClassRef[?] => List(cs)
-        case tr: TraitRef[?]      => collectSpecs(tr.sealedChildren)
-        case _                    => throw new Exception("Can never happen--Trait has a non-trait, non-class implementation!")
+        case cs: ScalaClassRef[?] =>
+          List(cs)
+        case tr: TraitRef[?] =>
+          collectSpecs(tr.sealedChildren)
+        case sr: SelfRefRef[?] =>
+          val srRef = sr.refType match {
+            case '[z] =>
+              co.blocke.scala_reflection.reflect.ReflectOnType[z](q)(TypeRepr.of[z], true)(using ctx.seenBefore)
+          }
+          srRef match {
+            case scr: ScalaClassRef[?] => List(scr)
+            case _ =>
+              throw new Exception("Can never happen--Trait has a non-trait, non-class implementation!")
+          }
+        case x =>
+          throw new Exception("Can never happen--Trait has a non-trait, non-class implementation!")
       }
 
     val allImplementingClasses: List[ScalaClassRef[?]] = collectSpecs(inTrait.sealedChildren)

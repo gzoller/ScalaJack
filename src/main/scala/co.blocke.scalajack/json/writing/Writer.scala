@@ -92,7 +92,7 @@ object Writer:
                   else $out.value($in.getClass.getName.split('.').last.stripSuffix("$"))
                 }
               else
-                val unique = Unique.findUniqueWithExcluded(t)
+                val unique = Unique.findUniqueWithExcluded(t)(ctx)
                 val cases = t.sealedChildren.map { child =>
                   child.refType match
                     case '[c] =>
@@ -142,7 +142,7 @@ object Writer:
                       val fieldName = changeFieldName(f)
                       MaybeWrite.maybeWrite[z](ctx, cfg, fieldName, fieldValue, f.fieldRef.asInstanceOf[RTypeRef[z]], out)
                 }
-                // ZZZ -- To block.... (soak this to see if it works then delete old block
+                //  -- To block.... (soak this to see if it works then delete old block
                 val cname: Expr[String] = cfg.typeHintPolicy match
                   case TypeHintPolicy.SIMPLE_CLASSNAME =>
                     Expr(lastPart(t.name))
@@ -255,7 +255,10 @@ object Writer:
 
           case t: TraitRef[?] => throw UnsupportedType("Non-sealed traits are not supported")
 
-          case t => throw new UnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
+          case _: SelfRefRef[?] => '{ () }
+
+          case t =>
+            throw new UnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
 
   // ---------------------------------------------------------------------------------------------
 

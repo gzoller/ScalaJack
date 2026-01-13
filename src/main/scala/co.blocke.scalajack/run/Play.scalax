@@ -3,11 +3,35 @@ package json
 package run
 
 import ScalaJack.*
+import co.blocke.scala_reflection.*
+import ScalaJackSyntax.*
 
 object RunMe extends App:
 
-//  given sj: ScalaJack[IngestRequest] = sjCodecOf[IngestRequest]
-//
-//  println(sj.fromJson(js))
+  given sj: ScalaJack[Foo] = sjCodecOf[Foo]
+
+  val s = SegmentNode("S1")
+  val ln = LogicalNode("LN1", 5, Vector(s))
+  val f = Foo(ln)
+
+  val js = f.toJson
+  println(js)
+  println(js.fromJson)
 
   println("ok")
+
+/*
+co.blocke.scalajack.json.run.Foo:
+   fields ->
+      ln: co.blocke.scalajack.json.run.LogicalNode:
+         fields ->
+            id: String
+            children: Vector of co.blocke.scalajack.json.run.Node (sealed trait):
+               fields ->
+                  id: String
+               children ->
+                  co.blocke.scalajack.json.run.SegmentNode:
+                     fields ->
+                        id: String
+                  co.blocke.scalajack.json.run.LogicalNode (recursive self-reference)
+ */
