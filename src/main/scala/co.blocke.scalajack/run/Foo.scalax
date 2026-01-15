@@ -2,19 +2,17 @@ package co.blocke.scalajack
 package json
 package run
 
-
 sealed trait Node:
   val id: String
 
 final case class SegmentNode(
-                              id: String,
-                            ) extends Node
-
+    id: String
+) extends Node
 
 final case class LogicalNode(
-                              id: String,
-                              blah: Int,
-                              children: Vector[Node]
-                            ) extends Node
+    id: String,
+    blah: Int,
+    children: Vector[Node]
+) extends Node
 
-case class Foo( ln: LogicalNode )
+case class Foo(ln: LogicalNode)
