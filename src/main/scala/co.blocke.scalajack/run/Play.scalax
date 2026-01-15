@@ -10,13 +10,18 @@ object RunMe extends App:
 
   given sj: ScalaJack[Foo] = sjCodecOf[Foo]
 
-  val s = SegmentNode("S1")
-  val ln = LogicalNode("LN1", 5, Vector(s))
+  val s1 = SegmentNode("S1")
+  val s2 = SegmentNode("S2")
+  val s3 = SegmentNode("S3")
+  val sln = LogicalNode("SLN", 1, Vector(s2, s3))
+  val ln = LogicalNode("LN1", 5, Vector(s1, sln))
   val f = Foo(ln)
 
   val js = f.toJson
   println(js)
-  println(js.fromJson)
+
+  val js2 = """{"ln":{"id":"LN1","blah":5,"children":[{"id":"S1"},{"id":"SLN","blah":1,"children":[{"id":"S2"},{"id":"S3"}]}]}}"""
+  println(js2.fromJson)
 
   println("ok")
 

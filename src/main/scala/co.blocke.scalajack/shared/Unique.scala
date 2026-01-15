@@ -33,7 +33,6 @@ case class Unique(fingerprints: Map[String, List[ScalaClassRef[?]]], optionalFie
 object Unique:
   // Given a TraitRef, analyze all child classes (and any descendant traits!) to extract field "fingerprints"
   // that uniquely identify classes (and those that cannot be so uniquely identified!).
-//  def findUniqueWithExcluded(inTrait: Sealable): Unique = {
   def findUniqueWithExcluded(inTrait: Sealable)(ctx: CodecBuildContext): Unique = {
     implicit val q = ctx.quotes
     import q.reflect.*

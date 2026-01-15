@@ -255,7 +255,23 @@ object Writer:
 
           case t: TraitRef[?] => throw UnsupportedType("Non-sealed traits are not supported")
 
-          case _: SelfRefRef[?] => '{ () }
+          case s: SelfRefRef[?] =>
+            s.refType match
+              case '[e] =>
+                val tin = aE.asExprOf[T]
+                '{
+                  val vv = $tin.asInstanceOf[e]
+                  ${
+                    genWriteVal[e](
+                      ctx,
+                      cfg,
+                      '{ vv },
+                      co.blocke.scala_reflection.reflect.ReflectOnType[e](ctx.quotes)(TypeRepr.of[e], true)(using ctx.seenBefore),
+                      out,
+                      inTuple = inTuple
+                    )
+                  }
+                }
 
           case t =>
             throw new UnsupportedType("Type represented by " + t.name + " is unsupported for JSON writes")
