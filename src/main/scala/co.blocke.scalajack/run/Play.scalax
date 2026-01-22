@@ -4,12 +4,23 @@ package run
 
 import ScalaJack.*
 import co.blocke.scala_reflection.*
-import ScalaJackSyntax.*
+//import ScalaJackSyntax.*
 
 object RunMe extends App:
 
-  given sj: ScalaJack[Foo] = sjCodecOf[Foo]
+//  val rt = RType.of[Foo[THING]]
+//  println(rt)
 
+  val sj = sjCodecOf[Foo[THING]]
+  val f = Foo("wow".asInstanceOf[THING])
+  val js = sj.toJson(f)
+  println(f)
+
+//  given sj: ScalaJack[Foo[THING]] = sjCodecOf[Foo[THING]]
+//
+//  println(f.toJson)
+
+/*
   val s1 = SegmentNode("S1")
   val s2 = SegmentNode("S2")
   val s3 = SegmentNode("S3")
@@ -24,6 +35,7 @@ object RunMe extends App:
   println(js2.fromJson)
 
   println("ok")
+ */
 
 /*
 co.blocke.scalajack.json.run.Foo:

@@ -220,6 +220,21 @@ object MaybeWrite:
               '{ (o: java.util.Optional[e]) => o.get }
             )
 
+      case t: AliasRef[?] if t.unwrappedType.isInstanceOf[OptionRef[?]] =>
+        t.unwrappedType.refType match
+          case '[e] =>
+            val unwrappedExpr =
+              '{ $aE.asInstanceOf[e] } // explicit alias erasure
+
+            _maybeWrite(
+              ctx,
+              cfg,
+              prefix,
+              unwrappedExpr,
+              t.unwrappedType.asInstanceOf[RTypeRef[e]],
+              out
+            )
+
       case t: TryRef[?] =>
         t.tryRef.refType match
           case '[e] =>

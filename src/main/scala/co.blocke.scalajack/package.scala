@@ -61,3 +61,14 @@ def testValidMapKey(testRef: RTypeRef[?]): Boolean =
 
 trait JsonDefault[T]:
   def default: T
+
+object JsonDefault:
+  def apply[T](value: T): JsonDefault[T] =
+    new JsonDefault[T]:
+      override def default: T = value
+
+// For Alias/Opaque Types -- common types. You'll need your own if you
+// opaque some custom types or other primitives
+given JsonDefault[String] = JsonDefault("")
+given JsonDefault[Int] = JsonDefault(0)
+given JsonDefault[Long] = JsonDefault(0L)

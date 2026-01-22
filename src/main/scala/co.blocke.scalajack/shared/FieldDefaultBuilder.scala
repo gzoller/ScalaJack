@@ -98,12 +98,40 @@ object FieldDefaultBuilder:
             }
 
           case a: AliasRef[?] =>
-            requiredMask |= (1L << idx)
-            Expr.summon[JsonDefault[f]] match
-              case Some(defaultExpr) =>
-                '{ $defaultExpr.default }.asExprOf[f] // safe Expr[T]
-              case None =>
-                throw new TypeError(s"No default value found for type ${a.name}. Consider providing a given JsonDefault.")
+            // Alias (opaque/type alias) fields: if missing and no Scala default param exists
+            // we either:
+            //   - treat Optional-ish aliases as not-required and initialize to empty
+            //   - otherwise treat as required unless a JsonDefault exists
+            a.unwrappedType match
+
+              // IMPORTANT: the field type `f` here is the *alias type*, not `Option[_]`.
+              // So we must first type the expression to the unwrapped `u` and only then cast to `f`.
+              case _: OptionRef[?] =>
+                a.unwrappedType.refType match
+                  case '[u] =>
+                    val noneU: Expr[u] = '{ None }.asExprOf[u]
+                    '{ $noneU.asInstanceOf[f] }.asExprOf[f]
+
+              case _: JavaOptionalRef[?] =>
+                a.unwrappedType.refType match
+                  case '[u] =>
+                    val emptyU: Expr[u] = '{ java.util.Optional.empty() }.asExprOf[u]
+                    '{ $emptyU.asInstanceOf[f] }.asExprOf[f]
+
+              case _ =>
+                requiredMask |= (1L << idx)
+                a.unwrappedType.refType match
+                  case '[u] =>
+                    Expr.summon[JsonDefault[u]] match
+                      case Some(defaultExpr) =>
+                        // defaultExpr.default : u
+                        '{ $defaultExpr.default.asInstanceOf[f] }.asExprOf[f]
+
+                      case None =>
+                        throw new TypeError(
+                          s"No default value found for alias ${a.name} (underlying ${a.unwrappedType.name}). " +
+                            s"Consider providing a given JsonDefault[${a.unwrappedType.name}]."
+                        )
 
           case _ =>
             requiredMask |= (1L << idx)
