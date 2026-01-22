@@ -30,9 +30,9 @@ inThisBuild(List(
 
 name := "scalajack"
 ThisBuild / organization := "co.blocke"
-ThisBuild / scalaVersion := "3.7.4"
+ThisBuild / scalaVersion := "3.5.2"
 ThisBuild / versionScheme := Some("semver-spec")
-ThisBuild / githubWorkflowScalaVersions := Seq("3.7.4")
+ThisBuild / githubWorkflowScalaVersions := Seq("3.5.2")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Distribution.Temurin, "21"))
 ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest", "windows-latest")
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost

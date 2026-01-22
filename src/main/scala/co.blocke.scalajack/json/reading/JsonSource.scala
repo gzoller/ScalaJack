@@ -164,7 +164,7 @@ case class JsonSource(js: CharSequence):
         parseOrderedMap[K, V](kf, vf, acc, false)
       case c => throw JsonParseError(s"Expected either object end '}' or field separator ',' here but got '$c'", this)
 
-  final def findAllFieldNames(acc: List[String] = List.empty[String]): List[String] = {
+  final def findAllFieldNames(): List[String] = {
     @tailrec
     def loop(acc: List[String]): List[String] =
       readToken() match

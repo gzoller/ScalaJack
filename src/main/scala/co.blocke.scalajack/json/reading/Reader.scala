@@ -82,7 +82,6 @@ object Reader:
             Helpers.generateReaderBodyForScalaClass[T](
               ctx,
               cfg,
-              methodKey,
               t,
               inExpr
             )
@@ -96,7 +95,6 @@ object Reader:
             Helpers.generateReaderBodyForJavaClass[T](
               ctx,
               cfg,
-              methodKey,
               t,
               inExpr
             )

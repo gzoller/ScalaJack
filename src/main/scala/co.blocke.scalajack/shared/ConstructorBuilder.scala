@@ -1,7 +1,5 @@
 package co.blocke.scalajack.shared
 
-import scala.quoted.*
-
 object ConstructorBuilder:
   def buildClassInstantiationExpr(
       ctx: CodecBuildContext,

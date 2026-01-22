@@ -17,7 +17,7 @@ object MaybeWrite:
   // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
   //
 
-  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput])(using Quotes): Expr[Unit] =
+  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput]): Expr[Unit] =
     given Quotes = ctx.quotes
 
     val labelE = Expr(label)

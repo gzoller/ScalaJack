@@ -4,9 +4,8 @@ package reading
 
 import scala.quoted.*
 import scala.reflect.ClassTag
-import scala.jdk.CollectionConverters.*
 import co.blocke.scala_reflection.reflect.rtypeRefs.*
-import co.blocke.scala_reflection.{RTypeRef, TypedName}
+import co.blocke.scala_reflection.RTypeRef
 import shared.*
 
 sealed trait ReaderEntry
@@ -208,7 +207,6 @@ object Helpers:
   def generateReaderBodyForScalaClass[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      methodKey: TypedName,
       classRef: ScalaClassRef[?],
       in: Expr[JsonSource]
   ): Expr[T] =
@@ -371,7 +369,6 @@ object Helpers:
   def generateReaderBodyForJavaClass[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      methodKey: TypedName,
       classRef: JavaClassRef[?],
       in: Expr[JsonSource]
   ): Expr[T] =

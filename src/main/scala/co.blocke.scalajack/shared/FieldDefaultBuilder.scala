@@ -106,17 +106,17 @@ object FieldDefaultBuilder:
 
               // IMPORTANT: the field type `f` here is the *alias type*, not `Option[_]`.
               // So we must first type the expression to the unwrapped `u` and only then cast to `f`.
-              case _: OptionRef[?] =>
-                a.unwrappedType.refType match
-                  case '[u] =>
-                    val noneU: Expr[u] = '{ None }.asExprOf[u]
-                    '{ $noneU.asInstanceOf[f] }.asExprOf[f]
-
               case _: JavaOptionalRef[?] =>
                 a.unwrappedType.refType match
                   case '[u] =>
                     val emptyU: Expr[u] = '{ java.util.Optional.empty() }.asExprOf[u]
                     '{ $emptyU.asInstanceOf[f] }.asExprOf[f]
+
+              case _: OptionRef[?] =>
+                a.unwrappedType.refType match
+                  case '[u] =>
+                    val noneU: Expr[u] = '{ None }.asExprOf[u]
+                    '{ $noneU.asInstanceOf[f] }.asExprOf[f]
 
               case _ =>
                 requiredMask |= (1L << idx)
