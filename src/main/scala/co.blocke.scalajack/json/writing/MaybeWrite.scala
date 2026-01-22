@@ -17,7 +17,7 @@ object MaybeWrite:
   // is to avoid slowing runtime down with extra "if" checks unless they're absolutely needed.
   //
 
-  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput])(using Quotes): Expr[Unit] =
+  def maybeWrite[T: Type](ctx: CodecBuildContext, cfg: SJConfig, label: String, aE: Expr[T], ref: RTypeRef[T], out: Expr[JsonOutput]): Expr[Unit] =
     given Quotes = ctx.quotes
 
     val labelE = Expr(label)
@@ -218,6 +218,21 @@ object MaybeWrite:
               out,
               '{ (o: java.util.Optional[e]) => o == null || !o.isPresent },
               '{ (o: java.util.Optional[e]) => o.get }
+            )
+
+      case t: AliasRef[?] if t.unwrappedType.isInstanceOf[OptionRef[?]] =>
+        t.unwrappedType.refType match
+          case '[e] =>
+            val unwrappedExpr =
+              '{ $aE.asInstanceOf[e] } // explicit alias erasure
+
+            _maybeWrite(
+              ctx,
+              cfg,
+              prefix,
+              unwrappedExpr,
+              t.unwrappedType.asInstanceOf[RTypeRef[e]],
+              out
             )
 
       case t: TryRef[?] =>

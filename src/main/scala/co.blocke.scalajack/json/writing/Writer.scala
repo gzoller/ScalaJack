@@ -392,7 +392,17 @@ object Writer:
               case t: AliasRef[?] =>
                 t.unwrappedType.refType match
                   case '[e] =>
-                    genWriteVal[e](ctx, cfg, aE.asInstanceOf[Expr[e]], t.unwrappedType.asInstanceOf[RTypeRef[e]], out, inTuple = inTuple)
+                    val casted: Expr[e] =
+                      '{ ${ aE }.asInstanceOf[e] }
+
+                    genWriteVal[e](
+                      ctx,
+                      cfg,
+                      casted,
+                      t.unwrappedType.asInstanceOf[RTypeRef[e]],
+                      out,
+                      inTuple = inTuple
+                    )
 
               case t: ArrayRef[?] =>
                 t.elementRef.refType match

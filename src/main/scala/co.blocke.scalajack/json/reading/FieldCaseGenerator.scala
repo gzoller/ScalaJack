@@ -30,7 +30,14 @@ object FieldCaseGenerator:
 
           val caseBody = field.fieldRef match {
             case _: OptionRef[?] | _: AnyRef =>
-              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                .asExprOf[Unit]
+                .asTerm
+
+            case a: AliasRef[?] if a.unwrappedType.isInstanceOf[OptionRef[?]] =>
+              Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm)
+                .asExprOf[Unit]
+                .asTerm
 
             case t: LeftRightRef[?] if t.hasOptionChild.isDefined =>
               Assign(fieldRef, Reader.genReadVal[f](ctx, cfg, field.fieldRef.asInstanceOf[RTypeRef[f]], in).asTerm).asExprOf[Unit].asTerm

@@ -43,4 +43,3 @@ object Permissions extends Enumeration {
   type Permissions = Value
   val READ, WRITE, EXEC, NONE = Value
 }
-import Permissions.*

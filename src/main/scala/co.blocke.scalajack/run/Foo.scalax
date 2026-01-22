@@ -15,4 +15,15 @@ final case class LogicalNode(
     children: Vector[Node]
 ) extends Node
 
-case class Foo(ln: LogicalNode)
+opaque type THING = String
+case class Foo[T](ln: T)
+
+/*
+co.blocke.scalajack.json.run.Foo[String]:
+   fields ->
+      ln: [T] String
+
+co.blocke.scalajack.json.run.Foo[THING]:
+   fields ->
+      ln: [T] alias THING defined as String
+ */

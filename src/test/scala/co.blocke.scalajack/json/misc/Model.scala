@@ -122,6 +122,9 @@ case class PhoneHolder(me: String, phone: PhoneNumber)
 import Raw.JsonRaw
 case class RawHolder(id: String, count: Int, oneBlob: JsonRaw, items: List[JsonRaw])
 
+opaque type Count = Int
+opaque type CountX = Option[Int]
+
 /*
 
 TODO: FUTURE

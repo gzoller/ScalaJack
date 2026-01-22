@@ -3,7 +3,6 @@ package json
 package primitives
 
 import ScalaJack.*
-import co.blocke.scala_reflection.*
 import scala.math.BigDecimal
 import TestUtil.*
 import org.scalatest.funspec.AnyFunSpec
