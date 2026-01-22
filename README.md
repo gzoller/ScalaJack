@@ -96,7 +96,7 @@ s
 ### Notes:
 
 =======
-* 8.1.5 -- Fix bug in opaque type handling
+* 8.1.6 -- Fix bug in opaque type handling
 * 8.1.2 -- Provide ScalaJackSyntax for nicer aesthetics
 * 8.1.1
     * JSON raw (unparsed json blob) support -- e.g. for payloads
