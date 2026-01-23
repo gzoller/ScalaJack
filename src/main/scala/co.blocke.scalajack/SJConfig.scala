@@ -203,29 +203,29 @@ object SJConfig
         case '{ TypeHintPolicy.USE_ANNOTATION }     => Some(TypeHintPolicy.USE_ANNOTATION)
   }
 
-  /*
-  Here's how we use Quotes to get default values from a class...def
+/*
+Here's how we use Quotes to get default values from a class...def
 
-          // Constructor argument list, preloaded with optional 'None' values and any default values specified
-        val preloaded = Expr
-          .ofList(r.fields.map { f =>
-            val scalaF = f.asInstanceOf[ScalaFieldInfoRef]
-            if scalaF.defaultValueAccessorName.isDefined then
-              r.refType match
-                case '[t] =>
-                  val tpe = TypeRepr.of[t].widen
-                  val sym = tpe.typeSymbol
-                  val companionBody = sym.companionClass.tree.asInstanceOf[ClassDef].body
-                  val companion = Ref(sym.companionModule)
-                  companionBody
-                    .collect {
-                      case defaultMethod @ DefDef(name, _, _, _) if name.startsWith("$lessinit$greater$default$" + (f.index + 1)) =>
-                        companion.select(defaultMethod.symbol).appliedToTypes(tpe.typeArgs).asExpr
-                    }
-                    .headOption
-                    .getOrElse(Expr(null.asInstanceOf[Boolean]))
-            else if scalaF.fieldRef.isInstanceOf[OptionRef[_]] then Expr(None)
-            else Expr(null.asInstanceOf[Int])
-          })
+        // Constructor argument list, preloaded with optional 'None' values and any default values specified
+      val preloaded = Expr
+        .ofList(r.fields.map { f =>
+          val scalaF = f.asInstanceOf[ScalaFieldInfoRef]
+          if scalaF.defaultValueAccessorName.isDefined then
+            r.refType match
+              case '[t] =>
+                val tpe = TypeRepr.of[t].widen
+                val sym = tpe.typeSymbol
+                val companionBody = sym.companionClass.tree.asInstanceOf[ClassDef].body
+                val companion = Ref(sym.companionModule)
+                companionBody
+                  .collect {
+                    case defaultMethod @ DefDef(name, _, _, _) if name.startsWith("$lessinit$greater$default$" + (f.index + 1)) =>
+                      companion.select(defaultMethod.symbol).appliedToTypes(tpe.typeArgs).asExpr
+                  }
+                  .headOption
+                  .getOrElse(Expr(null.asInstanceOf[Boolean]))
+          else if scalaF.fieldRef.isInstanceOf[OptionRef[_]] then Expr(None)
+          else Expr(null.asInstanceOf[Int])
+        })
 
-   */
+ */

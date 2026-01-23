@@ -42,6 +42,23 @@ Couldn't be simpler!
 | **NOTE:** Classes must be defined in a different file from where ScalaJack is called.
 | This is a Scala macro requirement, not a ScalaJack limitation.
 
+### New Syntax
+
+ScalaJack now supports a new and more convenient syntax.
+
+```scala
+import co.blocke.scalajack.*
+import co.blocke.scalajack.ScalaJackSyntax.*
+
+given ScalaJack[Person] = ScalaJack.sjCodecOf[Person]
+
+case class Person(name:String, age: Int)
+
+val p = Person("Bob",39)
+val js = p.toJson
+val p2 = js.fromJson[Person]
+```
+
 ### A word about performance...
 
 Compared to pre-8.0 ScalaJack, which used Scala 2.x runtime reflection, ScalaJack is dramatically faster in almost every case. How does this work? ScalaJack 8 uses compile-time macros to generate all the serialization code for you (the codecs). It's very much like writing hand-tooled, field-by-field serialization code yourself, except ScalaJack does it at compile-time.  Wherever you see ```sjCodecOf``` is where the compiler will generate all the serialization code.  **(That also means you should try not to use sjCodecOf more than once for any given class or you'll generate a lot of redundant code!)**
@@ -96,7 +113,7 @@ s
 ### Notes:
 
 =======
-* 8.1.6 -- Fix bug in opaque type handling
+* 8.1.7 -- Fix bug in opaque type handling
 * 8.1.2 -- Provide ScalaJackSyntax for nicer aesthetics
 * 8.1.1
     * JSON raw (unparsed json blob) support -- e.g. for payloads

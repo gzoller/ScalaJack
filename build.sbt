@@ -2,6 +2,7 @@ import org.typelevel.sbt.gha.JavaSpec.Distribution
 import xerial.sbt.Sonatype.sonatypeCentralHost
 import scoverage.ScoverageKeys._
 
+
 disablePlugins(TypelevelMimaPlugin) // we use our own versioning for now via gitflow-packager
 
 lazy val isCI = sys.env.get("CI").contains("true")
