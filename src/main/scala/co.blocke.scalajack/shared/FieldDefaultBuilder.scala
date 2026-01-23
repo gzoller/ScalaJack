@@ -119,21 +119,13 @@ object FieldDefaultBuilder:
                     '{ $noneU.asInstanceOf[f] }.asExprOf[f]
 
               case _ =>
+                // Non-optional alias with no Scala default param: treat as required.
+                // We intentionally do NOT consult user-provided defaults here.
                 requiredMask |= (1L << idx)
-                a.unwrappedType.refType match
-                  case '[u] =>
-                    Expr.summon[JsonDefault[u]] match
-                      case Some(defaultExpr) =>
-                        // defaultExpr.default : u
-                        '{ $defaultExpr.default.asInstanceOf[f] }.asExprOf[f]
-
-                      case None =>
-                        throw new TypeError(
-                          s"No default value found for alias ${a.name} (underlying ${a.unwrappedType.name}). " +
-                            s"Consider providing a given JsonDefault[${a.unwrappedType.name}]."
-                        )
+                '{ null.asInstanceOf[f] }
 
           case _ =>
+            // No Scala default param and not an Optional-ish type: treat as required.
             requiredMask |= (1L << idx)
             field.fieldRef.unitVal.asExprOf[f]
       else

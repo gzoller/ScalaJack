@@ -7,8 +7,8 @@ import json.reading.JsonSource
 object Raw:
   opaque type JsonRaw = String
 
-  given JsonDefault[JsonRaw] with
-    def default: JsonRaw = Raw("")
+//  given JsonDefault[JsonRaw] with
+//    def default: JsonRaw = Raw("")
 
   given JsonCodec[JsonRaw] with
     def encodeValue(in: JsonRaw, out: JsonOutput): Unit =
