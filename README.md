@@ -113,6 +113,7 @@ s
 ### Notes:
 
 =======
+* 8.1.8 -- Improve multi-threaded safety
 * 8.1.7 -- Fix bug in opaque type handling
 * 8.1.2 -- Provide ScalaJackSyntax for nicer aesthetics
 * 8.1.1
