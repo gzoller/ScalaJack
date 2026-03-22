@@ -9,16 +9,14 @@ import json.*
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
-  val out: JsonOutput = json.writing.JsonOutput()
-
-  def toJson(a: T): String =
+  def toJson(a: T, out: JsonOutput = json.writing.JsonOutput()): String =
     jsonCodec.encodeValue(a, out.clear())
     out.result
 
   def fromJson(js: String): T =
     jsonCodec.decodeValue(json.reading.JsonSource(js))
 
-  def toJsonList(xs: List[T]): String =
+  def toJsonList(xs: List[T], out: JsonOutput = json.writing.JsonOutput()): String =
     listCodec.encodeValue(xs, out.clear())
     out.result
 
