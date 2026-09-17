@@ -9,16 +9,20 @@ import json.*
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
-  def toJson(a: T, out: JsonOutput = json.writing.JsonOutput()): String =
-    jsonCodec.encodeValue(a, out.clear())
-    out.result
+  def toJson(a: T, out: JsonOutput = null): String =
+    ScalaJack.withJsonOutput(out) { target =>
+      jsonCodec.encodeValue(a, target.clear())
+      target.result
+    }
 
   def fromJson(js: String): T =
     jsonCodec.decodeValue(json.reading.JsonSource(js))
 
-  def toJsonList(xs: List[T], out: JsonOutput = json.writing.JsonOutput()): String =
-    listCodec.encodeValue(xs, out.clear())
-    out.result
+  def toJsonList(xs: List[T], out: JsonOutput = null): String =
+    ScalaJack.withJsonOutput(out) { target =>
+      listCodec.encodeValue(xs, target.clear())
+      target.result
+    }
 
   def fromJsonList(js: String): List[T] =
     listCodec.decodeValue(json.reading.JsonSource(js))
@@ -26,6 +30,17 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 // ---------------------------------------
 
 object ScalaJack {
+
+  private val jsonOutputPool = ThreadLocal.withInitial(() => new java.util.ArrayDeque[JsonOutput]())
+
+  private[scalajack] def withJsonOutput[A](provided: JsonOutput)(f: JsonOutput => A): A =
+    if provided != null then f(provided)
+    else
+      val pool = jsonOutputPool.get()
+      val output = pool.pollFirst()
+      val target = if output == null then JsonOutput() else output
+      try f(target)
+      finally pool.addFirst(target)
 
   // -----------------------
   //         JSON

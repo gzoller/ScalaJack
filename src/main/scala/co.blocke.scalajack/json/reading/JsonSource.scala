@@ -257,7 +257,7 @@ case class JsonSource(js: CharSequence):
         i = endI + 1
         str
       else // slower-parseString looking for escaped special chars
-        val buf = FastStringBuilder()
+        val buf = new FastStringBuilder()
         expectEncodedString(buf)
         buf.result
     else if t == 'n' then
@@ -295,10 +295,7 @@ case class JsonSource(js: CharSequence):
             buf.append('\t')
             expectEncodedString(buf)
           case 'u' =>
-            val hexEncoded = js.subSequence(i, i + 4)
-            i = i + 4
-            val unicodeChar = Integer.parseInt(hexEncoded.toString, 16).toChar
-            buf.append(unicodeChar.toString)
+            buf.append(readEscapedUnicode())
             expectEncodedString(buf)
           case c =>
             buf.append(c)
@@ -306,6 +303,20 @@ case class JsonSource(js: CharSequence):
       case c =>
         buf.append(c)
         expectEncodedString(buf)
+
+  private inline def hexValue(c: Char): Int =
+    val d = c - '0'
+    if d >= 0 && d <= 9 then d
+    else
+      val h = (c | 0x20) - 'a'
+      if h >= 0 && h <= 5 then h + 10
+      else throw JsonParseError("Invalid hexadecimal digit in unicode escape", this)
+
+  private def readEscapedUnicode(): Char =
+    if i + 4 > max then throw JsonParseError("Unexpected end of unicode escape", this)
+    val result = (hexValue(js.charAt(i)) << 12) | (hexValue(js.charAt(i + 1)) << 8) | (hexValue(js.charAt(i + 2)) << 4) | hexValue(js.charAt(i + 3))
+    i += 4
+    result.toChar
 
   def expectStringWithFn[T](parseFn: String => T): T =
     expectString() match
@@ -453,9 +464,37 @@ case class JsonSource(js: CharSequence):
     x
 
   def expectLong(): Long =
-    val result = UnsafeNumbers.long_(this, false)
-    backspace()
-    result
+    var b = readToken()
+    var s = -1L
+    if b == '-' then
+      b = readChar()
+      s = 0L
+    else if b == '+' then b = readChar()
+    if b < '0' || b > '9' then
+      backspace()
+      throw JsonParseError("Unexpected character in Int/Long value: " + b, this)
+    var x = ('0' - b).toLong
+    var readFour = true
+    while readFour && x > -922337203685477L && i + 3 < max do
+      val d0 = js.charAt(i) - '0'
+      val d1 = js.charAt(i + 1) - '0'
+      val d2 = js.charAt(i + 2) - '0'
+      val d3 = js.charAt(i + 3) - '0'
+      if (d0 | d1 | d2 | d3) < 0 || d0 > 9 || d1 > 9 || d2 > 9 || d3 > 9 then readFour = false
+      else
+        x = x * 10000 - (d0 * 1000 + d1 * 100 + d2 * 10 + d3)
+        i += 4
+    while i < max && { b = here; b >= '0' && b <= '9' } do
+      if x < -922337203685477580L || {
+          x = x * 10 + ('0' - b)
+          x > 0
+        }
+      then throw UnsafeNumbers.UnsafeNumber
+      i += 1
+    x ^= s
+    x -= s
+    if (s & x) == Long.MinValue then throw UnsafeNumbers.UnsafeNumber
+    x
 
   // Skip things...
   // =======================================================
