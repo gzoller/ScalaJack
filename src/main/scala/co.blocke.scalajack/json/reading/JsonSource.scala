@@ -257,7 +257,9 @@ case class JsonSource(js: CharSequence):
 
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
-  inline def expectString(): String =
+  // Keep this as a real call from generated codecs. Expanding a complete scanner at every String field
+  // makes object decoders too large for HotSpot to optimize and prevents useful nested-decoder inlining.
+  def expectString(): String =
     val mark = i
     val t = readToken()
     if t == '"' then
@@ -333,27 +335,26 @@ case class JsonSource(js: CharSequence):
       case s: String => parseFn(s)
       case null      => null.asInstanceOf[T]
 
-  final private def parseString(pos: Int): Int =
-    if js.charAt(pos) == '"' then pos // empty string: "" → return index of closing quote
-    else
-      @tailrec
-      def loop(p: Int): Int =
-        if p + 3 < max then
-          val bs = js.charAt(p) | (js.charAt(p + 1) << 8) | (js.charAt(p + 2) << 16) | (js.charAt(p + 3) << 24)
-          val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
-          if mask != 0 then
-            val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
-            if ((bs >>> (offset << 3)) & 0xff).toByte == '"' then p + offset
-            else -1 // special char found
-          else loop(p + 4)
-        else if p == max then throw new Exception("Unterminated string value")
-        else
-          val b = js.charAt(p)
-          if b == '"' then p
-          else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
-          else loop(p + 1)
-
-      loop(pos)
+  // Expand the scanner into expectString itself so HotSpot compiles that hot path once instead of
+  // reinlining a smaller wrapper (and the scanner beneath it) into every generated field case.
+  final private inline def parseString(pos: Int): Int =
+    var p = pos
+    var result = Int.MinValue
+    while result == Int.MinValue do
+      if p + 3 < max then
+        val bs = js.charAt(p) | (js.charAt(p + 1) << 8) | (js.charAt(p + 2) << 16) | (js.charAt(p + 3) << 24)
+        val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
+        if mask != 0 then
+          val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
+          result = if ((bs >>> (offset << 3)) & 0xff).toByte == '"' then p + offset else -1
+        else p += 4
+      else if p == max then throw new Exception("Unterminated string value")
+      else
+        val b = js.charAt(p)
+        if b == '"' then result = p
+        else if (b - 0x20 ^ 0x3c) <= 0 then result = -1
+        else p += 1
+    result
 
   def readRawJson(): String =
     val here = i
