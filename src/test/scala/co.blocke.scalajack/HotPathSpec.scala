@@ -51,12 +51,20 @@ class HotPathSpec extends AnyFunSpec:
         "0",
         "-0",
         "12345.6789",
+        "+1.25",
+        "1e23",
+        "1e-22",
+        "4503599627370495e-22",
+        "9223372036854775799",
         "1.7976931348623157E308",
         "4.9E-324",
         "9007199254740993",
         "1.2345678901234567890123456789",
         "1e-300",
-        "1e309"
+        "1e309",
+        "NaN",
+        "Infinity",
+        "-Infinity"
       )
       val random = new scala.util.Random(0x5ca1aL)
       val generated = Iterator.continually(java.lang.Double.longBitsToDouble(random.nextLong())).filter(_.isFinite).map(_.toString).take(10000)

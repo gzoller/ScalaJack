@@ -13,6 +13,8 @@ object JsonSource:
   protected val rue: Array[Char] = "rue".toCharArray
   protected val falseBytes = 'f' | 'a' << 8 | 'l' << 16 | 's' << 24 | 'e' << 32
   protected val trueBytes = 't' | 'r' << 8 | 'u' << 16 | 'e' << 24
+  private val pow10Doubles: Array[Double] =
+    Array(1.0d, 1.0e1d, 1.0e2d, 1.0e3d, 1.0e4d, 1.0e5d, 1.0e6d, 1.0e7d, 1.0e8d, 1.0e9d, 1.0e10d, 1.0e11d, 1.0e12d, 1.0e13d, 1.0e14d, 1.0e15d, 1.0e16d, 1.0e17d, 1.0e18d, 1.0e19d, 1.0e20d, 1.0e21d, 1.0e22d)
 
 // ZIO-Json defines a series of different Readers.  Not exactly sure why--maybe to support different
 // modes (streaming, ...)? At least for now we only need one, so merged key bits of Readers into one.
@@ -435,39 +437,82 @@ case class JsonSource(js: CharSequence):
     val start = i - 1
     var p = start
     var b = first
+    var isNegative = false
 
     if b == '-' || b == '+' then
+      isNegative = b == '-'
       p += 1
       if p >= max then throw JsonParseError("Malformed Double", this)
       b = js.charAt(p)
 
     // Preserve the non-standard values accepted by the previous parser.
-    if b == 'N' || b == 'I' then while p < max && Character.isLetter(js.charAt(p)) do p += 1
+    if b == 'N' || b == 'I' then
+      while p < max && Character.isLetter(js.charAt(p)) do p += 1
+      i = p
+      try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
+      catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
     else
       var hasDigit = false
+      var mantissa = 0L
+      var digitCount = 0
+      var fractionalDigits = 0
+      var fastPath = true
 
       while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
         hasDigit = true
+        if mantissa < 922337203685477580L then
+          mantissa = mantissa * 10 + (b - '0')
+          digitCount += 1
+        else fastPath = false
         p += 1
 
       if p < max && js.charAt(p) == '.' then
         p += 1
         while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
           hasDigit = true
+          fractionalDigits += 1
+          if mantissa < 922337203685477580L then
+            mantissa = mantissa * 10 + (b - '0')
+            digitCount += 1
+          else fastPath = false
           p += 1
 
       if !hasDigit then throw JsonParseError("Malformed Double", this)
 
+      var explicitExponent = 0
       if p < max && (js.charAt(p) | 0x20) == 'e' then
         p += 1
-        if p < max && { b = js.charAt(p); b == '-' || b == '+' } then p += 1
+        var exponentNegative = false
+        if p < max && { b = js.charAt(p); b == '-' || b == '+' } then
+          exponentNegative = b == '-'
+          p += 1
         val exponentStart = p
-        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do p += 1
+        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+          if explicitExponent < 10000 then explicitExponent = explicitExponent * 10 + (b - '0')
+          else fastPath = false
+          p += 1
         if p == exponentStart then throw JsonParseError("Malformed Double", this)
+        if exponentNegative then explicitExponent = -explicitExponent
 
-    i = p
-    try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
-    catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
+      i = p
+      val e10 = explicitExponent - fractionalDigits
+      var result = Double.NaN
+      // Clinger's correctly-rounded fast path, also used by jsoniter-scala.
+      // Inputs outside its safe mantissa/exponent range fall back to the JDK parser.
+      if fastPath then
+        if e10 == 0 && mantissa < 922337203685477580L then result = mantissa.toDouble
+        else if mantissa < 4503599627370496L && e10 >= -22 && e10 <= 38 - digitCount then
+          val pow10 = JsonSource.pow10Doubles
+          if e10 < 0 then result = mantissa / pow10(-e10)
+          else if e10 <= 22 then result = mantissa * pow10(e10)
+          else
+            val slop = 16 - digitCount
+            result = (mantissa * pow10(slop)) * pow10(e10 - slop)
+
+      if !result.isNaN then if isNegative then -result else result
+      else
+        try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
+        catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
 
   def expectNumberOrNull(): String =
     skipWS()
