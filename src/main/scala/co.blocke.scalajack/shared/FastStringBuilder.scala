@@ -41,33 +41,64 @@ final class FastStringBuilder(initial: Int = 16) {
     chars(i + 5) = hex(n & 0xf)
     i += 6
 
+  private def appendEscapedChar(s: String, p: Int, to: Int): Int =
+    val ch1 = s.charAt(p)
+    if ch1 < 0x80 then
+      val esc = FastStringBuilder.escapedChars(ch1)
+      if esc == 0 then
+        if i == chars.length then ensureCapacity(1)
+        chars(i) = ch1
+        i += 1
+      else if esc > 0 then
+        ensureCapacity(2)
+        chars(i) = 0x5c
+        chars(i + 1) = esc.toChar
+        i += 2
+      else appendEscapedUnicode(ch1)
+      p + 1
+    else if (ch1 & 0xf800) != 0xd800 then
+      appendEscapedUnicode(ch1)
+      p + 1
+    else
+      var ch2 = 0.toChar
+      if ch1 >= 0xdc00 || p + 1 >= to || {
+          ch2 = s.charAt(p + 1)
+          (ch2 & 0xfc00) != 0xdc00
+        }
+      then throw new IllegalCharacterError("Illegal encoded text character in string value: " + ch2)
+      appendEscapedUnicode(ch1)
+      appendEscapedUnicode(ch2)
+      p + 2
+
   final def appendEscaped(s: String, from: Int, to: Int): Unit =
+    // Reserve the common all-ASCII case once instead of checking capacity for
+    // every character. Escapes reserve their additional space only when found.
+    ensureCapacity(to - from)
     var p = from
+    val escaped = FastStringBuilder.escapedChars
+    while p + 3 < to do
+      val ch0 = s.charAt(p)
+      val ch1 = s.charAt(p + 1)
+      val ch2 = s.charAt(p + 2)
+      val ch3 = s.charAt(p + 3)
+      if ((ch0 | ch1 | ch2 | ch3) & 0xff80) == 0 && escaped(ch0) == 0 && escaped(ch1) == 0 && escaped(ch2) == 0 && escaped(ch3) == 0 then
+        if i + 4 > chars.length then ensureCapacity(4)
+        chars(i) = ch0
+        chars(i + 1) = ch1
+        chars(i + 2) = ch2
+        chars(i + 3) = ch3
+        i += 4
+        p += 4
+      else p = appendEscapedChar(s, p, to)
+
     while p < to do
-      ensureCapacity(2)
       val ch1 = s.charAt(p)
-      if ch1 < 0x80 then
-        val esc = FastStringBuilder.escapedChars(ch1)
-        if esc == 0 then
-          chars(i) = ch1
-          i += 1
-        else if esc > 0 then
-          chars(i) = 0x5c
-          chars(i + 1) = esc.toChar
-          i += 2
-        else appendEscapedUnicode(ch1)
-      else if (ch1 & 0xf800) != 0xd800 then appendEscapedUnicode(ch1)
-      else
-        var ch2 = 0.toChar
-        if ch1 >= 0xdc00 || p + 1 >= to || {
-            ch2 = s.charAt(p + 1)
-            (ch2 & 0xfc00) != 0xdc00
-          }
-        then throw new IllegalCharacterError("Illegal encoded text character in string value: " + ch2)
-        appendEscapedUnicode(ch1)
-        appendEscapedUnicode(ch2)
+      if ch1 < 0x80 && escaped(ch1) == 0 then
+        if i == chars.length then ensureCapacity(1)
+        chars(i) = ch1
+        i += 1
         p += 1
-      p += 1
+      else p = appendEscapedChar(s, p, to)
 
   def append(s: String): Unit =
     ensureCapacity(s.length)

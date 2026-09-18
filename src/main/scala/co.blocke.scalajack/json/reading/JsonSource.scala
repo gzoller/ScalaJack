@@ -6,6 +6,8 @@ import scala.annotation.{switch, tailrec}
 import co.blocke.scalajack.shared.{FastStringBuilder, StringMatrix, UnsafeNumbers}
 
 object JsonSource:
+  inline val OBJECT_END = -2
+  inline val NULL_OBJECT = -3
   val ull: Array[Char] = "ull".toCharArray
   protected val alse: Array[Char] = "alse".toCharArray
   protected val rue: Array[Char] = "rue".toCharArray
@@ -85,30 +87,37 @@ case class JsonSource(js: CharSequence):
 
   // returns false if 'null' found
   def expectFirstObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
+    expectFirstObjectFieldIndex(fieldNameMatrix) match
+      case JsonSource.NULL_OBJECT => null
+      case JsonSource.OBJECT_END  => None
+      case index                  => Some(index)
+
+  def expectFirstObjectFieldIndex(fieldNameMatrix: StringMatrix): Int =
     val t = readToken()
     if t == '{' then
       val tt = readToken()
-      if tt == '"' then
-        val foundIndex = parseObjectKey(fieldNameMatrix)
-        Some(foundIndex)
-      else if tt == '}' then None
+      if tt == '"' then parseObjectKey(fieldNameMatrix)
+      else if tt == '}' then JsonSource.OBJECT_END
       else throw new JsonParseError(s"Expected object field name or '}' but found '$tt'", this)
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
-      null
+      JsonSource.NULL_OBJECT
     else
       backspace()
       throw new JsonParseError(s"Expected object start '{' or null", this)
 
   def expectObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
+    expectObjectFieldIndex(fieldNameMatrix) match
+      case JsonSource.OBJECT_END => None
+      case index                 => Some(index)
+
+  def expectObjectFieldIndex(fieldNameMatrix: StringMatrix): Int =
     val t = readToken()
     if t == ',' then
       val tt = readToken()
-      if tt == '"' then
-        val foundIndex = parseObjectKey(fieldNameMatrix)
-        Some(foundIndex)
+      if tt == '"' then parseObjectKey(fieldNameMatrix)
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
-    else if t == '}' then None
+    else if t == '}' then JsonSource.OBJECT_END
     else
       backspace()
       throw new JsonParseError(s"Expected ',' or '}' but found '$t'", this)

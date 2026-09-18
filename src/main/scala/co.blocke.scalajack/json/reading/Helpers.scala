@@ -254,17 +254,17 @@ object Helpers:
     val requiredMaskExpr = Expr(requiredMask)
 
     val parseLogic: Term = '{
-      var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
-      if maybeFieldNum == null then null
+      var fieldNum = $in.expectFirstObjectFieldIndex($matrixRef)
+      if fieldNum == JsonSource.NULL_OBJECT then null
       else
-        while maybeFieldNum.isDefined do
+        while fieldNum != JsonSource.OBJECT_END do
           ${
             Match(
-              '{ maybeFieldNum.get }.asTerm,
+              '{ fieldNum }.asTerm,
               caseDefs :+ CaseDef(Wildcard(), None, '{ $in.skipValue() }.asTerm)
             ).asExprOf[Any]
           }
-          maybeFieldNum = $in.expectObjectField($matrixRef)
+          fieldNum = $in.expectObjectFieldIndex($matrixRef)
 
         if ($reqRefExpr & $requiredMaskExpr) == 0 then $instantiateExpr
         else
@@ -337,12 +337,12 @@ object Helpers:
     val parseLogic: Term =
       '{
         val ncBuffer = scala.collection.mutable.ListBuffer.empty[(Int, Int)]
-        var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
+        var fieldNum = $in.expectFirstObjectFieldIndex($matrixRef)
 
-        if maybeFieldNum == null then null.asInstanceOf[T]
+        if fieldNum == JsonSource.NULL_OBJECT then null.asInstanceOf[T]
         else
-          while maybeFieldNum.isDefined do
-            val foundFieldNum = maybeFieldNum.get
+          while fieldNum != JsonSource.OBJECT_END do
+            val foundFieldNum = fieldNum
             if foundFieldNum < ${ Expr(classRef.fields.size) } then
               ${
                 Match('{ foundFieldNum }.asTerm, constructorCases).asExprOf[Any]
@@ -351,7 +351,7 @@ object Helpers:
               ncBuffer += ((foundFieldNum, $in.pos))
               $in.skipValue()
             }
-            maybeFieldNum = $in.expectObjectField($matrixRef)
+            fieldNum = $in.expectObjectFieldIndex($matrixRef)
 
           if ($reqRefExpr & $requiredMaskExpr) == 0 then
             ${ Assign(Ref(instanceSym), instantiateExpr.asTerm).asExprOf[Unit] }
@@ -411,13 +411,13 @@ object Helpers:
 
         val parseLoop =
           '{
-            var maybeFieldNum = $in.expectFirstObjectField($matrixRef)
-            if maybeFieldNum == null then null
+            var fieldNum = $in.expectFirstObjectFieldIndex($matrixRef)
+            if fieldNum == JsonSource.NULL_OBJECT then null
             else
               ${ Assign(instanceSymRef, '{ Class.forName($classNameE).getDeclaredConstructor().newInstance().asInstanceOf[b] }.asTerm).asExprOf[Any] } // _instance = (new instance)
-              while maybeFieldNum.isDefined do
-                ${ Match('{ maybeFieldNum.get }.asTerm, caseDefs).asExprOf[Any] }
-                maybeFieldNum = $in.expectObjectField($matrixRef)
+              while fieldNum != JsonSource.OBJECT_END do
+                ${ Match('{ fieldNum }.asTerm, caseDefs).asExprOf[Any] }
+                fieldNum = $in.expectObjectFieldIndex($matrixRef)
 
               ${ Ref(instanceSym).asExprOf[Any] }
           }.asTerm

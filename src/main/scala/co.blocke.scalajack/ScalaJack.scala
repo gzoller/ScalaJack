@@ -31,16 +31,33 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
 object ScalaJack {
 
-  private val jsonOutputPool = ThreadLocal.withInitial(() => new java.util.ArrayDeque[JsonOutput]())
+  final private class JsonOutputPool:
+    private val primary = JsonOutput()
+    private var primaryInUse = false
+    private var nested: java.util.ArrayDeque[JsonOutput] = null
+
+    def acquire(): JsonOutput =
+      if !primaryInUse then
+        primaryInUse = true
+        primary
+      else
+        if nested == null then nested = new java.util.ArrayDeque[JsonOutput]()
+        val output = nested.pollFirst()
+        if output == null then JsonOutput() else output
+
+    def release(output: JsonOutput): Unit =
+      if output eq primary then primaryInUse = false
+      else nested.addFirst(output)
+
+  private val jsonOutputPool = ThreadLocal.withInitial(() => new JsonOutputPool())
 
   private[scalajack] def withJsonOutput[A](provided: JsonOutput)(f: JsonOutput => A): A =
     if provided != null then f(provided)
     else
       val pool = jsonOutputPool.get()
-      val output = pool.pollFirst()
-      val target = if output == null then JsonOutput() else output
+      val target = pool.acquire()
       try f(target)
-      finally pool.addFirst(target)
+      finally pool.release(target)
 
   // -----------------------
   //         JSON

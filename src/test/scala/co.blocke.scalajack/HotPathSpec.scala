@@ -74,6 +74,11 @@ class HotPathSpec extends AnyFunSpec:
       builder.appendEscaped(value, 0, value.length)
       builder.result shouldBe "pr\\u00e9fix\\u2606tail\\ud83d\\ude00done"
 
+      val tinyBuilder = new FastStringBuilder(1)
+      val expanded = "\nASCII-after-expansion"
+      tinyBuilder.appendEscaped(expanded, 0, expanded.length)
+      tinyBuilder.result shouldBe "\\nASCII-after-expansion"
+
     it("decodes unicode escapes without allocating intermediate strings"):
       JsonSource("\"pr\\u00e9fix\\u2606tail\\ud83d\\ude00done\"").expectString() shouldBe "préfix☆tail😀done"
 
@@ -97,6 +102,35 @@ class HotPathSpec extends AnyFunSpec:
       matrixFields.map(_.get(codec.jsonCodec)).zip(matrices).foreach { case (after, before) =>
         (after eq before) shouldBe true
       }
+
+    it("matches ASCII, prefix-sharing, and Unicode field names"):
+      val names = Array("person", "pets", "age", "éclair")
+      val matrix = StringMatrix(names)
+
+      def lookup(name: String): Int =
+        var bitset = matrix.initial
+        var i = 0
+        while i < name.length do
+          bitset = matrix.update(bitset, i, name.charAt(i))
+          i += 1
+        matrix.first(matrix.exact(bitset, name.length))
+
+      names.zipWithIndex.foreach { case (name, index) => lookup(name) shouldBe index }
+      lookup("pet") shouldBe -1
+      lookup("unknown") shouldBe -1
+
+    it("uses primitive sentinels in generated object field loops"):
+      val matrix = StringMatrix(Array("value"))
+      JsonSource("{}").expectFirstObjectFieldIndex(matrix) shouldBe JsonSource.OBJECT_END
+      JsonSource("null").expectFirstObjectFieldIndex(matrix) shouldBe JsonSource.NULL_OBJECT
+
+      val known = JsonSource("{\"value\":1}")
+      known.expectFirstObjectFieldIndex(matrix) shouldBe 0
+      known.skipValue()
+      known.expectObjectFieldIndex(matrix) shouldBe JsonSource.OBJECT_END
+
+      val unknown = JsonSource("{\"other\":1}")
+      unknown.expectFirstObjectFieldIndex(matrix) shouldBe -1
 
 case class MatrixChild(name: String)
 case class MatrixHolder(value: Int, child: MatrixChild)
