@@ -231,22 +231,21 @@ case class JsonSource(js: CharSequence):
   // Array and Tuple...
   // =======================================================
 
-  @tailrec
-  final private def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E, isFirst: Boolean): scala.collection.mutable.ListBuffer[E] =
-    if i == max then throw JsonParseError("Unexpected end of buffer", this)
-    val tt = readToken()
-    if tt == ']' then s
-    else if !isFirst && tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
-    else
-      if isFirst then backspace()
-      s.addOne(f())
-      addAllArray(s, f, false)
-
-  def expectArray[E](f: () => E): scala.collection.mutable.ListBuffer[E] =
+  inline def expectArray[E](inline f: () => E): scala.collection.mutable.ListBuffer[E] =
     val t = readToken()
     if t == '[' then
       val seq = scala.collection.mutable.ListBuffer.empty[E]
-      addAllArray(seq, f, true)
+      var first = true
+      var done = false
+      while !done do
+        if i == max then throw JsonParseError("Unexpected end of buffer", this)
+        val tt = readToken()
+        if tt == ']' then done = true
+        else if !first && tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
+        else
+          if first then backspace()
+          seq.addOne(f())
+          first = false
       seq
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
@@ -396,10 +395,9 @@ case class JsonSource(js: CharSequence):
   // Characters...
   // =======================================================
 
-  private var c: Char = 0
   inline def readChar(): Char =
     if i < max then
-      c = here
+      val c = here
       i += 1
       c
     else BUFFER_EXCEEDED
@@ -536,19 +534,17 @@ case class JsonSource(js: CharSequence):
       backspace()
       throw JsonParseError("Non-numeric character found when integer value expected", this)
     var x = '0' - b
-    while { b = readChar(); b >= '0' && b <= '9' } do
+    while i < max && { b = here; b >= '0' && b <= '9' } do
       if x < -214748364 || {
           x = x * 10 + ('0' - b)
           x > 0
         }
       then throw JsonParseError("Integer value overflow", this)
+      i += 1
     x ^= s
     x -= s
     if (s & x) == -2147483648 then throw JsonParseError("Integer value overflow", this)
-    if (b | 0x20) == 'e' || b == '.' then
-      backspace()
-      throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
-    backspace()
+    if i < max && ((b | 0x20) == 'e' || b == '.') then throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
     x
 
   def expectLong(): Long =
