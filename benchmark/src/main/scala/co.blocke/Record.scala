@@ -30,6 +30,7 @@ case class Pet2(
 
 case class Record2(
   person: Person2,
+  account_balance: Double,
   hobbies: List[String],
   friends: List[Friend2],
   pets: List[Pet2]
@@ -68,6 +69,7 @@ val jsData2 =
       ],
       "is_employed": true
     },
+    "account_balance": 12345.6789,
     "hobbies": [
       "reading",
       "swimming",

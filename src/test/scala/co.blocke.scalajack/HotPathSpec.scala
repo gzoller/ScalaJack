@@ -46,6 +46,28 @@ class HotPathSpec extends AnyFunSpec:
         source.readToken() shouldBe ','
       }
 
+    it("reads doubles directly and matches JDK rounding"):
+      val literals = Seq(
+        "0",
+        "-0",
+        "12345.6789",
+        "1.7976931348623157E308",
+        "4.9E-324",
+        "9007199254740993",
+        "1.2345678901234567890123456789",
+        "1e-300",
+        "1e309"
+      )
+      val random = new scala.util.Random(0x5ca1aL)
+      val generated = Iterator.continually(java.lang.Double.longBitsToDouble(random.nextLong())).filter(_.isFinite).map(_.toString).take(10000)
+
+      (literals.iterator ++ generated).foreach { literal =>
+        val source = JsonSource(" \n\t" + literal + ",")
+        val actual = source.expectDouble()
+        java.lang.Double.doubleToRawLongBits(actual) shouldBe java.lang.Double.doubleToRawLongBits(java.lang.Double.parseDouble(literal))
+        source.readToken() shouldBe ','
+      }
+
     it("escapes every non-ASCII code unit and continues through the rest of the string"):
       val builder = new FastStringBuilder()
       val value = "préfix☆tail😀done"

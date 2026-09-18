@@ -77,6 +77,19 @@ class ScalaPrimSpec() extends AnyFunSpec with JsonMatchers:
         sj.fromJson(js) shouldEqual inst
       }
 
+      it("Double parsing must handle whitespace and exact rounding") {
+        val literals = Array("12345.6789", "-0.0", "4.9E-324", "1.2345678901234567890123456789")
+        val parsed = sjCodecOf[SampleDouble].fromJson(
+          s"""{"d1": ${literals(0)}, "d2": ${literals(1)}, "d3": ${literals(2)}, "d4": ${literals(3)}}"""
+        )
+        val values = Array(parsed.d1, parsed.d2, parsed.d3, parsed.d4)
+
+        values.zip(literals).foreach { case (actual, literal) =>
+          java.lang.Double.doubleToRawLongBits(actual) shouldBe
+            java.lang.Double.doubleToRawLongBits(java.lang.Double.parseDouble(literal))
+        }
+      }
+
       it("Float must work (not nullable)") {
         val inst = SampleFloat(Float.MaxValue, Float.MinValue, 0.0f, -123.4567f)
         val sj = sjCodecOf[SampleFloat]

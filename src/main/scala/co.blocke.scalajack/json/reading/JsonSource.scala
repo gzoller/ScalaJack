@@ -422,9 +422,43 @@ case class JsonSource(js: CharSequence):
     result
 
   def expectDouble(): Double =
-    val result = UnsafeNumbers.double_(this, false, 64)
-    backspace()
-    result
+    val first = readToken()
+    val start = i - 1
+    var p = start
+    var b = first
+
+    if b == '-' || b == '+' then
+      p += 1
+      if p >= max then throw JsonParseError("Malformed Double", this)
+      b = js.charAt(p)
+
+    // Preserve the non-standard values accepted by the previous parser.
+    if b == 'N' || b == 'I' then while p < max && Character.isLetter(js.charAt(p)) do p += 1
+    else
+      var hasDigit = false
+
+      while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+        hasDigit = true
+        p += 1
+
+      if p < max && js.charAt(p) == '.' then
+        p += 1
+        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+          hasDigit = true
+          p += 1
+
+      if !hasDigit then throw JsonParseError("Malformed Double", this)
+
+      if p < max && (js.charAt(p) | 0x20) == 'e' then
+        p += 1
+        if p < max && { b = js.charAt(p); b == '-' || b == '+' } then p += 1
+        val exponentStart = p
+        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do p += 1
+        if p == exponentStart then throw JsonParseError("Malformed Double", this)
+
+    i = p
+    try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
+    catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
 
   def expectNumberOrNull(): String =
     skipWS()
