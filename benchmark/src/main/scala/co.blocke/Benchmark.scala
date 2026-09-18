@@ -27,6 +27,7 @@ trait HandTooledWritingBenchmark {
     record.person.phone_numbers.map(p => sb.append("\""+p+"\","))
     sb.append("],")
     sb.append("\"is_employed:\":"+record.person.is_employed+"},")
+    sb.append("\"account_balance:\":"+record.account_balance+",")
     sb.append("\"hobbies:\":[")
     record.hobbies.map(p => sb.append("\""+p+"\","))
     sb.append("],")
