@@ -30,6 +30,12 @@ trait CodecBuildContext:
   // Holds method definitions (DefDef) for reader functions per TypedName
   val readMethodDefs: mutable.HashMap[TypedName, DefDef] = mutable.HashMap.empty
 
+  // Field-name lookup matrices are immutable for a generated codec. Keep them
+  // outside reader methods so decoding does not rebuild their arrays and hash
+  // tables for every object.
+  val classFieldMatrixSyms: mutable.HashMap[TypedName, Symbol] = mutable.HashMap.empty
+  val classFieldMatrixValDefs: mutable.HashMap[TypedName, ValDef] = mutable.HashMap.empty
+
   // Whether a field of type `Any` was seen (used to decide if readAny() should be emitted)
   var seenAnyRef: Boolean = false
 

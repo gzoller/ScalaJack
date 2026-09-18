@@ -14,33 +14,41 @@ case class RealReader[T](expr: Expr[JsonSource => T], tpe: Type[T]) extends Read
 
 object Helpers:
 
-  private def generateFieldMatrixVal(
+  private def fieldMatrixRef(
       ctx: CodecBuildContext,
       t: RTypeRef[?],
       onlyConstructorFields: Boolean = true
-  ): ctx.quotes.reflect.ValDef =
+  ): Expr[StringMatrix] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
-    val valSym = Symbol.newVal(
-      Symbol.spliceOwner,
-      "__fieldMatrix",
-      TypeRepr.of[StringMatrix],
-      Flags.EmptyFlags,
-      Symbol.noSymbol
+    val methodKey = t.typedName
+    val valSym = ctx.classFieldMatrixSyms.getOrElseUpdate(
+      methodKey,
+      Symbol.newVal(
+        Symbol.spliceOwner,
+        "__" + t.name.replaceAll("\\.", "_") + "_fields",
+        TypeRepr.of[StringMatrix],
+        Flags.EmptyFlags,
+        Symbol.noSymbol
+      )
     )
-    val fieldNames =
-      t match
-        case s: ScalaClassRef[?] =>
-          if onlyConstructorFields then s.fields.map(f => changeFieldName(f))
-          else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f))
-        case j: JavaClassRef[?] =>
-          j.fields.sortBy(_.index).map(f => changeFieldName(f))
-    val namesArrayExpr = Expr(fieldNames.toArray)
-    val matrixExpr = '{
-      StringMatrix(if $namesArrayExpr.isEmpty then Array("_") else $namesArrayExpr)
-    }
-    ValDef(valSym, Some(matrixExpr.asTerm))
+
+    if !ctx.classFieldMatrixValDefs.contains(methodKey) then
+      val fieldNames =
+        t match
+          case s: ScalaClassRef[?] =>
+            if onlyConstructorFields then s.fields.map(f => changeFieldName(f))
+            else (s.fields ++ s.nonConstructorFields.sortBy(_.index)).map(f => changeFieldName(f))
+          case j: JavaClassRef[?] =>
+            j.fields.sortBy(_.index).map(f => changeFieldName(f))
+      val namesArrayExpr = Expr(fieldNames.toArray)
+      val matrixExpr = '{
+        StringMatrix(if $namesArrayExpr.isEmpty then Array("_") else $namesArrayExpr)
+      }
+      ctx.classFieldMatrixValDefs(methodKey) = ValDef(valSym, Some(matrixExpr.asTerm))
+
+    Ref(valSym).asExprOf[StringMatrix]
 
   // ----------------------------------------------------------------------
   // Helper functions for types we're generating functions for (keeps main code cleaner)
@@ -223,8 +231,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix for constructor fields only
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef)
-    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
+    val matrixRef = fieldMatrixRef(ctx, classRef)
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -269,7 +276,7 @@ object Helpers:
           )
     }.asTerm
 
-    Block(fieldMatrixVal +: varDefs :+ reqVarDef, parseLogic).asExprOf[T]
+    Block(varDefs :+ reqVarDef, parseLogic).asExprOf[T]
 
   private def generateReaderBodyWithNonCtor[T: Type](
       ctx: CodecBuildContext,
@@ -281,8 +288,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef, false)
-    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
+    val matrixRef = fieldMatrixRef(ctx, classRef, false)
 
     val (varDefs, idents, reqVarDef, requiredMask, fieldSymbols) =
       FieldDefaultBuilder.generateDefaults[T](ctx, classRef)
@@ -362,7 +368,7 @@ object Helpers:
       }.asTerm
 
     Block(
-      List(fieldMatrixVal) ++ varDefs ++ List(instanceValDef, reqVarDef),
+      varDefs ++ List(instanceValDef, reqVarDef),
       parseLogic
     ).asExprOf[T]
 
@@ -376,8 +382,7 @@ object Helpers:
     import ctx.quotes.reflect.*
 
     // Prebuild matrix including constructor + non-constructor fields
-    val fieldMatrixVal = generateFieldMatrixVal(ctx, classRef, false)
-    val matrixRef = Ref(fieldMatrixVal.symbol).asExprOf[StringMatrix]
+    val matrixRef = fieldMatrixRef(ctx, classRef, false)
 
     classRef.refType match // refType is Type[r.R]
       case '[b] =>
@@ -417,9 +422,6 @@ object Helpers:
               ${ Ref(instanceSym).asExprOf[Any] }
           }.asTerm
         Block(
-          List(
-            fieldMatrixVal,
-            ValDef(instanceSym, Some('{ null }.asTerm))
-          ),
+          List(ValDef(instanceSym, Some('{ null }.asTerm))),
           parseLoop
         ).asExprOf[T]

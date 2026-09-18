@@ -1,7 +1,7 @@
 package co.blocke.scalajack
 
 import co.blocke.scalajack.json.reading.JsonSource
-import co.blocke.scalajack.shared.FastStringBuilder
+import co.blocke.scalajack.shared.{FastStringBuilder, StringMatrix}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers.*
 
@@ -61,3 +61,20 @@ class HotPathSpec extends AnyFunSpec:
           (inner eq outer) shouldBe false
         }
       }
+
+    it("caches field-name matrices in the generated codec"):
+      val codec = ScalaJack.sjCodecOf[MatrixHolder]
+      val matrixFields = codec.jsonCodec.getClass.getDeclaredFields.filter(field => classOf[StringMatrix].isAssignableFrom(field.getType))
+      matrixFields.length shouldBe 2
+      matrixFields.foreach(_.setAccessible(true))
+      val matrices = matrixFields.map(_.get(codec.jsonCodec))
+
+      codec.fromJson("""{"value":1,"child":{"name":"one"}}""") shouldBe MatrixHolder(1, MatrixChild("one"))
+      codec.fromJson("""{"child":{"name":"two"},"value":2}""") shouldBe MatrixHolder(2, MatrixChild("two"))
+
+      matrixFields.map(_.get(codec.jsonCodec)).zip(matrices).foreach { case (after, before) =>
+        (after eq before) shouldBe true
+      }
+
+case class MatrixChild(name: String)
+case class MatrixHolder(value: Int, child: MatrixChild)
