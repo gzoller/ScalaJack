@@ -16,12 +16,12 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-| Jsoniter         | thrpt |  20    |    1346388.345  |  ± 17028.863 | ops/s |
-| **ScalaJack 8**  | thrpt |  20    |   **986597.070**|  ± 7473.148 | ops/s |
-| ZIOJson          | thrpt |  20    |     590995.917  |  ±   817.817 | ops/s |
-| Circe            | thrpt |  20    |     210805.946  |  ± 32488.564 | ops/s |
-| Play             | thrpt |  20    |     198747.067  |  ±  7253.896 | ops/s |
-| Argonaut         | thrpt |  20    |     183670.032  |  ±  8981.485 | ops/s |
+| Jsoniter         | thrpt |  20    |    1285501.352  |  ±  3973.802 | ops/s |
+| **ScalaJack 8**  | thrpt |  20    |   **938626.911**|  ± 31604.383 | ops/s |
+| ZIOJson          | thrpt |  20    |     500670.465  |  ±  8604.498 | ops/s |
+| Circe            | thrpt |  20    |     246376.846  |  ± 10817.595 | ops/s |
+| Play             | thrpt |  20    |     182401.796  |  ±  3159.044 | ops/s |
+| Argonaut         | thrpt |  20    |     178523.533  |  ±  3841.080 | ops/s |
 
 ## Writing Performance:
 
@@ -29,14 +29,14 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-|**ScalaJack 8 no escaped chars in String**   | thrpt |  20    | **5200691.37** |  ± 114219.728 | ops/s |
-|**ScalaJack 8**   | thrpt |  20    | **3039273.222** |  ± 14952.932 | ops/s |
-| Jsoniter         | thrpt |  20    |     2843150.452 |  ± 21478.503 | ops/s |
-| Hand-Tooled      | thrpt |  20    |     2732571.374 |  ± 15129.007 | ops/s |
-| Circe            | thrpt |  20    |     1958244.437 |  ± 23965.817 | ops/s |
-| ZIO JSON         | thrpt |  20    |      794352.301 |  ± 32336.852 | ops/s |
-| Argonaut         | thrpt |  20    |      690269.697 |  ±  6348.882 | ops/s |
-| Play JSON        | thrpt |  20    |      438650.022 |  ± 23800.221 | ops/s |
+|**ScalaJack 8 no escaped chars in String**   | thrpt |  20    | **4822161.717** |  ± 20998.956 | ops/s |
+| Jsoniter         | thrpt |  20    |     2766735.258 |  ±  3799.236 | ops/s |
+|**ScalaJack 8**   | thrpt |  20    | **2760896.986** |  ± 63233.995 | ops/s |
+| Hand-Tooled      | thrpt |  20    |     2250699.414 |  ±  8306.760 | ops/s |
+| Circe            | thrpt |  20    |     1738226.269 |  ± 26064.329 | ops/s |
+| ZIO JSON         | thrpt |  20    |      722061.218 |  ±  8337.419 | ops/s |
+| Argonaut         | thrpt |  20    |      592646.377 |  ±  9348.991 | ops/s |
+| Play JSON        | thrpt |  20    |      362770.165 |  ± 26000.841 | ops/s |
 
 **Note:** Exact numbers aren't terribly important--they may vary widely depending on the platform
 used.  The important thing is the relative relationship between libraries given all tests

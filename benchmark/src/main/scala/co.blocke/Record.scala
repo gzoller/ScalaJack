@@ -69,7 +69,7 @@ val jsData2 =
       ],
       "is_employed": true
     },
-    "account_balance": 12345.6789,
+    "account_balance":12345.6789,
     "hobbies": [
       "reading",
       "swimming",
