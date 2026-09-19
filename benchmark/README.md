@@ -17,7 +17,7 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
 | Jsoniter         | thrpt |  20    |    1285501.352  |  ±  3973.802 | ops/s |
-| **ScalaJack 8**  | thrpt |  20    |   **938626.911**|  ± 31604.383 | ops/s |
+| **ScalaJack 8**  | thrpt |  20    |  **1208555.067**|  ± 26366.803 | ops/s |
 | ZIOJson          | thrpt |  20    |     500670.465  |  ±  8604.498 | ops/s |
 | Circe            | thrpt |  20    |     246376.846  |  ± 10817.595 | ops/s |
 | Play             | thrpt |  20    |     182401.796  |  ±  3159.044 | ops/s |
@@ -29,9 +29,9 @@ sbt "jmh:run -i 10 -wi 10 -f 2 -t 1 co.blocke.*"
 
 | Benchmark        | Mode  | Count  |           Score |        Error | Units |
 |------------------|-------|-------:|----------------:|-------------:|-------|
-|**ScalaJack 8 no escaped chars in String**   | thrpt |  20    | **4822161.717** |  ± 20998.956 | ops/s |
+|**ScalaJack 8 no escaped chars in String**   | thrpt |  20    | **4797572.801** | ± 173616.527 | ops/s |
+|**ScalaJack 8**   | thrpt |  20    | **2833993.184** |  ± 11502.335 | ops/s |
 | Jsoniter         | thrpt |  20    |     2766735.258 |  ±  3799.236 | ops/s |
-|**ScalaJack 8**   | thrpt |  20    | **2760896.986** |  ± 63233.995 | ops/s |
 | Hand-Tooled      | thrpt |  20    |     2250699.414 |  ±  8306.760 | ops/s |
 | Circe            | thrpt |  20    |     1738226.269 |  ± 26064.329 | ops/s |
 | ZIO JSON         | thrpt |  20    |      722061.218 |  ±  8337.419 | ops/s |
@@ -105,12 +105,8 @@ enough is enough for you.  Here's a partial list of learnings incorporated into 
   speed is your goal. The generated code may look kludgy and have extra cruft in it. Rework your 
   macros carefully until the generated code is as smooth as you might write by hand.  
 
-After all the performance tunings and learnings, I was able to meet or beat Jsoniter for writing
-speed.  For reading I made a number of very substantial improvements, but there is still a 
-substantial performance gap between Jsoniter's reads and ScalaJack's, and for the life of me I can't
-figure out what's driving that difference.  The generated code is very similar.  Json parsing should
-be similar--in fact in some ways ScalaJack's should be faster.  Although micro-benchmarks indicate
-match/case is significantly slower in generated code than if/than/else, but in practice replacing 
-these with if/else didn't gain ScalaJack a thing.  Jsoniter has some tricky ByteArrayAccess code 
-that looks very low-level and clever, but when I benchmarked it, the gains seemed nominal to none 
-in my use case.  I dunno--If anyone has any ideas, please drop a comment in the Issues in repo!
+After all the performance tuning and learning, ScalaJack meets or beats Jsoniter for writing speed.
+A major Reader refactor initially introduced a severe read-performance regression relative to 8.0.0.
+Correcting that regression and adding several general hot-path improvements put reads ahead
+of the 8.0.0 baseline and narrowed the gap to Jsoniter considerably.  Jsoniter still leads the mixed
+record benchmark shown here, but the difference is now small rather than architectural in scale.
