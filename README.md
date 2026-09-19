@@ -113,6 +113,8 @@ This means you will be doing more re-compiling with macro-based code than you wo
 ### Notes:
 
 =======
+* 8.2.1 -- Update GitHub Actions for the Node 24 runtime
+* 8.2.0 -- Restore and improve JSON read performance
 * 8.1.8 -- Improve multi-threaded safety
 * 8.1.7 -- Fix bug in opaque type handling
 * 8.1.2 -- Provide ScalaJackSyntax for nicer aesthetics
