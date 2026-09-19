@@ -90,6 +90,9 @@ class HotPathSpec extends AnyFunSpec:
     it("decodes unicode escapes without allocating intermediate strings"):
       JsonSource("\"pr\\u00e9fix\\u2606tail\\ud83d\\ude00done\"").expectString() shouldBe "préfix☆tail😀done"
 
+    it("uses the escaped-string fallback after locating a backslash"):
+      JsonSource("\"a\\\"b\\\\c\\n\\u0041\"").expectString() shouldBe "a\"b\\c\nA"
+
     it("uses separate pooled outputs for reentrant serialization"):
       ScalaJack.withJsonOutput(null) { outer =>
         ScalaJack.withJsonOutput(null) { inner =>
