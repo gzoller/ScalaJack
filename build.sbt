@@ -74,27 +74,40 @@ ThisBuild / githubWorkflowJobSetup := Seq(
     commands = List("bash -c 'git config --global core.autocrlf false'")
   ),
   WorkflowStep.Use(
-    UseRef.Public("actions", "setup-java", "v4"),
+    UseRef.Public("actions", "setup-java", "v6"),
     params = Map(
       "distribution" -> "temurin",
       "java-version" -> "21"
     )
   ),
   WorkflowStep.Use(
-    UseRef.Public("actions", "checkout", "v4")
+    UseRef.Public("actions", "checkout", "v7")
   ),
   WorkflowStep.Use(
-    UseRef.Public("coursier", "setup-action", "v1")
+    UseRef.Public("coursier", "setup-action", "v3"),
+    params = Map("apps" -> "sbt")
   ),
   WorkflowStep.Run(
-    name = Some("Install sbt"),
-    commands = List(
-      "cs install sbt",
-      "echo \"$HOME/.local/share/coursier/bin\" >> $GITHUB_PATH",
-      "sbt sbtVersion"
-    )
+    name = Some("Verify sbt"),
+    commands = List("sbt sbtVersion")
   )
 )
+
+// sbt-typelevel 0.7.7 still generates Node 20 artifact actions. Keep its
+// generated workflow, but move those two steps to the Node 24 releases.
+ThisBuild / githubWorkflowGeneratedUploadSteps ~= (_.map {
+  case step: WorkflowStep.Use
+      if step.ref == UseRef.Public("actions", "upload-artifact", "v4") =>
+    step.withRef(UseRef.Public("actions", "upload-artifact", "v7"))
+  case step => step
+})
+
+ThisBuild / githubWorkflowGeneratedDownloadSteps ~= (_.map {
+  case step: WorkflowStep.Use
+      if step.ref == UseRef.Public("actions", "download-artifact", "v4") =>
+    step.withRef(UseRef.Public("actions", "download-artifact", "v8"))
+  case step => step
+})
 
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
@@ -127,4 +140,3 @@ lazy val compilerOptions = Seq(
   "-coverage-exclude-classlikes",
   ".*AnyWriter"
 )
-

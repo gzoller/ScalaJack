@@ -4,7 +4,7 @@ name: Coveralls Publish
 on:
   pull_request:
     branches:
-      - main
+      - master
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -30,23 +30,22 @@ jobs:
         run: git config --global core.autocrlf false
 
       - name: Checkout current branch (full)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: coursier/setup-action@v1
-
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
 
-      - name: Install sbt
+      - uses: coursier/setup-action@v3
+        with:
+          apps: sbt
+
+      - name: Verify sbt
         shell: bash
-        run: |
-          cs install sbt
-          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
-          sbt sbtVersion
+        run: sbt sbtVersion
 
       - name: sbt update
         if: matrix.java == 'zulu@21' && steps.setup-java-zulu-21.outputs.cache-hit == 'false'
