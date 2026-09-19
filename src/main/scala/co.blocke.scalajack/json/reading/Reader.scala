@@ -126,6 +126,17 @@ object Reader:
       // Always apply the function
       Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
 
+    def makeReadFnFromBody(
+        methodKey: TypedName,
+        readerBodyExpr: Tree => Expr[T]
+    ): Expr[T] =
+      ctx.readMethodSyms.get(methodKey) match
+        case Some(readMethodSym) =>
+          Apply(Ref(readMethodSym), List(in.asTerm)).asExprOf[T]
+        case None =>
+          makeReadFnSym[T](methodKey)
+          registerReaderDef(methodKey, readerBodyExpr)
+
     // ---------------------------
 
     val methodKey = ref.typedName
@@ -590,53 +601,59 @@ object Reader:
           //  Collections...
           // --------------------
           case t: SeqRef[?] =>
-            ref.refType match
-              case '[List[?]] =>
-                t.elementRef.refType match
-                  case '[e] =>
-                    val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                    '{
-                      val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-                      if parsedArray != null then parsedArray.toList
-                      else null
-                    }.asExprOf[T]
-              case '[Vector[?]] =>
-                t.elementRef.refType match
-                  case '[e] =>
-                    val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                    '{
-                      val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-                      if parsedArray != null then parsedArray.toVector
-                      else null
-                    }.asExprOf[T]
-              case '[IndexedSeq[?]] =>
-                t.elementRef.refType match
-                  case '[e] =>
-                    val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                    '{
-                      val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-                      if parsedArray != null then parsedArray.toIndexedSeq
-                      else null
-                    }.asExprOf[T]
-              case '[Seq[?]] =>
-                t.elementRef.refType match
-                  case '[e] =>
-                    val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                    '{
-                      val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-                      if parsedArray != null then parsedArray.toSeq
-                      else null
-                    }.asExprOf[T]
-              // Catch all, with (slightly) slower type coersion to proper Seq flavor
-              case _ =>
-                t.elementRef.refType match
-                  case '[e] =>
-                    val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
-                    '{
-                      val parsedArray = $in.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, in, inTuple).asExprOf[e] })
-                      if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
-                      else null
-                    }.asExprOf[T]
+            makeReadFnFromBody(
+              methodKey,
+              { inParam =>
+                val collectionIn = Ref(inParam.symbol).asExprOf[JsonSource]
+                ref.refType match
+                  case '[List[?]] =>
+                    t.elementRef.refType match
+                      case '[e] =>
+                        val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                        '{
+                          val parsedArray = $collectionIn.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, collectionIn, inTuple).asExprOf[e] })
+                          if parsedArray != null then parsedArray.toList
+                          else null
+                        }.asExprOf[T]
+                  case '[Vector[?]] =>
+                    t.elementRef.refType match
+                      case '[e] =>
+                        val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                        '{
+                          val parsedArray = $collectionIn.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, collectionIn, inTuple).asExprOf[e] })
+                          if parsedArray != null then parsedArray.toVector
+                          else null
+                        }.asExprOf[T]
+                  case '[IndexedSeq[?]] =>
+                    t.elementRef.refType match
+                      case '[e] =>
+                        val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                        '{
+                          val parsedArray = $collectionIn.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, collectionIn, inTuple).asExprOf[e] })
+                          if parsedArray != null then parsedArray.toIndexedSeq
+                          else null
+                        }.asExprOf[T]
+                  case '[Seq[?]] =>
+                    t.elementRef.refType match
+                      case '[e] =>
+                        val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                        '{
+                          val parsedArray = $collectionIn.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, collectionIn, inTuple).asExprOf[e] })
+                          if parsedArray != null then parsedArray.toSeq
+                          else null
+                        }.asExprOf[T]
+                  // Catch all, with (slightly) slower type coersion to proper Seq flavor
+                  case _ =>
+                    t.elementRef.refType match
+                      case '[e] =>
+                        val rtypeRef = t.elementRef.asInstanceOf[RTypeRef[e]]
+                        '{
+                          val parsedArray = $collectionIn.expectArray[e](() => ${ genReadVal[e](ctx, cfg, rtypeRef, collectionIn, inTuple).asExprOf[e] })
+                          if parsedArray != null then parsedArray.to(${ Expr.summon[Factory[e, T]].get }) // create appropriate flavor of Seq[T] here
+                          else null
+                        }.asExprOf[T]
+              }
+            )
 
           case t: IterableRef[?] =>
             t.elementRef.refType match
