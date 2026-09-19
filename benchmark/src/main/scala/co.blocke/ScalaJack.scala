@@ -6,6 +6,7 @@ object ScalaJackZ:
     import co.blocke.scalajack.ScalaJack.*
     import co.blocke.scalajack.*
  
+    // given sj: ScalaJack[co.blocke.Record2] = sjCodecOf[co.blocke.Record2](SJConfig.suppressEscapedStrings)
     given sj: ScalaJack[co.blocke.Record2] = sjCodecOf[co.blocke.Record2]
 
     trait ScalaJackReadingBenchmark{

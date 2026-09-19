@@ -9,16 +9,20 @@ import json.*
 
 case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 
-  def toJson(a: T, out: JsonOutput = json.writing.JsonOutput()): String =
-    jsonCodec.encodeValue(a, out.clear())
-    out.result
+  def toJson(a: T, out: JsonOutput = null): String =
+    ScalaJack.withJsonOutput(out) { target =>
+      jsonCodec.encodeValue(a, target.clear())
+      target.result
+    }
 
   def fromJson(js: String): T =
     jsonCodec.decodeValue(json.reading.JsonSource(js))
 
-  def toJsonList(xs: List[T], out: JsonOutput = json.writing.JsonOutput()): String =
-    listCodec.encodeValue(xs, out.clear())
-    out.result
+  def toJsonList(xs: List[T], out: JsonOutput = null): String =
+    ScalaJack.withJsonOutput(out) { target =>
+      listCodec.encodeValue(xs, target.clear())
+      target.result
+    }
 
   def fromJsonList(js: String): List[T] =
     listCodec.decodeValue(json.reading.JsonSource(js))
@@ -26,6 +30,34 @@ case class ScalaJack[T](jsonCodec: JsonCodec[T], listCodec: JsonCodec[List[T]]):
 // ---------------------------------------
 
 object ScalaJack {
+
+  final private class JsonOutputPool:
+    private val primary = JsonOutput()
+    private var primaryInUse = false
+    private var nested: java.util.ArrayDeque[JsonOutput] = null
+
+    def acquire(): JsonOutput =
+      if !primaryInUse then
+        primaryInUse = true
+        primary
+      else
+        if nested == null then nested = new java.util.ArrayDeque[JsonOutput]()
+        val output = nested.pollFirst()
+        if output == null then JsonOutput() else output
+
+    def release(output: JsonOutput): Unit =
+      if output eq primary then primaryInUse = false
+      else nested.addFirst(output)
+
+  private val jsonOutputPool = ThreadLocal.withInitial(() => new JsonOutputPool())
+
+  private[scalajack] def withJsonOutput[A](provided: JsonOutput)(f: JsonOutput => A): A =
+    if provided != null then f(provided)
+    else
+      val pool = jsonOutputPool.get()
+      val target = pool.acquire()
+      try f(target)
+      finally pool.release(target)
 
   // -----------------------
   //         JSON

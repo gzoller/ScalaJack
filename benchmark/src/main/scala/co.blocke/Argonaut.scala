@@ -19,7 +19,13 @@ object ArgonautZ:
     casecodec6(Person2.apply, (a: Person2) => Option((a.name, a.age, a.address, a.email, a.phone_numbers, a.is_employed)))("name", "age","address","email","phone_numbers","is_employed")
 
   implicit val CodecRecord: CodecJson[Record2] =
-    casecodec4(Record2.apply, (a: Record2) => Option((a.person, a.hobbies, a.friends, a.pets)))("person", "hobbies", "friends", "pets")
+    casecodec5(Record2.apply, (a: Record2) => Option((a.person, a.account_balance, a.hobbies, a.friends, a.pets)))(
+      "person",
+      "account_balance",
+      "hobbies",
+      "friends",
+      "pets"
+    )
 
 
   trait ArgonautReadingBenchmark {

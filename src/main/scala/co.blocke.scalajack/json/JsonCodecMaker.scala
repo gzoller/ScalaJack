@@ -26,8 +26,9 @@ object JsonCodecMaker:
     }.asTerm
 
     val codec = Block(
-      // Functions (can reference anything above)
-      ctx.writeMethodDefs.values.toList ++
+      // Cached data must precede the generated methods that reference it.
+      ctx.classFieldMatrixValDefs.values.toList ++
+        ctx.writeMethodDefs.values.toList ++
         ctx.readMethodDefs.values.toList ++ {
           if ctx.seenAnyRef then List(ctx.readAnyDef)
           else Nil

@@ -109,7 +109,7 @@ This means you will be doing more re-compiling with macro-based code than you wo
 * [Union type](doc/union.md)
 * [Custom Codecs (overrides)](doc/customCodec.md)
 * [Gimme Speed!](benchmark/README.md)
-s
+
 ### Notes:
 
 =======
