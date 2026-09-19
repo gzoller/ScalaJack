@@ -6,11 +6,15 @@ import scala.annotation.{switch, tailrec}
 import co.blocke.scalajack.shared.{FastStringBuilder, StringMatrix, UnsafeNumbers}
 
 object JsonSource:
+  inline val OBJECT_END = -2
+  inline val NULL_OBJECT = -3
   val ull: Array[Char] = "ull".toCharArray
   protected val alse: Array[Char] = "alse".toCharArray
   protected val rue: Array[Char] = "rue".toCharArray
   protected val falseBytes = 'f' | 'a' << 8 | 'l' << 16 | 's' << 24 | 'e' << 32
   protected val trueBytes = 't' | 'r' << 8 | 'u' << 16 | 'e' << 24
+  private val pow10Doubles: Array[Double] =
+    Array(1.0d, 1.0e1d, 1.0e2d, 1.0e3d, 1.0e4d, 1.0e5d, 1.0e6d, 1.0e7d, 1.0e8d, 1.0e9d, 1.0e10d, 1.0e11d, 1.0e12d, 1.0e13d, 1.0e14d, 1.0e15d, 1.0e16d, 1.0e17d, 1.0e18d, 1.0e19d, 1.0e20d, 1.0e21d, 1.0e22d)
 
 // ZIO-Json defines a series of different Readers.  Not exactly sure why--maybe to support different
 // modes (streaming, ...)? At least for now we only need one, so merged key bits of Readers into one.
@@ -85,30 +89,37 @@ case class JsonSource(js: CharSequence):
 
   // returns false if 'null' found
   def expectFirstObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
+    expectFirstObjectFieldIndex(fieldNameMatrix) match
+      case JsonSource.NULL_OBJECT => null
+      case JsonSource.OBJECT_END  => None
+      case index                  => Some(index)
+
+  def expectFirstObjectFieldIndex(fieldNameMatrix: StringMatrix): Int =
     val t = readToken()
     if t == '{' then
       val tt = readToken()
-      if tt == '"' then
-        val foundIndex = parseObjectKey(fieldNameMatrix)
-        Some(foundIndex)
-      else if tt == '}' then None
+      if tt == '"' then parseObjectKey(fieldNameMatrix)
+      else if tt == '}' then JsonSource.OBJECT_END
       else throw new JsonParseError(s"Expected object field name or '}' but found '$tt'", this)
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
-      null
+      JsonSource.NULL_OBJECT
     else
       backspace()
       throw new JsonParseError(s"Expected object start '{' or null", this)
 
   def expectObjectField(fieldNameMatrix: StringMatrix): Option[Int] =
+    expectObjectFieldIndex(fieldNameMatrix) match
+      case JsonSource.OBJECT_END => None
+      case index                 => Some(index)
+
+  def expectObjectFieldIndex(fieldNameMatrix: StringMatrix): Int =
     val t = readToken()
     if t == ',' then
       val tt = readToken()
-      if tt == '"' then
-        val foundIndex = parseObjectKey(fieldNameMatrix)
-        Some(foundIndex)
+      if tt == '"' then parseObjectKey(fieldNameMatrix)
       else throw new JsonParseError(s"Expected object field name but found '$tt'", this)
-    else if t == '}' then None
+    else if t == '}' then JsonSource.OBJECT_END
     else
       backspace()
       throw new JsonParseError(s"Expected ',' or '}' but found '$t'", this)
@@ -220,22 +231,21 @@ case class JsonSource(js: CharSequence):
   // Array and Tuple...
   // =======================================================
 
-  @tailrec
-  final private def addAllArray[E](s: scala.collection.mutable.ListBuffer[E], f: () => E, isFirst: Boolean): scala.collection.mutable.ListBuffer[E] =
-    if i == max then throw JsonParseError("Unexpected end of buffer", this)
-    val tt = readToken()
-    if tt == ']' then s
-    else if !isFirst && tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
-    else
-      if isFirst then backspace()
-      s.addOne(f())
-      addAllArray(s, f, false)
-
-  def expectArray[E](f: () => E): scala.collection.mutable.ListBuffer[E] =
+  inline def expectArray[E](inline f: () => E): scala.collection.mutable.ListBuffer[E] =
     val t = readToken()
     if t == '[' then
       val seq = scala.collection.mutable.ListBuffer.empty[E]
-      addAllArray(seq, f, true)
+      var first = true
+      var done = false
+      while !done do
+        if i == max then throw JsonParseError("Unexpected end of buffer", this)
+        val tt = readToken()
+        if tt == ']' then done = true
+        else if !first && tt != ',' then throw JsonParseError(s"Expected ',' or ']' got '$tt'", this)
+        else
+          if first then backspace()
+          seq.addOne(f())
+          first = false
       seq
     else if t == 'n' then
       readChars(JsonSource.ull, "null")
@@ -247,7 +257,9 @@ case class JsonSource(js: CharSequence):
 
   // Value might be null!
   // expectString() will look for leading '"'.  parseString() presumes the '"' has already been consumed.
-  inline def expectString(): String =
+  // Keep this as a real call from generated codecs. Expanding a complete scanner at every String field
+  // makes object decoders too large for HotSpot to optimize and prevents useful nested-decoder inlining.
+  def expectString(): String =
     val mark = i
     val t = readToken()
     if t == '"' then
@@ -257,7 +269,7 @@ case class JsonSource(js: CharSequence):
         i = endI + 1
         str
       else // slower-parseString looking for escaped special chars
-        val buf = FastStringBuilder()
+        val buf = new FastStringBuilder()
         expectEncodedString(buf)
         buf.result
     else if t == 'n' then
@@ -295,10 +307,7 @@ case class JsonSource(js: CharSequence):
             buf.append('\t')
             expectEncodedString(buf)
           case 'u' =>
-            val hexEncoded = js.subSequence(i, i + 4)
-            i = i + 4
-            val unicodeChar = Integer.parseInt(hexEncoded.toString, 16).toChar
-            buf.append(unicodeChar.toString)
+            buf.append(readEscapedUnicode())
             expectEncodedString(buf)
           case c =>
             buf.append(c)
@@ -307,32 +316,54 @@ case class JsonSource(js: CharSequence):
         buf.append(c)
         expectEncodedString(buf)
 
+  private inline def hexValue(c: Char): Int =
+    val d = c - '0'
+    if d >= 0 && d <= 9 then d
+    else
+      val h = (c | 0x20) - 'a'
+      if h >= 0 && h <= 5 then h + 10
+      else throw JsonParseError("Invalid hexadecimal digit in unicode escape", this)
+
+  private def readEscapedUnicode(): Char =
+    if i + 4 > max then throw JsonParseError("Unexpected end of unicode escape", this)
+    val result = (hexValue(js.charAt(i)) << 12) | (hexValue(js.charAt(i + 1)) << 8) | (hexValue(js.charAt(i + 2)) << 4) | hexValue(js.charAt(i + 3))
+    i += 4
+    result.toChar
+
   def expectStringWithFn[T](parseFn: String => T): T =
     expectString() match
       case s: String => parseFn(s)
       case null      => null.asInstanceOf[T]
 
-  final private def parseString(pos: Int): Int =
-    if js.charAt(pos) == '"' then pos // empty string: "" → return index of closing quote
-    else
-      @tailrec
-      def loop(p: Int): Int =
-        if p + 3 < max then
-          val bs = js.charAt(p) | (js.charAt(p + 1) << 8) | (js.charAt(p + 2) << 16) | (js.charAt(p + 3) << 24)
-          val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
-          if mask != 0 then
-            val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
-            if ((bs >>> (offset << 3)) & 0xff).toByte == '"' then p + offset
-            else -1 // special char found
-          else loop(p + 4)
-        else if p == max then throw new Exception("Unterminated string value")
+  // Expand the scanner into expectString itself so HotSpot compiles that hot path once instead of
+  // reinlining a smaller wrapper (and the scanner beneath it) into every generated field case.
+  final private inline def parseString(pos: Int): Int =
+    js match
+      case value: String =>
+        val end = value.indexOf('"', pos)
+        if end < 0 then throw new Exception("Unterminated string value")
         else
-          val b = js.charAt(p)
-          if b == '"' then p
-          else if (b - 0x20 ^ 0x3c) <= 0 then -1 // special char found
-          else loop(p + 1)
-
-      loop(pos)
+          var p = pos
+          while p < end && value.charAt(p) != '\\' do p += 1
+          if p < end then -1 else end
+      case _ =>
+        var p = pos
+        var result = Int.MinValue
+        while result == Int.MinValue do
+          if p + 3 < max then
+            val bs = js.charAt(p) | (js.charAt(p + 1) << 8) | (js.charAt(p + 2) << 16) | (js.charAt(p + 3) << 24)
+            val mask = ((bs - 0x20202020 ^ 0x3c3c3c3c) - 0x1010101 | (bs ^ 0x5d5d5d5d) + 0x1010101) & 0x80808080
+            if mask != 0 then
+              val offset = java.lang.Integer.numberOfTrailingZeros(mask) >> 3
+              result = if ((bs >>> (offset << 3)) & 0xff).toByte == '"' then p + offset else -1
+            else p += 4
+          else if p == max then throw new Exception("Unterminated string value")
+          else
+            val b = js.charAt(p)
+            if b == '"' then result = p
+            else if (b - 0x20 ^ 0x3c) <= 0 then result = -1
+            else p += 1
+        result
 
   def readRawJson(): String =
     val here = i
@@ -374,10 +405,9 @@ case class JsonSource(js: CharSequence):
   // Characters...
   // =======================================================
 
-  private var c: Char = 0
   inline def readChar(): Char =
     if i < max then
-      c = here
+      val c = here
       i += 1
       c
     else BUFFER_EXCEEDED
@@ -411,9 +441,86 @@ case class JsonSource(js: CharSequence):
     result
 
   def expectDouble(): Double =
-    val result = UnsafeNumbers.double_(this, false, 64)
-    backspace()
-    result
+    val first = readToken()
+    val start = i - 1
+    var p = start
+    var b = first
+    var isNegative = false
+
+    if b == '-' || b == '+' then
+      isNegative = b == '-'
+      p += 1
+      if p >= max then throw JsonParseError("Malformed Double", this)
+      b = js.charAt(p)
+
+    // Preserve the non-standard values accepted by the previous parser.
+    if b == 'N' || b == 'I' then
+      while p < max && Character.isLetter(js.charAt(p)) do p += 1
+      i = p
+      try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
+      catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
+    else
+      var hasDigit = false
+      var mantissa = 0L
+      var digitCount = 0
+      var fractionalDigits = 0
+      var fastPath = true
+
+      while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+        hasDigit = true
+        if mantissa < 922337203685477580L then
+          mantissa = mantissa * 10 + (b - '0')
+          digitCount += 1
+        else fastPath = false
+        p += 1
+
+      if p < max && js.charAt(p) == '.' then
+        p += 1
+        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+          hasDigit = true
+          fractionalDigits += 1
+          if mantissa < 922337203685477580L then
+            mantissa = mantissa * 10 + (b - '0')
+            digitCount += 1
+          else fastPath = false
+          p += 1
+
+      if !hasDigit then throw JsonParseError("Malformed Double", this)
+
+      var explicitExponent = 0
+      if p < max && (js.charAt(p) | 0x20) == 'e' then
+        p += 1
+        var exponentNegative = false
+        if p < max && { b = js.charAt(p); b == '-' || b == '+' } then
+          exponentNegative = b == '-'
+          p += 1
+        val exponentStart = p
+        while p < max && { b = js.charAt(p); b >= '0' && b <= '9' } do
+          if explicitExponent < 10000 then explicitExponent = explicitExponent * 10 + (b - '0')
+          else fastPath = false
+          p += 1
+        if p == exponentStart then throw JsonParseError("Malformed Double", this)
+        if exponentNegative then explicitExponent = -explicitExponent
+
+      i = p
+      val e10 = explicitExponent - fractionalDigits
+      var result = Double.NaN
+      // Clinger's correctly-rounded fast path, also used by jsoniter-scala.
+      // Inputs outside its safe mantissa/exponent range fall back to the JDK parser.
+      if fastPath then
+        if e10 == 0 && mantissa < 922337203685477580L then result = mantissa.toDouble
+        else if mantissa < 4503599627370496L && e10 >= -22 && e10 <= 38 - digitCount then
+          val pow10 = JsonSource.pow10Doubles
+          if e10 < 0 then result = mantissa / pow10(-e10)
+          else if e10 <= 22 then result = mantissa * pow10(e10)
+          else
+            val slop = 16 - digitCount
+            result = (mantissa * pow10(slop)) * pow10(e10 - slop)
+
+      if !result.isNaN then if isNegative then -result else result
+      else
+        try java.lang.Double.parseDouble(js.subSequence(start, p).toString)
+        catch case _: NumberFormatException => throw JsonParseError("Malformed Double", this)
 
   def expectNumberOrNull(): String =
     skipWS()
@@ -437,25 +544,51 @@ case class JsonSource(js: CharSequence):
       backspace()
       throw JsonParseError("Non-numeric character found when integer value expected", this)
     var x = '0' - b
-    while { b = readChar(); b >= '0' && b <= '9' } do
+    while i < max && { b = here; b >= '0' && b <= '9' } do
       if x < -214748364 || {
           x = x * 10 + ('0' - b)
           x > 0
         }
       then throw JsonParseError("Integer value overflow", this)
+      i += 1
     x ^= s
     x -= s
     if (s & x) == -2147483648 then throw JsonParseError("Integer value overflow", this)
-    if (b | 0x20) == 'e' || b == '.' then
-      backspace()
-      throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
-    backspace()
+    if i < max && ((b | 0x20) == 'e' || b == '.') then throw JsonParseError("Decimal digit 'e' or '.' found when integer value expected", this)
     x
 
   def expectLong(): Long =
-    val result = UnsafeNumbers.long_(this, false)
-    backspace()
-    result
+    var b = readToken()
+    var s = -1L
+    if b == '-' then
+      b = readChar()
+      s = 0L
+    else if b == '+' then b = readChar()
+    if b < '0' || b > '9' then
+      backspace()
+      throw JsonParseError("Unexpected character in Int/Long value: " + b, this)
+    var x = ('0' - b).toLong
+    var readFour = true
+    while readFour && x > -922337203685477L && i + 3 < max do
+      val d0 = js.charAt(i) - '0'
+      val d1 = js.charAt(i + 1) - '0'
+      val d2 = js.charAt(i + 2) - '0'
+      val d3 = js.charAt(i + 3) - '0'
+      if (d0 | d1 | d2 | d3) < 0 || d0 > 9 || d1 > 9 || d2 > 9 || d3 > 9 then readFour = false
+      else
+        x = x * 10000 - (d0 * 1000 + d1 * 100 + d2 * 10 + d3)
+        i += 4
+    while i < max && { b = here; b >= '0' && b <= '9' } do
+      if x < -922337203685477580L || {
+          x = x * 10 + ('0' - b)
+          x > 0
+        }
+      then throw UnsafeNumbers.UnsafeNumber
+      i += 1
+    x ^= s
+    x -= s
+    if (s & x) == Long.MinValue then throw UnsafeNumbers.UnsafeNumber
+    x
 
   // Skip things...
   // =======================================================

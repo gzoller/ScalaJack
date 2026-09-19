@@ -17,6 +17,32 @@ final class StringMatrix(val xs: Array[String]) {
   val lengths: Array[Int] = xs.map(_.length)
   val initial: Long = (0 until width).foldLeft(0L)((bs, r) => bs | (1L << r))
 
+  private val asciiMasks: Array[Long] = {
+    val bits = new Array[Long](height << 7)
+    var string = 0
+    while string < width do {
+      val value = xs(string)
+      var char = 0
+      while char < value.length do {
+        val c = value.charAt(char)
+        if c < 128 then bits((char << 7) + c) |= 1L << string
+        char += 1
+      }
+      string += 1
+    }
+    bits
+  }
+
+  private val lengthMasks: Array[Long] = {
+    val bits = new Array[Long](height + 1)
+    var string = 0
+    while string < width do {
+      bits(xs(string).length) |= 1L << string
+      string += 1
+    }
+    bits
+  }
+
   private val matrix: Array[Int] = {
     val m = Array.fill[Int](width * height)(-1)
     var string: Int = 0
@@ -40,17 +66,23 @@ final class StringMatrix(val xs: Array[String]) {
   def update(bitset: Long, char: Int, c: Int): Long =
     if char >= height then 0L // too long
     else if bitset == 0L then 0L // everybody lost
+    else if c < 128 then bitset & asciiMasks((char << 7) + c)
     else {
-      var latest: Long = bitset
       val base: Int = width * char
 
-      if bitset == initial then { // special case when it is dense since it is simple
+      if (bitset & (bitset - 1L)) == 0L then {
+        val string = java.lang.Long.numberOfTrailingZeros(bitset)
+        if matrix(base + string) == c then bitset else 0L
+      } else if bitset == initial then { // special case when it is dense since it is simple
+        var latest: Long = bitset
         var string: Int = 0
         while string < width do {
           if matrix(base + string) != c then latest = latest ^ (1L << string)
           string += 1
         }
+        latest
       } else {
+        var latest: Long = bitset
         var remaining: Long = bitset
         while remaining != 0L do {
           val string: Int = java.lang.Long.numberOfTrailingZeros(remaining)
@@ -58,25 +90,14 @@ final class StringMatrix(val xs: Array[String]) {
           if matrix(base + string) != c then latest = latest ^ bit
           remaining = remaining ^ bit
         }
+        latest
       }
-
-      latest
     }
 
   // excludes entries that are not the given exact length
   def exact(bitset: Long, length: Int): Long =
-    if length > height then 0L // too long
-    else {
-      var latest: Long = bitset
-      var remaining: Long = bitset
-      while remaining != 0L do {
-        val string: Int = java.lang.Long.numberOfTrailingZeros(remaining)
-        val bit: Long = 1L << string
-        if lengths(string) != length then latest = latest ^ bit
-        remaining = remaining ^ bit
-      }
-      latest
-    }
+    if length < 0 || length > height then 0L // invalid length
+    else bitset & lengthMasks(length)
 
   def first(bitset: Long): Int =
     if bitset == 0L then -1

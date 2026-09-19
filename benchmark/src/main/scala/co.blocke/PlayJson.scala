@@ -37,10 +37,11 @@ object PlayZ:
 
   implicit val recordWrites: Writes[Record2] = (
     (JsPath \ "person").write[Person2] and
+    (JsPath \ "account_balance").write[Double] and
     (JsPath \ "hobbies").write[List[String]] and
     (JsPath \ "friends").write[List[Friend2]] and
     (JsPath \ "pets").write[List[Pet2]]
-  )(unlift((a: Record2) => Option((a.person, a.hobbies, a.friends, a.pets))))
+  )(unlift((a: Record2) => Option((a.person, a.account_balance, a.hobbies, a.friends, a.pets))))
 
   implicit val friendReads: play.api.libs.json.Reads[co.blocke.Friend2] = Json.reads[Friend2]
   implicit val petReads: play.api.libs.json.Reads[co.blocke.Pet2] = Json.reads[Pet2]
