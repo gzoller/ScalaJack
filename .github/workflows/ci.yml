@@ -38,21 +38,20 @@ jobs:
         shell: bash
         run: bash -c 'git config --global core.autocrlf false'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: coursier/setup-action@v1
+      - uses: coursier/setup-action@v3
+        with:
+          apps: sbt
 
-      - name: Install sbt
+      - name: Verify sbt
         shell: bash
-        run: |
-          cs install sbt
-          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
-          sbt sbtVersion
+        run: sbt sbtVersion
 
       - name: Check that workflows are up to date
         shell: bash
@@ -74,7 +73,7 @@ jobs:
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}
           path: targets.tar
@@ -93,23 +92,22 @@ jobs:
         if: contains(runner.os, 'windows')
         run: bash -c 'git config --global core.autocrlf false'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: coursier/setup-action@v1
+      - uses: coursier/setup-action@v3
+        with:
+          apps: sbt
 
-      - name: Install sbt
-        run: |
-          cs install sbt
-          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
-          sbt sbtVersion
+      - name: Verify sbt
+        run: sbt sbtVersion
 
       - name: Download target directories (3.5.2)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3.5.2
 
@@ -156,20 +154,19 @@ jobs:
         if: contains(runner.os, 'windows')
         run: bash -c 'git config --global core.autocrlf false'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: coursier/setup-action@v1
+      - uses: coursier/setup-action@v3
+        with:
+          apps: sbt
 
-      - name: Install sbt
-        run: |
-          cs install sbt
-          echo "$HOME/.local/share/coursier/bin" >> $GITHUB_PATH
-          sbt sbtVersion
+      - name: Verify sbt
+        run: sbt sbtVersion
 
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
