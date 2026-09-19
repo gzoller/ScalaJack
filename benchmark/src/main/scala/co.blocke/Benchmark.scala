@@ -55,9 +55,9 @@ class ReadingBenchmark
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.SECONDS)
 class WritingBenchmark
-    extends HandTooledWritingBenchmark
+    extends ScalaJackZ.ScalaJackWritingBenchmark
     with CirceZ.CirceWritingBenchmark
-    with ScalaJackZ.ScalaJackWritingBenchmark
+    with HandTooledWritingBenchmark
     with JsoniterZ.JsoniterWritingBenchmark
     with ZIOZ.ZIOJsonWritingBenchmark
     with PlayZ.PlayWritingBenchmark

@@ -13,7 +13,7 @@ val compilerOptions = Seq(
 
 val circeVersion = "0.15.0-M1"
 val scalaTestVersion = "3.2.11"
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion := "3.5.2"
 
 def priorTo2_13(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -37,7 +37,7 @@ lazy val benchmark = project
     libraryDependencies ++= Seq(
       "org.playframework" %% "play-json" % "3.0.1",
       "io.argonaut" %% "argonaut" % "6.3.9",
-      "co.blocke" %% "scalajack" % "8.0.0",
+      "co.blocke" %% "scalajack" % "8.1.8+14-dd99b187+20260919-0053-SNAPSHOT",
       "dev.zio" %% "zio-json" % "0.6.1",
       "org.typelevel" %% "fabric-core" % "1.12.6",
       "org.typelevel" %% "fabric-io" % "1.12.6",
