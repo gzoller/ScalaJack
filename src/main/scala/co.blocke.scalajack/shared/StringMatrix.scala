@@ -17,12 +17,27 @@ final class StringMatrix(val xs: Array[String]) {
   val lengths: Array[Int] = xs.map(_.length)
   val initial: Long = (0 until width).foldLeft(0L)((bs, r) => bs | (1L << r))
 
-  private val initialAscii: Array[Long] = {
-    val bits = new Array[Long](128)
+  private val asciiMasks: Array[Long] = {
+    val bits = new Array[Long](height << 7)
     var string = 0
     while string < width do {
-      val c = xs(string).charAt(0)
-      if c < 128 then bits(c) |= 1L << string
+      val value = xs(string)
+      var char = 0
+      while char < value.length do {
+        val c = value.charAt(char)
+        if c < 128 then bits((char << 7) + c) |= 1L << string
+        char += 1
+      }
+      string += 1
+    }
+    bits
+  }
+
+  private val lengthMasks: Array[Long] = {
+    val bits = new Array[Long](height + 1)
+    var string = 0
+    while string < width do {
+      bits(xs(string).length) |= 1L << string
       string += 1
     }
     bits
@@ -51,7 +66,7 @@ final class StringMatrix(val xs: Array[String]) {
   def update(bitset: Long, char: Int, c: Int): Long =
     if char >= height then 0L // too long
     else if bitset == 0L then 0L // everybody lost
-    else if char == 0 && c < 128 then initialAscii(c)
+    else if c < 128 then bitset & asciiMasks((char << 7) + c)
     else {
       val base: Int = width * char
 
@@ -81,20 +96,8 @@ final class StringMatrix(val xs: Array[String]) {
 
   // excludes entries that are not the given exact length
   def exact(bitset: Long, length: Int): Long =
-    if length > height then 0L // too long
-    else if bitset == 0L then 0L
-    else if (bitset & (bitset - 1L)) == 0L then if lengths(java.lang.Long.numberOfTrailingZeros(bitset)) == length then bitset else 0L
-    else {
-      var latest: Long = bitset
-      var remaining: Long = bitset
-      while remaining != 0L do {
-        val string: Int = java.lang.Long.numberOfTrailingZeros(remaining)
-        val bit: Long = 1L << string
-        if lengths(string) != length then latest = latest ^ bit
-        remaining = remaining ^ bit
-      }
-      latest
-    }
+    if length < 0 || length > height then 0L // invalid length
+    else bitset & lengthMasks(length)
 
   def first(bitset: Long): Int =
     if bitset == 0L then -1
