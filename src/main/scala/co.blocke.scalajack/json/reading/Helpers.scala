@@ -102,7 +102,6 @@ object Helpers:
       case _              => "unknown" // should never happen
     }
     val tname = Expr(named)
-    val classPrefixE = Expr(allButLastPart(named))
 
     val caseDefs = traitRef.sealedChildren.map { childRef =>
       val childNameE = Expr(childRef.name)
@@ -145,7 +144,7 @@ object Helpers:
 
         case TypeHintPolicy.SIMPLE_CLASSNAME =>
           CaseDef(
-            Literal(StringConstant(childRef.name)),
+            Literal(StringConstant(lastPart(childRef.name))),
             None,
             ctx.readMethodSyms
               .get(methodKey)
@@ -163,7 +162,7 @@ object Helpers:
           val hint = $in.findObjectField($hintLabelE).getOrElse(throw JsonParseError(s"Unable to find type hint for abstract class $$cnameE", $in))
           ${
             cfg.typeHintPolicy match
-              case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+              case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
               case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
               case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
           }
@@ -190,7 +189,7 @@ object Helpers:
             case Some(hint) =>
               ${
                 cfg.typeHintPolicy match
-                  case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ $classPrefixE + "." + hint }.asTerm, caseDefs).asExprOf[T]
+                  case TypeHintPolicy.SIMPLE_CLASSNAME   => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
                   case TypeHintPolicy.SCRAMBLE_CLASSNAME => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
                   case TypeHintPolicy.USE_ANNOTATION     => Match('{ hint }.asTerm, caseDefs).asExprOf[T]
               }
