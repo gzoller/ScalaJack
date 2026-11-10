@@ -8,6 +8,12 @@ object ConstructorBuilder:
   ): ctx.quotes.reflect.Term =
     import ctx.quotes.reflect.*
 
+    // Singleton cases of an enum with payload cases are decoded as objects too.
+    tpe match
+      case singleton: TermRef if singleton.termSymbol.flags.is(Flags.Enum) =>
+        return Ref(singleton.termSymbol)
+      case _ => ()
+
     val classSymbol = tpe.classSymbol.get
     val primaryConstructor = classSymbol.primaryConstructor
     val newExpr = New(Inferred(tpe))

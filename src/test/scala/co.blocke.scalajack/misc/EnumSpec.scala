@@ -15,6 +15,53 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
 
   describe(colorString("-------------------------------\n:          Enum Tests         :\n-------------------------------", Console.YELLOW)) {
     describe(colorString("+++ Positive Tests +++")) {
+      it("Parameterized enum cases must round-trip") {
+        val sj = sjCodecOf[AuditActor]
+        val system = AuditActor.System("scheduler")
+        val user = AuditActor.User(java.util.UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+        sj.toJson(system) should matchJson("""{"code":"scheduler"}""")
+        sj.toJson(user) should matchJson("""{"userId":"123e4567-e89b-12d3-a456-426614174000"}""")
+        sj.fromJson(sj.toJson(system)) shouldEqual system
+        sj.fromJson(sj.toJson(user)) shouldEqual user
+        sj.fromJson("null") shouldEqual null
+        sj.toJson(null) shouldEqual "null"
+        val actors = List(system, user)
+        sj.fromJsonList(sj.toJsonList(actors)) shouldEqual actors
+      }
+      it("Parameterized enums must support explicit type hints") {
+        val sj = sjCodecOf[AuditActor](SJConfig.preferTypeHints)
+        val actor = AuditActor.System("scheduler")
+        sj.toJson(actor) should matchJson("""{"_hint":"System","code":"scheduler"}""")
+        sj.fromJson(sj.toJson(actor)) shouldEqual actor
+      }
+      it("Parameterized enums must work as fields and collection elements") {
+        val sj = sjCodecOf[AuditRecord]
+        val record = AuditRecord(AuditActor.System("scheduler"), List(AuditActor.System("other")))
+        sj.fromJson(sj.toJson(record)) shouldEqual record
+      }
+      it("Enums with singleton and payload cases must round-trip") {
+        val sj = sjCodecOf[MixedActor]
+        val actors = List(MixedActor.Anonymous, MixedActor.System("scheduler"), MixedActor.Unknown)
+        sj.fromJsonList(sj.toJsonList(actors)) shouldEqual actors
+      }
+      it("Enums with ambiguous payloads must use type hints") {
+        val sj = sjCodecOf[AmbiguousActor]
+        val actor = AmbiguousActor.System("scheduler")
+        sj.toJson(actor) should matchJson("""{"_hint":"System","id":"scheduler"}""")
+        sj.fromJson(sj.toJson(actor)) shouldEqual actor
+        val other = AmbiguousActor.User("user")
+        sj.fromJson(sj.toJson(other)) shouldEqual other
+      }
+      it("A concrete enum case must round-trip") {
+        val sj = sjCodecOf[AuditActor.System]
+        val actor = new AuditActor.System("scheduler")
+        sj.fromJson(sj.toJson(actor)) shouldEqual actor
+      }
+      it("Recursive payload enums must round-trip") {
+        val sj = sjCodecOf[ActorTree]
+        val tree = ActorTree.Branch(List(ActorTree.Leaf("system"), ActorTree.Branch(Nil)))
+        sj.fromJson(sj.toJson(tree)) shouldEqual tree
+      }
       it("Enum as Map key and value must work") {
         val inst = MapHolder[Color, Color](Map(Color.Red -> Color.Blue, Color.Green -> Color.Red))
         val sj = sjCodecOf[MapHolder[Color, Color]]
@@ -98,6 +145,14 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       }
     }
     describe(colorString("--- Negative Tests ---")) {
+      it("Payload enum cases must validate required fields") {
+        val sj = sjCodecOf[AuditActor](SJConfig.preferTypeHints)
+        val ex = intercept[JsonParseError](sj.fromJson("""{"_hint":"System"}"""))
+        ex.getMessage should include("Missing required field(s) code")
+      }
+      it("Payload enums cannot be JSON map keys") {
+        assertDoesNotCompile("""ScalaJack.sjCodecOf[Map[AuditActor, String]]""")
+      }
       it("Enum must break - bad value") {
         val sj = sjCodecOf[MapHolder[Color, Color]]
         val js = """{"a":{"Red":"Bogus","Green":"Red"}}"""
@@ -112,3 +167,22 @@ class EnumSpec() extends AnyFunSpec with JsonMatchers:
       }
     }
   }
+
+enum AuditActor:
+  case System(code: String)
+  case User(userId: java.util.UUID)
+
+case class AuditRecord(actor: AuditActor, history: List[AuditActor])
+
+enum MixedActor:
+  case Anonymous
+  case System(code: String)
+  case Unknown
+
+enum AmbiguousActor:
+  case System(id: String)
+  case User(id: String)
+
+enum ActorTree:
+  case Leaf(name: String)
+  case Branch(children: List[ActorTree])

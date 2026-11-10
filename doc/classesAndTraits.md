@@ -103,3 +103,20 @@ sjDog.fromJson(jsDog) // Fails. No type hint means ScalaJack doesn't know which 
 The given type hint will allow ScalaJack to construct a Dog object and return it as a Pet, which is what you want.
 
 We'll see in a later section how you can customize both the type hint label and the the hint value in your JSON.
+
+### Scala 3 enums with payloads
+
+Enum cases with constructor parameters use the same JSON object encoding and type-hint rules as sealed class hierarchies:
+
+```scala
+enum AuditActor:
+  case System(code: String)
+  case User(userId: java.util.UUID)
+
+val sj = sjCodecOf[AuditActor]
+val actor = AuditActor.System("scheduler")
+sj.toJson(actor) // {"code":"scheduler"}
+sj.fromJson(sj.toJson(actor)) // AuditActor.System("scheduler")
+```
+
+Distinct payload field names identify the case without a hint. Cases with ambiguous fields receive an `_hint` automatically; `SJConfig.preferTypeHints` includes hints for every case. Enums that mix singleton and payload cases encode all cases as objects, including empty objects for singleton cases (with hints when needed). Enums containing only singleton cases retain their string or ordinal encoding. Payload enums can be object fields and collection values, but cannot be JSON map keys.

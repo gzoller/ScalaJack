@@ -145,6 +145,12 @@ object Reader:
       case None =>
         ref match
 
+          case t: ScalaEnumRef[?] if shared.EnumSupport.hasPayload(t) =>
+            if isMapKey then throw TypeError(s"For JSON serialization, map keys must be a simple type. ${t.name} has payload cases.")
+            ctx.readMethodSyms.get(methodKey) match
+              case Some(sym) => Apply(Ref(sym), List(in.asTerm)).asExprOf[T]
+              case None      => makeReadFn(methodKey, shared.EnumSupport.hierarchy[T](ctx, t))
+
           // First cover all primitive and simple types...
           case t: BigDecimalRef =>
             if isMapKey then

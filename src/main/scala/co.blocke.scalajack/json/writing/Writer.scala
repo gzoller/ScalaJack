@@ -301,6 +301,9 @@ object Writer:
           case Some(userOverride) => '{ ${ userOverride }.encodeValue($aE, $out) }
           case None =>
             ref match
+              case t: ScalaEnumRef[?] if EnumSupport.hasPayload(t) =>
+                if isMapKey then throw TypeError(s"For JSON serialization, map keys must be a simple type. ${t.name} has payload cases.")
+                genEncFnBody(ctx, cfg, EnumSupport.hierarchy[T](ctx, t), aE, out, '{ false }, inTuple, isMapKey)
               // First cover all primitive and simple types...
               case t: BigDecimalRef =>
                 if isMapKey then '{ $out.valueStringified(${ aE.asExprOf[scala.math.BigDecimal] }) }
