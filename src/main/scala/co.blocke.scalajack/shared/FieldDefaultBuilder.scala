@@ -54,7 +54,8 @@ object FieldDefaultBuilder:
         typeArgs: List[TypeRepr],
         tpe: TypeRepr
     ): Expr[f] =
-      val dvMembers = classCompanion.tpe.typeSymbol.methodMember(s"<init>$$default$$${idx + 1}")
+      // Constructor default getters are exposed under their encoded names.
+      val dvMembers = classCompanion.tpe.typeSymbol.methodMember(s"$$lessinit$$greater$$default$$${idx + 1}")
 
       if dvMembers.isEmpty then
         field.fieldRef match
@@ -154,6 +155,9 @@ object FieldDefaultBuilder:
 
     val (valDefs, idents) = fieldResults.unzip
     val reqSym = Symbol.newVal(Symbol.spliceOwner, "_req", TypeRepr.of[Long], Flags.Mutable, Symbol.noSymbol)
-    val reqVarDef = ValDef(reqSym, Some(Literal(LongConstant(requiredMask))))
+    // Track unread fields separately from which fields are required. A field with
+    // a Scala default is still unread and must accept its first explicit value.
+    val unreadMask = classRef.fields.indices.foldLeft(0L)((mask, idx) => mask | (1L << idx))
+    val reqVarDef = ValDef(reqSym, Some(Literal(LongConstant(unreadMask))))
 
     (valDefs, idents, reqVarDef, requiredMask, symbolMap.toMap)
