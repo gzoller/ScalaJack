@@ -282,7 +282,7 @@ object Writer:
       ctx: CodecBuildContext,
       cfg: SJConfig,
       aE: Expr[T],
-      ref: RTypeRef[T],
+      inputRef: RTypeRef[T],
       out: Expr[JsonOutput],
       inTuple: Boolean = false,
       isMapKey: Boolean = false // only primitive or primitive-equiv types can be Map keys
@@ -290,6 +290,7 @@ object Writer:
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
 
+    val ref = OpaqueSupport.normalize(ctx, inputRef)
     val methodKey = ref.typedName
     ctx.writeMethodSyms
       .get(methodKey)

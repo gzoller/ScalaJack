@@ -17,13 +17,15 @@ object Reader:
   def genReadVal[T: Type](
       ctx: CodecBuildContext,
       cfg: SJConfig,
-      ref: RTypeRef[T],
+      inputRef: RTypeRef[T],
       in: Expr[JsonSource],
       inTuple: Boolean = false,
       isMapKey: Boolean = false
   ): Expr[T] =
     given Quotes = ctx.quotes
     import ctx.quotes.reflect.*
+
+    val ref = shared.OpaqueSupport.normalize(ctx, inputRef)
 
     // ------------------< Helpers
 
